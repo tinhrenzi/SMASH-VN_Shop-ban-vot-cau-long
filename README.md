@@ -1,1 +1,7 @@
-# SMASH-VN---Shop-b-n-ph-ki-n-c-u-l-ng
+Shop bán vợt cầu lông - SMASH VN là một dự án ứng dụng CRUD và AI vào trong một dự án thực tế.
+
+--------------------------------------------------------------------------------------------------------------
+Ngôn ngữ chính: Java,...
+
+--------------------------------------------------------------------------------------------------------------
+Chức năng chính: Quản lý tài khoản, quản lý sản phẩm, quản lý hóa đơn, quản lý giỏ hàng,...
