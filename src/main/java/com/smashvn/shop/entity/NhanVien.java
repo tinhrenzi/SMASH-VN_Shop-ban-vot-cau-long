@@ -1,0 +1,26 @@
+package com.smashvn.shop.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Entity
+@Table(name = "NhanVien")
+@Data
+public class NhanVien {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @OneToOne
+    @JoinColumn(name = "id_tai_khoan", nullable = false, unique = true)
+    private TaiKhoan taiKhoan;
+
+    @Column(name = "ho_ten_nv", nullable = false, length = 100)
+    private String hoTenNv;
+
+    @Column(name = "chuc_vu", nullable = false, length = 100)
+    private String chucVu;
+
+    @Column(name = "so_dien_thoai_nv", nullable = false, length = 15)
+    private String soDienThoaiNv;
+}
