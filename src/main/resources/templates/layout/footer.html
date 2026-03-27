@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link href="images/favicon.png" rel="shortcut icon">
+    <link th:href="@{/images/favicon.png}" rel="shortcut icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <title>Smash VN</title>
 
@@ -14,15 +14,16 @@
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
 
     <!--====== CSS Nhà cung cấp ======-->
-    <link rel="stylesheet" href="css/vendor.css">
+    <link rel="stylesheet" th:href="@{/css/vendor.css}">
 
     <!--====== Tiện ích khoảng cách ======-->
-    <link rel="stylesheet" href="css/utility.css">
+    <link rel="stylesheet" th:href="@{/css/utility.css}">
 
     <!--====== Ứng dụng ======-->
-    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
+	<div id="app">
     <footer th:fragment="footer">
     <div class="outer-footer">
                 <div class="container">
@@ -179,6 +180,7 @@
                 </div>
             </div>
     </footer>
+</div>
     <script>
         window.ga = function() {
             ga.q.push(arguments)

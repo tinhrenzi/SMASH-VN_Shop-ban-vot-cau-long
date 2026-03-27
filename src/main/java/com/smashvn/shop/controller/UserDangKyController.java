@@ -20,7 +20,7 @@ public class UserDangKyController {
     // Hiển thị form đăng ký (Giao diện)
     @GetMapping("/dang-ky")
     public String hienThiTrangDangKy() {
-        return "user-dang-ky"; // Sẽ tìm file dang-ky.html trong thư mục templates
+        return "signup"; // Sẽ tìm file dang-ky.html trong thư mục templates
     }
 
     // Xử lý khi người dùng bấm nút Submit form
@@ -33,7 +33,7 @@ public class UserDangKyController {
         // Kiểm tra 2 mật khẩu có khớp nhau không
         if (!matKhau.equals(xacNhanMatKhau)) {
             model.addAttribute("loi", "Mật khẩu xác nhận không trùng khớp!");
-            return "user-dang-ky"; // Trả lại trang đăng ký kèm câu báo lỗi
+            return "signup"; // Trả lại trang đăng ký kèm câu báo lỗi
         }
 
         try {
@@ -46,7 +46,7 @@ public class UserDangKyController {
         } catch (RuntimeException e) {
             // Bắt lỗi (ví dụ: trùng email) và hiển thị lên giao diện
             model.addAttribute("loi", e.getMessage());
-            return "user-dang-ky";
+            return "signup";
         }
     }
 }

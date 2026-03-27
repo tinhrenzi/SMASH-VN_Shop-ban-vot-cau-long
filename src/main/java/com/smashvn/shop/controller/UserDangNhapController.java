@@ -22,7 +22,7 @@ public class UserDangNhapController {
     // Hiển thị form đăng nhập
     @GetMapping("/dang-nhap")
     public String hienThiFormDangNhap() {
-        return "user-dang-nhap"; 
+        return "signin"; 
     }
 
     // Xử lý khi bấm nút "Đăng nhập"
@@ -45,7 +45,7 @@ public class UserDangNhapController {
         } catch (RuntimeException e) {
             // Đăng nhập thất bại, báo lỗi ra màn hình
             model.addAttribute("loi", e.getMessage());
-            return "user-dang-nhap";
+            return "signin";
         }
     }
     

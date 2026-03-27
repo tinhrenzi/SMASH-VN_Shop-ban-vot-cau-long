@@ -5,48 +5,10 @@
     // Main Object
     var RESHOP = {};
 
-    // Fragment loader cho header và footer dùng lại trên các trang
-    function loadHtmlFragment(url, containerId, callback) {
-        var container = document.getElementById(containerId);
-        if (!container) {
-            if (callback && typeof callback === 'function') {
-                callback();
-            }
-            return;
-        }
-        fetch(url)
-            .then(function(response) {
-                if (!response.ok) {
-                    throw new Error('Không tải được ' + url + ' (HTTP ' + response.status + ')');
-                }
-                return response.text();
-            })
-            .then(function(html) {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                var bodyContent = doc.body ? doc.body.innerHTML : html;
-                container.innerHTML = bodyContent;
-                if (callback && typeof callback === 'function') {
-                    callback();
-                }
-            })
-            .catch(function(error) {
-                console.error('Lỗi load fragment:', error);
-                container.innerHTML = '<!-- Lỗi tải fragment -->';
-                if (callback && typeof callback === 'function') {
-                    callback();
-                }
-            });
-    }
+    
+    
 
-    RESHOP.loadSharedHeaderFooter = function() {
-        loadHtmlFragment('/layout/header.html', 'header-placeholder', function() {
-            if (typeof RESHOP.reshopNavigation === 'function') {
-                RESHOP.reshopNavigation();
-            }
-        });
-        loadHtmlFragment('/layout/footer.html', 'footer-placeholder');
-    };
+    
 
     // Predefined variables
     var
@@ -706,8 +668,7 @@
         RESHOP.defaultAddressCheckbox();
         RESHOP.initScrollSpy();
         RESHOP.onClickScroll();
-        RESHOP.loadSharedHeaderFooter();
-        // RESHOP.reshopNavigation() is invoked after header fragment is loaded in loadSharedHeaderFooter
+        RESHOP.reshopNavigation() 
         RESHOP.primarySlider();
         RESHOP.productSlider();
         RESHOP.tabSlider();
