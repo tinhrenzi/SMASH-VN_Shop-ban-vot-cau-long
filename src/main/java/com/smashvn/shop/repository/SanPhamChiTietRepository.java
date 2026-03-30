@@ -8,4 +8,5 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 
 public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, Integer> {
 	List<SanPhamChiTiet> findTop8ByOrderByIdDesc();
+	List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 }

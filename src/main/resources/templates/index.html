@@ -207,7 +207,7 @@
 										            type="button" 
 										            th:attr="data-filter='.' + ${brand.tenThuongHieu}"
 										            th:text="${brand.tenThuongHieu}">
-										        [Tên Thương Hiệu]
+										        Tên Hãng
 										    </button>
 										</div>
 	                             </div>
@@ -217,7 +217,7 @@
 										    <div class="product-o product-o--hover-on product-o--radius">
 										        <div class="product-o__wrap">
 										            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.sanPham.id})}">
-										                <img class="aspect__img" th:src="${product.hinhAnhSanPham}" alt="Product Image">
+							                			<img class="aspect__img" th:src="@{'/images/product/' + ${product.hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
 										            </a>
 										            
 										            <div class="product-o__action-wrap">
@@ -229,11 +229,11 @@
 										        </div>
 										
 										        <span class="product-o__category">
-										            <a th:href="@{/danh-muc/{id}(id=${product.sanPham.danhMuc.id})}" th:text="${product.sanPham.danhMuc.tenDanhMuc}">[Tên Danh Mục]</a>
+										            <a th:href="@{#}" th:text="${product.sanPham.danhMuc.tenDanhMuc}">Danh mục</a>
 										        </span>
 										
 										        <span class="product-o__name">
-										            <a th:href="@{/san-pham/{id}(id=${product.sanPham.id})}" th:text="${product.sanPham.tenSanPham}">[Tên Sản Phẩm Cầu Lông]</a>
+										            <a th:href="@{/san-pham/{id}(id=${product.sanPham.id})}" th:text="${product.sanPham.tenSanPham}">Tên Sản Phẩm</a>
 										        </span>
 										        
 										        <div class="product-o__rating gl-rating-style">
@@ -241,7 +241,7 @@
 										        </div>
 										
 										        <span class="product-o__price" th:text="${#numbers.formatDecimal(product.giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-										            [Giá tiền]
+										            Giá
 										        </span>
 										    </div>
 										</div>
@@ -494,37 +494,37 @@
                     <div class="container">
                         <div class="row">
 						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
-						        <div class="product-o product-o--hover-on product-o--radius">
-						            <div class="product-o__wrap">
-						                <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
-						                    <img class="aspect__img" th:src="${product.anhDaiDien}" alt="Product Image">
-						                </a>
-						                
-						                <div class="product-o__action-wrap">
-						                    <ul class="product-o__action-list">
-						                        <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-						                        <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-						                    </ul>
-						                </div>
-						            </div>
-						
-						            <span class="product-o__category">
-						                <a th:href="@{/danh-muc/{id}(id=${product.idDanhMuc})}" th:text="${product.tenDanhMuc}">[Tên Danh Mục]</a>
-						            </span>
-						
-						            <span class="product-o__name">
-						                <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">[Tên Sản Phẩm Cầu Lông]</a>
-						            </span>
-						            
-						            <div class="product-o__rating gl-rating-style">
-						                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-						            </div>
-						
-						            <span class="product-o__price" th:text="${#numbers.formatDecimal(product.giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-						                [Giá tiền]
-						            </span>
-						        </div>
-						    </div>
+							    <div class="product-o product-o--hover-on product-o--radius">
+							        <div class="product-o__wrap">
+							            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.sanPham.id})}">
+							                <img class="aspect__img" th:src="@{'/images/product/' + ${product.hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+							            </a>
+							            
+							            <div class="product-o__action-wrap">
+							                <ul class="product-o__action-list">
+							                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
+							                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
+							                </ul>
+							            </div>
+							        </div>
+							
+							        <span class="product-o__category">
+							            <a th:href="@{#}" th:text="${product.sanPham.danhMuc.tenDanhMuc}">Danh mục</a>
+							        </span>
+							
+							        <span class="product-o__name">
+							            <a th:href="@{/san-pham/{id}(id=${product.sanPham.id})}" th:text="${product.sanPham.tenSanPham}">Tên Sản Phẩm</a>
+							        </span>
+							        
+							        <div class="product-o__rating gl-rating-style">
+							            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+							        </div>
+							
+							        <span class="product-o__price" th:text="${#numbers.formatDecimal(product.giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+							            Giá
+							        </span>
+							    </div>
+							</div>
 						</div>
                     </div>
                 </div>
