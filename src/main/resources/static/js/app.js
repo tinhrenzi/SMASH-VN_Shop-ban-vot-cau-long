@@ -20,15 +20,9 @@
         $collectionProductSlider = $('.product-slider'),
         $collectionTabSlider = $('.tab-slider'),
         $collectionInputCounter = $('.input-counter'),
-        $collectionCountDown = $('[data-countdown]'),
         $collectionCartModalLink = $('[data-modal="modal"]'),
         $defaultAddressCheckbox = $('#get-address'),
         $collectionFormBill = $('[data-bill]'),
-        $collectionPostGallery = $('.post-gallery'),
-        $blogMasonry = $('.blog-m'),
-        $collectionPostVideo = $('.post-video-block'),
-        // $("iframe[src*="youtube"], iframe[src*="vimeo"]") jQuery Multiple Selector
-        $collectionEmbedVideo = $('iframe[src*="youtube"]'),
         $productDetailElement = $('#pd-o-initiate'),
         $productDetailElementThumbnail = $('#pd-o-thumbnail'),
         $modalProductDetailElement = $('#js-product-detail-modal'),
@@ -302,48 +296,9 @@
         $('.preloader').removeClass('is-active');
     };
 
-    // Bind isotope filter plugin
-    RESHOP.isotopeFilter = function() {
 
-        // Check if filter grid wrapper on the page
-        if ($filterGridWrapper.length) {
 
-            $filterGridWrapper.isotope({
-                itemSelector:'.filter__item',
-                filter: '*'
-            });
-        }
 
-        // Check if filter buttons are on page then attach click
-        if ($collectionOfFilterBtn.length) {
-            // Attack click event to these filter buttons
-            $collectionOfFilterBtn.on('click',function(){
-               // Get Value of the attribute data-filter
-               var selectorValue = $(this).attr('data-filter');
-               // Now initialize isotope plugin
-                $filterGridWrapper.isotope({
-                    filter:selectorValue
-                });
-               $(this).closest('.filter-category-container').find('.js-checked').removeClass('js-checked');
-               $(this).addClass('js-checked');
-            });
-        }
-    };
-
-    // Bind countdown plugin
-    RESHOP.timerCountDown = function() {
-        // Check if Count Down on the page
-        if ($collectionCountDown.length) {
-            $collectionCountDown.each(function () {
-                var $this = $(this),
-                    finalDate = $(this).data('countdown');
-                $this.countdown(finalDate, function (event) {
-                      $this.html(event.strftime('<div class="countdown__content"><div><span class="countdown__value">%D</span><span class="countdown__key">Days</span></div></div><div class="countdown__content"><div><span class="countdown__value">%H</span><span class="countdown__key">Hours</span></div></div><div class="countdown__content"><div><span class="countdown__value">%M</span><span class="countdown__key">Mins</span></div></div><div class="countdown__content"><div><span class="countdown__value">%S</span><span class="countdown__key">Secs</span></div></div>'));
-                });
-            });
-        }
-
-    };
 
     // Input Counter
     RESHOP.initInputCounter = function() {
@@ -382,73 +337,6 @@
     };
 
 
-    // Blog Post Gallery
-    RESHOP.blogPostGallery = function() {
-        if ($collectionPostGallery.length) {
-            $collectionPostGallery.on('initialize.owl.carousel', function () {
-                $(this).closest('.slider-fouc').removeAttr('class');
-            }).each(function () {
-                $(this).owlCarousel({
-                    items:1,
-                    autoplay: false,
-                    loop: false,
-                    dots: false,
-                    rewind: true,
-                    smartSpeed: 1500,
-                    nav: true,
-                    navElement: 'div',
-                    navClass: ['post-prev', 'post-next'],
-                    navText: ['<i class="fas fa-long-arrow-alt-left"></i>', '<i class="fas fa-long-arrow-alt-right"></i>'],
-                });
-            });
-        }
-    };
-
-    // Blog Post Masonry
-    RESHOP.blogPostMasonry = function() {
-        if ($blogMasonry.length) {
-            $blogMasonry.find('.blog-m-init').isotope({
-                itemSelector: '.blog-m__element',
-                layoutMode: 'masonry'
-            });
-        }
-    };
-
-    // Blog Post Video
-    RESHOP.blogPostVideo = function() {
-        if ($collectionPostVideo.length) {
-            $collectionPostVideo.on('click',function (e) {
-                e.preventDefault();
-                var $this = $(this);
-                // Find immediate child that has .bp__video class
-                var myVideo = $this.find('.post-video')[0];
-                // Add ended event
-                $(myVideo).on('ended',function () {
-                    $this.removeClass('process');// Add play icon
-                });
-                // By default it is paused
-                if (myVideo.paused) {
-                    // Play Video
-                    myVideo.play();
-                    $(this).addClass('process');
-                    if ($(this).hasClass('pause')) {
-                        $(this).removeClass('pause');
-                    }
-                } // if user again click that block just pause the video and add icon
-                else {
-                    myVideo.pause();
-                    $(this).addClass('pause');
-                }
-            });
-        }
-    };
-
-    // Blog Post Embed Video
-    RESHOP.blogPostEmbedVideo = function() {
-        if ($collectionEmbedVideo.length) {
-            $collectionEmbedVideo.parent().fitVids();
-        }
-    };
 
 
 
@@ -637,23 +525,10 @@
         }
     };
 
-    // Show Newsletter Modal
-    RESHOP.showNewsletterModal = function() {
-        if ($('#newsletter-modal').length) {
-            setTimeout(function () {
-                // Manually opens a modal
-                $('#newsletter-modal').modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                    show: true
-                });
-            }, 5000);
-        }
-    };
+
 
     // Check everything including DOM elements and images loaded
     $(window).on('load',function () {
-        RESHOP.showNewsletterModal();
         if ($primarySlider.length) {
             // Play slider when everything is loaded
             $primarySlider.data('owl.carousel').options.autoplay = true;
@@ -668,7 +543,7 @@
         RESHOP.defaultAddressCheckbox();
         RESHOP.initScrollSpy();
         RESHOP.onClickScroll();
-        RESHOP.reshopNavigation() 
+        RESHOP.reshopNavigation();
         RESHOP.primarySlider();
         RESHOP.productSlider();
         RESHOP.tabSlider();
@@ -676,13 +551,7 @@
         RESHOP.brandSlider();
         RESHOP.testimonialSlider();
         RESHOP.appConfiguration();
-        RESHOP.isotopeFilter();
-        RESHOP.timerCountDown();
         RESHOP.initInputCounter();
-        RESHOP.blogPostGallery();
-        RESHOP.blogPostVideo();
-        RESHOP.blogPostEmbedVideo();
-        RESHOP.blogPostMasonry();
         RESHOP.productDetailInit();
         RESHOP.modalProductDetailInit();
         RESHOP.shopCategoryToggle();

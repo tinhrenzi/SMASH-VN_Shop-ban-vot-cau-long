@@ -28,7 +28,11 @@ public class SanPham {
 
     @Column(name = "ten_san_pham", nullable = false)
     private String tenSanPham;
-
+    
+ // Thêm vào bên trong class SanPham
+    @Column(name = "trang_thai", length = 50)
+    private String trangThai = "dang_ban"; // Mặc định khi tạo mới là đang bán
+    
     @Column(name = "mo_ta", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String moTa;
 
