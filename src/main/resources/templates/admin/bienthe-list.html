@@ -23,7 +23,8 @@
     <div th:if="${param.thanhcong != null}" class="alert alert-success">Thêm biến thể mới thành công!</div>
     <div th:if="${param.xoaThanhCong != null}" class="alert alert-success">Đã xóa biến thể thành công!</div>
     <div th:if="${param.loiXoa != null}" class="alert alert-danger">Không thể xóa! Sản phẩm này đang có trong giỏ hàng hoặc hóa đơn của khách.</div>
-
+	<div th:if="${param.suaThanhCong != null}" class="alert alert-success">Cập nhật biến thể thành công!</div>
+    
     <div class="card shadow mb-5 border-success">
         <div class="card-header bg-success text-white fw-bold">
             <i class="fas fa-plus-circle"></i> THÊM PHÂN LOẠI MỚI (Màu / Size / Giá)

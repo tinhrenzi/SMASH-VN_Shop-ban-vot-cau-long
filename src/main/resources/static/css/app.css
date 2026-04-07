@@ -6425,4 +6425,42 @@ input::-ms-clear {
 
 #js-product-detail-modal-thumbnail:hover .pt-prev, #js-product-detail-modal-thumbnail:hover .pt-next {
   opacity: .8; }
+  
+/*==============================================================
+  # CUSTOM CSS: Nút Chọn Biến Thể Sản Phẩm (Màu sắc / Size)
+  ==============================================================*/
+.variant-btn {
+    padding: 8px 20px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px;
+    cursor: pointer; 
+    transition: all 0.2s ease-in-out; 
+    background: #fff;
+}
 
+.variant-btn:hover { 
+    border-color: #ff4500; 
+    color: #ff4500; 
+}
+
+.variant-btn.active {
+    border-color: #ff4500; 
+    background-color: #ff4500; 
+    color: #fff; 
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(255, 69, 0, 0.2);
+}
+/*==============================================================
+  # CUSTOM CSS: Khung ảnh chữ nhật dọc cho sản phẩm (Vợt cầu lông)
+  ==============================================================*/
+/* Tạo khung hình chữ nhật dọc (Tỷ lệ 3:4) */
+.aspect--vertical {
+    padding-bottom: 133.33%; /* 4 chia 3 nhân 100% = 133.33% */
+}
+
+/* Đảm bảo ảnh vợt/giày hiển thị trọn vẹn, không bị méo hay vỡ hạt */
+.product-o__wrap .aspect__img {
+    object-fit: contain;
+    padding: 15px; /* Thêm khoảng trống nhỏ quanh ảnh để nhìn thanh thoát hơn */
+    background-color: #ffffff; /* Nền trắng giúp sản phẩm nổi bật hơn */
+}

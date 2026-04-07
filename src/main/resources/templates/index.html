@@ -214,37 +214,34 @@
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
 									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
-										    <div class="product-o product-o--hover-on product-o--radius">
-										        <div class="product-o__wrap">
-										            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.sanPham.id})}">
-							                			<img class="aspect__img" th:src="@{'/uploads/product/' + ${product.hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
-										            </a>
-										            
-										            <div class="product-o__action-wrap">
-										                <ul class="product-o__action-list">
-										                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-										                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-										                </ul>
-										            </div>
-										        </div>
-										
-										        <span class="product-o__category">
-										            <a th:href="@{#}" th:text="${product.sanPham.danhMuc.tenDanhMuc}">Danh mục</a>
-										        </span>
-										
-										        <span class="product-o__name">
-										            <a th:href="@{/san-pham/{id}(id=${product.sanPham.id})}" th:text="${product.sanPham.tenSanPham}">Tên Sản Phẩm</a>
-										        </span>
-										        
-										        <div class="product-o__rating gl-rating-style">
-										            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-										        </div>
-										
-										        <span class="product-o__price" th:text="${#numbers.formatDecimal(product.giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-										            Giá
-										        </span>
-										    </div>
-										</div>
+									    <div class="product-o product-o--hover-on product-o--radius">
+									        <div class="product-o__wrap">
+									            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+									                <img class="aspect__img" 
+									                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
+									                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+									            </a>
+									            <div class="product-o__action-wrap">
+									                <ul class="product-o__action-list">
+									                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
+									                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
+									                </ul>
+									            </div>
+									        </div>
+									
+									        <span class="product-o__category">
+									            <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+									        </span>
+									
+									        <span class="product-o__name">
+									            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+									        </span>
+									        
+									        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
+									            Từ <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+									        </span>
+									    </div>
+									</div>
 									</div>
                                 </div>
                             </div>
@@ -291,7 +288,7 @@
                                 <div class="product-o product-o--radius product-o--hover-off u-h-100">
                                     <div class="product-o__wrap">
 
-                                        <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/product-detail.html}">
 
                                             <img class="aspect__img" th:src="@{/images/product/electronic/product11.jpg}" alt=""></a>
                                         <div class="product-o__special-count-wrap">
@@ -372,7 +369,7 @@
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/product-detail.html}">
 
                                                 <img class="aspect__img" th:src="@{/images/product/electronic/product13.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
@@ -496,8 +493,10 @@
 						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
 							    <div class="product-o product-o--hover-on product-o--radius">
 							        <div class="product-o__wrap">
-							            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.sanPham.id})}">
-							                <img class="aspect__img" th:src="@{'/images/product/' + ${product.hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+							            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+							                <img class="aspect__img" 
+							                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
+							                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
 							            </a>
 							            
 							            <div class="product-o__action-wrap">
@@ -509,19 +508,15 @@
 							        </div>
 							
 							        <span class="product-o__category">
-							            <a th:href="@{#}" th:text="${product.sanPham.danhMuc.tenDanhMuc}">Danh mục</a>
+							            <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
 							        </span>
 							
 							        <span class="product-o__name">
-							            <a th:href="@{/san-pham/{id}(id=${product.sanPham.id})}" th:text="${product.sanPham.tenSanPham}">Tên Sản Phẩm</a>
+							            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
 							        </span>
 							        
-							        <div class="product-o__rating gl-rating-style">
-							            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-							        </div>
-							
-							        <span class="product-o__price" th:text="${#numbers.formatDecimal(product.giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-							            Giá
+							        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
+							            Từ <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
 							        </span>
 							    </div>
 							</div>
@@ -543,7 +538,7 @@
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
 
                                 <a class="promotion" th:href="@{/shop-side-version-2.html}">
-                                    <div class="aspect aspect--bg-grey aspect--square">
+                                    <div class="aspect aspect--bg-grey aspect--vertical">
 
                                         <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-1.jpg}" alt=""></div>
                                     <div class="promotion__content">

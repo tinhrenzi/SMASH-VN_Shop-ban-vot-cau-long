@@ -12,6 +12,9 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,21 +26,45 @@ public class SanPhamController {
     @GetMapping("/san-pham/{id}")
     public String hienThiChiTietSanPham(@PathVariable("id") Integer id, Model model) {
         
-        // 1. Tìm thông tin gốc của sản phẩm (Tên, Mô tả, Hãng)
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm này!"));
         
-        // 2. Tìm tất cả các phân loại/biến thể của sản phẩm đó (Giá bán, Màu, Trọng lượng)
         List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
-        
-        // Lấy đại 1 hình ảnh của biến thể đầu tiên làm ảnh đại diện to
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
 
-        // 3. Đẩy dữ liệu sang giao diện
+        // 1. Lấy danh sách Màu Sắc không trùng lặp
+        java.util.Set<String> listMauSac = danhSachChiTiet.stream()
+                .map(SanPhamChiTiet::getMauSac)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        // 2. Lấy danh sách Size (Trọng lượng) không trùng lặp
+        java.util.Set<String> listKichThuoc = danhSachChiTiet.stream()
+                .map(SanPhamChiTiet::getTrongLuong)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // --- CODE FIX LỖI BẮT ĐẦU TỪ ĐÂY ---
+        // 3. Tạo một list "gọn nhẹ" (Map) chỉ chứa đúng các thông tin JS cần thiết để tránh lỗi đệ quy
+        List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", ct.getId());
+            map.put("mauSac", ct.getMauSac());
+            map.put("trongLuong", ct.getTrongLuong());
+            map.put("giaBan", ct.getGiaBan());
+            map.put("soLuongTon", ct.getSoLuongTon());
+            map.put("hinhAnhSanPham", ct.getHinhAnhSanPham());
+            return map;
+        }).collect(Collectors.toList());
+        // --- KẾT THÚC CODE FIX LỖI ---
+
+        model.addAttribute("listMauSac", listMauSac);
+        model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("sp", sanPham);
         model.addAttribute("listChiTiet", danhSachChiTiet);
         model.addAttribute("anhDaiDien", anhDaiDien);
         
-        return "product-detail"; // Sẽ gọi file product-detail.html
+        // Ném list đã tối ưu này sang giao diện cho JS dùng
+        model.addAttribute("listBienTheJS", listBienTheJS); 
+        
+        return "product-detail"; 
     }
 }

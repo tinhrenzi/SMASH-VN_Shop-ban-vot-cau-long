@@ -558,3 +558,86 @@
         RESHOP.shopPerspectiveChange();
         RESHOP.shopSideFilter();
 })(jQuery);
+
+/*==============================================================
+  # CUSTOM JS: Xử lý Logic Chọn Phân Loại (Màu / Size)
+  ==============================================================*/
+let selectedColor = null;
+let selectedSize = null;
+
+function selectColor(element) {
+    // Gỡ active các nút màu khác, set active nút hiện tại
+    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    selectedColor = element.getAttribute('data-color');
+    
+    checkAndApplyVariant(); // Kiểm tra xem đã chọn đủ bộ chưa
+}
+
+function selectSize(element) {
+    // Gỡ active các nút size khác, set active nút hiện tại
+    document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    selectedSize = element.getAttribute('data-size');
+    
+    checkAndApplyVariant(); // Kiểm tra xem đã chọn đủ bộ chưa
+}
+
+function checkAndApplyVariant() {
+    const btnAdd = document.getElementById('btnAddToCart');
+    const stockStatus = document.getElementById('stock-status');
+    const inputId = document.getElementById('selectedVariantId');
+
+    // Nếu chưa chọn đủ cả 2 thì thoát ra, không làm gì cả
+    if (!selectedColor || !selectedSize) {
+        stockStatus.style.display = 'block';
+        stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn cả Màu sắc và Trọng lượng.';
+        stockStatus.className = 'u-s-m-b-15 text-warning fw-bold';
+        btnAdd.disabled = true;
+        return;
+    }
+
+    // Kiểm tra an toàn: Đảm bảo dữ liệu từ Java đã được tải
+    if (typeof danhSachBienThe === 'undefined') {
+        console.error("Lỗi: Không tìm thấy dữ liệu danhSachBienThe.");
+        return;
+    }
+
+    // Tìm điểm giao: Tìm biến thể có màu VÀ size giống hệt khách chọn
+    const matchedVariant = danhSachBienThe.find(v => v.mauSac === selectedColor && v.trongLuong === selectedSize);
+
+    if (matchedVariant) {
+        // NẾU TÌM THẤY SẢN PHẨM: Mở khóa nút bấm, đổi giá, đổi ảnh
+        inputId.value = matchedVariant.id; // Lưu ID vào Form để gửi lên server
+        btnAdd.disabled = false;
+        
+        // Cập nhật trạng thái Kho
+        stockStatus.style.display = 'block';
+        stockStatus.innerHTML = `<i class="fas fa-check-circle"></i> Sản phẩm có sẵn (Còn ${matchedVariant.soLuongTon} chiếc)`;
+        stockStatus.className = 'u-s-m-b-15 text-success fw-bold';
+
+        // Cập nhật giới hạn số lượng nhập
+        const quantityInput = document.getElementById('quantityInput');
+        if (quantityInput) quantityInput.setAttribute('data-max', matchedVariant.soLuongTon);
+
+        // Đổi Giá Tiền
+        const priceDisplay = document.querySelector('.pd-detail__price');
+        if (priceDisplay) {
+            priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+        }
+
+        // Đổi Ảnh
+        const mainImage = document.querySelector('#pd-o-initiate img');
+        if (mainImage && matchedVariant.hinhAnhSanPham) {
+            mainImage.src = '/uploads/product/' + matchedVariant.hinhAnhSanPham;
+            mainImage.setAttribute('data-zoom-image', '/uploads/product/' + matchedVariant.hinhAnhSanPham);
+        }
+    } else {
+        // NẾU KHÔNG CÓ SỰ KẾT HỢP NÀY (Hết hàng hoặc Admin không tạo)
+        inputId.value = "";
+        btnAdd.disabled = true;
+        stockStatus.style.display = 'block';
+        stockStatus.innerHTML = '<i class="fas fa-times-circle"></i> Phân loại này hiện đã hết hàng. Vui lòng chọn màu/size khác.';
+        stockStatus.className = 'u-s-m-b-15 text-danger fw-bold';
+    }
+}

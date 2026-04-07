@@ -100,34 +100,34 @@
 
                                         <span class="gl-text u-s-m-b-30">If you have an account with us, please log in.</span>
                                         <div th:if="${loi != null}" class="u-s-m-b-15">
-    <span style="color: #ff0000; font-weight: bold;" th:text="${loi}"></span>
-</div>
-
-<div th:if="${param.thanhcong != null}" class="u-s-m-b-15">
-    <span style="color: #00cc00; font-weight: bold;">Đăng ký thành công! Vui lòng đăng nhập.</span>
-</div>
-
-<form class="l-f-o__form" th:action="@{/user/dang-nhap}" method="post">
-    
-    <div class="u-s-m-b-30">
-        <label class="gl-label" for="login-email">E-MAIL *</label>
-        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail">
-    </div>
-    
-    <div class="u-s-m-b-30">
-        <label class="gl-label" for="login-password">MẬT KHẨU *</label>
-        <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu">
-    </div>
-    
-    <div class="gl-inline">
-        <div class="u-s-m-b-30">
-            <button class="btn btn--e-transparent-brand-b-2" type="submit">ĐĂNG NHẬP</button>
-        </div>
-        <div class="u-s-m-b-30">
-            <a class="gl-link" href="#">Quên mật khẩu?</a>
-        </div>
-    </div>
-</form>
+										<span style="color: #ff0000; font-weight: bold;" th:text="${loi}"></span>
+										</div>
+										
+										<div th:if="${param.thanhcong != null}" class="u-s-m-b-15">
+										    <span style="color: #00cc00; font-weight: bold;">Đăng ký thành công! Vui lòng đăng nhập.</span>
+										</div>
+										
+										<form class="l-f-o__form" th:action="@{/user/dang-nhap}" method="post">
+										    
+										    <div class="u-s-m-b-30">
+										        <label class="gl-label" for="login-email">E-MAIL *</label>
+										        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail">
+										    </div>
+										    
+										    <div class="u-s-m-b-30">
+										        <label class="gl-label" for="login-password">MẬT KHẨU *</label>
+										        <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu">
+										    </div>
+										    
+										    <div class="gl-inline">
+										        <div class="u-s-m-b-30">
+										            <button class="btn btn--e-transparent-brand-b-2" type="submit">ĐĂNG NHẬP</button>
+										        </div>
+										        <div class="u-s-m-b-30">
+										            <a th:href="@{/user/quen-mat-khau}" class="text-danger small">Quên mật khẩu?</a>
+										        </div>
+										    </div>
+										</form>
                                     </div>
                                 </div>
                             </div>

@@ -1,6 +1,7 @@
 package com.smashvn.shop.entity;
 
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -43,4 +44,7 @@ public class SanPham {
         inverseJoinColumns = @JoinColumn(name = "id_dot_giam_gia")
     )
     private Set<DotGiamGia> cacDotGiamGia;
+    
+    @OneToMany(mappedBy = "sanPham", fetch = FetchType.LAZY)
+    private List<SanPhamChiTiet> sanPhamChiTiets;
 }
