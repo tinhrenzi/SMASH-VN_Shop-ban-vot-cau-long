@@ -94,92 +94,102 @@
 
                             <!--====== Product Right Side Details ======-->
                             <div class="pd-detail">
-							    <div>
-							        <span class="pd-detail__name" th:text="${sp.tenSanPham}">Tên Sản Phẩm</span>
-							    </div>
+								    <div>
+								        <span class="pd-detail__name" th:text="${sp.tenSanPham}">Tên Sản Phẩm</span>
+								    </div>
+								    
+								    <div class="u-s-m-b-15 u-s-m-t-15">
+								        Thương hiệu: <strong th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</strong> | 
+								        Danh mục: <strong th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</strong>
+								    </div>
+								
+								    <div>
+								        <div class="pd-detail__inline">
+								            <span class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
+								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								        </div>
+								    </div>
+								    
+								    <div class="u-s-m-b-15 u-s-m-t-15">
+								        <div class="pd-detail__rating gl-rating-style">
+								            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+								            <span class="pd-detail__review u-s-m-l-4">
+								                <a data-click-scroll="#view-review">23 Đánh giá</a>
+								            </span>
+								        </div>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+								        <span class="pd-detail__preview-desc" th:text="${sp.moTa}">Mô tả ngắn...</span>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+										<div class="pd-detail__inline">
+											<span class="pd-detail__click-wrap"><i class="far fa-heart u-s-m-r-6"></i>
+												 <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ')'" >
+												 Thêm vào yêu thích
+												</a>
+											</span>
+										 </div>
+									</div>
+								    
+								    <div class="u-s-m-b-15">
+								        <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
+								
+								            <div class="u-s-m-b-15" th:if="${listMauSac != null and !listMauSac.isEmpty()}">
+								                <span class="pd-detail__label u-s-m-b-8">1. Màu sắc:</span>
+								                <div class="d-flex flex-wrap">
+								                    <div th:each="mau : ${listMauSac}" 
+								                         class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
+								                         th:attr="data-color=${mau}"
+								                         onclick="selectColor(this)">
+								                        <span th:text="${mau}"></span>
+								                    </div>
+								                </div>
+								            </div>
+								        
+								            <div class="u-s-m-b-15" th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
+								                <span class="pd-detail__label u-s-m-b-8">2. Trọng lượng / Size:</span>
+								                <div class="d-flex flex-wrap">
+								                    <div th:each="size : ${listKichThuoc}" 
+								                         class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
+								                         th:attr="data-size=${size}"
+								                         onclick="selectSize(this)">
+								                        <span th:text="${size}"></span>
+								                    </div>
+								                </div>
+								            </div>
+								        
+								            <div class="js-stock-status u-s-m-b-15 text-danger fw-bold" style="display:none;">
+								                <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
+								            </div>
+								        
+								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
+								        
+								            <div class="pd-detail-inline-2">
+								                <div class="u-s-m-b-15">
+								                    <div class="input-counter">
+								                        <span class="input-counter__minus fas fa-minus"></span>
+								                        <input class="js-quantity-input input-counter__text input-counter--text-primary-style" type="text" name="soLuong" value="1" data-min="1" data-max="1000">
+								                        <span class="input-counter__plus fas fa-plus"></span>
+								                    </div>
+								                </div>
+								                <div class="u-s-m-b-15">
+								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit" disabled>THÊM VÀO GIỎ</button>
+								                </div>
+								        </form>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+								        <span class="pd-detail__label u-s-m-b-8">Chính sách mua hàng:</span>
+								        <ul class="pd-detail__policy-list">
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Cam kết chính hãng 100%.</span></li>
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Bảo hành theo tiêu chuẩn nhà sản xuất.</span></li>
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Đổi trả trong 7 ngày nếu lỗi do NSX.</span></li>
+								        </ul>
+								    </div>
+								</div>
 							    
-							    <div class="u-s-m-b-15 u-s-m-t-15">
-							        Thương hiệu: <strong th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</strong> | 
-							        Danh mục: <strong th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</strong>
-							    </div>
-							
-							    <div>
-							        <div class="pd-detail__inline">
-							            <span class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
-							                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
-							        </div>
-							    </div>
-							    
-							    <div class="u-s-m-b-15 u-s-m-t-15">
-							        <div class="pd-detail__rating gl-rating-style">
-							            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-							            <span class="pd-detail__review u-s-m-l-4">
-							                <a data-click-scroll="#view-review">23 Đánh giá</a>
-							            </span>
-							        </div>
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <span class="pd-detail__preview-desc" th:text="${sp.moTa}">Mô tả ngắn...</span>
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
-    
-									    <div class="u-s-m-b-15">
-									        <span class="pd-detail__label u-s-m-b-8">1. Màu sắc:</span>
-									        <div class="d-flex flex-wrap">
-									            <div th:each="mau : ${listMauSac}" 
-									                 class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
-									                 th:data-color="${mau}"
-									                 onclick="selectColor(this)">
-									                <span th:text="${mau}"></span>
-									            </div>
-									        </div>
-									    </div>
-									
-									    <div class="u-s-m-b-15">
-									        <span class="pd-detail__label u-s-m-b-8">2. Trọng lượng / Size:</span>
-									        <div class="d-flex flex-wrap">
-									            <div th:each="size : ${listKichThuoc}" 
-									                 class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
-									                 th:data-size="${size}"
-									                 onclick="selectSize(this)">
-									                <span th:text="${size}"></span>
-									            </div>
-									        </div>
-									    </div>
-									
-									    <div class="u-s-m-b-15 text-danger fw-bold" id="stock-status" style="display:none;">
-									        <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
-									    </div>
-									
-									    <input type="hidden" name="idSanPhamChiTiet" id="selectedVariantId" required>
-									
-									    <div class="pd-detail-inline-2">
-									        <div class="u-s-m-b-15">
-									            <div class="input-counter">
-									                <span class="input-counter__minus fas fa-minus"></span>
-									                <input class="input-counter__text input-counter--text-primary-style" type="text" name="soLuong" value="1" data-min="1" data-max="1000" id="quantityInput">
-									                <span class="input-counter__plus fas fa-plus"></span>
-									            </div>
-									        </div>
-									        <div class="u-s-m-b-15">
-									            <button class="btn btn--e-brand-b-2" type="submit" id="btnAddToCart" disabled>THÊM VÀO GIỎ</button>
-									        </div>
-									    </div>
-									</form>
-									
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <span class="pd-detail__label u-s-m-b-8">Chính sách mua hàng:</span>
-							        <ul class="pd-detail__policy-list">
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Cam kết chính hãng 100%.</span></li>
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Bảo hành theo tiêu chuẩn nhà sản xuất.</span></li>
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Đổi trả trong 7 ngày nếu lỗi do NSX.</span></li>
-							        </ul>
-							    </div>
 							</div>
                             <!--====== End - Product Right Side Details ======-->
                         </div>

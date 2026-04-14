@@ -52,7 +52,7 @@
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
 
-                                        <a th:href="@{/index.html}">Home</a></li>
+                                        <a th:href="@{/}">Home</a></li>
                                     <li class="is-marked">
 
                                         <a th:href="@{/signup.html}">Signup</a></li>
@@ -90,7 +90,24 @@
                             <div class="col-lg-6 col-md-8 u-s-m-b-30">
                                 <div class="l-f-o">
                                     <div class="l-f-o__pad-box">
-                                        <h1 class="gl-h1">THÔNG TIN CÁ NHÂN</h1>
+                                    
+                                    <h1 class="gl-h1">THÔNG TIN CÁ NHÂN</h1>
+                       
+                                            <div class="gl-s-api">
+                                            
+											    <div class="u-s-m-b-15">
+											    
+											        <a th:href="@{/oauth2/authorization/google}" class="gl-s-api__btn gl-s-api__btn--gplus" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+											            
+											            <i class="fab fa-google"></i>
+											            
+											            <span>Đăng ký bằng Google</span>
+											        
+											        </a>
+											    </div>
+											</div>
+                                            
+                                        
                                         <div th:if="${loi != null}" class="u-s-m-b-15">
 										    <span style="color: #ff0000; font-weight: bold;" th:text="${loi}"></span>
 										</div>

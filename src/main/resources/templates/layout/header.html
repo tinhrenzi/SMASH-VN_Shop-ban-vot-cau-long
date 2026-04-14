@@ -1,29 +1,3 @@
-<!DOCTYPE html>
-<html class="no-js" lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link th:href="@{/images/favicon.png}" rel="shortcut icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <title>Smash VN</title>
-
-    <!--====== Phông chữ Google ======-->
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
-
-    <!--====== CSS Nhà cung cấp ======-->
-    <link rel="stylesheet" th:href="@{/css/vendor.css}">
-
-    <!--====== Tiện ích khoảng cách ======-->
-    <link rel="stylesheet" th:href="@{/css/utility.css}">
-
-    <!--====== Ứng dụng ======-->
-    <link rel="stylesheet" th:href="@{/css/app.css}">
-</head>
-<body>
-    <div id="app">
         <header class="header--style-1">
 
             <!--====== Điều hướng 1 ======-->
@@ -65,36 +39,34 @@
                                 <!--====== Danh sách ======-->
                                 <ul class="ah-list ah-list--design1 ah-list--link-color-secondary">
                                     <li class="has-dropdown" data-tooltip="tooltip" data-placement="left" title="Account">
-
-                                        <a><i class="far fa-user-circle"></i></a>
-
-                                        <!--====== Danh sách thả xuống ======-->
-
-                                        <span class="js-menu-toggle"></span>
-                                        <ul style="width:120px">
-                                            <li>
-
-                                                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
-
-                                                    <span>Tài khoản</span></a></li>
-                                            <li>
-
-                                                <a th:href="@{/user/dang-ky}"><i class="fas fa-user-plus u-s-m-r-6"></i>
-
-                                                    <span>Đăng ký</span></a></li>
-                                            <li>
-
-                                                <a th:href="@{/user/dang-nhap}"><i class="fas fa-lock u-s-m-r-6"></i>
-
-                                                    <span>Đăng nhập</span></a></li>
-                                            <li>
-
-                                                <a th:href="@{/#}" ><i class="fas fa-lock-open u-s-m-r-6"></i>
-
-                                                    <span>Đăng xuất</span></a></li>
-                                        </ul>
-                                        <!--====== Kết thúc - Danh sách thả xuống ======-->
-                                    </li>
+									    <a><i class="far fa-user-circle"></i></a>
+									    <span class="js-menu-toggle"></span>
+									    <ul style="width:120px">
+									        
+									        <th:block th:if="${session.idNguoiDung != null}">
+									            <li>
+									                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
+									                    <span>Tài khoản</span></a>
+									            </li>
+									            <li>
+									                <a th:href="@{/user/dang-xuat}"><i class="fas fa-lock-open u-s-m-r-6"></i>
+									                    <span>Đăng xuất</span></a>
+									            </li>
+									        </th:block>
+									
+									        <th:block th:unless="${session.idNguoiDung != null}">
+									            <li>
+									                <a th:href="@{/user/dang-ky}"><i class="fas fa-user-plus u-s-m-r-6"></i>
+									                    <span>Đăng ký</span></a>
+									            </li>
+									            <li>
+									                <a th:href="@{/user/dang-nhap}"><i class="fas fa-lock u-s-m-r-6"></i>
+									                    <span>Đăng nhập</span></a>
+									            </li>
+									        </th:block>
+									
+									    </ul>
+									</li>
                                     
                                     <li data-tooltip="tooltip" data-placement="left" title="Contact">
 
@@ -602,69 +574,30 @@
                                         <a th:href="@{/}"><i class="fas fa-home u-c-brand"></i></a></li>
                                     <li>
 
-                                        <a th:href="@{/wishlist.html}"><i class="far fa-heart"></i></a></li>
+                                        <a th:href="@{/wishlist}"><i class="far fa-heart"></i></a></li>
                                     <li class="has-dropdown">
-
-                                        <a class="mini-cart-shop-link"><i class="fas fa-shopping-bag"></i>
-
-                                            <span class="total-item-round">99</span></a>
-
-                                        <!--====== Danh sách thả xuống ======-->
-
-                                        <span class="js-menu-toggle"></span>
-                                        <div class="mini-cart">
-
-                                            <!--====== Mini san phẩm giỏ hàng Container ======-->
-                                            <div class="mini-product-container gl-scroll u-s-m-b-15">
-
-                                                <!--====== Hiện mini sản phẩm giỏ hàng ======-->
-                                                <div class="card-mini-product">
-                                                    <div class="mini-product">
-                                                        <div class="mini-product__image-wrapper">
-
-                                                            <a class="mini-product__link" th:href="@{/product-detail.html}">
-
-                                                                <img class="u-img-fluid" th:src="@{/images/product/electronic/product3.jpg}" alt=""></a></div>
-                                                        <div class="mini-product__info-wrapper">
-
-                                                            <span class="mini-product__category">
-
-                                                                <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
-
-                                                            <span class="mini-product__name">
-
-                                                                <a th:href="@{/product-detail.html}">Yellow Wireless Headphone</a></span>
-
-                                                            <span class="mini-product__quantity">1 x</span>
-
-                                                            <span class="mini-product__price">$8</span></div>
-                                                    </div>
-
-                                                    <a class="mini-product__delete-link far fa-trash-alt"></a>
-                                                </div>
-                                                <!--====== End - Hiện mini sản phẩm giỏ hàng ======-->
-
-                                            </div>
-                                            <!--====== End - Mini Product Container ======-->
-
-
-                                            <!--====== Mini Product Statistics ======-->
-                                            <div class="mini-product-stat">
-                                                <div class="mini-total">
-
-                                                    <span class="subtotal-text">SUBTOTAL</span>
-
-                                                    <span class="subtotal-value">$16</span></div>
-                                                <div class="mini-action">
-
-                                                    <a class="mini-link btn--e-brand-b-2" th:href="@{/checkout.html}">PROCEED TO CHECKOUT</a>
-
-                                                    <a class="mini-link btn--e-transparent-secondary-b-2" th:href="@{/gio-hang}">VIEW CART</a></div>
-                                            </div>
-                                            <!--====== End - Mini Product Statistics ======-->
-                                        </div>
-                                        <!--====== Kết thúc - Danh sách thả xuống ======-->
-                                    </li>
+									    <a class="mini-cart-shop-link" th:href="@{/gio-hang}">
+									        <i class="fas fa-shopping-bag"></i>
+									        <span class="total-item-round" id="cart-icon-count">0</span>
+									    </a>
+									
+									    <span class="js-menu-toggle"></span>
+									    <div class="mini-cart">
+									        <div class="mini-product-container gl-scroll u-s-m-b-15" id="mini-cart-items">
+									            </div>
+									
+									        <div class="mini-product-stat">
+									            <div class="mini-total">
+									                <span class="subtotal-text">TỔNG CỘNG</span>
+									                <span class="subtotal-value" id="mini-cart-total">0 đ</span>
+									            </div>
+									            <div class="mini-action">
+									                <a class="mini-link btn--e-brand-b-2" th:href="@{/checkout.html}">THANH TOÁN</a>
+									                <a class="mini-link btn--e-transparent-secondary-b-2" th:href="@{/gio-hang}">XEM GIỎ HÀNG</a>
+									            </div>
+									        </div>
+									    </div>
+									</li>
                                 </ul>
                                 <!--====== Kết thúc - Danh sách ======-->
                             </div>
@@ -675,45 +608,29 @@
                     <!--====== End - Secondary Nav ======-->
                 </div>
             </nav>
+            <div id="floating-cart" class="floating-cart">
+    
+			    <a th:href="@{/gio-hang}" class="floating-cart__btn">
+			        <i class="fas fa-shopping-bag"></i>
+			        <span class="floating-cart__badge" id="floating-cart-count">0</span>
+			    </a>
+			    
+			    <div class="floating-cart-dropdown">
+			        <div class="mini-product-container gl-scroll u-s-m-b-15" id="floating-mini-cart-items">
+			            </div>
+			        <div class="mini-product-stat">
+			            <div class="mini-total">
+			                <span class="subtotal-text">TỔNG CỘNG</span>
+			                <span class="subtotal-value" id="floating-mini-cart-total">0 đ</span>
+			            </div>
+			            <div class="mini-action">
+			                <a class="mini-link btn--e-brand-b-2" th:href="@{/checkout.html}">THANH TOÁN</a>
+			                <a class="mini-link btn--e-transparent-secondary-b-2" th:href="@{/gio-hang}">XEM GIỎ HÀNG</a>
+			            </div>
+			        </div>
+			    </div>
+			
+			</div>
         </header>
-        <!--====== Kết thúc - Điều hướng 2 ======-->
-    </div>
-        <script>
-        window.ga = function() {
-            ga.q.push(arguments)
-        };
-        ga.q = [];
-        ga.l = +new Date;
-        ga('create', 'UA-XXXXX-Y', 'auto');
-        ga('send', 'pageview')
-    </script>
-    <script src="https://www.google-analytics.com/analytics.js" async defer></script>
-
-    <!--====== Vendor Js ======-->
-    <script th:src="@{/js/vendor.js}"></script>
-
-    <!--====== Plugin jQuery Shopnav ======-->
-    <script th:src="@{/js/jquery.shopnav.js}"></script>
-
-    <!--====== Ứng dụng ======-->
-    <script th:src="@{/js/app.js}"></script>
-
-    <!--====== Khi không hỗ trợ JavaScript ======-->
-    <noscript>
-        <div class="app-setting">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
-
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </noscript>
-</body>
-</html>
+        
 

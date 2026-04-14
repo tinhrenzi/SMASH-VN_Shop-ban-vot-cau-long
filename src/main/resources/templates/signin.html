@@ -52,10 +52,10 @@
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
 
-                                        <a th:href="@{/index.html}">Home</a></li>
+                                        <a th:href="@{/}">Home</a></li>
                                     <li class="is-marked">
 
-                                        <a th:href="@{/signin.html}">Signin</a></li>
+                                        <a th:href="@{/user/dang-nhap}">Signin</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -74,7 +74,7 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary">ALREADY REGISTERED?</h1>
+                                    <h1 class="section__heading u-c-secondary">ĐÃ ĐĂNG KÝ RỒI?</h1>
                                 </div>
                             </div>
                         </div>
@@ -90,15 +90,27 @@
                             <div class="col-lg-6 col-md-8 u-s-m-b-30">
                                 <div class="l-f-o">
                                     <div class="l-f-o__pad-box">
-                                        <h1 class="gl-h1">I'M NEW CUSTOMER</h1>
+                                        <h1 class="gl-h1">BẠN LÀ KHÁCH HÀNG MỚI</h1>
 
-                                        <span class="gl-text u-s-m-b-30">By creating an account with our store, you will be able to move through the checkout process faster, store shipping addresses, view and track your orders in your account and more.</span>
+                                        <span class="gl-text u-s-m-b-30">Bằng cách tạo tài khoản với cửa hàng của chúng tôi, bạn sẽ có thể hoàn tất quá trình thanh toán nhanh hơn, lưu địa chỉ giao hàng, xem và theo dõi đơn hàng trong tài khoản của mình và nhiều hơn nữa.</span>
                                         <div class="u-s-m-b-15">
+                                        
+                                            <a class="l-f-o__create-link btn--e-transparent-brand-b-2" th:href="@{/user/dang-ky}">Tạo mới tài khoản</a></div>
+                                        
+                                        <h1 class="gl-h1">ĐĂNG NHẬP</h1>
 
-                                            <a class="l-f-o__create-link btn--e-transparent-brand-b-2" th:href="@{/signup.html}">CREATE AN ACCOUNT</a></div>
-                                        <h1 class="gl-h1">SIGNIN</h1>
-
-                                        <span class="gl-text u-s-m-b-30">If you have an account with us, please log in.</span>
+                                        <span class="gl-text u-s-m-b-30">Nếu bạn có tài khoản với chúng tôi, vui lòng đăng nhập.</span>
+                                        
+                                        <div class="gl-s-api">
+                                            <div class="u-s-m-b-15">
+                                        	<a th:href="@{/oauth2/authorization/google}" class="gl-s-api__btn gl-s-api__btn--gplus">
+											   
+											    <i class="fab fa-google"></i>
+											    
+											    <span>Đăng nhập bằng Google</span></a></div>
+                                         </div>
+                                        
+                                        
                                         <div th:if="${loi != null}" class="u-s-m-b-15">
 										<span style="color: #ff0000; font-weight: bold;" th:text="${loi}"></span>
 										</div>
@@ -124,7 +136,7 @@
 										            <button class="btn btn--e-transparent-brand-b-2" type="submit">ĐĂNG NHẬP</button>
 										        </div>
 										        <div class="u-s-m-b-30">
-										            <a th:href="@{/user/quen-mat-khau}" class="text-danger small">Quên mật khẩu?</a>
+										            <a th:href="@{/user/quen-mat-khau}" class="gl-link">Quên mật khẩu?</a>
 										        </div>
 										    </div>
 										</form>

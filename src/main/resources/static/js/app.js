@@ -300,41 +300,41 @@
 
 
 
-    // Input Counter
-    RESHOP.initInputCounter = function() {
-        // Check if Input Counters on the page
-        if ($collectionInputCounter.length) {
-            // Attach Click event to plus button
-            $collectionInputCounter.find('.input-counter__plus').on('click',function () {
-                var $input = $(this).parent().find('input');
-                var count = parseInt($input.val()) + 1; // Number + Number
-                $input.val(count).change();
-            });
-            // Attach Click event to minus button
-            $collectionInputCounter.find('.input-counter__minus').on('click',function () {
-                var $input = $(this).parent().find('input');
-                var count = parseInt($input.val()) - 1; // Number - Number
-                $input.val(count).change();
-            });
-            // Fires when the value of the element is changed
-            $collectionInputCounter.find('input').change(function () {
-                var $this = $(this);
-                var min = $this.data('min');
-                var max = $this.data('max');
-                var val = parseInt($this.val());// Current value
-                // Restrictions check
-                if (!val) {
-                   val = 1;
-                }
-                // The min() method returns the number with the lowest value
-                val = Math.min(val,max);
-                // The max() method returns the number with the highest value
-                val = Math.max(val,min);
-                // Sets the Value
-                $this.val(val);
-            });
-        }
-    };
+	// Input Counter
+	RESHOP.initInputCounter = function() {
+	    // Quét lại toàn bộ DOM để tìm các thẻ input-counter mới sinh ra
+	    var $dynamicInputCounter = $('.input-counter'); 
+	    
+	    if ($dynamicInputCounter.length) {
+	        // Gỡ các sự kiện click cũ trước khi gắn mới để không bị nhân đôi sự kiện
+	        $dynamicInputCounter.find('.input-counter__plus, .input-counter__minus').off('click');
+	        $dynamicInputCounter.find('input').off('change');
+
+	        // Attach Click event to plus button
+	        $dynamicInputCounter.find('.input-counter__plus').on('click',function () {
+	            var $input = $(this).parent().find('input');
+	            var count = parseInt($input.val()) + 1;
+	            $input.val(count).change();
+	        });
+	        // Attach Click event to minus button
+	        $dynamicInputCounter.find('.input-counter__minus').on('click',function () {
+	            var $input = $(this).parent().find('input');
+	            var count = parseInt($input.val()) - 1;
+	            $input.val(count).change();
+	        });
+	        // Fires when the value of the element is changed
+	        $dynamicInputCounter.find('input').change(function () {
+	            var $this = $(this);
+	            var min = $this.data('min');
+	            var max = $this.data('max');
+	            var val = parseInt($this.val());
+	            if (!val) { val = 1; }
+	            val = Math.min(val,max);
+	            val = Math.max(val,min);
+	            $this.val(val);
+	        });
+	    }
+	};
 
 
 
@@ -431,57 +431,54 @@
       }
     };
 
-    // Modal Product Detail Init
-    RESHOP.modalProductDetailInit = function() {
-        if ($modalProductDetailElement.length && $modalProductDetailElementThumbnail.length) {
-            $modalProductDetailElement.slick({
-                slidesToShow: 1,
-                slidesToScroll: 1,
-                infinite:false,
-                arrows: false,
-                dots: false,
-                fade: true,
-                asNavFor: $modalProductDetailElementThumbnail
-            });
+	// Modal Product Detail Init
+	RESHOP.modalProductDetailInit = function() {
+	    // Ép quét lại DOM mỗi khi gọi hàm
+	    var $dynamicModalDetail = $('#js-product-detail-modal');
+	    var $dynamicModalThumbnail = $('#js-product-detail-modal-thumbnail');
 
-            $modalProductDetailElementThumbnail.slick({
-                slidesToShow: 4,
-                slidesToScroll: 1,
-                infinite:false,
-                arrows: true,
-                dots: false,
-                focusOnSelect: true,
-                asNavFor: $modalProductDetailElement,
-                prevArrow:'<div class="pt-prev"><i class="fas fa-angle-left"></i>',
-                nextArrow:'<div class="pt-next"><i class="fas fa-angle-right"></i>',
-                responsive: [
-                    {
-                        breakpoint: 1200,
-                        settings: {
-                            slidesToShow: 4
-                        }
-                    },
-                    {
-                        breakpoint: 992,
-                        settings: {
-                            slidesToShow: 3
-                        }
-                    },
-                    {
-                        breakpoint: 576,
-                        settings: {
-                            slidesToShow: 2
-                        }
-                    }
-                ]
-            });
-            // Hook into Bootstrap shown event and manually trigger 'resize' event
-            // so that Slick recalculates the widths
-            $('#quick-look').on('shown.bs.modal', function () {
-                $modalProductDetailElement.resize();
-            });
-        }
-    };
+	    if ($dynamicModalDetail.length && $dynamicModalThumbnail.length) {
+	        // Hủy Slick cũ nếu đã từng khởi tạo trước đó (để không bị lỗi dồn file)
+	        if ($dynamicModalDetail.hasClass('slick-initialized')) {
+	            $dynamicModalDetail.slick('unslick');
+	        }
+	        if ($dynamicModalThumbnail.hasClass('slick-initialized')) {
+	            $dynamicModalThumbnail.slick('unslick');
+	        }
+
+	        $dynamicModalDetail.slick({
+	            slidesToShow: 1,
+	            slidesToScroll: 1,
+	            infinite:false,
+	            arrows: false,
+	            dots: false,
+	            fade: true,
+	            asNavFor: $dynamicModalThumbnail
+	        });
+
+	        $dynamicModalThumbnail.slick({
+	            slidesToShow: 4,
+	            slidesToScroll: 1,
+	            infinite:false,
+	            arrows: true,
+	            dots: false,
+	            focusOnSelect: true,
+	            asNavFor: $dynamicModalDetail,
+	            prevArrow:'<div class="pt-prev"><i class="fas fa-angle-left"></i>',
+	            nextArrow:'<div class="pt-next"><i class="fas fa-angle-right"></i>',
+	            responsive: [
+	                { breakpoint: 1200, settings: { slidesToShow: 4 } },
+	                { breakpoint: 992, settings: { slidesToShow: 3 } },
+	                { breakpoint: 576, settings: { slidesToShow: 2 } }
+	            ]
+	        });
+
+	        // Cập nhật lại kích thước khi Modal mở ra
+	        $('#quick-look').on('shown.bs.modal', function () {
+	            $dynamicModalDetail.resize();
+	        });
+	    }
+	};
     // Shop Category Toggle Functionality
     RESHOP.shopCategoryToggle = function() {
         if ($shopCategoryToggleSpan.length) {
@@ -557,87 +554,467 @@
         RESHOP.shopCategoryToggle();
         RESHOP.shopPerspectiveChange();
         RESHOP.shopSideFilter();
+		window.RESHOP = RESHOP;
 })(jQuery);
 
 /*==============================================================
-  # CUSTOM JS: Xử lý Logic Chọn Phân Loại (Màu / Size)
+  # CUSTOM JS: Xử lý Logic Chọn Phân Loại (Không dùng ID)
   ==============================================================*/
-let selectedColor = null;
-let selectedSize = null;
-
 function selectColor(element) {
-    // Gỡ active các nút màu khác, set active nút hiện tại
-    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
-    selectedColor = element.getAttribute('data-color');
+    // 1. Tìm khu vực bao quanh nó (để tách biệt giữa Modal và Trang chủ)
+    let container = element.closest('.pd-detail'); 
     
-    checkAndApplyVariant(); // Kiểm tra xem đã chọn đủ bộ chưa
+    container.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    
+    // 2. Lưu màu vừa chọn trực tiếp vào khu vực đó
+    container.setAttribute('data-selected-color', element.getAttribute('data-color'));
+    checkAndApplyVariant(container);
 }
 
 function selectSize(element) {
-    // Gỡ active các nút size khác, set active nút hiện tại
-    document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+    let container = element.closest('.pd-detail');
+    container.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
-    selectedSize = element.getAttribute('data-size');
     
-    checkAndApplyVariant(); // Kiểm tra xem đã chọn đủ bộ chưa
+    container.setAttribute('data-selected-size', element.getAttribute('data-size'));
+    checkAndApplyVariant(container);
 }
 
-function checkAndApplyVariant() {
-    const btnAdd = document.getElementById('btnAddToCart');
-    const stockStatus = document.getElementById('stock-status');
-    const inputId = document.getElementById('selectedVariantId');
+function checkAndApplyVariant(container) {
+    // 1. Lấy các phần tử DOM thông qua class
+    const btnAdd = container.querySelector('.js-btn-add-cart');
+    const stockStatus = container.querySelector('.js-stock-status');
+    const inputId = container.querySelector('.js-variant-id');
+    const quantityInput = container.querySelector('.js-quantity-input');
+    const priceDisplay = container.querySelector('.pd-detail__price');
 
-    // Nếu chưa chọn đủ cả 2 thì thoát ra, không làm gì cả
+    const selectedColor = container.getAttribute('data-selected-color');
+    const selectedSize = container.getAttribute('data-selected-size');
+
+    // Nếu chưa chọn đủ Màu và Size
     if (!selectedColor || !selectedSize) {
-        stockStatus.style.display = 'block';
-        stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn cả Màu sắc và Trọng lượng.';
-        stockStatus.className = 'u-s-m-b-15 text-warning fw-bold';
-        btnAdd.disabled = true;
+        if(stockStatus) {
+            stockStatus.style.display = 'block';
+            stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
+            stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
+        }
+        if(btnAdd) btnAdd.disabled = true;
         return;
     }
 
-    // Kiểm tra an toàn: Đảm bảo dữ liệu từ Java đã được tải
-    if (typeof danhSachBienThe === 'undefined') {
-        console.error("Lỗi: Không tìm thấy dữ liệu danhSachBienThe.");
-        return;
-    }
-
-    // Tìm điểm giao: Tìm biến thể có màu VÀ size giống hệt khách chọn
+    // Tìm biến thể khớp với Màu và Size đã chọn
     const matchedVariant = danhSachBienThe.find(v => v.mauSac === selectedColor && v.trongLuong === selectedSize);
 
     if (matchedVariant) {
-        // NẾU TÌM THẤY SẢN PHẨM: Mở khóa nút bấm, đổi giá, đổi ảnh
-        inputId.value = matchedVariant.id; // Lưu ID vào Form để gửi lên server
+        // --- CẬP NHẬT THÔNG TIN CƠ BẢN ---
+        inputId.value = matchedVariant.id;
         btnAdd.disabled = false;
         
-        // Cập nhật trạng thái Kho
-        stockStatus.style.display = 'block';
-        stockStatus.innerHTML = `<i class="fas fa-check-circle"></i> Sản phẩm có sẵn (Còn ${matchedVariant.soLuongTon} chiếc)`;
-        stockStatus.className = 'u-s-m-b-15 text-success fw-bold';
+        if(stockStatus) {
+            stockStatus.style.display = 'block';
+            stockStatus.innerHTML = `<i class="fas fa-check-circle"></i> Sản phẩm có sẵn (Còn ${matchedVariant.soLuongTon})`;
+            stockStatus.className = 'js-stock-status u-s-m-b-15 text-success fw-bold';
+        }
 
-        // Cập nhật giới hạn số lượng nhập
-        const quantityInput = document.getElementById('quantityInput');
         if (quantityInput) quantityInput.setAttribute('data-max', matchedVariant.soLuongTon);
+        if (priceDisplay) priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
 
-        // Đổi Giá Tiền
-        const priceDisplay = document.querySelector('.pd-detail__price');
-        if (priceDisplay) {
-            priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+        // --- CẬP NHẬT HÌNH ẢNH (TÍCH HỢP CẢ QUICK LOOK & DETAIL) ---
+        // Tìm ngược lên thẻ bọc ngoài cùng (div class="row") để qua cột trái lấy ảnh
+        const mainRow = container.closest('.row');
+        
+        if (mainRow && matchedVariant.hinhAnhSanPham) {
+            const newImgSrc = '/uploads/product/' + matchedVariant.hinhAnhSanPham;
+
+            // Ưu tiên tìm ảnh đang active trong slider Slick (Của Modal hoặc Detail)
+            let activeImage = mainRow.querySelector('#js-product-detail-modal .slick-current img') ||
+                              mainRow.querySelector('#pd-o-initiate .slick-current img');
+
+            // Fallback: Nếu Slick chưa init xong, lấy ảnh đầu tiên nó thấy
+            if (!activeImage) {
+                activeImage = mainRow.querySelector('#js-product-detail-modal img') ||
+                              mainRow.querySelector('#pd-o-initiate img');
+            }
+
+            if (activeImage) {
+                // Đổi đường dẫn ảnh hiển thị
+                activeImage.src = newImgSrc;
+
+                // Nếu ảnh có plugin Kính lúp (ElevateZoom) ở trang Chi tiết
+                if (activeImage.hasAttribute('data-zoom-image')) {
+                    activeImage.setAttribute('data-zoom-image', newImgSrc);
+                    
+                    // Gọi API của plugin ElevateZoom để nó nạp lại ảnh phóng to mới
+                    let ez = $(activeImage).data('elevateZoom');
+                    if (ez) {
+                        ez.swaptheimage(newImgSrc, newImgSrc);
+                    }
+                }
+            }
         }
 
-        // Đổi Ảnh
-        const mainImage = document.querySelector('#pd-o-initiate img');
-        if (mainImage && matchedVariant.hinhAnhSanPham) {
-            mainImage.src = '/uploads/product/' + matchedVariant.hinhAnhSanPham;
-            mainImage.setAttribute('data-zoom-image', '/uploads/product/' + matchedVariant.hinhAnhSanPham);
-        }
     } else {
-        // NẾU KHÔNG CÓ SỰ KẾT HỢP NÀY (Hết hàng hoặc Admin không tạo)
+        // Trường hợp hết hàng / Không có biến thể này
         inputId.value = "";
         btnAdd.disabled = true;
-        stockStatus.style.display = 'block';
-        stockStatus.innerHTML = '<i class="fas fa-times-circle"></i> Phân loại này hiện đã hết hàng. Vui lòng chọn màu/size khác.';
-        stockStatus.className = 'u-s-m-b-15 text-danger fw-bold';
+        if(stockStatus) {
+            stockStatus.style.display = 'block';
+            stockStatus.innerHTML = '<i class="fas fa-times-circle"></i> Hiện đã hết hàng.';
+            stockStatus.className = 'js-stock-status u-s-m-b-15 text-danger fw-bold';
+        }
     }
 }
+/*==============================================================
+  # CUSTOM JS: Xử lý Quick Look Modal bằng AJAX
+  ==============================================================*/
+  function openQuickLookModal(productId) {
+      $.ajax({
+          url: '/modal/quick-look/' + productId,
+          type: 'GET',
+          success: function(responseHtml) {
+              $('#quick-look-content').html(responseHtml);
+              
+              // 1. Kích hoạt lại nút cộng trừ số lượng
+              if(typeof RESHOP.initInputCounter === 'function') {
+                  RESHOP.initInputCounter();
+              }
+
+              // 2. Kích hoạt lại Slider ảnh cho đúng form
+              if(typeof RESHOP.modalProductDetailInit === 'function') {
+                  RESHOP.modalProductDetailInit();
+              }
+              
+              $('#quick-look').modal('show');
+          },
+          error: function(error) {
+              console.log("Lỗi khi tải dữ liệu Quick Look", error);
+              alert("Có lỗi xảy ra khi tải dữ liệu sản phẩm!");
+          }
+      });
+  }
+  /*==============================================================
+    # CUSTOM JS: Load dữ liệu Giỏ hàng thu nhỏ (Mini Cart) bằng AJAX
+    ==============================================================*/
+  function loadMiniCart() {
+      $.ajax({
+          url: '/gio-hang/api/mini-cart',
+          type: 'GET',
+          success: function(response) {
+              // 1. Cập nhật số lượng đỏ cho CẢ Header VÀ Floating Cart
+              $('#cart-icon-count, #floating-cart-count').text(response.tongSoLuong);
+
+              // 2. Gom Selector: Chọn CẢ 2 khu vực chứa danh sách
+              var $cartContainer = $('#mini-cart-items, #floating-mini-cart-items');
+              var $cartTotal = $('#mini-cart-total, #floating-mini-cart-total');
+
+              // Xử lý trường hợp trống
+              if (response.trangThai === 'chuadangnhap' || response.tongSoLuong === 0) {
+                  $cartContainer.html('<div class="text-center u-s-p-y-15">Giỏ hàng của bạn đang trống.</div>');
+                  $cartTotal.text('0 đ');
+                  return; 
+              }
+
+              // 3. Format tiền tệ VNĐ và cập nhật Tổng tiền cho CẢ 2
+              var formattedTotal = new Intl.NumberFormat('vi-VN').format(response.tongTien) + ' đ';
+              $cartTotal.text(formattedTotal);
+
+              // 4. Lặp qua danh sách sản phẩm và tạo thẻ HTML
+              var htmlContent = '';
+              response.danhSach.forEach(function(item) {
+                  var formattedPrice = new Intl.NumberFormat('vi-VN').format(item.giaBan) + ' đ';
+                  var productUrl = '/san-pham/' + item.idSanPham;
+                  var imageUrl = '/uploads/product/' + item.hinhAnh;
+
+                  // TẠO HTML CHO TỪNG SẢN PHẨM TRONG GIỎ (Dùng Template Literal)
+                  htmlContent += `
+                      <div class="card-mini-product">
+                          <div class="mini-product">
+                              <div class="mini-product__image-wrapper">
+                                  <a class="mini-product__link" href="${productUrl}">
+                                      <img class="u-img-fluid" src="${imageUrl}" alt="">
+                                  </a>
+                              </div>
+                              <div class="mini-product__info-wrapper">
+                                  <span class="mini-product__name">
+                                      <a href="${productUrl}">${item.tenSanPham}</a>
+                                  </span>
+                                  <span class="mini-product__quantity">${item.soLuong} x</span>
+                                  <span class="mini-product__price">${formattedPrice}</span>
+                              </div>
+                          </div>
+						  <a class="mini-product__delete-link far fa-trash-alt js-delete-cart-item" 
+						     href="javascript:void(0)" 
+						     data-id="${item.idChiTiet}">
+						  </a>
+                      </div>
+                  `;
+              });
+
+              // 5. Bơm toàn bộ HTML vừa tạo vào CẢ 2 khung
+              $cartContainer.html(htmlContent);
+          },
+          error: function(error) {
+              console.log("Lỗi khi tải Mini Cart:", error);
+          }
+      });
+  }
+
+  // Lệnh này ép trình duyệt: "Ngay khi trang web vừa load xong thì chạy hàm loadMiniCart() ngay cho tao!"
+  $(document).ready(function() {
+      loadMiniCart();
+  });
+  /*==============================================================
+    # CUSTOM JS: Xử lý Thêm vào giỏ hàng bằng AJAX (Chống reload trang)
+    ==============================================================*/
+  $(document).on('submit', '.pd-detail__form', function(e) {
+      e.preventDefault(); // Ngăn chặn hành vi reload trang mặc định của form
+      
+      var form = $(this);
+      var url = form.attr('action');
+      var data = form.serialize(); // Lấy tự động idSanPhamChiTiet và soLuong
+
+      // Khóa nút bấm lại để tránh khách click đúp 2 lần
+      var submitBtn = form.find('button[type="submit"]');
+      var originalBtnText = submitBtn.html();
+      submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+
+      $.ajax({
+          url: url,
+          type: 'POST',
+          data: data,
+          success: function(response) {
+              // Nhả nút bấm ra
+              submitBtn.prop('disabled', false).html(originalBtnText);
+
+              if (response.trangThai === 'chuadangnhap') {
+                  window.location.href = '/user/dang-nhap';
+                  return;
+              }
+
+              if (response.trangThai === 'ok') {
+                  // 1. Đổ dữ liệu thật vào Modal
+                  $('#js-modal-cart-name').text(response.tenSanPham);
+                  $('#js-modal-cart-variant').text('Phân loại: ' + response.phanLoai);
+                  $('#js-modal-cart-qty').text('Số lượng thêm: ' + response.soLuongThem);
+                  
+                  var formattedPrice = new Intl.NumberFormat('vi-VN').format(response.giaBan) + ' đ';
+                  $('#js-modal-cart-price').text(formattedPrice);
+                  
+                  $('#js-modal-cart-img').attr('src', '/uploads/product/' + response.hinhAnh);
+
+                  // 2. Ẩn modal Quick Look nếu khách đang thao tác từ Quick Look
+                  $('#quick-look').modal('hide');
+
+                  // 3. Hiển thị modal thông báo thành công
+                  $('#add-to-cart').modal('show');
+
+                  // 4. Update tự động Mini Cart trên thanh Header
+                  if (typeof loadMiniCart === 'function') {
+                      loadMiniCart();
+                  }
+              } else {
+                  alert("Lỗi: " + response.message);
+              }
+          },
+          error: function(error) {
+              submitBtn.prop('disabled', false).html(originalBtnText);
+              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              console.log(error);
+          }
+      });
+  });
+  
+  /*==============================================================
+    # CUSTOM JS: Xóa sản phẩm bằng AJAX (Hiệu ứng mượt, không nhảy trang)
+    ==============================================================*/
+  $(document).on('click', '.js-delete-cart-item', function(e) {
+      e.preventDefault(); // Khóa cứng hành vi load/nhảy trang mặc định
+      
+      var btn = $(this);
+      var idChiTiet = btn.data('id');
+
+      if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ?')) {
+          // Làm mờ nút đi một chút để báo hiệu đang chờ Server xử lý
+          btn.css('opacity', '0.5');
+
+          $.ajax({
+              url: '/gio-hang/api/xoa/' + idChiTiet,
+              type: 'GET',
+              success: function(response) {
+                  if (response.trangThai === 'chuadangnhap') {
+                      window.location.href = '/user/dang-nhap';
+                      return;
+                  }
+                  
+                  if (response.trangThai === 'ok') {
+                      // 1. NẾU ĐANG Ở TRANG CART.HTML: Xóa dòng <tr> với hiệu ứng mờ dần
+                      var row = btn.closest('tr');
+                      if (row.length) {
+                          row.fadeOut(300, function() {
+                              $(this).remove(); // Cắt bỏ thẻ <tr> khỏi giao diện
+                              
+                              // Nếu bảng trống trơn, hiển thị thông báo "Giỏ hàng trống"
+                              if ($('table.table-p tbody tr').length === 0) {
+                                  $('table.table-p tbody').html('<tr><td colspan="4" class="text-center u-s-p-y-30">Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm vào giỏ nhé!</td></tr>');
+                                  $('.f-cart').fadeOut(); // Ẩn luôn khu vực Tạm tính tiền
+                              }
+                          });
+                      }
+
+                      // 2. Tái sử dụng lại API loadMiniCart để nó tự lo việc tính toán TỔNG TIỀN và SỐ LƯỢNG MỚI
+                      if (typeof loadMiniCart === 'function') {
+                          loadMiniCart();
+                      }
+                      
+                      // 3. Nếu ở trang cart.html, cập nhật luôn số TỔNG CỘNG bự chà bá
+                      $.ajax({
+                          url: '/gio-hang/api/mini-cart',
+                          type: 'GET',
+                          success: function(res) {
+                              if (res.trangThai === 'ok') {
+                                  var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
+                                  $('.js-cart-summary-total').text(formattedTotal);
+                                  $('.f-cart__table tr:first-child td:last-child').text(formattedTotal); // Cập nhật Tạm tính
+                              }
+                          }
+                      });
+
+                  } else {
+                      alert("Có lỗi xảy ra khi xóa!");
+                      btn.css('opacity', '1');
+                  }
+              },
+              error: function() {
+                  alert("Lỗi kết nối máy chủ!");
+                  btn.css('opacity', '1');
+              }
+          });
+      }
+  });
+  /*==============================================================
+    # CUSTOM JS: Thêm nhanh vào giỏ (Dành cho SP có duy nhất 1 biến thể)
+    ==============================================================*/
+  function quickAddToCart(idSanPhamChiTiet) {
+      $.ajax({
+          url: '/gio-hang/them',
+          type: 'POST',
+          data: {
+              idSanPhamChiTiet: idSanPhamChiTiet,
+              soLuong: 1 // Thêm nhanh mặc định là 1 chiếc
+          },
+          success: function(response) {
+              if (response.trangThai === 'chuadangnhap') {
+                  window.location.href = '/user/dang-nhap';
+                  return;
+              }
+
+              if (response.trangThai === 'ok') {
+                  // Đổ dữ liệu thật vào Modal Thành Công
+                  $('#js-modal-cart-name').text(response.tenSanPham);
+                  $('#js-modal-cart-variant').text('Phân loại: ' + response.phanLoai);
+                  $('#js-modal-cart-qty').text('Số lượng thêm: ' + response.soLuongThem);
+                  
+                  var formattedPrice = new Intl.NumberFormat('vi-VN').format(response.giaBan) + ' đ';
+                  $('#js-modal-cart-price').text(formattedPrice);
+                  $('#js-modal-cart-img').attr('src', '/uploads/product/' + response.hinhAnh);
+
+                  // Hiển thị modal thông báo thành công
+                  $('#add-to-cart').modal('show');
+
+                  // Load lại Mini Cart trên Header
+                  if (typeof loadMiniCart === 'function') {
+                      loadMiniCart();
+                  }
+              } else {
+                  alert("Không thể thêm: " + response.message);
+              }
+          },
+          error: function(error) {
+              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              console.log(error);
+          }
+      });
+  }
+  /*==============================================================
+    # CUSTOM JS: Xử lý hiển thị Floating Cart khi cuộn chuột
+    ==============================================================*/
+  $(window).on('scroll', function() {
+      // Nếu cuộn chuột xuống quá 300px (nghĩa là đã vượt qua thanh Header)
+      if ($(window).scrollTop() > 300) {
+          $('#floating-cart').addClass('is-visible');
+      } else {
+          // Cuộn lên lại đầu trang thì ẩn đi
+          $('#floating-cart').removeClass('is-visible');
+      }
+  });
+  /*==============================================================
+    # CUSTOM JS: Thêm vào Wishlist bằng AJAX
+  ==============================================================*/
+  function addToWishlist(idSanPham) {
+      $.ajax({
+          url: '/wishlist/them',
+          type: 'POST',
+          data: { idSanPham: idSanPham },
+          success: function(res) {
+              if (res === 'chuadangnhap') {
+                  window.location.href = '/user/dang-nhap';
+              } else if (res === 'datontai') {
+                  alert('Sản phẩm này đã có trong danh sách yêu thích của bạn!');
+              } else if (res === 'ok') {
+                  alert('Đã thêm vào danh sách yêu thích!');
+                  // Có thể cập nhật số đếm trên Header ở đây nếu cần
+              }
+          },
+          error: function() {
+              alert('Có lỗi xảy ra, vui lòng thử lại!');
+          }
+      });
+  }
+  /*==============================================================
+    # CUSTOM JS: Xóa sản phẩm Yêu Thích bằng AJAX (Hiệu ứng mượt)
+  ==============================================================*/
+  $(document).on('click', '.js-delete-wishlist-item', function(e) {
+      e.preventDefault();
+      var btn = $(this);
+      var idSanPham = btn.data('id');
+
+      if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi danh sách yêu thích?')) {
+          btn.css('opacity', '0.5');
+
+          $.ajax({
+              url: '/wishlist/api/xoa/' + idSanPham,
+              type: 'GET',
+              success: function(response) {
+                  if (response.trangThai === 'chuadangnhap') {
+                      window.location.href = '/user/dang-nhap';
+                      return;
+                  }
+                  
+                  if (response.trangThai === 'ok') {
+                      // Tìm thẻ bọc ngoài cùng của sản phẩm (class .w-r) và làm mờ nó đi
+                      var row = btn.closest('.w-r');
+                      if (row.length) {
+                          row.fadeOut(300, function() {
+                              $(this).remove(); // Xóa hẳn khỏi HTML
+                              
+                              // Nếu xóa hết sạch sản phẩm rồi thì hiện thông báo "Danh sách trống"
+                              if ($('.w-r').length === 0) {
+                                  var emptyHtml = '<div class="text-center u-s-p-y-60"><h3 class="u-s-m-b-15">Danh sách yêu thích của bạn đang trống!</h3><a class="btn btn--e-brand-b-2" href="/">QUAY LẠI MUA SẮM</a></div>';
+                                  $('.section__content .col-lg-12.col-md-12.col-sm-12').html(emptyHtml);
+                                  $('.route-box').hide(); // Ẩn luôn các nút Xóa Tất Cả bên dưới
+                              }
+                          });
+                      }
+                  } else {
+                      alert("Có lỗi xảy ra khi xóa!");
+                      btn.css('opacity', '1');
+                  }
+              },
+              error: function() {
+                  alert("Lỗi kết nối máy chủ!");
+                  btn.css('opacity', '1');
+              }
+          });
+      }
+  });

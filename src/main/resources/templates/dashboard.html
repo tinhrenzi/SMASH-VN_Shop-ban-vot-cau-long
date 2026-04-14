@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link th:href="@{/images/favicon.png}" rel="shortcut icon">
-    <title>Ludus - Electronics, Apparel, Computers, Books, DVDs & more</title>
+    <title>Smash VN</title>
 
     <!--====== Phông chữ Google ======-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
@@ -52,10 +52,10 @@
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
 
-                                        <a th:href="@{/}">Home</a></li>
+                                        <a th:href="@{/}">Trang chủ</a></li>
                                     <li class="is-marked">
 
-                                        <a th:href="@{/user/dashboard}">My Account</a></li>
+                                        <a th:href="@{/user/dashboard}">Tài khoản</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -83,25 +83,25 @@
                                             <ul class="dash__f-list">
                                                 <li>
 
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Manage My Account</a></li>
+                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/profile}">My Profile</a></li>
+                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/address}">Address Book</a></li>
+                                                    <a th:href="@{/user/address}">Sổ địa chỉ</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/track-order}">Track Order</a></li>
+                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/my-order}">My Orders</a></li>
+                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/payment-option}">My Payment Options</a></li>
+                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/cancellation}">My Returns & Cancellations</a></li>
+                                                    <a th:href="@{/user/cancellation}">Chính sách trả hàng và hủy đơn hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -143,36 +143,36 @@
                                 <div class="col-lg-9 col-md-12">
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white u-s-m-b-30">
                                         <div class="dash__pad-2">
-                                            <h1 class="dash__h1 u-s-m-b-14">Manage My Account</h1>
+                                            <h1 class="dash__h1 u-s-m-b-14">Quản lý tài khoản</h1>
 
-                                            <span class="dash__text u-s-m-b-30">From your My Account Dashboard you have the ability to view a snapshot of your recent account activity and update your account information. Select a link below to view or edit information.</span>
+                                            <span class="dash__text u-s-m-b-30">Từ trang Tổng quan Tài khoản của tôi, bạn có thể xem tóm tắt hoạt động gần đây của tài khoản và cập nhật thông tin tài khoản. Chọn liên kết bên dưới để xem hoặc chỉnh sửa thông tin.</span>
                                             <div class="row">
                                                 <div class="col-lg-4 u-s-m-b-30">
                                                     <div class="dash__box dash__box--bg-grey dash__box--shadow-2 u-h-100">
                                                         <div class="dash__pad-3">
-                                                            <h2 class="dash__h2 u-s-m-b-8">PERSONAL PROFILE</h2>
+                                                            <h2 class="dash__h2 u-s-m-b-8">THÔNG TIN CÁ NHÂN</h2>
                                                             <div class="dash__link dash__link--secondary u-s-m-b-8">
 
-                                                                <a th:href="@{/user/profile/edit}">Edit</a></div>
+                                                                <a th:href="@{/user/profile/edit}">Sửa</a></div>
 
                                                             <span class="dash__text" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
 
                                                             <span class="dash__text" th:text="${kh.taiKhoan.email}"></span>
                                                             <div class="dash__link dash__link--secondary u-s-m-t-8">
 
-                                                                <a data-modal="modal" data-modal-id="#dash-newsletter">Subscribe Newsletter</a></div>
+                                                                <a data-modal="modal" data-modal-id="#dash-newsletter">Đăng ký nhận tin tức mới</a></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-4 u-s-m-b-30">
                                                     <div class="dash__box dash__box--bg-grey dash__box--shadow-2 u-h-100">
                                                         <div class="dash__pad-3">
-                                                            <h2 class="dash__h2 u-s-m-b-8">ADDRESS BOOK</h2>
+                                                            <h2 class="dash__h2 u-s-m-b-8">SỔ ĐỊA CHỈ</h2>
 
-                                                            <span class="dash__text-2 u-s-m-b-8">Default Shipping Address</span>
+                                                            <span class="dash__text-2 u-s-m-b-8">Địa chỉ giao hàng mặc định</span>
                                                             <div class="dash__link dash__link--secondary u-s-m-b-8">
 
-                                                                <a th:href="@{/user/address}">Edit</a></div>
+                                                                <a th:href="@{/user/address}">Sửa</a></div>
 
                                                             <span class="dash__text">4247 Ashford Drive Virginia - VA-20006 - USA</span>
 

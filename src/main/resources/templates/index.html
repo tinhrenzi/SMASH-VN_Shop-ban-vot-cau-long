@@ -30,7 +30,7 @@
     </div>
 
     <!--====== app js ======-->
-    <div id="app"></div>
+    <div id="app">
 
         <!--====== Header ======-->
         <header class="header--style-1">
@@ -213,35 +213,64 @@
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
-									    <div class="product-o product-o--hover-on product-o--radius">
-									        <div class="product-o__wrap">
-									            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
-									                <img class="aspect__img" 
-									                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
-									                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
-									            </a>
-									            <div class="product-o__action-wrap">
-									                <ul class="product-o__action-list">
-									                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-									                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-									                </ul>
-									            </div>
-									        </div>
-									
-									        <span class="product-o__category">
-									            <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
-									        </span>
-									
-									        <span class="product-o__name">
-									            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
-									        </span>
-									        
-									        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
-									            Từ <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
-									        </span>
-									    </div>
-									</div>
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item headphone" th:each="product : ${products}">
+									    
+											<div class="product-o product-o--hover-on product-o--radius">
+											    
+											    <div class="product-o__wrap">
+											        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+											            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+											                 th:if="${!product.sanPhamChiTiets.isEmpty()}"
+											                 th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+											        </a>
+											        
+											        <div class="product-o__action-wrap">
+											            <ul class="product-o__action-list">
+											                <li>
+											                    <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+											                        <i class="fas fa-search-plus"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+											                        <i class="fas fa-plus-circle"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+											                        <i class="fas fa-plus-circle text-success"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                	<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+													                <i class="fas fa-heart"></i>
+													            </a>
+											                </li>
+											            </ul>
+											        </div>
+											    </div>
+											
+											    <span class="product-o__category">
+											        <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+											    </span>
+											
+											    <span class="product-o__name">
+											        <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+											    </span>
+											    
+											    <div class="product-o__rating gl-rating-style">
+											        <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+											        <span class="product-o__review">(0)</span>
+											    </div>
+											
+											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
+											        <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+											    </span>
+											    
+											</div>
+										</div>
+										
 									</div>
                                 </div>
                             </div>
@@ -721,6 +750,7 @@
         <!--====== Modal trỏ vào sản phẩm ======-->
 	<div th:replace="~{layout/modals :: all-modals}"></div>
         
+    	</div>
     </div>
     <!--====== End - Main App ======-->
 

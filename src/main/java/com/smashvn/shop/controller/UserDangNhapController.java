@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.UserDangNhapService;
@@ -54,5 +55,25 @@ public class UserDangNhapController {
     public String xuLyDangXuat(HttpSession session) {
         session.invalidate(); // Xóa toàn bộ dữ liệu trong Session
         return "redirect:/user/dang-nhap";
+    }
+    @GetMapping("/google-success")
+    public String googleSuccess(OAuth2AuthenticationToken oauth2Token, HttpSession session) {
+        // Rút trích Email và Tên từ Google
+        String email = oauth2Token.getPrincipal().getAttribute("email");
+        String name = oauth2Token.getPrincipal().getAttribute("name");
+
+        try {
+            // Xử lý tạo/lấy tài khoản từ DB
+            TaiKhoan tk = userDangNhapService.xuLyDangNhapGoogle(email, name);
+            
+            // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
+            session.setAttribute("nguoiDungDangNhap", tk.getEmail());
+            session.setAttribute("idNguoiDung", tk.getId());
+            session.setAttribute("vaiTro", tk.getVaiTro());
+            
+            return "redirect:/"; // Về trang chủ
+        } catch (RuntimeException e) {
+            return "redirect:/user/dang-nhap?loi=" + e.getMessage();
+        }
     }
 }

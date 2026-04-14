@@ -1787,7 +1787,7 @@ input::-ms-clear {
     vertical-align: middle;
     background-color: #f5f5f5;
     width: 120px;
-    height: 120px; }
+    height: 160px; }
     .success__img-wrap img {
       min-width: 120px; }
   .success__name {
@@ -6460,7 +6460,145 @@ input::-ms-clear {
 
 /* Đảm bảo ảnh vợt/giày hiển thị trọn vẹn, không bị méo hay vỡ hạt */
 .product-o__wrap .aspect__img {
-    object-fit: contain;
-    padding: 15px; /* Thêm khoảng trống nhỏ quanh ảnh để nhìn thanh thoát hơn */
-    background-color: #ffffff; /* Nền trắng giúp sản phẩm nổi bật hơn */
+/* Đổi sang cover để ảnh luôn phóng to lấp đầy 100% khung, không để lại viền trống */
+    object-fit: cover; 
+    
+    /* BẮT BUỘC XÓA padding và background-color để ảnh tràn viền */
+    width: 100%;
+    height: 100%;
+    
+    /* (Tùy chọn) Thêm dòng này để nếu ảnh dọc, nó sẽ ưu tiên hiển thị phần giữa (mặt vợt) */
+    object-position: center;
+}
+/*==============================================================
+ # CUSTOM CSS: Tối ưu hóa hiển thị ảnh tự Upload (Chống méo ảnh)
+ ==============================================================*/
+
+/* 1. Tối ưu ảnh trong Giỏ Hàng (Cart) */
+.table-p__img-wrap {
+    width: 100px; /* Cố định chiều rộng khung */
+    height: 100px; /* Cố định chiều cao khung để tạo hình vuông */
+    overflow: hidden; /* Giấu phần ảnh bị thừa */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f7f8f9; /* Lót nền màu xám nhạt cho đẹp mắt */
+    border-radius: 8px; /* Bo góc nhẹ cho chuyên nghiệp */
+}
+
+.table-p__img-wrap img.u-img-fluid {
+    width: 100%;
+    height: 100%;
+    /* THUỘC TÍNH QUAN TRỌNG NHẤT: */
+    object-fit: cover; /* 'cover' giúp ảnh lấp đầy khung mà không bị méo (có thể bị cắt đi rìa ảnh 1 chút). */
+    object-position: center; /* Luôn canh ảnh ở chính giữa */
+}
+
+/* 2. Tối ưu ảnh hiển thị ở Mini Cart (Dropdown trên Header) */
+.mini-product__image-wrapper {
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.mini-product__image-wrapper img.u-img-fluid {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+/*=============================================
+  # CUSTOM: FLOATING CART (Giao diện tinh tế)
+=============================================*/
+.floating-cart {
+    position: fixed;
+    bottom: 120px;
+    right: 20px; /* Ép cứng nó nằm ở góc dưới bên phải */
+    z-index: 9999;
+    display: none; /* JS sẽ thêm class is-visible khi cuộn */
+}
+
+.floating-cart.is-visible {
+    display: block;
+    animation: fadeInBottom 0.5s ease;
+}
+
+/* Nút giỏ hàng: Nền trắng, bóng mờ, icon xám đậm (Chuẩn Ludus) */
+.floating-cart__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: #ffffff;
+    color: #333333;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid #eeeeee;
+    font-size: 22px;
+    text-decoration: none !important;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Khi hover: Đổi màu icon sang cam thương hiệu */
+.floating-cart__btn:hover {
+    color: #ff4500;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Cục Badge báo số lượng */
+.floating-cart__badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #ff4500;
+    color: #ffffff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* KHUNG DANH SÁCH GIỎ HÀNG (Bay từ dưới lên) */
+.floating-cart-dropdown {
+    position: absolute;
+    bottom: 75px; /* Nằm ngay trên nút tròn */
+    right: 0;
+    width: 420px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 10000;
+}
+
+/* Tạo mũi tên nhỏ chĩa xuống cái nút */
+.floating-cart-dropdown::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 22px;
+    border-width: 8px 8px 0;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+    display: block;
+    width: 0;
+}
+
+/* Hiển thị Dropdown khi trỏ chuột vào toàn bộ khối */
+.floating-cart:hover .floating-cart-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }

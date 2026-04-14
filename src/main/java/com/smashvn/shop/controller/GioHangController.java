@@ -2,19 +2,17 @@ package com.smashvn.shop.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import com.smashvn.shop.entity.GioHangChiTiet;
+import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.service.GioHangService;
 
 @Controller
@@ -24,76 +22,107 @@ public class GioHangController {
 
     private final GioHangService gioHangService;
 
+    // HÀM 1: THÊM VÀO GIỎ (Dùng cho AJAX)
     @PostMapping("/them")
-    public String xuLyThemVaoGio(@RequestParam("idSanPhamChiTiet") Integer idSanPhamChiTiet,
-                                 @RequestParam("soLuong") Integer soLuong,
-                                 HttpSession session) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> xuLyThemVaoGio(
+            @RequestParam("idSanPhamChiTiet") Integer idSanPhamChiTiet,
+            @RequestParam("soLuong") Integer soLuong,
+            HttpSession session) {
         
-        // 1. Kiểm tra xem người dùng đã đăng nhập chưa
+        Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        
         if (idNguoiDung == null) {
-            // Nếu chưa đăng nhập, đá về trang Đăng nhập
-            return "redirect:/user/dang-nhap";
+            response.put("trangThai", "chuadangnhap");
+            return ResponseEntity.ok(response);
         }
 
         try {
-            // 2. Gọi Service để thêm vào giỏ
-            gioHangService.themVaoGio(idNguoiDung, idSanPhamChiTiet, soLuong);
-            
-            // 3. Tạm thời chuyển hướng về trang chủ sau khi thêm thành công
-            // (Sau này chúng ta sẽ chuyển hướng sang trang xem Giỏ Hàng)
-            return "redirect:/"; 
+            // Service xử lý và trả về luôn dữ liệu hiển thị Modal
+            Map<String, Object> data = gioHangService.themVaoGio(idNguoiDung, idSanPhamChiTiet, soLuong);
+            data.put("trangThai", "ok");
+            return ResponseEntity.ok(data);
 
         } catch (RuntimeException e) {
-            // Nếu có lỗi (ví dụ: chưa có profile Khách hàng), có thể in ra console để debug
-            System.err.println("LỖI THÊM GIỎ HÀNG: " + e.getMessage());
-            return "redirect:/";
+            response.put("trangThai", "loi");
+            response.put("message", e.getMessage());
+            return ResponseEntity.ok(response);
         }
     }
+
+    // HÀM 2: LẤY DỮ LIỆU MINI CART (Dùng cho AJAX Header)
+    @GetMapping("/api/mini-cart")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> layDuLieuMiniCart(HttpSession session) {
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        
+        if (idNguoiDung == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("trangThai", "chuadangnhap");
+            response.put("tongSoLuong", 0);
+            return ResponseEntity.ok(response);
+        }
+
+        // Controller chỉ việc gọi 1 dòng duy nhất!
+        Map<String, Object> response = gioHangService.layDuLieuMiniCart(idNguoiDung);
+        return ResponseEntity.ok(response);
+    }
+
+    // HÀM 3: HIỂN THỊ TRANG GIỎ HÀNG (cart.html)
     @GetMapping
     public String hienThiGioHang(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) {
-            return "redirect:/user/dang-nhap"; // Chưa đăng nhập thì bắt đăng nhập
-        }
+        if (idNguoiDung == null) return "redirect:/user/dang-nhap";
 
-        // Lấy danh sách sản phẩm trong giỏ
         List<GioHangChiTiet> danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
-
-        // Tính toán tổng tiền của cả giỏ hàng (Giá bán * Số lượng)
+        
         BigDecimal tongTien = BigDecimal.ZERO;
         for (GioHangChiTiet item : danhSachChiTiet) {
-            BigDecimal gia = item.getSanPhamChiTiet().getGiaBan();
-            BigDecimal soLuong = new BigDecimal(item.getSoLuong());
-            tongTien = tongTien.add(gia.multiply(soLuong));
+            SanPham sp = item.getSanPhamChiTiet().getSanPham();
+            int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
+            String trangThai = sp.getTrangThai();
+
+            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban"));
+            if (hopLe) {
+                tongTien = tongTien.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            }
         }
 
-        // Gửi dữ liệu sang View
         model.addAttribute("danhSachCart", danhSachChiTiet);
         model.addAttribute("tongTien", tongTien);
-
-        return "cart"; // Gọi file cart.html
+        return "cart";
     }
-    @GetMapping("/xoa/{id}")
-    public String xoaSanPhamKhoiGio(@PathVariable("id") Integer idChiTiet, HttpSession session) {
-        // Kiểm tra đăng nhập bảo mật
-        if (session.getAttribute("idNguoiDung") == null) {
-            return "redirect:/user/dang-nhap";
-        }
 
-        // Gọi Service thực hiện xóa
-        gioHangService.xoaSanPhamKhoiGio(idChiTiet);
-        
-        // Xóa xong thì load lại (redirect) về chính trang Giỏ hàng để thấy kết quả
-        return "redirect:/gio-hang";
-    }
+	 // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Gộp chung cho cả Cart và Mini Cart)
+	    @GetMapping("/api/xoa/{id}")
+	    @ResponseBody
+	    public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
+	        Map<String, String> response = new HashMap<>();
+	        
+	        if (session.getAttribute("idNguoiDung") == null) {
+	            response.put("trangThai", "chuadangnhap");
+	            return ResponseEntity.ok(response);
+	        }
+	        
+	        try {
+	            gioHangService.xoaSanPhamKhoiGio(idChiTiet);
+	            response.put("trangThai", "ok");
+	        } catch (Exception e) {
+	            response.put("trangThai", "loi");
+	            response.put("message", e.getMessage());
+	        }
+	        return ResponseEntity.ok(response);
+	    }
+
+    // HÀM 5: CẬP NHẬT SỐ LƯỢNG (Dùng cho AJAX trong cart.html)
     @PostMapping("/cap-nhat")
-    public String capNhatSoLuong(@RequestParam("idChiTiet") Integer idChiTiet,
-                                 @RequestParam("soLuong") Integer soLuong,
-                                 HttpSession session) {
-        if (session.getAttribute("idNguoiDung") == null) return "redirect:/user/dang-nhap";
-        
+    @ResponseBody
+    public ResponseEntity<String> capNhatSoLuong(@RequestParam("idChiTiet") Integer idChiTiet,
+                                                 @RequestParam("soLuong") Integer soLuong,
+                                                 HttpSession session) {
+        if (session.getAttribute("idNguoiDung") == null) return ResponseEntity.status(401).body("Chưa đăng nhập");
         gioHangService.capNhatSoLuong(idChiTiet, soLuong);
-        return "redirect:/gio-hang"; // Load lại trang để thấy tổng tiền mới
+        return ResponseEntity.ok("ok");
     }
 }
