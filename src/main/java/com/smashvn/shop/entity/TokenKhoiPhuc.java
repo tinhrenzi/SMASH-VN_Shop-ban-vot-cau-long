@@ -19,8 +19,8 @@ public class TokenKhoiPhuc {
     @Column(name = "ma_xac_nhan", nullable = false)
     private String maXacNhan;
 
-    @Column(name = "loai_xac_nhan", nullable = false)
-    private String loaiXacNhan; // Sẽ lưu là 'EMAIL'
+    @Column(name = "loai_xac_nhan", nullable = false, length = 20, columnDefinition = "nvarchar(20)")
+    private String loaiXacNhan;
 
     @Column(name = "thoi_gian_het_han", nullable = false)
     private LocalDateTime thoiGianHetHan;

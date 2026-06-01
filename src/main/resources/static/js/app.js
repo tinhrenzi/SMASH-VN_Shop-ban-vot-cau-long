@@ -1018,3 +1018,117 @@ function checkAndApplyVariant(container) {
           });
       }
   });
+  /*==============================================================
+    # CUSTOM JS: Lấy vị trí hiện tại (Geolocation + OpenStreetMap)
+  ==============================================================*/
+  function getCurrentLocation() {
+      const btn = document.getElementById('btn-get-location');
+      const originalText = btn.innerHTML;
+      
+      // Đổi trạng thái nút báo hiệu đang tải
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin u-s-m-r-8"></i> Đang định vị...';
+      btn.disabled = true;
+
+      // Kiểm tra trình duyệt có hỗ trợ định vị không
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+              function(position) {
+                  // Lấy được tọa độ
+                  const lat = position.coords.latitude;
+                  const lon = position.coords.longitude;
+
+                  // Gọi API của OpenStreetMap để dịch tọa độ thành địa chỉ thật (Reverse Geocoding)
+                  const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=vi`;
+
+                  fetch(apiUrl)
+                      .then(response => response.json())
+                      .then(data => {
+                          const address = data.address;
+                          
+                          // Trích xuất dữ liệu
+                          const soNhaĐuong = (address.house_number ? address.house_number + ' ' : '') + 
+                                             (address.road || address.pedestrian || address.suburb || '');
+                          const tinhThanh = address.city || address.state || address.province || address.county || '';
+                          const quocGia = address.country || 'Việt Nam';
+
+                          // Đổ dữ liệu thẳng vào các ô input của bạn theo ID đã đặt
+                          if (soNhaĐuong) document.getElementById('address-street').value = soNhaĐuong;
+                          if (tinhThanh) document.getElementById('address-state').value = tinhThanh;
+                          if (quocGia) document.getElementById('address-country').value = quocGia;
+
+                          alert('📍 Đã tự động điền vị trí của bạn thành công!');
+                          
+                          // Trả lại trạng thái nút
+                          btn.innerHTML = originalText;
+                          btn.disabled = false;
+                      })
+                      .catch(error => {
+                          console.error('Lỗi lấy địa chỉ:', error);
+                          alert('Không thể nhận diện chi tiết địa chỉ. Vui lòng nhập thủ công.');
+                          btn.innerHTML = originalText;
+                          btn.disabled = false;
+                      });
+              },
+              function(error) {
+                  alert('Bạn đã từ chối quyền truy cập vị trí hoặc máy chủ định vị gặp lỗi.');
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+              },
+              {
+                  enableHighAccuracy: true, // Ưu tiên độ chính xác cao
+                  timeout: 10000,           // Thời gian chờ tối đa 10s
+                  maximumAge: 0
+              }
+          );
+      } else {
+          alert("Trình duyệt của bạn không hỗ trợ tính năng định vị.");
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+      }
+  }
+  /*==============================================================
+    # CUSTOM JS: Xóa Sổ Địa Chỉ bằng AJAX
+  ==============================================================*/
+  $(document).on('click', '.js-delete-address', function(e) {
+      e.preventDefault();
+      var btn = $(this);
+      var idDiaChi = btn.data('id');
+
+      if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
+          // Làm mờ dòng đó đi để báo hiệu đang chờ máy chủ
+          var tr = btn.closest('tr');
+          tr.css('opacity', '0.5');
+
+          $.ajax({
+              url: '/user/address/api/delete/' + idDiaChi,
+              type: 'GET',
+              success: function(response) {
+                  if (response.trangThai === 'chuadangnhap') {
+                      window.location.href = '/user/dang-nhap';
+                      return;
+                  }
+                  
+                  if (response.trangThai === 'ok') {
+                      // Mờ dần và xóa dòng HTML
+                      tr.fadeOut(300, function() {
+                          $(this).remove();
+                          
+                          // Nếu xóa hết sạch, hiển thị câu thông báo trống
+                          if ($('table.dash__table-2 tbody tr').length === 0) {
+                              var emptyMsg = '<tr><td colspan="6" class="text-center text-muted py-4">Bạn chưa có địa chỉ giao hàng nào. Hãy thêm mới nhé!</td></tr>';
+                              $('table.dash__table-2 tbody').html(emptyMsg);
+                          }
+                      });
+                  } else {
+                      // Báo lỗi (Ví dụ: Lỗi cố tình xóa địa chỉ mặc định)
+                      alert(response.message);
+                      tr.css('opacity', '1'); // Khôi phục lại hiển thị
+                  }
+              },
+              error: function() {
+                  alert("Lỗi kết nối máy chủ!");
+                  tr.css('opacity', '1');
+              }
+          });
+      }
+  });

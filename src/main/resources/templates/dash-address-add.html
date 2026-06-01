@@ -81,27 +81,27 @@
 
                                             <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
                                             <ul class="dash__f-list">
+                                               <li>
+
+                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
 
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Manage My Account</a></li>
+                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/profile}">My Profile</a></li>
+                                                    <a th:href="@{/user/address}">Sổ địa chỉ</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/address}">Address Book</a></li>
+                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/track-order}">Track Order</a></li>
+                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/my-order}">My Orders</a></li>
+                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/payment-option}">My Payment Options</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/cancellation}">My Returns & Cancellations</a></li>
+                                                    <a th:href="@{/user/cancellation}">Chính sách trả hàng và hủy đơn hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -145,7 +145,13 @@
                                         <div class="dash__pad-2">
                                             <h1 class="dash__h1 u-s-m-b-14">Add new Address</h1>
 
-                                            <span class="dash__text u-s-m-b-30">We need an address where we could deliver products.</span>
+                                            <span class="dash__text u-s-m-b-30">Chúng tôi cần địa chỉ để có thể giao sản phẩm đến cho bạn.</span>
+
+											<div class="u-s-m-b-30 dash-address-manipulation">
+											    <button type="button" class="btn btn--e-transparent-brand-b-2" onclick="getCurrentLocation()" id="btn-get-location">
+											        <i class="fas fa-map-marker-alt u-s-m-r-8"></i> LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI
+											    </button>
+											</div>
                                             <form class="dash-address-manipulation" th:action="@{/user/address/add}" method="post">
                                                 <div class="gl-inline">
                                                     <div class="u-s-m-b-30">

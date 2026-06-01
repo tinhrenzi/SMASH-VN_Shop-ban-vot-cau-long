@@ -121,4 +121,25 @@ public class UserAddressService {
         
         soDiaChiRepository.save(dc);
     }
+ // 6. Xóa địa chỉ (Có kiểm tra logic)
+    @Transactional
+    public void xoaDiaChi(Integer idDiaChi, Integer idKhachHang) {
+        SoDiaChi dc = soDiaChiRepository.findById(idDiaChi)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ!"));
+
+        // Bảo mật: Tránh xóa trộm
+        if (!dc.getKhachHang().getId().equals(idKhachHang)) {
+            throw new RuntimeException("Bạn không có quyền xóa địa chỉ này!");
+        }
+
+        // Logic E-commerce: Không cho phép xóa địa chỉ mặc định nếu họ vẫn còn địa chỉ khác
+        if (dc.isDefaultShipping()) {
+            List<SoDiaChi> danhSach = layDanhSachDiaChi(idKhachHang);
+            if (danhSach.size() > 1) {
+                throw new RuntimeException("Không thể xóa địa chỉ mặc định. Vui lòng chọn địa chỉ khác làm mặc định trước!");
+            }
+        }
+
+        soDiaChiRepository.delete(dc);
+    }
 }
