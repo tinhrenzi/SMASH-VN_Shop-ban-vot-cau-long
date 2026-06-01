@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+    <nav th:fragment="sidebar(activeTab)" class="col-md-2 d-none d-md-block sidebar">
+        <!-- Logo khu vực quản trị thiết kế theo style trang chủ -->
+        <div class="sidebar-logo text-center py-4 mb-4 border-bottom border-secondary border-opacity-25">
+            <h3 class="fw-extrabold text-uppercase m-0 tracking-wider font-sans" style="color: #ff4500; font-family: 'Open Sans', sans-serif; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                <i class="fa-solid fa-table-tennis-paddle-ball me-2"></i>SMASH VN
+            </h3>
+            <span class="text-xs text-uppercase tracking-widest text-muted" style="font-size: 0.75rem; letter-spacing: 0.15em; color: #adb5bd;">Khu Vực Admin</span>
+        </div>
+        
+        <div class="sidebar-links d-flex flex-column gap-2">
+            <a th:href="@{/admin/all}" th:class="${activeTab == 'tongquan' ? 'active' : ''}">
+                <i class="fas fa-tachometer-alt me-2 text-brand"></i> Tổng Quan
+            </a>
+            
+            <a th:href="@{/admin/san-pham}" th:class="${activeTab == 'sanpham' ? 'active' : ''}">
+                <i class="fas fa-box me-2 text-brand"></i> Sản Phẩm
+            </a>
+            
+            <a th:href="@{/admin/don-hang}" th:class="${activeTab == 'donhang' ? 'active' : ''}">
+                <i class="fas fa-shopping-cart me-2 text-brand"></i> Đơn Hàng
+            </a>
+            
+            <a th:href="@{/admin/khach-hang}" th:class="${activeTab == 'khachhang' ? 'active' : ''}">
+                <i class="fas fa-users me-2 text-brand"></i> Khách Hàng
+            </a>
+            
+            <a th:href="@{/admin/khuyen-mai}" th:class="${activeTab == 'khuyenmai' ? 'active' : ''}">
+                <i class="fas fa-percent me-2 text-brand"></i> Khuyến Mãi
+            </a>
+            
+            <a th:href="@{/}" class="mt-5 text-warning logout-link">
+                <i class="fas fa-arrow-left me-2"></i> Về Trang Chủ
+            </a>
+        </div>
+
+        <style>
+            .sidebar {
+                min-height: 100vh;
+                background-color: #15171c !important; /* Deep dark slate from home page theme */
+                color: #ffffff;
+                padding-top: 10px;
+                box-shadow: 4px 0 10px rgba(0,0,0,0.15);
+                font-family: 'Open Sans', sans-serif;
+            }
+            .sidebar a {
+                color: #adb5bd;
+                text-decoration: none;
+                padding: 14px 20px;
+                display: flex;
+                align-items: center;
+                border-radius: 8px;
+                margin: 0 12px;
+                font-weight: 600;
+                font-size: 0.95rem;
+                transition: all 0.25s ease;
+            }
+            .sidebar a i.text-brand {
+                color: #adb5bd; /* Muted standard icon state */
+                transition: all 0.25s ease;
+            }
+            .sidebar a:hover {
+                background-color: #1e222b;
+                color: #ffffff;
+                transform: translateX(4px);
+            }
+            .sidebar a.active {
+                background-color: #1e222b !important;
+                color: #ff4500 !important; /* Premium brand orange-red highlight */
+                border-left: 4px solid #ff4500 !important;
+                box-shadow: inset 0 0 10px rgba(255, 69, 0, 0.05);
+            }
+            .sidebar a.active i.text-brand {
+                color: #ff4500 !important;
+            }
+            .sidebar a.logout-link {
+                border: 1px dashed rgba(255, 193, 7, 0.3);
+                margin-top: 60px;
+                color: #ffc107 !important;
+            }
+            .sidebar a.logout-link:hover {
+                background-color: rgba(255, 193, 7, 0.1);
+                color: #ffc107 !important;
+                border-color: #ffc107;
+            }
+        </style>
+    </nav>
+
+</body>
+</html>

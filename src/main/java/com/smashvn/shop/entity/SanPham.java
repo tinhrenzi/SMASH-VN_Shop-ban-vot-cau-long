@@ -27,7 +27,7 @@ public class SanPham {
     @JoinColumn(name = "id_nhan_vien", nullable = false)
     private NhanVien nhanVien;
 
-    @Column(name = "ten_san_pham", nullable = false)
+    @Column(name = "ten_san_pham", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String tenSanPham;
     
  // Thêm vào bên trong class SanPham

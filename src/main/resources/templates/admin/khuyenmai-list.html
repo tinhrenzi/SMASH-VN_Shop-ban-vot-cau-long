@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Khuyến Mãi - Admin SmashVN</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
+
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title"><i class="fas fa-percent text-brand me-2"></i>Quản Lý Khuyến Mãi & Voucher</h2>
+            </div>
+
+            <!-- Discounts (Campaigns) Section -->
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-bullhorn me-2 text-brand"></i>Chiến Dịch Đợt Giảm Giá</span>
+                    <span class="badge bg-primary" th:text="${danhSachDotGiamGia.size()} + ' đợt'"></span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive p-0 shadow-none border-0">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên Chiến Dịch</th>
+                                    <th>% Giảm Giá</th>
+                                    <th>Thời Gian Hoạt Động</th>
+                                    <th>Loại Giảm</th>
+                                    <th>Nhân Viên Tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="dgg : ${danhSachDotGiamGia}">
+                                    <td class="fw-bold text-dark" th:text="'#' + ${dgg.id}">#1</td>
+                                    <td class="fw-bold text-primary" th:text="${dgg.tenChienDich}">Mừng hè rực rỡ</td>
+                                    <td class="text-danger fw-bold fs-6" th:text="${dgg.phanTramGiam} + '%'">15%</td>
+                                    <td>
+                                        <small class="fw-semibold" th:text="'Bắt đầu: ' + ${#temporals.format(dgg.ngayBatDau, 'dd/MM/yyyy HH:mm')}"></small><br>
+                                        <small class="text-danger fw-semibold" th:text="'Kết thúc: ' + ${#temporals.format(dgg.ngayKetThuc, 'dd/MM/yyyy HH:mm')}"></small>
+                                    </td>
+                                    <td th:text="${dgg.loaiGiamGia}">Theo Phần Trăm</td>
+                                    <td th:text="${dgg.nhanVien != null ? (dgg.nhanVien.hoNv + ' ' + dgg.nhanVien.tenNv) : 'Hệ Thống'}">Staff</td>
+                                </tr>
+                                <tr th:if="${danhSachDotGiamGia.isEmpty()}">
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có chiến dịch đợt giảm giá nào.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vouchers (Coupons) Section -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-ticket-alt me-2 text-brand"></i>Danh Sách Phiếu Giảm Giá (Voucher)</span>
+                    <span class="badge bg-primary" th:text="${danhSachPhieuGiamGia.size()} + ' phiếu'"></span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive p-0 shadow-none border-0">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Mã Phiếu</th>
+                                    <th>Giá Trị</th>
+                                    <th>Đơn Vị</th>
+                                    <th>Còn Lại</th>
+                                    <th>Hạn Sử Dụng</th>
+                                    <th>Loại Giảm</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="pgg : ${danhSachPhieuGiamGia}">
+                                    <td class="fw-bold text-dark" th:text="'#' + ${pgg.id}">#1</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark font-monospace fs-6" th:text="${pgg.maPhieu}">SUMMER26</span>
+                                    </td>
+                                    <td class="text-danger fw-bold" th:text="${pgg.donVi == 'VNĐ' ? #numbers.formatDecimal(pgg.giaTri, 0, 'COMMA', 0, 'POINT') + ' đ' : pgg.giaTri}">100,000 đ</td>
+                                    <td th:text="${pgg.donVi}">VNĐ</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark" th:text="${pgg.soLuongConLai} + ' lượt'">50</span>
+                                    </td>
+                                    <td>
+                                        <small class="fw-semibold" th:text="'Từ: ' + ${#temporals.format(pgg.ngayBatDau, 'dd/MM/yyyy')}"></small><br>
+                                        <small class="text-danger fw-semibold" th:text="'Đến: ' + ${#temporals.format(pgg.ngayKetThuc, 'dd/MM/yyyy')}"></small>
+                                    </td>
+                                    <td th:text="${pgg.loaiGiamGia}">Giảm trực tiếp</td>
+                                </tr>
+                                <tr th:if="${danhSachPhieuGiamGia.isEmpty()}">
+                                    <td colspan="7" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

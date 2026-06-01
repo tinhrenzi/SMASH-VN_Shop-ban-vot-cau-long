@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
+import java.util.List;
 
 import com.smashvn.shop.entity.*;
 import com.smashvn.shop.repository.*;
@@ -19,6 +22,11 @@ public class AdminSanPhamController {
     private final ThuongHieuRepository thuongHieuRepository;
     private final AdminSanPhamService adminSanPhamService;
 
+    // Các thuộc tính thuộc phân loại vợt cầu lông
+    private final List<String> listMauSacConfig = List.of("Đỏ", "Xanh dương", "Đen", "Trắng", "Vàng", "Cam");
+    private final List<String> listTrongLuongConfig = List.of("3U", "4U", "5U");
+    private final List<String> listMucCangConfig = List.of("10.5 kg", "11.0 kg", "11.5 kg", "12.0 kg", "12.5 kg");
+
     @GetMapping
     public String hienThiDanhSach(Model model) {
         model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
@@ -29,19 +37,54 @@ public class AdminSanPhamController {
     public String hienThiFormThem(Model model) {
         model.addAttribute("listDanhMuc", danhMucRepository.findAll());
         model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+        
+        // Đổ động thuộc tính ra Model phục vụ checkbox
+        model.addAttribute("listMauSac", listMauSacConfig);
+        model.addAttribute("listTrongLuong", listTrongLuongConfig);
+        model.addAttribute("listMucCang", listMucCangConfig);
+        
         return "admin/sanpham-add"; 
     }
 
     @PostMapping("/them")
-    public String xuLyThemSanPham(@RequestParam("tenSanPham") String tenSanPham,
-                                  @RequestParam("idDanhMuc") Integer idDanhMuc,
-                                  @RequestParam("idThuongHieu") Integer idThuongHieu,
-                                  @RequestParam("moTa") String moTa) {
+    public String xuLyThemSanPham(
+            @RequestParam("tenSanPham") String tenSanPham,
+            @RequestParam("idDanhMuc") Integer idDanhMuc,
+            @RequestParam("idThuongHieu") Integer idThuongHieu,
+            @RequestParam("moTa") String moTa,
+            @RequestParam("giaBan") BigDecimal giaBan,
+            @RequestParam("soLuongTon") Integer soLuongTon,
+            @RequestParam("fileAnh") MultipartFile fileAnh,
+            @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
+            @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
+            @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
+            Model model) {
         try {
-            adminSanPhamService.themSanPhamMoi(tenSanPham, idDanhMuc, idThuongHieu, moTa);
+            adminSanPhamService.themSanPhamVaBienThe(
+                tenSanPham, idDanhMuc, idThuongHieu, moTa,
+                giaBan, soLuongTon, fileAnh,
+                mauSacs, trongLuongs, mucCangs
+            );
             return "redirect:/admin/san-pham?thanhcong"; 
         } catch (Exception e) {
-            return "redirect:/admin/san-pham/them?loi=LoiHeThong";
+            // Khi lỗi, giữ lại thông tin nhập, ném lỗi ra màn hình
+            model.addAttribute("loi", e.getMessage());
+            model.addAttribute("tenSanPham", tenSanPham);
+            model.addAttribute("moTa", moTa);
+            model.addAttribute("giaBan", giaBan);
+            model.addAttribute("soLuongTon", soLuongTon);
+            model.addAttribute("selectedMauSacs", mauSacs);
+            model.addAttribute("selectedTrongLuongs", trongLuongs);
+            model.addAttribute("selectedMucCangs", mucCangs);
+            
+            // Re-populate lists
+            model.addAttribute("listDanhMuc", danhMucRepository.findAll());
+            model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+            model.addAttribute("listMauSac", listMauSacConfig);
+            model.addAttribute("listTrongLuong", listTrongLuongConfig);
+            model.addAttribute("listMucCang", listMucCangConfig);
+            
+            return "admin/sanpham-add";
         }
     }
     

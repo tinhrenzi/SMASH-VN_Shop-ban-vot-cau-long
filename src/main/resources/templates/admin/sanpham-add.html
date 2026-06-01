@@ -5,54 +5,212 @@
     <title>Thêm Sản Phẩm Mới - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { background-color: #f8f9fa; }</style>
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-5 mb-5">
-    <div class="card shadow">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Thêm Sản Phẩm Gốc</h4>
-            <a th:href="@{/admin/san-pham}" class="btn btn-sm btn-light">Quay lại danh sách</a>
-        </div>
-        <div class="card-body">
-            <div th:if="${param.loi != null}" class="alert alert-danger" th:text="${param.loi}">Đã xảy ra lỗi!</div>
-
-            <form th:action="@{/admin/san-pham/them}" method="post">
-                
-                <h5 class="text-primary border-bottom pb-2">Thông tin chung (Sản phẩm gốc)</h5>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Tên Sản Phẩm *</label>
-                        <input type="text" name="tenSanPham" class="form-control" required placeholder="VD: Vợt Yonex Astrox...">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Danh Mục *</label>
-                        <select name="idDanhMuc" class="form-select" required>
-                            <option value="">-- Chọn --</option>
-                            <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}"></option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Thương Hiệu *</label>
-                        <select name="idThuongHieu" class="form-select" required>
-                            <option value="">-- Chọn --</option>
-                            <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}"></option>
-                        </select>
-                    </div>
+<div class="container-fluid">
+    <div class="row">
+        
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('sanpham')}"></div>
+        
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+            
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <h4 class="mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Mới Sản Phẩm & Tự Động Sinh Biến Thể</h4>
+                    <a th:href="@{/admin/san-pham}" class="btn btn-sm btn-light">Quay lại danh sách</a>
                 </div>
+                <div class="card-body">
+                    <!-- Hiển thị lỗi bảo mật hoặc validate hệ thống đầu vào -->
+                    <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span th:text="${loi}">Đã xảy ra lỗi!</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Mô tả sản phẩm</label>
-                    <textarea name="moTa" class="form-control" rows="4" required placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..."></textarea>
-                </div>
+                    <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm">
+                        
+                        <!-- SECTION 1: THÔNG TIN SẢN PHẨM GỐC -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-info-circle me-1"></i>1. Thông Tin Sản Phẩm Gốc</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tên Sản Phẩm *</label>
+                                <input type="text" name="tenSanPham" class="form-control" th:value="${tenSanPham}" required placeholder="VD: Vợt Yonex Astrox 88D Pro...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Danh Mục *</label>
+                                <select name="idDanhMuc" class="form-select" required>
+                                    <option value="">-- Chọn --</option>
+                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Thương Hiệu *</label>
+                                <select name="idThuongHieu" class="form-select" required>
+                                    <option value="">-- Chọn --</option>
+                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}"></option>
+                                </select>
+                            </div>
+                        </div>
 
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg px-5"><i class="fas fa-save me-2"></i> LƯU SẢN PHẨM GỐC</button>
-                    <p class="text-muted mt-2"><small>(Bạn sẽ thêm Giá tiền, Màu sắc, Hình ảnh ở phần Quản lý Biến thể sau khi lưu)</small></p>
+                        <div class="mb-4">
+                            <label class="form-label">Mô tả sản phẩm</label>
+                            <textarea name="moTa" class="form-control" rows="3" required placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..." th:text="${moTa}"></textarea>
+                        </div>
+
+                        <!-- SECTION 2: CẤU HÌNH THUỘC TÍNH & FILE ANH MẶC ĐỊNH -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-tags me-1"></i>2. Cấu Hình Giá, Kho & Ảnh Biến Thể</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Giá bán mặc định (VNĐ) *</label>
+                                <input type="number" name="giaBan" class="form-control" th:value="${giaBan}" required min="1000" step="1000" placeholder="VD: 3500000">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Số lượng kho mặc định *</label>
+                                <input type="number" name="soLuongTon" class="form-control" th:value="${soLuongTon != null ? soLuongTon : 10}" required min="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Hình ảnh sản phẩm *</label>
+                                <input type="file" name="fileAnh" class="form-control" accept="image/*" required>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 3: CHECKBOX THUỘC TÍNH -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-sliders-h me-1"></i>3. Chọn Các Thuộc Tính Để Tự Động Nhân Biến Thể</h5>
+                        <div class="row g-3 mb-4">
+                            <!-- Màu Sắc -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Màu Sắc</h6>
+                                    <div class="form-check my-2" th:each="mau : ${listMauSac}">
+                                        <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}">
+                                        <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Trọng lượng/Size -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Size / Trọng Lượng</h6>
+                                    <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
+                                        <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}">
+                                        <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mức căng -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Sức Căng (Vợt Cầu Lông)</h6>
+                                    <div class="form-check my-2" th:each="cang : ${listMucCang}">
+                                        <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}">
+                                        <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${cang}" th:text="${cang}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 4: XEM TRƯỚC BIẾN THỂ -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Xem Trước Biến Thể Sẽ Được Tạo</h5>
+                        <div class="mb-4">
+                            <div class="preview-box-premium shadow-sm">
+                                <div id="preview-count" class="fw-bold mb-3 text-dark">Chưa có thuộc tính nào được chọn để xem trước.</div>
+                                <ul id="preview-list" class="list-group list-group-flush shadow-none" style="max-height: 350px; overflow-y: auto;">
+                                </ul>
+                            </div>
+                            <div id="limit-warning" class="text-danger mt-2 fw-bold d-none">
+                                <i class="fas fa-exclamation-triangle"></i> Số lượng biến thể vượt quá giới hạn tối đa cho phép (100 biến thể). Vui lòng bỏ bớt lựa chọn!
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow" id="btnSubmit"><i class="fas fa-save me-2"></i> LƯU SẢN PHẨM & SINH BIẾN THỂ</button>
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = document.querySelectorAll(".filter-checkbox");
+        const previewList = document.getElementById("preview-list");
+        const previewCount = document.getElementById("preview-count");
+        const limitWarning = document.getElementById("limit-warning");
+        const btnSubmit = document.getElementById("btnSubmit");
+
+        function updatePreview() {
+            // Lấy toàn bộ các thuộc tính được tick
+            const checkedMaus = Array.from(document.querySelectorAll(".mau-cb:checked")).map(cb => cb.value);
+            const checkedTrongs = Array.from(document.querySelectorAll(".trong-cb:checked")).map(cb => cb.value);
+            const checkedCangs = Array.from(document.querySelectorAll(".cang-cb:checked")).map(cb => cb.value);
+
+            // Xóa rỗng list cũ
+            previewList.innerHTML = "";
+
+            if (checkedMaus.length === 0 || checkedTrongs.length === 0 || checkedCangs.length === 0) {
+                previewCount.textContent = "Vui lòng chọn ít nhất 1 Màu sắc, 1 Trọng lượng/Size và 1 Sức căng để xem trước.";
+                previewCount.className = "fw-bold mb-2 text-warning";
+                btnSubmit.disabled = false;
+                limitWarning.classList.add("d-none");
+                return;
+            }
+
+            // Tính tích Descartes
+            let total = checkedMaus.length * checkedTrongs.length * checkedCangs.length;
+            previewCount.textContent = `Tổng số biến thể sẽ được tự động tạo: ${total}`;
+            previewCount.className = "fw-bold mb-2 text-success fs-5";
+
+            // Kiểm tra giới hạn 100 biến thể
+            if (total > 100) {
+                limitWarning.classList.remove("d-none");
+                btnSubmit.disabled = true;
+                previewCount.className = "fw-bold mb-2 text-danger fs-5";
+            } else {
+                limitWarning.classList.add("d-none");
+                btnSubmit.disabled = false;
+                previewCount.className = "fw-bold mb-2 text-success fs-5";
+            }
+
+            // Render ra danh sách xem trước
+            let fragment = document.createDocumentFragment();
+            checkedMaus.forEach(mau => {
+                checkedTrongs.forEach(trong => {
+                    checkedCangs.forEach(cang => {
+                        let li = document.createElement("li");
+                        li.className = "list-group-item d-flex justify-content-between align-items-center py-2";
+                        li.innerHTML = `
+                            <span>
+                                <i class="fas fa-tag text-brand me-2"></i> 
+                                <strong>${mau}</strong> &mdash; <strong>${trong}</strong> &mdash; <strong>${cang}</strong>
+                            </span>
+                            <span class="badge bg-primary">Mới</span>
+                        `;
+                        fragment.appendChild(li);
+                    });
+                });
+            });
+            previewList.appendChild(fragment);
+        }
+
+        // Đăng ký sự kiện change cho tất cả checkboxes
+        checkboxes.forEach(cb => {
+            cb.addEventListener("change", updatePreview);
+        });
+
+        // Chạy lần đầu khi load form
+        updatePreview();
+    });
+</script>
 </body>
 </html>

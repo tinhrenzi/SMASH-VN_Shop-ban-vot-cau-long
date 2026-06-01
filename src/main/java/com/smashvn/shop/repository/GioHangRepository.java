@@ -7,6 +7,7 @@ import com.smashvn.shop.entity.GioHang;
 
 @Repository
 public interface GioHangRepository extends JpaRepository<GioHang, Integer> {
+
     GioHang findByKhachHang_Id(Integer idKhachHang);
-    
+
 }

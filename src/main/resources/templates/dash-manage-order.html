@@ -203,23 +203,25 @@
                                                     </div>
                                                 </div>
                                                 <div class="manage-o__description">
-                                                    <div class="description__container" th:each="item : ${orderItems}">
-                                                        <div class="description__img-wrap">
-
-                                                            <img class="u-img-fluid" th:src="@{'/images/product/' + ${item.sanPhamChiTiet.sanPham.anh}}" alt=""></div>
-                                                        <div class="description-title" th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Yellow Wireless Headphone</div>
-                                                    </div>
-                                                    <div class="description__info-wrap">
-                                                        <div>
-
-                                                            <span class="manage-o__text-2 u-c-silver">Quantity:
-
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span></span></div>
-                                                        <div>
-
-                                                            <span class="manage-o__text-2 u-c-silver">Total:
-
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="'$' + ${item.sanPhamChiTiet.giaBan * item.soLuong}">$16.00</span></span></div>
+                                                    <div class="manage-o__description-item" th:each="item : ${orderItems}" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 15px 0;">
+                                                        <div class="description__container" style="display: flex; align-items: center;">
+                                                            <div class="description__img-wrap" style="width: 80px; height: 80px; margin-right: 15px;">
+                                                                <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.sanPham.moTa}}" alt="Product Image" style="width: 100%; height: 100%; object-fit: cover;">
+                                                            </div>
+                                                            <div class="description-title" th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}" style="font-weight: 600; color: #333;">Yellow Wireless Headphone</div>
+                                                        </div>
+                                                        <div class="description__info-wrap" style="display: flex; gap: 30px;">
+                                                            <div>
+                                                                <span class="manage-o__text-2 u-c-silver">Quantity:
+                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span>
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <span class="manage-o__text-2 u-c-silver">Total:
+                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="'$' + ${item.sanPhamChiTiet.giaBan * item.soLuong}">$16.00</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
