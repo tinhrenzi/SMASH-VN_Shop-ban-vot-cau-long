@@ -35,8 +35,22 @@ public class UserDashboardController {
         return dashboardService.layThongTinKhachHang(idTaiKhoan);
     }
 
+    private String checkRoleAndRedirect(HttpSession session) {
+        String vaiTro = (String) session.getAttribute("vaiTro");
+        if ("QL".equals(vaiTro)) {
+            return "redirect:/admin/all";
+        }
+        if ("NV".equals(vaiTro)) {
+            return "redirect:/admin/don-hang";
+        }
+        return null;
+    }
+
     @GetMapping("/dashboard")
     public String hienThiDashboard(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -55,6 +69,9 @@ public class UserDashboardController {
 
     @GetMapping("/profile")
     public String hienThiHoSo(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -73,6 +90,9 @@ public class UserDashboardController {
 
     @GetMapping("/profile/edit")
     public String hienThiSuaHoSo(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -87,6 +107,9 @@ public class UserDashboardController {
             @RequestParam("ho") String ho,
             @RequestParam("ten") String ten,
             @RequestParam("sdt") String sdt) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
         dashboardService.capNhatHoSo(idTaiKhoan, ho, ten, sdt);
         return "redirect:/user/profile?capNhatThanhCong";
@@ -94,6 +117,9 @@ public class UserDashboardController {
 
     @GetMapping("/my-order")
     public String hienThiMyOrders(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -114,6 +140,9 @@ public class UserDashboardController {
 
     @GetMapping("/cancellation")
     public String hienThiCancellation(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -132,6 +161,9 @@ public class UserDashboardController {
 
     @GetMapping("/payment-option")
     public String hienThiPaymentOption(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -150,6 +182,9 @@ public class UserDashboardController {
 
     @GetMapping("/track-order")
     public String hienThiTrackOrder(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";
@@ -170,6 +205,9 @@ public class UserDashboardController {
     public String hienThiManageOrder(@PathVariable(value = "id", required = false) Integer pathId,
             @RequestParam(value = "id", required = false) Integer paramId,
             HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             return "redirect:/user/dang-nhap";

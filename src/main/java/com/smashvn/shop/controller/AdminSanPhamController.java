@@ -70,6 +70,8 @@ public class AdminSanPhamController {
             // Khi lỗi, giữ lại thông tin nhập, ném lỗi ra màn hình
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("tenSanPham", tenSanPham);
+            model.addAttribute("idDanhMuc", idDanhMuc);
+            model.addAttribute("idThuongHieu", idThuongHieu);
             model.addAttribute("moTa", moTa);
             model.addAttribute("giaBan", giaBan);
             model.addAttribute("soLuongTon", soLuongTon);

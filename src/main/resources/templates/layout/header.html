@@ -44,7 +44,15 @@
 									    <ul style="width:120px">
 									        
 									        <th:block th:if="${session.idNguoiDung != null}">
-									            <li>
+									            <li th:if="${session.vaiTro == 'QL'}">
+									                <a th:href="@{/admin/all}"><i class="fas fa-user-shield u-s-m-r-6"></i>
+									                    <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản lý'}">Quản lý</span></a>
+									            </li>
+									            <li th:if="${session.vaiTro == 'NV'}">
+									                <a th:href="@{/admin/don-hang}"><i class="fas fa-user-tie u-s-m-r-6"></i>
+									                    <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Nhân viên'}">Nhân viên</span></a>
+									            </li>
+									            <li th:if="${session.vaiTro != 'QL' and session.vaiTro != 'NV'}">
 									                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
 									                    <span>Tài khoản</span></a>
 									            </li>

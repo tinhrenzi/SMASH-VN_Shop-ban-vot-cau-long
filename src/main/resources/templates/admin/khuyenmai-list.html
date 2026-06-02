@@ -164,7 +164,7 @@
                                     <td>
                                         <span class="badge bg-warning text-dark font-monospace fs-6" th:text="${pgg.maPhieu}">SUMMER26</span>
                                     </td>
-                                    <td class="text-danger fw-bold" th:text="${pgg.donVi == 'VNĐ' ? #numbers.formatDecimal(pgg.giaTri, 0, 'COMMA', 0, 'POINT') + ' đ' : pgg.giaTri}">100,000 đ</td>
+                                    <td class="text-danger fw-bold" th:text="${(pgg.donVi == 'VNĐ' or pgg.donVi == 'VND') ? #numbers.formatDecimal(pgg.giaTri, 0, 'COMMA', 0, 'POINT') + ' đ' : pgg.giaTri}">100,000 đ</td>
                                     <td th:text="${pgg.donVi}">VNĐ</td>
                                     <td>
                                         <span class="badge bg-info text-dark" th:text="${pgg.soLuongConLai} + ' lượt'">50</span>

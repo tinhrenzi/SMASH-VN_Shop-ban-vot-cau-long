@@ -25,7 +25,10 @@ public class UserDangNhapController {
 
     // Hiển thị form đăng nhập
     @GetMapping("/dang-nhap")
-    public String hienThiFormDangNhap() {
+    public String hienThiFormDangNhap(@RequestParam(value = "loi", required = false) String loi, Model model) {
+        if (loi != null) {
+            model.addAttribute("loi", loi);
+        }
         return "signin"; 
     }
 

@@ -34,7 +34,7 @@ public class AdminNhanVienService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getAllNhanVien();
         }
-        return nhanVienRepository.searchNhanVien(keyword.trim());
+        return nhanVienRepository.searchNhanVien("%" + keyword.trim() + "%");
     }
 
     public NhanVien findById(Integer id) {

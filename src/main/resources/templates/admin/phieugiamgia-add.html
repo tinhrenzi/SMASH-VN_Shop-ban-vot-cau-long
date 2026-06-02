@@ -70,7 +70,7 @@
                                     <div class="col-md-4">
                                         <label for="donVi" class="form-label fw-bold">Đơn Vị <span class="text-danger">*</span></label>
                                         <select id="donVi" name="donVi" class="form-select" required>
-                                            <option value="VNĐ" th:selected="${donVi == 'VNĐ'}">VNĐ (Số tiền cố định)</option>
+                                            <option value="VND" th:selected="${donVi == 'VNĐ' or donVi == 'VND'}">VNĐ (Số tiền cố định)</option>
                                             <option value="%" th:selected="${donVi == '%'}">% (Tỷ lệ phần trăm)</option>
                                         </select>
                                     </div>

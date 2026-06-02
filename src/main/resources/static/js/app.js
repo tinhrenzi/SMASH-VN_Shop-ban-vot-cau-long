@@ -561,8 +561,10 @@
   # CUSTOM JS: Xử lý Logic Chọn Phân Loại (Không dùng ID)
   ==============================================================*/
 function selectColor(element) {
+    if (!element) return;
     // 1. Tìm khu vực bao quanh nó (để tách biệt giữa Modal và Trang chủ)
     let container = element.closest('.pd-detail'); 
+    if (!container) return;
     
     container.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
@@ -573,7 +575,10 @@ function selectColor(element) {
 }
 
 function selectSize(element) {
+    if (!element) return;
     let container = element.closest('.pd-detail');
+    if (!container) return;
+    
     container.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
     
@@ -582,6 +587,7 @@ function selectSize(element) {
 }
 
 function checkAndApplyVariant(container) {
+    if (!container) return;
     // 1. Lấy các phần tử DOM thông qua class
     const btnAdd = container.querySelector('.js-btn-add-cart');
     const stockStatus = container.querySelector('.js-stock-status');
@@ -603,13 +609,21 @@ function checkAndApplyVariant(container) {
         return;
     }
 
-    // Tìm biến thể khớp với Màu và Size đã chọn
-    const matchedVariant = danhSachBienThe.find(v => v.mauSac === selectedColor && v.trongLuong === selectedSize);
+    if (typeof danhSachBienThe === 'undefined' || !danhSachBienThe) {
+        console.error("danhSachBienThe is not defined!");
+        return;
+    }
+
+    // Tìm biến thể khớp với Màu và Size đã chọn (Bọc trim() và toLowerCase() phòng trường hợp khoảng trắng thừa trong DB)
+    const matchedVariant = danhSachBienThe.find(v => 
+        v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
+        v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()
+    );
 
     if (matchedVariant) {
         // --- CẬP NHẬT THÔNG TIN CƠ BẢN ---
-        inputId.value = matchedVariant.id;
-        btnAdd.disabled = false;
+        if (inputId) inputId.value = matchedVariant.id;
+        if (btnAdd) btnAdd.disabled = false;
         
         if(stockStatus) {
             stockStatus.style.display = 'block';
@@ -656,8 +670,8 @@ function checkAndApplyVariant(container) {
 
     } else {
         // Trường hợp hết hàng / Không có biến thể này
-        inputId.value = "";
-        btnAdd.disabled = true;
+        if (inputId) inputId.value = "";
+        if (btnAdd) btnAdd.disabled = true;
         if(stockStatus) {
             stockStatus.style.display = 'block';
             stockStatus.innerHTML = '<i class="fas fa-times-circle"></i> Hiện đã hết hàng.';
@@ -788,7 +802,7 @@ function checkAndApplyVariant(container) {
               submitBtn.prop('disabled', false).html(originalBtnText);
 
               if (response.trangThai === 'chuadangnhap') {
-                  window.location.href = '/user/dang-nhap';
+                  window.location.href = '/user/dang-nhap?loi=' + encodeURIComponent('Bạn chưa đăng nhập. Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
                   return;
               }
 
@@ -905,7 +919,7 @@ function checkAndApplyVariant(container) {
           },
           success: function(response) {
               if (response.trangThai === 'chuadangnhap') {
-                  window.location.href = '/user/dang-nhap';
+                  window.location.href = '/user/dang-nhap?loi=' + encodeURIComponent('Bạn chưa đăng nhập. Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
                   return;
               }
 

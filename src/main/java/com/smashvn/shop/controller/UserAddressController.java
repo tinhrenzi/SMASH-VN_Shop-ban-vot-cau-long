@@ -31,9 +31,23 @@ public class UserAddressController {
         return (idTaiKhoan != null) ? dashboardService.layThongTinKhachHang(idTaiKhoan) : null;
     }
 
+    private String checkRoleAndRedirect(HttpSession session) {
+        String vaiTro = (String) session.getAttribute("vaiTro");
+        if ("QL".equals(vaiTro)) {
+            return "redirect:/admin/all";
+        }
+        if ("NV".equals(vaiTro)) {
+            return "redirect:/admin/don-hang";
+        }
+        return null;
+    }
+
     // 1. Trang danh sách
     @GetMapping
     public String hienThiSoDiaChi(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
         
@@ -45,6 +59,9 @@ public class UserAddressController {
     // 2. Form thêm mới
     @GetMapping("/add")
     public String hienThiThemDiaChi(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
         
@@ -63,6 +80,9 @@ public class UserAddressController {
                                  @RequestParam("quocGia") String quocGia,
                                  @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
                                  
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
 
@@ -79,6 +99,9 @@ public class UserAddressController {
     // 4. Form cập nhật
     @GetMapping("/edit/{id}")
     public String hienThiSuaDiaChi(@PathVariable("id") Integer idDiaChi, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
         
@@ -104,6 +127,9 @@ public class UserAddressController {
                                 @RequestParam("quocGia") String quocGia,
                                 @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
                                  
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
 
@@ -119,6 +145,9 @@ public class UserAddressController {
     // 6. Xử lý Đặt làm mặc định
     @GetMapping("/set-default/{id}")
     public String thietLapDiaChiMacDinh(@PathVariable("id") Integer idDiaChi, HttpSession session, RedirectAttributes redirectAttributes) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) return "redirect:/user/dang-nhap";
 

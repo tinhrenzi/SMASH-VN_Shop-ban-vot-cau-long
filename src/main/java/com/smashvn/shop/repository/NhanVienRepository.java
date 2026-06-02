@@ -9,7 +9,7 @@ import com.smashvn.shop.entity.NhanVien;
 
 public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
 
-    @Query("SELECT nv FROM NhanVien nv WHERE nv.hoTenNv LIKE %:keyword% OR nv.taiKhoan.email LIKE %:keyword%")
+    @Query("SELECT nv FROM NhanVien nv WHERE nv.hoTenNv LIKE :keyword OR nv.taiKhoan.email LIKE :keyword")
     List<NhanVien> searchNhanVien(@Param("keyword") String keyword);
 
     NhanVien findByTaiKhoanId(Integer idTaiKhoan);

@@ -73,7 +73,7 @@ public class GioHangController {
     @GetMapping
     public String hienThiGioHang(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) return "redirect:/user/dang-nhap";
+        if (idNguoiDung == null) return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Bạn chưa đăng nhập. Vui lòng đăng nhập để xem giỏ hàng!", java.nio.charset.StandardCharsets.UTF_8);
 
         List<GioHangChiTiet> danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
         

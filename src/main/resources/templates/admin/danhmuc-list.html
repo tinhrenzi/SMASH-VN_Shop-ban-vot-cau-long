@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Danh Mục & Thương Hiệu - Admin SmashVN</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('danhmuc')}"></div>
+
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+
+            <!-- Toast / Alerts -->
+            <div th:if="${param.themDanhMucThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Thêm danh mục mới thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.themThuongHieuThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Thêm hãng vợt mới thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.xoaDanhMucThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Xóa danh mục thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.xoaThuongHieuThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Xóa hãng vợt thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${param.loi}">Lỗi hệ thống</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Page Title Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title"><i class="fas fa-folder-open text-brand me-2"></i>Quản Lý Danh Mục & Hãng Vợt</h2>
+            </div>
+
+            <div class="row g-4">
+                
+                <!-- COLUMN 1: DANH MỤC SẢN PHẨM -->
+                <div class="col-lg-6">
+                    <!-- Form thêm nhanh danh mục -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white py-3">
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Danh Mục Mới</h5>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/danh-muc/them}" method="POST">
+                                <div th:if="${loiDanhMuc != null}" class="text-danger mb-2 fw-semibold" th:text="${loiDanhMuc}"></div>
+                                <div class="input-group">
+                                    <input type="text" name="tenDanhMuc" class="form-control" placeholder="VD: Vợt Cầu Lông, Phụ Kiện..." required>
+                                    <button class="btn btn-brand text-white px-4" type="submit"><i class="fas fa-plus me-1"></i>Thêm Mới</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Bảng danh sách danh mục -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-list me-2 text-brand"></i>Danh Sách Danh Mục</h5>
+                            <span class="badge bg-primary" th:text="${listDanhMuc.size()} + ' danh mục'"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive border-0 shadow-none">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;">ID</th>
+                                            <th>Tên Danh Mục</th>
+                                            <th class="text-center" style="width: 100px;">Hành Động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="dm : ${listDanhMuc}">
+                                            <td class="fw-bold text-dark" th:text="'#' + ${dm.id}">#1</td>
+                                            <td class="fw-semibold text-secondary" th:text="${dm.tenDanhMuc}">Vợt Cầu Lông</td>
+                                            <td class="text-center">
+                                                <a th:href="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
+                                                    <i class="fas fa-trash-alt"></i> Xóa
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${listDanhMuc.isEmpty()}">
+                                            <td colspan="3" class="text-center text-muted py-4">Chưa có danh mục nào.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMN 2: HÃNG VỢT / THƯƠNG HIỆU -->
+                <div class="col-lg-6">
+                    <!-- Form thêm nhanh hãng vợt -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white py-3">
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Hãng Vợt (Thương Hiệu) Mới</h5>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/danh-muc/thuong-hieu/them}" method="POST">
+                                <div th:if="${loiThuongHieu != null}" class="text-danger mb-2 fw-semibold" th:text="${loiThuongHieu}"></div>
+                                <div class="input-group">
+                                    <input type="text" name="tenThuongHieu" class="form-control" placeholder="VD: Yonex, Li-Ning, Victor..." required>
+                                    <button class="btn btn-brand text-white px-4" type="submit"><i class="fas fa-plus me-1"></i>Thêm Mới</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Bảng danh sách hãng vợt -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-copyright me-2 text-brand"></i>Danh Sách Thương Hiệu</h5>
+                            <span class="badge bg-primary" th:text="${listThuongHieu.size()} + ' hãng'"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive border-0 shadow-none">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;">ID</th>
+                                            <th>Tên Hãng / Thương Hiệu</th>
+                                            <th class="text-center" style="width: 100px;">Hành Động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="th : ${listThuongHieu}">
+                                            <td class="fw-bold text-dark" th:text="'#' + ${th.id}">#1</td>
+                                            <td class="fw-semibold text-secondary" th:text="${th.tenThuongHieu}">Yonex</td>
+                                            <td class="text-center">
+                                                <a th:href="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
+                                                    <i class="fas fa-trash-alt"></i> Xóa
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${listThuongHieu.isEmpty()}">
+                                            <td colspan="3" class="text-center text-muted py-4">Chưa có thương hiệu nào.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

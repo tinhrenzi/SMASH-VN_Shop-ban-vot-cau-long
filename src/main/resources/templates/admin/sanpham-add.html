@@ -45,14 +45,14 @@
                                 <label class="form-label">Danh Mục *</label>
                                 <select name="idDanhMuc" class="form-select" required>
                                     <option value="">-- Chọn --</option>
-                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}"></option>
+                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${dm.id == idDanhMuc}"></option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Thương Hiệu *</label>
                                 <select name="idThuongHieu" class="form-select" required>
                                     <option value="">-- Chọn --</option>
-                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}"></option>
+                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}" th:selected="${th.id == idThuongHieu}"></option>
                                 </select>
                             </div>
                         </div>
@@ -87,7 +87,7 @@
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Màu Sắc</h6>
                                     <div class="form-check my-2" th:each="mau : ${listMauSac}">
-                                        <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}">
+                                        <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}" th:checked="${selectedMauSacs != null && selectedMauSacs.contains(mau)}">
                                         <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
                                     </div>
                                 </div>
@@ -98,7 +98,7 @@
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Size / Trọng Lượng</h6>
                                     <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
-                                        <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}">
+                                        <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}" th:checked="${selectedTrongLuongs != null && selectedTrongLuongs.contains(trong)}">
                                         <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Sức Căng (Vợt Cầu Lông)</h6>
                                     <div class="form-check my-2" th:each="cang : ${listMucCang}">
-                                        <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}">
+                                        <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}" th:checked="${selectedMucCangs != null && selectedMucCangs.contains(cang)}">
                                         <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${cang}" th:text="${cang}"></label>
                                     </div>
                                 </div>

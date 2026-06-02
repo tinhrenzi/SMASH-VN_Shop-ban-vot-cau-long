@@ -22,6 +22,10 @@
             <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/san-pham}" th:class="${activeTab == 'sanpham' ? 'active' : ''}">
                 <i class="fas fa-box me-2 text-brand"></i> Sản Phẩm
             </a>
+
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/danh-muc}" th:class="${activeTab == 'danhmuc' ? 'active' : ''}">
+                <i class="fas fa-folder-open me-2 text-brand"></i> Danh Mục & Hãng
+            </a>
             
             <a th:href="@{/admin/don-hang}" th:class="${activeTab == 'donhang' ? 'active' : ''}">
                 <i class="fas fa-shopping-cart me-2 text-brand"></i> Đơn Hàng
