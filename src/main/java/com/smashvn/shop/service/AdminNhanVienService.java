@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.smashvn.shop.entity.EditLog;
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.EditLogRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 
@@ -25,6 +27,24 @@ public class AdminNhanVienService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final EditLogRepository editLogRepository;
     private final JavaMailSender mailSender;
+    private final KhachHangRepository khachHangRepository;
+
+    public static String[] splitFullName(String fullName) {
+        if (fullName == null) {
+            return new String[]{"", ""};
+        }
+        String hoTen = fullName.trim();
+        if (hoTen.isEmpty()) {
+            return new String[]{"", ""};
+        }
+        int lastSpaceIndex = hoTen.lastIndexOf(' ');
+        if (lastSpaceIndex == -1) {
+            return new String[]{"", hoTen};
+        }
+        String hoKh = hoTen.substring(0, lastSpaceIndex).trim();
+        String tenKh = hoTen.substring(lastSpaceIndex + 1).trim();
+        return new String[]{hoKh, tenKh};
+    }
 
     public List<NhanVien> getAllNhanVien() {
         return nhanVienRepository.findAll();
@@ -82,6 +102,17 @@ public class AdminNhanVienService {
         nv.setSoDienThoaiNv(soDienThoaiNv);
         nv = nhanVienRepository.save(nv);
 
+        // --- NEW: Tạo KhachHang ---
+        KhachHang kh = new KhachHang();
+        kh.setTaiKhoan(tk);
+        String[] nameParts = splitFullName(hoTenNv);
+        kh.setHoKh(nameParts[0]);
+        kh.setTenKh(nameParts[1]);
+        kh.setSoDienThoaiKh(soDienThoaiNv);
+        kh.setNhanBanTin(false);
+        kh.setLaTaiKhoanNoiBo(true); // Internal account flag
+        kh = khachHangRepository.save(kh);
+
         // 4. Lưu EditLog (Audit Logging)
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
@@ -97,6 +128,21 @@ public class AdminNhanVienService {
             log.setGhiChu("Tạo nhân viên mới: " + email);
             log.setVaiTroThucHien(actingUser.getVaiTro());
             editLogRepository.save(log);
+
+            // Audit log for customer profile creation
+            EditLog khLog = new EditLog();
+            khLog.setTaiKhoan(actingUser);
+            khLog.setTenBang("KhachHang");
+            khLog.setIdBanGhi(kh.getId().longValue());
+            khLog.setHanhDong("INSERT");
+            khLog.setGiaTriCu(null);
+            khLog.setGiaTriMoi(String.format("id=%s, id_tai_khoan=%s, hoKh=%s, tenKh=%s, soDienThoaiKh=%s, laTaiKhoanNoiBo=true", 
+                    kh.getId(), tk.getId(), kh.getHoKh(), kh.getTenKh(), kh.getSoDienThoaiKh()));
+            khLog.setThoiGian(LocalDateTime.now());
+            khLog.setDiaChiIp(ipAddress);
+            khLog.setGhiChu("Tạo hồ sơ khách hàng thử nghiệm cho nhân viên: " + email);
+            khLog.setVaiTroThucHien(actingUser.getVaiTro());
+            editLogRepository.save(khLog);
         }
     }
 
@@ -120,6 +166,16 @@ public class AdminNhanVienService {
         nv.setChucVu(chucVu);
         nv.setSoDienThoaiNv(soDienThoaiNv);
         nhanVienRepository.save(nv);
+
+        // Update the linked KhachHang profile if it exists
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+        if (kh != null) {
+            String[] nameParts = splitFullName(hoTenNv);
+            kh.setHoKh(nameParts[0]);
+            kh.setTenKh(nameParts[1]);
+            kh.setSoDienThoaiKh(soDienThoaiNv);
+            khachHangRepository.save(kh);
+        }
 
         tk.setVaiTro(vaiTro);
         tk.setTrangThai(trangThai);

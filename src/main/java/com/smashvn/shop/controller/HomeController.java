@@ -32,4 +32,18 @@ public class HomeController {
 
         return "index";
     }
+
+    @GetMapping({
+        "/shop-side-version-2.html", 
+        "/index.html", 
+        "/product-detail.html",
+        "/blog-left-sidebar.html",
+        "/blog-right-sidebar.html",
+        "/blog-sidebar-none.html",
+        "/blog-masonry.html",
+        "/blog-detail.html"
+    })
+    public String redirectLegacyTemplates() {
+        return "redirect:/";
+    }
 }
