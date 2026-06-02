@@ -21,13 +21,61 @@
             <!-- Header layout dùng chung -->
             <div th:replace="~{admin/layout/header :: header}"></div>
 
+            <!-- Toast / Alerts -->
+            <div th:if="${param.themChienDichThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Đã tạo mới đợt giảm giá thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.suaChienDichThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Cập nhật đợt giảm giá thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.deactivateChienDichThanhCong != null}" class="alert alert-warning alert-dismissible fade show border-start border-warning border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>Đã dừng đợt giảm giá!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.xoaChienDichThanhCong != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-trash-alt me-2"></i>Đã xóa đợt giảm giá khỏi hệ thống!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${param.themPhieuThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Đã tạo mới phiếu giảm giá thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.suaPhieuThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Cập nhật phiếu giảm giá thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.deactivatePhieuThanhCong != null}" class="alert alert-warning alert-dismissible fade show border-start border-warning border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>Đã dừng phát hành phiếu giảm giá!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.xoaPhieuThanhCong != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-trash-alt me-2"></i>Đã xóa phiếu giảm giá khỏi hệ thống!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${param.loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-times-circle me-2"></i><span th:text="${param.loi}">Lỗi thao tác</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="page-title"><i class="fas fa-percent text-brand me-2"></i>Quản Lý Khuyến Mãi & Voucher</h2>
+                <div>
+                    <a th:href="@{/admin/khuyen-mai/dot-giam-gia/them}" class="btn btn-dark shadow-sm px-4">
+                        <i class="fas fa-plus-circle me-2"></i>Tạo Đợt Giảm Giá
+                    </a>
+                    <a th:href="@{/admin/khuyen-mai/phieu-giam-gia/them}" class="btn btn-brand text-white shadow-sm px-4 ms-2">
+                        <i class="fas fa-ticket-alt me-2"></i>Tạo Phiếu Giảm Giá
+                    </a>
+                </div>
             </div>
 
             <!-- Discounts (Campaigns) Section -->
             <div class="card border-0 shadow-sm mb-5">
-                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
                     <span><i class="fas fa-bullhorn me-2 text-brand"></i>Chiến Dịch Đợt Giảm Giá</span>
                     <span class="badge bg-primary" th:text="${danhSachDotGiamGia.size()} + ' đợt'"></span>
                 </div>
@@ -38,26 +86,48 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Tên Chiến Dịch</th>
-                                    <th>% Giảm Giá</th>
+                                    <th>% Giảm</th>
                                     <th>Thời Gian Hoạt Động</th>
                                     <th>Loại Giảm</th>
+                                    <th>Trạng Thái</th>
                                     <th>Nhân Viên Tạo</th>
+                                    <th class="text-center">Hành Động</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="dgg : ${danhSachDotGiamGia}">
                                     <td class="fw-bold text-dark" th:text="'#' + ${dgg.id}">#1</td>
-                                    <td class="fw-bold text-primary" th:text="${dgg.tenChienDich}">Mừng hè rực rỡ</td>
+                                    <td>
+                                        <div class="fw-bold text-primary" th:text="${dgg.tenChienDich}">Mừng hè rực rỡ</div>
+                                        <small class="text-muted" th:text="'Áp dụng cho ' + ${dgg.sanPhams.size()} + ' sản phẩm'"></small>
+                                    </td>
                                     <td class="text-danger fw-bold fs-6" th:text="${dgg.phanTramGiam} + '%'">15%</td>
                                     <td>
                                         <small class="fw-semibold" th:text="'Bắt đầu: ' + ${#temporals.format(dgg.ngayBatDau, 'dd/MM/yyyy HH:mm')}"></small><br>
                                         <small class="text-danger fw-semibold" th:text="'Kết thúc: ' + ${#temporals.format(dgg.ngayKetThuc, 'dd/MM/yyyy HH:mm')}"></small>
                                     </td>
                                     <td th:text="${dgg.loaiGiamGia}">Theo Phần Trăm</td>
-                                    <td th:text="${dgg.nhanVien != null ? (dgg.nhanVien.hoNv + ' ' + dgg.nhanVien.tenNv) : 'Hệ Thống'}">Staff</td>
+                                    <td>
+                                        <span th:if="${dgg.getDynamicStatus() == 'UPCOMING'}" class="badge bg-primary text-white px-2.5 py-1.5">Sắp diễn ra</span>
+                                        <span th:if="${dgg.getDynamicStatus() == 'ACTIVE'}" class="badge bg-success text-white px-2.5 py-1.5">Đang hoạt động</span>
+                                        <span th:if="${dgg.getDynamicStatus() == 'EXPIRED'}" class="badge bg-secondary text-white px-2.5 py-1.5">Đã kết thúc</span>
+                                        <span th:if="${dgg.getDynamicStatus() == 'INACTIVE'}" class="badge bg-danger text-white px-2.5 py-1.5">Đã tạm dừng</span>
+                                    </td>
+                                    <td th:text="${dgg.nhanVien != null ? dgg.nhanVien.hoTenNv : 'Hệ Thống'}">Staff</td>
+                                    <td class="text-center">
+                                        <a th:href="@{/admin/khuyen-mai/dot-giam-gia/sua/{id}(id=${dgg.id})}" class="btn btn-sm btn-outline-primary px-2" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a th:if="${dgg.active}" th:href="@{/admin/khuyen-mai/dot-giam-gia/deactivate/{id}(id=${dgg.id})}" class="btn btn-sm btn-outline-warning px-2 ms-1" onclick="return confirm('Bạn có chắc chắn muốn TẠM DỪNG chiến dịch này?');" title="Tạm dừng">
+                                            <i class="fas fa-ban"></i>
+                                        </a>
+                                        <a th:if="${dgg.active}" th:href="@{/admin/khuyen-mai/dot-giam-gia/delete/{id}(id=${dgg.id})}" class="btn btn-sm btn-outline-danger px-2 ms-1" onclick="return confirm('Bạn có chắc chắn muốn XÓA chiến dịch này?');" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                                 <tr th:if="${danhSachDotGiamGia.isEmpty()}">
-                                    <td colspan="6" class="text-center text-muted py-4">Chưa có chiến dịch đợt giảm giá nào.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Chưa có chiến dịch đợt giảm giá nào.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -66,8 +136,8 @@
             </div>
 
             <!-- Vouchers (Coupons) Section -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
                     <span><i class="fas fa-ticket-alt me-2 text-brand"></i>Danh Sách Phiếu Giảm Giá (Voucher)</span>
                     <span class="badge bg-primary" th:text="${danhSachPhieuGiamGia.size()} + ' phiếu'"></span>
                 </div>
@@ -81,8 +151,11 @@
                                     <th>Giá Trị</th>
                                     <th>Đơn Vị</th>
                                     <th>Còn Lại</th>
-                                    <th>Hạn Sử Dụng</th>
+                                    <th>Hạn Mức Tối Thiểu</th>
+                                    <th>Thời Gian Sử Dụng</th>
                                     <th>Loại Giảm</th>
+                                    <th>Trạng Trạng Thái</th>
+                                    <th class="text-center">Hành Động</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -96,14 +169,32 @@
                                     <td>
                                         <span class="badge bg-info text-dark" th:text="${pgg.soLuongConLai} + ' lượt'">50</span>
                                     </td>
+                                    <td class="fw-semibold text-secondary" th:text="${#numbers.formatDecimal(pgg.getGiaTriDonHangToiThieu(), 0, 'COMMA', 0, 'POINT')} + ' đ'">300,000 đ</td>
                                     <td>
-                                        <small class="fw-semibold" th:text="'Từ: ' + ${#temporals.format(pgg.ngayBatDau, 'dd/MM/yyyy')}"></small><br>
-                                        <small class="text-danger fw-semibold" th:text="'Đến: ' + ${#temporals.format(pgg.ngayKetThuc, 'dd/MM/yyyy')}"></small>
+                                        <small class="fw-semibold" th:text="'Từ: ' + ${#temporals.format(pgg.ngayBatDau, 'dd/MM/yyyy HH:mm')}"></small><br>
+                                        <small class="text-danger fw-semibold" th:text="'Đến: ' + ${#temporals.format(pgg.ngayKetThuc, 'dd/MM/yyyy HH:mm')}"></small>
                                     </td>
                                     <td th:text="${pgg.loaiGiamGia}">Giảm trực tiếp</td>
+                                    <td>
+                                        <span th:if="${pgg.getDynamicStatus() == 'UPCOMING'}" class="badge bg-primary text-white px-2.5 py-1.5">Sắp diễn ra</span>
+                                        <span th:if="${pgg.getDynamicStatus() == 'ACTIVE'}" class="badge bg-success text-white px-2.5 py-1.5">Đang hoạt động</span>
+                                        <span th:if="${pgg.getDynamicStatus() == 'EXPIRED'}" class="badge bg-secondary text-white px-2.5 py-1.5">Đã hết hạn</span>
+                                        <span th:if="${pgg.getDynamicStatus() == 'INACTIVE'}" class="badge bg-danger text-white px-2.5 py-1.5">Đã dừng phát hành</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a th:href="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${pgg.id})}" class="btn btn-sm btn-outline-primary px-2" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a th:if="${pgg.active}" th:href="@{/admin/khuyen-mai/phieu-giam-gia/deactivate/{id}(id=${pgg.id})}" class="btn btn-sm btn-outline-warning px-2 ms-1" onclick="return confirm('Bạn có chắc chắn muốn TẠM DỪNG phát hành phiếu này?');" title="Tạm dừng">
+                                            <i class="fas fa-ban"></i>
+                                        </a>
+                                        <a th:if="${pgg.active}" th:href="@{/admin/khuyen-mai/phieu-giam-gia/delete/{id}(id=${pgg.id})}" class="btn btn-sm btn-outline-danger px-2 ms-1" onclick="return confirm('Bạn có chắc chắn muốn XÓA phiếu này?');" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                                 <tr th:if="${danhSachPhieuGiamGia.isEmpty()}">
-                                    <td colspan="7" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
+                                    <td colspan="10" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
                                 </tr>
                             </tbody>
                         </table>

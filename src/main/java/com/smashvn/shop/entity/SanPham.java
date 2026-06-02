@@ -37,12 +37,9 @@ public class SanPham {
     @Column(name = "mo_ta", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String moTa;
 
-    @ManyToMany
-    @JoinTable(
-        name = "SanPham_DotGiamGia",
-        joinColumns = @JoinColumn(name = "id_san_pham"),
-        inverseJoinColumns = @JoinColumn(name = "id_dot_giam_gia")
-    )
+    @ManyToMany(mappedBy = "sanPhams")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<DotGiamGia> cacDotGiamGia;
     
     @OneToMany(mappedBy = "sanPham", fetch = FetchType.LAZY)

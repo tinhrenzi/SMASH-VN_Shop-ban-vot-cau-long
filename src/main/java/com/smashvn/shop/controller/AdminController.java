@@ -1,19 +1,19 @@
 package com.smashvn.shop.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.repository.SanPhamRepository;
-import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
-import com.smashvn.shop.dao.DotGiamGiaDAO;
-import com.smashvn.shop.dao.PhieuGiamGiaDAO;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.AdminKhuyenMaiService;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/admin")
@@ -25,8 +25,7 @@ public class AdminController {
     private final HoaDonRepository hoaDonRepository;
     private final KhachHangRepository khachHangRepository;
     private final NhanVienRepository nhanVienRepository;
-    private final DotGiamGiaDAO dotGiamGiaDAO;
-    private final PhieuGiamGiaDAO phieuGiamGiaDAO;
+    private final AdminKhuyenMaiService adminKhuyenMaiService;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
@@ -42,7 +41,7 @@ public class AdminController {
 
         model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
         model.addAttribute("danhSachChoKhoa", nhanVienRepository.findPendingLockEmployees());
-        return "admin/admin-dashboard"; 
+        return "admin/admin-dashboard";
     }
 
     @GetMapping("/don-hang")
@@ -59,8 +58,8 @@ public class AdminController {
 
     @GetMapping("/khuyen-mai")
     public String hienThiDanhSachKhuyenMai(Model model) {
-        model.addAttribute("danhSachDotGiamGia", dotGiamGiaDAO.findAll());
-        model.addAttribute("danhSachPhieuGiamGia", phieuGiamGiaDAO.findAll());
+        model.addAttribute("danhSachDotGiamGia", adminKhuyenMaiService.getAllDotGiamGia());
+        model.addAttribute("danhSachPhieuGiamGia", adminKhuyenMaiService.getAllPhieuGiamGia());
         return "admin/khuyenmai-list";
     }
 }
