@@ -1,16 +1,26 @@
 package com.smashvn.shop.service;
 
-import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
+import com.smashvn.shop.entity.GioHang;
+import com.smashvn.shop.entity.GioHangChiTiet;
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.TrangThaiGioHang;
+import com.smashvn.shop.repository.GioHangChiTietRepository;
+import com.smashvn.shop.repository.GioHangRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.TrangThaiGioHangRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +51,8 @@ public class GioHangService {
 
         // --- BÀI TOÁN VALIDATE TỒN KHO THỰC TẾ ---
         // 1. Xem trong giỏ của khách đã có bao nhiêu chiếc này rồi?
-        int soLuongHienCo = (chiTiet != null) ? chiTiet.getSoLuong() : 0;
-        
+        int soLuongHienCo = (chiTiet != null && chiTiet.getSoLuong() != null) ? chiTiet.getSoLuong() : 0;
+
         // 2. Tính tổng số lượng khách sẽ có nếu thêm thành công
         int tongYeuCau = soLuongHienCo + soLuong;
 
@@ -63,9 +73,9 @@ public class GioHangService {
             chiTiet.setGioHang(gioHang);
             chiTiet.setSanPhamChiTiet(spct);
             chiTiet.setSoLuong(soLuong);
-            
+
             TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
-                .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1"));
+                    .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1"));
             chiTiet.setTrangThai(trangThai);
         }
 
@@ -78,22 +88,26 @@ public class GioHangService {
         result.put("giaBan", spct.getGiaBan());
         result.put("hinhAnh", spct.getHinhAnhSanPham());
         result.put("soLuongThem", soLuong);
-        
+
         return result;
     }
 
     public List<GioHangChiTiet> layDanhSachSanPhamTrongGio(Integer idTaiKhoan) {
         KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (khachHang == null) return new ArrayList<>();
+        if (khachHang == null) {
+            return new ArrayList<>();
+        }
         GioHang gioHang = gioHangRepository.findByKhachHang_Id(khachHang.getId());
-        if (gioHang == null) return new ArrayList<>();
+        if (gioHang == null) {
+            return new ArrayList<>();
+        }
         return gioHangChiTietRepository.findByGioHang_Id(gioHang.getId());
     }
 
     // SỬA ĐỔI 2: Gom toàn bộ logic tính tiền, gom JSON của Mini Cart vào Service
     public Map<String, Object> layDuLieuMiniCart(Integer idTaiKhoan) {
         List<GioHangChiTiet> danhSach = layDanhSachSanPhamTrongGio(idTaiKhoan);
-        
+
         BigDecimal tongTien = BigDecimal.ZERO;
         int tongSoLuong = 0;
         List<Map<String, Object>> danhSachMini = new ArrayList<>();

@@ -6,10 +6,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.dao.PhieuGiamGiaDAO;
 
@@ -22,13 +24,24 @@ public class AdminController {
     private final SanPhamRepository sanPhamRepository;
     private final HoaDonRepository hoaDonRepository;
     private final KhachHangRepository khachHangRepository;
+    private final NhanVienRepository nhanVienRepository;
     private final DotGiamGiaDAO dotGiamGiaDAO;
     private final PhieuGiamGiaDAO phieuGiamGiaDAO;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
-        model.addAttribute("danhSachTaiKhoan", taiKhoanRepository.findAll());
+        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByVaiTroIn(java.util.List.of("NV", "QL"));
+        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByVaiTro("KH");
+        long employeeCount = nhanVienRepository.count();
+
+        model.addAttribute("danhSachTaiKhoanNhanVien", nvAccounts);
+        model.addAttribute("danhSachTaiKhoanKhachHang", khAccounts);
+        model.addAttribute("soLuongNhanVien", employeeCount);
+        model.addAttribute("soLuongTaiKhoanNhanVien", nvAccounts.size());
+        model.addAttribute("soLuongTaiKhoanKhachHang", khAccounts.size());
+
         model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
+        model.addAttribute("danhSachChoKhoa", nhanVienRepository.findPendingLockEmployees());
         return "admin/admin-dashboard"; 
     }
 

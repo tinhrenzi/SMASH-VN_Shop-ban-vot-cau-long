@@ -16,15 +16,36 @@ public class UserDangNhapService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final KhachHangRepository khachHangRepository;
     
+    @org.springframework.transaction.annotation.Transactional
     public TaiKhoan kiemTraDangNhap(String email, String matKhau) {
         TaiKhoan taiKhoan = taiKhoanRepository.findByEmail(email);
         
-        // SO KHỚP MẬT KHẨU ĐÃ MÃ HÓA
-        if (taiKhoan != null && BCrypt.checkpw(matKhau, taiKhoan.getMatKhau())) {
-            if (!"hoat_dong".equals(taiKhoan.getTrangThai())) {
-                throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+        if (taiKhoan != null) {
+            String dbPass = taiKhoan.getMatKhau();
+            boolean matches = false;
+            boolean isPlaintext = dbPass == null || (!dbPass.startsWith("$2a$") && !dbPass.startsWith("$2b$") && !dbPass.startsWith("$2y$"));
+
+            if (isPlaintext) {
+                matches = matKhau.equals(dbPass);
+                if (matches) {
+                    // Tự động mã hóa lại mật khẩu bằng BCrypt và lưu lại vào DB
+                    taiKhoan.setMatKhau(BCrypt.hashpw(matKhau, BCrypt.gensalt()));
+                    taiKhoanRepository.save(taiKhoan);
+                }
+            } else {
+                try {
+                    matches = BCrypt.checkpw(matKhau, dbPass);
+                } catch (IllegalArgumentException e) {
+                    matches = false;
+                }
             }
-            return taiKhoan;
+
+            if (matches) {
+                if (!"hoat_dong".equals(taiKhoan.getTrangThai()) && !"cho_khoa".equals(taiKhoan.getTrangThai())) {
+                    throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+                }
+                return taiKhoan;
+            }
         }
         throw new RuntimeException("Email hoặc mật khẩu không chính xác!");
     }

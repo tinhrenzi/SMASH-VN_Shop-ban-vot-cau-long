@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.UserDangNhapService;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.entity.NhanVien;
 
 @Controller
 @RequestMapping("/user")
@@ -19,6 +21,7 @@ import com.smashvn.shop.service.UserDangNhapService;
 public class UserDangNhapController {
 
     private final UserDangNhapService userDangNhapService;
+    private final NhanVienRepository nhanVienRepository;
 
     // Hiển thị form đăng nhập
     @GetMapping("/dang-nhap")
@@ -40,8 +43,23 @@ public class UserDangNhapController {
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
             session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
 
-            // Đăng nhập thành công, chuyển hướng về Trang chủ
-            return "redirect:/"; 
+            if ("QL".equals(tkDangNhap.getVaiTro()) || "NV".equals(tkDangNhap.getVaiTro())) {
+                NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkDangNhap.getId());
+                if (nv != null) {
+                    session.setAttribute("tenHienThi", nv.getHoTenNv());
+                } else {
+                    session.setAttribute("tenHienThi", "Nhân viên hệ thống");
+                }
+            }
+
+            // Đăng nhập thành công, chuyển hướng theo vai trò
+            if ("QL".equals(tkDangNhap.getVaiTro())) {
+                return "redirect:/admin/all";
+            } else if ("NV".equals(tkDangNhap.getVaiTro())) {
+                return "redirect:/admin/don-hang";
+            } else {
+                return "redirect:/";
+            }
             
         } catch (RuntimeException e) {
             // Đăng nhập thất bại, báo lỗi ra màn hình
@@ -71,7 +89,14 @@ public class UserDangNhapController {
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", tk.getVaiTro());
             
-            return "redirect:/"; // Về trang chủ
+            // Đăng nhập thành công, chuyển hướng theo vai trò
+            if ("QL".equals(tk.getVaiTro())) {
+                return "redirect:/admin/all";
+            } else if ("NV".equals(tk.getVaiTro())) {
+                return "redirect:/admin/don-hang";
+            } else {
+                return "redirect:/";
+            }
         } catch (RuntimeException e) {
             return "redirect:/user/dang-nhap?loi=" + e.getMessage();
         }

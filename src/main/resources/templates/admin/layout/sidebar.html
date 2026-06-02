@@ -15,11 +15,11 @@
         </div>
         
         <div class="sidebar-links d-flex flex-column gap-2">
-            <a th:href="@{/admin/all}" th:class="${activeTab == 'tongquan' ? 'active' : ''}">
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/all}" th:class="${activeTab == 'tongquan' ? 'active' : ''}">
                 <i class="fas fa-tachometer-alt me-2 text-brand"></i> Tổng Quan
             </a>
             
-            <a th:href="@{/admin/san-pham}" th:class="${activeTab == 'sanpham' ? 'active' : ''}">
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/san-pham}" th:class="${activeTab == 'sanpham' ? 'active' : ''}">
                 <i class="fas fa-box me-2 text-brand"></i> Sản Phẩm
             </a>
             
@@ -31,8 +31,12 @@
                 <i class="fas fa-users me-2 text-brand"></i> Khách Hàng
             </a>
             
-            <a th:href="@{/admin/khuyen-mai}" th:class="${activeTab == 'khuyenmai' ? 'active' : ''}">
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/khuyen-mai}" th:class="${activeTab == 'khuyenmai' ? 'active' : ''}">
                 <i class="fas fa-percent me-2 text-brand"></i> Khuyến Mãi
+            </a>
+
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/nhan-vien}" th:class="${activeTab == 'nhanvien' ? 'active' : ''}">
+                <i class="fas fa-user-shield me-2 text-brand"></i> Nhân Viên
             </a>
             
             <a th:href="@{/}" class="mt-5 text-warning logout-link">

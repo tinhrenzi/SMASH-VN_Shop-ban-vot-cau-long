@@ -18,7 +18,8 @@
             
             <div class="dropdown">
                 <button class="btn btn-dark px-3 py-2 dropdown-toggle rounded-pill shadow-sm" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #15171c; border: none; font-size: 0.9rem; font-weight: 600;">
-                    <i class="fas fa-user-shield me-2" style="color: #ff4500;"></i>Quản Trị Viên
+                    <i class="fas fa-user-shield me-2" style="color: #ff4500;"></i>
+                    <span th:text="${session.tenHienThi != null ? session.tenHienThi + ' (' + (session.vaiTro == 'QL' ? 'Quản lý' : 'Nhân viên') + ')' : 'Quản Trị Viên'}">Quản Trị Viên</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px;">
                     <li><a class="dropdown-item text-danger py-2" th:href="@{/user/dang-xuat}"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>

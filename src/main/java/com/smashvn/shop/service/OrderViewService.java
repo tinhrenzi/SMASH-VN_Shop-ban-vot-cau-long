@@ -21,7 +21,6 @@ import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
-import com.smashvn.shop.repository.SoDiaChiRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,7 +32,6 @@ public class OrderViewService {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final SanPhamRepository sanPhamRepository;
     private final KhachHangRepository khachHangRepository;
-    private final SoDiaChiRepository soDiaChiRepository;
 
     // Helper to format dates for dash-my-order.html
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss", Locale.US);
