@@ -74,7 +74,7 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary">ĐÃ ĐĂNG KÝ RỒI?</h1>
+                                    <h1 class="section__heading u-c-secondary">BẠN CHƯA CÓ TÀI KHOẢN?</h1>
                                 </div>
                             </div>
                         </div>
@@ -90,7 +90,6 @@
                             <div class="col-lg-6 col-md-8 u-s-m-b-30">
                                 <div class="l-f-o">
                                     <div class="l-f-o__pad-box">
-                                        <h1 class="gl-h1">BẠN LÀ KHÁCH HÀNG MỚI</h1>
 
                                         <span class="gl-text u-s-m-b-30">Bằng cách tạo tài khoản với cửa hàng của chúng tôi, bạn sẽ có thể hoàn tất quá trình thanh toán nhanh hơn, lưu địa chỉ giao hàng, xem và theo dõi đơn hàng trong tài khoản của mình và nhiều hơn nữa.</span>
                                         <div class="u-s-m-b-15">
@@ -119,16 +118,24 @@
 										    <span style="color: #00cc00; font-weight: bold;">Đăng ký thành công! Vui lòng đăng nhập.</span>
 										</div>
 										
+										<div th:if="${param.khoiphucthanhcong != null}" class="u-s-m-b-15">
+										    <span style="color: #00cc00; font-weight: bold;">Khôi phục mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.</span>
+										</div>
+										
+										<div th:if="${thongBaoThanhCong != null}" class="u-s-m-b-15">
+										    <span style="color: #00cc00; font-weight: bold;" th:text="${thongBaoThanhCong}"></span>
+										</div>
+										
 										<form class="l-f-o__form" th:action="@{/user/dang-nhap}" method="post">
 										    
 										    <div class="u-s-m-b-30">
 										        <label class="gl-label" for="login-email">E-MAIL *</label>
-										        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail">
+										        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail" style="border: 2px solid #ccc;">
 										    </div>
 										    
 										    <div class="u-s-m-b-30">
 										        <label class="gl-label" for="login-password">MẬT KHẨU *</label>
-										        <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu">
+										        <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu" style="border: 2px solid #ccc;">
 										    </div>
 										    
 										    <div class="gl-inline">

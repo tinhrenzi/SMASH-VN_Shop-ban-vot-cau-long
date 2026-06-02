@@ -28,6 +28,7 @@
             <div th:if="${param.thanhcong != null}" class="alert alert-success border-0 shadow-sm"><i class="fas fa-check-circle me-2"></i>Thêm sản phẩm thành công! Hãy bấm vào nút "Biến thể" để nhập Giá và Ảnh.</div>
             <div th:if="${param.suaThanhCong != null}" class="alert alert-success border-0 shadow-sm"><i class="fas fa-check-circle me-2"></i>Cập nhật sản phẩm gốc thành công!</div>
             <div th:if="${param.xoaThanhCong != null}" class="alert alert-success border-0 shadow-sm"><i class="fas fa-check-circle me-2"></i>Đã ngừng bán sản phẩm thành công!</div>
+            <div th:if="${param.moBanLaiThanhCong != null}" class="alert alert-success border-0 shadow-sm"><i class="fas fa-check-circle me-2"></i>Đã mở bán lại sản phẩm thành công!</div>
 
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -43,6 +44,7 @@
                                     <th>Tên Sản Phẩm</th>
                                     <th>Danh Mục</th>
                                     <th>Thương Hiệu</th>
+                                    <th>Tổng Số Lượng</th>
                                     <th>Trạng thái</th>
                                     <th class="text-center">Hành Động</th>
                                 </tr>
@@ -53,6 +55,11 @@
                                     <td class="fw-bold text-primary" th:text="${sp.tenSanPham}">Vợt Yonex</td>
                                     <td th:text="${sp.danhMuc.tenDanhMuc}">Vợt</td>
                                     <td th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</td>
+                                    
+                                    <td>
+                                        <span th:text="${sp.getTongSoLuongTon()}" 
+                                              th:class="${sp.getTongSoLuongTon() == 0 ? 'badge bg-danger rounded-pill' : (sp.getTongSoLuongTon() <= 10 ? 'badge bg-warning rounded-pill' : 'badge bg-success rounded-pill')}">0</span>
+                                    </td>
                                     
                                     <td>
                                         <span th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" class="badge bg-success">Đang bán</span>
@@ -74,10 +81,17 @@
                                            onclick="return confirm('Bạn có chắc chắn muốn ngừng bán sản phẩm này?');">
                                             <i class="fas fa-trash-alt"></i> Ngừng bán
                                         </a>
+                                        
+                                        <a th:if="${sp.trangThai == 'ngung_kinh_doanh'}" 
+                                           th:href="@{/admin/san-pham/mo-ban-lai/{id}(id=${sp.id})}" 
+                                           class="btn btn-sm btn-success ms-1" title="Mở bán lại"
+                                           onclick="return confirm('Bạn có chắc chắn muốn mở bán lại sản phẩm này?');">
+                                            <i class="fas fa-play"></i> Mở bán lại
+                                        </a>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachSanPham.isEmpty()}">
-                                    <td colspan="6" class="text-center text-muted py-4">Chưa có sản phẩm nào trong kho.</td>
+                                    <td colspan="7" class="text-center text-muted py-4">Chưa có sản phẩm nào trong kho.</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -44,4 +44,13 @@ public class SanPham {
     
     @OneToMany(mappedBy = "sanPham", fetch = FetchType.LAZY)
     private List<SanPhamChiTiet> sanPhamChiTiets;
+
+    public int getTongSoLuongTon() {
+        if (sanPhamChiTiets == null || sanPhamChiTiets.isEmpty()) {
+            return 0;
+        }
+        return sanPhamChiTiets.stream()
+                .mapToInt(spct -> spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
+                .sum();
+    }
 }

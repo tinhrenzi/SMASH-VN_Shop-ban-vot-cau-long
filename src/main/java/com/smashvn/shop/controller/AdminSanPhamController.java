@@ -52,18 +52,50 @@ public class AdminSanPhamController {
             @RequestParam("idDanhMuc") Integer idDanhMuc,
             @RequestParam("idThuongHieu") Integer idThuongHieu,
             @RequestParam("moTa") String moTa,
-            @RequestParam("giaBan") BigDecimal giaBan,
-            @RequestParam("soLuongTon") Integer soLuongTon,
+            @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
+            @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
             @RequestParam("fileAnh") MultipartFile fileAnh,
             @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
             @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
             @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
+            org.springframework.web.multipart.MultipartHttpServletRequest request,
             Model model) {
         try {
+            java.util.Map<String, MultipartFile> variantImageMap = new java.util.HashMap<>();
+            request.getFileMap().forEach((key, file) -> {
+                if (key.startsWith("variantImages[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    variantImageMap.put(variantKey, file);
+                }
+            });
+
+            java.util.Map<String, java.math.BigDecimal> variantPriceMap = new java.util.HashMap<>();
+            java.util.Map<String, Integer> variantQuantityMap = new java.util.HashMap<>();
+            
+            request.getParameterMap().forEach((key, values) -> {
+                if (key.startsWith("variantPrices[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
+                        variantPriceMap.put(variantKey, new java.math.BigDecimal(values[0].trim()));
+                    }
+                } else if (key.startsWith("variantQuantities[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
+                        variantQuantityMap.put(variantKey, Integer.parseInt(values[0].trim()));
+                    }
+                }
+            });
+
+            BigDecimal defaultGia = (giaBan != null) ? giaBan : new BigDecimal("3500000");
+            Integer defaultKho = (soLuongTon != null) ? soLuongTon : 10;
+
             adminSanPhamService.themSanPhamVaBienThe(
                 tenSanPham, idDanhMuc, idThuongHieu, moTa,
-                giaBan, soLuongTon, fileAnh,
-                mauSacs, trongLuongs, mucCangs
+                defaultGia, defaultKho, fileAnh,
+                mauSacs, trongLuongs, mucCangs,
+                variantImageMap,
+                variantPriceMap,
+                variantQuantityMap
             );
             return "redirect:/admin/san-pham?thanhcong"; 
         } catch (Exception e) {
@@ -120,6 +152,16 @@ public class AdminSanPhamController {
             return "redirect:/admin/san-pham?xoaThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham?loiXoa"; 
+        }
+    }
+
+    @GetMapping("/mo-ban-lai/{id}")
+    public String xuLyMoBanLaiSanPham(@PathVariable("id") Integer id) {
+        try {
+            adminSanPhamService.moBanLaiSanPham(id);
+            return "redirect:/admin/san-pham?moBanLaiThanhCong";
+        } catch (Exception e) {
+            return "redirect:/admin/san-pham?loiMoBanLai"; 
         }
     }
 }

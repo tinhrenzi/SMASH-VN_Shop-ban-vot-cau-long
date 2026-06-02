@@ -91,11 +91,10 @@
 
                                 <!-- Trạng thái tài khoản -->
                                 <div class="col-md-6">
-                                    <label for="trangThai" class="form-label">Trạng Thái Tài Khoản <span class="text-danger">*</span></label>
-                                    <select id="trangThai" name="trangThai" class="form-select" required>
-                                        <option value="hoat_dong" th:selected="${nv.taiKhoan.trangThai == 'hoat_dong'}">Hoạt động (Cho phép đăng nhập)</option>
-                                        <option value="bi_khoa" th:selected="${nv.taiKhoan.trangThai == 'bi_khoa'}">Khóa tài khoản (Cấm truy cập)</option>
-                                    </select>
+                                    <label class="form-label">Trạng Thái Tài Khoản</label>
+                                    <input type="text" class="form-control bg-light" th:value="${nv.taiKhoan.trangThai == 'hoat_dong' ? 'Hoạt động (Cho phép đăng nhập)' : (nv.taiKhoan.trangThai == 'bi_khoa' ? 'Khóa tài khoản (Cấm truy cập)' : 'Chờ khóa')}" readonly>
+                                    <input type="hidden" name="trangThai" th:value="${nv.taiKhoan.trangThai}">
+                                    <div class="form-text text-muted">Trạng thái tài khoản chỉ hiển thị để xem, không thể thay đổi tại đây.</div>
                                 </div>
 
                                 <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">

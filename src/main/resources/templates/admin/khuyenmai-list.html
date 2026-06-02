@@ -155,6 +155,7 @@
                                     <th>Thời Gian Sử Dụng</th>
                                     <th>Loại Giảm</th>
                                     <th>Trạng Trạng Thái</th>
+                                    <th>Nhân Viên Tạo</th>
                                     <th class="text-center">Hành Động</th>
                                 </tr>
                             </thead>
@@ -181,6 +182,7 @@
                                         <span th:if="${pgg.getDynamicStatus() == 'EXPIRED'}" class="badge bg-secondary text-white px-2.5 py-1.5">Đã hết hạn</span>
                                         <span th:if="${pgg.getDynamicStatus() == 'INACTIVE'}" class="badge bg-danger text-white px-2.5 py-1.5">Đã dừng phát hành</span>
                                     </td>
+                                    <td th:text="${pgg.nhanVien != null ? pgg.nhanVien.hoTenNv : 'Hệ Thống'}">Staff</td>
                                     <td class="text-center">
                                         <a th:href="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${pgg.id})}" class="btn btn-sm btn-outline-primary px-2" title="Chỉnh sửa">
                                             <i class="fas fa-edit"></i>
@@ -194,7 +196,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachPhieuGiamGia.isEmpty()}">
-                                    <td colspan="10" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
+                                    <td colspan="11" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>In Hóa Đơn - SmashVN</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: #000000;
+            margin: 0;
+            padding: 10px;
+            width: 80mm; /* K80 thermal printer width */
+            background-color: #ffffff;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        .address, .phone {
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .title {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .metadata {
+            font-size: 11px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .divider {
+            border-top: 1px dashed #000000;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
+        table th {
+            text-align: left;
+            border-bottom: 1px solid #000000;
+            padding: 5px 0;
+        }
+        table td {
+            padding: 6px 0;
+            vertical-align: top;
+        }
+        .item-details {
+            font-size: 10px;
+            color: #333;
+        }
+        .summary-table {
+            width: 100%;
+            font-size: 12px;
+        }
+        .summary-table td {
+            padding: 3px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+        /* Hide buttons during print */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+                margin: 0;
+            }
+        }
+        .btn-print-action {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Print controls only visible on screen -->
+    <div class="no-print text-center" style="margin-top: 10px;">
+        <button class="btn-print-action" onclick="window.print()"><i class="fas fa-print"></i> Click vào đây để IN</button>
+        <button class="btn-print-action" style="background-color: #555555; margin-left: 5px;" onclick="window.close()">Đóng Tab</button>
+        <div style="border-bottom: 2px solid #000000; margin-bottom: 15px; width: 100%;"></div>
+    </div>
+
+    <!-- Receipt Header -->
+    <div class="text-center">
+        <div class="logo">SMASH VN SHOP</div>
+        <div class="address">Địa chỉ: Số 12 Chùa Bộc, Đống Đa, Hà Nội</div>
+        <div class="phone">Hotline: 0987.654.321</div>
+        <div class="title">HÓA ĐƠN BÁN HÀNG</div>
+    </div>
+
+    <!-- Receipt Metadata -->
+    <div class="metadata">
+        <div><strong>Mã HĐ:</strong> <span th:text="${maHoaDon}">HD-001</span></div>
+        <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(hoaDon.ngayTao, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026 12:00:00</span></div>
+        <div><strong>Nhân viên:</strong> <span th:text="${hoaDon.nhanVien != null ? hoaDon.nhanVien.hoTenNv : 'Bán tại quầy'}">Nguyễn Văn A</span></div>
+        <div><strong>Khách hàng:</strong> <span th:text="${hoaDon.khachHang.hoKh} + ' ' + ${hoaDon.khachHang.tenKh}">Khách Lẻ</span></div>
+        <div><strong>SĐT:</strong> <span th:text="${hoaDon.khachHang.soDienThoaiKh}">0000000000</span></div>
+        <div><strong>Thanh toán:</strong> <span th:text="${hoaDon.phuongThucThanhToan.tenPhuongThuc}">Tiền mặt</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Items Table -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%;">Sản phẩm</th>
+                <th style="width: 15%; text-align: center;">SL</th>
+                <th style="width: 35%; text-align: right;">Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${items}">
+                <td>
+                    <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Vợt Yonex</span><br>
+                    <span class="item-details" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">3U | Đỏ</span>
+                </td>
+                <td style="text-align: center;" th:text="${item.soLuong}">1</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(item.donGia.multiply(new java.math.BigDecimal(item.soLuong)), 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Summary block -->
+    <table class="summary-table">
+        <tr>
+            <td class="bold">Cộng tiền hàng:</td>
+            <td style="text-align: right;" th:text="${#numbers.formatDecimal(tongTienTruocGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
+        </tr>
+        <tr th:if="${tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #000;">
+            <td class="bold">Voucher giảm:</td>
+            <td style="text-align: right;" th:text="'-' + ${#numbers.formatDecimal(tienGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">-100.000 đ</td>
+        </tr>
+        <tr>
+            <td class="bold" style="font-size: 13px;">TỔNG THANH TOÁN:</td>
+            <td class="bold" style="text-align: right; font-size: 13px;" th:text="${#numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">900.000 đ</td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Receipt Footer -->
+    <div class="text-center footer">
+        <div>CẢM ƠN QUÝ KHÁCH HÀNG!</div>
+        <div>HẸN GẶP LẠI QUÝ KHÁCH!</div>
+        <div style="margin-top: 5px; font-style: italic;">Powered by SmashVN</div>
+    </div>
+
+    <!-- Automatically trigger print dialog on page load -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Delay print dynamic render to settle down styles
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

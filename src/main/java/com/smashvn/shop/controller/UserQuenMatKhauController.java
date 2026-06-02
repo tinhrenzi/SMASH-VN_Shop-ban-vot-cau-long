@@ -53,6 +53,7 @@ public class UserQuenMatKhauController {
     public String xuLyDatLaiMK(@RequestParam("token") String token, 
                                @RequestParam("matKhauMoi") String matKhauMoi, 
                                @RequestParam("xacNhanMatKhau") String xacNhanMatKhau, 
+                               org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
                                Model model) {
         if (!matKhauMoi.equals(xacNhanMatKhau)) {
             model.addAttribute("loi", "Mật khẩu xác nhận không khớp!");
@@ -62,7 +63,8 @@ public class UserQuenMatKhauController {
 
         try {
             quenMatKhauService.datLaiMatKhau(token, matKhauMoi);
-            return "redirect:/user/dang-nhap?khoiphucthanhcong";
+            redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Khôi phục mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.");
+            return "redirect:/user/dang-nhap";
         } catch (RuntimeException e) {
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("token", token);

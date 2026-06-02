@@ -44,31 +44,8 @@ public class AdminInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        // 3. Phân quyền
-        String requestURI = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        String path = requestURI.substring(contextPath.length());
-
-        // Nếu là khách hàng (KH), cấm truy cập bất kỳ trang /admin nào, đẩy về trang chủ
-        if ("KH".equals(vaiTro)) {
-            response.sendRedirect(request.getContextPath() + "/");
-            return false;
-        }
-
-        // Nếu là nhân viên (NV)
-        if ("NV".equals(vaiTro)) {
-            // Chỉ cho phép truy cập /admin/don-hang/** và /admin/khach-hang/**
-            boolean isAllowed = path.startsWith("/admin/don-hang") || path.startsWith("/admin/khach-hang");
-            if (!isAllowed) {
-                // Đẩy về trang /admin/don-hang kèm theo thông điệp cảnh báo trong session
-                HttpSession activeSession = request.getSession(true);
-                activeSession.setAttribute("warningMsg", "Bạn không có quyền thực hiện chức năng này!");
-                response.sendRedirect(request.getContextPath() + "/admin/don-hang");
-                return false;
-            }
-        }
-
-        // Nếu là quản lý (QL), cho phép tất cả các tài nguyên /admin
+        // 3. Phân quyền đã được bàn giao cho Spring Security. 
+        // Interceptor này chỉ kiểm tra trạng thái hoạt động của tài khoản ở trên.
         return true;
     }
 

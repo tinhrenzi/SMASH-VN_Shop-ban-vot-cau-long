@@ -9,6 +9,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import java.util.List;
 
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.UserDangNhapService;
@@ -46,6 +52,13 @@ public class UserDangNhapController {
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
             session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
 
+            // Gán Authentication vào Spring Security Context
+            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tkDangNhap.getVaiTro()));
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(tkDangNhap.getEmail(), null, authorities);
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+
             if ("QL".equals(tkDangNhap.getVaiTro()) || "NV".equals(tkDangNhap.getVaiTro())) {
                 NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkDangNhap.getId());
                 if (nv != null) {
@@ -75,8 +88,10 @@ public class UserDangNhapController {
     @GetMapping("/dang-xuat")
     public String xuLyDangXuat(HttpSession session) {
         session.invalidate(); // Xóa toàn bộ dữ liệu trong Session
+        SecurityContextHolder.clearContext(); // Xóa context của Spring Security
         return "redirect:/user/dang-nhap";
     }
+
     @GetMapping("/google-success")
     public String googleSuccess(OAuth2AuthenticationToken oauth2Token, HttpSession session) {
         // Rút trích Email và Tên từ Google
@@ -91,6 +106,13 @@ public class UserDangNhapController {
             session.setAttribute("nguoiDungDangNhap", tk.getEmail());
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", tk.getVaiTro());
+
+            // Gán Authentication vào Spring Security Context
+            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tk.getVaiTro()));
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(tk.getEmail(), null, authorities);
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
             
             // Đăng nhập thành công, chuyển hướng theo vai trò
             if ("QL".equals(tk.getVaiTro())) {
