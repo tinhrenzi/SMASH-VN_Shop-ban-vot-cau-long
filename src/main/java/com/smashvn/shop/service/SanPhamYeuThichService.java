@@ -1,16 +1,23 @@
 package com.smashvn.shop.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.SanPhamYeuThich;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +32,9 @@ public class SanPhamYeuThichService {
     @Transactional
     public String themVaoWishlist(Integer idTaiKhoan, Integer idSanPham) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (kh == null) return "chuadangnhap";
+        if (kh == null) {
+            return "chuadangnhap";
+        }
 
         // Kiểm tra xem đã có trong Wishlist chưa
         if (yeuThichRepository.existsById_KhachHangIdAndId_SanPhamId(kh.getId(), idSanPham)) {
@@ -41,7 +50,7 @@ public class SanPhamYeuThichService {
         spy.setId(key);
         spy.setKhachHang(kh);
         spy.setSanPham(sp);
-        
+
         yeuThichRepository.save(spy);
         return "ok";
     }
@@ -49,7 +58,9 @@ public class SanPhamYeuThichService {
     // 2. Lấy danh sách Wishlist của khách hàng
     public List<Map<String, Object>> layDanhSachWishlist(Integer idTaiKhoan) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (kh == null) return new ArrayList<>();
+        if (kh == null) {
+            return new ArrayList<>();
+        }
 
         List<SanPhamYeuThich> danhSachGoc = yeuThichRepository.findByKhachHang_Id(kh.getId());
         List<Map<String, Object>> danhSachKetQua = new ArrayList<>();
@@ -57,7 +68,7 @@ public class SanPhamYeuThichService {
         for (SanPhamYeuThich spy : danhSachGoc) {
             SanPham sp = spy.getSanPham();
             Map<String, Object> map = new HashMap<>();
-            
+
             map.put("idSanPham", sp.getId());
             map.put("tenSanPham", sp.getTenSanPham());
             map.put("tenDanhMuc", sp.getDanhMuc() != null ? sp.getDanhMuc().getTenDanhMuc() : "Chưa phân loại");

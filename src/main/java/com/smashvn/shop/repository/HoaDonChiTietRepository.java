@@ -1,12 +1,40 @@
 package com.smashvn.shop.repository;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Pageable;
 
 import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.dto.TopProductDTO;
 
 public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, Integer> {
 
     List<HoaDonChiTiet> findByHoaDon_Id(Integer idHoaDon);
+
+    @Query("SELECT COALESCE(SUM(hdct.soLuong), 0L) FROM HoaDonChiTiet hdct " +
+           "WHERE hdct.hoaDon.trangThaiDonHang = 'da_giao' AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
+    Long getTotalProductsSold(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT new com.smashvn.shop.dto.TopProductDTO(" +
+           "hdct.sanPhamChiTiet.sanPham.id, " +
+           "hdct.sanPhamChiTiet.sanPham.tenSanPham, " +
+           "COALESCE(MIN(hdct.sanPhamChiTiet.hinhAnhSanPham), ''), " +
+           "hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc, " +
+           "COALESCE(SUM(hdct.soLuong), 0L), " +
+           "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)" +
+           ") " +
+           "FROM HoaDonChiTiet hdct " +
+           "WHERE hdct.hoaDon.trangThaiDonHang = 'da_giao' " +
+           "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate " +
+           "GROUP BY hdct.sanPhamChiTiet.sanPham.id, hdct.sanPhamChiTiet.sanPham.tenSanPham, hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc " +
+           "ORDER BY SUM(hdct.soLuong) DESC")
+    List<TopProductDTO> findBestSellingProducts(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 }

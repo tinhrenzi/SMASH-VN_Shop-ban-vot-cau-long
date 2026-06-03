@@ -1033,73 +1033,735 @@ function checkAndApplyVariant(container) {
       }
   });
   /*==============================================================
-    # CUSTOM JS: Lấy vị trí hiện tại (Geolocation + OpenStreetMap)
+    # CUSTOM JS: Lấy vị trí hiện tại (Geolocation + OpenStreetMap + Bản đồ tương tác)
   ==============================================================*/
-  function getCurrentLocation() {
-      const btn = document.getElementById('btn-get-location');
-      const originalText = btn.innerHTML;
+
+  // Global variables for Map and Marker
+  let leafletMap = null;
+  let mapMarker = null;
+
+  // Dynamic Toast CSS injection for premium notifications
+  (function injectToastStyles() {
+      if (document.getElementById('custom-toast-styles')) return;
+      const styles = `
+          .custom-toast-container {
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              z-index: 99999;
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+              max-width: 380px;
+              width: calc(100% - 40px);
+              pointer-events: none;
+          }
+          .custom-toast {
+              display: flex;
+              align-items: flex-start;
+              gap: 12px;
+              background: rgba(255, 255, 255, 0.95);
+              backdrop-filter: blur(10px);
+              border-radius: 12px;
+              padding: 16px;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+              border-left: 5px solid #ccc;
+              transform: translateX(120%);
+              transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+              opacity: 0;
+              pointer-events: auto;
+          }
+          .custom-toast.show {
+              transform: translateX(0);
+              opacity: 1;
+          }
+          .custom-toast-success {
+              border-left-color: #2ecc71;
+          }
+          .custom-toast-warning {
+              border-left-color: #f1c40f;
+          }
+          .custom-toast-error {
+              border-left-color: #e74c3c;
+          }
+          .custom-toast-info {
+              border-left-color: #3498db;
+          }
+          .custom-toast-icon {
+              font-size: 1.25rem;
+              flex-shrink: 0;
+              margin-top: 2px;
+          }
+          .custom-toast-success .custom-toast-icon { color: #2ecc71; }
+          .custom-toast-warning .custom-toast-icon { color: #f1c40f; }
+          .custom-toast-error .custom-toast-icon { color: #e74c3c; }
+          .custom-toast-info .custom-toast-icon { color: #3498db; }
+          
+          .custom-toast-content {
+              flex-grow: 1;
+              color: #2c3e50;
+          }
+          .custom-toast-title {
+              font-weight: 700;
+              font-size: 0.95rem;
+              margin-bottom: 4px;
+          }
+          .custom-toast-message {
+              font-size: 0.85rem;
+              line-height: 1.4;
+              color: #7f8c8d;
+          }
+          .custom-toast-close {
+              background: none;
+              border: none;
+              color: #bdc3c7;
+              cursor: pointer;
+              font-size: 1rem;
+              padding: 0;
+              line-height: 1;
+              flex-shrink: 0;
+              transition: color 0.2s;
+          }
+          .custom-toast-close:hover {
+              color: #7f8c8d;
+          }
+          
+          @media (max-width: 480px) {
+              .custom-toast-container {
+                  top: 10px;
+                  right: 10px;
+                  width: calc(100% - 20px);
+              }
+          }
+      `;
+      const styleSheet = document.createElement("style");
+      styleSheet.id = 'custom-toast-styles';
+      styleSheet.type = "text/css";
+      styleSheet.innerText = styles;
+      document.head.appendChild(styleSheet);
+  })();
+
+  // Toast displaying helper
+  function showToast(title, message, type = 'info', duration = 5000) {
+      let container = document.querySelector('.custom-toast-container');
+      if (!container) {
+          container = document.createElement('div');
+          container.className = 'custom-toast-container';
+          document.body.appendChild(container);
+      }
       
-      // Đổi trạng thái nút báo hiệu đang tải
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin u-s-m-r-8"></i> Đang định vị...';
+      const toast = document.createElement('div');
+      toast.className = `custom-toast custom-toast-${type}`;
+      
+      let iconClass = 'fa-info-circle';
+      if (type === 'success') iconClass = 'fa-check-circle';
+      else if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+      else if (type === 'error') iconClass = 'fa-times-circle';
+      
+      toast.innerHTML = `
+          <span class="custom-toast-icon fas ${iconClass}"></span>
+          <div class="custom-toast-content">
+              <div class="custom-toast-title">${title}</div>
+              <div class="custom-toast-message">${message}</div>
+          </div>
+          <button class="custom-toast-close fas fa-times"></button>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Force reflow
+      toast.offsetHeight;
+      toast.classList.add('show');
+      
+      const closeToast = () => {
+          toast.classList.remove('show');
+          toast.addEventListener('transitionend', () => {
+              toast.remove();
+          });
+      };
+      
+      let timer = setTimeout(closeToast, duration);
+      
+      toast.querySelector('.custom-toast-close').addEventListener('click', () => {
+          clearTimeout(timer);
+          closeToast();
+      });
+  }
+
+  // Debounce helper (Requirement: Debounce reverse geocoding when dragging marker)
+  function debounce(func, delay) {
+      let timer;
+      return function(...args) {
+          clearTimeout(timer);
+          timer = setTimeout(() => func.apply(this, args), delay);
+      };
+  }
+
+  // Helper: Fetch with timeout using AbortController (Requirement 4 & 7)
+  async function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 8000 } = options;
+      
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      
+      try {
+          const response = await fetch(resource, {
+              ...options,
+              signal: controller.signal
+          });
+          clearTimeout(id);
+          return response;
+      } catch (error) {
+          clearTimeout(id);
+          if (error.name === 'AbortError') {
+              throw new Error('TIMEOUT_ERROR');
+          }
+          throw error;
+      }
+  }
+
+  // Validator: Validate coordinates (Requirement 5)
+  function isValidCoordinates(lat, lon) {
+      return !isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  }
+
+  // Parser: Smart Vietnam Administrative Mapping (Requirement 3)
+  function parseNominatimAddress(data) {
+      const address = data.address || {};
+      let displayParts = [];
+      if (data.display_name) {
+          displayParts = data.display_name.split(',').map(p => p.trim());
+      }
+
+      // Province mapping
+      let province = address.city || address.province || address.state || address.county || "";
+      
+      // District mapping
+      let district = address.city_district || address.county || address.district || "";
+      
+      // Ward / Commune mapping
+      let ward = address.suburb || address.neighbourhood || address.quarter || address.village || "";
+
+      // Road mapping
+      let road = address.road || address.street || address.footway || address.path || address.pedestrian || "";
+
+      // Specific house/building
+      const buildingCandidates = [
+          address.house_number,
+          address.building,
+          address.office,
+          address.amenity,
+          address.shop,
+          address.historic,
+          address.tourism,
+          address.leisure
+      ];
+      let localDetails = [];
+      buildingCandidates.forEach(val => {
+          if (val && val.trim() !== "" && !localDetails.includes(val.trim())) {
+              localDetails.push(val.trim());
+          }
+      });
+      let building = localDetails.join(' ');
+
+      let diaChiCuThe = "";
+      let tinhThanh = province.trim();
+      let quocGia = address.country || "Việt Nam";
+
+      // Build structured diaChiCuThe
+      let specificParts = [];
+      if (building) specificParts.push(building);
+      if (road) specificParts.push(road);
+      if (ward) specificParts.push(ward);
+      if (district) specificParts.push(district);
+
+      specificParts = specificParts.map(p => p.trim()).filter(Boolean);
+      
+      // Deduplicate parts
+      let uniqueParts = [];
+      specificParts.forEach(p => {
+          if (!uniqueParts.includes(p)) {
+              uniqueParts.push(p);
+          }
+      });
+
+      if (uniqueParts.length > 0) {
+          diaChiCuThe = uniqueParts.join(', ');
+      }
+
+      // Fallback to display_name slice if structured parts are too sparse
+      if (!diaChiCuThe || uniqueParts.length < 2) {
+          if (displayParts.length >= 2) {
+              quocGia = displayParts[displayParts.length - 1];
+              let penIdx = displayParts.length - 2;
+              let penValue = displayParts[penIdx];
+              if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
+                  if (!tinhThanh) tinhThanh = displayParts[penIdx - 1];
+                  diaChiCuThe = displayParts.slice(0, penIdx - 1).join(', ');
+              } else {
+                  if (!tinhThanh) tinhThanh = penValue;
+                  diaChiCuThe = displayParts.slice(0, penIdx).join(', ');
+              }
+          } else {
+              diaChiCuThe = data.display_name || "";
+          }
+      }
+
+      if (!tinhThanh && displayParts.length >= 2) {
+          let penIdx = displayParts.length - 2;
+          let penValue = displayParts[penIdx];
+          if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
+              tinhThanh = displayParts[penIdx - 1];
+          } else {
+              tinhThanh = penValue;
+          }
+      }
+
+      // Format cleanups
+      if (tinhThanh) {
+          tinhThanh = tinhThanh.replace(/\d+/g, '').trim();
+      }
+      if (quocGia) {
+          quocGia = quocGia.trim();
+      }
+
+      return {
+          diaChiCuThe: diaChiCuThe,
+          tinhThanh: tinhThanh,
+          quocGia: quocGia
+      };
+  }
+
+  // Provider abstraction with Zoom level fallbacks (Requirement 7 & 8)
+  async function reverseGeocode(latitude, longitude) {
+      if (!navigator.onLine) {
+          throw new Error("OFFLINE_ERROR");
+      }
+
+      const zoomLevels = [18, 17, 16];
+      let fallbackResult = null;
+
+      for (let zoom of zoomLevels) {
+          try {
+              const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&accept-language=vi`;
+              const response = await fetchWithTimeout(apiUrl, { timeout: 6000 });
+              
+              if (!response.ok) {
+                  if (response.status === 429 || response.status >= 500) {
+                      throw new Error("PROVIDER_ERROR");
+                  }
+                  continue; // Try next zoom level on other errors
+              }
+
+              const data = await response.json();
+              const parsed = parseNominatimAddress(data);
+
+              // Check if details are sufficient (Requirement 7)
+              const partsCount = parsed.diaChiCuThe ? parsed.diaChiCuThe.split(',').length : 0;
+              if (partsCount >= 3) {
+                  return parsed; // Excellent detail level, return immediately
+              }
+              
+              // Keep as fallback if it contains at least some address structure
+              if (!fallbackResult || partsCount > (fallbackResult.diaChiCuThe ? fallbackResult.diaChiCuThe.split(',').length : 0)) {
+                  fallbackResult = parsed;
+              }
+          } catch (err) {
+              console.warn(`[Geocoding] Zoom ${zoom} failed:`, err.message);
+              if (err.message === "OFFLINE_ERROR" || err.message === "PROVIDER_ERROR") {
+                  throw err; // Propagate blocking network or provider-rate-limit errors immediately
+              }
+          }
+      }
+
+      if (fallbackResult && fallbackResult.diaChiCuThe) {
+          return fallbackResult;
+      }
+
+      throw new Error("GEOCODE_FAILED");
+  }
+
+  // Debounced reverse geocoding to update UI and inputs (Requirement: Debounce reverse geocoding when dragging marker)
+  const debouncedReverseGeocode = debounce(async function(lat, lon) {
+      try {
+          const parsedAddress = await reverseGeocode(lat, lon);
+          populateAddressFields(parsedAddress);
+          showToast('Đã cập nhật', 'Đã tự động cập nhật địa chỉ theo toạ độ bản đồ!', 'success');
+      } catch (err) {
+          console.error('[Geocoding] Debounced geocoding error:', err);
+          handleGeocodingError(err);
+      }
+  }, 400);
+
+  // Populate UI inputs with geocoding results
+  function populateAddressFields(addressObj) {
+      if (addressObj.diaChiCuThe) {
+          document.getElementById('address-street').value = addressObj.diaChiCuThe;
+      }
+      if (addressObj.tinhThanh) {
+          document.getElementById('address-state').value = addressObj.tinhThanh;
+      }
+      if (addressObj.quocGia) {
+          document.getElementById('address-country').value = addressObj.quocGia;
+      }
+  }
+
+  // Update map marker and inputs when getting location from GPS/IP button (Requirement 10)
+  function updateMapFromLocation(lat, lon) {
+      if (leafletMap && mapMarker) {
+          leafletMap.flyTo([lat, lon], 16);
+          mapMarker.setLatLng([lat, lon]);
+          if (!leafletMap.hasLayer(mapMarker)) {
+              mapMarker.addTo(leafletMap);
+          }
+          
+          const latInput = document.getElementById('address-lat');
+          const lonInput = document.getElementById('address-lon');
+          if (latInput) latInput.value = lat.toFixed(6);
+          if (lonInput) lonInput.value = lon.toFixed(6);
+      }
+  }
+
+  // Fallback to IP Geolocation through backend proxy (Requirement 1 & 9)
+  async function triggerIpFallback(btn, originalText) {
+      if (!navigator.onLine) {
+          showToast('Lỗi kết nối', 'Không có kết nối mạng. Vui lòng thử lại.', 'error');
+          resetButton(btn, originalText);
+          return;
+      }
+
+      try {
+          // Fetch coordinates from backend IP proxy
+          const response = await fetchWithTimeout('/api/location/ip', { timeout: 6000 });
+          if (!response.ok) {
+              if (response.status === 429) {
+                  throw new Error("RATE_LIMITED");
+              }
+              throw new Error("BACKEND_PROXY_FAILED");
+          }
+
+          const data = await response.json();
+          const lat = data.latitude;
+          const lon = data.longitude;
+
+          if (!isValidCoordinates(lat, lon)) {
+              throw new Error("INVALID_COORDINATES");
+          }
+
+          console.log(`[Geocoding] IP coords retrieved via backend proxy: lat=${lat}, lon=${lon} (Source: ${data.source})`);
+
+          // Update Leaflet Map state
+          updateMapFromLocation(lat, lon);
+
+          // Reverse geocode IP coordinates
+          const parsedAddress = await reverseGeocode(lat, lon);
+
+          // Save success result to cache
+          try {
+              localStorage.setItem('location_geocode_cache', JSON.stringify({
+                  latitude: lat,
+                  longitude: lon,
+                  address: parsedAddress,
+                  timestamp: Date.now()
+              }));
+          } catch (cacheStoreErr) {
+              console.warn("[Geocoding] Failed to save to localStorage:", cacheStoreErr);
+          }
+
+          populateAddressFields(parsedAddress);
+          showToast('Định vị qua IP', 'Đã tự động xác định và điền địa chỉ của bạn thành công qua IP!', 'success');
+
+      } catch (err) {
+          console.error('[Geocoding] IP Fallback failed:', err);
+          handleGeocodingError(err);
+      } finally {
+          resetButton(btn, originalText);
+      }
+  }
+
+  // Centralized geocoding error handler (Requirement 9)
+  function handleGeocodingError(error) {
+      if (!navigator.onLine || error.message === "OFFLINE_ERROR") {
+          showToast('Lỗi kết nối', 'Không có kết nối mạng. Vui lòng thử lại.', 'error');
+      } else if (error.message === "RATE_LIMITED") {
+          showToast('Giới hạn yêu cầu', 'Bạn đã yêu cầu quá nhanh. Vui lòng đợi một phút trước khi thử lại.', 'warning');
+      } else if (error.message === "GEOCODE_FAILED" || error.message === "PROVIDER_ERROR") {
+          showToast('Lỗi định vị', 'Không thể xác định địa chỉ từ vị trí hiện tại.', 'error');
+      } else {
+          showToast('Lỗi vị trí', 'Không thể lấy dữ liệu vị trí vào lúc này.', 'error');
+      }
+  }
+
+  // Restore button state
+  function resetButton(btn, originalText) {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+  }
+
+  // Geolocation main controller (Requirement 2, 4, 5, 6, 9)
+  async function getCurrentLocation() {
+      const btn = document.getElementById('btn-get-location');
+      if (!btn || btn.disabled) return; // Prevent double trigger
+
+      const originalText = btn.innerHTML;
+
+      // 1. Protect user entered data (Requirement 6)
+      const streetInput = document.getElementById('address-street');
+      const stateInput = document.getElementById('address-state');
+      const hasUserData = (streetInput && streetInput.value.trim() !== '') || 
+                          (stateInput && stateInput.value.trim() !== '');
+
+      if (hasUserData) {
+          const confirmOverwrite = confirm("Địa chỉ hiện tại sẽ bị thay thế bởi vị trí mới. Bạn có muốn tiếp tục không?");
+          if (!confirmOverwrite) {
+              return; // Cancel
+          }
+      }
+
+      // 2. Check localStorage cache (Requirement 4)
+      try {
+          const cachedData = localStorage.getItem('location_geocode_cache');
+          if (cachedData) {
+              const cache = JSON.parse(cachedData);
+              const now = Date.now();
+              // Cache valid for 10 minutes (600,000ms)
+              if (now - cache.timestamp < 600000 && cache.address && isValidCoordinates(cache.latitude, cache.longitude)) {
+                  console.log("[Geocoding] Using valid cached location coordinates:", cache.latitude, cache.longitude);
+                  
+                  // Update map marker and inputs
+                  updateMapFromLocation(cache.latitude, cache.longitude);
+                  populateAddressFields(cache.address);
+                  showToast('Bộ nhớ tạm', 'Đã tự động điền vị trí từ bộ nhớ tạm thời của bạn!', 'info');
+                  return;
+              }
+          }
+      } catch (cacheErr) {
+          console.warn("[Geocoding] Cache lookup error:", cacheErr);
+      }
+
+      // 3. Set loading state and request protection (Requirement 5)
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin u-s-m-r-8"></i> Đang lấy vị trí hiện tại...';
       btn.disabled = true;
 
-      // Kiểm tra trình duyệt có hỗ trợ định vị không
+      // 4. Try browser GPS location first
       if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-              function(position) {
-                  // Lấy được tọa độ
-                  const lat = position.coords.latitude;
-                  const lon = position.coords.longitude;
+              async function(position) {
+                  try {
+                      const lat = position.coords.latitude;
+                      const lon = position.coords.longitude;
+                      const accuracy = position.coords.accuracy;
 
-                  // Gọi API của OpenStreetMap để dịch tọa độ thành địa chỉ thật (Reverse Geocoding)
-                  const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=vi`;
+                      console.log(`[Geocoding] GPS coords retrieved: lat=${lat}, lon=${lon}, accuracy=${accuracy}m`);
 
-                  fetch(apiUrl)
-                      .then(response => response.json())
-                      .then(data => {
-                          const address = data.address;
-                          
-                          // Trích xuất dữ liệu
-                          const soNhaĐuong = (address.house_number ? address.house_number + ' ' : '') + 
-                                             (address.road || address.pedestrian || address.suburb || '');
-                          const tinhThanh = address.city || address.state || address.province || address.county || '';
-                          const quocGia = address.country || 'Việt Nam';
+                      // Validate coordinates (Requirement 5)
+                      if (!isValidCoordinates(lat, lon)) {
+                          throw new Error("INVALID_COORDINATES");
+                      }
 
-                          // Đổ dữ liệu thẳng vào các ô input của bạn theo ID đã đặt
-                          if (soNhaĐuong) document.getElementById('address-street').value = soNhaĐuong;
-                          if (tinhThanh) document.getElementById('address-state').value = tinhThanh;
-                          if (quocGia) document.getElementById('address-country').value = quocGia;
+                      // Accuracy check (Requirement 2)
+                      if (accuracy > 500) {
+                          showToast('Độ chính xác thấp', 'Vị trí hiện tại có độ chính xác thấp. Kết quả địa chỉ có thể không hoàn toàn chính xác.', 'warning', 7000);
+                      }
 
-                          alert('📍 Đã tự động điền vị trí của bạn thành công!');
-                          
-                          // Trả lại trạng thái nút
-                          btn.innerHTML = originalText;
-                          btn.disabled = false;
-                      })
-                      .catch(error => {
-                          console.error('Lỗi lấy địa chỉ:', error);
-                          alert('Không thể nhận diện chi tiết địa chỉ. Vui lòng nhập thủ công.');
-                          btn.innerHTML = originalText;
-                          btn.disabled = false;
-                      });
+                      // Update map marker
+                      updateMapFromLocation(lat, lon);
+
+                      // Call reverse geocoding abstraction
+                      const parsedAddress = await reverseGeocode(lat, lon);
+
+                      // Save success result to cache (Requirement 4)
+                      try {
+                          localStorage.setItem('location_geocode_cache', JSON.stringify({
+                              latitude: lat,
+                              longitude: lon,
+                              address: parsedAddress,
+                              timestamp: Date.now()
+                          }));
+                      } catch (cacheStoreErr) {
+                          console.warn("[Geocoding] Failed to save to localStorage:", cacheStoreErr);
+                      }
+
+                      populateAddressFields(parsedAddress);
+                      showToast('Thành công', 'Đã tự động định vị và điền vị trí của bạn thành công!', 'success');
+
+                  } catch (err) {
+                      console.error('[Geocoding] GPS success branch error:', err);
+                      handleGeocodingError(err);
+                  } finally {
+                      resetButton(btn, originalText);
+                  }
               },
               function(error) {
-                  alert('Bạn đã từ chối quyền truy cập vị trí hoặc máy chủ định vị gặp lỗi.');
-                  btn.innerHTML = originalText;
-                  btn.disabled = false;
+                  console.warn('[Geocoding] GPS lookup failed or denied. Transitioning to IP fallback...');
+                  // GPS failure: Trigger fallback automatically (Requirement 9)
+                  if (error.code === 1) { // PERMISSION_DENIED
+                      showToast('Chuyển hướng IP', 'Không thể truy cập GPS. Hệ thống sẽ thử xác định vị trí qua IP.', 'info', 4000);
+                  }
+                  triggerIpFallback(btn, originalText);
               },
               {
-                  enableHighAccuracy: true, // Ưu tiên độ chính xác cao
-                  timeout: 10000,           // Thời gian chờ tối đa 10s
+                  enableHighAccuracy: true,
+                  timeout: 8000, // Timeout after 8 seconds (Requirement 9)
                   maximumAge: 0
               }
           );
       } else {
-          alert("Trình duyệt của bạn không hỗ trợ tính năng định vị.");
-          btn.innerHTML = originalText;
-          btn.disabled = false;
+          console.warn('[Geocoding] Browser does not support Geolocation. Transitioning to IP fallback...');
+          triggerIpFallback(btn, originalText);
       }
   }
+
+  // Interactive Leaflet Map initialization and synchronization
+  async function initLocationMap(mapDiv) {
+      const latInput = document.getElementById('address-lat');
+      const lonInput = document.getElementById('address-lon');
+      const streetInput = document.getElementById('address-street');
+      const stateInput = document.getElementById('address-state');
+
+      let initialLat = 21.0285;
+      let initialLon = 105.8542;
+      let zoomLevel = 13;
+      let hasCoordinates = false;
+
+      // 5. Use saved coordinates directly (Requirement 5: Dùng tọa độ đã lưu)
+      if (latInput && lonInput && latInput.value && lonInput.value) {
+          const lat = parseFloat(latInput.value);
+          const lon = parseFloat(lonInput.value);
+          if (isValidCoordinates(lat, lon)) {
+              initialLat = lat;
+              initialLon = lon;
+              zoomLevel = 16;
+              hasCoordinates = true;
+          }
+      }
+
+      // Initialize Map
+      leafletMap = L.map(mapDiv).setView([initialLat, initialLon], zoomLevel);
+
+      // Tile Layer setup (OpenStreetMap Tiles)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(leafletMap);
+
+      // Draggable Marker
+      mapMarker = L.marker([initialLat, initialLon], {
+          draggable: true
+      });
+
+      if (hasCoordinates) {
+          mapMarker.addTo(leafletMap);
+      }
+
+      // Add Custom "Locate Me" Control on the Map (Locate self on the map)
+      L.Control.LocateMe = L.Control.extend({
+          options: {
+              position: 'topleft'
+          },
+          onAdd: function(map) {
+              const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+              container.style.backgroundColor = '#fff';
+              container.style.width = '34px';
+              container.style.height = '34px';
+              container.style.lineHeight = '30px';
+              container.style.textAlign = 'center';
+              container.style.cursor = 'pointer';
+              container.style.display = 'flex';
+              container.style.alignItems = 'center';
+              container.style.justifyContent = 'center';
+              container.title = "Định vị vị trí của tôi";
+
+              // Target / Crosshairs icon using FontAwesome
+              container.innerHTML = '<a href="#" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #333; font-size: 16px; text-decoration: none;"><i class="fas fa-crosshairs"></i></a>';
+
+              L.DomEvent.disableClickPropagation(container);
+              L.DomEvent.on(container, 'click', function(e) {
+                  L.DomEvent.preventDefault(e);
+                  getCurrentLocation();
+              });
+
+              return container;
+          }
+      });
+      leafletMap.addControl(new L.Control.LocateMe());
+
+      // Click event on map to select position
+      leafletMap.on('click', function(e) {
+          const { lat, lng } = e.latlng;
+          if (!isValidCoordinates(lat, lng)) return;
+
+          mapMarker.setLatLng(e.latlng);
+          if (!leafletMap.hasLayer(mapMarker)) {
+              mapMarker.addTo(leafletMap);
+          }
+
+          if (latInput) latInput.value = lat.toFixed(6);
+          if (lonInput) lonInput.value = lng.toFixed(6);
+
+          debouncedReverseGeocode(lat, lng);
+      });
+
+      // Marker drag event (de-bounced geocode lookup)
+      mapMarker.on('dragend', function(e) {
+          const latlng = mapMarker.getLatLng();
+          const { lat, lng } = latlng;
+          if (!isValidCoordinates(lat, lng)) return;
+
+          if (latInput) latInput.value = lat.toFixed(6);
+          if (lonInput) lonInput.value = lng.toFixed(6);
+
+          debouncedReverseGeocode(lat, lng);
+      });
+
+      // If Edit form and NO coordinates are saved, geocode the text address via backend proxy
+      if (!hasCoordinates && streetInput && streetInput.value && stateInput && stateInput.value) {
+          const addressQuery = `${streetInput.value}, ${stateInput.value}`;
+          console.log("[Map] Edit Mode: Geocoding text address via backend proxy:", addressQuery);
+          try {
+              const response = await fetchWithTimeout(`/api/location/search?q=${encodeURIComponent(addressQuery)}`, { timeout: 5000 });
+              if (response.ok) {
+                  const data = await response.json();
+                  const lat = data.latitude;
+                  const lon = data.longitude;
+                  if (isValidCoordinates(lat, lon)) {
+                      leafletMap.setView([lat, lon], 16);
+                      mapMarker.setLatLng([lat, lon]).addTo(leafletMap);
+                      if (latInput) latInput.value = lat.toFixed(6);
+                      if (lonInput) lonInput.value = lon.toFixed(6);
+                  }
+              }
+          } catch (err) {
+              console.warn("[Map] Silent forward geocoding failed:", err.message);
+          }
+      }
+
+      // If Add form and NO coordinates are saved, center map using silent IP lookup (no UI alerts)
+      if (!hasCoordinates && (!streetInput || !streetInput.value)) {
+          console.log("[Map] Add Mode: Attempting silent IP geolocate to center map...");
+          try {
+              const response = await fetchWithTimeout('/api/location/ip', { timeout: 4000 });
+              if (response.ok) {
+                  const data = await response.json();
+                  const lat = data.latitude;
+                  const lon = data.longitude;
+                  if (isValidCoordinates(lat, lon)) {
+                      leafletMap.setView([lat, lon], 14);
+                  }
+              }
+          } catch (err) {
+              console.warn("[Map] Silent IP lookup failed:", err.message);
+          }
+      }
+  }
+
+  // DOM initialization wrapper for Map
+  $(document).ready(function() {
+      const mapDiv = document.getElementById('map');
+      if (mapDiv) {
+          initLocationMap(mapDiv);
+      }
+  });
   /*==============================================================
     # CUSTOM JS: Xóa Sổ Địa Chỉ bằng AJAX
   ==============================================================*/

@@ -18,6 +18,10 @@
             <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/all}" th:class="${activeTab == 'tongquan' ? 'active' : ''}">
                 <i class="fas fa-tachometer-alt me-2 text-brand"></i> Tổng Quan
             </a>
+
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/thong-ke}" th:class="${activeTab == 'thongke' ? 'active' : ''}">
+                <i class="fas fa-chart-line me-2 text-brand"></i> Thống Kê Doanh Thu
+            </a>
             
             <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/san-pham}" th:class="${activeTab == 'sanpham' ? 'active' : ''}">
                 <i class="fas fa-box me-2 text-brand"></i> Sản Phẩm

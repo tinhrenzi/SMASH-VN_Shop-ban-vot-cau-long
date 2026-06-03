@@ -24,7 +24,8 @@ public class UserAddressService {
     // 2. Thêm địa chỉ mới
     @Transactional
     public void themDiaChiMoi(KhachHang khachHang, String ho, String ten, String sdt, 
-                              String diaChiCuThe, String tinhThanh, String quocGia, boolean isDefault) {
+                              String diaChiCuThe, String tinhThanh, String quocGia, 
+                              Double latitude, Double longitude, boolean isDefault) {
         
         SoDiaChi dc = new SoDiaChi();
         dc.setKhachHang(khachHang);
@@ -36,6 +37,8 @@ public class UserAddressService {
         dc.setThanhPho(tinhThanh); // Tạm gán giống Tỉnh thành
         dc.setQuocGia(quocGia);
         dc.setMaBuuDien("700000"); // Tạm gán mặc định nếu HTML không có ô nhập
+        dc.setLatitude(latitude);
+        dc.setLongitude(longitude);
         
         // Nếu chọn làm mặc định, phải gỡ mặc định của các địa chỉ cũ
         if (isDefault) {
@@ -98,7 +101,8 @@ public class UserAddressService {
     // 5. Lưu cập nhật địa chỉ
     @Transactional
     public void capNhatDiaChi(Integer idDiaChi, Integer idKhachHang, String ho, String ten, String sdt, 
-                              String diaChiCuThe, String tinhThanh, String quocGia, boolean isDefault) {
+                              String diaChiCuThe, String tinhThanh, String quocGia, 
+                              Double latitude, Double longitude, boolean isDefault) {
         
         SoDiaChi dc = layDiaChiTheoId(idDiaChi, idKhachHang); // Lấy địa chỉ cũ lên
         
@@ -110,6 +114,8 @@ public class UserAddressService {
         dc.setTinhThanh(tinhThanh);
         dc.setThanhPho(tinhThanh); 
         dc.setQuocGia(quocGia);
+        dc.setLatitude(latitude);
+        dc.setLongitude(longitude);
         
         // Nếu người dùng tích chọn "Đặt làm mặc định" và địa chỉ này CHƯA phải là mặc định
         if (isDefault && !dc.isDefaultShipping()) {

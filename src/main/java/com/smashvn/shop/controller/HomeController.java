@@ -5,11 +5,14 @@ import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.ThuongHieu;
+import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.repository.DanhMucRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +22,7 @@ public class HomeController {
 
     private final SanPhamRepository sanPhamRepository;
     private final ThuongHieuRepository thuongHieuRepository;
+    private final DanhMucRepository danhMucRepository;
 
     @GetMapping("/")
     public String hienThiTrangChu(Model model) {
@@ -33,8 +37,34 @@ public class HomeController {
         return "index";
     }
 
+    @GetMapping("/shop-side-version-2.html")
+    public String hienThiShopSideVersion2(
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "brandId", required = false) Integer brandId,
+            Model model) {
+        
+        List<SanPham> danhSachSanPham;
+        if (categoryId != null) {
+            danhSachSanPham = sanPhamRepository.findByDanhMucId(categoryId);
+        } else if (brandId != null) {
+            danhSachSanPham = sanPhamRepository.findByThuongHieuId(brandId);
+        } else {
+            danhSachSanPham = sanPhamRepository.findAll();
+        }
+
+        List<DanhMuc> danhSachDanhMuc = danhMucRepository.findAll();
+        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
+
+        model.addAttribute("products", danhSachSanPham);
+        model.addAttribute("categories", danhSachDanhMuc);
+        model.addAttribute("brands", danhSachThuongHieu);
+        model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("selectedBrandId", brandId);
+
+        return "shop-side-version-2";
+    }
+
     @GetMapping({
-        "/shop-side-version-2.html", 
         "/index.html", 
         "/product-detail.html",
         "/blog-left-sidebar.html",

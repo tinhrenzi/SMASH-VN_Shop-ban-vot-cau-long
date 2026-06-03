@@ -54,6 +54,7 @@ public class OrderViewService {
                 // Ánh xạ trạng thái hiển thị
                 String statusText = getStatusLabel(hd.getTrangThaiDonHang());
                 orderMap.put("status", statusText);
+                orderMap.put("total", hd.getTongTien());
 
                 List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
                 List<Map<String, Object>> itemMaps = new ArrayList<>();
@@ -112,6 +113,7 @@ public class OrderViewService {
             items1.add(item1_1);
 
             mock1.put("items", items1);
+            mock1.put("total", p1Price.add(new BigDecimal("30000")));
             resultList.add(mock1);
 
             // Mock Order 2: Đã giao
@@ -146,6 +148,7 @@ public class OrderViewService {
             items2.add(item2_1);
 
             mock2.put("items", items2);
+            mock2.put("total", p2Price.multiply(new BigDecimal(2)).add(new BigDecimal("30000")));
             resultList.add(mock2);
         }
         return resultList;

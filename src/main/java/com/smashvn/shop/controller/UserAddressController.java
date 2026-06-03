@@ -78,6 +78,8 @@ public class UserAddressController {
                                  @RequestParam("diaChiCuThe") String diaChiCuThe,
                                  @RequestParam("tinhThanh") String tinhThanh,
                                  @RequestParam("quocGia") String quocGia,
+                                 @RequestParam(value = "latitude", required = false) Double latitude,
+                                 @RequestParam(value = "longitude", required = false) Double longitude,
                                  @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
                                  
         String redirect = checkRoleAndRedirect(session);
@@ -87,7 +89,7 @@ public class UserAddressController {
         if (kh == null) return "redirect:/user/dang-nhap";
 
         try {
-            addressService.themDiaChiMoi(kh, ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, isDefault);
+            addressService.themDiaChiMoi(kh, ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, latitude, longitude, isDefault);
             // Dùng Flash Attribute truyền thông báo an toàn
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Đã thêm địa chỉ mới thành công!");
         } catch (Exception e) {
@@ -125,6 +127,8 @@ public class UserAddressController {
                                 @RequestParam("diaChiCuThe") String diaChiCuThe,
                                 @RequestParam("tinhThanh") String tinhThanh,
                                 @RequestParam("quocGia") String quocGia,
+                                @RequestParam(value = "latitude", required = false) Double latitude,
+                                @RequestParam(value = "longitude", required = false) Double longitude,
                                 @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
                                  
         String redirect = checkRoleAndRedirect(session);
@@ -134,7 +138,7 @@ public class UserAddressController {
         if (kh == null) return "redirect:/user/dang-nhap";
 
         try {
-            addressService.capNhatDiaChi(idDiaChi, kh.getId(), ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, isDefault);
+            addressService.capNhatDiaChi(idDiaChi, kh.getId(), ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, latitude, longitude, isDefault);
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Cập nhật địa chỉ thành công!");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("thongBaoLoi", "Không thể cập nhật: " + e.getMessage());

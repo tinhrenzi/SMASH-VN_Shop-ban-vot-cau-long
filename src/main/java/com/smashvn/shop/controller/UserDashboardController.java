@@ -2,16 +2,15 @@ package com.smashvn.shop.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.repository.SanPhamYeuThichRepository;
 import com.smashvn.shop.service.OrderViewService;
 import com.smashvn.shop.service.UserDashboardService;
 
@@ -25,6 +24,7 @@ public class UserDashboardController {
 
     private final UserDashboardService dashboardService;
     private final OrderViewService orderViewService;
+    private final SanPhamYeuThichRepository wishlistRepository;
 
     // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
     private KhachHang getLoggedInCustomer(HttpSession session) {
@@ -60,9 +60,33 @@ public class UserDashboardController {
 
         List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
+
+        // Lấy địa chỉ giao hàng và hóa đơn mặc định
+        SoDiaChi defaultShipping = null;
+        SoDiaChi defaultBilling = null;
+        if (kh.getSoDiaChis() != null) {
+            defaultShipping = kh.getSoDiaChis().stream()
+                    .filter(SoDiaChi::isDefaultShipping)
+                    .findFirst()
+                    .orElse(null);
+            defaultBilling = kh.getSoDiaChis().stream()
+                    .filter(SoDiaChi::isDefaultBilling)
+                    .findFirst()
+                    .orElse(null);
+        }
+        model.addAttribute("defaultShipping", defaultShipping);
+        model.addAttribute("defaultBilling", defaultBilling);
+
+        // Đơn hàng gần đây (giới hạn 5 đơn)
+        List<Map<String, Object>> recentOrders = ordersList.stream()
+                .limit(5)
+                .collect(Collectors.toList());
+        model.addAttribute("orders", recentOrders);
 
         return "dashboard"; // Trỏ đến dashboard.html
     }
@@ -81,9 +105,11 @@ public class UserDashboardController {
 
         List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
 
         return "dash-my-profile"; // Trỏ đến dash-my-profile.html
     }
@@ -131,10 +157,11 @@ public class UserDashboardController {
         model.addAttribute("orders", ordersList);
 
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
         return "dash-my-order"; // Trỏ đến dash-my-order.html
     }
 
@@ -152,9 +179,11 @@ public class UserDashboardController {
 
         List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
 
         return "dash-cancellation";
     }
@@ -173,9 +202,11 @@ public class UserDashboardController {
 
         List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
 
         return "dash-payment-option";
     }
@@ -194,9 +225,11 @@ public class UserDashboardController {
 
         List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
         model.addAttribute("orderPlaced", ordersList.size());
         model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", 0);
+        model.addAttribute("wishlist", wishlistCount);
 
         return "dash-track-order";
     }
@@ -226,6 +259,9 @@ public class UserDashboardController {
 
             model.addAttribute("kh", kh);
             model.addAllAttributes(details);
+
+            long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+            model.addAttribute("wishlistCount", wishlistCount);
 
             return "dash-manage-order";
         } catch (Exception e) {

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link th:href="@{/images/favicon.png}" rel="shortcut icon">
+    <title>Danh mục sản phẩm - Smash VN</title>
+
+    <!--====== Phông chữ Google ======-->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
+
+    <!--====== CSS Nhà cung cấp ======-->
+    <link rel="stylesheet" th:href="@{/css/vendor.css}">
+
+    <!--====== Tiện ích khoảng cách ======-->
+    <link rel="stylesheet" th:href="@{/css/utility.css}">
+
+    <!--====== Ứng dụng ======-->
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="config">
+    <div class="preloader is-active">
+        <div class="preloader__wrap">
+
+            <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
+    </div>
+
+    <!--====== Ứng dụng chính ======-->
+    <div id="app">
+
+        <!--====== Tiêu đề chính ======-->
+        <header class="header--style-1">
+            <div th:replace="~{layout/header :: header}"></div>
+        </header>
+        <!--====== End - Main Header ======-->
+
+
+        <!--====== App Content ======-->
+        <div class="app-content">
+
+            <!--====== Trái 1 ======-->
+            <div class="u-s-p-y-90">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-12">
+                            <div class="shop-w-master">
+                                <h1 class="shop-w-master__heading u-s-m-b-30"><i class="fas fa-filter u-s-m-r-8"></i>
+
+                                    <span>BỘ LỌC</span></h1>
+                                <div class="shop-w-master__sidebar">
+                                    <div class="u-s-m-b-30">
+                                        <div class="shop-w shop-w--style">
+                                            <div class="shop-w__intro-wrap">
+                                                <h1 class="shop-w__h">DANH MỤC</h1>
+
+                                                <span class="fas fa-minus shop-w__toggle" data-target="#s-category" data-toggle="collapse"></span>
+                                            </div>
+                                            <div class="shop-w__wrap collapse show" id="s-category">
+                                                <ul class="shop-w__category-list gl-scroll">
+                                                    <li>
+                                                        <a th:href="@{/shop-side-version-2.html}"
+                                                           th:style="${selectedCategoryId == null ? 'color: #ff4500; font-weight: bold;' : ''}">Tất cả danh mục</a>
+                                                    </li>
+                                                    <li th:each="category : ${categories}">
+                                                        <a th:href="@{/shop-side-version-2.html(categoryId=${category.id})}"
+                                                           th:text="${category.tenDanhMuc}"
+                                                           th:style="${selectedCategoryId == category.id ? 'color: #ff4500; font-weight: bold;' : ''}">Danh mục</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="u-s-m-b-30">
+                                        <div class="shop-w shop-w--style">
+                                            <div class="shop-w__intro-wrap">
+                                                <h1 class="shop-w__h">THƯƠNG HIỆU</h1>
+
+                                                <span class="fas fa-minus shop-w__toggle" data-target="#s-manufacturer" data-toggle="collapse"></span>
+                                            </div>
+                                            <div class="shop-w__wrap collapse show" id="s-manufacturer">
+                                                <ul class="shop-w__list-2">
+                                                    <li>
+                                                        <div class="list__content">
+                                                            <a th:href="@{/shop-side-version-2.html}"
+                                                               th:style="${selectedBrandId == null ? 'color: #ff4500; font-weight: bold;' : ''}">Tất cả thương hiệu</a>
+                                                        </div>
+                                                    </li>
+                                                    <li th:each="brand : ${brands}">
+                                                        <div class="list__content">
+                                                            <a th:href="@{/shop-side-version-2.html(brandId=${brand.id})}"
+                                                               th:text="${brand.tenThuongHieu}"
+                                                               th:style="${selectedBrandId == brand.id ? 'color: #ff4500; font-weight: bold;' : ''}">Thương hiệu</a>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== Giữa ====== -->
+                        <div class="col-lg-9 col-md-12">
+                            <div class="shop-p">
+                                <div class="shop-p__toolbar u-s-m-b-30">
+                                    <div class="shop-p__meta-wrap u-s-m-b-60">
+                                        <span class="shop-p__meta-text-1" th:text="'TẤT CẢ SẢN PHẨM (' + ${products.size()} + ')'">TẤT CẢ SẢN PHẨM</span>
+                                    </div>
+                                    <div class="shop-p__tool-style">
+                                        <div class="tool-style__group u-s-m-b-8">
+
+                                            <span class="js-shop-grid-target is-active">Grid</span>
+
+                                            <span class="js-shop-list-target">List</span></div>
+                                    </div>
+                                </div>
+                                <div class="shop-p__collection">
+                                    <div class="row is-grid-active">
+                                        <div class="col-lg-4 col-md-6 col-sm-6" th:each="product : ${products}">
+                                            <div class="product-m" th:if="${product.sanPhamChiTiets != null and !product.sanPhamChiTiets.isEmpty()}">
+                                                <div class="product-m__thumb">
+                                                    <a class="aspect aspect--bg-grey aspect--square u-d-block" 
+                                                       th:href="@{/san-pham/{id}(id=${product.id})}">
+                                                        <img class="aspect__img" 
+                                                             th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" 
+                                                             alt="">
+                                                    </a>
+                                                    <div class="product-m__quick-look">
+                                                        <a class="fas fa-search" th:href="@{/san-pham/{id}(id=${product.id})}"></a>
+                                                    </div>
+                                                    <div class="product-m__add-cart">
+                                                        <a class="btn--e-brand" th:href="@{/san-pham/{id}(id=${product.id})}">Xem Chi Tiết</a>
+                                                    </div>
+                                                </div>
+                                                <div class="product-m__content">
+                                                    <div class="product-m__category">
+                                                        <a th:href="@{/shop-side-version-2.html(categoryId=${product.danhMuc.id})}" 
+                                                           th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+                                                    </div>
+                                                    <div class="product-m__name">
+                                                        <a th:href="@{/san-pham/{id}(id=${product.id})}" 
+                                                           th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+                                                    </div>
+                                                    <div class="product-m__rating gl-rating-style">
+                                                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                        <span class="product-m__review">(5)</span>
+                                                    </div>
+                                                    <div class="product-m__price" 
+                                                         th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT') + ' đ'}">$125.00</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--====== End - Section 1 ======-->
+        </div>
+        <!--====== End - App Content ======-->
+
+
+        <!--====== Main Footer ======-->
+        <footer th:replace="~{layout/footer :: footer}">
+        </footer>
+
+        <!--====== Modal Section ======-->
+        <div th:replace="~{layout/modals :: all-modals}"></div>
+    </div>
+    <!--====== End - Main App ======-->
+
+
+    <!--====== Google Analytics: change UA-XXXXX-Y to be your site's ID ======-->
+    <script>
+        window.ga = function() {
+            ga.q.push(arguments)
+        };
+        ga.q = [];
+        ga.l = +new Date;
+        ga('create', 'UA-XXXXX-Y', 'auto');
+        ga('send', 'pageview')
+    </script>
+    <script src="https://www.google-analytics.com/analytics.js" async defer></script>
+
+    <!--====== Vendor Js ======-->
+    <script th:src="@{/js/vendor.js}"></script>
+
+    <!--====== Plugin jQuery Shopnav ======-->
+    <script th:src="@{/js/jquery.shopnav.js}"></script>
+
+    <!--====== Ứng dụng ======-->
+    <script th:src="@{/js/app.js}"></script>
+
+    <!--====== Khi không hỗ trợ JavaScript ======-->
+    <noscript>
+        <div class="app-setting">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="app-setting__wrap">
+                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
+
+                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </noscript>
+</body>
+</html>

@@ -46,4 +46,10 @@ public class SoDiaChi {
 
     @Column(name = "is_default_billing", nullable = false)
     private boolean defaultBilling;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 }
