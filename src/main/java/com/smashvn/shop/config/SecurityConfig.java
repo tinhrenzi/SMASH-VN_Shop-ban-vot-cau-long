@@ -5,15 +5,26 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Tạm tắt CSRF để dễ Test POST requests
+            // Kích hoạt lại bảo mật CSRF
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat"))
+            // Cấu hình các Header bảo mật nâng cao
+            .headers(headers -> {
+                headers.frameOptions(frame -> frame.deny());
+                headers.referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN));
+                headers.permissionsPolicy(permissions -> permissions.policy("geolocation=(), microphone=(), camera=()"));
+                headers.xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK));
+            })
             .authorizeHttpRequests(auth -> auth
                 // Phân quyền cho POS, Đơn hàng, Khách hàng cho QL và NV
                 .requestMatchers("/admin/pos/**", "/admin/don-hang/**", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
@@ -27,7 +38,19 @@ public class SecurityConfig {
                     response.sendRedirect(request.getContextPath() + "/user/dang-nhap");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    String ip = request.getRemoteAddr();
+                    String uri = request.getRequestURI();
+                    Integer idNguoiDung = (Integer) request.getSession().getAttribute("idNguoiDung");
                     String role = (String) request.getSession().getAttribute("vaiTro");
+
+                    // Phân biệt CSRF Deny vs Access Deny để ghi log an ninh
+                    if (accessDeniedException instanceof org.springframework.security.web.csrf.CsrfException) {
+                        log.warn("[SECURITY_EVENT] CSRF_DENY: IP: {}, URL: {}, UserID: {}", ip, uri, idNguoiDung);
+                    } else {
+                        log.warn("[SECURITY_EVENT] ACCESS_DENY: IP: {}, UserID: {}, URL: {}, Lỗi: {}", 
+                                 ip, idNguoiDung, uri, accessDeniedException.getMessage());
+                    }
+
                     if ("NV".equals(role)) {
                         request.getSession().setAttribute("warningMsg", "Bạn không có quyền thực hiện chức năng này!");
                         response.sendRedirect(request.getContextPath() + "/admin/don-hang");
@@ -42,5 +65,14 @@ public class SecurityConfig {
             );
         
         return http.build();
+    }
+
+    // Đăng ký UploadSecurityFilter riêng biệt cho đường dẫn uploads
+    @Bean
+    public FilterRegistrationBean<UploadSecurityFilter> uploadSecurityFilterRegistration() {
+        FilterRegistrationBean<UploadSecurityFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new UploadSecurityFilter());
+        registrationBean.addUrlPatterns("/uploads/*");
+        return registrationBean;
     }
 }

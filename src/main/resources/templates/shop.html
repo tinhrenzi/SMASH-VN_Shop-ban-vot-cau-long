@@ -61,11 +61,11 @@
                                             <div class="shop-w__wrap collapse show" id="s-category">
                                                 <ul class="shop-w__category-list gl-scroll">
                                                     <li>
-                                                        <a th:href="@{/shop-side-version-2.html}"
+                                                        <a th:href="@{/shop}"
                                                            th:style="${selectedCategoryId == null ? 'color: #ff4500; font-weight: bold;' : ''}">Tất cả danh mục</a>
                                                     </li>
                                                     <li th:each="category : ${categories}">
-                                                        <a th:href="@{/shop-side-version-2.html(categoryId=${category.id})}"
+                                                        <a th:href="@{/shop(categoryId=${category.id})}"
                                                            th:text="${category.tenDanhMuc}"
                                                            th:style="${selectedCategoryId == category.id ? 'color: #ff4500; font-weight: bold;' : ''}">Danh mục</a>
                                                     </li>
@@ -86,13 +86,13 @@
                                                 <ul class="shop-w__list-2">
                                                     <li>
                                                         <div class="list__content">
-                                                            <a th:href="@{/shop-side-version-2.html}"
+                                                            <a th:href="@{/shop}"
                                                                th:style="${selectedBrandId == null ? 'color: #ff4500; font-weight: bold;' : ''}">Tất cả thương hiệu</a>
                                                         </div>
                                                     </li>
                                                     <li th:each="brand : ${brands}">
                                                         <div class="list__content">
-                                                            <a th:href="@{/shop-side-version-2.html(brandId=${brand.id})}"
+                                                            <a th:href="@{/shop(brandId=${brand.id})}"
                                                                th:text="${brand.tenThuongHieu}"
                                                                th:style="${selectedBrandId == brand.id ? 'color: #ff4500; font-weight: bold;' : ''}">Thương hiệu</a>
                                                         </div>
@@ -141,7 +141,7 @@
                                                 </div>
                                                 <div class="product-m__content">
                                                     <div class="product-m__category">
-                                                        <a th:href="@{/shop-side-version-2.html(categoryId=${product.danhMuc.id})}" 
+                                                        <a th:href="@{/shop(categoryId=${product.danhMuc.id})}" 
                                                            th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
                                                     </div>
                                                     <div class="product-m__name">

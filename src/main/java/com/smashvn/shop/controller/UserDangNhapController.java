@@ -21,17 +21,23 @@ import com.smashvn.shop.service.UserDangNhapService;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.entity.NhanVien;
 
+import com.smashvn.shop.security.LoginRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
+@Slf4j
 public class UserDangNhapController {
 
     private final UserDangNhapService userDangNhapService;
     private final NhanVienRepository nhanVienRepository;
+    private final LoginRateLimiter loginRateLimiter;
 
     // Hiển thị form đăng nhập
     @GetMapping("/dang-nhap")
-    public String hienThiFormDangNhap(@RequestParam(value = "loi", required = false) String loi, Model model) {
+    public String hienThiFormFormDangNhap(@RequestParam(value = "loi", required = false) String loi, Model model) {
         if (loi != null) {
             model.addAttribute("loi", loi);
         }
@@ -42,10 +48,26 @@ public class UserDangNhapController {
     @PostMapping("/dang-nhap")
     public String xuLyDangNhap(@RequestParam("email") String email,
                                @RequestParam("matKhau") String matKhau,
+                               HttpServletRequest request,
                                HttpSession session, // Dùng để lưu phiên đăng nhập
                                Model model) {
+        String ip = request.getRemoteAddr();
+        
+        // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
+        if (loginRateLimiter.isBlocked(ip)) {
+            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
+            return "signin";
+        }
+        
         try {
             TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(email, matKhau);
+            
+            // Đăng nhập thành công -> Reset bộ đếm rate limiter
+            loginRateLimiter.loginSucceeded(ip);
+            
+            // 2. Chống Session Fixation
+            request.changeSessionId();
+            session = request.getSession(true);
             
             // Lưu thông tin vào Session (ví dụ lưu email và id)
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
@@ -78,7 +100,10 @@ public class UserDangNhapController {
             }
             
         } catch (RuntimeException e) {
-            // Đăng nhập thất bại, báo lỗi ra màn hình
+            // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
+            loginRateLimiter.loginFailed(ip);
+            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
+            
             model.addAttribute("loi", e.getMessage());
             return "signin";
         }
@@ -93,14 +118,19 @@ public class UserDangNhapController {
     }
 
     @GetMapping("/google-success")
-    public String googleSuccess(OAuth2AuthenticationToken oauth2Token, HttpSession session) {
+    public String googleSuccess(OAuth2AuthenticationToken oauth2Token, HttpServletRequest request, HttpSession session) {
         // Rút trích Email và Tên từ Google
         String email = oauth2Token.getPrincipal().getAttribute("email");
         String name = oauth2Token.getPrincipal().getAttribute("name");
+        String ip = request.getRemoteAddr();
 
         try {
             // Xử lý tạo/lấy tài khoản từ DB
             TaiKhoan tk = userDangNhapService.xuLyDangNhapGoogle(email, name);
+            
+            // Chống Session Fixation
+            request.changeSessionId();
+            session = request.getSession(true);
             
             // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
             session.setAttribute("nguoiDungDangNhap", tk.getEmail());
@@ -123,7 +153,8 @@ public class UserDangNhapController {
                 return "redirect:/";
             }
         } catch (RuntimeException e) {
-            return "redirect:/user/dang-nhap?loi=" + e.getMessage();
+            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Google Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
+            return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 }

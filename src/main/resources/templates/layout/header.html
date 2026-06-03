@@ -1,4 +1,8 @@
         <header class="header--style-1">
+            <div id="csrf-token-holder" 
+                 th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 
+                 th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
+                 style="display:none;"></div>
 
             <!--====== Điều hướng 1 ======-->
             <nav class="primary-nav primary-nav-wrapper--border">
@@ -127,21 +131,21 @@
                                                     <ul>
                                                         <li class="js-active">
 
-                                                            <a th:href="@{/shop-side-version-2.html}"><i class="fa-solid fa-table-tennis-paddle-ball"></i>
+                                                            <a th:href="@{/shop}"><i class="fa-solid fa-table-tennis-paddle-ball"></i>
 
                                                                 <span>Sản phẩm</span></a>
 
                                                             <span class="js-menu-toggle js-toggle-mark"></span></li>
                                                         <li>
 
-                                                            <a th:href="@{/shop-side-version-2.html}"><i class="fas fa-female u-s-m-r-6"></i>
+                                                            <a th:href="@{/shop}"><i class="fas fa-female u-s-m-r-6"></i>
 
                                                                 <span>Tag 2</span></a>
 
                                                             <span class="js-menu-toggle"></span></li>
                                                         <li>
 
-                                                            <a th:href="@{/shop-side-version-2.html}"><i class="fas fa-male u-s-m-r-6"></i>
+                                                            <a th:href="@{/shop}"><i class="fas fa-male u-s-m-r-6"></i>
 
                                                                 <span>Tag 3</span></a>
 
@@ -185,7 +189,7 @@
                                                         <div class="col-lg-3">
                                                             <ul>
                                                                 <li class="mega-list-title">
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng trỏ đến sản phẩm 1</a></li>
+                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 1</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-3">
@@ -212,7 +216,7 @@
                                                         <div class="col-lg-3">
                                                             <ul>
                                                                 <li class="mega-list-title">
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng trỏ đến sản phẩm 2</a></li>
+                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 2</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-3">
@@ -240,13 +244,13 @@
                                                             <ul>
                                                                 <li class="mega-list-title">
 
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng trỏ đến sản phẩm 3</a></li>
+                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 3</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-9 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-0.jpg}" alt=""></a></div>
                                                         </div>
@@ -264,14 +268,14 @@
                                                         <div class="col-lg-6 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-1.jpg}" alt=""></a></div>
                                                         </div>
                                                         <div class="col-lg-6 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-2.jpg}" alt=""></a></div>
                                                         </div>
@@ -285,7 +289,7 @@
                                                             <ul>
                                                                 <li class="mega-list-title">
 
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng trỏ đến sản phẩm 2</a></li>
+                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 2</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-3">
@@ -313,7 +317,7 @@
                                                             <ul>
                                                                 <li class="mega-list-title">
 
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng trỏ đến sản phẩm 3</a></li>
+                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 3</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-3">
@@ -340,14 +344,14 @@
                                                         <div class="col-lg-9 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-3.jpg}" alt=""></a></div>
                                                         </div>
                                                         <div class="col-lg-3 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-4.jpg}" alt=""></a></div>
                                                         </div>
@@ -365,21 +369,21 @@
                                                         <div class="col-lg-4 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-5.jpg}" alt=""></a></div>
                                                         </div>
                                                         <div class="col-lg-4 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-6.jpg}" alt=""></a></div>
                                                         </div>
                                                         <div class="col-lg-4 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-7.jpg}" alt=""></a></div>
                                                         </div>
@@ -393,7 +397,7 @@
                                                             <ul>
                                                                 <li class="mega-list-title">
 
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng mẫu 2</a></li>
+                                                                    <a th:href="@{/shop}">Hàng mẫu 2</a></li>
                                                             </ul>
                                                         </div>
                                                         <div class="col-lg-3">
@@ -421,7 +425,7 @@
                                                             <ul>
                                                                 <li class="mega-list-title">
 
-                                                                    <a th:href="@{/shop-side-version-2.html}">Hàng mẫu</a></li>
+                                                                    <a th:href="@{/shop}">Hàng mẫu</a></li>
                                             
                                                             </ul>
                                                         </div>
@@ -449,14 +453,14 @@
                                                         <div class="col-lg-6 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-8.jpg}" alt=""></a></div>
                                                         </div>
                                                         <div class="col-lg-6 mega-image">
                                                             <div class="mega-banner">
 
-                                                                <a class="u-d-block" th:href="@{/shop-side-version-2.html}">
+                                                                <a class="u-d-block" th:href="@{/shop}">
 
                                                                     <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-9.jpg}" alt=""></a></div>
                                                         </div>
@@ -519,9 +523,11 @@
                                     <li>
                                         <a th:href="@{/}">Trang chủ</a></li>
                                     <li>
-                                        <a th:href="@{/}">Sản phẩm</a></li>
+                                        <a th:href="@{/shop}">Sản phẩm</a></li>
                                     <li>
-                                        <a th:href="@{/}">Giới thiệu</a></li>
+                                        <a th:href="@{/about}">Giới thiệu</a></li>
+                                    <li>
+                                        <a th:href="@{/blog}">Tin tức / Blogs</a></li>
                                 </ul>
                                 <!--====== Kết thúc - Danh sách ======-->
                             </div>

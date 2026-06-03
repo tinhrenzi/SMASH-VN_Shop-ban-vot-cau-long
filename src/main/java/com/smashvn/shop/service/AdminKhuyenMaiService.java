@@ -33,7 +33,7 @@ public class AdminKhuyenMaiService {
     private final SanPhamRepository sanPhamRepository;
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
-    private final EditLogRepository editLogRepository;
+    private final AuditService auditService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -384,18 +384,7 @@ public class AdminKhuyenMaiService {
                               String giaTriCu, String giaTriMoi, String ipAddress, String ghiChu) {
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang(tenBang);
-            log.setIdBanGhi(idBanGhi);
-            log.setHanhDong(hanhDong);
-            log.setGiaTriCu(giaTriCu);
-            log.setGiaTriMoi(giaTriMoi);
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu(ghiChu);
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
+            auditService.log(actingTaiKhoanId, tenBang, idBanGhi, hanhDong, giaTriCu, giaTriMoi, ipAddress, ghiChu, actingUser.getVaiTro());
         }
     }
 }

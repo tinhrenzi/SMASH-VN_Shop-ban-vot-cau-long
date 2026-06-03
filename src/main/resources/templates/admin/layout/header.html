@@ -6,6 +6,10 @@
 <body>
 
     <div th:fragment="header" class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary border-opacity-10 admin-header">
+        <div id="csrf-token-holder" 
+             th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 
+             th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
+             style="display:none;"></div>
         <h4 class="m-0 fw-bold d-flex align-items-center" style="font-family: 'Open Sans', sans-serif; color: #15171c;">
             <span class="badge me-2" style="background-color: #ff4500;"><i class="fas fa-lock text-white"></i></span>
             Hệ Thống Quản Trị <span class="text-brand-accent ms-2 fw-semibold opacity-75">/ Administration Panel</span>

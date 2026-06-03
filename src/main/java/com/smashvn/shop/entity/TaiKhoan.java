@@ -24,4 +24,7 @@ public class TaiKhoan {
 
     @Column(name = "trang_thai", nullable = false, length = 50)
     private String trangThai = "hoat_dong";
+
+    @Column(name = "token_xac_thuc_khoa", length = 100)
+    private String tokenXacThucKhoa;
 }

@@ -14,11 +14,17 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import com.smashvn.shop.service.UserDangNhapService;
+
+import org.springframework.web.servlet.ModelAndView;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Component
 @RequiredArgsConstructor
 public class AdminInterceptor implements HandlerInterceptor {
 
-    private final TaiKhoanRepository taiKhoanRepository;
+    private final UserDangNhapService userDangNhapService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -31,11 +37,10 @@ public class AdminInterceptor implements HandlerInterceptor {
         }
 
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        String vaiTro = (String) session.getAttribute("vaiTro");
 
-        // 2. Kiểm tra tài khoản trong DB để xem trạng thái có bị khóa không
-        TaiKhoan taiKhoan = taiKhoanRepository.findById(idNguoiDung).orElse(null);
-        if (taiKhoan == null || (!"hoat_dong".equals(taiKhoan.getTrangThai()) && !"cho_khoa".equals(taiKhoan.getTrangThai()))) {
+        // 2. Kiểm tra tài khoản qua Cache dịch vụ để xem trạng thái có bị khóa không (M-4)
+        String trangThai = userDangNhapService.layTrangThaiTaiKhoan(idNguoiDung);
+        if (!"hoat_dong".equals(trangThai) && !"cho_khoa".equals(trangThai)) {
             // Hủy phiên đăng nhập
             if (session != null) {
                 session.invalidate();

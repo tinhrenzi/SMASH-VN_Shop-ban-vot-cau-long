@@ -75,19 +75,25 @@
                                             <i class="fas fa-tags"></i> Biến thể
                                         </a>
                                         
-                                        <a th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" 
-                                           th:href="@{/admin/san-pham/xoa/{id}(id=${sp.id})}" 
-                                           class="btn btn-sm btn-danger ms-1" title="Ngừng bán"
-                                           onclick="return confirm('Bạn có chắc chắn muốn ngừng bán sản phẩm này?');">
-                                            <i class="fas fa-trash-alt"></i> Ngừng bán
-                                        </a>
+                                        <form th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" 
+                                              th:action="@{/admin/san-pham/xoa/{id}(id=${sp.id})}" 
+                                              method="POST" style="display: inline;"
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn ngừng bán sản phẩm này?');">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            <button type="submit" class="btn btn-sm btn-danger ms-1" title="Ngừng bán">
+                                                <i class="fas fa-trash-alt"></i> Ngừng bán
+                                            </button>
+                                        </form>
                                         
-                                        <a th:if="${sp.trangThai == 'ngung_kinh_doanh'}" 
-                                           th:href="@{/admin/san-pham/mo-ban-lai/{id}(id=${sp.id})}" 
-                                           class="btn btn-sm btn-success ms-1" title="Mở bán lại"
-                                           onclick="return confirm('Bạn có chắc chắn muốn mở bán lại sản phẩm này?');">
-                                            <i class="fas fa-play"></i> Mở bán lại
-                                        </a>
+                                        <form th:if="${sp.trangThai == 'ngung_kinh_doanh'}" 
+                                              th:action="@{/admin/san-pham/mo-ban-lai/{id}(id=${sp.id})}" 
+                                              method="POST" style="display: inline;"
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn mở bán lại sản phẩm này?');">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            <button type="submit" class="btn btn-sm btn-success ms-1" title="Mở bán lại">
+                                                <i class="fas fa-play"></i> Mở bán lại
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachSanPham.isEmpty()}">

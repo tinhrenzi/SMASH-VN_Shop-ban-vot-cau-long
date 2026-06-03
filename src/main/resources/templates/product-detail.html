@@ -99,7 +99,7 @@
 								
 								    <div>
 								        <div class="pd-detail__inline">
-								            <span class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
+								            <span id="js-display-price" class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
 								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
 								        </div>
 								    </div>
@@ -157,18 +157,25 @@
 								            <div class="js-stock-status u-s-m-b-15 text-danger fw-bold" style="display:none;">
 								                <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
 								            </div>
+
+								            <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
+								            <div id="js-variant-stock-info" class="u-s-m-b-15" style="display:none;">
+								                <span class="pd-detail__label">Kho: </span>
+								                <span id="js-variant-stock-count" class="fw-bold"></span>
+								                <span id="js-variant-stock-badge" class="pd-detail__stock" style="margin-left:8px;"></span>
+								            </div>
 								        
 								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
 								        
-								            <div class="pd-detail-inline-2">
-								                <div class="u-s-m-b-15">
+								            <div class="pd-detail-action-row u-s-m-b-15">
+								                <div class="pd-detail-action-row__counter">
 								                    <div class="input-counter">
 								                        <span class="input-counter__minus fas fa-minus"></span>
 								                        <input class="js-quantity-input input-counter__text input-counter--text-primary-style" type="text" name="soLuong" value="1" data-min="1" data-max="1000">
 								                        <span class="input-counter__plus fas fa-plus"></span>
 								                    </div>
 								                </div>
-								                <div class="u-s-m-b-15">
+								                <div class="pd-detail-action-row__btn">
 								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit" disabled>THÊM VÀO GIỎ</button>
 								                </div>
 								            </div>

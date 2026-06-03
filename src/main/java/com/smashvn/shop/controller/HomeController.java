@@ -37,8 +37,13 @@ public class HomeController {
         return "index";
     }
 
-    @GetMapping("/shop-side-version-2.html")
-    public String hienThiShopSideVersion2(
+    @GetMapping("/about")
+    public String hienThiTrangGioiThieu() {
+        return "about";
+    }
+
+    @GetMapping("/shop")
+    public String hienThiCuaHang(
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "brandId", required = false) Integer brandId,
             Model model) {
@@ -61,17 +66,28 @@ public class HomeController {
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("selectedBrandId", brandId);
 
-        return "shop-side-version-2";
+        return "shop";
+    }
+
+    @GetMapping("/shop-side-version-2.html")
+    public String redirectShopLegacy() {
+        return "redirect:/shop";
     }
 
     @GetMapping({
-        "/index.html", 
-        "/product-detail.html",
         "/blog-left-sidebar.html",
         "/blog-right-sidebar.html",
         "/blog-sidebar-none.html",
         "/blog-masonry.html",
         "/blog-detail.html"
+    })
+    public String redirectBlogLegacy() {
+        return "redirect:/blog";
+    }
+
+    @GetMapping({
+        "/index.html", 
+        "/product-detail.html"
     })
     public String redirectLegacyTemplates() {
         return "redirect:/";

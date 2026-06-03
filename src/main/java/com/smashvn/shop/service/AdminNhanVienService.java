@@ -11,10 +11,10 @@ import com.smashvn.shop.entity.EditLog;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.repository.EditLogRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,9 +25,12 @@ public class AdminNhanVienService {
 
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
-    private final EditLogRepository editLogRepository;
+    private final AuditService auditService;
     private final JavaMailSender mailSender;
     private final KhachHangRepository khachHangRepository;
+
+    @Value("${app.admin.emails}")
+    private String adminEmailsConfig;
 
     public static String[] splitFullName(String fullName) {
         if (fullName == null) {
@@ -113,36 +116,11 @@ public class AdminNhanVienService {
         kh.setLaTaiKhoanNoiBo(true); // Internal account flag
         kh = khachHangRepository.save(kh);
 
-        // 4. Lưu EditLog (Audit Logging)
+        // 4. Lưu Audit Logs
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang("NhanVien");
-            log.setIdBanGhi(nv.getId().longValue());
-            log.setHanhDong("INSERT");
-            log.setGiaTriCu(null);
-            log.setGiaTriMoi(formatState(nv, tk));
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu("Tạo nhân viên mới: " + email);
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
-
-            // Audit log for customer profile creation
-            EditLog khLog = new EditLog();
-            khLog.setTaiKhoan(actingUser);
-            khLog.setTenBang("KhachHang");
-            khLog.setIdBanGhi(kh.getId().longValue());
-            khLog.setHanhDong("INSERT");
-            khLog.setGiaTriCu(null);
-            khLog.setGiaTriMoi(String.format("id=%s, id_tai_khoan=%s, hoKh=%s, tenKh=%s, soDienThoaiKh=%s, laTaiKhoanNoiBo=true", 
-                    kh.getId(), tk.getId(), kh.getHoKh(), kh.getTenKh(), kh.getSoDienThoaiKh()));
-            khLog.setThoiGian(LocalDateTime.now());
-            khLog.setDiaChiIp(ipAddress);
-            khLog.setGhiChu("Tạo hồ sơ khách hàng thử nghiệm cho nhân viên: " + email);
-            khLog.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(khLog);
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "INSERT", null, formatState(nv, tk), ipAddress, "Tạo nhân viên mới: " + email, actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "KhachHang", kh.getId().longValue(), "INSERT", null, String.format("id=%s, id_tai_khoan=%s, hoKh=%s, tenKh=%s, soDienThoaiKh=%s, laTaiKhoanNoiBo=true", kh.getId(), tk.getId(), kh.getHoKh(), kh.getTenKh(), kh.getSoDienThoaiKh()), ipAddress, "Tạo hồ sơ khách hàng thử nghiệm cho nhân viên: " + email, actingUser.getVaiTro());
         }
     }
 
@@ -184,21 +162,10 @@ public class AdminNhanVienService {
         }
         taiKhoanRepository.save(tk);
 
-        // 3. Lưu EditLog (Audit Logging)
+        // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang("NhanVien");
-            log.setIdBanGhi(nv.getId().longValue());
-            log.setHanhDong("UPDATE");
-            log.setGiaTriCu(oldStateStr);
-            log.setGiaTriMoi(formatState(nv, tk));
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu("Cập nhật thông tin nhân viên: " + tk.getEmail());
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin nhân viên: " + tk.getEmail(), actingUser.getVaiTro());
         }
     }
 
@@ -223,44 +190,43 @@ public class AdminNhanVienService {
             newStatus = "cho_khoa"; // Chờ phê duyệt khóa
             logMessage = "Yêu cầu khóa tài khoản nhân viên (chờ phê duyệt): " + tk.getEmail();
             
+            // Tạo token ngẫu nhiên khi status chuyển thành cho_khoa
+            String token = java.util.UUID.randomUUID().toString();
+            tk.setTokenXacThucKhoa(token);
+            
             // Gửi email cho các admin hệ thống kèm link phê duyệt/từ chối trực tiếp
-            guiEmailXacNhanKhoa(nv, tk, appUrl);
+            guiEmailXacNhanKhoa(nv, tk, token, appUrl);
         } else if ("bi_khoa".equals(oldStatus)) {
             newStatus = "hoat_dong"; // Mở khóa trực tiếp
             logMessage = "Mở khóa tài khoản nhân viên: " + tk.getEmail();
+            tk.setTokenXacThucKhoa(null);
         } else {
             // Đang ở trạng thái cho_khoa, bấm lại thì hủy yêu cầu khóa (trở lại hoạt động)
             newStatus = "hoat_dong";
             logMessage = "Hủy yêu cầu khóa tài khoản nhân viên: " + tk.getEmail();
+            tk.setTokenXacThucKhoa(null);
         }
 
         tk.setTrangThai(newStatus);
         taiKhoanRepository.save(tk);
 
-        // 3. Lưu EditLog (Audit Logging)
+        // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang("NhanVien");
-            log.setIdBanGhi(nv.getId().longValue());
-            log.setHanhDong("UPDATE");
-            log.setGiaTriCu(oldStateStr);
-            log.setGiaTriMoi(formatState(nv, tk));
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu(logMessage);
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, logMessage, actingUser.getVaiTro());
         }
     }
 
-    private void guiEmailXacNhanKhoa(NhanVien nv, TaiKhoan tk, String appUrl) {
-        String[] admins = {"tinhluc02@gmail.com", "luonghiep334@gmail.com"};
+    private void guiEmailXacNhanKhoa(NhanVien nv, TaiKhoan tk, String token, String appUrl) {
+        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
+            System.err.println("Không có email quản trị nào được cấu hình trong app.admin.emails!");
+            return;
+        }
+        String[] admins = adminEmailsConfig.split(",");
         for (String email : admins) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(email);
+                message.setTo(email.trim());
                 message.setSubject("[Smash VN] Yêu cầu xác nhận khóa tài khoản nhân viên");
                 message.setText(String.format(
                         "Chào Admin hệ thống,\n\n" +
@@ -270,14 +236,14 @@ public class AdminNhanVienService {
                         "- Chức vụ: %s\n" +
                         "- Số điện thoại: %s\n\n" +
                         "Vui lòng nhấp vào một trong các liên kết dưới đây để thực hiện hành động:\n" +
-                        "1. PHÊ DUYỆT KHÓA TÀI KHOẢN: %s/admin/nhan-vien/approve-lock/%d\n" +
-                        "2. TỪ CHỐI KHÓA TÀI KHOẢN: %s/admin/nhan-vien/reject-lock/%d\n\n" +
+                        "1. PHÊ DUYỆT KHÓA TÀI KHOẢN: %s/admin/nhan-vien/approve-lock/%d?token=%s\n" +
+                        "2. TỪ CHỐI KHÓA TÀI KHOẢN: %s/admin/nhan-vien/reject-lock/%d?token=%s\n\n" +
                         "Yêu cầu này cũng hiển thị trên bảng điều khiển quản trị (Dashboard).\n" +
                         "Trân trọng,\n" +
                         "Hệ thống Quản trị Smash VN",
                         nv.getHoTenNv(), tk.getEmail(), nv.getChucVu(), nv.getSoDienThoaiNv(),
-                        appUrl, nv.getId(),
-                        appUrl, nv.getId()
+                        appUrl, nv.getId(), token,
+                        appUrl, nv.getId(), token
                 ));
                 mailSender.send(message);
             } catch (Exception e) {
@@ -287,37 +253,48 @@ public class AdminNhanVienService {
     }
 
     @Transactional
-    public void approveLock(Integer id, Integer actingTaiKhoanId, String ipAddress) {
+    public void approveLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
         NhanVien nv = findById(id);
         TaiKhoan tk = nv.getTaiKhoan();
 
         if (!"cho_khoa".equals(tk.getTrangThai())) {
             throw new RuntimeException("Tài khoản này không ở trạng thái chờ khóa!");
+        }
+
+        // Kiểm tra quyền: phải là Quản lý đăng nhập HOẶC token phải trùng khớp
+        boolean authorized = false;
+        TaiKhoan actingUser = null;
+        if (actingTaiKhoanId != null) {
+            actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+            if (actingUser != null && "QL".equals(actingUser.getVaiTro())) {
+                authorized = true;
+            }
+        }
+        
+        if (!authorized) {
+            if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
+                authorized = true;
+            }
+        }
+
+        if (!authorized) {
+            throw new RuntimeException("Bạn không có quyền thực hiện phê duyệt khóa tài khoản này!");
         }
 
         String oldStateStr = formatState(nv, tk);
         tk.setTrangThai("bi_khoa");
+        tk.setTokenXacThucKhoa(null); // Clear token
         taiKhoanRepository.save(tk);
 
-        TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang("NhanVien");
-            log.setIdBanGhi(nv.getId().longValue());
-            log.setHanhDong("UPDATE");
-            log.setGiaTriCu(oldStateStr);
-            log.setGiaTriMoi(formatState(nv, tk));
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu("Phê duyệt khóa tài khoản nhân viên: " + tk.getEmail());
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
+        if (actingUser == null) {
+            auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản qua token Email", "SYSTEM_EMAIL");
+        } else {
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản nhân viên: " + tk.getEmail(), actingUser.getVaiTro());
         }
     }
 
     @Transactional
-    public void rejectLock(Integer id, Integer actingTaiKhoanId, String ipAddress) {
+    public void rejectLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
         NhanVien nv = findById(id);
         TaiKhoan tk = nv.getTaiKhoan();
 
@@ -325,36 +302,50 @@ public class AdminNhanVienService {
             throw new RuntimeException("Tài khoản này không ở trạng thái chờ khóa!");
         }
 
+        // Kiểm tra quyền: phải là Quản lý đăng nhập HOẶC token phải trùng khớp
+        boolean authorized = false;
+        TaiKhoan actingUser = null;
+        if (actingTaiKhoanId != null) {
+            actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+            if (actingUser != null && "QL".equals(actingUser.getVaiTro())) {
+                authorized = true;
+            }
+        }
+        
+        if (!authorized) {
+            if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
+                authorized = true;
+            }
+        }
+
+        if (!authorized) {
+            throw new RuntimeException("Bạn không có quyền thực hiện từ chối khóa tài khoản này!");
+        }
+
         String oldStateStr = formatState(nv, tk);
         tk.setTrangThai("hoat_dong");
+        tk.setTokenXacThucKhoa(null); // Clear token
         taiKhoanRepository.save(tk);
 
         // Gửi mail thông báo từ chối khóa về các admin
         guiEmailTuChoiKhoa(nv, tk);
 
-        TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (actingUser != null) {
-            EditLog log = new EditLog();
-            log.setTaiKhoan(actingUser);
-            log.setTenBang("NhanVien");
-            log.setIdBanGhi(nv.getId().longValue());
-            log.setHanhDong("UPDATE");
-            log.setGiaTriCu(oldStateStr);
-            log.setGiaTriMoi(formatState(nv, tk));
-            log.setThoiGian(LocalDateTime.now());
-            log.setDiaChiIp(ipAddress);
-            log.setGhiChu("Từ chối khóa tài khoản nhân viên: " + tk.getEmail());
-            log.setVaiTroThucHien(actingUser.getVaiTro());
-            editLogRepository.save(log);
+        if (actingUser == null) {
+            auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản qua token Email", "SYSTEM_EMAIL");
+        } else {
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản nhân viên: " + tk.getEmail(), actingUser.getVaiTro());
         }
     }
 
     private void guiEmailTuChoiKhoa(NhanVien nv, TaiKhoan tk) {
-        String[] admins = {"tinhluc02@gmail.com", "luonghiep334@gmail.com"};
+        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
+            return;
+        }
+        String[] admins = adminEmailsConfig.split(",");
         for (String email : admins) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(email);
+                message.setTo(email.trim());
                 message.setSubject("[Smash VN] Yêu cầu khóa tài khoản bị từ chối");
                 message.setText(String.format(
                         "Chào Admin hệ thống,\n\n" +

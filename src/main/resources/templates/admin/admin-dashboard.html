@@ -301,7 +301,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function processLockAction(id, actionUrl) {
-        fetch(`/admin/nhan-vien/${actionUrl}/${id}?ajax=true`)
+        const tokenHolder = document.getElementById('csrf-token-holder');
+        const token = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+        const header = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+
+        const headers = {};
+        if (token && header) {
+            headers[header] = token;
+        }
+
+        fetch(`/admin/nhan-vien/${actionUrl}/${id}?ajax=true`, {
+            headers: headers
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {

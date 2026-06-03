@@ -106,7 +106,7 @@ public class AdminNhanVienController {
         }
     }
 
-    @GetMapping("/toggle/{id}")
+    @PostMapping("/toggle/{id}")
     public String xuLyToggleTrangThai(
             @PathVariable("id") Integer id,
             HttpSession session,
@@ -131,6 +131,7 @@ public class AdminNhanVienController {
     @GetMapping("/approve-lock/{id}")
     public Object xuLyPheDuyetKhoa(
             @PathVariable("id") Integer id,
+            @RequestParam(value = "token", required = false) String token,
             @RequestParam(value = "ajax", required = false) Boolean ajax,
             HttpSession session,
             HttpServletRequest request,
@@ -139,7 +140,7 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.approveLock(id, actingTaiKhoanId, ipAddress);
+            adminNhanVienService.approveLock(id, token, actingTaiKhoanId, ipAddress);
             if (Boolean.TRUE.equals(ajax)) {
                 return ResponseEntity.ok(Map.of("success", true, "message", "Đã phê duyệt khóa tài khoản thành công!"));
             }
@@ -161,6 +162,7 @@ public class AdminNhanVienController {
     @GetMapping("/reject-lock/{id}")
     public Object xuLyTuChoiKhoa(
             @PathVariable("id") Integer id,
+            @RequestParam(value = "token", required = false) String token,
             @RequestParam(value = "ajax", required = false) Boolean ajax,
             HttpSession session,
             HttpServletRequest request,
@@ -169,7 +171,7 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.rejectLock(id, actingTaiKhoanId, ipAddress);
+            adminNhanVienService.rejectLock(id, token, actingTaiKhoanId, ipAddress);
             if (Boolean.TRUE.equals(ajax)) {
                 return ResponseEntity.ok(Map.of("success", true, "message", "Đã từ chối khóa tài khoản nhân viên."));
             }

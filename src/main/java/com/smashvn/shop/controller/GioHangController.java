@@ -94,19 +94,20 @@ public class GioHangController {
         return "cart";
     }
 
-	 // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Gộp chung cho cả Cart và Mini Cart)
-	    @GetMapping("/api/xoa/{id}")
+	 // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Chuyển sang POST để chống CSRF)
+	    @PostMapping("/api/xoa/{id}")
 	    @ResponseBody
 	    public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
 	        Map<String, String> response = new HashMap<>();
+	        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
 	        
-	        if (session.getAttribute("idNguoiDung") == null) {
+	        if (idNguoiDung == null) {
 	            response.put("trangThai", "chuadangnhap");
 	            return ResponseEntity.ok(response);
 	        }
 	        
 	        try {
-	            gioHangService.xoaSanPhamKhoiGio(idChiTiet);
+	            gioHangService.xoaSanPhamKhoiGio(idChiTiet, idNguoiDung);
 	            response.put("trangThai", "ok");
 	        } catch (Exception e) {
 	            response.put("trangThai", "loi");
@@ -121,8 +122,10 @@ public class GioHangController {
     public ResponseEntity<String> capNhatSoLuong(@RequestParam("idChiTiet") Integer idChiTiet,
                                                  @RequestParam("soLuong") Integer soLuong,
                                                  HttpSession session) {
-        if (session.getAttribute("idNguoiDung") == null) return ResponseEntity.status(401).body("Chưa đăng nhập");
-        gioHangService.capNhatSoLuong(idChiTiet, soLuong);
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) return ResponseEntity.status(401).body("Chưa đăng nhập");
+        
+        gioHangService.capNhatSoLuong(idChiTiet, soLuong, idNguoiDung);
         return ResponseEntity.ok("ok");
     }
 }

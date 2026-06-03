@@ -12,9 +12,15 @@ import com.smashvn.shop.entity.*;
 import com.smashvn.shop.repository.*;
 import com.smashvn.shop.service.AdminSanPhamService;
 
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.*;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+
 @Controller
 @RequestMapping("/admin/san-pham")
 @RequiredArgsConstructor
+@Validated
 public class AdminSanPhamController {
 
     private final SanPhamRepository sanPhamRepository;
@@ -48,17 +54,18 @@ public class AdminSanPhamController {
 
     @PostMapping("/them")
     public String xuLyThemSanPham(
-            @RequestParam("tenSanPham") String tenSanPham,
-            @RequestParam("idDanhMuc") Integer idDanhMuc,
-            @RequestParam("idThuongHieu") Integer idThuongHieu,
+            @RequestParam("tenSanPham") @NotBlank(message = "Tên sản phẩm không được trống") @Size(min = 3, max = 255, message = "Tên sản phẩm phải từ 3 đến 255 ký tự") String tenSanPham,
+            @RequestParam("idDanhMuc") @NotNull(message = "Danh mục không được trống") @Min(value = 1, message = "Danh mục không hợp lệ") Integer idDanhMuc,
+            @RequestParam("idThuongHieu") @NotNull(message = "Thương hiệu không được trống") @Min(value = 1, message = "Thương hiệu không hợp lệ") Integer idThuongHieu,
             @RequestParam("moTa") String moTa,
-            @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
-            @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
+            @RequestParam(value = "giaBan", required = false) @NotNull(message = "Giá bán không được trống") @DecimalMin(value = "1.0", message = "Giá bán phải lớn hơn 0") BigDecimal giaBan,
+            @RequestParam(value = "soLuongTon", required = false) @NotNull(message = "Số lượng tồn kho không được trống") @Min(value = 0, message = "Số lượng không được âm") Integer soLuongTon,
             @RequestParam("fileAnh") MultipartFile fileAnh,
-            @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
-            @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
-            @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
+            @RequestParam(value = "mauSacs", required = false) @NotEmpty(message = "Chọn ít nhất 1 màu sắc") List<String> mauSacs,
+            @RequestParam(value = "trongLuongs", required = false) @NotEmpty(message = "Chọn ít nhất 1 trọng lượng") List<String> trongLuongs,
+            @RequestParam(value = "mucCangs", required = false) @NotEmpty(message = "Chọn ít nhất 1 mức căng") List<String> mucCangs,
             org.springframework.web.multipart.MultipartHttpServletRequest request,
+            HttpSession session,
             Model model) {
         try {
             java.util.Map<String, MultipartFile> variantImageMap = new java.util.HashMap<>();
@@ -95,7 +102,9 @@ public class AdminSanPhamController {
                 mauSacs, trongLuongs, mucCangs,
                 variantImageMap,
                 variantPriceMap,
-                variantQuantityMap
+                variantQuantityMap,
+                (Integer) session.getAttribute("idNguoiDung"),
+                request.getRemoteAddr()
             );
             return "redirect:/admin/san-pham?thanhcong"; 
         } catch (Exception e) {
@@ -136,29 +145,34 @@ public class AdminSanPhamController {
                                  @RequestParam("tenSanPham") String tenSanPham,
                                  @RequestParam("idDanhMuc") Integer idDanhMuc,
                                  @RequestParam("idThuongHieu") Integer idThuongHieu,
-                                 @RequestParam("moTa") String moTa) {
+                                 @RequestParam("moTa") String moTa,
+                                 HttpSession session,
+                                 HttpServletRequest request) {
         try {
-            adminSanPhamService.capNhatSanPham(idSanPham, tenSanPham, idDanhMuc, idThuongHieu, moTa);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.capNhatSanPham(idSanPham, tenSanPham, idDanhMuc, idThuongHieu, moTa, idNguoiDung, request.getRemoteAddr());
             return "redirect:/admin/san-pham?suaThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham/sua/" + idSanPham + "?loi=LoiHeThong";
         }
     }
     
-    @GetMapping("/xoa/{id}")
-    public String xuLyXoaSanPham(@PathVariable("id") Integer id) {
+    @PostMapping("/xoa/{id}")
+    public String xuLyXoaSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
-            adminSanPhamService.xoaSanPham(id);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.xoaSanPham(id, idNguoiDung, request.getRemoteAddr());
             return "redirect:/admin/san-pham?xoaThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham?loiXoa"; 
         }
     }
 
-    @GetMapping("/mo-ban-lai/{id}")
-    public String xuLyMoBanLaiSanPham(@PathVariable("id") Integer id) {
+    @PostMapping("/mo-ban-lai/{id}")
+    public String xuLyMoBanLaiSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
-            adminSanPhamService.moBanLaiSanPham(id);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.moBanLaiSanPham(id, idNguoiDung, request.getRemoteAddr());
             return "redirect:/admin/san-pham?moBanLaiThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham?loiMoBanLai"; 

@@ -4486,8 +4486,26 @@ input::-ms-clear {
 
 .pd-detail__price {
   color: #ff4500;
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 700; }
+
+/* Layout hàng action: ô số lượng + nút thêm vào giỏ */
+.pd-detail-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px; }
+
+.pd-detail-action-row__counter {
+  flex-shrink: 0; }
+
+.pd-detail-action-row__btn {
+  flex-shrink: 0; }
+
+@media (max-width: 480px) {
+  .pd-detail-action-row {
+    flex-direction: column;
+    align-items: flex-start; } }
 
 .pd-detail__discount {
   color: #ff4500;

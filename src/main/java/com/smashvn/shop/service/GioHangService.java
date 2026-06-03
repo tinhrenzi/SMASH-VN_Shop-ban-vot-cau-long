@@ -32,6 +32,7 @@ public class GioHangService {
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TrangThaiGioHangRepository trangThaiGioHangRepository;
 
+    @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
         KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (khachHang == null) {
@@ -46,7 +47,8 @@ public class GioHangService {
         }
 
         GioHangChiTiet chiTiet = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(gioHang.getId(), idSanPhamChiTiet);
-        SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
+        // Sử dụng findByIdWithLock để khóa dòng sản phẩm chi tiết bằng Pessimistic Write (Chống Overselling)
+        SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
         // --- BÀI TOÁN VALIDATE TỒN KHO THỰC TẾ ---
@@ -145,18 +147,48 @@ public class GioHangService {
         return response;
     }
 
-    public void xoaSanPhamKhoiGio(Integer idGioHangChiTiet) {
-        gioHangChiTietRepository.deleteById(idGioHangChiTiet);
-    }
+    @org.springframework.transaction.annotation.Transactional
+    public void xoaSanPhamKhoiGio(Integer idGioHangChiTiet, Integer idTaiKhoan) {
+        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (khachHang == null) {
+            throw new RuntimeException("Tài khoản không hợp lệ!");
+        }
 
-    public void capNhatSoLuong(Integer idGioHangChiTiet, Integer soLuongMoi) {
         GioHangChiTiet chiTiet = gioHangChiTietRepository.findById(idGioHangChiTiet)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm trong giỏ"));
+
+        // Chống IDOR: Xác minh sản phẩm giỏ hàng thuộc về người dùng đang thao tác
+        if (!chiTiet.getGioHang().getKhachHang().getId().equals(khachHang.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền xóa sản phẩm này khỏi giỏ hàng!");
+        }
+
+        gioHangChiTietRepository.delete(chiTiet);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void capNhatSoLuong(Integer idGioHangChiTiet, Integer soLuongMoi, Integer idTaiKhoan) {
+        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (khachHang == null) {
+            throw new RuntimeException("Tài khoản không hợp lệ!");
+        }
+
+        GioHangChiTiet chiTiet = gioHangChiTietRepository.findById(idGioHangChiTiet)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm trong giỏ"));
+
+        // Chống IDOR: Xác minh sản phẩm giỏ hàng thuộc về người dùng đang thao tác
+        if (!chiTiet.getGioHang().getKhachHang().getId().equals(khachHang.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền cập nhật giỏ hàng này!");
+        }
+
         if (soLuongMoi > 0) {
+            // Chống sửa vượt quá tồn kho (H-7)
+            if (chiTiet.getSanPhamChiTiet().getSoLuongTon() < soLuongMoi) {
+                throw new RuntimeException("Số lượng tồn kho không đủ! Chỉ còn " + chiTiet.getSanPhamChiTiet().getSoLuongTon() + " sản phẩm.");
+            }
             chiTiet.setSoLuong(soLuongMoi);
             gioHangChiTietRepository.save(chiTiet);
         } else {
-            gioHangChiTietRepository.deleteById(idGioHangChiTiet);
+            gioHangChiTietRepository.delete(chiTiet);
         }
     }
 }

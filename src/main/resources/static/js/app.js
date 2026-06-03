@@ -2,6 +2,15 @@
  * This is main script file that contains JS code.
  */
 (function ($) {
+    // Global jQuery AJAX CSRF configuration
+    $(document).ajaxSend(function(event, xhr, options) {
+        const token = $('#csrf-token-holder').data('csrf-token');
+        const header = $('#csrf-token-holder').data('csrf-header');
+        if (token && header) {
+            xhr.setRequestHeader(header, token);
+        }
+    });
+
     // Main Object
     var RESHOP = {};
 
@@ -593,7 +602,13 @@ function checkAndApplyVariant(container) {
     const stockStatus = container.querySelector('.js-stock-status');
     const inputId = container.querySelector('.js-variant-id');
     const quantityInput = container.querySelector('.js-quantity-input');
-    const priceDisplay = container.querySelector('.pd-detail__price');
+    // Ưu tiên dùng id #js-display-price nếu có, fallback sang class
+    const priceDisplay = document.getElementById('js-display-price') || container.querySelector('.pd-detail__price');
+    
+    // Panel tồn kho riêng (chỉ có ở trang chi tiết)
+    const stockInfoPanel = document.getElementById('js-variant-stock-info');
+    const stockCountEl = document.getElementById('js-variant-stock-count');
+    const stockBadgeEl = document.getElementById('js-variant-stock-badge');
 
     const selectedColor = container.getAttribute('data-selected-color');
     const selectedSize = container.getAttribute('data-selected-size');
@@ -605,6 +620,7 @@ function checkAndApplyVariant(container) {
             stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
             stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
         }
+        if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if(btnAdd) btnAdd.disabled = true;
         return;
     }
@@ -623,15 +639,36 @@ function checkAndApplyVariant(container) {
     if (matchedVariant) {
         // --- CẬP NHẬT THÔNG TIN CƠ BẢN ---
         if (inputId) inputId.value = matchedVariant.id;
-        if (btnAdd) btnAdd.disabled = false;
         
+        const soLuong = matchedVariant.soLuongTon || 0;
+        const conHang = soLuong > 0;
+        
+        if(btnAdd) btnAdd.disabled = !conHang;
+        
+        // Ẩn thông báo cảnh báo
         if(stockStatus) {
-            stockStatus.style.display = 'block';
-            stockStatus.innerHTML = `<i class="fas fa-check-circle"></i> Sản phẩm có sẵn (Còn ${matchedVariant.soLuongTon})`;
-            stockStatus.className = 'js-stock-status u-s-m-b-15 text-success fw-bold';
+            stockStatus.style.display = 'none';
         }
 
-        if (quantityInput) quantityInput.setAttribute('data-max', matchedVariant.soLuongTon);
+        // Hiển thị panel tồn kho riêng
+        if (stockInfoPanel) {
+            stockInfoPanel.style.display = 'block';
+            if (stockCountEl) {
+                stockCountEl.innerText = soLuong + ' sản phẩm';
+                stockCountEl.style.color = conHang ? '#009444' : '#ff4500';
+            }
+            if (stockBadgeEl) {
+                if (conHang) {
+                    stockBadgeEl.innerText = 'Còn hàng';
+                    stockBadgeEl.className = 'pd-detail__stock';
+                } else {
+                    stockBadgeEl.innerText = 'Hết hàng';
+                    stockBadgeEl.className = 'pd-detail__left';
+                }
+            }
+        }
+
+        if (quantityInput) quantityInput.setAttribute('data-max', soLuong);
         if (priceDisplay) priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
 
         // --- CẬP NHẬT HÌNH ẢNH (TÍCH HỢP CẢ QUICK LOOK & DETAIL) ---
@@ -672,6 +709,7 @@ function checkAndApplyVariant(container) {
         // Trường hợp hết hàng / Không có biến thể này
         if (inputId) inputId.value = "";
         if (btnAdd) btnAdd.disabled = true;
+        if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if(stockStatus) {
             stockStatus.style.display = 'block';
             stockStatus.innerHTML = '<i class="fas fa-times-circle"></i> Hiện đã hết hàng.';
@@ -854,7 +892,7 @@ function checkAndApplyVariant(container) {
 
           $.ajax({
               url: '/gio-hang/api/xoa/' + idChiTiet,
-              type: 'GET',
+              type: 'POST',
               success: function(response) {
                   if (response.trangThai === 'chuadangnhap') {
                       window.location.href = '/user/dang-nhap';

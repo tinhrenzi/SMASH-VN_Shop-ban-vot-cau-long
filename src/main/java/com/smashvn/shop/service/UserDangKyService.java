@@ -20,6 +20,16 @@ public class UserDangKyService {
 
     @Transactional // Rất quan trọng: Đảm bảo lưu cả 2 bảng cùng lúc, lỗi 1 cái là hoàn tác cả 2
     public TaiKhoan dangKy(String email, String matKhau) {
+        // Validation email format
+        if (email == null || !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            throw new RuntimeException("Định dạng email không hợp lệ!");
+        }
+
+        // Validation password strength: >= 8 characters, containing both letters and numbers
+        if (matKhau == null || matKhau.length() < 8 || !matKhau.matches(".*[A-Za-z].*") || !matKhau.matches(".*[0-9].*")) {
+            throw new RuntimeException("Mật khẩu phải dài ít nhất 8 ký tự và chứa cả chữ và số!");
+        }
+
         // 1. Kiểm tra trùng lặp
         if (taiKhoanRepository.existsByEmail(email)) {
             throw new RuntimeException("Email này đã được sử dụng!");

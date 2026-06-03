@@ -27,7 +27,7 @@ public class AdminPosService {
     private final NhanVienRepository nhanVienRepository;
     private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
-    private final EditLogRepository editLogRepository;
+    private final AuditService auditService;
     private final SanPhamRepository sanPhamRepository;
 
     // Tìm kiếm biến thể sản phẩm đang bán kèm lọc danh mục & thương hiệu
@@ -281,16 +281,7 @@ public class AdminPosService {
         }
 
         // 9. Ghi nhật ký kiểm toán (Audit Log)
-        EditLog audit = new EditLog();
-        audit.setTaiKhoan(nvTk);
-        audit.setTenBang("HoaDon");
-        audit.setIdBanGhi(Long.valueOf(hd.getId()));
-        audit.setHanhDong("INSERT");
-        audit.setThoiGian(LocalDateTime.now());
-        audit.setDiaChiIp(clientIp);
-        audit.setVaiTroThucHien(nvTk.getVaiTro());
-        audit.setGhiChu("Thanh toán hóa đơn tại quầy (POS) - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")");
-        editLogRepository.save(audit);
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp, "Thanh toán hóa đơn tại quầy (POS) - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
 
         return hd;
     }
