@@ -63,6 +63,12 @@
     <h2>1. Những Yêu Cầu Đã Thực Hiện (Implemented Requirements)</h2>
     <div class="section-block">
         <ul>
+            <li><strong>Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix):</strong>
+                <ul>
+                    <li><strong>Hỗ trợ đồng bộ trạng thái đơn hàng:</strong> Cập nhật các truy vấn trong <code>HoaDonRepository</code> và <code>HoaDonChiTietRepository</code> để tính toán doanh thu, số lượng sản phẩm bán ra, giá trị trung bình đơn hàng, và xếp hạng sản phẩm bán chạy dựa trên cả trạng thái đơn hàng POS (<code>da_giao</code> / <code>da_huy</code>) và đơn hàng Online (<code>delivered</code> / <code>cancelled</code>).</li>
+                    <li><strong>Chuẩn hóa hiển thị biểu đồ và tỷ lệ đơn hàng:</strong> Cấu hình <code>AdminThongKeService</code> tự động ánh xạ và gom nhóm các trạng thái đơn hàng tiếng Anh về nhãn tiếng Việt tiêu chuẩn (<code>cho_xac_nhan</code>, <code>dang_giao</code>, <code>da_giao</code>, <code>da_huy</code>) trước khi trả về frontend, giúp biểu đồ trạng thái đơn hàng hiển thị chính xác 100% dữ liệu của cả hai luồng bán hàng.</li>
+                </ul>
+            </li>
             <li><strong>Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow):</strong>
                 <ul>
                     <li><strong>Mở rộng Phương thức Thanh toán POS:</strong> Hỗ trợ lựa chọn giữa Tiền mặt (CASH) và Chuyển khoản (BANK_TRANSFER). Việc định vị phương thức thanh toán được ánh xạ trực tiếp sang bảng <code>PhuongThucThanhToan</code> sẵn có, tránh dư thừa nguồn dữ liệu (no duplicate sources of truth).</li>

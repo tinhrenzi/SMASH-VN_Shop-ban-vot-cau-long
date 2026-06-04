@@ -68,4 +68,29 @@ public class GeneralMetricsDTO {
     public Long totalProductsSold() {
         return totalProductsSold;
     }
+
+    // Standard JavaBeans getters for Jackson JSON serialization
+    public Long getTotalOrders() {
+        return totalOrders;
+    }
+
+    public Long getSuccessfulOrders() {
+        return successfulOrders;
+    }
+
+    public Long getCancelledOrders() {
+        return cancelledOrders;
+    }
+
+    public BigDecimal getTotalRevenue() {
+        return totalRevenue;
+    }
+
+    public Double getAvgOrderValue() {
+        return avgOrderValue;
+    }
+
+    public Long getTotalProductsSold() {
+        return totalProductsSold;
+    }
 }

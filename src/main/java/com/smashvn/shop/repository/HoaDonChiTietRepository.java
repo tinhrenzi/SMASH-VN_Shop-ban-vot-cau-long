@@ -16,7 +16,7 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
     List<HoaDonChiTiet> findByHoaDon_Id(Integer idHoaDon);
 
     @Query("SELECT COALESCE(SUM(hdct.soLuong), 0L) FROM HoaDonChiTiet hdct " +
-           "WHERE hdct.hoaDon.trangThaiDonHang = 'da_giao' AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
+           "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
     Long getTotalProductsSold(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.TopProductDTO(" +
@@ -28,7 +28,7 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
            "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)" +
            ") " +
            "FROM HoaDonChiTiet hdct " +
-           "WHERE hdct.hoaDon.trangThaiDonHang = 'da_giao' " +
+           "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') " +
            "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate " +
            "GROUP BY hdct.sanPhamChiTiet.sanPham.id, hdct.sanPhamChiTiet.sanPham.tenSanPham, hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc " +
            "ORDER BY SUM(hdct.soLuong) DESC")

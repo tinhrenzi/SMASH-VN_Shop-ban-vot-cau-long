@@ -18,34 +18,34 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
     @Query("SELECT new com.smashvn.shop.dto.GeneralMetricsDTO(" +
            "COUNT(hd.id), " +
-           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang = 'da_giao' THEN 1L ELSE 0L END), 0L), " +
-           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang = 'da_huy' THEN 1L ELSE 0L END), 0L), " +
-           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang = 'da_giao' THEN hd.tongTien ELSE 0.0 END), 0.0), " +
-           "COALESCE(AVG(CASE WHEN hd.trangThaiDonHang = 'da_giao' THEN hd.tongTien ELSE NULL END), 0.0), " +
+           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang IN ('da_giao', 'delivered') THEN 1L ELSE 0L END), 0L), " +
+           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang IN ('da_huy', 'cancelled') THEN 1L ELSE 0L END), 0L), " +
+           "COALESCE(SUM(CASE WHEN hd.trangThaiDonHang IN ('da_giao', 'delivered') THEN hd.tongTien ELSE 0.0 END), 0.0), " +
+           "COALESCE(AVG(CASE WHEN hd.trangThaiDonHang IN ('da_giao', 'delivered') THEN hd.tongTien ELSE NULL END), 0.0), " +
            "0L" +
            ") FROM HoaDon hd WHERE hd.ngayTao BETWEEN :start AND :end")
     GeneralMetricsDTO getGeneralMetricsWithoutProductCount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.ChartPointDTO(HOUR(hd.ngayTao), COALESCE(SUM(hd.tongTien), 0.0)) " +
            "FROM HoaDon hd " +
-           "WHERE hd.trangThaiDonHang = 'da_giao' AND hd.ngayTao BETWEEN :start AND :end " +
+           "WHERE hd.trangThaiDonHang IN ('da_giao', 'delivered') AND hd.ngayTao BETWEEN :start AND :end " +
            "GROUP BY HOUR(hd.ngayTao) ORDER BY HOUR(hd.ngayTao)")
     List<ChartPointDTO> getRevenueByHour(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.ChartPointDTO(YEAR(hd.ngayTao), MONTH(hd.ngayTao), DAY(hd.ngayTao), COALESCE(SUM(hd.tongTien), 0.0)) " +
            "FROM HoaDon hd " +
-           "WHERE hd.trangThaiDonHang = 'da_giao' AND hd.ngayTao BETWEEN :start AND :end " +
+           "WHERE hd.trangThaiDonHang IN ('da_giao', 'delivered') AND hd.ngayTao BETWEEN :start AND :end " +
            "GROUP BY YEAR(hd.ngayTao), MONTH(hd.ngayTao), DAY(hd.ngayTao) ORDER BY YEAR(hd.ngayTao), MONTH(hd.ngayTao), DAY(hd.ngayTao)")
     List<ChartPointDTO> getRevenueByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.ChartPointDTO(YEAR(hd.ngayTao), MONTH(hd.ngayTao), COALESCE(SUM(hd.tongTien), 0.0)) " +
            "FROM HoaDon hd " +
-           "WHERE hd.trangThaiDonHang = 'da_giao' AND hd.ngayTao BETWEEN :start AND :end " +
+           "WHERE hd.trangThaiDonHang IN ('da_giao', 'delivered') AND hd.ngayTao BETWEEN :start AND :end " +
            "GROUP BY YEAR(hd.ngayTao), MONTH(hd.ngayTao) ORDER BY YEAR(hd.ngayTao), MONTH(hd.ngayTao)")
     List<ChartPointDTO> getRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT COUNT(kh.id) FROM KhachHang kh " +
-           "WHERE (SELECT MIN(hd.ngayTao) FROM HoaDon hd WHERE hd.khachHang.id = kh.id AND hd.trangThaiDonHang = 'da_giao') BETWEEN :start AND :end")
+           "WHERE (SELECT MIN(hd.ngayTao) FROM HoaDon hd WHERE hd.khachHang.id = kh.id AND hd.trangThaiDonHang IN ('da_giao', 'delivered')) BETWEEN :start AND :end")
     Long countNewCustomers(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.OrderStatusCountDTO(hd.trangThaiDonHang, COUNT(hd.id)) " +

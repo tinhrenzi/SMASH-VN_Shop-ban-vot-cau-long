@@ -129,7 +129,17 @@ public class AdminThongKeService {
         statusMap.put("da_giao", 0L);
         statusMap.put("da_huy", 0L);
         for (OrderStatusCountDTO osc : statusCounts) {
-            statusMap.put(osc.status(), osc.count());
+            String dbStatus = osc.status();
+            if (dbStatus != null) {
+                String normalizedStatus = switch (dbStatus.toLowerCase()) {
+                    case "da_giao", "delivered" -> "da_giao";
+                    case "da_huy", "cancelled" -> "da_huy";
+                    case "dang_giao", "shipping" -> "dang_giao";
+                    case "cho_xac_nhan", "processing" -> "cho_xac_nhan";
+                    default -> dbStatus;
+                };
+                statusMap.put(normalizedStatus, statusMap.getOrDefault(normalizedStatus, 0L) + osc.count());
+            }
         }
 
         // 3. Gom nhóm doanh thu cho biểu đồ

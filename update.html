@@ -63,7 +63,22 @@
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
     <!-- NEWEST UPDATES FIRST -->
-    <h2>1. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
+    <h2>1. Chức năng: Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tổng hợp dữ liệu doanh thu đa kênh:</strong> Điều chỉnh các truy vấn JPA trong <code>HoaDonRepository</code> và <code>HoaDonChiTietRepository</code> để hỗ trợ đồng thời cả hai bộ trạng thái đơn hàng:
+                <ul>
+                    <li>Hoàn thành/Đã giao: <code>da_giao</code> (POS) và <code>delivered</code> (Online).</li>
+                    <li>Đã hủy: <code>da_huy</code> (POS) và <code>cancelled</code> (Online).</li>
+                </ul>
+                Giúp các chỉ số KPIs (Doanh thu thuần, Đơn thành công, Sản phẩm đã bán, Giá trị trung bình đơn) và biểu đồ doanh thu theo thời gian hiển thị chính xác toàn bộ kết quả bán hàng thực tế.
+            </li>
+            <li><strong>Chuẩn hóa ánh xạ trạng thái đơn hàng:</strong> Cải tiến <code>AdminThongKeService.java</code> để tự động chuyển đổi các trạng thái tiếng Anh của đơn hàng online (<code>delivered</code>, <code>cancelled</code>, <code>shipping</code>, <code>processing</code>) về các trạng thái tiếng Việt tương ứng trước khi đưa vào bản đồ phân phối <code>statusMap</code>, đảm bảo biểu đồ tròn hiển thị đầy đủ và chính xác tỷ lệ đơn hàng.</li>
+        </ul>
+    </div>
+
+    <h2>2. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -98,7 +113,7 @@
         </ul>
     </div>
 
-    <h2>2. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
+    <h2>3. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -113,7 +128,7 @@
         </ul>
     </div>
 
-    <h2>2. Chức năng: Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
+    <h2>4. Chức năng: Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -131,7 +146,7 @@
         </ul>
     </div>
 
-    <h2>3. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
+    <h2>5. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -143,7 +158,7 @@
         </ul>
     </div>
 
-    <h2>4. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
+    <h2>6. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -162,7 +177,7 @@
         </ul>
     </div>
 
-    <h2>5. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
+    <h2>7. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -175,7 +190,7 @@
         </ul>
     </div>
 
-    <h2>6. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
+    <h2>8. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -186,7 +201,7 @@
         </ul>
     </div>
 
-    <h2>7. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
+    <h2>9. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -197,7 +212,7 @@
         </ul>
     </div>
 
-    <h2>8. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
+    <h2>10. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -206,7 +221,7 @@
         </ul>
     </div>
 
-    <h2>9. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
+    <h2>11. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -221,7 +236,7 @@
         </ul>
     </div>
 
-    <h2>10. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
+    <h2>12. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -234,7 +249,7 @@
         </ul>
     </div>
 
-    <h2>11. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
+    <h2>13. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -244,7 +259,7 @@
         </ul>
     </div>
 
-    <h2>12. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
+    <h2>14. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -253,7 +268,7 @@
         </ul>
     </div>
 
-    <h2>13. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
+    <h2>15. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
 
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
@@ -264,7 +279,7 @@
         </ul>
     </div>
 
-    <h2>14. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
+    <h2>16. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -275,7 +290,7 @@
         </ul>
     </div>
 
-    <h2>15. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
+    <h2>17. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -286,7 +301,7 @@
         </ul>
     </div>
 
-    <h2>16. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
+    <h2>18. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -296,7 +311,7 @@
         </ul>
     </div>
 
-    <h2>17. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
+    <h2>19. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -308,7 +323,7 @@
         </ul>
     </div>
 
-    <h2>18. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
+    <h2>20. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -317,7 +332,7 @@
         </ul>
     </div>
 
-    <h2>19. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
+    <h2>21. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -332,7 +347,7 @@
         </ul>
     </div>
 
-    <h2>20. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
+    <h2>22. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
