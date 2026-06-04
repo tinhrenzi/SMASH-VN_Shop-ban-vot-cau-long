@@ -63,6 +63,13 @@
     <h2>1. Những Yêu Cầu Đã Thực Hiện (Implemented Requirements)</h2>
     <div class="section-block">
         <ul>
+            <li><strong>Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix):</strong>
+                <ul>
+                    <li><strong>Ngăn ngừa xung đột CSS:</strong> Thay thế lớp class <code>about</code> thiết kế riêng cho trang Giới thiệu bằng lớp class tùy chỉnh mới <code>error-card</code> để tránh xung đột định dạng chiều cao, bóng mờ và khoảng cách trên các trang báo lỗi.</li>
+                    <li><strong>Sửa lỗi tràn nút (Button Overflow):</strong> Cấu hình hiển thị dạng <code>inline-block</code> cùng kích thước đệm (padding) chuẩn và bo góc cho các nút hành động, ngăn chặn hoàn toàn hiện tượng nút tràn ra ngoài và đè lên đường viền nét đứt của hộp thông báo.</li>
+                    <li><strong>Đồng bộ kiểu dáng nút phụ:</strong> Đổi class nút "Cửa hàng" từ <code>btn--e-secondary-b-2</code> không tồn tại sang <code>btn--e-secondary</code> hợp lệ để nút hiển thị nền đen chuẩn thiết kế của SmashVN thay vì dạng liên kết chữ thô không viền.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix):</strong>
                 <ul>
                     <li><strong>Hỗ trợ đồng bộ trạng thái đơn hàng:</strong> Cập nhật các truy vấn trong <code>HoaDonRepository</code> và <code>HoaDonChiTietRepository</code> để tính toán doanh thu, số lượng sản phẩm bán ra, giá trị trung bình đơn hàng, và xếp hạng sản phẩm bán chạy dựa trên cả trạng thái đơn hàng POS (<code>da_giao</code> / <code>da_huy</code>) và đơn hàng Online (<code>delivered</code> / <code>cancelled</code>).</li>
