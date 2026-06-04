@@ -127,6 +127,12 @@ public class AdminSanPhamService {
             if (tenSanPham == null || tenSanPham.trim().length() < 3) {
                 throw new RuntimeException("Tên sản phẩm bắt buộc và phải có ít nhất 3 ký tự!");
             }
+            if (idDanhMuc == null || idDanhMuc < 1) {
+                throw new RuntimeException("Vui lòng chọn danh mục hợp lệ!");
+            }
+            if (idThuongHieu == null || idThuongHieu < 1) {
+                throw new RuntimeException("Vui lòng chọn thương hiệu hợp lệ!");
+            }
             if (giaBan == null || giaBan.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Giá bán phải lớn hơn 0 VNĐ!");
             }

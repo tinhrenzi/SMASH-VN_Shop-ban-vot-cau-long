@@ -20,7 +20,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @RequestMapping("/admin/san-pham")
 @RequiredArgsConstructor
-@Validated
 public class AdminSanPhamController {
 
     private final SanPhamRepository sanPhamRepository;
@@ -54,16 +53,16 @@ public class AdminSanPhamController {
 
     @PostMapping("/them")
     public String xuLyThemSanPham(
-            @RequestParam("tenSanPham") @NotBlank(message = "Tên sản phẩm không được trống") @Size(min = 3, max = 255, message = "Tên sản phẩm phải từ 3 đến 255 ký tự") String tenSanPham,
-            @RequestParam("idDanhMuc") @NotNull(message = "Danh mục không được trống") @Min(value = 1, message = "Danh mục không hợp lệ") Integer idDanhMuc,
-            @RequestParam("idThuongHieu") @NotNull(message = "Thương hiệu không được trống") @Min(value = 1, message = "Thương hiệu không hợp lệ") Integer idThuongHieu,
+            @RequestParam("tenSanPham") String tenSanPham,
+            @RequestParam("idDanhMuc") Integer idDanhMuc,
+            @RequestParam("idThuongHieu") Integer idThuongHieu,
             @RequestParam("moTa") String moTa,
-            @RequestParam(value = "giaBan", required = false) @NotNull(message = "Giá bán không được trống") @DecimalMin(value = "1.0", message = "Giá bán phải lớn hơn 0") BigDecimal giaBan,
-            @RequestParam(value = "soLuongTon", required = false) @NotNull(message = "Số lượng tồn kho không được trống") @Min(value = 0, message = "Số lượng không được âm") Integer soLuongTon,
+            @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
+            @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
             @RequestParam("fileAnh") MultipartFile fileAnh,
-            @RequestParam(value = "mauSacs", required = false) @NotEmpty(message = "Chọn ít nhất 1 màu sắc") List<String> mauSacs,
-            @RequestParam(value = "trongLuongs", required = false) @NotEmpty(message = "Chọn ít nhất 1 trọng lượng") List<String> trongLuongs,
-            @RequestParam(value = "mucCangs", required = false) @NotEmpty(message = "Chọn ít nhất 1 mức căng") List<String> mucCangs,
+            @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
+            @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
+            @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
             org.springframework.web.multipart.MultipartHttpServletRequest request,
             HttpSession session,
             Model model) {

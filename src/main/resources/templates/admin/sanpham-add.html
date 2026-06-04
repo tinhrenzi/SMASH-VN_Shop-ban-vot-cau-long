@@ -78,9 +78,22 @@
                             <div class="col-md-4">
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Màu Sắc</h6>
-                                    <div class="form-check my-2" th:each="mau : ${listMauSac}">
-                                        <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}" th:checked="${selectedMauSacs != null && selectedMauSacs.contains(mau)}">
-                                        <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
+                                    <div id="mauSacContainer">
+                                        <div class="form-check my-2" th:each="mau : ${listMauSac}">
+                                            <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}" th:checked="${selectedMauSacs != null && selectedMauSacs.contains(mau)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected colors -->
+                                        <th:block th:if="${selectedMauSacs != null}">
+                                            <div class="form-check my-2" th:each="selectedMau : ${selectedMauSacs}" th:if="${!listMauSac.contains(selectedMau)}">
+                                                <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${selectedMau}" th:id="'mau_' + ${selectedMau}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${selectedMau}" th:text="${selectedMau}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newColorInput" placeholder="Thêm màu mới..." maxlength="50">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('color')"><i class="fas fa-plus"></i> Thêm</button>
                                     </div>
                                 </div>
                             </div>
@@ -89,9 +102,22 @@
                             <div class="col-md-4">
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Size / Trọng Lượng</h6>
-                                    <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
-                                        <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}" th:checked="${selectedTrongLuongs != null && selectedTrongLuongs.contains(trong)}">
-                                        <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
+                                    <div id="trongLuongContainer">
+                                        <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
+                                            <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}" th:checked="${selectedTrongLuongs != null && selectedTrongLuongs.contains(trong)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected weights -->
+                                        <th:block th:if="${selectedTrongLuongs != null}">
+                                            <div class="form-check my-2" th:each="selectedTrong : ${selectedTrongLuongs}" th:if="${!listTrongLuong.contains(selectedTrong)}">
+                                                <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${selectedTrong}" th:id="'trong_' + ${selectedTrong}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${selectedTrong}" th:text="${selectedTrong}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newWeightInput" placeholder="Thêm trọng lượng/size..." maxlength="20">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('weight')"><i class="fas fa-plus"></i> Thêm</button>
                                     </div>
                                 </div>
                             </div>
@@ -100,9 +126,22 @@
                             <div class="col-md-4">
                                 <div class="checkbox-card-premium shadow-sm">
                                     <h6>Sức Căng (Vợt Cầu Lông)</h6>
-                                    <div class="form-check my-2" th:each="cang : ${listMucCang}">
-                                        <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}" th:checked="${selectedMucCangs != null && selectedMucCangs.contains(cang)}">
-                                        <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${cang}" th:text="${cang}"></label>
+                                    <div id="mucCangContainer">
+                                        <div class="form-check my-2" th:each="cang : ${listMucCang}">
+                                            <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}" th:checked="${selectedMucCangs != null && selectedMucCangs.contains(cang)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${cang}" th:text="${cang}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected tensions -->
+                                        <th:block th:if="${selectedMucCangs != null}">
+                                            <div class="form-check my-2" th:each="selectedCang : ${selectedMucCangs}" th:if="${!listMucCang.contains(selectedCang)}">
+                                                <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${selectedCang}" th:id="'cang_' + ${selectedCang}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${selectedCang}" th:text="${selectedCang}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newTensionInput" placeholder="Thêm sức căng..." maxlength="20">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('tension')"><i class="fas fa-plus"></i> Thêm</button>
                                     </div>
                                 </div>
                             </div>
@@ -291,13 +330,94 @@
         }
 
         // Đăng ký sự kiện change cho tất cả checkboxes
-        checkboxes.forEach(cb => {
-            cb.addEventListener("change", updatePreview);
-        });
+        function registerCheckboxListeners() {
+            const currentCheckboxes = document.querySelectorAll(".filter-checkbox");
+            currentCheckboxes.forEach(cb => {
+                cb.removeEventListener("change", updatePreview);
+                cb.addEventListener("change", updatePreview);
+            });
+        }
+
+        registerCheckboxListeners();
 
         // Chạy lần đầu khi load form
         updatePreview();
+
+        window.updateProductPreview = function() {
+            registerCheckboxListeners();
+            updatePreview();
+        };
     });
+
+    function addNewAttribute(type) {
+        let inputId, containerId, name, cbClass, labelPrefix;
+        if (type === 'color') {
+            inputId = 'newColorInput';
+            containerId = 'mauSacContainer';
+            name = 'mauSacs';
+            cbClass = 'mau-cb';
+            labelPrefix = 'mau_';
+        } else if (type === 'weight') {
+            inputId = 'newWeightInput';
+            containerId = 'trongLuongContainer';
+            name = 'trongLuongs';
+            cbClass = 'trong-cb';
+            labelPrefix = 'trong_';
+        } else if (type === 'tension') {
+            inputId = 'newTensionInput';
+            containerId = 'mucCangContainer';
+            name = 'mucCangs';
+            cbClass = 'cang-cb';
+            labelPrefix = 'cang_';
+        }
+
+        const input = document.getElementById(inputId);
+        const value = input.value.trim();
+        if (!value) {
+            alert('Vui lòng nhập giá trị!');
+            return;
+        }
+
+        const container = document.getElementById(containerId);
+        // Check if value already exists
+        const existingCheckboxes = container.querySelectorAll(`input[name="${name}"]`);
+        for (let cb of existingCheckboxes) {
+            if (cb.value.toLowerCase() === value.toLowerCase()) {
+                alert('Giá trị này đã tồn tại!');
+                return;
+            }
+        }
+
+        // Create new checkbox
+        const newId = labelPrefix + value.replace(/\s+/g, '_');
+        const formCheck = document.createElement('div');
+        formCheck.className = 'form-check my-2';
+        
+        const cbInput = document.createElement('input');
+        cbInput.className = `form-check-input filter-checkbox ${cbClass}`;
+        cbInput.type = 'checkbox';
+        cbInput.name = name;
+        cbInput.value = value;
+        cbInput.id = newId;
+        cbInput.checked = true; // Auto check the newly added attribute
+        
+        const cbLabel = document.createElement('label');
+        cbLabel.className = 'form-check-label fw-semibold text-secondary';
+        cbLabel.htmlFor = newId;
+        cbLabel.textContent = value;
+
+        formCheck.appendChild(cbInput);
+        formCheck.appendChild(cbLabel);
+        container.appendChild(formCheck);
+
+        // Clear input
+        input.value = '';
+
+        // Trigger preview update
+        if (window.updateProductPreview) {
+            window.updateProductPreview();
+        }
+    }
 </script>
 </body>
 </html>

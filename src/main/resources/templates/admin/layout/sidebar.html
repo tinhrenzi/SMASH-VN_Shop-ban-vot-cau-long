@@ -57,12 +57,23 @@
 
         <style>
             .sidebar {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+                -ms-overflow-style: none;  /* IE and Edge */
+                scrollbar-width: none;  /* Firefox */
                 min-height: 100vh;
                 background-color: #15171c !important; /* Deep dark slate from home page theme */
                 color: #ffffff;
                 padding-top: 10px;
                 box-shadow: 4px 0 10px rgba(0,0,0,0.15);
                 font-family: 'Open Sans', sans-serif;
+                align-self: flex-start;
+                z-index: 1000;
+            }
+            .sidebar::-webkit-scrollbar {
+                display: none; /* Hide scrollbar for Chrome/Safari/Opera */
             }
             .sidebar a {
                 color: #adb5bd;

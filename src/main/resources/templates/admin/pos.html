@@ -8,10 +8,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
     <style>
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-content {
+            height: 100vh !important;
+            min-height: 100vh !important;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 30px 15px 30px !important;
+            overflow: hidden;
+        }
         .pos-container {
             display: flex;
             gap: 20px;
-            height: calc(100vh - 150px);
+            flex: 1;
+            min-height: 0;
         }
         .pos-left {
             flex: 1.3;
@@ -89,9 +102,7 @@
             margin-bottom: 8px;
         }
         .cart-list {
-            flex: 1;
-            overflow-y: auto;
-            min-height: 200px;
+            min-height: 120px;
             border: 1px dashed rgba(21, 23, 28, 0.15);
             border-radius: 12px;
             padding: 10px;

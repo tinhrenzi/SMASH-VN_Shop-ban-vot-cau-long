@@ -5,7 +5,7 @@
     <title>In Hóa Đơn - SmashVN</title>
     <style>
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 12px;
             color: #000000;
             margin: 0;
@@ -56,7 +56,7 @@
         }
         table th {
             text-align: left;
-            border-bottom: 1px solid #000000;
+            border-bottom: 1px dashed #000000;
             padding: 5px 0;
         }
         table td {
@@ -139,9 +139,9 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 50%;">Sản phẩm</th>
-                <th style="width: 15%; text-align: center;">SL</th>
-                <th style="width: 35%; text-align: right;">Thành tiền</th>
+                <th style="width: 55%;">Sản phẩm</th>
+                <th style="width: 15%; text-align: center; white-space: nowrap;">SL</th>
+                <th style="width: 30%; text-align: right; white-space: nowrap;">Thành tiền</th>
             </tr>
         </thead>
         <tbody>
@@ -150,8 +150,8 @@
                     <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Vợt Yonex</span><br>
                     <span class="item-details" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">3U | Đỏ</span>
                 </td>
-                <td style="text-align: center;" th:text="${item.soLuong}">1</td>
-                <td style="text-align: right;" th:text="${#numbers.formatDecimal(item.donGia.multiply(new java.math.BigDecimal(item.soLuong)), 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
+                <td style="text-align: center; white-space: nowrap;" th:text="${item.soLuong}">1</td>
+                <td style="text-align: right; white-space: nowrap;" th:text="${#numbers.formatDecimal(item.donGia.multiply(new java.math.BigDecimal(item.soLuong)), 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
             </tr>
         </tbody>
     </table>
@@ -161,16 +161,16 @@
     <!-- Summary block -->
     <table class="summary-table">
         <tr>
-            <td class="bold">Cộng tiền hàng:</td>
-            <td style="text-align: right;" th:text="${#numbers.formatDecimal(tongTienTruocGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
+            <td class="bold" style="white-space: nowrap; width: 60%;">Cộng tiền hàng:</td>
+            <td style="text-align: right; white-space: nowrap; width: 40%;" th:text="${#numbers.formatDecimal(tongTienTruocGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>
         </tr>
         <tr th:if="${tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #000;">
-            <td class="bold">Voucher giảm:</td>
-            <td style="text-align: right;" th:text="'-' + ${#numbers.formatDecimal(tienGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">-100.000 đ</td>
+            <td class="bold" style="white-space: nowrap; width: 60%;">Voucher giảm:</td>
+            <td style="text-align: right; white-space: nowrap; width: 40%;" th:text="'-' + ${#numbers.formatDecimal(tienGiam, 0, 'COMMA', 0, 'POINT')} + ' đ'">-100.000 đ</td>
         </tr>
         <tr>
-            <td class="bold" style="font-size: 13px;">TỔNG THANH TOÁN:</td>
-            <td class="bold" style="text-align: right; font-size: 13px;" th:text="${#numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">900.000 đ</td>
+            <td class="bold" style="font-size: 13px; white-space: nowrap; width: 60%;">TỔNG THANH TOÁN:</td>
+            <td class="bold" style="text-align: right; font-size: 13px; white-space: nowrap; width: 40%;" th:text="${#numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">900.000 đ</td>
         </tr>
     </table>
 

@@ -63,7 +63,27 @@
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
     <!-- NEWEST UPDATES FIRST -->
-    <h2>1. Chức năng: Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix)</h2>
+    <h2>1. Chức năng: Khắc phục lỗi Sidebar Cố định (Fixed/Sticky Sidebar Navigation Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Cố định thanh điều hướng bên trái:</strong> Cập nhật lớp CSS <code>.sidebar</code> thành <code>position: sticky; top: 0; height: 100vh;</code>. Đảm bảo thanh menu quản trị bên trái luôn được cố định ở vị trí hiển thị trên màn hình và không bao giờ bị cuốn trôi theo khung cuộn nội dung chính bên phải.</li>
+            <li><strong>Ẩn thanh cuộn thông minh (Independent Scrollability):</strong> Kích hoạt <code>overflow-y: auto</code> để menu tự cuộn nếu danh mục vượt quá độ cao màn hình, đồng thời ẩn thanh cuộn (scrollbar) đối với mọi trình duyệt để giữ giao diện thanh lịch và liền mạch.</li>
+        </ul>
+    </div>
+
+    <h2>2. Chức năng: Khắc phục lỗi Giao diện In Hóa đơn K80 (K80 Receipt Print Layout Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Chuyển đổi font chữ hiển thị trực quan:</strong> Thay đổi font chữ hóa đơn in nhiệt từ font monospace (<code>Courier New</code>) sang font chữ không chân (<code>Arial, sans-serif</code>) giúp giao diện gọn gàng, tiết kiệm chiều ngang của khổ K80 và giống với mẫu hóa đơn hình 2.</li>
+            <li><strong>Ngăn chặn xuống dòng và lệch cột (white-space: nowrap):</strong> Thiết lập thuộc tính CSS <code>white-space: nowrap</code> trên các cột hiển thị số lượng, đơn giá và thành tiền, giúp ngăn ngừa tình trạng số tiền lớn hoặc số lượng sản phẩm làm vỡ dòng (wrap thành hàng dọc).</li>
+            <li><strong>Định vị tỷ lệ cột cố định:</strong> Cập nhật các thẻ <code>th</code> và <code>td</code> trong bảng chi tiết sản phẩm và bảng tổng hợp (Summary Table) với các tỷ lệ phần trăm cụ thể (55%, 15%, 30% cho chi tiết; 60%, 40% cho tổng hợp) để bảo toàn cấu trúc bảng ngay cả khi số liệu có độ rộng bất thường.</li>
+            <li><strong>Chuyển đường viền bảng sang nét đứt:</strong> Thay đổi kiểu viền dưới của tiêu đề bảng (table header) thành dạng nét đứt <code>border-bottom: 1px dashed #000000</code> để đồng bộ hoàn toàn với các phần phân vùng divider nét đứt khác trên hóa đơn in nhiệt.</li>
+        </ul>
+    </div>
+
+    <h2>3. Chức năng: Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -73,7 +93,7 @@
         </ul>
     </div>
 
-    <h2>2. Chức năng: Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix)</h2>
+    <h2>4. Chức năng: Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -88,7 +108,7 @@
         </ul>
     </div>
 
-    <h2>3. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
+    <h2>5. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -123,7 +143,7 @@
         </ul>
     </div>
 
-    <h2>4. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
+    <h2>6. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -138,7 +158,7 @@
         </ul>
     </div>
 
-    <h2>5. Chức năng: Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
+    <h2>7. Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -156,7 +176,7 @@
         </ul>
     </div>
 
-    <h2>6. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
+    <h2>8. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -168,7 +188,7 @@
         </ul>
     </div>
 
-    <h2>7. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
+    <h2>9. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -187,7 +207,7 @@
         </ul>
     </div>
 
-    <h2>8. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
+    <h2>10. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -200,7 +220,7 @@
         </ul>
     </div>
 
-    <h2>9. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
+    <h2>11. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -211,7 +231,7 @@
         </ul>
     </div>
 
-    <h2>10. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
+    <h2>12. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -222,7 +242,7 @@
         </ul>
     </div>
 
-    <h2>11. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
+    <h2>13. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -231,7 +251,7 @@
         </ul>
     </div>
 
-    <h2>12. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
+    <h2>14. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -246,7 +266,7 @@
         </ul>
     </div>
 
-    <h2>13. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
+    <h2>15. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -259,7 +279,7 @@
         </ul>
     </div>
 
-    <h2>14. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
+    <h2>16. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -269,7 +289,7 @@
         </ul>
     </div>
 
-    <h2>15. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
+    <h2>17. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -278,7 +298,7 @@
         </ul>
     </div>
 
-    <h2>16. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
+    <h2>18. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
 
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
@@ -289,7 +309,7 @@
         </ul>
     </div>
 
-    <h2>17. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
+    <h2>19. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -300,7 +320,7 @@
         </ul>
     </div>
 
-    <h2>18. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
+    <h2>20. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -311,7 +331,7 @@
         </ul>
     </div>
 
-    <h2>19. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
+    <h2>21. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -321,7 +341,7 @@
         </ul>
     </div>
 
-    <h2>20. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
+    <h2>22. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -333,7 +353,7 @@
         </ul>
     </div>
 
-    <h2>21. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
+    <h2>23. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -342,7 +362,7 @@
         </ul>
     </div>
 
-    <h2>22. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
+    <h2>24. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -357,12 +377,42 @@
         </ul>
     </div>
 
-    <h2>23. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
+    <h2>25. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
             <li><strong>Bảo mật múi giờ Asia/Ho_Chi_Minh:</strong> Đồng bộ múi giờ Việt Nam khi chuyển đổi ngày lọc, thiết lập mốc bắt đầu ngày (<code>00:00:00</code>) và kết thúc ngày (<code>23:59:59</code>) nhất quán.</li>
             <li><strong>Xử lý dữ liệu trống tinh tế (Empty states):</strong> Khi khoảng thời gian lọc không có dữ liệu, frontend ẩn canvas biểu đồ và render giao diện thông báo trống trực quan thay vì gây lỗi biểu đồ.</li>
+        </ul>
+    </div>
+
+    <h2>26. Chức năng: Cố định Sidebar & Tối ưu hóa Giao diện POS tại quầy</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Khắc phục lỗi Sidebar trượt cuộn:</strong> Bổ sung thuộc tính <code>align-self: flex-start</code> và <code>z-index: 1000</code> cho class <code>.sidebar</code> để ngăn sidebar tự động giãn nở theo chiều cao của phần nội dung chính trong flexbox layout, giúp sidebar luôn cố định vị trí (sticky) ở mép trái màn hình khi cuộn nội dung.</li>
+            <li><strong>Khóa khung cuộn trang POS (Viewport Locking):</strong> Thiết lập chiều cao <code>body</code> và <code>.main-content</code> thành <code>100vh</code> kết hợp thuộc tính <code>overflow: hidden</code> trên trang POS để triệt tiêu thanh cuộn của trình duyệt chính, khóa cứng vị trí Header và Sidebar.</li>
+            <li><strong>Tối ưu hóa cuộn độc lập trang POS:</strong> Điều chỉnh giao diện hiển thị để giỏ hàng <code>.cart-list</code> tự động co giãn theo danh sách sản phẩm và cuộn mượt mà độc lập trong panel thanh toán <code>.pos-right</code>, loại bỏ hoàn toàn hiện tượng hiển thị hai thanh cuộn lồng nhau (double scrollbars) gây khó chịu.</li>
+        </ul>
+    </div>
+
+    <h2>27. Chức năng: Thêm động Màu Sắc, Size, Trọng Lượng khi Tạo Sản Phẩm Mới</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Nhập động thuộc tính tùy chỉnh:</strong> Tích hợp ô nhập văn bản và nút "Thêm" trực tiếp dưới các mục thuộc tính "Màu sắc", "Size / Trọng Lượng" và "Sức Căng (Vợt Cầu Lông)" trên màn hình thêm sản phẩm mới (<code>sanpham-add.html</code>). Cho phép quản trị viên tự do nhập thêm các giá trị mới ngoài danh sách mặc định cứng.</li>
+            <li><strong>Tự động sinh biến thể với giá trị mới:</strong> Sử dụng JavaScript động để chèn lựa chọn mới vào danh sách checkbox, tự động kích hoạt tính năng tính Cartesian Product để sinh đầy đủ biến thể và bảng thiết lập giá/kho của giá trị vừa thêm.</li>
+            <li><strong>Duy trì giá trị đã thêm khi lỗi form (Form Persistence):</strong> Viết mã Thymeleaf để tự động phát hiện và vẽ lại các checkbox chứa giá trị tùy chỉnh được chọn trước đó trong trường hợp xảy ra lỗi xác thực đầu vào từ phía backend, ngăn ngừa việc mất mát dữ liệu đã nhập.</li>
+        </ul>
+    </div>
+
+    <h2>28. Sửa lỗi: Phục hồi trang Thêm Sản phẩm khi Gặp Lỗi Xác thực (Validation Recovery Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Loại bỏ interceptor chặn lỗi trước phương thức:</strong> Loại bỏ chú thích <code>@Validated</code> ở cấp lớp và các chú thích ràng buộc trực tiếp trên tham số phương thức <code>xuLyThemSanPham</code> trong <code>AdminSanPhamController.java</code>. Điều này ngăn Spring Validation tự động ném ra ngoại lệ <code>ConstraintViolationException</code> từ trước khi luồng điều khiển đi vào phương thức của controller.</li>
+            <li><strong>Xử lý lỗi tập trung tại Controller:</strong> Chuyển toàn bộ các nghiệp vụ kiểm tra tính hợp lệ của dữ liệu đầu vào (tên sản phẩm, giá bán, số lượng tồn kho, danh mục, thương hiệu, và tệp ảnh tải lên) sang Service layer xử lý thủ công và ném lỗi <code>RuntimeException</code>. Giúp đảm bảo các ngoại lệ này được bắt giữ trực tiếp trong khối <code>try-catch</code> của hàm controller.</li>
+            <li><strong>Khắc phục triệt để lỗi sập trang Thymeleaf:</strong> Khi xảy ra lỗi đầu vào, khối <code>catch</code> sẽ nạp đầy đủ các bộ dữ liệu danh mục (<code>listDanhMuc</code>), thương hiệu (<code>listThuongHieu</code>) và danh sách cấu hình thuộc tính mặc định, ngăn chặn hoàn toàn hiện tượng Thymeleaf cố gắng render trang với dữ liệu null dẫn đến lỗi hỏng trang vĩnh viễn (sập trang và không thêm lại được sản phẩm).</li>
         </ul>
     </div>
 

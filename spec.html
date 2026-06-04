@@ -63,6 +63,19 @@
     <h2>1. Những Yêu Cầu Đã Thực Hiện (Implemented Requirements)</h2>
     <div class="section-block">
         <ul>
+            <li><strong>Khắc phục lỗi Sidebar Cố định (Fixed/Sticky Sidebar Navigation Fix):</strong>
+                <ul>
+                    <li><strong>Cố định thanh điều hướng bên trái:</strong> Cập nhật lớp CSS <code>.sidebar</code> thành <code>position: sticky; top: 0; height: 100vh;</code>. Đảm bảo thanh menu quản trị bên trái luôn được cố định ở vị trí hiển thị trên màn hình và không bao giờ bị cuốn trôi theo khung cuộn nội dung chính bên phải.</li>
+                    <li><strong>Ẩn thanh cuộn thông minh (Independent Scrollability):</strong> Kích hoạt <code>overflow-y: auto</code> để menu tự cuộn nếu danh mục vượt quá độ cao màn hình, đồng thời ẩn thanh cuộn (scrollbar) đối với mọi trình duyệt để giữ giao diện thanh lịch và liền mạch.</li>
+                </ul>
+            </li>
+            <li><strong>Khắc phục lỗi Giao diện In Hóa đơn K80 (K80 Receipt Print Layout Fix):</strong>
+                <ul>
+                    <li><strong>Thay đổi font chữ tương thích:</strong> Chuyển font chữ hóa đơn từ dạng monospace (Courier New) vốn chiếm nhiều chiều ngang sang font chữ không chân (sans-serif: Arial, Helvetica) nhỏ gọn, hiện đại và giống hệt mẫu yêu cầu.</li>
+                    <li><strong>Sửa lỗi lệch cột và tràn dòng (No-Wrap Alignment):</strong> Bổ sung thuộc tính CSS <code>white-space: nowrap</code> cho các cột số lượng và thành tiền, cùng việc thiết lập tỷ lệ chiều rộng cố định cho các cột trong bảng tổng hợp, ngăn chặn tình trạng số tiền dài làm co rụt cột chữ và làm vỡ dòng (wrap chữ thành từng dòng dọc).</li>
+                    <li><strong>Chuẩn hóa đường viền phân cách:</strong> Đổi viền dưới của tiêu đề bảng (table header) từ nét liền (solid) sang nét đứt (dashed) để đồng bộ hoàn toàn phong cách với các đường nét đứt phân vùng khác của hóa đơn in nhiệt.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix):</strong>
                 <ul>
                     <li><strong>Ngăn ngừa xung đột CSS:</strong> Thay thế lớp class <code>about</code> thiết kế riêng cho trang Giới thiệu bằng lớp class tùy chỉnh mới <code>error-card</code> để tránh xung đột định dạng chiều cao, bóng mờ và khoảng cách trên các trang báo lỗi.</li>
@@ -230,6 +243,9 @@
         <ul>
             <li><strong>Loại bỏ cột phuong_thuc_pos trùng lặp:</strong> Để đảm bảo nguyên lý "Single Source of Truth", chúng tôi đã loại bỏ cột <code>phuong_thuc_pos</code> được thêm ở phiên bản trước khỏi CSDL và cấu hình Entity Java, đồng thời chuyển hướng đọc nhãn thanh toán trực tiếp từ liên kết thực thể <code>PhuongThucThanhToan</code>.</li>
             <!-- NEWEST FIRST -->
+            <li><strong>Khắc phục lỗi Phục hồi biểu mẫu Thêm Sản Phẩm:</strong> Giải quyết tận gốc lỗi sập trang (Thymeleaf crash) khi thêm sản phẩm không thành công bằng cách gỡ bỏ cơ chế tự động validate cấp tham số của Spring (<code>@Validated</code>). Nhường quyền kiểm tra tính hợp lệ về cho Service layer ném lỗi <code>RuntimeException</code> thủ công. Nhờ đó, lỗi được kiểm soát gọn gàng bởi block <code>try-catch</code> nội bộ của controller, cho phép re-populate đầy đủ danh mục, thương hiệu, màu sắc, size trước khi render lại trang vĩnh viễn giúp người dùng sửa lỗi và gửi lại form bình thường.</li>
+            <li><strong>Thêm động thuộc tính Vợt khi tạo sản phẩm:</strong> Để hỗ trợ việc tạo các sản phẩm có màu sắc, trọng lượng hoặc sức căng đặc biệt ngoài danh sách cứng mặc định, chúng tôi đã tích hợp các ô nhập văn bản kèm nút "Thêm" động trên giao diện <code>sanpham-add.html</code>. Thuộc tính mới được sinh ra bằng JS trực tiếp và đưa vào luồng Cartesian Product tính toán biến thể ở client trước khi gửi lên controller lưu trữ vào database.</li>
+            <li><strong>Tối ưu hóa Giao diện POS & Cố định Sidebar:</strong> Thiết lập cơ chế khóa cứng khung hình <code>100vh</code> ở trang bán hàng tại quầy (POS) cùng với cơ chế <code>align-self: flex-start</code> trên sidebar, giúp toàn bộ layout (bao gồm sidebar và header) luôn được giữ cố định trên màn hình, còn các vùng dữ liệu (như lưới sản phẩm và hóa đơn thanh toán) cuộn độc lập mượt mà, giải quyết triệt để lỗi sidebar trượt cuộn theo trang.</li>
             <li><strong>Đồng bộ liên kết Đăng xuất của Admin:</strong> Cập nhật toàn bộ các liên kết nút "Đăng xuất" trong giao diện header của Admin từ <code>/user/dang-xuat</code> thành <code>/admin/dang-xuat</code> để chuyển hướng an toàn về trang đăng nhập quản trị mới.</li>
             <li><strong>Tách biệt nghiệp vụ địa lý sang LocationService độc lập:</strong> Để tuân thủ nguyên tắc Single Responsibility (SRP) và tránh lỗi tự gọi proxy của cơ chế Spring AOP khi dùng <code>@Cacheable</code>, toàn bộ mã nguồn kết nối API bên thứ ba được tách riêng từ Controller sang Service bean <code>LocationService</code>.</li>
             <li><strong>Tự động nhận diện IP nội bộ & gán IP kiểm thử:</strong> Hệ thống tự động phân tích IP người dùng. Nếu phát hiện các dải IP local (IPv4 loopback, IPv6 loopback, private IP lớp A/B/C), backend sẽ tự động chuyển đổi sang IP công cộng của nhà mạng Viettel Việt Nam cấu hình từ properties giúp việc phát triển và test tính năng IP Geolocation ở môi trường máy local (localhost) diễn ra hoàn toàn tự động và suôn sẻ.</li>
