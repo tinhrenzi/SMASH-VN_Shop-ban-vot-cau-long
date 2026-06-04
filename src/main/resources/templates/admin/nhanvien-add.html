@@ -82,10 +82,12 @@
 
                                 <!-- Phân vai trò -->
                                 <div class="col-md-6">
-                                    <label class="form-label">Vai Trò Hệ Thống</label>
-                                    <input type="text" class="form-control bg-light" value="Nhân viên" readonly>
-                                    <input type="hidden" name="vaiTro" value="NV">
-                                    <div class="form-text text-muted">Quản lý chỉ có quyền tạo tài khoản Nhân viên mới, không thể tạo thêm Quản lý.</div>
+                                    <label for="vaiTro" class="form-label">Vai Trò Hệ Thống <span class="text-danger">*</span></label>
+                                    <select id="vaiTro" name="vaiTro" class="form-select" required>
+                                        <option value="NV" th:selected="${vaiTro == 'NV' || vaiTro == null}">Nhân viên</option>
+                                        <option value="QL" th:selected="${vaiTro == 'QL'}">Quản trị viên</option>
+                                    </select>
+                                    <div class="form-text text-muted">Chọn vai trò ban đầu cho tài khoản nhân viên mới.</div>
                                 </div>
 
                                 <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">

@@ -170,6 +170,11 @@
 </head>
 <body>
 
+<div class="pos-loading-overlay" id="posLoadingOverlay">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
+    <div class="fw-bold">Đang xử lý giao dịch... Vui lòng không tải lại trang.</div>
+</div>
+
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar layout dùng chung -->
@@ -258,7 +263,7 @@
                         <!-- Selected Customer display badge -->
                         <div id="selectedCustomerDisplay" class="alert alert-info mt-2 py-2 px-3 d-flex justify-content-between align-items-center mb-0">
                             <span class="fw-semibold text-dark"><i class="fas fa-user-check me-2 text-info"></i>Khách hàng: <strong id="selectedCustomerName">Khách Lẻ</strong></span>
-                            <button type="button" class="btn-close" style="font-size: 0.75rem;" onclick="selectGuestCustomer()"></button>
+                            <button type="button" class="btn-close" id="btnCloseCustomerReset" style="font-size: 0.75rem;" onclick="selectGuestCustomer()"></button>
                         </div>
                     </div>
 
@@ -296,21 +301,142 @@
 
                         <!-- Payment method selection -->
                         <div class="mb-3">
-                            <label class="form-label font-bold text-xs">Phương Thức Thanh Toán</label>
-                            <select id="paymentMethodSelect" class="form-select">
-                                <option th:each="pm : ${phuongThucThanhToans}" th:value="${pm.id}" th:text="${pm.tenPhuongThuc}"></option>
-                            </select>
+                            <label class="form-label fw-bold small"><i class="fas fa-credit-card me-1"></i> Phương Thức Thanh Toán</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="TIEN_MAT" checked autocomplete="off">
+                                <label class="btn btn-outline-primary flex-fill py-2 text-uppercase fw-bold text-xs" for="payCash">
+                                    <i class="fas fa-money-bill-wave me-1"></i> Tiền mặt
+                                </label>
+
+                                <input type="radio" class="btn-check" name="paymentMethod" id="payBank" value="CHUYEN_KHOAN" autocomplete="off">
+                                <label class="btn btn-outline-primary flex-fill py-2 text-uppercase fw-bold text-xs" for="payBank">
+                                    <i class="fas fa-university me-1"></i> Chuyển khoản
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Pay submit button -->
-                        <button type="button" id="btnSubmitCheckout" onclick="processCheckout()" class="btn btn-brand w-100 py-3 font-bold fs-6">
-                            <i class="fas fa-check-circle me-1"></i> XÁC NHẬN THANH TOÁN
+                        <button type="button" id="btnSubmitCheckout" onclick="openPaymentConfirmationModal()" class="btn btn-brand w-100 py-3 font-bold fs-6">
+                            <i class="fas fa-arrow-circle-right me-1"></i> TIẾN HÀNH THANH TOÁN
                         </button>
                     </div>
                 </div>
 
             </div>
         </main>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div class="modal fade" id="paymentConfirmModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-wallet me-2"></i> Xác Nhận Thanh Toán</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="closePaymentConfirmModal()"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="bg-light rounded-3 p-3 mb-4 border text-center">
+                    <div class="text-muted fw-bold text-uppercase small">Tổng tiền cần thanh toán</div>
+                    <div class="display-6 fw-extrabold text-danger mt-1" id="confirmGrandTotal">0 đ</div>
+                </div>
+
+                <!-- Cash Payment Section -->
+                <div id="modalCashSection">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tiền khách đưa <span class="text-danger">*</span></label>
+                        <div class="input-group input-group-lg">
+                            <input type="number" id="inputCashReceived" class="form-control text-end fw-bold" placeholder="0" oninput="calculateChange()">
+                            <span class="input-group-text fw-bold">đ</span>
+                        </div>
+                        <div class="mt-2 d-flex flex-wrap gap-2 justify-content-end" id="quickCashButtons">
+                            <!-- Quick cash templates populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="mb-3 bg-light rounded-3 p-3 border d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-secondary">Tiền thối lại:</span>
+                        <span class="fs-4 fw-bold text-success" id="confirmCashChange">0 đ</span>
+                    </div>
+                </div>
+
+                <!-- Bank Transfer Section -->
+                <div id="modalBankSection" class="d-none">
+                    <div class="p-3 border rounded-3 bg-light mb-3">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-university me-1"></i> Thông tin tài khoản cửa hàng:</h6>
+                        <div class="d-flex flex-column gap-2 small">
+                            <div class="d-flex justify-content-between border-bottom pb-1">
+                                <span class="text-muted">Ngân hàng:</span>
+                                <strong class="text-dark">BIDV (Ngân hàng Đầu tư và Phát triển VN)</strong>
+                            </div>
+                            <div class="d-flex justify-content-between border-bottom pb-1">
+                                <span class="text-muted">Số tài khoản:</span>
+                                <strong class="text-dark">1234567890</strong>
+                            </div>
+                            <div class="d-flex justify-content-between border-bottom pb-1">
+                                <span class="text-muted">Chủ tài khoản:</span>
+                                <strong class="text-dark">SMASH VN SHOP</strong>
+                            </div>
+                            <div class="d-flex justify-content-between pb-1">
+                                <span class="text-muted">Nội dung chuyển khoản:</span>
+                                <strong class="text-danger" id="txtTransferCode">SMASHVN...</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Placeholder -->
+                    <div class="text-center my-3 p-3 border rounded-3 bg-white">
+                        <div class="fw-bold text-muted mb-2 small"><i class="fas fa-qrcode me-1"></i> MÃ QR THANH TOÁN (MOCKUP)</div>
+                        <div class="d-flex justify-content-center align-items-center bg-light mx-auto" style="width: 150px; height: 150px; border-radius: 8px;">
+                            <svg width="120" height="120" viewBox="0 0 100 100" class="text-dark">
+                                <rect width="100" height="100" fill="none"/>
+                                <rect x="5" y="5" width="25" height="25" fill="currentColor"/>
+                                <rect x="10" y="10" width="15" height="15" fill="white"/>
+                                <rect x="15" y="15" width="5" height="5" fill="currentColor"/>
+
+                                <rect x="70" y="5" width="25" height="25" fill="currentColor"/>
+                                <rect x="75" y="10" width="15" height="15" fill="white"/>
+                                <rect x="80" y="15" width="5" height="5" fill="currentColor"/>
+
+                                <rect x="5" y="70" width="25" height="25" fill="currentColor"/>
+                                <rect x="10" y="75" width="15" height="15" fill="white"/>
+                                <rect x="15" y="80" width="5" height="5" fill="currentColor"/>
+
+                                <rect x="40" y="10" width="10" height="5" fill="currentColor"/>
+                                <rect x="55" y="5" width="5" height="15" fill="currentColor"/>
+                                <rect x="45" y="25" width="15" height="5" fill="currentColor"/>
+                                <rect x="35" y="40" width="20" height="20" fill="currentColor"/>
+                                <rect x="40" y="45" width="10" height="10" fill="white"/>
+                                <rect x="65" y="40" width="10" height="5" fill="currentColor"/>
+                                <rect x="80" y="55" width="15" height="10" fill="currentColor"/>
+                                <rect x="40" y="70" width="5" height="25" fill="currentColor"/>
+                                <rect x="55" y="80" width="20" height="5" fill="currentColor"/>
+                                <rect x="85" y="80" width="10" height="10" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <div class="text-muted small mt-2">Nội dung QR chứa mã đơn hàng và số tiền tự động</div>
+                    </div>
+
+                    <!-- Transfer transaction reference -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã giao dịch ngân hàng (Traceability)</label>
+                        <input type="text" id="inputTransferRef" class="form-control" placeholder="Nhập mã giao dịch chuyển khoản...">
+                    </div>
+                </div>
+
+                <div class="alert alert-warning py-2 small d-flex align-items-center mb-0 mt-3">
+                    <i class="fas fa-exclamation-triangle me-2 text-warning fs-5"></i>
+                    <span><strong>Nhân viên lưu ý:</strong> Hãy xác nhận đã nhận đủ tiền từ khách hàng trước khi bấm hoàn tất.</span>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 d-flex gap-2">
+                <button type="button" class="btn btn-secondary flex-fill py-2" onclick="closePaymentConfirmModal()">
+                    <i class="fas fa-times me-1"></i> Hủy thanh toán
+                </button>
+                <button type="button" id="btnConfirmPayment" class="btn btn-primary flex-fill py-2 fw-bold" onclick="executeCheckout()">
+                    <i class="fas fa-check me-1"></i> Xác nhận đã nhận tiền
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -335,12 +461,6 @@
     </div>
 </div>
 
-<!-- Global loading indicator overlay -->
-<div id="posLoadingOverlay" class="pos-loading-overlay">
-    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
-    <div>Đang xử lý giao dịch... Vui lòng không tải lại trang.</div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Global POS state variables
@@ -348,6 +468,7 @@
     let cart = [];
     let selectedCustomer = null; // null represents Default Guest
     let appliedVoucher = null;
+    let confirmModal = null;
 
     // Load initial list from backend Thymeleaf data
     document.addEventListener("DOMContentLoaded", function() {
@@ -530,9 +651,10 @@
         let discount = 0;
         if (appliedVoucher) {
             if (subtotal < appliedVoucher.giaTriDonHangToiThieu) {
-                // Remove voucher as it is no longer valid
+                // Save the minimum requirement to display before nulling
+                const minReq = appliedVoucher.giaTriDonHangToiThieu;
                 appliedVoucher = null;
-                document.getElementById("voucherStatus").innerHTML = `<span class="text-danger">Voucher đã bị hủy vì tổng tiền không đủ ${formatVND(appliedVoucher.giaTriDonHangToiThieu)}</span>`;
+                document.getElementById("voucherStatus").innerHTML = `<span class="text-danger">Voucher đã bị hủy vì tổng tiền không đủ ${formatVND(minReq)}</span>`;
                 document.getElementById("voucherInput").value = "";
             } else {
                 if (appliedVoucher.donVi === "%") {
@@ -560,7 +682,7 @@
 
         input.addEventListener("input", function(e) {
             const val = e.target.value;
-            if (val.trim().isEmpty) {
+            if (val.trim().length === 0) {
                 list.classList.add("d-none");
                 return;
             }
@@ -601,13 +723,13 @@
     function selectCustomer(cust) {
         selectedCustomer = cust;
         document.getElementById("selectedCustomerName").innerText = `${cust.hoTen} (${cust.sdt})`;
-        document.getElementById("selectedCustomerDisplay").style.setProperty("display", "flex", "important");
+        document.getElementById("btnCloseCustomerReset").classList.remove("d-none");
     }
 
     function selectGuestCustomer() {
         selectedCustomer = null;
         document.getElementById("selectedCustomerName").innerText = "Khách Lẻ";
-        document.getElementById("selectedCustomerDisplay").style.setProperty("display", "none", "important");
+        document.getElementById("btnCloseCustomerReset").classList.add("d-none");
     }
 
     // Check & apply voucher
@@ -656,36 +778,174 @@
             });
     }
 
-    // Process payment checkout
-    function processCheckout() {
+    // Open Payment Confirmation Modal
+    function openPaymentConfirmationModal() {
         if (cart.length === 0) {
             alert("Giỏ hàng trống! Không thể thanh toán.");
             return;
         }
 
-        if (!confirm("Xác nhận hoàn tất giao dịch thanh toán?")) {
+        // Get selected payment method
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        
+        // Recalculate totals to ensure we have the latest grand total
+        let subtotal = 0;
+        cart.forEach(item => {
+            subtotal += item.giaBan * item.soLuong;
+        });
+        let discount = 0;
+        if (appliedVoucher) {
+            if (appliedVoucher.donVi === "%") {
+                discount = subtotal * (appliedVoucher.giaTri / 100);
+            } else {
+                discount = appliedVoucher.giaTri;
+            }
+            if (discount > subtotal) discount = subtotal;
+        }
+        const grandTotal = subtotal - discount;
+
+        // Set total on modal
+        document.getElementById("confirmGrandTotal").innerText = formatVND(grandTotal);
+
+        // Configure modal view based on payment method
+        const btnConfirm = document.getElementById("btnConfirmPayment");
+        if (paymentMethod === "TIEN_MAT") {
+            document.getElementById("modalCashSection").classList.remove("d-none");
+            document.getElementById("modalBankSection").classList.add("d-none");
+            document.getElementById("inputCashReceived").value = "";
+            document.getElementById("confirmCashChange").innerText = formatVND(0);
+            btnConfirm.innerText = "Xác nhận đã nhận tiền (Tiền mặt)";
+            btnConfirm.disabled = true;
+
+            // Build quick cash buttons
+            setupQuickCashButtons(grandTotal);
+        } else {
+            document.getElementById("modalCashSection").classList.add("d-none");
+            document.getElementById("modalBankSection").classList.remove("d-none");
+            document.getElementById("inputTransferRef").value = "";
+            btnConfirm.innerText = "Xác nhận đã nhận chuyển khoản";
+            btnConfirm.disabled = false;
+
+            // Setup a mock transfer code
+            const randomCode = "SMASHVN" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById("txtTransferCode").innerText = randomCode;
+        }
+
+        // Show modal
+        if (!confirmModal) {
+            confirmModal = new bootstrap.Modal(document.getElementById('paymentConfirmModal'));
+        }
+        confirmModal.show();
+    }
+
+    function closePaymentConfirmModal() {
+        if (confirmModal) {
+            confirmModal.hide();
+        }
+    }
+
+    function setupQuickCashButtons(total) {
+        const div = document.getElementById("quickCashButtons");
+        div.innerHTML = "";
+        
+        // Suggest values based on total
+        const suggestions = [total];
+        const nextRounded = Math.ceil(total / 50000) * 50000;
+        if (nextRounded > total && !suggestions.includes(nextRounded)) {
+            suggestions.push(nextRounded);
+        }
+        const commonDenominations = [50000, 100000, 200000, 500000];
+        commonDenominations.forEach(d => {
+            if (d > total && !suggestions.includes(d)) {
+                suggestions.push(d);
+            }
+        });
+
+        // Sort suggestions ascending
+        suggestions.sort((a, b) => a - b);
+
+        // Take top 4 suggestions
+        suggestions.slice(0, 4).forEach(amount => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn-sm btn-outline-secondary";
+            btn.innerText = formatVND(amount);
+            btn.onclick = () => {
+                document.getElementById("inputCashReceived").value = amount;
+                calculateChange();
+            };
+            div.appendChild(btn);
+        });
+    }
+
+    function calculateChange() {
+        const grandTotal = parseCurrencyToNumber(document.getElementById("confirmGrandTotal").innerText);
+        const cashReceivedVal = parseFloat(document.getElementById("inputCashReceived").value);
+        const cashReceived = isNaN(cashReceivedVal) ? 0 : cashReceivedVal;
+
+        const change = cashReceived - grandTotal;
+        const confirmCashChangeSpan = document.getElementById("confirmCashChange");
+        const btnConfirm = document.getElementById("btnConfirmPayment");
+
+        if (cashReceived < grandTotal) {
+            confirmCashChangeSpan.innerText = "Chưa đủ tiền";
+            confirmCashChangeSpan.className = "fs-4 fw-bold text-danger";
+            btnConfirm.disabled = true;
+        } else {
+            confirmCashChangeSpan.innerText = formatVND(change);
+            confirmCashChangeSpan.className = "fs-4 fw-bold text-success";
+            btnConfirm.disabled = false;
+        }
+    }
+
+    function parseCurrencyToNumber(str) {
+        if (!str) return 0;
+        const val = parseInt(str.replace(/[^\d]/g, ''));
+        return isNaN(val) ? 0 : val;
+    }
+
+    // Execute checkout (called only after employee clicks confirm in modal)
+    function executeCheckout() {
+        if (cart.length === 0) {
+            alert("Giỏ hàng trống! Không thể thanh toán.");
             return;
         }
 
-        // Show loading screen and disable checkout button
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        const note = document.getElementById("orderNote").value;
+        const transferRef = document.getElementById("inputTransferRef").value;
+
+        // Show global loading overlay and disable modal buttons
         const overlay = document.getElementById("posLoadingOverlay");
-        const btnSubmit = document.getElementById("btnSubmitCheckout");
         overlay.style.display = "flex";
-        btnSubmit.disabled = true;
+        
+        // Hide payment confirm modal
+        closePaymentConfirmModal();
 
         const bodyData = {
             idKhachHang: selectedCustomer ? selectedCustomer.id : -1,
             maVoucher: appliedVoucher ? appliedVoucher.maPhieu : "",
             items: cart.map(i => ({ idSanPhamChiTiet: i.id, soLuong: i.soLuong })),
-            idPhuongThucThanhToan: parseInt(document.getElementById("paymentMethodSelect").value),
-            ghiChu: document.getElementById("orderNote").value
+            phuongThucPos: paymentMethod, // TIEN_MAT or CHUYEN_KHOAN
+            maGiaoDich: paymentMethod === "CHUYEN_KHOAN" ? transferRef : "",
+            ghiChu: note
         };
+
+        // CSRF Token retrieval
+        const tokenHolder = document.getElementById('csrf-token-holder');
+        const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+        const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+
+        const headers = {
+            "Content-Type": "application/json"
+        };
+        if (csrfHeader && csrfToken) {
+            headers[csrfHeader] = csrfToken;
+        }
 
         fetch("/admin/pos/checkout", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: headers,
             body: JSON.stringify(bodyData)
         })
         .then(res => res.json())
@@ -706,13 +966,11 @@
                 clearPOSState();
             } else {
                 alert(`Thao tác thanh toán thất bại: \n${data.message}`);
-                btnSubmit.disabled = false;
             }
         })
         .catch(err => {
             console.error(err);
             overlay.style.display = "none";
-            btnSubmit.disabled = false;
             alert("Đã xảy ra lỗi kết nối mạng. Vui lòng kiểm tra lại!");
         });
     }
@@ -725,7 +983,6 @@
         document.getElementById("voucherInput").value = "";
         document.getElementById("voucherStatus").innerHTML = "";
         document.getElementById("orderNote").value = "";
-        document.getElementById("btnSubmitCheckout").disabled = false;
         document.getElementById("productSearchInput").value = "";
         document.getElementById("filterCategory").value = "-1";
         document.getElementById("filterBrand").value = "-1";
@@ -740,6 +997,7 @@
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', 'đ');
     }
 
+    // Close print confirmation modal
     function closePrintModal() {
         const modalEl = document.getElementById('printConfirmModal');
         const modal = bootstrap.Modal.getInstance(modalEl);

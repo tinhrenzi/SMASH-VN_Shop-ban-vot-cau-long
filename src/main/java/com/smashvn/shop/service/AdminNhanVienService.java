@@ -80,21 +80,45 @@ public class AdminNhanVienService {
 
     @Transactional
     public void createNhanVien(String email, String matKhau, String hoTenNv, String chucVu, String soDienThoaiNv, String vaiTro, Integer actingTaiKhoanId, String ipAddress) {
-        if ("QL".equals(vaiTro)) {
-            throw new RuntimeException("Bạn không có quyền tạo tài khoản quản lý!");
-        }
-
         // 1. Kiểm tra Email tồn tại
         if (taiKhoanRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email này đã được sử dụng!");
+            TaiKhoan existingTk = taiKhoanRepository.findByEmail(email);
+            if (Boolean.TRUE.equals(existingTk.getLaNhanVien()) || Boolean.TRUE.equals(existingTk.getLaQuanLy())) {
+                throw new RuntimeException("Email này đã được sử dụng bởi một nhân viên/quản lý khác!");
+            }
+
+            // Nâng quyền tài khoản khách hàng thành nhân viên
+            existingTk.setLaKhachHang(true);
+            existingTk.setLaNhanVien(true);
+            existingTk.setLaQuanLy("QL".equals(vaiTro));
+            existingTk.setVaiTro(vaiTro);
+            existingTk = taiKhoanRepository.save(existingTk);
+
+            // Tạo NhanVien
+            NhanVien nv = new NhanVien();
+            nv.setTaiKhoan(existingTk);
+            nv.setHoTenNv(hoTenNv);
+            nv.setChucVu(chucVu);
+            nv.setSoDienThoaiNv(soDienThoaiNv);
+            nv = nhanVienRepository.save(nv);
+
+            // Lưu Audit Logs
+            TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+            if (actingUser != null) {
+                auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "INSERT", null, formatState(nv, existingTk), ipAddress, "Nâng quyền tài khoản khách hàng thành nhân viên mới: " + email, actingUser.getVaiTro());
+            }
+            return;
         }
 
-        // 2. Tạo TaiKhoan
+        // 2. Tạo TaiKhoan mới
         TaiKhoan tk = new TaiKhoan();
         tk.setEmail(email);
         tk.setMatKhau(BCrypt.hashpw(matKhau, BCrypt.gensalt()));
         tk.setVaiTro(vaiTro);
         tk.setTrangThai("hoat_dong");
+        tk.setLaKhachHang(true); // new employees also have customer role by default
+        tk.setLaNhanVien("NV".equals(vaiTro) || "QL".equals(vaiTro));
+        tk.setLaQuanLy("QL".equals(vaiTro));
         tk = taiKhoanRepository.save(tk);
 
         // 3. Tạo NhanVien
@@ -125,15 +149,16 @@ public class AdminNhanVienService {
     }
 
     @Transactional
-    public void updateNhanVien(Integer id, String hoTenNv, String chucVu, String soDienThoaiNv, String vaiTro, String trangThai, String newPassword, Integer actingTaiKhoanId, String ipAddress) {
+    public void updateNhanVien(Integer id, String hoTenNv, String chucVu, String soDienThoaiNv, Boolean laKhachHang, Boolean laNhanVien, Boolean laQuanLy, String trangThai, String newPassword, Integer actingTaiKhoanId, String ipAddress) {
         NhanVien nv = findById(id);
         TaiKhoan tk = nv.getTaiKhoan();
 
-        if ("QL".equals(tk.getVaiTro())) {
-            throw new RuntimeException("Bạn chỉ có thể theo dõi tài khoản quản lý khác, không thể chỉnh sửa!");
-        }
-        if ("QL".equals(vaiTro)) {
-            throw new RuntimeException("Bạn không thể nâng quyền tài khoản thành quản lý!");
+        if (laKhachHang == null) laKhachHang = false;
+        if (laNhanVien == null) laNhanVien = false;
+        if (laQuanLy == null) laQuanLy = false;
+
+        if (!laKhachHang && !laNhanVien && !laQuanLy) {
+            throw new RuntimeException("Tài khoản phải có ít nhất một vai trò!");
         }
 
         // 1. Lưu lại trạng thái cũ
@@ -155,17 +180,32 @@ public class AdminNhanVienService {
             khachHangRepository.save(kh);
         }
 
-        tk.setVaiTro(vaiTro);
+        // Cập nhật các cờ vai trò
+        tk.setLaKhachHang(laKhachHang);
+        tk.setLaNhanVien(laNhanVien);
+        tk.setLaQuanLy(laQuanLy);
+
+        // Cập nhật vai_tro và vai_tro_hien_tai cho tương thích ngược
+        if (laQuanLy) {
+            tk.setVaiTro("QL");
+        } else if (laNhanVien) {
+            tk.setVaiTro("NV");
+        } else {
+            tk.setVaiTro("KH");
+        }
+
         tk.setTrangThai(trangThai);
         if (newPassword != null && !newPassword.trim().isEmpty()) {
             tk.setMatKhau(BCrypt.hashpw(newPassword.trim(), BCrypt.gensalt()));
         }
         taiKhoanRepository.save(tk);
 
+        // Soft deactivation via role flags is handled, NhanVien profile remains in database.
+
         // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin nhân viên: " + tk.getEmail(), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin và vai trò nhân viên: " + tk.getEmail(), actingUser.getVaiTro());
         }
     }
 

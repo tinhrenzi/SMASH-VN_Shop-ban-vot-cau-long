@@ -46,7 +46,7 @@ public class AdminDanhMucController {
         }
     }
 
-    @GetMapping("/xoa/{id}")
+    @PostMapping("/xoa/{id}")
     public String xoaDanhMuc(@PathVariable("id") Integer id) {
         try {
             if (sanPhamRepository.existsByDanhMucId(id)) {
@@ -55,7 +55,7 @@ public class AdminDanhMucController {
             danhMucRepository.deleteById(id);
             return "redirect:/admin/danh-muc?xoaDanhMucThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/danh-muc?loi=" + e.getMessage();
+            return "redirect:/admin/danh-muc?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -77,7 +77,7 @@ public class AdminDanhMucController {
         }
     }
 
-    @GetMapping("/thuong-hieu/xoa/{id}")
+    @PostMapping("/thuong-hieu/xoa/{id}")
     public String xoaThuongHieu(@PathVariable("id") Integer id) {
         try {
             if (sanPhamRepository.existsByThuongHieuId(id)) {
@@ -86,7 +86,7 @@ public class AdminDanhMucController {
             thuongHieuRepository.deleteById(id);
             return "redirect:/admin/danh-muc?xoaThuongHieuThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/danh-muc?loi=" + e.getMessage();
+            return "redirect:/admin/danh-muc?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 }

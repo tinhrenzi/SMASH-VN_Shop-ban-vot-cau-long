@@ -52,9 +52,16 @@ public class AdminPosService {
                 .collect(Collectors.toList());
     }
 
-    // Tìm kiếm khách hàng (chỉ vai trò KH)
+    /**
+     * Tìm kiếm khách hàng — tương thích multi-role (dùng flag la_khach_hang = true).
+     * Loại trừ tài khoản Khách Lẻ nội bộ (guest@smashvn.com).
+     */
     public List<KhachHang> searchCustomers(String query) {
-        List<KhachHang> customers = khachHangRepository.findByTaiKhoan_VaiTro("KH");
+        List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
+                .stream()
+                .filter(c -> !"guest@smashvn.com".equals(c.getTaiKhoan().getEmail()))
+                .collect(Collectors.toList());
+
         if (query == null || query.trim().isEmpty()) {
             return customers;
         }
@@ -100,9 +107,16 @@ public class AdminPosService {
         public Integer soLuong;
     }
 
-    // Hàm thanh toán POS trong transaction an toàn
+    /**
+     * Hàm thanh toán POS trong transaction an toàn.
+     *
+     * @param phuongThucPos  TIEN_MAT | CHUYEN_KHOAN (phương thức thanh toán POS)
+     * @param ghiChu         Ghi chú hóa đơn (nullable)
+     */
     @Transactional
-    public HoaDon thanhToanPos(Integer idKhachHang, String maVoucher, List<PosItem> items, Integer idPhuongThucThanhToan, String ghiChu, Integer idNhanVienTaiKhoan, String clientIp) {
+    public HoaDon thanhToanPos(Integer idKhachHang, String maVoucher, List<PosItem> items,
+                                String phuongThucPos, String maGiaoDich, String ghiChu,
+                                Integer idNhanVienTaiKhoan, String clientIp) {
         if (items == null || items.isEmpty()) {
             throw new RuntimeException("Đơn hàng không có sản phẩm nào!");
         }
@@ -141,24 +155,19 @@ public class AdminPosService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng trong hệ thống!"));
         }
 
-        // 3. Lấy phương thức thanh toán
-        PhuongThucThanhToan pttt = null;
-        if (idPhuongThucThanhToan != null) {
-            pttt = phuongThucThanhToanDAO.findById(idPhuongThucThanhToan).orElse(null);
-        }
-        if (pttt == null) {
-            // Tìm mặc định "Tiền mặt" hoặc lấy cái đầu tiên
-            List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
-            if (allPttt.isEmpty()) {
-                PhuongThucThanhToan defaultPttt = new PhuongThucThanhToan();
-                defaultPttt.setTenPhuongThuc("Tiền mặt");
-                pttt = phuongThucThanhToanDAO.save(defaultPttt);
-            } else {
-                pttt = allPttt.stream()
-                        .filter(p -> p.getTenPhuongThuc().toLowerCase().contains("tiền mặt"))
-                        .findFirst()
-                        .orElse(allPttt.get(0));
-            }
+        // 3. Ánh xạ phương thức thanh toán POS → PhuongThucThanhToan (giữ FK cho tương thích)
+        String tenPhuongThucCan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "chuyển khoản" : "tiền mặt";
+        List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
+        PhuongThucThanhToan pttt;
+        if (allPttt.isEmpty()) {
+            PhuongThucThanhToan defaultPttt = new PhuongThucThanhToan();
+            defaultPttt.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
+            pttt = phuongThucThanhToanDAO.save(defaultPttt);
+        } else {
+            pttt = allPttt.stream()
+                    .filter(p -> p.getTenPhuongThuc().toLowerCase().contains(tenPhuongThucCan))
+                    .findFirst()
+                    .orElse(allPttt.get(0));
         }
 
         // 4. Lấy đơn vị vận chuyển (Bán tại quầy)
@@ -258,7 +267,7 @@ public class AdminPosService {
             tongTienCuoi = BigDecimal.ZERO;
         }
 
-        // 7. Tạo hóa đơn mới
+        // 7. Tạo hóa đơn — trạng thái DA_THANH_TOAN vì nhân viên đã xác nhận nhận tiền
         HoaDon hd = new HoaDon();
         hd.setKhachHang(khachHang);
         hd.setNhanVien(nhanVien);
@@ -267,10 +276,16 @@ public class AdminPosService {
         hd.setDonViVanChuyen(dvvc);
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(tongTienCuoi);
-        hd.setTrangThaiDonHang("da_giao"); // Hoàn thành ngay tại quầy
-        hd.setTrangThaiThanhToan("da_thanh_toan");
+        hd.setTrangThaiDonHang("da_giao");           // Bán tại quầy → hoàn thành ngay
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");   // Nhân viên đã xác nhận
         hd.setDiaChiNhan("Bán tại quầy");
-        hd.setSdtNhan(khachHang.getSoDienThoaiKh());
+        hd.setSdtNhan(khachHang.getSoDienThoaiKh() != null && !khachHang.getSoDienThoaiKh().trim().isEmpty()
+                ? khachHang.getSoDienThoaiKh()
+                : "0000000000");
+        hd.setGhiChu(ghiChu);
+        hd.setMaGiaoDich(maGiaoDich);
+        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+        hd.setThoiGianXacNhan(LocalDateTime.now());
 
         hd = hoaDonRepository.save(hd);
 
@@ -280,8 +295,10 @@ public class AdminPosService {
             hoaDonChiTietRepository.save(ct);
         }
 
-        // 9. Ghi nhật ký kiểm toán (Audit Log)
-        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp, "Thanh toán hóa đơn tại quầy (POS) - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
+        // 9. Ghi nhật ký kiểm toán
+        String ptLabel = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt";
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp,
+                "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
 
         return hd;
     }

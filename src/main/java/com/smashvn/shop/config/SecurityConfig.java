@@ -17,7 +17,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             // Kích hoạt lại bảo mật CSRF
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat"))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat", "/admin/dang-xuat"))
             // Cấu hình các Header bảo mật nâng cao
             .headers(headers -> {
                 headers.frameOptions(frame -> frame.deny());
@@ -26,16 +26,31 @@ public class SecurityConfig {
                 headers.xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK));
             })
             .authorizeHttpRequests(auth -> auth
-                // Phân quyền cho POS, Đơn hàng, Khách hàng cho QL và NV
-                .requestMatchers("/admin/pos/**", "/admin/don-hang/**", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
-                // Chỉ QL được phép truy cập tất cả các trang /admin còn lại
-                .requestMatchers("/admin/**").hasRole("QL")
+                // Cho phép truy cập công khai trang đăng nhập/đăng xuất admin và tài nguyên tĩnh
+                .requestMatchers("/admin/dang-nhap", "/admin/dang-xuat").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**").permitAll()
+                .requestMatchers("/user/**").permitAll()
+                
+                // Phân quyền chi tiết cho Admin/Staff theo Backend Enforcement (cả endpoint gốc và sub-paths)
+                .requestMatchers("/admin/nguoi-dung", "/admin/nguoi-dung/**").hasRole("QL")
+                .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")
+                .requestMatchers("/admin/thong-ke", "/admin/thong-ke/**").hasRole("QL")
+                
+                .requestMatchers("/admin/don-hang", "/admin/don-hang/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/san-pham", "/admin/san-pham/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/danh-muc", "/admin/danh-muc/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/pos", "/admin/pos/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/khach-hang", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
+                
+                // Các trang quản trị còn lại chỉ dành cho QL
+                .requestMatchers("/admin", "/admin/**").hasRole("QL")
+                
                 // Tất cả các request khác đều được permit
                 .anyRequest().permitAll() 
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendRedirect(request.getContextPath() + "/user/dang-nhap");
+                    response.sendRedirect(request.getContextPath() + "/admin/dang-nhap");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     String ip = request.getRemoteAddr();

@@ -121,11 +121,16 @@
     <!-- Receipt Metadata -->
     <div class="metadata">
         <div><strong>Mã HĐ:</strong> <span th:text="${maHoaDon}">HD-001</span></div>
-        <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(hoaDon.ngayTao, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026 12:00:00</span></div>
-        <div><strong>Nhân viên:</strong> <span th:text="${hoaDon.nhanVien != null ? hoaDon.nhanVien.hoTenNv : 'Bán tại quầy'}">Nguyễn Văn A</span></div>
+        <div><strong>Thời gian tạo:</strong> <span th:text="${#temporals.format(hoaDon.ngayTao, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026 12:00:00</span></div>
         <div><strong>Khách hàng:</strong> <span th:text="${hoaDon.khachHang.hoKh} + ' ' + ${hoaDon.khachHang.tenKh}">Khách Lẻ</span></div>
-        <div><strong>SĐT:</strong> <span th:text="${hoaDon.khachHang.soDienThoaiKh}">0000000000</span></div>
-        <div><strong>Thanh toán:</strong> <span th:text="${hoaDon.phuongThucThanhToan.tenPhuongThuc}">Tiền mặt</span></div>
+        <div><strong>Số ĐT khách:</strong> <span th:text="${hoaDon.khachHang.soDienThoaiKh}">0000000000</span></div>
+        <div class="divider"></div>
+        <div><strong>Thanh toán:</strong> <span th:text="${phuongThucLabel}">Tiền mặt</span></div>
+        <div><strong>Trạng thái:</strong> <span th:text="${trangThaiLabel}">ĐÃ THANH TOÁN</span></div>
+        <div th:if="${hoaDon.maGiaoDich != null and !#strings.isEmpty(hoaDon.maGiaoDich)}"><strong>Mã giao dịch:</strong> <span th:text="${hoaDon.maGiaoDich}">TRF123456</span></div>
+        <div><strong>NV xác nhận:</strong> <span th:text="${hoaDon.nguoiXacNhanThanhToan != null ? hoaDon.nguoiXacNhanThanhToan : 'Nhân viên hệ thống'}">Nguyễn Văn A</span></div>
+        <div><strong>Thời gian xác nhận:</strong> <span th:text="${hoaDon.thoiGianXacNhan != null ? #temporals.format(hoaDon.thoiGianXacNhan, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">01/01/2026 12:00:00</span></div>
+        <div th:if="${hoaDon.ghiChu != null and !#strings.isEmpty(hoaDon.ghiChu)}"><strong>Ghi chú:</strong> <span th:text="${hoaDon.ghiChu}">Ghi chú đơn hàng</span></div>
     </div>
 
     <div class="divider"></div>
@@ -181,7 +186,6 @@
     <!-- Automatically trigger print dialog on page load -->
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            // Delay print dynamic render to settle down styles
             setTimeout(() => {
                 window.print();
             }, 500);

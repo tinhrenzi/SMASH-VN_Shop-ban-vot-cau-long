@@ -29,12 +29,12 @@ public class AdminController {
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
-        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByVaiTroIn(java.util.List.of("NV", "QL"));
-        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByVaiTro("KH");
+        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByLaNhanVienTrueOrLaQuanLyTrue();
+        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByLaKhachHangTrue();
         long employeeCount = nhanVienRepository.count();
 
-        long countStaff = nvAccounts.stream().filter(tk -> "NV".equals(tk.getVaiTro())).count();
-        long countManager = nvAccounts.stream().filter(tk -> "QL".equals(tk.getVaiTro())).count();
+        long countStaff = nvAccounts.stream().filter(tk -> Boolean.TRUE.equals(tk.getLaNhanVien())).count();
+        long countManager = nvAccounts.stream().filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy())).count();
 
         model.addAttribute("danhSachTaiKhoanNhanVien", nvAccounts);
         model.addAttribute("danhSachTaiKhoanKhachHang", khAccounts);
@@ -57,7 +57,7 @@ public class AdminController {
 
     @GetMapping("/khach-hang")
     public String hienThiDanhSachKhachHang(Model model) {
-        model.addAttribute("danhSachKhachHang", khachHangRepository.findByTaiKhoan_VaiTro("KH"));
+        model.addAttribute("danhSachKhachHang", khachHangRepository.findByLaKhachHangTrue());
         return "admin/khachhang-list";
     }
 

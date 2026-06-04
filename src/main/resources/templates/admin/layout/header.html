@@ -23,10 +23,35 @@
             <div class="dropdown">
                 <button class="btn btn-dark px-3 py-2 dropdown-toggle rounded-pill shadow-sm" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #15171c; border: none; font-size: 0.9rem; font-weight: 600;">
                     <i class="fas fa-user-shield me-2" style="color: #ff4500;"></i>
-                    <span th:text="${session.tenHienThi != null ? session.tenHienThi + ' (' + (session.vaiTro == 'QL' ? 'Quản lý' : 'Nhân viên') + ')' : 'Quản Trị Viên'}">Quản Trị Viên</span>
+                    <span th:text="${session.tenHienThi != null ? session.tenHienThi + ' (' + (session.activeRole == 'QL' ? 'Quản lý' : 'Nhân viên') + ')' : 'Quản Trị Viên'}">Quản Trị Viên</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px;">
-                    <li><a class="dropdown-item text-danger py-2" th:href="@{/user/dang-xuat}"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px; min-width: 200px;">
+                    <!-- Chuyển vai trò nếu có nhiều vai trò -->
+                    <th:block th:with="roleCount=${(session.laKhachHang ? 1 : 0) + (session.laNhanVien ? 1 : 0) + (session.laQuanLy ? 1 : 0)}">
+                        <th:block th:if="${roleCount > 1}">
+                            <li class="dropdown-header text-uppercase fw-bold pb-1" style="font-size: 0.75rem; color: #888;">Đăng nhập với vai trò:</li>
+                            <li th:if="${session.laKhachHang}">
+                                <a th:href="@{/switch-role(role='KH')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Khách hàng</span>
+                                    <i th:if="${session.activeRole == 'KH'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li th:if="${session.laNhanVien}">
+                                <a th:href="@{/switch-role(role='NV')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Nhân viên</span>
+                                    <i th:if="${session.activeRole == 'NV'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li th:if="${session.laQuanLy}">
+                                <a th:href="@{/switch-role(role='QL')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Quản trị viên</span>
+                                    <i th:if="${session.activeRole == 'QL'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        </th:block>
+                    </th:block>
+                    <li><a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
                 </ul>
             </div>
         </div>

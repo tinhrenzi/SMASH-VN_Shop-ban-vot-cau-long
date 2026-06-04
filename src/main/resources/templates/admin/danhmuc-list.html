@@ -89,9 +89,12 @@
                                             <td class="fw-bold text-dark" th:text="'#' + ${dm.id}">#1</td>
                                             <td class="fw-semibold text-secondary" th:text="${dm.tenDanhMuc}">Vợt Cầu Lông</td>
                                             <td class="text-center">
-                                                <a th:href="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
-                                                    <i class="fas fa-trash-alt"></i> Xóa
-                                                </a>
+                                                <form th:action="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash-alt"></i> Xóa
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                         <tr th:if="${listDanhMuc.isEmpty()}">
@@ -143,9 +146,12 @@
                                             <td class="fw-bold text-dark" th:text="'#' + ${th.id}">#1</td>
                                             <td class="fw-semibold text-secondary" th:text="${th.tenThuongHieu}">Yonex</td>
                                             <td class="text-center">
-                                                <a th:href="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
-                                                    <i class="fas fa-trash-alt"></i> Xóa
-                                                </a>
+                                                <form th:action="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash-alt"></i> Xóa
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                         <tr th:if="${listThuongHieu.isEmpty()}">

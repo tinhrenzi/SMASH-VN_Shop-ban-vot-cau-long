@@ -1,24 +1,18 @@
 package com.smashvn.shop.config;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.smashvn.shop.service.UserDangNhapService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
-
-import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.repository.TaiKhoanRepository;
-
-import org.springframework.web.servlet.ModelAndView;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
-import com.smashvn.shop.service.UserDangNhapService;
-
-import org.springframework.web.servlet.ModelAndView;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -28,29 +22,35 @@ public class AdminInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String uri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        String path = uri.substring(contextPath.length());
+
+        // Bỏ qua kiểm tra cho các trang đăng nhập/đăng xuất admin để tránh vòng lặp chuyển hướng
+        if ("/admin/dang-nhap".equals(path) || "/admin/dang-xuat".equals(path)) {
+            return true;
+        }
+
         HttpSession session = request.getSession(false);
 
-        // 1. Kiểm tra đăng nhập
-        if (session == null || session.getAttribute("nguoiDungDangNhap") == null || session.getAttribute("vaiTro") == null) {
-            response.sendRedirect(request.getContextPath() + "/user/dang-nhap");
-            return false;
+        // Nếu chưa đăng nhập session, để Spring Security xử lý phân quyền và chuyển hướng
+        if (session == null || session.getAttribute("idNguoiDung") == null) {
+            return true;
         }
 
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
 
-        // 2. Kiểm tra tài khoản qua Cache dịch vụ để xem trạng thái có bị khóa không (M-4)
+        // Kiểm tra tài khoản qua Cache dịch vụ để xem trạng thái có bị khóa không
         String trangThai = userDangNhapService.layTrangThaiTaiKhoan(idNguoiDung);
         if (!"hoat_dong".equals(trangThai) && !"cho_khoa".equals(trangThai)) {
-            // Hủy phiên đăng nhập
             if (session != null) {
                 session.invalidate();
             }
-            response.sendRedirect(request.getContextPath() + "/user/dang-nhap?loi=" + URLEncoder.encode("Tài khoản của bạn đã bị khóa.", StandardCharsets.UTF_8.toString()));
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            response.sendRedirect(request.getContextPath() + "/admin/dang-nhap?loi=" + URLEncoder.encode("Tài khoản của bạn đã bị khóa.", StandardCharsets.UTF_8.toString()));
             return false;
         }
 
-        // 3. Phân quyền đã được bàn giao cho Spring Security. 
-        // Interceptor này chỉ kiểm tra trạng thái hoạt động của tài khoản ở trên.
         return true;
     }
 

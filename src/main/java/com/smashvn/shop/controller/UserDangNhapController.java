@@ -1,28 +1,24 @@
 package com.smashvn.shop.controller;
 
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import java.util.List;
 
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.service.UserDangNhapService;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
-import com.smashvn.shop.entity.NhanVien;
-
 import com.smashvn.shop.security.LoginRateLimiter;
+import com.smashvn.shop.service.UserDangNhapService;
+
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Controller
@@ -33,6 +29,7 @@ public class UserDangNhapController {
 
     private final UserDangNhapService userDangNhapService;
     private final NhanVienRepository nhanVienRepository;
+    private final KhachHangRepository khachHangRepository;
     private final LoginRateLimiter loginRateLimiter;
 
     // Hiển thị form đăng nhập
@@ -41,78 +38,77 @@ public class UserDangNhapController {
         if (loi != null) {
             model.addAttribute("loi", loi);
         }
-        return "signin"; 
+        return "signin";
     }
 
     // Xử lý khi bấm nút "Đăng nhập"
     @PostMapping("/dang-nhap")
     public String xuLyDangNhap(@RequestParam("email") String email,
-                               @RequestParam("matKhau") String matKhau,
-                               HttpServletRequest request,
-                               HttpSession session, // Dùng để lưu phiên đăng nhập
-                               Model model) {
+            @RequestParam("matKhau") String matKhau,
+            HttpServletRequest request,
+            HttpSession session, // Dùng để lưu phiên đăng nhập
+            Model model) {
         String ip = request.getRemoteAddr();
-        
+
         // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
         if (loginRateLimiter.isBlocked(ip)) {
             model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
             return "signin";
         }
-        
+
         try {
             TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(email, matKhau);
-            
+
+            // Chỉ cho phép KH
+            if (!Boolean.TRUE.equals(tkDangNhap.getLaKhachHang())) {
+                loginRateLimiter.loginFailed(ip);
+                log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
+                model.addAttribute("loi", "Tài khoản không hợp lệ!");
+                return "signin";
+            }
+
             // Đăng nhập thành công -> Reset bộ đếm rate limiter
             loginRateLimiter.loginSucceeded(ip);
-            
+
             // 2. Chống Session Fixation
             request.changeSessionId();
             session = request.getSession(true);
-            
+
             // Lưu thông tin vào Session (ví dụ lưu email và id)
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
-            session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
+            session.setAttribute("vaiTro", "KH");
+            session.setAttribute("activeRole", "KH");
+            session.setAttribute("laKhachHang", true);
+            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()));
+            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()));
 
-            // Gán Authentication vào Spring Security Context
-            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tkDangNhap.getVaiTro()));
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(tkDangNhap.getEmail(), null, authorities);
-            SecurityContext sc = SecurityContextHolder.getContext();
-            sc.setAuthentication(auth);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
-
-            if ("QL".equals(tkDangNhap.getVaiTro()) || "NV".equals(tkDangNhap.getVaiTro())) {
-                NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkDangNhap.getId());
-                if (nv != null) {
-                    session.setAttribute("tenHienThi", nv.getHoTenNv());
-                } else {
-                    session.setAttribute("tenHienThi", "Nhân viên hệ thống");
-                }
-            }
-
-            // Đăng nhập thành công, chuyển hướng theo vai trò
-            if ("QL".equals(tkDangNhap.getVaiTro())) {
-                return "redirect:/admin/all";
-            } else if ("NV".equals(tkDangNhap.getVaiTro())) {
-                return "redirect:/admin/don-hang";
+            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tkDangNhap.getId());
+            if (kh != null) {
+                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
             } else {
-                return "redirect:/";
+                session.setAttribute("tenHienThi", "Khách hàng");
             }
-            
+
+            // Đăng nhập thành công, chuyển hướng về trang chủ
+            return "redirect:/";
+
         } catch (RuntimeException e) {
             // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
             loginRateLimiter.loginFailed(ip);
             log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
-            
+
             model.addAttribute("loi", e.getMessage());
             return "signin";
         }
     }
-    
+
     // Thêm luôn chức năng Đăng xuất cho tiện
     @GetMapping("/dang-xuat")
     public String xuLyDangXuat(HttpSession session) {
-        session.invalidate(); // Xóa toàn bộ dữ liệu trong Session
+        if (session != null) {
+            session.invalidate(); // Xóa toàn bộ dữ liệu trong Session
+        }
         SecurityContextHolder.clearContext(); // Xóa context của Spring Security
         return "redirect:/user/dang-nhap";
     }
@@ -127,31 +123,33 @@ public class UserDangNhapController {
         try {
             // Xử lý tạo/lấy tài khoản từ DB
             TaiKhoan tk = userDangNhapService.xuLyDangNhapGoogle(email, name);
-            
+
+            if (!Boolean.TRUE.equals(tk.getLaKhachHang())) {
+                log.warn("[SECURITY_EVENT] UNAUTHORIZED_GOOGLE_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
+                return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Tài khoản không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+
             // Chống Session Fixation
             request.changeSessionId();
             session = request.getSession(true);
-            
+
             // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
             session.setAttribute("nguoiDungDangNhap", tk.getEmail());
             session.setAttribute("idNguoiDung", tk.getId());
-            session.setAttribute("vaiTro", tk.getVaiTro());
+            session.setAttribute("vaiTro", "KH");
+            session.setAttribute("activeRole", "KH");
+            session.setAttribute("laKhachHang", true);
+            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tk.getLaNhanVien()));
+            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tk.getLaQuanLy()));
 
-            // Gán Authentication vào Spring Security Context
-            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tk.getVaiTro()));
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(tk.getEmail(), null, authorities);
-            SecurityContext sc = SecurityContextHolder.getContext();
-            sc.setAuthentication(auth);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
-            
-            // Đăng nhập thành công, chuyển hướng theo vai trò
-            if ("QL".equals(tk.getVaiTro())) {
-                return "redirect:/admin/all";
-            } else if ("NV".equals(tk.getVaiTro())) {
-                return "redirect:/admin/don-hang";
+            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+            if (kh != null) {
+                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
             } else {
-                return "redirect:/";
+                session.setAttribute("tenHienThi", name != null ? name : "Người dùng Google");
             }
+
+            return "redirect:/";
         } catch (RuntimeException e) {
             log.warn("[SECURITY_EVENT] FAILED_LOGIN: Google Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
             return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);

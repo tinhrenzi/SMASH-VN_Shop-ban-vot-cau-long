@@ -20,16 +20,18 @@ public class PlaintextPasswordMigrator implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("[MIGRATION] Bắt đầu quét cơ sở dữ liệu để tìm và mã hóa mật khẩu plaintext...");
+        List<TaiKhoan> accounts = taiKhoanRepository.findPlaintextAccounts();
         
-        List<TaiKhoan> accounts = taiKhoanRepository.findAll();
+        if (accounts.isEmpty()) {
+            return; // Trả về ngay lập tức nếu không có tài khoản plaintext nào cần di trú, tránh in log thừa lúc khởi động
+        }
+
+        log.info("[MIGRATION] Phát hiện {} tài khoản có mật khẩu plaintext. Bắt đầu mã hóa bằng BCrypt...", accounts.size());
         int count = 0;
         
         for (TaiKhoan tk : accounts) {
             String dbPass = tk.getMatKhau();
-            
-            // Nếu mật khẩu không trống và không có tiền tố của BCrypt ($2a$, $2b$, $2y$) -> đây là plaintext
-            if (dbPass != null && !dbPass.startsWith("$2a$") && !dbPass.startsWith("$2b$") && !dbPass.startsWith("$2y$")) {
+            if (dbPass != null) {
                 String hashed = BCrypt.hashpw(dbPass, BCrypt.gensalt());
                 tk.setMatKhau(hashed);
                 taiKhoanRepository.save(tk);

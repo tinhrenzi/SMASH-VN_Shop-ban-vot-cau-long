@@ -8,12 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
-import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
-import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.service.AdminPosService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +20,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin/pos")
@@ -31,16 +28,14 @@ public class AdminPosController {
 
     private final AdminPosService adminPosService;
     private final TaiKhoanRepository taiKhoanRepository;
-    private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final com.smashvn.shop.repository.DanhMucRepository danhMucRepository;
     private final com.smashvn.shop.repository.ThuongHieuRepository thuongHieuRepository;
 
-    // Hiển thị trang bán hàng tại quầy (POS)
+    // ─── Trang chính POS ────────────────────────────────────────────────────────
     @GetMapping
     public String viewPos(Model model, HttpSession session) {
-        model.addAttribute("phuongThucThanhToans", phuongThucThanhToanDAO.findAll());
         model.addAttribute("customers", adminPosService.searchCustomers(""));
         model.addAttribute("variants", adminPosService.searchActiveVariants("", -1, -1));
         model.addAttribute("categories", danhMucRepository.findAll());
@@ -48,14 +43,14 @@ public class AdminPosController {
         return "admin/pos";
     }
 
-    // API tìm kiếm sản phẩm chi tiết qua AJAX
+    // ─── API tìm kiếm sản phẩm ──────────────────────────────────────────────────
     @GetMapping("/search-products")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> searchProducts(
             @RequestParam(value = "q", required = false) String query,
             @RequestParam(value = "danhMucId", required = false) Integer danhMucId,
             @RequestParam(value = "thuongHieuId", required = false) Integer thuongHieuId) {
-        
+
         List<Map<String, Object>> results = adminPosService.searchActiveVariants(query, danhMucId, thuongHieuId).stream().map(v -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", v.getId());
@@ -71,7 +66,7 @@ public class AdminPosController {
         return ResponseEntity.ok(results);
     }
 
-    // API tìm kiếm khách hàng qua AJAX
+    // ─── API tìm kiếm khách hàng ────────────────────────────────────────────────
     @GetMapping("/search-customers")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> searchCustomers(@RequestParam(value = "q", required = false) String query) {
@@ -86,13 +81,13 @@ public class AdminPosController {
         return ResponseEntity.ok(results);
     }
 
-    // API kiểm tra voucher qua AJAX
+    // ─── API kiểm tra voucher ────────────────────────────────────────────────────
     @GetMapping("/check-voucher")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> checkVoucher(@RequestParam("code") String code, @RequestParam("total") BigDecimal total) {
         Map<String, Object> response = new HashMap<>();
         try {
-            PhieuGiamGia voucher = adminPosService.checkVoucher(code, total);
+            var voucher = adminPosService.checkVoucher(code, total);
             if (voucher != null) {
                 response.put("success", true);
                 response.put("maPhieu", voucher.getMaPhieu());
@@ -110,29 +105,32 @@ public class AdminPosController {
         return ResponseEntity.ok(response);
     }
 
-    // DTO phục vụ request checkout từ UI
+    // ─── DTO request checkout ────────────────────────────────────────────────────
     public static class PosCheckoutRequest {
         public Integer idKhachHang;
         public String maVoucher;
         public List<AdminPosService.PosItem> items;
-        public Integer idPhuongThucThanhToan;
+        /** TIEN_MAT | CHUYEN_KHOAN */
+        public String phuongThucPos;
+        public String maGiaoDich;
         public String ghiChu;
     }
 
-    // Xử lý thanh toán POS với Double Submit Protection
+    // ─── Xử lý thanh toán POS ────────────────────────────────────────────────────
     @PostMapping("/checkout")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> checkout(@RequestBody PosCheckoutRequest req, HttpServletRequest request, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> checkout(@RequestBody PosCheckoutRequest req,
+                                                         HttpServletRequest request,
+                                                         HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
-        // 1. Kiểm tra tài khoản nhân viên đang thao tác
+        // Xác định nhân viên đang thao tác
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
-            // Tìm dự phòng qua Spring Security Authentication
-            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
-                String email = auth.getName();
-                TaiKhoan tk = taiKhoanRepository.findByEmail(email);
+                TaiKhoan tk = taiKhoanRepository.findByEmail(auth.getName());
                 if (tk != null) {
                     idNguoiDung = tk.getId();
                     session.setAttribute("idNguoiDung", idNguoiDung);
@@ -147,7 +145,7 @@ public class AdminPosController {
             return ResponseEntity.status(401).body(response);
         }
 
-        // 2. Chống trùng lặp submit (Double Submit Protection) dùng Session-based Lock
+        // Chống trùng lặp submit (Double Submit Protection)
         synchronized (session) {
             if (Boolean.TRUE.equals(session.getAttribute("pos_processing"))) {
                 response.put("success", false);
@@ -164,7 +162,8 @@ public class AdminPosController {
                 req.idKhachHang,
                 req.maVoucher,
                 req.items,
-                req.idPhuongThucThanhToan,
+                req.phuongThucPos,
+                req.maGiaoDich,
                 req.ghiChu,
                 idNguoiDung,
                 ipAddress
@@ -182,12 +181,11 @@ public class AdminPosController {
             return ResponseEntity.badRequest().body(response);
 
         } finally {
-            // Giải phóng khóa
             session.removeAttribute("pos_processing");
         }
     }
 
-    // In hóa đơn nhiệt tại quầy
+    // ─── In hóa đơn nhiệt ────────────────────────────────────────────────────────
     @GetMapping("/print/{id}")
     public String printInvoice(@PathVariable("id") Integer id, Model model) {
         HoaDon hd = hoaDonRepository.findById(id)
@@ -203,11 +201,22 @@ public class AdminPosController {
             tienGiam = BigDecimal.ZERO;
         }
 
+        // Label phương thức thanh toán
+        String phuongThucLabel = hd.getPhuongThucThanhToan() != null
+                ? hd.getPhuongThucThanhToan().getTenPhuongThuc()
+                : "Tiền mặt";
+
+        String trangThaiLabel = "DA_THANH_TOAN".equals(hd.getTrangThaiThanhToan())
+                ? "ĐÃ THANH TOÁN"
+                : ("CHO_THANH_TOAN".equals(hd.getTrangThaiThanhToan()) ? "CHỜ THANH TOÁN" : "HỦY");
+
         model.addAttribute("hoaDon", hd);
         model.addAttribute("maHoaDon", "HD-" + hd.getId());
         model.addAttribute("items", items);
         model.addAttribute("tongTienTruocGiam", tongTienTruocGiam);
         model.addAttribute("tienGiam", tienGiam);
+        model.addAttribute("phuongThucLabel", phuongThucLabel);
+        model.addAttribute("trangThaiLabel", trangThaiLabel);
         return "admin/pos-print";
     }
 }

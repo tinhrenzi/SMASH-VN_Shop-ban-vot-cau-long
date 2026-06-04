@@ -1,13 +1,13 @@
 package com.smashvn.shop.service;
 
-import lombok.RequiredArgsConstructor;
-
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -15,11 +15,11 @@ public class UserDangNhapService {
 
     private final TaiKhoanRepository taiKhoanRepository;
     private final KhachHangRepository khachHangRepository;
-    
+
     @org.springframework.transaction.annotation.Transactional
     public TaiKhoan kiemTraDangNhap(String email, String matKhau) {
         TaiKhoan taiKhoan = taiKhoanRepository.findByEmail(email);
-        
+
         boolean matches = false;
         // Dùng hash giả lập nếu tài khoản không tồn tại để chạy checkpw, triệt tiêu Timing Attack
         String dbPass = (taiKhoan != null) ? taiKhoan.getMatKhau() : "$2a$10$NXyH1kUoY7G7ZlE8w8rL1eA5gR4wD2O4hIeJ1F7H6v8tM9dY0mK1e";
@@ -40,17 +40,17 @@ public class UserDangNhapService {
         }
         return taiKhoan;
     }
-    
+
     @org.springframework.cache.annotation.Cacheable(value = "taiKhoanStatus", key = "#idNguoiDung")
     public String layTrangThaiTaiKhoan(Integer idNguoiDung) {
         TaiKhoan taiKhoan = taiKhoanRepository.findById(idNguoiDung).orElse(null);
         return (taiKhoan != null) ? taiKhoan.getTrangThai() : "bi_khoa";
     }
-    
+
     @org.springframework.transaction.annotation.Transactional
     public TaiKhoan xuLyDangNhapGoogle(String email, String name) {
         TaiKhoan tk = taiKhoanRepository.findByEmail(email);
-        
+
         if (tk == null) {
             // 1. CHƯA TỒN TẠI: Tự động đăng ký mới
             tk = new TaiKhoan();
@@ -59,6 +59,9 @@ public class UserDangNhapService {
             String randomPass = java.util.UUID.randomUUID().toString();
             tk.setMatKhau(BCrypt.hashpw(randomPass, BCrypt.gensalt()));
             tk.setVaiTro("KH");
+            tk.setLaKhachHang(true);
+            tk.setLaNhanVien(false);
+            tk.setLaQuanLy(false);
             tk.setTrangThai("hoat_dong");
             tk = taiKhoanRepository.save(tk);
 

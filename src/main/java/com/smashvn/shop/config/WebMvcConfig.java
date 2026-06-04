@@ -30,6 +30,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(adminInterceptor)
                 .addPathPatterns("/admin/**")
-                .excludePathPatterns("/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**");
+                .excludePathPatterns("/admin/dang-nhap", "/admin/dang-xuat", "/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**");
     }
 }

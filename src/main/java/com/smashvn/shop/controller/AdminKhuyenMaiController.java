@@ -78,7 +78,7 @@ public class AdminKhuyenMaiController {
             model.addAttribute("selectedProductIds", dgg.getSanPhams().stream().map(SanPham::getId).toList());
             return "admin/dotgiamgia-edit";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -112,7 +112,7 @@ public class AdminKhuyenMaiController {
         }
     }
 
-    @GetMapping("/dot-giam-gia/deactivate/{id}")
+    @PostMapping("/dot-giam-gia/deactivate/{id}")
     public String processDeactivateDotGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
@@ -120,11 +120,11 @@ public class AdminKhuyenMaiController {
             adminKhuyenMaiService.deactivateDotGiamGia(id, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?deactivateChienDichThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
-    @GetMapping("/dot-giam-gia/delete/{id}")
+    @PostMapping("/dot-giam-gia/delete/{id}")
     public String processDeleteDotGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
@@ -132,7 +132,7 @@ public class AdminKhuyenMaiController {
             adminKhuyenMaiService.deleteDotGiamGia(id, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?xoaChienDichThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -188,7 +188,7 @@ public class AdminKhuyenMaiController {
             model.addAttribute("voucher", pgg);
             return "admin/phieugiamgia-edit";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -222,7 +222,7 @@ public class AdminKhuyenMaiController {
         }
     }
 
-    @GetMapping("/phieu-giam-gia/deactivate/{id}")
+    @PostMapping("/phieu-giam-gia/deactivate/{id}")
     public String processDeactivatePhieuGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
@@ -230,11 +230,11 @@ public class AdminKhuyenMaiController {
             adminKhuyenMaiService.deactivatePhieuGiamGia(id, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?deactivatePhieuThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
-    @GetMapping("/phieu-giam-gia/delete/{id}")
+    @PostMapping("/phieu-giam-gia/delete/{id}")
     public String processDeletePhieuGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
@@ -242,7 +242,7 @@ public class AdminKhuyenMaiController {
             adminKhuyenMaiService.deletePhieuGiamGia(id, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?xoaPhieuThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/khuyen-mai?loi=" + e.getMessage();
+            return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 }

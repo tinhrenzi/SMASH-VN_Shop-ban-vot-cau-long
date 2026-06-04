@@ -76,7 +76,7 @@ public class AdminNhanVienController {
             model.addAttribute("nv", nv);
             return "admin/nhanvien-edit";
         } catch (Exception e) {
-            return "redirect:/admin/nhan-vien?loi=" + e.getMessage();
+            return "redirect:/admin/nhan-vien?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -86,7 +86,9 @@ public class AdminNhanVienController {
             @RequestParam("hoTenNv") String hoTenNv,
             @RequestParam("chucVu") String chucVu,
             @RequestParam("soDienThoaiNv") String soDienThoaiNv,
-            @RequestParam("vaiTro") String vaiTro,
+            @RequestParam(value = "laKhachHang", required = false) Boolean laKhachHang,
+            @RequestParam(value = "laNhanVien", required = false) Boolean laNhanVien,
+            @RequestParam(value = "laQuanLy", required = false) Boolean laQuanLy,
             @RequestParam("trangThai") String trangThai,
             @RequestParam(value = "newPassword", required = false) String newPassword,
             HttpSession session,
@@ -96,7 +98,7 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.updateNhanVien(id, hoTenNv, chucVu, soDienThoaiNv, vaiTro, trangThai, newPassword, actingTaiKhoanId, ipAddress);
+            adminNhanVienService.updateNhanVien(id, hoTenNv, chucVu, soDienThoaiNv, laKhachHang, laNhanVien, laQuanLy, trangThai, newPassword, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/nhan-vien?suaThanhCong";
         } catch (Exception e) {
             NhanVien nv = adminNhanVienService.findById(id);
@@ -124,7 +126,7 @@ public class AdminNhanVienController {
             adminNhanVienService.toggleStatus(id, actingTaiKhoanId, ipAddress, appUrl);
             return "redirect:/admin/nhan-vien?toggleThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/nhan-vien?loi=" + e.getMessage();
+            return "redirect:/admin/nhan-vien?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
