@@ -63,52 +63,281 @@
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
     <!-- NEWEST UPDATES FIRST -->
-    <h2>1. Chức năng: Khắc phục lỗi Sidebar Cố định (Fixed/Sticky Sidebar Navigation Fix)</h2>
+
+<h2>28. Sửa lỗi: Phục hồi trang Thêm Sản phẩm khi Gặp Lỗi Xác thực (Validation Recovery Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Cố định thanh điều hướng bên trái:</strong> Cập nhật lớp CSS <code>.sidebar</code> thành <code>position: sticky; top: 0; height: 100vh;</code>. Đảm bảo thanh menu quản trị bên trái luôn được cố định ở vị trí hiển thị trên màn hình và không bao giờ bị cuốn trôi theo khung cuộn nội dung chính bên phải.</li>
-            <li><strong>Ẩn thanh cuộn thông minh (Independent Scrollability):</strong> Kích hoạt <code>overflow-y: auto</code> để menu tự cuộn nếu danh mục vượt quá độ cao màn hình, đồng thời ẩn thanh cuộn (scrollbar) đối với mọi trình duyệt để giữ giao diện thanh lịch và liền mạch.</li>
+            <li><strong>Loại bỏ interceptor chặn lỗi trước phương thức:</strong> Loại bỏ chú thích <code>@Validated</code> ở cấp lớp và các chú thích ràng buộc trực tiếp trên tham số phương thức <code>xuLyThemSanPham</code> trong <code>AdminSanPhamController.java</code>. Điều này ngăn Spring Validation tự động ném ra ngoại lệ <code>ConstraintViolationException</code> từ trước khi luồng điều khiển đi vào phương thức của controller.</li>
+            <li><strong>Xử lý lỗi tập trung tại Controller:</strong> Chuyển toàn bộ các nghiệp vụ kiểm tra tính hợp lệ của dữ liệu đầu vào (tên sản phẩm, giá bán, số lượng tồn kho, danh mục, thương hiệu, và tệp ảnh tải lên) sang Service layer xử lý thủ công và ném lỗi <code>RuntimeException</code>. Giúp đảm bảo các ngoại lệ này được bắt giữ trực tiếp trong khối <code>try-catch</code> của hàm controller.</li>
+            <li><strong>Khắc phục triệt để lỗi sập trang Thymeleaf:</strong> Khi xảy ra lỗi đầu vào, khối <code>catch</code> sẽ nạp đầy đủ các bộ dữ liệu danh mục (<code>listDanhMuc</code>), thương hiệu (<code>listThuongHieu</code>) và danh sách cấu hình thuộc tính mặc định, ngăn chặn hoàn toàn hiện tượng Thymeleaf cố gắng render trang với dữ liệu null dẫn đến lỗi hỏng trang vĩnh viễn (sập trang và không thêm lại được sản phẩm).</li>
         </ul>
     </div>
 
-    <h2>2. Chức năng: Khắc phục lỗi Giao diện In Hóa đơn K80 (K80 Receipt Print Layout Fix)</h2>
+<h2>27. Chức năng: Thêm động Màu Sắc, Size, Trọng Lượng khi Tạo Sản Phẩm Mới</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Chuyển đổi font chữ hiển thị trực quan:</strong> Thay đổi font chữ hóa đơn in nhiệt từ font monospace (<code>Courier New</code>) sang font chữ không chân (<code>Arial, sans-serif</code>) giúp giao diện gọn gàng, tiết kiệm chiều ngang của khổ K80 và giống với mẫu hóa đơn hình 2.</li>
-            <li><strong>Ngăn chặn xuống dòng và lệch cột (white-space: nowrap):</strong> Thiết lập thuộc tính CSS <code>white-space: nowrap</code> trên các cột hiển thị số lượng, đơn giá và thành tiền, giúp ngăn ngừa tình trạng số tiền lớn hoặc số lượng sản phẩm làm vỡ dòng (wrap thành hàng dọc).</li>
-            <li><strong>Định vị tỷ lệ cột cố định:</strong> Cập nhật các thẻ <code>th</code> và <code>td</code> trong bảng chi tiết sản phẩm và bảng tổng hợp (Summary Table) với các tỷ lệ phần trăm cụ thể (55%, 15%, 30% cho chi tiết; 60%, 40% cho tổng hợp) để bảo toàn cấu trúc bảng ngay cả khi số liệu có độ rộng bất thường.</li>
-            <li><strong>Chuyển đường viền bảng sang nét đứt:</strong> Thay đổi kiểu viền dưới của tiêu đề bảng (table header) thành dạng nét đứt <code>border-bottom: 1px dashed #000000</code> để đồng bộ hoàn toàn với các phần phân vùng divider nét đứt khác trên hóa đơn in nhiệt.</li>
+            <li><strong>Nhập động thuộc tính tùy chỉnh:</strong> Tích hợp ô nhập văn bản và nút "Thêm" trực tiếp dưới các mục thuộc tính "Màu sắc", "Size / Trọng Lượng" và "Sức Căng (Vợt Cầu Lông)" trên màn hình thêm sản phẩm mới (<code>sanpham-add.html</code>). Cho phép quản trị viên tự do nhập thêm các giá trị mới ngoài danh sách mặc định cứng.</li>
+            <li><strong>Tự động sinh biến thể với giá trị mới:</strong> Sử dụng JavaScript động để chèn lựa chọn mới vào danh sách checkbox, tự động kích hoạt tính năng tính Cartesian Product để sinh đầy đủ biến thể và bảng thiết lập giá/kho của giá trị vừa thêm.</li>
+            <li><strong>Duy trì giá trị đã thêm khi lỗi form (Form Persistence):</strong> Viết mã Thymeleaf để tự động phát hiện và vẽ lại các checkbox chứa giá trị tùy chỉnh được chọn trước đó trong trường hợp xảy ra lỗi xác thực đầu vào từ phía backend, ngăn ngừa việc mất mát dữ liệu đã nhập.</li>
         </ul>
     </div>
 
-    <h2>3. Chức năng: Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix)</h2>
+<h2>26. Chức năng: Cố định Sidebar & Tối ưu hóa Giao diện POS tại quầy</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Ngăn ngừa xung đột CSS và cô lập lớp giao diện:</strong> Thay thế lớp class <code>about</code> (vốn thiết kế riêng cho các thẻ của trang Giới thiệu) bằng lớp tùy chỉnh <code>error-card</code> trên các trang lỗi để đảm bảo không bị ảnh hưởng bởi CSS layout trang khác.</li>
-            <li><strong>Định vị các nút hiển thị độc lập (display: inline-block):</strong> Thêm thuộc tính CSS <code>display: inline-block</code> cùng kích thước đệm (padding) chuẩn và bo góc cho các nút hành động (Quay về trang chủ, Cửa hàng), giải quyết triệt để lỗi nút tràn ra ngoài và đè lên đường viền nét đứt của container box.</li>
-            <li><strong>Chuẩn hóa kiểu dáng nút thứ hai (Cửa hàng):</strong> Thay đổi class nút từ <code>btn--e-secondary-b-2</code> không tồn tại sang <code>btn--e-secondary</code> hợp lệ để nút hiển thị nền đen chuẩn thiết kế của SmashVN thay vì dạng liên kết chữ thô không viền.</li>
+            <li><strong>Khắc phục lỗi Sidebar trượt cuộn:</strong> Bổ sung thuộc tính <code>align-self: flex-start</code> và <code>z-index: 1000</code> cho class <code>.sidebar</code> để ngăn sidebar tự động giãn nở theo chiều cao của phần nội dung chính trong flexbox layout, giúp sidebar luôn cố định vị trí (sticky) ở mép trái màn hình khi cuộn nội dung.</li>
+            <li><strong>Khóa khung cuộn trang POS (Viewport Locking):</strong> Thiết lập chiều cao <code>body</code> và <code>.main-content</code> thành <code>100vh</code> kết hợp thuộc tính <code>overflow: hidden</code> trên trang POS để triệt tiêu thanh cuộn của trình duyệt chính, khóa cứng vị trí Header và Sidebar.</li>
+            <li><strong>Tối ưu hóa cuộn độc lập trang POS:</strong> Điều chỉnh giao diện hiển thị để giỏ hàng <code>.cart-list</code> tự động co giãn theo danh sách sản phẩm và cuộn mượt mà độc lập trong panel thanh toán <code>.pos-right</code>, loại bỏ hoàn toàn hiện tượng hiển thị hai thanh cuộn lồng nhau (double scrollbars) gây khó chịu.</li>
         </ul>
     </div>
 
-    <h2>4. Chức năng: Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix)</h2>
+<h2>25. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Tổng hợp dữ liệu doanh thu đa kênh:</strong> Điều chỉnh các truy vấn JPA trong <code>HoaDonRepository</code> và <code>HoaDonChiTietRepository</code> để hỗ trợ đồng thời cả hai bộ trạng thái đơn hàng:
+            <li><strong>Bảo mật múi giờ Asia/Ho_Chi_Minh:</strong> Đồng bộ múi giờ Việt Nam khi chuyển đổi ngày lọc, thiết lập mốc bắt đầu ngày (<code>00:00:00</code>) và kết thúc ngày (<code>23:59:59</code>) nhất quán.</li>
+            <li><strong>Xử lý dữ liệu trống tinh tế (Empty states):</strong> Khi khoảng thời gian lọc không có dữ liệu, frontend ẩn canvas biểu đồ và render giao diện thông báo trống trực quan thay vì gây lỗi biểu đồ.</li>
+        </ul>
+    </div>
+
+<h2>24. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Endpoint xuất Excel:</strong> Thêm đường dẫn <code>/admin/thong-ke/export</code> nhận các tham số lọc ngày tương tự trang dashboard.</li>
+            <li><strong>Báo cáo đa vùng dữ liệu (Multi-sheet):</strong> Xuất file Excel định dạng <code>.xlsx</code> gồm 3 sheet:
                 <ul>
-                    <li>Hoàn thành/Đã giao: <code>da_giao</code> (POS) và <code>delivered</code> (Online).</li>
-                    <li>Đã hủy: <code>da_huy</code> (POS) và <code>cancelled</code> (Online).</li>
+                    <li>Sheet 1: KPIs & Trạng Thái Đơn Hàng (Định dạng tiền tệ đ và tỷ lệ %).</li>
+                    <li>Sheet 2: Doanh Thu Theo Thời Gian (Phục vụ vẽ biểu đồ thủ công).</li>
+                    <li>Sheet 3: Top Sản Phẩm Bán Chạy Nhất (Xếp hạng, số lượng bán, doanh thu sản phẩm).</li>
                 </ul>
-                Giúp các chỉ số KPIs (Doanh thu thuần, Đơn thành công, Sản phẩm đã bán, Giá trị trung bình đơn) và biểu đồ doanh thu theo thời gian hiển thị chính xác toàn bộ kết quả bán hàng thực tế.
             </li>
-            <li><strong>Chuẩn hóa ánh xạ trạng thái đơn hàng:</strong> Cải tiến <code>AdminThongKeService.java</code> để tự động chuyển đổi các trạng thái tiếng Anh của đơn hàng online (<code>delivered</code>, <code>cancelled</code>, <code>shipping</code>, <code>processing</code>) về các trạng thái tiếng Việt tương ứng trước khi đưa vào bản đồ phân phối <code>statusMap</code>, đảm bảo biểu đồ tròn hiển thị đầy đủ và chính xác tỷ lệ đơn hàng.</li>
         </ul>
     </div>
 
-    <h2>5. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
+<h2>23. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tích hợp Caffeine Cache:</strong> Cấu hình cache tự động giải phóng bộ nhớ sau 30 giây kể từ khi ghi dữ liệu thống kê (<code>expireAfterWrite=30s</code>).</li>
+            <li><strong>Giảm tải truy vấn lặp lại:</strong> Khi Admin bấm làm mới trang liên tục hoặc thay đổi qua lại giữa các tab, dữ liệu được đọc trực tiếp từ cache giúp máy chủ không phải chạy lại các câu lệnh SQL nặng nề.</li>
+        </ul>
+    </div>
+
+<h2>22. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Gom Index cơ sở dữ liệu:</strong> Chuyển việc tạo chỉ mục sang Flyway Migration để tạo index cho cột ngày tháng (<code>ngay_tao</code>) và trạng thái đơn hàng trên bảng <code>HoaDon</code>.</li>
+            <li><strong>Truy vấn tổng hợp dưới DB:</strong> Thay thế việc lấy toàn bộ hóa đơn lên Java để tính toán. Toàn bộ KPIs doanh thu, trung bình đơn, số đơn được tính toán thông qua truy vấn aggregate của cơ sở dữ liệu (SUM, COUNT, AVG, GROUP BY).</li>
+            <li><strong>An toàn giá trị null:</strong> Áp dụng hàm <code>COALESCE</code> cho toàn bộ các truy vấn JPQL tổng hợp SUM/AVG giúp trả về giá trị 0.0 mặc định thay vì trả về null khi không có dữ liệu.</li>
+            <li><strong>Thay thế Object[] bằng DTO:</strong> Định nghĩa các Java Records (<code>TopProductDTO</code>, <code>OrderStatusCountDTO</code>) giúp ánh xạ kết quả truy vấn chuẩn xác, loại bỏ hoàn toàn mảng thô Object[].</li>
+            <li><strong>Sử dụng Class thay vì Record cho GeneralMetricsDTO:</strong> Chuyển đổi DTO này thành class thông thường có constructor nhận tham số dạng <code>Object</code> để giải quyết triệt để lỗi biên dịch/SemanticException của Hibernate khi kết quả trả về của các biểu thức SUM, AVG, COALESCE tự động ánh xạ sang các kiểu dữ liệu số khác nhau (Double, BigDecimal, Long) tùy theo DB.</li>
+        </ul>
+    </div>
+
+<h2>21. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Nhóm theo Giờ (Hour Grouping):</strong> Khi lọc khoảng thời gian trong vòng 1 ngày (Hôm nay), biểu đồ doanh thu tự động hiển thị trục X đủ 24 giờ (<code>00h</code> &rarr; <code>23h</code>).</li>
+            <li><strong>Nhóm theo Ngày (Day Grouping):</strong> Khi lọc khoảng thời gian từ 2 đến 90 ngày (ví dụ: 30 ngày qua, Tháng này), doanh thu được gộp và hiển thị theo nhãn ngày/tháng (<code>dd/MM</code>).</li>
+            <li><strong>Nhóm theo Tháng (Month Grouping):</strong> Khi lọc khoảng thời gian lớn hơn 90 ngày (ví dụ: Năm nay), doanh thu tự động chuyển sang gộp theo tháng (<code>Tháng 1</code> &rarr; <code>Tháng 12</code>).</li>
+        </ul>
+    </div>
+
+<h2>20. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Bộ lọc thời gian nhanh (Presets):</strong> Thêm các nút chọn nhanh khoảng thời gian thống kê (Hôm nay, Tuần này, Tháng này, Năm nay, 30 ngày qua).</li>
+            <li><strong>Bộ lọc ngày tùy chỉnh:</strong> Thêm ô chọn khoảng ngày bắt đầu và kết thúc (Date range picker) hiển thị động khi chọn chế độ "Tùy chỉnh".</li>
+            <li><strong>Tải dữ liệu AJAX:</strong> Loại bỏ cơ chế reload toàn bộ trang. Toàn bộ KPIs, biểu đồ và bảng sản phẩm được cập nhật tức thì qua API JSON <code>/admin/thong-ke/api</code> khi thay đổi bộ lọc.</li>
+            <li><strong>Biểu đồ trực quan tương tác:</strong> Tích hợp thư viện Chart.js hiển thị biểu đồ đường (Line Chart) cho doanh thu và biểu đồ vành khuyên (Doughnut Chart) cho trạng thái đơn hàng.</li>
+        </ul>
+    </div>
+
+<h2>19. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Hiển thị số liệu thật trên Widget:</strong> Thay thế các số liệu cứng (4 đơn hàng, 0 đơn hủy, 0 sản phẩm yêu thích) bằng các thuộc tính động truy vấn trực tiếp từ cơ sở dữ liệu.</li>
+            <li><strong>Thông tin Sổ địa chỉ thực tế:</strong> Liên kết hiển thị địa chỉ nhận hàng và địa chỉ thanh toán mặc định của khách hàng từ <code>SoDiaChi</code> thay vị trí địa chỉ giả định của Mỹ (Ashford Drive).</li>
+            <li><strong>Đồng bộ hóa Bảng đơn hàng gần đây:</strong> Bảng đơn hàng gần đây hiển thị tối đa 5 đơn hàng thực tế kèm theo hình ảnh thật của sản phẩm, ngày đặt hàng chính xác, tổng số tiền thanh toán hiển thị theo định dạng tiền Việt (VND) và nút quản lý đơn hàng động.</li>
+            <li><strong>Khắc phục chân trang bị lỗi:</strong> Thay thế footer bị hỏng (placeholder trống) trong trang thông tin cá nhân (<code>dash-my-profile.html</code>) bằng component chân trang chuẩn của trang chủ.</li>
+        </ul>
+    </div>
+
+<h2>18. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
+
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Việt hóa toàn bộ giao diện:</strong> Dịch toàn bộ tiêu đề, nhãn, thanh điều hướng, các nút bấm, các tab thông tin và phần phản hồi bình luận/đánh giá trên các trang HTML (Trang chủ, Chi tiết sản phẩm, Giỏ hàng, Yêu thích, Dashboard tài khoản) từ tiếng Anh sang tiếng Việt.</li>
+            <li><strong>Chuẩn hóa tiền tệ VNĐ:</strong> Định dạng lại hiển thị giá bán và giá khuyến mãi của sản phẩm, tổng tiền giỏ hàng, hóa đơn theo đơn vị VNĐ (sử dụng hàm Thymeleaf formatDecimal để tạo định dạng phần nghìn bằng dấu phẩy và thêm hậu tố 'đ').</li>
+            <li><strong>Đồng bộ sản phẩm liên quan trong trang chi tiết:</strong> Đổi toàn bộ các mặt hàng điện tử giả lập (tai nghe Beats, điện thoại) trong phần "Sản phẩm khách hàng cũng xem" thành các dòng vợt cầu lông nổi tiếng (Yonex Astrox 88D Pro, Lining Tectonic 7, Victor Thruster K 9900...) với mức giá VNĐ tương thích với thương hiệu của SmashVN.</li>
+        </ul>
+    </div>
+
+<h2>17. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Đồng bộ Sidebar & Dashboard:</strong> Đã chuyển đổi tất cả hiển thị của danh mục "Sổ địa chỉ" thành "Địa chỉ" trong toàn bộ trang quản lý tài khoản của khách hàng (dashboard, thông tin cá nhân, danh sách đơn hàng, theo dõi đơn hàng, chính sách trả hàng/hủy đơn).</li>
+            <li><strong>Đồng bộ thẻ thông tin (Widget):</strong> Đổi tiêu đề thẻ thông tin địa chỉ từ "SỔ ĐỊA CHỈ" thành "ĐỊA CHỈ" tại trang tổng quan tài khoản (dashboard.html) để tạo sự đồng bộ và tự nhiên trong tiếng Việt.</li>
+        </ul>
+    </div>
+
+<h2>16. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Cải tiến Geolocation & OSM:</strong> Định vị tọa độ qua GPS/IP và gửi yêu cầu dịch ngược tọa độ (Reverse Geocoding) thông qua OpenStreetMap Nominatim API bằng tiếng Việt.</li>
+            <li><strong>Thuật toán bóc tách địa chỉ tự động:</strong> Sử dụng thuật toán phân tích chuỗi địa chỉ đầy đủ (display_name), tự động tách phần số nhà, ngách/ngõ, tên đường, phường/xã, quận/huyện điền vào ô "Địa chỉ cụ thể" và tên tỉnh/thành phố vào ô "Tỉnh/Thành phố" tương ứng. Loại bỏ hoàn toàn mã zip code thừa hoặc tên quốc gia.</li>
+            <li><strong>Tích hợp thêm tại trang sửa địa chỉ:</strong> Bổ sung nút bấm "LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI" vào cả trang sửa địa chỉ (dash-address-edit.html) giúp tăng trải nghiệm người dùng khi cập nhật địa chỉ đã lưu.</li>
+        </ul>
+    </div>
+
+<h2>15. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Bảo mật Proxy IP Geolocation:</strong> Đã chuyển cuộc gọi API bên thứ ba ra khỏi trình duyệt. Tạo endpoint backend proxy <code>/api/location/ip</code> để ẩn các dịch vụ định vị IP bên ngoài (ipapi, ipinfo), tránh lỗi CORS và quản lý lỗi tập trung. Tích hợp cache phía máy chủ (<code>@Cacheable</code>) và giới hạn tần suất truy cập (Rate Limiting 10 req/min) dựa trên IP của client.</li>
+            <li><strong>Quản lý Fetch Timeout:</strong> Tích hợp <code>AbortController</code> cho tất cả các cuộc gọi fetch ở frontend với thời gian timeout 8 giây, ngăn chặn hiện tượng treo UI khi mạng yếu.</li>
+            <li><strong>Bảo vệ dữ liệu người dùng:</strong> Thêm xác nhận ghi đè địa chỉ (Overwrite Alert) khi các ô nhập địa chỉ đã có dữ liệu trước đó, tránh việc mất thông tin vô ý của khách hàng.</li>
+            <li><strong>Lưu đệm Local Geocode Cache:</strong> Lưu kết quả định vị thành công vào <code>localStorage</code> trong 10 phút để tối ưu hóa hiệu suất ứng dụng và tránh gọi lại các API dịch ngược không cần thiết.</li>
+            <li><strong>Xác thực và Cải tiến thuật toán định lý:</strong> Xác thực vĩ độ/kinh độ hợp lệ ở cả client và server. Thêm cảnh báo khi độ chính xác của GPS quá thấp (> 500m). Xây dựng cơ chế dịch ngược địa lý đa cấp độ (thử lại với zoom=18, 17, 16) và hỗ trợ ánh xạ hành chính Việt Nam qua nhiều biến thể trường dữ liệu Nominatim (tỉnh, quận, phường).</li>
+            <li><strong>Hộp thông báo tùy chỉnh (Custom Toast Notification Box):</strong> Loại bỏ hoàn toàn tất cả các thông báo dạng <code>alert()</code> mặc định của trình duyệt. Thay thế bằng hệ thống thông báo toast tự thiết kế (glassmorphic style, tự động ẩn sau 5 giây, có nút đóng và hỗ trợ màu sắc phân loại HSL theo trạng thái: Thành công, Cảnh báo, Lỗi, Thông tin) hiển thị trực tiếp trên góc màn hình chính.</li>
+        </ul>
+    </div>
+
+<h2>14. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tích hợp Bản đồ Leaflet (OpenStreetMap):</strong> Nhúng bản đồ động vào giao diện <code>dash-address-add.html</code> và <code>dash-address-edit.html</code>. Cho phép người dùng nhấp trực tiếp vào bản đồ hoặc kéo thả ghim marker đỏ để chọn vị trí mong muốn.</li>
+            <li><strong>Nút định vị tích hợp trực tiếp trên bản đồ:</strong> Bổ sung một nút "Định vị vị trí của tôi" (biểu tượng tâm ngắm <code>crosshairs</code>) trực tiếp vào khu vực điều khiển phía trên bên trái bản đồ Leaflet. Khi người dùng nhấp vào nút này, hệ thống tự động chạy cơ chế định vị GPS/IP, tự động dịch chuyển camera bản đồ đến vị trí hiện tại của họ và ghim marker đỏ cập nhật địa chỉ mà không cần cuộn tìm thủ công.</li>
+            <li><strong>Đồng bộ hóa 2 chiều:</strong> Nhấp chuột hoặc kéo thả ghim trên bản đồ sẽ tự động ghi vĩ độ/kinh độ vào 2 input ẩn của form và tự động dịch ngược (Reverse Geocode) để cập nhật địa chỉ dạng chữ. Nút "LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI" cũng đồng thời định vị và bay camera (flyTo) bản đồ đến vị trí tương ứng.</li>
+            <li><strong>Cơ chế Debounce chống nghẽn API:</strong> Áp dụng debounce trì hoãn 400ms đối với tiến trình gọi dịch ngược Nominatim khi marker bị kéo liên tục, bảo vệ ứng dụng khỏi lỗi 429 (Too Many Requests).</li>
+            <li><strong>Lưu trữ tọa độ thực tế:</strong> Thêm thuộc tính <code>latitude</code> và <code>longitude</code> vào thực thể <code>SoDiaChi</code>. Hệ thống tự động tạo các cột CSDL tương ứng qua cơ chế Hibernate ddl-auto.</li>
+            <li><strong>Tải bản đồ từ tọa độ lưu trữ:</strong> Khi sửa địa chỉ, hệ thống tự động đọc tọa độ đã lưu trong DB để vẽ ghim marker đỏ ngay lập tức mà không cần dùng dịch vụ phân tích địa chỉ text, giảm tải API của bên thứ ba.</li>
+            <li><strong>Backend Forward Geocoding Search Proxy:</strong> Tạo endpoint <code>GET /api/location/search?q=...</code> hỗ trợ chuyển đổi chuỗi địa chỉ thành tọa độ với điều kiện lọc quốc gia <code>countrycodes=vn</code>, tích hợp IP rate limiting và server caching (<code>geocodeSearchCache</code>).</li>
+            <li><strong>Giao diện thông báo Toast không che khuất:</strong> Thay toàn bộ <code>alert()</code> mặc định bằng Custom Toast Notification có phong cách HSL hiện đại giúp thông báo mượt mà.</li>
+        </ul>
+    </div>
+
+<h2>13. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Đồng bộ hóa Sidebar Navigation:</strong> Đổi nhãn menu liên kết từ "Chính sách trả hàng và hủy đơn hàng" thành "Chính sách hoàn trả hàng" trên tất cả các trang quản lý tài khoản của khách hàng (dashboard, profile, address, orders, v.v.).</li>
+            <li><strong>Chuẩn hóa nội dung trang Cancellation:</strong> Cập nhật tiêu đề trang, tiêu đề chính <code>h1</code> và dòng mô tả trạng thái trong <code>dash-cancellation.html</code> thành thuật ngữ "hoàn trả hàng" giúp tạo cảm giác đồng nhất, chuyên nghiệp.</li>
+        </ul>
+    </div>
+
+<h2>12. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tái cấu trúc 4 cột Footer:</strong> Thay thế thông tin liên hệ tĩnh tiếng Anh mặc định bằng thông tin liên hệ thực tế của cửa hàng tại đường đê Mỏ Bạch, Thái Nguyên, Việt Nam và số điện thoại hỗ trợ chính thức.</li>
+            <li><strong>Menu liên kết Việt hóa:</strong> Đổi tên các mục và dịch các liên kết trong menu <strong>THÔNG TIN</strong> và <strong>CÔNG TY</strong> để đồng bộ với các trang tính năng sẵn có.</li>
+            <li><strong>Nâng cấp Form Đăng ký:</strong> Cập nhật form newsletter bằng tiếng Việt, thêm phần chọn giới tính (tùy chọn) và dòng chữ cam kết bảo mật đi kèm biểu tượng khóa bảo mật FontAwesome.</li>
+            <li><strong>Thêm thanh Cam kết chất lượng:</strong> Thiết kế và nhúng thêm dải Service Assurance Bar gồm 4 huy hiệu tiêu chuẩn: <em>Sản phẩm chính hãng</em>, <em>Đổi trả dễ dàng</em>, <em>Giao hàng toàn quốc</em> và <em>Hỗ trợ 24/7</em>, tạo giao diện chuyên nghiệp và gia tăng uy tín cho website bán hàng.</li>
+        </ul>
+    </div>
+
+<h2>11. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tích hợp Trang danh mục động:</strong> Sao chép mẫu giao diện <code>shop-side-version-2.html</code> và nhúng các thẻ Thymeleaf để tự động lấy dữ liệu danh mục, thương hiệu, và sản phẩm từ cơ sở dữ liệu.</li>
+            <li><strong>Xây dựng API Lọc sản phẩm:</strong> Thêm các phương thức lọc <code>findByDanhMucId</code> và <code>findByThuongHieuId</code> tại repository, đồng thời cập nhật <code>HomeController</code> để xử lý yêu cầu lọc của người dùng dựa theo tham số danh mục/thương hiệu tùy chọn.</li>
+            <li><strong>Nhất quán Layout:</strong> Thay thế header, footer, và các popup modal tĩnh trong trang danh mục bằng các layout fragment dùng chung của dự án để dễ quản lý và đồng bộ thiết kế.</li>
+            <li><strong>Loại bỏ Service Assurance Bar:</strong> Loại bỏ hoàn toàn dải Cam kết chất lượng dịch vụ ở chân trang theo yêu cầu tối giản hóa giao diện, giữ lại bố cục 4 cột chuyên nghiệp đã được cấu trúc lại.</li>
+        </ul>
+    </div>
+
+<h2>10. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Định tuyến lại và thiết lập /shop:</strong> Đổi tên view từ <code>shop-side-version-2.html</code> thành <code>shop.html</code>, đổi định tuyến Controller thành <code>/shop</code>, thực hiện tìm kiếm thay thế liên kết trên toàn bộ các file giao diện và thiết lập redirect 301.</li>
+            <li><strong>Tạo trang Giới thiệu (/about) chuyên sâu:</strong> Tạo file giao diện <code>about.html</code> trình bày lịch sử hình thành (thành lập 2018 tại Thái Nguyên), các thành tựu (căng >20.000 vợt, phục vụ >50.000 khách), cam kết 100% chính hãng và thương hiệu đối tác (Yonex, Lining, Victor).</li>
+            <li><strong>Xây dựng trang Tin tức / Blogs động (/blog):</strong> Tạo thực thể <code>Blog.java</code> JPA và interface <code>BlogRepository.java</code> cùng <code>BlogService.java</code> hỗ trợ tự động khởi tạo dữ liệu bài viết (5 bài viết cầu lông tiếng Việt) khi CSDL trống. Bản ghi được truy cập qua slug sạch (<code>/blog/{slug}</code>).</li>
+            <li><strong>Chức năng tìm kiếm và phân trang bài viết:</strong> Hỗ trợ tìm kiếm từ khóa không phân biệt hoa thường và phân trang động bằng Pageable trong Spring Boot.</li>
+            <li><strong>Trang 404 tùy chỉnh:</strong> Tạo giao diện lỗi <code>404.html</code> chuyên nghiệp đồng bộ phong cách Smash VN.</li>
+            <li><strong>Tích hợp SEO, OpenGraph & JSON-LD:</strong> Thêm thẻ canonical URL động, robots.txt, sitemap.xml, các thẻ Meta & OpenGraph (kèm ảnh OG mặc định), và các khối script Schema.org JSON-LD (AboutPage, Organization, Blog, BlogPosting) giúp tối ưu điểm SEO.</li>
+        </ul>
+    </div>
+
+<h2>9. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Bảo mật file cấu hình qua Biến môi trường (.env):</strong> Tạo file <code>.env.example</code> và file <code>.env</code> cục bộ; chỉnh sửa <code>application.properties</code> sử dụng cú pháp placeholder <code>${...}</code> để tham chiếu; xây dựng bộ nạp biến môi trường tự động thông qua <code>DotenvEnvironmentPostProcessor.java</code> giúp hỗ trợ chạy đồng bộ cho cả ứng dụng chính và kiểm thử (unit tests); ưu tiên các biến môi trường thực tế của hệ thống (Environment Variables) và dùng <code>.env</code> làm dự phòng (fallback) cho môi trường local.</li>
+            <li><strong>Di trú mật khẩu & Tối ưu hóa hiệu năng (PlaintextPasswordMigrator):</strong> Cấu hình tự động mã hóa mật khẩu plaintext thành mã hash BCrypt thông qua kích hoạt profile <code>migration</code> khi khởi chạy (sử dụng <code>@Profile("migration")</code>); tối ưu hóa bằng phương thức truy vấn custom <code>findPlaintextAccounts</code> chỉ lấy danh sách tài khoản chưa mã hóa thay vì load toàn bộ DB, tránh nghẽn hiệu năng.</li>
+            <li><strong>Cấu hình cờ bảo mật Session Cookie:</strong> Thiết lập cờ <code>http-only=true</code> chống XSS đánh cắp cookie session, cờ <code>same-site=lax</code> chống tấn công CSRF thông qua các liên kết từ bên ngoài, và cờ <code>secure</code> cấu hình linh động bằng biến môi trường <code>SESSION_COOKIE_SECURE</code> (mặc định false ở local, true ở production) trong file <code>application.properties</code>.</li>
+            <li><strong>Cấu hình & Tích hợp đăng nhập Google OAuth2 riêng:</strong> Hướng dẫn cấu hình thông tin xác thực OAuth2 mới (Client ID/Client Secret mới) thay thế cho Client ID mặc định của bài lab cũ trong file <code>.env</code>; cấu hình chính xác địa chỉ chuyển hướng được ủy quyền (Authorized redirect URIs) dạng <code>http://localhost:8080/login/oauth2/code/google</code> trong Google Console để giải quyết lỗi <code>redirect_uri_mismatch</code> và <code>invalid_client</code>.</li>
+            <li><strong>Chống tấn công CSRF & Cấu hình AJAX toàn hệ thống:</strong> Kích hoạt lại CSRF trong <code>SecurityConfig.java</code>; cập nhật <code>app.js</code> để tự động đính kèm token CSRF (x-csrf-token) cho mọi request AJAX qua jQuery; sửa các nút hành động dạng GET (như ngừng bán sản phẩm, khóa nhân viên, xóa danh mục, xóa thương hiệu, tạm dừng/xóa đợt giảm giá, tạm dừng/xóa phiếu giảm giá) thành các form POST/DELETE có chứa thẻ CSRF token ẩn.</li>
+            <li><strong>Mã hóa tham số chuyển hướng lỗi an toàn:</strong> Thực hiện mã hóa URL-encode đối với tất cả các thông báo lỗi truyền qua tham số redirect (ví dụ: <code>?loi=...</code>) trong các Controller bằng <code>java.net.URLEncoder.encode</code> để tránh đứt gãy URL hoặc bị lỗi parse do ký tự tiếng Việt có khoảng trắng.</li>
+            <li><strong>Xác thực và Giới hạn tệp tải lên (File Upload Protection):</strong> Tích hợp Apache Tika trong <code>AdminSanPhamService.java</code> để kiểm tra chính xác MIME type của file ảnh tải lên; giới hạn độ phân giải của hình ảnh không vượt quá 5000x5000px sử dụng <code>ImageIO</code>; ngăn ngừa Path Traversal bằng việc làm sạch và chuẩn hóa tên file.</li>
+            <li><strong>Chính sách Content Security Policy (CSP) & nosniff cho Uploads:</strong> Cấu hình <code>UploadSecurityFilter.java</code> để chỉ áp dụng CSP với giá trị sandbox và header <code>X-Content-Type-Options: nosniff</code> trên đường dẫn <code>/uploads/**</code>, bảo vệ hệ thống khỏi mã độc XSS thực thi từ tệp tĩnh mà không gây ảnh hưởng đến phần còn lại của ứng dụng.</li>
+            <li><strong>Cải tiến tính năng khóa tài khoản an toàn qua Email:</strong> Bổ sung cột <code>token_xac_thuc_khoa</code> vào bảng <code>TaiKhoan</code> và tạo mã UUID token ngẫu nhiên khi gửi yêu cầu khóa tài khoản qua email; kiểm tra token an sau khi đổi trạng thái tài khoản.</li>
+            <li><strong>Lưu nhật ký kiểm toán (Audit Logging):</strong> Thay thế việc ghi log trực tiếp vào DB bằng việc tích hợp <code>AuditService</code> thống nhất ghi lại các hành động nghiệp vụ nhạy cảm vào bảng <code>EditLog</code>; các sự kiện đăng nhập thất bại hoặc sự kiện unauthenticated được chuyển hướng ghi vào tệp log ứng dụng qua SLF4J giúp bảo vệ tài nguyên DB.</li>
+            <li><strong>Tự động chuẩn hóa đường dẫn thư mục tải lên:</strong> Cải tiến <code>UploadPathVerifier.java</code> hỗ trợ tự động chuẩn hóa và tạo mới thư mục tải lên ở cả dạng tương đối và tuyệt đối ngay khi khởi chạy Spring Boot.</li>
+            <li><strong>Ràng buộc mật khẩu & Email đầu vào:</strong> Cập nhật <code>UserDangKyService.java</code> kiểm tra độ mạnh mật khẩu (độ dài >= 8 ký tự, bao gồm cả chữ và số) và định dạng email chuẩn regex khi đăng ký tài khoản mới.</li>
+        </ul>
+    </div>
+
+<h2>8. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Phi tập trung hóa phân quyền Khách hàng khỏi Spring Security:</strong> Khách hàng khi đăng nhập bằng tài khoản thông thường hoặc Google OAuth sẽ không tạo Spring Security <code>Authentication</code> hay lưu vào <code>SecurityContextHolder</code>. Hệ thống chỉ lưu trữ thông tin nhận diện trong session nội bộ, giảm thiểu lỗ hổng leo thang đặc quyền (privilege escalation).</li>
+            <li><strong>Phân tách đường dẫn đăng nhập Admin/Staff riêng biệt:</strong> Quản lý (QL) và Nhân viên (NV) đăng nhập qua đường dẫn <code>/admin/dang-nhap</code> (quản lý bởi Controller <code>AdminDangNhapController.java</code> mới). Các nỗ lực đăng nhập sai phân hệ (admin đăng nhập ở trang user hoặc ngược lại) đều bị chặn và cảnh báo lỗi.</li>
+            <li><strong>Tăng cường kiểm soát an ninh định tuyến backend:</strong> Thiết lập quy tắc kiểm tra quyền hạn chi tiết trong Spring Security (các trang nhân viên/thống kê chỉ QL được vào; các trang đơn hàng, sản phẩm, danh mục, POS, khách hàng thì cả QL và NV đều được truy cập). Mọi truy cập trái phép vào <code>/admin/**</code> được tự động redirect đến <code>/admin/dang-nhap</code>.</li>
+            <li><strong>Tạo trang Đăng nhập Quản trị chuyên dụng:</strong> Xây dựng giao diện đăng nhập Admin mới với thiết kế tối giản, phong cách tối màu và hiệu ứng kính mờ (glassmorphic dark design) tại <code>templates/admin/signin.html</code>, hỗ trợ cờ tải trang (loading spinner) khi đang submit và ẩn hiện mật khẩu động.</li>
+            <li><strong>Chuẩn hóa Đăng xuất và Interceptor:</strong> Viết lại logic trong <code>AdminInterceptor.java</code> để chỉ tập trung kiểm tra thời gian thực xem tài khoản admin/staff có bị khóa hay không, loại bỏ mã chuyển hướng đăng nhập dư thừa và loại trừ các trang đăng nhập/đăng xuất của admin trong <code>WebMvcConfig.java</code>.</li>
+        </ul>
+    </div>
+
+<h2>7. Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Lưu trữ flag phân quyền tương thích ngược:</strong> Bổ sung 3 cột flag (<code>la_khach_hang</code>, <code>la_nhan_vien</code>, <code>la_quan_ly</code>) vào bảng <code>TaiKhoan</code> thông qua Flyway migration. Drop cột <code>vai_tro_hien_tai</code> (sử dụng <code>V1.4__remove_vai_tro_hien_tai.sql</code>) do trạng thái vai trò hoạt động chỉ lưu trữ trên session, không lưu dưới DB.</li>
+            <li><strong>Tự động định vị vai trò khi Đăng nhập:</strong> Loại bỏ hoàn toàn màn hình trung gian <code>/select-role</code>. Việc đăng nhập tại <code>/user/dang-nhap</code> tự động thiết lập <code>activeRole = 'KH'</code>; đăng nhập tại <code>/admin/dang-nhap</code> tự động thiết lập <code>activeRole = 'QL'</code> (nếu là quản lý) hoặc <code>'NV'</code> (nếu là nhân viên).</li>
+            <li><strong>Bảo mật chuyển đổi vai trò (Switch-Role Enforcements):</strong>
+                <ul>
+                    <li>Endpoint <code>/switch-role</code> yêu cầu session đã xác thực, thực hiện xác thực chéo quyền sở hữu tài khoản và sở hữu vai trò.</li>
+                    <li>Nâng quyền (KH -> NV/QL hoặc NV -> QL) yêu cầu redirect về <code>/admin/dang-nhap</code> để nhập lại credentials.</li>
+                    <li>Hạ quyền (QL -> NV/KH hoặc NV -> KH) cho phép chuyển đổi trực tiếp bằng cách hủy bỏ session cũ, xóa sạch SecurityContext, khởi tạo session mới và nạp lại quyền hạn/thông tin tương ứng.</li>
+                </ul>
+            </li>
+            <li><strong>Đồng bộ hóa Menu thả xuống:</strong> Hiển thị danh sách vai trò thực tế của người dùng kèm dấu tích ở Header trang khách hàng và admin dashboard để chuyển đổi vai trò.</li>
+            <li><strong>Lưu trữ lịch sử nhân viên bị demote (Soft Deactivation):</strong> Không xóa vật lý dữ liệu trong bảng <code>NhanVien</code> khi tài khoản bị tước quyền quản trị/nhân viên, giúp giữ lại toàn bộ liên kết lịch sử.</li>
+        </ul>
+    </div>
+
+<h2>6. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Bổ sung spring-boot-starter-flyway vào pom.xml:</strong> Thay thế trực tiếp dependency <code>flyway-core</code> bằng <code>spring-boot-starter-flyway</code> để kích hoạt cơ chế tự động cấu hình và thực thi migrations của Flyway tại thời điểm khởi chạy trong Spring Boot 4.0.6.</li>
+            <li><strong>Thiết lập các bản di trú Flyway dạng lũy tiến và idempotent:</strong> Chỉnh sửa nội dung các tệp tin migrations <code>V1.3__multi_role_support.sql</code> và <code>V1.4__remove_vai_tro_hien_tai.sql</code> thành dạng idempotent sử dụng các câu lệnh kiểm tra sự tồn tại của cột trong SQL Server (<code>IF NOT EXISTS</code> / <code>IF EXISTS</code>). Giúp kịch bản chạy Flyway không bao giờ bị gián đoạn hay crash nếu các cột hoặc bảng đã được can thiệp thủ công từ trước.</li>
+            <li><strong>Xây dựng cơ chế tự động sửa lỗi và đồng bộ cấu hình (DatabaseSchemaRepairConfig):</strong> Thiết lập lớp cấu hình <code>DatabaseSchemaRepairConfig.java</code> định nghĩa custom <code>FlywayMigrationStrategy</code> bean:
+                <ul>
+                    <li>Tự động gọi <code>flyway.repair()</code> khi khởi chạy ứng dụng để tự động sửa chữa/đồng bộ mã checksum và loại bỏ các bản ghi migration lỗi trong bảng lịch sử <code>flyway_schema_history</code>.</li>
+                    <li>Sử dụng kết nối JDBC thô trực tiếp từ DataSource để kiểm tra xem bảng <code>TaiKhoan</code> đã có các cột <code>la_khach_hang</code>, <code>la_nhan_vien</code>, <code>la_quan_ly</code> chưa. Nếu chưa có, ứng dụng sẽ thực hiện chạy câu lệnh <code>ALTER TABLE</code> bổ sung và cập nhật dữ liệu mặc định từ cột <code>vai_tro</code> cũ trước khi Hibernate tiến hành validate schema, loại bỏ hoàn toàn lỗi crash <code>SchemaManagementException: Schema validation: missing column</code> tại startup.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+<h2>5. Chức năng: Quy trình Xác nhận Thanh toán tại Quầy POS (POS Payment Confirmation Flow)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
@@ -143,276 +372,48 @@
         </ul>
     </div>
 
-    <h2>6. Chức năng: Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair)</h2>
+<h2>4. Chức năng: Khắc phục lỗi Thống kê Doanh thu & Sản phẩm (Revenue & Sales Statistics Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Bổ sung spring-boot-starter-flyway vào pom.xml:</strong> Thay thế trực tiếp dependency <code>flyway-core</code> bằng <code>spring-boot-starter-flyway</code> để kích hoạt cơ chế tự động cấu hình và thực thi migrations của Flyway tại thời điểm khởi chạy trong Spring Boot 4.0.6.</li>
-            <li><strong>Thiết lập các bản di trú Flyway dạng lũy tiến và idempotent:</strong> Chỉnh sửa nội dung các tệp tin migrations <code>V1.3__multi_role_support.sql</code> và <code>V1.4__remove_vai_tro_hien_tai.sql</code> thành dạng idempotent sử dụng các câu lệnh kiểm tra sự tồn tại của cột trong SQL Server (<code>IF NOT EXISTS</code> / <code>IF EXISTS</code>). Giúp kịch bản chạy Flyway không bao giờ bị gián đoạn hay crash nếu các cột hoặc bảng đã được can thiệp thủ công từ trước.</li>
-            <li><strong>Xây dựng cơ chế tự động sửa lỗi và đồng bộ cấu hình (DatabaseSchemaRepairConfig):</strong> Thiết lập lớp cấu hình <code>DatabaseSchemaRepairConfig.java</code> định nghĩa custom <code>FlywayMigrationStrategy</code> bean:
+            <li><strong>Tổng hợp dữ liệu doanh thu đa kênh:</strong> Điều chỉnh các truy vấn JPA trong <code>HoaDonRepository</code> và <code>HoaDonChiTietRepository</code> để hỗ trợ đồng thời cả hai bộ trạng thái đơn hàng:
                 <ul>
-                    <li>Tự động gọi <code>flyway.repair()</code> khi khởi chạy ứng dụng để tự động sửa chữa/đồng bộ mã checksum và loại bỏ các bản ghi migration lỗi trong bảng lịch sử <code>flyway_schema_history</code>.</li>
-                    <li>Sử dụng kết nối JDBC thô trực tiếp từ DataSource để kiểm tra xem bảng <code>TaiKhoan</code> đã có các cột <code>la_khach_hang</code>, <code>la_nhan_vien</code>, <code>la_quan_ly</code> chưa. Nếu chưa có, ứng dụng sẽ thực hiện chạy câu lệnh <code>ALTER TABLE</code> bổ sung và cập nhật dữ liệu mặc định từ cột <code>vai_tro</code> cũ trước khi Hibernate tiến hành validate schema, loại bỏ hoàn toàn lỗi crash <code>SchemaManagementException: Schema validation: missing column</code> tại startup.</li>
+                    <li>Hoàn thành/Đã giao: <code>da_giao</code> (POS) và <code>delivered</code> (Online).</li>
+                    <li>Đã hủy: <code>da_huy</code> (POS) và <code>cancelled</code> (Online).</li>
                 </ul>
+                Giúp các chỉ số KPIs (Doanh thu thuần, Đơn thành công, Sản phẩm đã bán, Giá trị trung bình đơn) và biểu đồ doanh thu theo thời gian hiển thị chính xác toàn bộ kết quả bán hàng thực tế.
             </li>
+            <li><strong>Chuẩn hóa ánh xạ trạng thái đơn hàng:</strong> Cải tiến <code>AdminThongKeService.java</code> để tự động chuyển đổi các trạng thái tiếng Anh của đơn hàng online (<code>delivered</code>, <code>cancelled</code>, <code>shipping</code>, <code>processing</code>) về các trạng thái tiếng Việt tương ứng trước khi đưa vào bản đồ phân phối <code>statusMap</code>, đảm bảo biểu đồ tròn hiển thị đầy đủ và chính xác tỷ lệ đơn hàng.</li>
         </ul>
     </div>
 
-    <h2>7. Nâng cấp Hệ thống Tài khoản Đa Vai trò Đơn giản hóa (Simplified Multi-Role Account System)</h2>
+<h2>3. Chức năng: Khắc phục lỗi Giao diện Hộp thông báo lỗi (Error Page Layout & Button Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Lưu trữ flag phân quyền tương thích ngược:</strong> Bổ sung 3 cột flag (<code>la_khach_hang</code>, <code>la_nhan_vien</code>, <code>la_quan_ly</code>) vào bảng <code>TaiKhoan</code> thông qua Flyway migration. Drop cột <code>vai_tro_hien_tai</code> (sử dụng <code>V1.4__remove_vai_tro_hien_tai.sql</code>) do trạng thái vai trò hoạt động chỉ lưu trữ trên session, không lưu dưới DB.</li>
-            <li><strong>Tự động định vị vai trò khi Đăng nhập:</strong> Loại bỏ hoàn toàn màn hình trung gian <code>/select-role</code>. Việc đăng nhập tại <code>/user/dang-nhap</code> tự động thiết lập <code>activeRole = 'KH'</code>; đăng nhập tại <code>/admin/dang-nhap</code> tự động thiết lập <code>activeRole = 'QL'</code> (nếu là quản lý) hoặc <code>'NV'</code> (nếu là nhân viên).</li>
-            <li><strong>Bảo mật chuyển đổi vai trò (Switch-Role Enforcements):</strong>
-                <ul>
-                    <li>Endpoint <code>/switch-role</code> yêu cầu session đã xác thực, thực hiện xác thực chéo quyền sở hữu tài khoản và sở hữu vai trò.</li>
-                    <li>Nâng quyền (KH -> NV/QL hoặc NV -> QL) yêu cầu redirect về <code>/admin/dang-nhap</code> để nhập lại credentials.</li>
-                    <li>Hạ quyền (QL -> NV/KH hoặc NV -> KH) cho phép chuyển đổi trực tiếp bằng cách hủy bỏ session cũ, xóa sạch SecurityContext, khởi tạo session mới và nạp lại quyền hạn/thông tin tương ứng.</li>
-                </ul>
-            </li>
-            <li><strong>Đồng bộ hóa Menu thả xuống:</strong> Hiển thị danh sách vai trò thực tế của người dùng kèm dấu tích ở Header trang khách hàng và admin dashboard để chuyển đổi vai trò.</li>
-            <li><strong>Lưu trữ lịch sử nhân viên bị demote (Soft Deactivation):</strong> Không xóa vật lý dữ liệu trong bảng <code>NhanVien</code> khi tài khoản bị tước quyền quản trị/nhân viên, giúp giữ lại toàn bộ liên kết lịch sử.</li>
+            <li><strong>Ngăn ngừa xung đột CSS và cô lập lớp giao diện:</strong> Thay thế lớp class <code>about</code> (vốn thiết kế riêng cho các thẻ của trang Giới thiệu) bằng lớp tùy chỉnh <code>error-card</code> trên các trang lỗi để đảm bảo không bị ảnh hưởng bởi CSS layout trang khác.</li>
+            <li><strong>Định vị các nút hiển thị độc lập (display: inline-block):</strong> Thêm thuộc tính CSS <code>display: inline-block</code> cùng kích thước đệm (padding) chuẩn và bo góc cho các nút hành động (Quay về trang chủ, Cửa hàng), giải quyết triệt để lỗi nút tràn ra ngoài và đè lên đường viền nét đứt của container box.</li>
+            <li><strong>Chuẩn hóa kiểu dáng nút thứ hai (Cửa hàng):</strong> Thay đổi class nút từ <code>btn--e-secondary-b-2</code> không tồn tại sang <code>btn--e-secondary</code> hợp lệ để nút hiển thị nền đen chuẩn thiết kế của SmashVN thay vì dạng liên kết chữ thô không viền.</li>
         </ul>
     </div>
 
-    <h2>8. Chức năng: Phân tách luồng Xác thực Khách hàng và Quản trị & Nâng cấp Phân quyền (Auth separation & RBAC hardening)</h2>
+<h2>2. Chức năng: Khắc phục lỗi Giao diện In Hóa đơn K80 (K80 Receipt Print Layout Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Phi tập trung hóa phân quyền Khách hàng khỏi Spring Security:</strong> Khách hàng khi đăng nhập bằng tài khoản thông thường hoặc Google OAuth sẽ không tạo Spring Security <code>Authentication</code> hay lưu vào <code>SecurityContextHolder</code>. Hệ thống chỉ lưu trữ thông tin nhận diện trong session nội bộ, giảm thiểu lỗ hổng leo thang đặc quyền (privilege escalation).</li>
-            <li><strong>Phân tách đường dẫn đăng nhập Admin/Staff riêng biệt:</strong> Quản lý (QL) và Nhân viên (NV) đăng nhập qua đường dẫn <code>/admin/dang-nhap</code> (quản lý bởi Controller <code>AdminDangNhapController.java</code> mới). Các nỗ lực đăng nhập sai phân hệ (admin đăng nhập ở trang user hoặc ngược lại) đều bị chặn và cảnh báo lỗi.</li>
-            <li><strong>Tăng cường kiểm soát an ninh định tuyến backend:</strong> Thiết lập quy tắc kiểm tra quyền hạn chi tiết trong Spring Security (các trang nhân viên/thống kê chỉ QL được vào; các trang đơn hàng, sản phẩm, danh mục, POS, khách hàng thì cả QL và NV đều được truy cập). Mọi truy cập trái phép vào <code>/admin/**</code> được tự động redirect đến <code>/admin/dang-nhap</code>.</li>
-            <li><strong>Tạo trang Đăng nhập Quản trị chuyên dụng:</strong> Xây dựng giao diện đăng nhập Admin mới với thiết kế tối giản, phong cách tối màu và hiệu ứng kính mờ (glassmorphic dark design) tại <code>templates/admin/signin.html</code>, hỗ trợ cờ tải trang (loading spinner) khi đang submit và ẩn hiện mật khẩu động.</li>
-            <li><strong>Chuẩn hóa Đăng xuất và Interceptor:</strong> Viết lại logic trong <code>AdminInterceptor.java</code> để chỉ tập trung kiểm tra thời gian thực xem tài khoản admin/staff có bị khóa hay không, loại bỏ mã chuyển hướng đăng nhập dư thừa và loại trừ các trang đăng nhập/đăng xuất của admin trong <code>WebMvcConfig.java</code>.</li>
+            <li><strong>Chuyển đổi font chữ hiển thị trực quan:</strong> Thay đổi font chữ hóa đơn in nhiệt từ font monospace (<code>Courier New</code>) sang font chữ không chân (<code>Arial, sans-serif</code>) giúp giao diện gọn gàng, tiết kiệm chiều ngang của khổ K80 và giống với mẫu hóa đơn hình 2.</li>
+            <li><strong>Ngăn chặn xuống dòng và lệch cột (white-space: nowrap):</strong> Thiết lập thuộc tính CSS <code>white-space: nowrap</code> trên các cột hiển thị số lượng, đơn giá và thành tiền, giúp ngăn ngừa tình trạng số tiền lớn hoặc số lượng sản phẩm làm vỡ dòng (wrap thành hàng dọc).</li>
+            <li><strong>Định vị tỷ lệ cột cố định:</strong> Cập nhật các thẻ <code>th</code> và <code>td</code> trong bảng chi tiết sản phẩm và bảng tổng hợp (Summary Table) với các tỷ lệ phần trăm cụ thể (55%, 15%, 30% cho chi tiết; 60%, 40% cho tổng hợp) để bảo toàn cấu trúc bảng ngay cả khi số liệu có độ rộng bất thường.</li>
+            <li><strong>Chuyển đường viền bảng sang nét đứt:</strong> Thay đổi kiểu viền dưới của tiêu đề bảng (table header) thành dạng nét đứt <code>border-bottom: 1px dashed #000000</code> để đồng bộ hoàn toàn với các phần phân vùng divider nét đứt khác trên hóa đơn in nhiệt.</li>
         </ul>
     </div>
 
-    <h2>9. Chức năng: Triển khai chuẩn hóa Bảo mật Hệ thống toàn diện (Security Remediation & Hardening)</h2>
+<h2>1. Chức năng: Khắc phục lỗi Sidebar Cố định (Fixed/Sticky Sidebar Navigation Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
         <ul>
-            <li><strong>Bảo mật file cấu hình qua Biến môi trường (.env):</strong> Tạo file <code>.env.example</code> và file <code>.env</code> cục bộ; chỉnh sửa <code>application.properties</code> sử dụng cú pháp placeholder <code>${...}</code> để tham chiếu; xây dựng bộ nạp biến môi trường tự động thông qua <code>DotenvEnvironmentPostProcessor.java</code> giúp hỗ trợ chạy đồng bộ cho cả ứng dụng chính và kiểm thử (unit tests); ưu tiên các biến môi trường thực tế của hệ thống (Environment Variables) và dùng <code>.env</code> làm dự phòng (fallback) cho môi trường local.</li>
-            <li><strong>Di trú mật khẩu & Tối ưu hóa hiệu năng (PlaintextPasswordMigrator):</strong> Cấu hình tự động mã hóa mật khẩu plaintext thành mã hash BCrypt thông qua kích hoạt profile <code>migration</code> khi khởi chạy (sử dụng <code>@Profile("migration")</code>); tối ưu hóa bằng phương thức truy vấn custom <code>findPlaintextAccounts</code> chỉ lấy danh sách tài khoản chưa mã hóa thay vì load toàn bộ DB, tránh nghẽn hiệu năng.</li>
-            <li><strong>Cấu hình cờ bảo mật Session Cookie:</strong> Thiết lập cờ <code>http-only=true</code> chống XSS đánh cắp cookie session, cờ <code>same-site=lax</code> chống tấn công CSRF thông qua các liên kết từ bên ngoài, và cờ <code>secure</code> cấu hình linh động bằng biến môi trường <code>SESSION_COOKIE_SECURE</code> (mặc định false ở local, true ở production) trong file <code>application.properties</code>.</li>
-            <li><strong>Cấu hình & Tích hợp đăng nhập Google OAuth2 riêng:</strong> Hướng dẫn cấu hình thông tin xác thực OAuth2 mới (Client ID/Client Secret mới) thay thế cho Client ID mặc định của bài lab cũ trong file <code>.env</code>; cấu hình chính xác địa chỉ chuyển hướng được ủy quyền (Authorized redirect URIs) dạng <code>http://localhost:8080/login/oauth2/code/google</code> trong Google Console để giải quyết lỗi <code>redirect_uri_mismatch</code> và <code>invalid_client</code>.</li>
-            <li><strong>Chống tấn công CSRF & Cấu hình AJAX toàn hệ thống:</strong> Kích hoạt lại CSRF trong <code>SecurityConfig.java</code>; cập nhật <code>app.js</code> để tự động đính kèm token CSRF (x-csrf-token) cho mọi request AJAX qua jQuery; sửa các nút hành động dạng GET (như ngừng bán sản phẩm, khóa nhân viên, xóa danh mục, xóa thương hiệu, tạm dừng/xóa đợt giảm giá, tạm dừng/xóa phiếu giảm giá) thành các form POST/DELETE có chứa thẻ CSRF token ẩn.</li>
-            <li><strong>Mã hóa tham số chuyển hướng lỗi an toàn:</strong> Thực hiện mã hóa URL-encode đối với tất cả các thông báo lỗi truyền qua tham số redirect (ví dụ: <code>?loi=...</code>) trong các Controller bằng <code>java.net.URLEncoder.encode</code> để tránh đứt gãy URL hoặc bị lỗi parse do ký tự tiếng Việt có khoảng trắng.</li>
-            <li><strong>Xác thực và Giới hạn tệp tải lên (File Upload Protection):</strong> Tích hợp Apache Tika trong <code>AdminSanPhamService.java</code> để kiểm tra chính xác MIME type của file ảnh tải lên; giới hạn độ phân giải của hình ảnh không vượt quá 5000x5000px sử dụng <code>ImageIO</code>; ngăn ngừa Path Traversal bằng việc làm sạch và chuẩn hóa tên file.</li>
-            <li><strong>Chính sách Content Security Policy (CSP) & nosniff cho Uploads:</strong> Cấu hình <code>UploadSecurityFilter.java</code> để chỉ áp dụng CSP với giá trị sandbox và header <code>X-Content-Type-Options: nosniff</code> trên đường dẫn <code>/uploads/**</code>, bảo vệ hệ thống khỏi mã độc XSS thực thi từ tệp tĩnh mà không gây ảnh hưởng đến phần còn lại của ứng dụng.</li>
-            <li><strong>Cải tiến tính năng khóa tài khoản an toàn qua Email:</strong> Bổ sung cột <code>token_xac_thuc_khoa</code> vào bảng <code>TaiKhoan</code> và tạo mã UUID token ngẫu nhiên khi gửi yêu cầu khóa tài khoản qua email; kiểm tra token an sau khi đổi trạng thái tài khoản.</li>
-            <li><strong>Lưu nhật ký kiểm toán (Audit Logging):</strong> Thay thế việc ghi log trực tiếp vào DB bằng việc tích hợp <code>AuditService</code> thống nhất ghi lại các hành động nghiệp vụ nhạy cảm vào bảng <code>EditLog</code>; các sự kiện đăng nhập thất bại hoặc sự kiện unauthenticated được chuyển hướng ghi vào tệp log ứng dụng qua SLF4J giúp bảo vệ tài nguyên DB.</li>
-            <li><strong>Tự động chuẩn hóa đường dẫn thư mục tải lên:</strong> Cải tiến <code>UploadPathVerifier.java</code> hỗ trợ tự động chuẩn hóa và tạo mới thư mục tải lên ở cả dạng tương đối và tuyệt đối ngay khi khởi chạy Spring Boot.</li>
-            <li><strong>Ràng buộc mật khẩu & Email đầu vào:</strong> Cập nhật <code>UserDangKyService.java</code> kiểm tra độ mạnh mật khẩu (độ dài >= 8 ký tự, bao gồm cả chữ và số) và định dạng email chuẩn regex khi đăng ký tài khoản mới.</li>
-        </ul>
-    </div>
-
-    <h2>10. Chức năng: Xây dựng trang Cửa hàng (/shop), trang Giới thiệu (/about) và trang Blogs Tin tức (/blog)</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Định tuyến lại và thiết lập /shop:</strong> Đổi tên view từ <code>shop-side-version-2.html</code> thành <code>shop.html</code>, đổi định tuyến Controller thành <code>/shop</code>, thực hiện tìm kiếm thay thế liên kết trên toàn bộ các file giao diện và thiết lập redirect 301.</li>
-            <li><strong>Tạo trang Giới thiệu (/about) chuyên sâu:</strong> Tạo file giao diện <code>about.html</code> trình bày lịch sử hình thành (thành lập 2018 tại Thái Nguyên), các thành tựu (căng >20.000 vợt, phục vụ >50.000 khách), cam kết 100% chính hãng và thương hiệu đối tác (Yonex, Lining, Victor).</li>
-            <li><strong>Xây dựng trang Tin tức / Blogs động (/blog):</strong> Tạo thực thể <code>Blog.java</code> JPA và interface <code>BlogRepository.java</code> cùng <code>BlogService.java</code> hỗ trợ tự động khởi tạo dữ liệu bài viết (5 bài viết cầu lông tiếng Việt) khi CSDL trống. Bản ghi được truy cập qua slug sạch (<code>/blog/{slug}</code>).</li>
-            <li><strong>Chức năng tìm kiếm và phân trang bài viết:</strong> Hỗ trợ tìm kiếm từ khóa không phân biệt hoa thường và phân trang động bằng Pageable trong Spring Boot.</li>
-            <li><strong>Trang 404 tùy chỉnh:</strong> Tạo giao diện lỗi <code>404.html</code> chuyên nghiệp đồng bộ phong cách Smash VN.</li>
-            <li><strong>Tích hợp SEO, OpenGraph & JSON-LD:</strong> Thêm thẻ canonical URL động, robots.txt, sitemap.xml, các thẻ Meta & OpenGraph (kèm ảnh OG mặc định), và các khối script Schema.org JSON-LD (AboutPage, Organization, Blog, BlogPosting) giúp tối ưu điểm SEO.</li>
-        </ul>
-    </div>
-
-    <h2>11. Chức năng: Tích hợp Trang danh mục Sản phẩm động (shop-side-version-2.html) và Tối ưu hóa Footer</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Tích hợp Trang danh mục động:</strong> Sao chép mẫu giao diện <code>shop-side-version-2.html</code> và nhúng các thẻ Thymeleaf để tự động lấy dữ liệu danh mục, thương hiệu, và sản phẩm từ cơ sở dữ liệu.</li>
-            <li><strong>Xây dựng API Lọc sản phẩm:</strong> Thêm các phương thức lọc <code>findByDanhMucId</code> và <code>findByThuongHieuId</code> tại repository, đồng thời cập nhật <code>HomeController</code> để xử lý yêu cầu lọc của người dùng dựa theo tham số danh mục/thương hiệu tùy chọn.</li>
-            <li><strong>Nhất quán Layout:</strong> Thay thế header, footer, và các popup modal tĩnh trong trang danh mục bằng các layout fragment dùng chung của dự án để dễ quản lý và đồng bộ thiết kế.</li>
-            <li><strong>Loại bỏ Service Assurance Bar:</strong> Loại bỏ hoàn toàn dải Cam kết chất lượng dịch vụ ở chân trang theo yêu cầu tối giản hóa giao diện, giữ lại bố cục 4 cột chuyên nghiệp đã được cấu trúc lại.</li>
-        </ul>
-    </div>
-
-    <h2>12. Chức năng: Cập nhật giao diện Footer đồng bộ và hiện đại</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Tái cấu trúc 4 cột Footer:</strong> Thay thế thông tin liên hệ tĩnh tiếng Anh mặc định bằng thông tin liên hệ thực tế của cửa hàng tại đường đê Mỏ Bạch, Thái Nguyên, Việt Nam và số điện thoại hỗ trợ chính thức.</li>
-            <li><strong>Menu liên kết Việt hóa:</strong> Đổi tên các mục và dịch các liên kết trong menu <strong>THÔNG TIN</strong> và <strong>CÔNG TY</strong> để đồng bộ với các trang tính năng sẵn có.</li>
-            <li><strong>Nâng cấp Form Đăng ký:</strong> Cập nhật form newsletter bằng tiếng Việt, thêm phần chọn giới tính (tùy chọn) và dòng chữ cam kết bảo mật đi kèm biểu tượng khóa bảo mật FontAwesome.</li>
-            <li><strong>Thêm thanh Cam kết chất lượng:</strong> Thiết kế và nhúng thêm dải Service Assurance Bar gồm 4 huy hiệu tiêu chuẩn: <em>Sản phẩm chính hãng</em>, <em>Đổi trả dễ dàng</em>, <em>Giao hàng toàn quốc</em> và <em>Hỗ trợ 24/7</em>, tạo giao diện chuyên nghiệp và gia tăng uy tín cho website bán hàng.</li>
-        </ul>
-    </div>
-
-    <h2>13. Chức năng: Đồng bộ thuật ngữ "Chính sách hoàn trả hàng"</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Đồng bộ hóa Sidebar Navigation:</strong> Đổi nhãn menu liên kết từ "Chính sách trả hàng và hủy đơn hàng" thành "Chính sách hoàn trả hàng" trên tất cả các trang quản lý tài khoản của khách hàng (dashboard, profile, address, orders, v.v.).</li>
-            <li><strong>Chuẩn hóa nội dung trang Cancellation:</strong> Cập nhật tiêu đề trang, tiêu đề chính <code>h1</code> và dòng mô tả trạng thái trong <code>dash-cancellation.html</code> thành thuật ngữ "hoàn trả hàng" giúp tạo cảm giác đồng nhất, chuyên nghiệp.</li>
-        </ul>
-    </div>
-
-    <h2>14. Chức năng: Bản đồ Tương tác & Lưu trữ Tọa độ Địa chỉ</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Tích hợp Bản đồ Leaflet (OpenStreetMap):</strong> Nhúng bản đồ động vào giao diện <code>dash-address-add.html</code> và <code>dash-address-edit.html</code>. Cho phép người dùng nhấp trực tiếp vào bản đồ hoặc kéo thả ghim marker đỏ để chọn vị trí mong muốn.</li>
-            <li><strong>Nút định vị tích hợp trực tiếp trên bản đồ:</strong> Bổ sung một nút "Định vị vị trí của tôi" (biểu tượng tâm ngắm <code>crosshairs</code>) trực tiếp vào khu vực điều khiển phía trên bên trái bản đồ Leaflet. Khi người dùng nhấp vào nút này, hệ thống tự động chạy cơ chế định vị GPS/IP, tự động dịch chuyển camera bản đồ đến vị trí hiện tại của họ và ghim marker đỏ cập nhật địa chỉ mà không cần cuộn tìm thủ công.</li>
-            <li><strong>Đồng bộ hóa 2 chiều:</strong> Nhấp chuột hoặc kéo thả ghim trên bản đồ sẽ tự động ghi vĩ độ/kinh độ vào 2 input ẩn của form và tự động dịch ngược (Reverse Geocode) để cập nhật địa chỉ dạng chữ. Nút "LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI" cũng đồng thời định vị và bay camera (flyTo) bản đồ đến vị trí tương ứng.</li>
-            <li><strong>Cơ chế Debounce chống nghẽn API:</strong> Áp dụng debounce trì hoãn 400ms đối với tiến trình gọi dịch ngược Nominatim khi marker bị kéo liên tục, bảo vệ ứng dụng khỏi lỗi 429 (Too Many Requests).</li>
-            <li><strong>Lưu trữ tọa độ thực tế:</strong> Thêm thuộc tính <code>latitude</code> và <code>longitude</code> vào thực thể <code>SoDiaChi</code>. Hệ thống tự động tạo các cột CSDL tương ứng qua cơ chế Hibernate ddl-auto.</li>
-            <li><strong>Tải bản đồ từ tọa độ lưu trữ:</strong> Khi sửa địa chỉ, hệ thống tự động đọc tọa độ đã lưu trong DB để vẽ ghim marker đỏ ngay lập tức mà không cần dùng dịch vụ phân tích địa chỉ text, giảm tải API của bên thứ ba.</li>
-            <li><strong>Backend Forward Geocoding Search Proxy:</strong> Tạo endpoint <code>GET /api/location/search?q=...</code> hỗ trợ chuyển đổi chuỗi địa chỉ thành tọa độ với điều kiện lọc quốc gia <code>countrycodes=vn</code>, tích hợp IP rate limiting và server caching (<code>geocodeSearchCache</code>).</li>
-            <li><strong>Giao diện thông báo Toast không che khuất:</strong> Thay toàn bộ <code>alert()</code> mặc định bằng Custom Toast Notification có phong cách HSL hiện đại giúp thông báo mượt mà.</li>
-        </ul>
-    </div>
-
-    <h2>15. Chức năng: Nâng cấp bảo mật, tối ưu hóa định vị GPS và dịch ngược địa lý</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Bảo mật Proxy IP Geolocation:</strong> Đã chuyển cuộc gọi API bên thứ ba ra khỏi trình duyệt. Tạo endpoint backend proxy <code>/api/location/ip</code> để ẩn các dịch vụ định vị IP bên ngoài (ipapi, ipinfo), tránh lỗi CORS và quản lý lỗi tập trung. Tích hợp cache phía máy chủ (<code>@Cacheable</code>) và giới hạn tần suất truy cập (Rate Limiting 10 req/min) dựa trên IP của client.</li>
-            <li><strong>Quản lý Fetch Timeout:</strong> Tích hợp <code>AbortController</code> cho tất cả các cuộc gọi fetch ở frontend với thời gian timeout 8 giây, ngăn chặn hiện tượng treo UI khi mạng yếu.</li>
-            <li><strong>Bảo vệ dữ liệu người dùng:</strong> Thêm xác nhận ghi đè địa chỉ (Overwrite Alert) khi các ô nhập địa chỉ đã có dữ liệu trước đó, tránh việc mất thông tin vô ý của khách hàng.</li>
-            <li><strong>Lưu đệm Local Geocode Cache:</strong> Lưu kết quả định vị thành công vào <code>localStorage</code> trong 10 phút để tối ưu hóa hiệu suất ứng dụng và tránh gọi lại các API dịch ngược không cần thiết.</li>
-            <li><strong>Xác thực và Cải tiến thuật toán định lý:</strong> Xác thực vĩ độ/kinh độ hợp lệ ở cả client và server. Thêm cảnh báo khi độ chính xác của GPS quá thấp (> 500m). Xây dựng cơ chế dịch ngược địa lý đa cấp độ (thử lại với zoom=18, 17, 16) và hỗ trợ ánh xạ hành chính Việt Nam qua nhiều biến thể trường dữ liệu Nominatim (tỉnh, quận, phường).</li>
-            <li><strong>Hộp thông báo tùy chỉnh (Custom Toast Notification Box):</strong> Loại bỏ hoàn toàn tất cả các thông báo dạng <code>alert()</code> mặc định của trình duyệt. Thay thế bằng hệ thống thông báo toast tự thiết kế (glassmorphic style, tự động ẩn sau 5 giây, có nút đóng và hỗ trợ màu sắc phân loại HSL theo trạng thái: Thành công, Cảnh báo, Lỗi, Thông tin) hiển thị trực tiếp trên góc màn hình chính.</li>
-        </ul>
-    </div>
-
-    <h2>16. Chức năng: Định vị thông minh & Bóc tách địa chỉ chính xác</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Cải tiến Geolocation & OSM:</strong> Định vị tọa độ qua GPS/IP và gửi yêu cầu dịch ngược tọa độ (Reverse Geocoding) thông qua OpenStreetMap Nominatim API bằng tiếng Việt.</li>
-            <li><strong>Thuật toán bóc tách địa chỉ tự động:</strong> Sử dụng thuật toán phân tích chuỗi địa chỉ đầy đủ (display_name), tự động tách phần số nhà, ngách/ngõ, tên đường, phường/xã, quận/huyện điền vào ô "Địa chỉ cụ thể" và tên tỉnh/thành phố vào ô "Tỉnh/Thành phố" tương ứng. Loại bỏ hoàn toàn mã zip code thừa hoặc tên quốc gia.</li>
-            <li><strong>Tích hợp thêm tại trang sửa địa chỉ:</strong> Bổ sung nút bấm "LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI" vào cả trang sửa địa chỉ (dash-address-edit.html) giúp tăng trải nghiệm người dùng khi cập nhật địa chỉ đã lưu.</li>
-        </ul>
-    </div>
-
-    <h2>17. Chức năng: Đồng bộ hóa tên hiển thị địa chỉ ("Sổ địa chỉ" -> "Địa chỉ")</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Đồng bộ Sidebar & Dashboard:</strong> Đã chuyển đổi tất cả hiển thị của danh mục "Sổ địa chỉ" thành "Địa chỉ" trong toàn bộ trang quản lý tài khoản của khách hàng (dashboard, thông tin cá nhân, danh sách đơn hàng, theo dõi đơn hàng, chính sách trả hàng/hủy đơn).</li>
-            <li><strong>Đồng bộ thẻ thông tin (Widget):</strong> Đổi tiêu đề thẻ thông tin địa chỉ từ "SỔ ĐỊA CHỈ" thành "ĐỊA CHỈ" tại trang tổng quan tài khoản (dashboard.html) để tạo sự đồng bộ và tự nhiên trong tiếng Việt.</li>
-        </ul>
-    </div>
-
-    <h2>18. Chức năng: Việt hóa toàn diện & Chuẩn hóa tiền tệ sang VNĐ</h2>
-
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Việt hóa toàn bộ giao diện:</strong> Dịch toàn bộ tiêu đề, nhãn, thanh điều hướng, các nút bấm, các tab thông tin và phần phản hồi bình luận/đánh giá trên các trang HTML (Trang chủ, Chi tiết sản phẩm, Giỏ hàng, Yêu thích, Dashboard tài khoản) từ tiếng Anh sang tiếng Việt.</li>
-            <li><strong>Chuẩn hóa tiền tệ VNĐ:</strong> Định dạng lại hiển thị giá bán và giá khuyến mãi của sản phẩm, tổng tiền giỏ hàng, hóa đơn theo đơn vị VNĐ (sử dụng hàm Thymeleaf formatDecimal để tạo định dạng phần nghìn bằng dấu phẩy và thêm hậu tố 'đ').</li>
-            <li><strong>Đồng bộ sản phẩm liên quan trong trang chi tiết:</strong> Đổi toàn bộ các mặt hàng điện tử giả lập (tai nghe Beats, điện thoại) trong phần "Sản phẩm khách hàng cũng xem" thành các dòng vợt cầu lông nổi tiếng (Yonex Astrox 88D Pro, Lining Tectonic 7, Victor Thruster K 9900...) với mức giá VNĐ tương thích với thương hiệu của SmashVN.</li>
-        </ul>
-    </div>
-
-    <h2>19. Chức năng: Cải tiến hiển thị trang Tổng quan Tài khoản cá nhân (User Dashboard)</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Hiển thị số liệu thật trên Widget:</strong> Thay thế các số liệu cứng (4 đơn hàng, 0 đơn hủy, 0 sản phẩm yêu thích) bằng các thuộc tính động truy vấn trực tiếp từ cơ sở dữ liệu.</li>
-            <li><strong>Thông tin Sổ địa chỉ thực tế:</strong> Liên kết hiển thị địa chỉ nhận hàng và địa chỉ thanh toán mặc định của khách hàng từ <code>SoDiaChi</code> thay vị trí địa chỉ giả định của Mỹ (Ashford Drive).</li>
-            <li><strong>Đồng bộ hóa Bảng đơn hàng gần đây:</strong> Bảng đơn hàng gần đây hiển thị tối đa 5 đơn hàng thực tế kèm theo hình ảnh thật của sản phẩm, ngày đặt hàng chính xác, tổng số tiền thanh toán hiển thị theo định dạng tiền Việt (VND) và nút quản lý đơn hàng động.</li>
-            <li><strong>Khắc phục chân trang bị lỗi:</strong> Thay thế footer bị hỏng (placeholder trống) trong trang thông tin cá nhân (<code>dash-my-profile.html</code>) bằng component chân trang chuẩn của trang chủ.</li>
-        </ul>
-    </div>
-
-    <h2>20. Chức năng: Thống kê Doanh thu & Lọc thời gian AJAX động</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Bộ lọc thời gian nhanh (Presets):</strong> Thêm các nút chọn nhanh khoảng thời gian thống kê (Hôm nay, Tuần này, Tháng này, Năm nay, 30 ngày qua).</li>
-            <li><strong>Bộ lọc ngày tùy chỉnh:</strong> Thêm ô chọn khoảng ngày bắt đầu và kết thúc (Date range picker) hiển thị động khi chọn chế độ "Tùy chỉnh".</li>
-            <li><strong>Tải dữ liệu AJAX:</strong> Loại bỏ cơ chế reload toàn bộ trang. Toàn bộ KPIs, biểu đồ và bảng sản phẩm được cập nhật tức thì qua API JSON <code>/admin/thong-ke/api</code> khi thay đổi bộ lọc.</li>
-            <li><strong>Biểu đồ trực quan tương tác:</strong> Tích hợp thư viện Chart.js hiển thị biểu đồ đường (Line Chart) cho doanh thu và biểu đồ vành khuyên (Doughnut Chart) cho trạng thái đơn hàng.</li>
-        </ul>
-    </div>
-
-    <h2>21. Chức năng: Gom nhóm biểu đồ thông minh (Smart Grouping)</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Nhóm theo Giờ (Hour Grouping):</strong> Khi lọc khoảng thời gian trong vòng 1 ngày (Hôm nay), biểu đồ doanh thu tự động hiển thị trục X đủ 24 giờ (<code>00h</code> &rarr; <code>23h</code>).</li>
-            <li><strong>Nhóm theo Ngày (Day Grouping):</strong> Khi lọc khoảng thời gian từ 2 đến 90 ngày (ví dụ: 30 ngày qua, Tháng này), doanh thu được gộp và hiển thị theo nhãn ngày/tháng (<code>dd/MM</code>).</li>
-            <li><strong>Nhóm theo Tháng (Month Grouping):</strong> Khi lọc khoảng thời gian lớn hơn 90 ngày (ví dụ: Năm nay), doanh thu tự động chuyển sang gộp theo tháng (<code>Tháng 1</code> &rarr; <code>Tháng 12</code>).</li>
-        </ul>
-    </div>
-
-    <h2>22. Chức năng: Tối ưu hóa Cơ sở Dữ liệu & Truy vấn hiệu năng cao</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Gom Index cơ sở dữ liệu:</strong> Chuyển việc tạo chỉ mục sang Flyway Migration để tạo index cho cột ngày tháng (<code>ngay_tao</code>) và trạng thái đơn hàng trên bảng <code>HoaDon</code>.</li>
-            <li><strong>Truy vấn tổng hợp dưới DB:</strong> Thay thế việc lấy toàn bộ hóa đơn lên Java để tính toán. Toàn bộ KPIs doanh thu, trung bình đơn, số đơn được tính toán thông qua truy vấn aggregate của cơ sở dữ liệu (SUM, COUNT, AVG, GROUP BY).</li>
-            <li><strong>An toàn giá trị null:</strong> Áp dụng hàm <code>COALESCE</code> cho toàn bộ các truy vấn JPQL tổng hợp SUM/AVG giúp trả về giá trị 0.0 mặc định thay vì trả về null khi không có dữ liệu.</li>
-            <li><strong>Thay thế Object[] bằng DTO:</strong> Định nghĩa các Java Records (<code>TopProductDTO</code>, <code>OrderStatusCountDTO</code>) giúp ánh xạ kết quả truy vấn chuẩn xác, loại bỏ hoàn toàn mảng thô Object[].</li>
-            <li><strong>Sử dụng Class thay vì Record cho GeneralMetricsDTO:</strong> Chuyển đổi DTO này thành class thông thường có constructor nhận tham số dạng <code>Object</code> để giải quyết triệt để lỗi biên dịch/SemanticException của Hibernate khi kết quả trả về của các biểu thức SUM, AVG, COALESCE tự động ánh xạ sang các kiểu dữ liệu số khác nhau (Double, BigDecimal, Long) tùy theo DB.</li>
-        </ul>
-    </div>
-
-    <h2>23. Chức năng: Bộ đệm Caffeine Cache TTL ngắn hạn (30 giây)</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Tích hợp Caffeine Cache:</strong> Cấu hình cache tự động giải phóng bộ nhớ sau 30 giây kể từ khi ghi dữ liệu thống kê (<code>expireAfterWrite=30s</code>).</li>
-            <li><strong>Giảm tải truy vấn lặp lại:</strong> Khi Admin bấm làm mới trang liên tục hoặc thay đổi qua lại giữa các tab, dữ liệu được đọc trực tiếp từ cache giúp máy chủ không phải chạy lại các câu lệnh SQL nặng nề.</li>
-        </ul>
-    </div>
-
-    <h2>24. Chức năng: Xuất báo cáo Excel bằng Apache POI</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Endpoint xuất Excel:</strong> Thêm đường dẫn <code>/admin/thong-ke/export</code> nhận các tham số lọc ngày tương tự trang dashboard.</li>
-            <li><strong>Báo cáo đa vùng dữ liệu (Multi-sheet):</strong> Xuất file Excel định dạng <code>.xlsx</code> gồm 3 sheet:
-                <ul>
-                    <li>Sheet 1: KPIs & Trạng Thái Đơn Hàng (Định dạng tiền tệ đ và tỷ lệ %).</li>
-                    <li>Sheet 2: Doanh Thu Theo Thời Gian (Phục vụ vẽ biểu đồ thủ công).</li>
-                    <li>Sheet 3: Top Sản Phẩm Bán Chạy Nhất (Xếp hạng, số lượng bán, doanh thu sản phẩm).</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <h2>25. Chức năng: Xử lý múi giờ đồng nhất & Xử lý dữ liệu trống</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Bảo mật múi giờ Asia/Ho_Chi_Minh:</strong> Đồng bộ múi giờ Việt Nam khi chuyển đổi ngày lọc, thiết lập mốc bắt đầu ngày (<code>00:00:00</code>) và kết thúc ngày (<code>23:59:59</code>) nhất quán.</li>
-            <li><strong>Xử lý dữ liệu trống tinh tế (Empty states):</strong> Khi khoảng thời gian lọc không có dữ liệu, frontend ẩn canvas biểu đồ và render giao diện thông báo trống trực quan thay vì gây lỗi biểu đồ.</li>
-        </ul>
-    </div>
-
-    <h2>26. Chức năng: Cố định Sidebar & Tối ưu hóa Giao diện POS tại quầy</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Khắc phục lỗi Sidebar trượt cuộn:</strong> Bổ sung thuộc tính <code>align-self: flex-start</code> và <code>z-index: 1000</code> cho class <code>.sidebar</code> để ngăn sidebar tự động giãn nở theo chiều cao của phần nội dung chính trong flexbox layout, giúp sidebar luôn cố định vị trí (sticky) ở mép trái màn hình khi cuộn nội dung.</li>
-            <li><strong>Khóa khung cuộn trang POS (Viewport Locking):</strong> Thiết lập chiều cao <code>body</code> và <code>.main-content</code> thành <code>100vh</code> kết hợp thuộc tính <code>overflow: hidden</code> trên trang POS để triệt tiêu thanh cuộn của trình duyệt chính, khóa cứng vị trí Header và Sidebar.</li>
-            <li><strong>Tối ưu hóa cuộn độc lập trang POS:</strong> Điều chỉnh giao diện hiển thị để giỏ hàng <code>.cart-list</code> tự động co giãn theo danh sách sản phẩm và cuộn mượt mà độc lập trong panel thanh toán <code>.pos-right</code>, loại bỏ hoàn toàn hiện tượng hiển thị hai thanh cuộn lồng nhau (double scrollbars) gây khó chịu.</li>
-        </ul>
-    </div>
-
-    <h2>27. Chức năng: Thêm động Màu Sắc, Size, Trọng Lượng khi Tạo Sản Phẩm Mới</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Nhập động thuộc tính tùy chỉnh:</strong> Tích hợp ô nhập văn bản và nút "Thêm" trực tiếp dưới các mục thuộc tính "Màu sắc", "Size / Trọng Lượng" và "Sức Căng (Vợt Cầu Lông)" trên màn hình thêm sản phẩm mới (<code>sanpham-add.html</code>). Cho phép quản trị viên tự do nhập thêm các giá trị mới ngoài danh sách mặc định cứng.</li>
-            <li><strong>Tự động sinh biến thể với giá trị mới:</strong> Sử dụng JavaScript động để chèn lựa chọn mới vào danh sách checkbox, tự động kích hoạt tính năng tính Cartesian Product để sinh đầy đủ biến thể và bảng thiết lập giá/kho của giá trị vừa thêm.</li>
-            <li><strong>Duy trì giá trị đã thêm khi lỗi form (Form Persistence):</strong> Viết mã Thymeleaf để tự động phát hiện và vẽ lại các checkbox chứa giá trị tùy chỉnh được chọn trước đó trong trường hợp xảy ra lỗi xác thực đầu vào từ phía backend, ngăn ngừa việc mất mát dữ liệu đã nhập.</li>
-        </ul>
-    </div>
-
-    <h2>28. Sửa lỗi: Phục hồi trang Thêm Sản phẩm khi Gặp Lỗi Xác thực (Validation Recovery Fix)</h2>
-    <div class="feature-block">
-        <div class="feature-title">Cập nhật những tính năng gì:</div>
-        <ul>
-            <li><strong>Loại bỏ interceptor chặn lỗi trước phương thức:</strong> Loại bỏ chú thích <code>@Validated</code> ở cấp lớp và các chú thích ràng buộc trực tiếp trên tham số phương thức <code>xuLyThemSanPham</code> trong <code>AdminSanPhamController.java</code>. Điều này ngăn Spring Validation tự động ném ra ngoại lệ <code>ConstraintViolationException</code> từ trước khi luồng điều khiển đi vào phương thức của controller.</li>
-            <li><strong>Xử lý lỗi tập trung tại Controller:</strong> Chuyển toàn bộ các nghiệp vụ kiểm tra tính hợp lệ của dữ liệu đầu vào (tên sản phẩm, giá bán, số lượng tồn kho, danh mục, thương hiệu, và tệp ảnh tải lên) sang Service layer xử lý thủ công và ném lỗi <code>RuntimeException</code>. Giúp đảm bảo các ngoại lệ này được bắt giữ trực tiếp trong khối <code>try-catch</code> của hàm controller.</li>
-            <li><strong>Khắc phục triệt để lỗi sập trang Thymeleaf:</strong> Khi xảy ra lỗi đầu vào, khối <code>catch</code> sẽ nạp đầy đủ các bộ dữ liệu danh mục (<code>listDanhMuc</code>), thương hiệu (<code>listThuongHieu</code>) và danh sách cấu hình thuộc tính mặc định, ngăn chặn hoàn toàn hiện tượng Thymeleaf cố gắng render trang với dữ liệu null dẫn đến lỗi hỏng trang vĩnh viễn (sập trang và không thêm lại được sản phẩm).</li>
+            <li><strong>Cố định thanh điều hướng bên trái:</strong> Cập nhật lớp CSS <code>.sidebar</code> thành <code>position: sticky; top: 0; height: 100vh;</code>. Đảm bảo thanh menu quản trị bên trái luôn được cố định ở vị trí hiển thị trên màn hình và không bao giờ bị cuốn trôi theo khung cuộn nội dung chính bên phải.</li>
+            <li><strong>Ẩn thanh cuộn thông minh (Independent Scrollability):</strong> Kích hoạt <code>overflow-y: auto</code> để menu tự cuộn nếu danh mục vượt quá độ cao màn hình, đồng thời ẩn thanh cuộn (scrollbar) đối với mọi trình duyệt để giữ giao diện thanh lịch và liền mạch.</li>
         </ul>
     </div>
 
