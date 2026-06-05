@@ -70,7 +70,8 @@
             justify-content: space-between;
             box-shadow: 0 2px 8px rgba(21, 23, 28, 0.06);
             overflow: hidden;
-            min-height: 245px;
+            height: 295px;
+            min-height: 295px;
         }
         .product-card:hover {
             border-color: var(--brand-accent);
@@ -82,11 +83,11 @@
         }
         .product-card-img-wrap {
             width: 100%;
-            height: 120px;
+            height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             background: #f8f9fc;
             border-radius: 8px;
             overflow: hidden;
@@ -102,7 +103,7 @@
         .product-name {
             font-size: 0.8rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             color: #1a1d2e;
             min-height: 36px;
             display: -webkit-box;
@@ -114,7 +115,7 @@
         .product-attr {
             font-size: 0.72rem;
             color: #8a93a4;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -123,7 +124,7 @@
             font-size: 0.88rem;
             font-weight: 800;
             color: #e03a00;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .card-add-btn {
             display: block;
@@ -630,10 +631,8 @@
                     </div>
                     <div class="product-name" title="${v.tenSanPham}">${v.tenSanPham}</div>
                     <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · ${v.mucCang}</div>
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-1">
-                        <div class="product-price">${formatVND(v.giaBan)}</div>
-                        <div style="flex-shrink: 0;">${stockBadge}</div>
-                    </div>
+                    <div class="product-price mb-1">${formatVND(v.giaBan)}</div>
+                    <div class="mb-2">${stockBadge}</div>
                 </div>
                 <button class="card-add-btn" data-variant-idx="${idx}" ${isOutOfStock ? 'disabled' : ''}>${addBtnText}</button>
             `;

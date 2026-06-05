@@ -64,6 +64,19 @@
 
     <!-- NEWEST UPDATES FIRST -->
 
+    <h2>36. Sửa lỗi: Căn giữa thông tin sản phẩm và hiển thị nút hành động đầy đủ tại POS (POS Product Card Centering &amp; Button Visibility Fixes)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Căn giữa giá bán và nhãn tồn kho (Price &amp; Stock Badge Centering):</strong> Chuyển đổi dòng hiển thị giá bán và nhãn tồn kho từ dạng flex-row sang dạng xếp chồng dọc (vertical block layout). Cả giá bán và nhãn tồn kho kế thừa căn giữa tự động của thẻ sản phẩm, tạo sự đồng bộ và cân đối với tên sản phẩm và thuộc tính.</li>
+            <li><strong>Khắc phục triệt để nút "Thêm vào đơn" bị che khuất (Button Visibility Hardening):</strong> Đặt chiều cao và chiều cao tối thiểu của thẻ sản phẩm <code>.product-card</code> cố định ở mức <code>295px</code>. Đồng thời, thu nhỏ chiều cao khung ảnh sản phẩm <code>.product-card-img-wrap</code> từ <code>120px</code> xuống <code>110px</code> và thu hẹp các khoảng cách lề (margin-bottom) giữa tên, thông số và giá bán. Sự kết hợp này giải phóng thêm nhiều không gian hiển thị, đảm bảo nút hành động ở chân thẻ và các nhãn tồn kho hiển thị trọn vẹn 100%, không bị che khuất một phần bởi thuộc tính <code>overflow: hidden</code>.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/pos.html</code> — Cải tiến cấu trúc HTML thẻ sản phẩm, giảm chiều cao ảnh xuống 110px, thu hẹp các khoảng cách lề và thiết lập chiều cao <code>295px</code> cho <code>.product-card</code>.</li>
+        </ul>
+    </div>
+
     <h2>35. Sửa lỗi: Khắc phục hiện tượng đè chữ và vỡ khung tại trang Bán hàng tại quầy (POS Overlapping Text & Layout Fixes)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>
