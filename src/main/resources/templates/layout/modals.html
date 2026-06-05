@@ -52,7 +52,7 @@
 	                            </div>
 	                        </div>
 	                        <div class="col-lg-7">
-	                            <div class="pd-detail">
+	                            <div id="quick-look-modal-container" class="pd-detail">
 	                                
 	                                <div>
 	                                    <span class="pd-detail__name" th:text="${spQuickLook.tenSanPham}">Tên Sản Phẩm</span>
@@ -95,6 +95,7 @@
 	                                    <span class="pd-detail__label u-s-m-b-8">Màu sắc:</span>
 	                                    <div class="d-flex flex-wrap">
 	                                        <button th:each="mau : ${listMauSac}" 
+	                                                type="button"
 	                                                class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8" 
 	                                                th:attr="data-color=${mau}" 
 	                                                onclick="selectColor(this)" 
@@ -107,6 +108,7 @@
 	                                    <span class="pd-detail__label u-s-m-b-8">Trọng lượng / Kích thước:</span>
 	                                    <div class="d-flex flex-wrap">
 	                                        <button th:each="size : ${listKichThuoc}" 
+	                                                type="button"
 	                                                class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8" 
 	                                                th:attr="data-size=${size}" 
 	                                                onclick="selectSize(this)" 
@@ -138,7 +140,15 @@
 	                                
 	                                <script th:inline="javascript">
 	                                    /*<![CDATA[*/
-	                                    var danhSachBienThe = /*[[${listBienTheJS}]]*/ [];
+	                                    (function() {
+	                                        var variants = /*[[${listBienTheJS}]]*/ [];
+	                                        var container = document.getElementById('quick-look-modal-container');
+	                                        if (container) {
+	                                            container.danhSachBienThe = variants;
+	                                        } else {
+	                                            console.error("Lỗi: Không tìm thấy #quick-look-modal-container!");
+	                                        }
+	                                    })();
 	                                    /*]]>*/
 	                                </script>
 	

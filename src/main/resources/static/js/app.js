@@ -625,13 +625,19 @@ function checkAndApplyVariant(container) {
         return;
     }
 
-    if (typeof danhSachBienThe === 'undefined' || !danhSachBienThe) {
-        console.error("danhSachBienThe is not defined!");
+    const variants = container.danhSachBienThe;
+    if (typeof variants === 'undefined' || !variants) {
+        console.error("Lỗi: Không tìm thấy danh sách biến thể trên container!", container);
+        if (stockStatus) {
+            stockStatus.style.display = 'block';
+            stockStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Lỗi hệ thống: Không tải được thông tin phân loại.';
+            stockStatus.className = 'js-stock-status u-s-m-b-15 text-danger fw-bold';
+        }
         return;
     }
 
     // Tìm biến thể khớp với Màu và Size đã chọn (Bọc trim() và toLowerCase() phòng trường hợp khoảng trắng thừa trong DB)
-    const matchedVariant = danhSachBienThe.find(v => 
+    const matchedVariant = variants.find(v => 
         v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
         v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()
     );

@@ -204,6 +204,64 @@
                                     <h4 class="mb-0 fw-extrabold text-dark" id="valCancellationRate">0.0%</h4>
                                     <small class="text-muted">Tổng đơn hàng đã hủy / Tổng đơn tạo</small>
                                 </div>
+                    </div>
+                </div>
+
+                <!-- Row 1.8: ZaloPay Statistics -->
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #0084ff !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-info bg-opacity-10 text-info">
+                                    <i class="fas fa-money-bill-transfer fa-xl"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Tổng Giao Dịch ZaloPay</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpTotal" style="font-size: 1.35rem; font-weight: 800;">0</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng số lượt khởi tạo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #10b981 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-circle-check fa-xl"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">ZaloPay Thành Công</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpSuccess" style="font-size: 1.35rem; font-weight: 800;">0</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Đã nhận được tiền</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #ef4444 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-danger bg-opacity-10 text-danger">
+                                    <i class="fas fa-circle-xmark fa-xl"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Thất Bại / Đang Chờ</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpFailedPending" style="font-size: 1.35rem; font-weight: 800;">0 / 0</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Hủy, lỗi / chưa thanh toán</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #ff4500 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-coins fa-xl"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Doanh Thu ZaloPay</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpRevenue" style="font-size: 1.35rem; font-weight: 800;">0 đ</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng doanh thu qua ví</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -367,6 +425,12 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
         document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
         document.getElementById("valCancellationRate").textContent = data.cancellationRate.toFixed(1) + "%";
+
+        // Cập nhật ZaloPay KPI
+        document.getElementById("valZpTotal").textContent = formatNumber(data.zpTotal);
+        document.getElementById("valZpSuccess").textContent = formatNumber(data.zpSuccess);
+        document.getElementById("valZpFailedPending").textContent = formatNumber(data.zpFailed) + " / " + formatNumber(data.zpPending);
+        document.getElementById("valZpRevenue").textContent = formatVND(data.zpRevenue);
     }
 
     // Cập nhật và khởi tạo biểu đồ

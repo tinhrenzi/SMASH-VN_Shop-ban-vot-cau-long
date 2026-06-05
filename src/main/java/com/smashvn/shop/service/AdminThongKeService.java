@@ -189,6 +189,13 @@ public class AdminThongKeService {
         // 4. Top 5 sản phẩm bán chạy nhất
         List<TopProductDTO> topProducts = hoaDonChiTietRepository.findBestSellingProducts(start, end, PageRequest.of(0, 5));
 
+        // 5. Thống kê ZaloPay
+        Long zpTotal = hoaDonRepository.countZaloPayTransactions(start, end);
+        Long zpSuccess = hoaDonRepository.countZaloPaySuccessful(start, end);
+        Long zpFailed = hoaDonRepository.countZaloPayFailed(start, end);
+        Long zpPending = hoaDonRepository.countZaloPayPending(start, end);
+        BigDecimal zpRevenue = hoaDonRepository.sumZaloPayRevenue(start, end);
+
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
         data.put("cancellationRate", cancellationRate);
@@ -198,6 +205,13 @@ public class AdminThongKeService {
         data.put("chartValues", chartValues);
         data.put("topProducts", topProducts);
         data.put("grouping", grouping);
+        
+        // Put ZaloPay statistics
+        data.put("zpTotal", zpTotal != null ? zpTotal : 0L);
+        data.put("zpSuccess", zpSuccess != null ? zpSuccess : 0L);
+        data.put("zpFailed", zpFailed != null ? zpFailed : 0L);
+        data.put("zpPending", zpPending != null ? zpPending : 0L);
+        data.put("zpRevenue", zpRevenue != null ? zpRevenue : BigDecimal.ZERO);
         return data;
     }
 
@@ -300,6 +314,35 @@ public class AdminThongKeService {
                 Row row = kpiSheet.createRow(startRowStatus + 1 + i);
                 row.createCell(0).setCellValue(statuses[i]);
                 row.createCell(1).setCellValue(statusMap.getOrDefault(statusKeys[i], 0L));
+            }
+
+            // Dòng trống và vẽ bảng Thống kê ZaloPay
+            int startRowZp = startRowStatus + statuses.length + 3;
+            Row rZpHeader = kpiSheet.createRow(startRowZp);
+            Cell cZpHeader = rZpHeader.createCell(0);
+            cZpHeader.setCellValue("Thống Kê Thanh Toán ZaloPay");
+            cZpHeader.setCellStyle(headerStyle);
+            kpiSheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(startRowZp, startRowZp, 0, 1));
+
+            String[] zpLabels = {
+                    "Tổng số giao dịch ZaloPay", "Giao dịch thành công", 
+                    "Giao dịch thất bại", "Giao dịch đang chờ", "Doanh thu ZaloPay"
+            };
+            Object[] zpValues = {
+                    stats.get("zpTotal"), stats.get("zpSuccess"), 
+                    stats.get("zpFailed"), stats.get("zpPending"), stats.get("zpRevenue")
+            };
+
+            for (int i = 0; i < zpLabels.length; i++) {
+                Row row = kpiSheet.createRow(startRowZp + 1 + i);
+                row.createCell(0).setCellValue(zpLabels[i]);
+                Cell valCell = row.createCell(1);
+                if (zpValues[i] instanceof Long) {
+                    valCell.setCellValue((Long) zpValues[i]);
+                } else if (zpValues[i] instanceof BigDecimal) {
+                    valCell.setCellValue(((BigDecimal) zpValues[i]).doubleValue());
+                    valCell.setCellStyle(currencyStyle);
+                }
             }
 
             // ----------------------------------------------------

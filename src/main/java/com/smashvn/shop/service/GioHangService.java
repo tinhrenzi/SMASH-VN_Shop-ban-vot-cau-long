@@ -14,11 +14,20 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.TrangThaiGioHang;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.GioHangRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TrangThaiGioHangRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +40,10 @@ public class GioHangService {
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TrangThaiGioHangRepository trangThaiGioHangRepository;
+    private final HoaDonRepository hoaDonRepository;
+    private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
+    private final DonViVanChuyenDAO donViVanChuyenDAO;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -190,5 +203,105 @@ public class GioHangService {
         } else {
             gioHangChiTietRepository.delete(chiTiet);
         }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void xoaTatCa(Integer idTaiKhoan) {
+        List<GioHangChiTiet> danhSach = layDanhSachSanPhamTrongGio(idTaiKhoan);
+        gioHangChiTietRepository.deleteAll(danhSach);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan, 
+                              Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu) {
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (kh == null) {
+            throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
+        }
+
+        List<GioHangChiTiet> cartItems = layDanhSachSanPhamTrongGio(idTaiKhoan);
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng trống!");
+        }
+
+        // Validate items eligibility (stock & status)
+        BigDecimal tamTinh = BigDecimal.ZERO;
+        for (GioHangChiTiet item : cartItems) {
+            SanPham sp = item.getSanPhamChiTiet().getSanPham();
+            int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
+            String trangThai = sp.getTrangThai();
+            boolean hopLe = tonKho >= item.getSoLuong() && (trangThai == null || "dang_ban".equals(trangThai));
+            if (!hopLe) {
+                throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc đã ngưng kinh doanh!");
+            }
+            tamTinh = tamTinh.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+        }
+
+        // Load carrier
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị vận chuyển"));
+
+        BigDecimal phiShip = new BigDecimal("30000");
+        BigDecimal totalAmount = tamTinh.add(phiShip);
+
+        // Find or create Payment Method
+        String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "ZaloPay";
+        List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
+        PhuongThucThanhToan pttt = allPttt.stream()
+                .filter(p -> ptttName.equalsIgnoreCase(p.getTenPhuongThuc()))
+                .findFirst()
+                .orElseGet(() -> {
+                    PhuongThucThanhToan newP = new PhuongThucThanhToan();
+                    newP.setTenPhuongThuc(ptttName);
+                    return phuongThucThanhToanDAO.save(newP);
+                });
+
+        // Create HoaDon
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setNgayTao(LocalDateTime.now());
+        hd.setTongTien(totalAmount);
+        hd.setTrangThaiDonHang("cho_xac_nhan");
+        hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+        hd.setDiaChiNhan(diaChiNhan);
+        hd.setSdtNhan(sdtNhan);
+        hd.setGhiChu(ghiChu);
+        hd.setPaymentMethod(ptttName);
+        hd.setPaymentStatus("PENDING");
+
+        hd = hoaDonRepository.save(hd);
+
+        // Create HoaDonChiTiet
+        for (GioHangChiTiet item : cartItems) {
+            SanPhamChiTiet spct = item.getSanPhamChiTiet();
+
+            // For COD orders: deduct stock immediately
+            if ("COD".equalsIgnoreCase(ptttName)) {
+                // Acquire pessimistic write lock & deduct stock
+                SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                        .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+                if (lockedSpct.getSoLuongTon() < item.getSoLuong()) {
+                    throw new RuntimeException("Sản phẩm '" + lockedSpct.getSanPham().getTenSanPham() + "' không đủ hàng tồn kho!");
+                }
+                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
+                sanPhamChiTietRepository.save(lockedSpct);
+            }
+
+            HoaDonChiTiet hdct = new HoaDonChiTiet();
+            hdct.setHoaDon(hd);
+            hdct.setSanPhamChiTiet(spct);
+            hdct.setSoLuong(item.getSoLuong());
+            hdct.setDonGia(spct.getGiaBan());
+            hoaDonChiTietRepository.save(hdct);
+        }
+
+        // For COD orders: clear cart immediately
+        if ("COD".equalsIgnoreCase(ptttName)) {
+            xoaTatCa(idTaiKhoan);
+        }
+
+        return hd;
     }
 }

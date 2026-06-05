@@ -326,11 +326,9 @@
                                         <div class="product-o__action-wrap">
                                             <ul class="product-o__action-list">
                                                 <li>
-
-                                                    <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                 <li>
-
-                                                    <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                 <li>
 
                                                     <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
@@ -404,11 +402,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
 
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
@@ -529,10 +525,29 @@
 							            </a>
 							            
 							            <div class="product-o__action-wrap">
-							                <ul class="product-o__action-list">
-							                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-							                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-							                </ul>
+											            <ul class="product-o__action-list">
+											                <li>
+											                    <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+											                        <i class="fas fa-search-plus"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+											                        <i class="fas fa-plus-circle"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+											                        <i class="fas fa-plus-circle text-success"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                	<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+													                <i class="fas fa-heart"></i>
+													            </a>
+											                </li>
+											            </ul>
 							            </div>
 							        </div>
 							

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link th:href="@{/images/favicon.png}" rel="shortcut icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Thanh Toán - Smash VN</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/vendor.css}">
+    <link rel="stylesheet" th:href="@{/css/utility.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <style>
+        .payment-card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .payment-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .payment-card:hover {
+            border-color: #ff4500;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 69, 0, 0.08);
+        }
+        .payment-card.active {
+            border-color: #ff4500;
+            background-color: rgba(255, 69, 0, 0.02);
+        }
+        .payment-card .card-radio {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .payment-card.active .card-radio {
+            border-color: #ff4500;
+            background-color: #ff4500;
+        }
+        .payment-card.active .card-radio::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+        .payment-card-icon {
+            font-size: 32px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        .icon-cod {
+            color: #ff4500;
+            background-color: rgba(255, 69, 0, 0.1);
+        }
+        .icon-zalopay {
+            color: #0084ff;
+            background-color: rgba(0, 132, 255, 0.1);
+        }
+        .payment-card-info {
+            flex-grow: 1;
+        }
+        .payment-card-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .payment-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Glassmorphic Modal */
+        .zp-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .zp-modal {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            position: relative;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .zp-modal-overlay.active {
+            display: flex;
+        }
+        .zp-modal-overlay.active .zp-modal {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .zp-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .zp-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .zp-modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+        .zp-modal-close:hover {
+            color: #1e293b;
+        }
+        .zp-modal-body {
+            padding: 24px;
+            text-align: center;
+        }
+        .zp-qr-container {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .zp-qr-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .zp-spinner {
+            border: 4px solid rgba(255, 69, 0, 0.1);
+            border-top: 4px solid #ff4500;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .zp-btn-pay {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #0084ff;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        .zp-btn-pay:hover {
+            background-color: #006dd4;
+            color: #fff;
+        }
+        .zp-status-text {
+            font-weight: 600;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .zp-status-success {
+            color: #10b981;
+        }
+        .zp-status-error {
+            color: #ef4444;
+        }
+        .zp-status-pending {
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="config">
+    <div class="preloader is-active">
+        <div class="preloader__wrap">
+            <img class="preloader__img" th:src="@{/images/preloader.png}" alt="">
+        </div>
+    </div>
+
+    <div id="app">
+        <header class="header--style-1">
+            <div th:replace="~{layout/header :: header}"></div>
+        </header>
+
+        <div class="app-content">
+            <div class="u-s-p-y-60">
+                <div class="section__content">
+                    <div class="container">
+                        <div class="breadcrumb">
+                            <div class="breadcrumb__wrap">
+                                <ul class="breadcrumb__list">
+                                    <li class="has-separator"><a th:href="@{/}">Trang chủ</a></li>
+                                    <li class="has-separator"><a th:href="@{/gio-hang}">Giỏ hàng</a></li>
+                                    <li class="is-marked"><a th:href="@{/checkout}">Thanh toán</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="u-s-p-b-60">
+                <div class="section__intro u-s-m-b-60">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="section__text-wrap">
+                                    <h1 class="section__heading u-c-secondary">ĐẶT HÀNG &amp; THANH TOÁN</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section__content">
+                    <div class="container">
+                        <form id="checkout-form" class="checkout-f">
+                            <div class="row">
+                                <!-- Form details -->
+                                <div class="col-lg-6 col-md-12 col-sm-12">
+                                    <h2 class="checkout-f__h1">THÔNG TIN GIAO HÀNG</h2>
+                                    <div class="u-s-m-b-15" th:if="${listDiaChi != null and !listDiaChi.isEmpty()}">
+                                        <div class="checkout-address-type" style="display: flex; gap: 20px; margin-bottom: 15px;">
+                                            <label style="cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569;">
+                                                <input type="radio" name="addressType" value="saved" checked style="accent-color: #ff4500; width: 16px; height: 16px;">
+                                                Sử dụng địa chỉ đã lưu
+                                            </label>
+                                            <label style="cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569;">
+                                                <input type="radio" name="addressType" value="new" style="accent-color: #ff4500; width: 16px; height: 16px;">
+                                                Nhập địa chỉ mới
+                                            </label>
+                                        </div>
+                                        
+                                        <div id="saved-address-container" class="u-s-m-b-15">
+                                            <label class="gl-label" for="selectDiaChiLuu">CHỌN ĐỊA CHỈ ĐÃ LƯU</label>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <select class="select-box select-box--primary-style" id="selectDiaChiLuu" style="flex-grow: 1; margin-bottom: 0;">
+                                                    <option value="" th:selected="${!hasDefaultAddress}">-- Chọn địa chỉ đã lưu --</option>
+                                                    <option th:each="dc : ${listDiaChi}" 
+                                                            th:value="${dc.id}"
+                                                            th:selected="${dc.defaultShipping}"
+                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + ', ' + dc.tinhThanh + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
+                                                    </option>
+                                                </select>
+                                                <a href="/user/address/add" target="_blank" class="btn btn--e-secondary" style="padding: 12px 18px; font-size: 13px; white-space: nowrap; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 5px; height: 40px;" title="Thêm địa chỉ mới vào sổ địa chỉ">
+                                                    <i class="fas fa-plus"></i> Thêm mới
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="u-s-m-b-15" th:if="${listDiaChi == null or listDiaChi.isEmpty()}" style="text-align: right; margin-top: -10px; margin-bottom: 10px;">
+                                        <a href="/user/address/add" target="_blank" style="color: #ff4500; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-plus-circle"></i> Thêm địa chỉ mới vào tài khoản
+                                        </a>
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="hoTenNhan">HỌ VÀ TÊN NGƯỜI NHẬN *</label>
+                                        <input class="input-text input-text--primary-style" type="text" id="hoTenNhan" name="hoTenNhan" required placeholder="Nhập tên người nhận...">
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="sdtNhan">SỐ ĐIỆN THOẠI *</label>
+                                        <input class="input-text input-text--primary-style" type="text" id="sdtNhan" name="sdtNhan" required placeholder="Nhập số điện thoại...">
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="diaChiNhan">ĐỊA CHỈ NHẬN HÀNG *</label>
+                                        <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Số nhà, tên đường, xã/phường, quận/huyện, tỉnh/thành...">
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="idDonViVanChuyen">ĐƠN VỊ VẬN CHUYỂN *</label>
+                                        <select class="select-box select-box--primary-style" id="idDonViVanChuyen" name="idDonViVanChuyen" required>
+                                            <option value="" disabled selected>Chọn đơn vị vận chuyển...</option>
+                                            <option th:each="dvvc : ${listDvvc}" th:value="${dvvc.id}" th:text="${dvvc.tenDonVi} + ' (Phí ship: 30,000 đ)'"></option>
+                                        </select>
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="ghiChu">GHI CHÚ ĐƠN HÀNG (TÙY CHỌN)</label>
+                                        <textarea class="text-area text-area--primary-style" id="ghiChu" name="ghiChu" placeholder="Lưu ý cho người giao hàng..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Order summary & Payment method -->
+                                <div class="col-lg-6 col-md-12 col-sm-12">
+                                    <h2 class="checkout-f__h1">TÓM TẮT ĐƠN HÀNG</h2>
+                                    <div class="f-cart__pad-box u-s-m-b-30" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px;">
+                                        <div class="table-responsive u-s-m-b-20" style="max-height: 250px; overflow-y: auto;">
+                                            <table class="table" style="font-size: 13px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sản phẩm</th>
+                                                        <th class="text-right">Tạm tính</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="item : ${danhSachCart}">
+                                                        <td>
+                                                            <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Tên Vợt</span>
+                                                            <strong th:text="' x ' + ${item.soLuong}">x 1</strong>
+                                                            <br>
+                                                            <small class="text-muted" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}"></small>
+                                                        </td>
+                                                        <td class="text-right" th:text="${#numbers.formatDecimal(item.sanPhamChiTiet.giaBan * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <table class="f-cart__table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>TẠM TÍNH</td>
+                                                    <td class="text-right" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>VẬN CHUYỂN</td>
+                                                    <td class="text-right js-ship-fee">0 đ</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>TỔNG CỘNG</strong></td>
+                                                    <td class="text-right"><strong class="js-checkout-total" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <h2 class="checkout-f__h1">PHƯƠNG THỨC THANH TOÁN</h2>
+                                    <div class="payment-card-container">
+                                        <!-- COD Card -->
+                                        <div class="payment-card active" data-value="COD">
+                                            <div class="payment-card-icon icon-cod">
+                                                <i class="fas fa-hand-holding-dollar"></i>
+                                            </div>
+                                            <div class="payment-card-info">
+                                                <div class="payment-card-title">COD</div>
+                                                <div class="payment-card-desc">Thanh toán khi nhận hàng</div>
+                                            </div>
+                                            <div class="card-radio"></div>
+                                        </div>
+
+                                        <!-- ZaloPay Card -->
+                                        <div class="payment-card" data-value="ZaloPay">
+                                            <div class="payment-card-icon icon-zalopay">
+                                                <i class="wallet-icon"><img th:src="@{/images/favicon.png}" style="width: 28px; height: 28px; object-fit: contain; filter: brightness(0) saturate(100%) invert(43%) sepia(87%) saturate(1478%) hue-rotate(186deg) brightness(101%) contrast(101%);" alt="zp"></i>
+                                            </div>
+                                            <div class="payment-card-info">
+                                                <div class="payment-card-title">ZaloPay</div>
+                                                <div class="payment-card-desc">Ví điện tử / QR Code</div>
+                                            </div>
+                                            <div class="card-radio"></div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="phuongThucThanhToan" id="phuongThucThanhToan" value="COD">
+
+                                    <div class="u-s-m-t-30">
+                                        <button class="btn btn--e-brand-b-2 w-100" type="submit" style="padding: 16px; font-size: 15px; font-weight: 700; border-radius: 8px;">ĐẶT HÀNG NGAY</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer th:replace="~{layout/footer :: footer}"></footer>
+        <div th:replace="~{layout/modals :: all-modals}"></div>
+    </div>
+
+    <!-- ZaloPay Payment Modal overlay -->
+    <div class="zp-modal-overlay" id="zp-modal-overlay">
+        <div class="zp-modal">
+            <div class="zp-modal-header">
+                <div class="zp-modal-title">
+                    <img th:src="@{/images/favicon.png}" style="width: 24px; height: 24px; object-fit: contain;" alt="ZaloPay Logo">
+                    <span>Thanh toán qua ZaloPay</span>
+                </div>
+                <button class="zp-modal-close" id="zp-close-btn">&times;</button>
+            </div>
+            <div class="zp-modal-body">
+                <p class="u-s-m-b-15" style="font-size: 14px; color: #475569;">Quét mã QR dưới đây bằng ứng dụng ZaloPay hoặc Camera điện thoại để thanh toán</p>
+                
+                <div class="zp-qr-container">
+                    <img src="" alt="Mã QR ZaloPay" class="zp-qr-image" id="zp-qr-img">
+                </div>
+
+                <div class="u-s-m-b-10" style="font-size: 16px; font-weight: 700; color: #ff4500;">
+                    Tổng tiền: <span id="zp-modal-amount">0 đ</span>
+                </div>
+
+                <a href="#" target="_blank" class="zp-btn-pay" id="zp-deeplink-btn">Thanh toán qua app ZaloPay</a>
+
+                <div class="zp-spinner" id="zp-spinner-loading"></div>
+                <div class="zp-status-text zp-status-pending" id="zp-status-msg">
+                    <i class="fas fa-spinner fa-spin"></i> Đang chờ bạn thanh toán...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/vendor.js}"></script>
+    <script th:src="@{/js/jquery.shopnav.js}"></script>
+    <script th:src="@{/js/app.js}"></script>
+
+    <script th:inline="javascript">
+        /*[<![CDATA[*/
+        const baseTongTien = /*[[${tongTien}]]*/ 0;
+        const addressMapJsonStr = /*[[${addressMapJson}]]*/ '{}';
+        const addressMap = JSON.parse(addressMapJsonStr);
+        console.log("Address Map Object:", addressMap);
+        /*]]>*/
+
+        $(document).ready(function() {
+            // CSRF Setup
+            const token = $("meta[name='_csrf']").attr("content");
+            const header = $("meta[name='_csrf_header']").attr("content");
+            $.ajaxSetup({
+                beforeSend: function(xhr) {
+                    if (header && token) {
+                        xhr.setRequestHeader(header, token);
+                    }
+                }
+            });
+
+            // Autofill registered address
+            $('#selectDiaChiLuu').on('change', function() {
+                const addressId = $(this).val();
+                if (addressId && addressMap[addressId]) {
+                    const details = addressMap[addressId];
+                    $('#hoTenNhan').val(details.hoTen);
+                    $('#sdtNhan').val(details.sdt);
+                    $('#diaChiNhan').val(details.diaChi);
+                }
+            });
+
+            // Toggle address type (saved vs new)
+            $('input[name="addressType"]').on('change', function() {
+                const type = $(this).val();
+                if (type === 'saved') {
+                    $('#saved-address-container').slideDown(200);
+                    $('#selectDiaChiLuu').trigger('change');
+                } else {
+                    $('#saved-address-container').slideUp(200);
+                    // Clear the shipping input fields for manual entry
+                    $('#hoTenNhan').val('');
+                    $('#sdtNhan').val('');
+                    $('#diaChiNhan').val('');
+                }
+            });
+
+            // Trigger change on load if a valid default option was pre-selected
+            const initialVal = $('#selectDiaChiLuu').val();
+            if (initialVal) {
+                $('#selectDiaChiLuu').trigger('change');
+            }
+
+            // Payment Card Selection
+            $('.payment-card').on('click', function() {
+                $('.payment-card').removeClass('active');
+                $(this).addClass('active');
+                const pMethod = $(this).attr('data-value');
+                $('#phuongThucThanhToan').val(pMethod);
+            });
+
+            // Recalculate Shipping Fee
+            $('#idDonViVanChuyen').on('change', function() {
+                const selectedVal = $(this).val();
+                if (selectedVal) {
+                    const shipFee = 30000;
+                    const formattedShipFee = new Intl.NumberFormat('vi-VN').format(shipFee) + ' đ';
+                    $('.js-ship-fee').text(formattedShipFee);
+                    
+                    const totalAmount = baseTongTien + shipFee;
+                    const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
+                    $('.js-checkout-total').text(formattedTotal);
+                } else {
+                    $('.js-ship-fee').text('0 đ');
+                    const formattedTotal = new Intl.NumberFormat('vi-VN').format(baseTongTien) + ' đ';
+                    $('.js-checkout-total').text(formattedTotal);
+                }
+            });
+
+            // Form Submit Interceptor
+            let pollingInterval = null;
+            let currentAppTransId = null;
+            let attempts = 0;
+
+            $('#checkout-form').on('submit', function(e) {
+                e.preventDefault();
+
+                // Validate form inputs
+                const hoTen = $('#hoTenNhan').val().trim();
+                const sdt = $('#sdtNhan').val().trim();
+                const diaChi = $('#diaChiNhan').val().trim();
+                const dvvcId = $('#idDonViVanChuyen').val();
+                const paymentMethod = $('#phuongThucThanhToan').val();
+                const ghiChu = $('#ghiChu').val();
+
+                if (!hoTen || !sdt || !diaChi || !dvvcId) {
+                    alert('Vui lòng nhập đầy đủ các thông tin bắt buộc.');
+                    return;
+                }
+
+                // Call submitCheckout
+                const submitData = {
+                    hoTenNhan: hoTen,
+                    sdtNhan: sdt,
+                    diaChiNhan: diaChi,
+                    idDonViVanChuyen: parseInt(dvvcId),
+                    phuongThucThanhToan: paymentMethod,
+                    ghiChu: ghiChu
+                };
+
+                // Loader
+                $('.preloader').addClass('is-active');
+
+                $.ajax({
+                    url: '/checkout/submit',
+                    type: 'POST',
+                    data: submitData,
+                    success: function(response) {
+                        $('.preloader').removeClass('is-active');
+
+                        if (response.trangThai === 'ok') {
+                            const orderId = response.orderId;
+                            
+                            if (paymentMethod === 'COD') {
+                                // COD order placed successfully
+                                alert('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.');
+                                window.location.href = '/user/my-order';
+                            } else {
+                                // ZaloPay payment method selected
+                                createZaloPayOrder(orderId, response.tongTien);
+                            }
+                        } else {
+                            alert('Đặt hàng thất bại: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('.preloader').removeClass('is-active');
+                        alert('Đã xảy ra lỗi kết nối: ' + error);
+                    }
+                });
+            });
+
+            function createZaloPayOrder(orderId, amount) {
+                $('.preloader').addClass('is-active');
+
+                $.ajax({
+                    url: '/api/payment/zalopay/create',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ orderId: orderId }),
+                    success: function(resp) {
+                        $('.preloader').removeClass('is-active');
+                        
+                        if (resp.status === 'PENDING') {
+                            currentAppTransId = resp.appTransId;
+                            attempts = 0;
+
+                            // Update Modal details
+                            $('#zp-qr-img').attr('src', 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(resp.paymentUrl));
+                            $('#zp-deeplink-btn').attr('href', resp.paymentUrl);
+                            $('#zp-modal-amount').text(new Intl.NumberFormat('vi-VN').format(amount) + ' đ');
+
+                            // Reset status view
+                            $('#zp-spinner-loading').show();
+                            $('#zp-status-msg').removeClass('zp-status-success zp-status-error').addClass('zp-status-pending')
+                                .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ bạn thanh toán...');
+                            
+                            // Show modal
+                            $('#zp-modal-overlay').addClass('active');
+
+                            // Start polling every 5 seconds
+                            pollingInterval = setInterval(function() {
+                                queryPaymentStatus(resp.appTransId);
+                            }, 5000);
+                        } else {
+                            alert('Không thể khởi tạo giao dịch ZaloPay. Vui lòng thử lại.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('.preloader').removeClass('is-active');
+                        alert('Đã xảy ra lỗi khởi tạo ZaloPay: ' + error);
+                    }
+                });
+            }
+
+            function queryPaymentStatus(appTransId) {
+                attempts++;
+                if (attempts > 30) {
+                    // Timeout
+                    clearInterval(pollingInterval);
+                    cancelZaloPayOrder(appTransId);
+                    
+                    $('#zp-spinner-loading').hide();
+                    $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
+                        .html('<i class="fas fa-exclamation-triangle"></i> Giao dịch hết hạn thanh toán (Quá 2.5 phút). Vui lòng thử lại!');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/api/payment/zalopay/query/' + appTransId,
+                    type: 'GET',
+                    success: function(resp) {
+                        if (resp.status === 'PAID') {
+                            clearInterval(pollingInterval);
+                            $('#zp-spinner-loading').hide();
+                            $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
+                                .html('<i class="fas fa-check-circle"></i> Thanh toán thành công! Đang chuyển hướng...');
+                            
+                            // Redirect after 2 seconds
+                            setTimeout(function() {
+                                window.location.href = '/user/my-order';
+                            }, 2000);
+                        } else if (resp.status === 'FAILED' || resp.status === 'CANCELLED' || resp.status === 'EXPIRED') {
+                            clearInterval(pollingInterval);
+                            $('#zp-spinner-loading').hide();
+                            $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
+                                .html('<i class="fas fa-times-circle"></i> Giao dịch thất bại, đã bị hủy hoặc hết hạn.');
+                        }
+                    },
+                    error: function() {
+                        console.warn('Query transaction error, retrying...');
+                    }
+                });
+            }
+
+            function cancelZaloPayOrder(appTransId) {
+                $.ajax({
+                    url: '/api/payment/zalopay/cancel/' + appTransId,
+                    type: 'POST',
+                    success: function() {
+                        console.log('AppTransId ' + appTransId + ' cancelled successfully.');
+                    },
+                    error: function() {
+                        console.error('Failed to cancel order: ' + appTransId);
+                    }
+                });
+            }
+
+            // Close Modal handler
+            $('#zp-close-btn').on('click', function() {
+                if (confirm('Bạn có chắc chắn muốn hủy giao dịch thanh toán ZaloPay này? Đơn hàng sẽ ở trạng thái chờ thanh toán.')) {
+                    if (pollingInterval) clearInterval(pollingInterval);
+                    if (currentAppTransId) {
+                        cancelZaloPayOrder(currentAppTransId);
+                    }
+                    $('#zp-modal-overlay').removeClass('active');
+                    // Redirect to my-order so they can retry or pay later
+                    window.location.href = '/user/my-order';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

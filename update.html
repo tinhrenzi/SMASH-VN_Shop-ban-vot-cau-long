@@ -64,6 +64,103 @@
 
     <!-- NEWEST UPDATES FIRST -->
 
+    <h2>33. Sửa lỗi: Khắc phục lỗi Thêm vào giỏ hàng trong modal Xem nhanh (Quick Look Modal Add-to-Cart Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Cô lập danh sách biến thể theo Container (Container-scoped Variants):</strong> Loại bỏ hoàn toàn sự phụ phục vào biến toàn cục <code>window.danhSachBienThe</code>. Thay vào đó, danh sách biến thể được lưu trực tiếp vào thuộc tính của từng container giao diện riêng biệt (<code>#product-detail-container</code> cho trang chi tiết và <code>#quick-look-modal-container</code> cho modal xem nhanh). Tránh lỗi chồng chéo và ghi đè trạng thái khi người dùng xem nhanh nhiều sản phẩm liên tiếp hoặc mở xem nhanh từ trang chi tiết sản phẩm.</li>
+            <li><strong>Ràng buộc lỗi hiển thị trực quan và ghi nhật ký:</strong> Nếu dữ liệu biến thể của container bị thiếu hoặc không tải được, hệ thống sẽ phát hiện ngay, ghi log lỗi chi tiết vào console và hiển thị cảnh báo đỏ trực quan trên giao diện thay vì lỗi ngầm.</li>
+            <li><strong>Đồng bộ nút hành động động trên trang chủ:</strong> Cập nhật phần "Sản phẩm nổi bật" (Featured Products) của trang chủ sử dụng các sự kiện click động chuẩn của hệ thống (<code>openQuickLookModal</code>, <code>quickAddToCart</code>, <code>addToWishlist</code>) tương tự như khu vực "Sản phẩm bán chạy" để hiển thị đúng thông tin khi xem nhanh.</li>
+            <li><strong>Khử các liên kết modal tĩnh bị lỗi:</strong> Thay thế toàn bộ các thuộc tính gọi modal tĩnh (<code>data-modal-id="#quick-look"</code>) ở các thẻ sản phẩm giả định/cương mẫu (như Ưu đãi trong ngày, Sản phẩm mới, và Sản phẩm khách hàng cũng xem) thành các liên kết dẫn trực tiếp đến trang cửa hàng (<code>/shop</code>) để nâng cao trải nghiệm người dùng, tránh việc mở ra popup trống rỗng.</li>
+            <li><strong>Chuẩn hóa thẻ nút phân loại trong modal:</strong> Cập nhật tất cả các nút chọn thuộc tính màu sắc, kích thước trong modal sang <code>type="button"</code> để ngăn ngừa hành vi tự động submit form ngoài ý muốn của trình duyệt.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/static/js/app.js</code> — Cải tiến <code>checkAndApplyVariant()</code> để tìm và quét biến thể theo container cụ thể.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/layout/modals.html</code> — Thiết lập container ID cho modal xem nhanh, cấu hình nút thuộc tính và lưu trữ biến thể cục bộ.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/product-detail.html</code> — Thiết lập container ID cho trang chi tiết sản phẩm chính, lưu trữ biến thể cục bộ và dọn dẹp liên kết modal tĩnh ở phần Sản phẩm cũng xem.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/index.html</code> — Kích hoạt xem nhanh động cho Sản phẩm nổi bật và loại bỏ modal tĩnh cho các phần Ưu đãi trong ngày / Sản phẩm mới.</li>
+        </ul>
+    </div>
+
+    <h2>32. Chức năng: Tích hợp cổng thanh toán trực tuyến ZaloPay (ZaloPay Integration)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Thành lập luồng checkout Online đồng nhất:</strong> Tích hợp cổng thanh toán ZaloPay vào luồng checkout của khách hàng mà không tạo nhánh checkout song song. Đơn hàng được lưu với trạng thái <code>PENDING</code> ban đầu và chỉ xử lý sau khi xác nhận thanh toán thành công.</li>
+            <li><strong>Duy trì an toàn tồn kho (Pessimistic Locking &amp; Validation):</strong> Khi ZaloPay gửi callback webhook thành công, hệ thống sử dụng khóa <code>PESSIMISTIC_WRITE</code> khóa dòng dữ liệu các biến thể sản phẩm, đọc và kiểm tra tồn kho. Nếu đủ hàng, tiến hành trừ kho và xóa sản phẩm tương ứng trong giỏ hàng của khách. Nếu xảy ra tranh chấp thiếu hàng (overselling), hệ thống đổi trạng thái đơn sang <code>STOCK_CONFLICT</code>, giữ nguyên trạng thái thanh toán <code>PAID</code> và bắn log cảnh báo an ninh cho Admin.</li>
+            <li><strong>Bảo vệ an toàn đa luồng (Idempotency &amp; State Validation):</strong> Chặn mọi chuyển đổi trạng thái thanh toán ngược chiều và đảm bảo callback chỉ được xử lý một lần duy nhất (PENDING -> PAID/FAILED/CANCELLED/EXPIRED).</li>
+            <li><strong>Quét mã QR &amp; Polling Trạng thái Client-side:</strong> Trang <code>checkout.html</code> tích hợp cổng quét mã QR ZaloPay bằng popup overlay glassmorphic tuyệt đẹp, tự động gửi yêu cầu kiểm tra trạng thái tới backend mỗi 5 giây (tối đa 30 lần). Bổ sung nút deeplink thanh toán trực tiếp qua app ZaloPay.</li>
+            <li><strong>Tác vụ quét dọn tự động (Scheduled Order Cleanup):</strong> <code>ZaloPayScheduler</code> tự động kích hoạt mỗi phút để hủy các hóa đơn ZaloPay ở trạng thái <code>PENDING</code> quá 30 phút thành <code>EXPIRED</code>.</li>
+            <li><strong>Báo cáo doanh thu &amp; Xuất Excel KPIs:</strong> Tích hợp các chỉ số giao dịch ZaloPay (Tổng giao dịch, Giao dịch thành công, Thất bại/Đang chờ, Doanh thu) hiển thị trực tiếp trên trang dashboard Admin và hỗ trợ xuất dữ liệu ra tệp tin Excel.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[NEW] <code>src/main/resources/db/migration/V1.7__add_zalopay_fields.sql</code> — Tập lệnh Flyway nâng cấp CSDL.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/entity/HoaDon.java</code> — Khai báo các thuộc tính phục vụ tích hợp ZaloPay và kiểm toán.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/repository/HoaDonRepository.java</code> — Bổ sung các phương thức truy vấn và thống kê ZaloPay.</li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/config/ZaloPayConfig.java</code> — Nạp các tham số ZaloPay Sandbox từ properties.</li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/service/ZaloPayService.java</code> &amp; <code>ZaloPayServiceImpl.java</code> — Triển khai xử lý nghiệp vụ ZaloPay (hmac, callback, locking, conflict, audit).</li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/service/ZaloPayScheduler.java</code> — Tác vụ tự động hủy đơn hết hạn.</li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/controller/ZaloPayController.java</code> — Expose các endpoint API.</li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/controller/CheckoutController.java</code> — Xử lý view checkout và submit checkout.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/GioHangService.java</code> — Cải tiến tạo hóa đơn hỗ trợ luồng COD và ZaloPay.</li>
+            <li>[NEW] <code>src/main/resources/templates/checkout.html</code> — Trang điền thông tin và thanh toán online của khách.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/dash-payment-option.html</code> — Nâng cấp giao diện hiển thị các phương thức thanh toán hoạt động.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/AdminThongKeService.java</code> — Thêm thống kê ZaloPay vào dashboard và xuất Excel.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/thongke.html</code> — Giao diện hiển thị KPIs ZaloPay Admin.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/config/SecurityConfig.java</code> — Miễn trừ CSRF cho webhook callback ZaloPay.</li>
+        </ul>
+    </div>
+
+    <h2>31. Cải thiện UX/UI: Thiết kế lại toàn diện thẻ Sản phẩm và Lưới Sản phẩm trên POS</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Thêm nút hành động "Thêm vào đơn" trực tiếp trên card:</strong> Mỗi thẻ sản phẩm giờ có thêm một nút CTA (Call-to-Action) nằm ở chân thẻ với text "+ Thêm vào đơn". Nút chuyển sang màu cam thương hiệu khi hover. Sản phẩm hết hàng sẽ hiển thị nút "🚫 Hết hàng" bị vô hiệu hóa (disabled).</li>
+            <li><strong>Cải thiện bố cục ảnh sản phẩm:</strong> Wrap ảnh trong <code>.product-card-img-wrap</code> sử dụng flex layout để căn giữa hoàn hảo. Ảnh dùng <code>max-width/max-height: 100%</code> để tự co giãn giữ nguyên tỷ lệ, đặc biệt phù hợp với hình dạng cây vợt cầu lông dài và mảnh.</li>
+            <li><strong>Hiển thị giá và tồn kho hàng ngang:</strong> Redesign layout nội dung thẻ, giá bán và badge tồn kho giờ nằm trên cùng một hàng (flex row) giúp thẻ gọn gàng và rõ ràng hơn.</li>
+            <li><strong>Thuộc tính sản phẩm dùng dấu chấm giữa (·):</strong> Thay dấu pipe | bằng ký tự dấu chấm giữa · để phân tách màu sắc, trọng lượng và mức căng, giúp nhìn sạch và chuyên nghiệp hơn. Thêm <code>text-overflow: ellipsis</code> để không bị tràn dòng.</li>
+            <li><strong>Sửa lỗi giải mã đường dẫn ảnh (getProductImageUrl):</strong> Cải tiến hàm JavaScript để xử lý đúng tên file thuần túy (UUID_filename.jpg) được lưu trong cột <code>hinh_anh_san_pham</code> của bảng <code>SanPhamChiTiet</code> — tự động map sang URL <code>/uploads/product/{filename}</code>. Thêm fallback xử lý <code>default.jpg</code> và chuỗi rỗng.</li>
+            <li><strong>Cải thiện ảnh thumbnail trong giỏ hàng:</strong> Đổi <code>object-fit: cover</code> thành <code>object-fit: contain</code> cho ảnh thumbnail trong <code>.cart-item</code>, thêm padding và nền nhạt để hiển thị trọn vẹn hình dạng vợt cầu lông.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li><code>src/main/resources/templates/admin/pos.html</code> — CSS của <code>.product-card</code>, <code>.product-card-img-wrap</code>, <code>.card-add-btn</code>, <code>.cart-item img</code>; JS <code>renderProductGrid()</code>, <code>getProductImageUrl()</code></li>
+        </ul>
+    </div>
+
+    <h2>30. Chức năng: Thiết kế lại Thẻ Sản phẩm và Khắc phục vỡ hình ảnh Vợt trên POS</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Khắc phục lỗi vỡ/cắt hình ảnh sản phẩm (Object-fit contain):</strong> Thay đổi thuộc tính <code>object-fit: cover</code> thành <code>object-fit: contain</code> trên thẻ ảnh của sản phẩm. Thiết lập nền trắng tinh tế <code>background-color: #ffffff</code>, bo góc và đệm lề (padding) 4px, giúp hiển thị trọn vẹn toàn bộ thân vợt và cán vợt cầu lông thay vì bị cắt xén như trước.</li>
+            <li><strong>Làm nổi bật lưới sản phẩm (Premium Product Card layout):</strong> Cấu trúc lại giao diện hiển thị danh sách:
+                <ul>
+                    <li>Đặt nền xám nhạt hiện đại <code>#f4f6fa</code> và đệm lề 15px cho khối lưới sản phẩm <code>.product-grid</code> để làm nổi bật các thẻ sản phẩm.</li>
+                    <li>Thay đổi nền thẻ <code>.product-card</code> sang màu trắng tinh khiết <code>#ffffff</code>, nâng độ dày đường viền lên 1.5px màu <code>#e3e6ec</code>, kết hợp đổ bóng mờ nhạt <code>box-shadow</code> giúp các hộp sản phẩm hiển thị vô cùng rõ ràng, trực quan.</li>
+                    <li>Bổ sung hiệu ứng dịch chuyển mềm mại (translateY) và tăng cường độ phủ của bóng mờ khi di chuột (hover) để gia tăng tính tương tác.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <h2>29. Sửa lỗi: Hiển thị Hình ảnh Sản phẩm tại trang POS (POS Product Image Display Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Xây dựng hàm xử lý đường dẫn ảnh động (getProductImageUrl):</strong> Định nghĩa hàm helper JavaScript <code>getProductImageUrl(hinhAnh)</code> để chuẩn hóa mọi kiểu đường dẫn hình ảnh được lưu trữ dưới DB hoặc cấu hình từ mock data:
+                <ul>
+                    <li>Nếu ảnh là null, rỗng, hoặc có giá trị mặc định <code>product9.jpg</code> (không tồn tại vật lý trong source), tự động trả về ảnh chờ <code>/images/preloader.png</code>.</li>
+                    <li>Nếu ảnh bắt đầu bằng <code>http://</code> hoặc <code>https://</code>, giữ nguyên đường dẫn gốc.</li>
+                    <li>Nếu ảnh có chứa tiền tố relative <code>../</code> (như mock data <code>../uploads/...</code>), tự động bóc tách và chuyển về đường dẫn tuyệt đối.</li>
+                    <li>Nếu ảnh chưa có ký tự `/` ở đầu (như <code>uploads/product/...</code>), tự động thêm dấu gạch chéo để trỏ đúng thư mục tĩnh.</li>
+                </ul>
+            </li>
+            <li><strong>Đồng bộ hiển thị ảnh lưới sản phẩm và giỏ hàng:</strong> Cập nhật hàm <code>renderProductGrid()</code> và <code>renderCart()</code> trong file <code>pos.html</code> sử dụng helper <code>getProductImageUrl</code> mới, loại bỏ hoàn toàn các lỗi hiển thị hình ảnh bị vỡ (broken link) của các sản phẩm có đường dẫn đặc biệt.</li>
+        </ul>
+    </div>
+
 <h2>28. Sửa lỗi: Phục hồi trang Thêm Sản phẩm khi Gặp Lỗi Xác thực (Validation Recovery Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

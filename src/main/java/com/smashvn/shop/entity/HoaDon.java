@@ -68,4 +68,23 @@ public class HoaDon {
     /** Thời gian xác nhận thanh toán */
     @Column(name = "thoi_gian_xac_nhan")
     private LocalDateTime thoiGianXacNhan;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "payment_status", length = 50)
+    private String paymentStatus;
+
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
+
+    @Column(name = "gateway_response", columnDefinition = "NVARCHAR(MAX)")
+    private String gatewayResponse;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "app_trans_id", length = 100)
+    private String appTransId;
 }
+

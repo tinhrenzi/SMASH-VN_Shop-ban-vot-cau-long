@@ -87,7 +87,7 @@
                         <div class="col-lg-7">
 
                             <!--====== Product Right Side Details ======-->
-                            <div class="pd-detail">
+                            <div id="product-detail-container" class="pd-detail">
 								    <div>
 								        <span class="pd-detail__name" th:text="${sp.tenSanPham}">Tên Sản Phẩm</span>
 								    </div>
@@ -584,9 +584,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -618,9 +618,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -652,9 +652,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -686,9 +686,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -720,9 +720,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -754,9 +754,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Xem nhanh"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
@@ -810,7 +810,15 @@
     </script>
 	<script th:inline="javascript">
 	    /*<![CDATA[*/
-	    var danhSachBienThe = /*[[${listBienTheJS}]]*/ [];
+	    (function() {
+	        var variants = /*[[${listBienTheJS}]]*/ [];
+	        var container = document.getElementById('product-detail-container');
+	        if (container) {
+	            container.danhSachBienThe = variants;
+	        } else {
+	            console.error("Lỗi: Không tìm thấy #product-detail-container!");
+	        }
+	    })();
 	    /*]]>*/
 	</script>
     <script src="https://www.google-analytics.com/analytics.js" async defer></script>
