@@ -38,8 +38,6 @@
         }
         .pos-right {
             flex: 1;
-            display: flex;
-            flex-direction: column;
             background: #ffffff;
             border-radius: 16px;
             border: 1px solid rgba(21, 23, 28, 0.08);
@@ -174,6 +172,7 @@
         }
         .cart-item-info {
             flex: 1;
+            min-width: 0;
         }
         .cart-item-name {
             font-size: 0.82rem;
@@ -245,7 +244,7 @@
             <div th:replace="~{admin/layout/header :: header}"></div>
 
             <!-- Page Title -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
                 <h2 class="page-title"><i class="fas fa-cash-register" style="color: var(--brand-accent);"></i> Bán Hàng Tại Quầy (POS)</h2>
                 <div class="text-muted fw-bold">Nhân viên: <span class="text-primary" th:text="${session.tenHienThi != null ? session.tenHienThi : 'Nhân viên hệ thống'}">Staff</span></div>
             </div>
@@ -320,9 +319,9 @@
                         <div id="customerSuggestions" class="autocomplete-suggestions d-none"></div>
 
                         <!-- Selected Customer display badge -->
-                        <div id="selectedCustomerDisplay" class="alert alert-info mt-2 py-2 px-3 d-flex justify-content-between align-items-center mb-0">
-                            <span class="fw-semibold text-dark"><i class="fas fa-user-check me-2 text-info"></i>Khách hàng: <strong id="selectedCustomerName">Khách Lẻ</strong></span>
-                            <button type="button" class="btn-close" id="btnCloseCustomerReset" style="font-size: 0.75rem;" onclick="selectGuestCustomer()"></button>
+                        <div id="selectedCustomerDisplay" class="alert alert-info mt-2 py-2 px-3 d-flex justify-content-between align-items-center mb-0" style="gap: 10px;">
+                            <span class="fw-semibold text-dark" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="fas fa-user-check me-2 text-info"></i>Khách hàng: <strong id="selectedCustomerName">Khách Lẻ</strong></span>
+                            <button type="button" class="btn-close" id="btnCloseCustomerReset" style="font-size: 0.75rem; flex-shrink: 0;" onclick="selectGuestCustomer()"></button>
                         </div>
                     </div>
 
@@ -423,19 +422,19 @@
                     <div class="p-3 border rounded-3 bg-light mb-3">
                         <h6 class="fw-bold text-primary mb-3"><i class="fas fa-university me-1"></i> Thông tin tài khoản cửa hàng:</h6>
                         <div class="d-flex flex-column gap-2 small">
-                            <div class="d-flex justify-content-between border-bottom pb-1">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Ngân hàng:</span>
-                                <strong class="text-dark">BIDV (Ngân hàng Đầu tư và Phát triển VN)</strong>
+                                <strong class="text-dark text-end">BIDV (Ngân hàng Đầu tư và Phát triển VN)</strong>
                             </div>
-                            <div class="d-flex justify-content-between border-bottom pb-1">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Số tài khoản:</span>
                                 <strong class="text-dark">1234567890</strong>
                             </div>
-                            <div class="d-flex justify-content-between border-bottom pb-1">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Chủ tài khoản:</span>
                                 <strong class="text-dark">SMASH VN SHOP</strong>
                             </div>
-                            <div class="d-flex justify-content-between pb-1">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 pb-1">
                                 <span class="text-muted">Nội dung chuyển khoản:</span>
                                 <strong class="text-danger" id="txtTransferCode">SMASHVN...</strong>
                             </div>
@@ -631,9 +630,9 @@
                     </div>
                     <div class="product-name" title="${v.tenSanPham}">${v.tenSanPham}</div>
                     <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · ${v.mucCang}</div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-1">
                         <div class="product-price">${formatVND(v.giaBan)}</div>
-                        <div>${stockBadge}</div>
+                        <div style="flex-shrink: 0;">${stockBadge}</div>
                     </div>
                 </div>
                 <button class="card-add-btn" data-variant-idx="${idx}" ${isOutOfStock ? 'disabled' : ''}>${addBtnText}</button>

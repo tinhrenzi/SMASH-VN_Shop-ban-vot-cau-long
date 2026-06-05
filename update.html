@@ -64,6 +64,43 @@
 
     <!-- NEWEST UPDATES FIRST -->
 
+    <h2>35. Sửa lỗi: Khắc phục hiện tượng đè chữ và vỡ khung tại trang Bán hàng tại quầy (POS Overlapping Text & Layout Fixes)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Chống đè chữ giá bán và nhãn tồn kho (Price &amp; Stock Badge Wrap):</strong> Bổ sung thuộc tính <code>flex-wrap: wrap</code> và <code>gap-1</code> cho dòng hiển thị Giá bán và Nhãn trạng thái tồn kho của thẻ sản phẩm (product card) trong danh mục bán hàng. Tránh việc đè chữ hoặc ép chặt ký tự khi chiều rộng cột hẹp.</li>
+            <li><strong>Chống tràn dòng thông tin thanh toán ngân hàng (Bank Transfer Wrap):</strong> Nâng cấp các hàng thông tin tài khoản chuyển khoản tại Popup modal sang cơ chế flex-wrap tự thích ứng, giúp các chuỗi dài (như tên ngân hàng đầy đủ) tự động xuống dòng gọn gàng thay vì đè lấn lên nhãn mô tả.</li>
+            <li><strong>Chống đè tên khách hàng được chọn (Customer Display Ellipsis):</strong> Định cấu hình giới hạn chiều rộng <code>min-width: 0</code>, <code>white-space: nowrap</code> và <code>text-overflow: ellipsis</code> cho thẻ hiển thị tên khách hàng đã chọn để không đè lên nút xóa (reset khách hàng).</li>
+            <li><strong>Dàn đều tiêu đề POS và tên nhân viên (POS Title Layout):</strong> Kích hoạt tự xuống dòng responsive cho khối tiêu đề POS và khối hiển thị tên nhân viên đang trực để tránh đè lấp lẫn nhau trên màn hình độ phân giải thấp.</li>
+            <li><strong>Ngăn chặn lỗi sụt giảm chiều rộng giỏ hàng (Cart Item Info shrink):</strong> Thêm <code>min-width: 0</code> cho phần thông tin sản phẩm trong giỏ hàng POS, đảm bảo tên sản phẩm dài tự ngắt dòng chuẩn xác và không đẩy dạt hoặc đè lên ô số lượng / nút xóa đơn.</li>
+            <li><strong>Khắc phục triệt để lỗi giỏ hàng bị ép chiều cao gây tràn và đè chữ (.pos-right layout fix):</strong> Chuyển đổi panel thanh toán bên phải <code>.pos-right</code> từ dạng flex container sang block container thông thường (loại bỏ <code>display: flex</code> và <code>flex-direction: column</code>). Điều này cho phép giỏ hàng <code>.cart-list</code> cùng tất cả các phần tử bên dưới co giãn và tự sắp xếp theo luồng (flow layout) chuẩn của HTML block. Kết quả là giỏ hàng tự động mở rộng chiều cao bao phủ trọn vẹn toàn bộ sản phẩm bên trong và tự động đẩy khu vực tìm kiếm khách hàng xuống phía dưới, chấm dứt hoàn toàn lỗi đè lấp chữ, đồng thời duy trì khả năng cuộn trang mượt mà của panel.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/pos.html</code> — Loại bỏ thuộc tính flexbox của <code>.pos-right</code>, áp dụng các thay đổi CSS, bổ sung thuộc tính flex-wrap, gap, và giới hạn văn bản cho các khối nội dung POS.</li>
+        </ul>
+    </div>
+
+    <h2>34. Chức năng: Chọn địa chỉ giao hàng đã lưu hoặc thêm địa chỉ mới tại trang thanh toán (Autofill & Toggle Registered Shipping Address at Checkout)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tích hợp Bộ Chọn &amp; Nút Tắt/Mở thông minh:</strong> Tích hợp thêm hai lựa chọn "Sử dụng địa chỉ đã lưu" và "Nhập địa chỉ mới" bằng nút radio ở trên cùng của phần thông tin giao hàng tại trang <code>checkout.html</code> (chỉ hiển thị khi người dùng đã có sổ địa chỉ).</li>
+            <li><strong>Tự động điền dữ liệu (Autofill):</strong> Lựa chọn "Sử dụng địa chỉ đã lưu" sẽ tự động hiển thị dropdown danh sách các địa chỉ. Khi chọn một địa chỉ cụ thể, các ô nhập Họ và tên người nhận, Số điện thoại và Địa chỉ nhận hàng sẽ tự động được điền thông tin tương ứng.</li>
+            <li><strong>Khử trùng điền mặc định (Default Address Autofill):</strong> Dropdown tự động chọn và điền thông tin của địa chỉ giao hàng mặc định ngay khi tải trang. Nếu không có địa chỉ mặc định, dropdown giữ ở dòng chọn placeholder và không tự điền.</li>
+            <li><strong>Bảo toàn dữ liệu tự gõ (Manual override safety):</strong> Nếu người dùng chọn placeholder "-- Chọn địa chỉ đã lưu --", hệ thống sẽ không xóa các dữ liệu người dùng tự nhập trước đó để tránh làm mất thông tin. Chọn "Nhập địa chỉ mới" sẽ ẩn dropdown và tự động dọn dẹp các trường thông tin để người dùng sẵn sàng gõ tay.</li>
+            <li><strong>An toàn Bảo mật Server-side:</strong> Dữ liệu địa chỉ được tải an toàn thông qua SessionID (<code>idNguoiDung</code>) trên Server và không dựa vào ID địa chỉ từ Client gửi lên trong API lưu đơn hàng để tránh các cuộc tấn công IDOR hoặc giả mạo địa chỉ của tài khoản khác.</li>
+            <li><strong>Thêm địa chỉ mới an toàn (Add new address flow):</strong> Bổ sung nút "Thêm mới" nằm ngay cạnh dropdown dẫn trực tiếp tới trang thêm địa chỉ <code>/user/address/add</code> (mở tab mới), giúp người dùng dễ dàng lưu thêm địa chỉ mới vào tài khoản mà không làm mất phiên thanh toán hiện tại.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/CheckoutController.java</code> — Tải danh sách địa chỉ, tính toán cờ địa chỉ mặc định, và tuần tự hóa bản đồ thông tin địa chỉ sang chuỗi JSON bằng ObjectMapper.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/checkout.html</code> — Tích hợp khối radio và dropdown chọn địa chỉ, thêm nút Thêm mới, phân tích cú pháp JSON ở phía client và cài đặt các trình xử lý sự kiện jQuery.</li>
+            <li>[NEW] <code>src/test/java/com/smashvn/shop/controller/CheckoutControllerTest.java</code> — Viết bộ unit test sử dụng Mockito kiểm thử các kịch bản không có địa chỉ, 1 địa chỉ, nhiều địa chỉ, có hoặc không có địa chỉ mặc định.</li>
+            <li>[MODIFY] <code>pom.xml</code> — Cập nhật thư viện <code>spring-boot-starter-test</code> tiêu chuẩn phục vụ biên dịch và chạy kiểm thử.</li>
+        </ul>
+    </div>
+
     <h2>33. Sửa lỗi: Khắc phục lỗi Thêm vào giỏ hàng trong modal Xem nhanh (Quick Look Modal Add-to-Cart Fix)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

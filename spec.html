@@ -63,6 +63,22 @@
     <h2>1. Những Yêu Cầu Đã Thực Hiện (Implemented Requirements)</h2>
     <div class="section-block">
         <ul>
+            <li><strong>Khắc phục hiện tượng đè chữ và vỡ khung tại trang Bán hàng tại quầy (POS Overlapping Text &amp; Layout Fixes):</strong>
+                <ul>
+                    <li><strong>Chống đè chữ trong thẻ sản phẩm:</strong> Bổ sung cơ chế <code>flex-wrap</code> và khoảng cách <code>gap</code> cho dòng giá bán/badge tồn kho, ngăn chặn tình trạng đè chồng văn bản trên màn hình hẹp.</li>
+                    <li><strong>Ngăn chặn đè chữ thông tin chuyển khoản:</strong> Sử dụng flex-wrap cho danh sách thông tin tài khoản chuyển khoản tại modal xác nhận thanh toán, giúp hiển thị tên ngân hàng dài xuống dòng đúng chuẩn.</li>
+                    <li><strong>Tối ưu hóa giỏ hàng và danh tính khách hàng:</strong> Thiết lập <code>min-width: 0</code> và cơ chế tràn chữ (text-ellipsis) cho tên khách hàng và thông tin sản phẩm giỏ hàng để tránh đè lấn lên các nút thao tác chức năng kề cạnh.</li>
+                    <li><strong>Chuyển đổi sang Block Layout cho panel thanh toán:</strong> Loại bỏ cấu trúc flexbox (<code>display: flex</code>, <code>flex-direction: column</code>) trên panel <code>.pos-right</code>, thay thế bằng luồng block chuẩn để giỏ hàng <code>.cart-list</code> tự động mở rộng theo kích thước thật của nội dung, đẩy phần chọn khách hàng và các thông tin thanh toán khác xuống dưới một cách tự nhiên và tránh hoàn toàn các lỗi đè lấn khung.</li>
+                </ul>
+            </li>
+            <li><strong>Sử dụng Sổ địa chỉ đã lưu hoặc Thêm địa chỉ mới tại trang thanh toán (Autofill &amp; Toggle Registered Shipping Address at Checkout):</strong>
+                <ul>
+                    <li><strong>Giao diện Tắt/Mở và Chọn địa chỉ:</strong> Thêm khối radio toggle cho phép người dùng linh hoạt chọn giữa "Sử dụng địa chỉ đã lưu" (hiển thị dropdown chứa các địa chỉ đã đăng ký) và "Nhập địa chỉ mới" (ẩn dropdown và xóa sạch các ô nhập để tự điền thủ công).</li>
+                    <li><strong>Truy xuất và Điền thông tin tự động (Autofill):</strong> Bản đồ liên kết địa chỉ được tải tự động trên Server từ danh sách <code>SoDiaChi</code> dựa trên khóa ngoại <code>idNguoiDung</code> trong Session. Dropdown tự động chọn địa chỉ có cờ <code>defaultShipping = true</code> khi tải trang và thực hiện điền tự động dữ liệu Họ tên, Số điện thoại và Địa chỉ chi tiết.</li>
+                    <li><strong>Bảo toàn dữ liệu tự gõ (Manual override safety):</strong> Điền tự động không tự xóa/ghi đè nếu người dùng chuyển về placeholder. Các trường dữ liệu vẫn giữ nguyên để cho phép khách hàng sửa đổi nhanh hoặc ghi đè sau khi điền mà không sợ bị làm mới.</li>
+                    <li><strong>Nút Thêm địa chỉ tiện lợi:</strong> Tích hợp nút link "Thêm mới" nằm kề dropdown để mở trang <code>/user/address/add</code> trong một tab mới, tránh làm gián đoạn hoặc hủy giỏ hàng của phiên thanh toán hiện tại.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi Thêm vào giỏ hàng trong modal Xem nhanh (Quick Look Modal Add-to-Cart Fix):</strong>
                 <ul>
                     <li><strong>Cô lập danh sách biến thể theo Container (Container-scoped Variants):</strong> Loại bỏ việc sử dụng biến toàn cục duy nhất <code>window.danhSachBienThe</code>. Mỗi container giao diện (<code>#product-detail-container</code> cho trang chi tiết và <code>#quick-look-modal-container</code> cho modal) tự quản lý danh sách biến thể của riêng mình qua thuộc tính DOM cục bộ (<code>container.danhSachBienThe</code>), tránh lỗi ghi đè trạng thái khi người dùng xem nhanh nhiều sản phẩm khác nhau hoặc mở xem nhanh từ trang chi tiết sản phẩm.</li>
