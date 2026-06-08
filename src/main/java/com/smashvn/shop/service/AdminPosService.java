@@ -276,6 +276,7 @@ public class AdminPosService {
         hd.setDonViVanChuyen(dvvc);
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(tongTienCuoi);
+        hd.setPhiVanChuyen(BigDecimal.ZERO);
         hd.setTrangThaiDonHang("da_giao");           // Bán tại quầy → hoàn thành ngay
         hd.setTrangThaiThanhToan("DA_THANH_TOAN");   // Nhân viên đã xác nhận
         hd.setDiaChiNhan("Bán tại quầy");

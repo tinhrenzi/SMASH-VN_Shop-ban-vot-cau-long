@@ -18,6 +18,7 @@ import com.smashvn.shop.dto.GeneralMetricsDTO;
 import com.smashvn.shop.dto.ChartPointDTO;
 import com.smashvn.shop.dto.TopProductDTO;
 import com.smashvn.shop.dto.OrderStatusCountDTO;
+import com.smashvn.shop.dto.TransactionHistoryDTO;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 
@@ -61,6 +62,10 @@ public class AdminThongKeService {
                 start = now.toLocalDate().minusDays(30).atStartOfDay();
                 end = now.toLocalDate().atTime(LocalTime.MAX);
                 break;
+            case "all_time":
+                start = LocalDate.of(2000, 1, 1).atStartOfDay();
+                end = now.toLocalDate().atTime(LocalTime.MAX);
+                break;
             case "custom":
                 if (startDateStr != null && !startDateStr.isEmpty() && endDateStr != null && !endDateStr.isEmpty()) {
                     start = LocalDate.parse(startDateStr).atStartOfDay();
@@ -95,6 +100,90 @@ public class AdminThongKeService {
         } else {
             return "MONTH";
         }
+    }
+
+    private String standardizePaymentMethod(String raw) {
+        if (raw == null) return "CASH";
+        raw = raw.toUpperCase().trim();
+        if (raw.contains("ZALOPAY")) return "ZALOPAY";
+        if (raw.contains("SEPAY")) return "SEPAY";
+        if (raw.contains("COD")) return "COD";
+        if (raw.contains("CHUYEN_KHOAN") || raw.contains("CHUYỂN KHOẢN") || raw.contains("BANK") || raw.contains("TRANSFER") || raw.contains("BANKING")) {
+            return "BANK_TRANSFER";
+        }
+        if (raw.contains("TIEN_MAT") || raw.contains("TIỀN MẶT") || raw.contains("CASH")) {
+            return "CASH";
+        }
+        return "CASH";
+    }
+
+    private String standardizePaymentStatus(String status, String trangThaiDonHang) {
+        if (status == null) return "PENDING";
+        status = status.toUpperCase().trim();
+        if ("PAID".equals(status) || "DA_THANH_TOAN".equals(status)) return "PAID";
+        if ("CANCELLED".equals(status) || "DA_HUY".equals(status) || "da_huy".equalsIgnoreCase(trangThaiDonHang)) return "CANCELLED";
+        if ("FAILED".equals(status) || "THAT_BAI".equals(status)) return "FAILED";
+        if ("REFUNDED".equals(status) || "HOAN_TIEN".equals(status)) return "REFUNDED";
+        if ("PENDING".equals(status) || "CHO_THANH_TOAN".equals(status)) return "PENDING";
+        return "PENDING";
+    }
+
+    public List<TransactionHistoryDTO> getTransactionHistory(LocalDateTime start, LocalDateTime end, Integer limit) {
+        org.springframework.data.domain.Pageable pageable = limit != null ? PageRequest.of(0, limit) : org.springframework.data.domain.Pageable.unpaged();
+        List<Object[]> rawList = hoaDonRepository.findRawTransactionsInPeriod(start, end, pageable);
+        List<TransactionHistoryDTO> dtos = new ArrayList<>();
+        for (Object[] row : rawList) {
+            Integer rawId = (Integer) row[0];
+            String ho = (String) row[1];
+            String ten = (String) row[2];
+            LocalDateTime ngayTao = (LocalDateTime) row[3];
+            String pm = (String) row[4];
+            String tenPttt = (String) row[5];
+            String ps = (String) row[6];
+            String tttt = (String) row[7];
+            String ttdh = (String) row[8];
+            String tid = (String) row[9];
+            String appTransId = (String) row[10];
+            String maGd = (String) row[11];
+            BigDecimal amount = (BigDecimal) row[12];
+
+            Long id = rawId != null ? rawId.longValue() : 0L;
+            String invoiceCode = "HD-" + id;
+
+            String customerName = "Khách vãng lai";
+            if (ho != null || ten != null) {
+                customerName = ((ho != null ? ho : "") + " " + (ten != null ? ten : "")).trim();
+                if (customerName.isEmpty()) {
+                    customerName = "Khách vãng lai";
+                }
+            }
+
+            String rawMethod = pm != null && !pm.trim().isEmpty() ? pm : tenPttt;
+            String paymentMethod = standardizePaymentMethod(rawMethod);
+
+            String rawStatus = ps != null && !ps.trim().isEmpty() ? ps : tttt;
+            String paymentStatus = standardizePaymentStatus(rawStatus, ttdh);
+
+            String transactionId = tid != null && !tid.trim().isEmpty() ? tid : appTransId;
+            if (transactionId == null || transactionId.trim().isEmpty()) {
+                transactionId = maGd;
+            }
+            if (transactionId == null || transactionId.trim().isEmpty()) {
+                transactionId = "-";
+            }
+
+            dtos.add(new TransactionHistoryDTO(
+                id,
+                invoiceCode,
+                customerName,
+                ngayTao,
+                paymentMethod,
+                paymentStatus,
+                transactionId,
+                amount != null ? amount : BigDecimal.ZERO
+            ));
+        }
+        return dtos;
     }
 
     // Cache kết quả thống kê 30 giây (được cấu hình bằng Caffeine TTL ở application.properties)
@@ -134,8 +223,8 @@ public class AdminThongKeService {
                 String normalizedStatus = switch (dbStatus.toLowerCase()) {
                     case "da_giao", "delivered" -> "da_giao";
                     case "da_huy", "cancelled" -> "da_huy";
-                    case "dang_giao", "shipping" -> "dang_giao";
-                    case "cho_xac_nhan", "processing" -> "cho_xac_nhan";
+                    case "dang_giao", "shipping", "dang_lay_hang" -> "dang_giao";
+                    case "cho_xac_nhan", "processing", "da_xac_nhan" -> "cho_xac_nhan";
                     default -> dbStatus;
                 };
                 statusMap.put(normalizedStatus, statusMap.getOrDefault(normalizedStatus, 0L) + osc.count());
@@ -189,12 +278,12 @@ public class AdminThongKeService {
         // 4. Top 5 sản phẩm bán chạy nhất
         List<TopProductDTO> topProducts = hoaDonChiTietRepository.findBestSellingProducts(start, end, PageRequest.of(0, 5));
 
-        // 5. Thống kê ZaloPay
-        Long zpTotal = hoaDonRepository.countZaloPayTransactions(start, end);
-        Long zpSuccess = hoaDonRepository.countZaloPaySuccessful(start, end);
-        Long zpFailed = hoaDonRepository.countZaloPayFailed(start, end);
-        Long zpPending = hoaDonRepository.countZaloPayPending(start, end);
-        BigDecimal zpRevenue = hoaDonRepository.sumZaloPayRevenue(start, end);
+        // 5. Thống kê Online
+        Long onlineTotal = hoaDonRepository.countOnlineTransactions(start, end);
+        Long onlineSuccess = hoaDonRepository.countOnlineSuccessful(start, end);
+        Long onlineFailed = hoaDonRepository.countOnlineFailed(start, end);
+        Long onlinePending = hoaDonRepository.countOnlinePending(start, end);
+        BigDecimal onlineRevenue = hoaDonRepository.sumOnlineRevenue(start, end);
 
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
@@ -206,12 +295,20 @@ public class AdminThongKeService {
         data.put("topProducts", topProducts);
         data.put("grouping", grouping);
         
-        // Put ZaloPay statistics
-        data.put("zpTotal", zpTotal != null ? zpTotal : 0L);
-        data.put("zpSuccess", zpSuccess != null ? zpSuccess : 0L);
-        data.put("zpFailed", zpFailed != null ? zpFailed : 0L);
-        data.put("zpPending", zpPending != null ? zpPending : 0L);
-        data.put("zpRevenue", zpRevenue != null ? zpRevenue : BigDecimal.ZERO);
+        // Put Online statistics
+        data.put("onlineTotal", onlineTotal != null ? onlineTotal : 0L);
+        data.put("onlineSuccess", onlineSuccess != null ? onlineSuccess : 0L);
+        data.put("onlineFailed", onlineFailed != null ? onlineFailed : 0L);
+        data.put("onlinePending", onlinePending != null ? onlinePending : 0L);
+        data.put("onlineRevenue", onlineRevenue != null ? onlineRevenue : BigDecimal.ZERO);
+
+        // 6. Lịch sử giao dịch (Shared Data Source)
+        Long totalTransactions = hoaDonRepository.countTransactionsInPeriod(start, end);
+        List<TransactionHistoryDTO> transactions = getTransactionHistory(start, end, 100);
+        data.put("totalTransactions", totalTransactions != null ? totalTransactions : 0L);
+        data.put("displayedTransactions", transactions.size());
+        data.put("transactions", transactions);
+
         return data;
     }
 
@@ -316,21 +413,21 @@ public class AdminThongKeService {
                 row.createCell(1).setCellValue(statusMap.getOrDefault(statusKeys[i], 0L));
             }
 
-            // Dòng trống và vẽ bảng Thống kê ZaloPay
+            // Dòng trống và vẽ bảng Thống kê Online
             int startRowZp = startRowStatus + statuses.length + 3;
             Row rZpHeader = kpiSheet.createRow(startRowZp);
             Cell cZpHeader = rZpHeader.createCell(0);
-            cZpHeader.setCellValue("Thống Kê Thanh Toán ZaloPay");
+            cZpHeader.setCellValue("Thống Kê Thanh Toán Online");
             cZpHeader.setCellStyle(headerStyle);
             kpiSheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(startRowZp, startRowZp, 0, 1));
 
             String[] zpLabels = {
-                    "Tổng số giao dịch ZaloPay", "Giao dịch thành công", 
-                    "Giao dịch thất bại", "Giao dịch đang chờ", "Doanh thu ZaloPay"
+                    "Tổng số giao dịch Online", "Giao dịch thành công", 
+                    "Giao dịch thất bại", "Giao dịch đang chờ", "Doanh thu Online"
             };
             Object[] zpValues = {
-                    stats.get("zpTotal"), stats.get("zpSuccess"), 
-                    stats.get("zpFailed"), stats.get("zpPending"), stats.get("zpRevenue")
+                    stats.get("onlineTotal"), stats.get("onlineSuccess"), 
+                    stats.get("onlineFailed"), stats.get("onlinePending"), stats.get("onlineRevenue")
             };
 
             for (int i = 0; i < zpLabels.length; i++) {
@@ -397,6 +494,63 @@ public class AdminThongKeService {
                 Cell cellRev = row.createCell(4);
                 cellRev.setCellValue(p.revenue().doubleValue());
                 cellRev.setCellStyle(currencyStyle);
+            }
+
+            // ----------------------------------------------------
+            // SHEET 4: LỊCH SỬ GIAO DỊCH
+            // ----------------------------------------------------
+            Sheet txSheet = workbook.createSheet("Lịch Sử Giao Dịch");
+            txSheet.setColumnWidth(0, 3000);
+            txSheet.setColumnWidth(1, 7000);
+            txSheet.setColumnWidth(2, 6000);
+            txSheet.setColumnWidth(3, 5000);
+            txSheet.setColumnWidth(4, 8000);
+            txSheet.setColumnWidth(5, 5000);
+            txSheet.setColumnWidth(6, 5000);
+
+            Row rTxHeader = txSheet.createRow(0);
+            String[] txHeaders = {
+                    "Mã Hóa Đơn", "Khách Hàng", "Thời Gian", 
+                    "Phương Thức", "Mã Giao Dịch", "Số Tiền", "Trạng Thái Thanh Toán"
+            };
+            for (int i = 0; i < txHeaders.length; i++) {
+                Cell cell = rTxHeader.createCell(i);
+                cell.setCellValue(txHeaders[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            @SuppressWarnings("unchecked")
+            List<TransactionHistoryDTO> transactionsList = (List<TransactionHistoryDTO>) stats.get("transactions");
+            if (transactionsList != null) {
+                DateTimeFormatter excelDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                for (int i = 0; i < transactionsList.size(); i++) {
+                    TransactionHistoryDTO tx = transactionsList.get(i);
+                    Row row = txSheet.createRow(i + 1);
+                    
+                    // Mã Hóa Đơn (String)
+                    row.createCell(0).setCellValue(tx.invoiceCode());
+                    
+                    // Khách Hàng (String)
+                    row.createCell(1).setCellValue(tx.customerName());
+                    
+                    // Thời Gian (String)
+                    String formattedTime = tx.transactionTime() != null ? excelDateFormatter.format(tx.transactionTime()) : "";
+                    row.createCell(2).setCellValue(formattedTime);
+                    
+                    // Phương Thức (String)
+                    row.createCell(3).setCellValue(tx.paymentMethod());
+                    
+                    // Mã Giao Dịch (String)
+                    row.createCell(4).setCellValue(tx.transactionId());
+                    
+                    // Số Tiền (Numeric)
+                    Cell cellAmt = row.createCell(5);
+                    cellAmt.setCellValue(tx.amount() != null ? tx.amount().doubleValue() : 0.0);
+                    cellAmt.setCellStyle(currencyStyle);
+                    
+                    // Trạng Thái Thanh Toán (String)
+                    row.createCell(6).setCellValue(tx.paymentStatus());
+                }
             }
 
             // Ghi workbook vào byte array

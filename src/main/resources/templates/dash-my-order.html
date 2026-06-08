@@ -20,6 +20,46 @@
 
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        /* ===== Toast Notification ===== */
+        .toast-notify {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 16px 28px;
+            background-color: #323232;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast-notify.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast-notify.success { background-color: #4caf50; border-left: 5px solid #2e7d32; }
+        .toast-notify.error { background-color: #f44336; border-left: 5px solid #c62828; }
+
+        /* ===== Badge Trạng thái ===== */
+        .badge--pending   { background-color: #fff3cd !important; color: #856404 !important; }
+        .badge--warning   { background-color: #ffeeb3 !important; color: #856404 !important; }
+        .badge--processing{ background-color: #cce5ff !important; color: #004085 !important; }
+        .badge--confirmed { background-color: #d0f0fd !important; color: #005f7a !important; }
+        .badge--shipping  { background-color: #d1ecf1 !important; color: #0c5460 !important; }
+        .badge--delivered { background-color: #d4edda !important; color: #155724 !important; }
+        .badge--cancelled { background-color: #f8d7da !important; color: #721c24 !important; }
+        .badge--conflict  { background-color: #ffe5b4 !important; color: #7a4500 !important; }
+    </style>
 </head>
 <body class="config">
     <div class="preloader is-active">
@@ -182,7 +222,24 @@
                                                         <div class="description__info-wrap">
                                                             <div>
 
-                                                                <span class="manage-o__badge" th:class="'manage-o__badge badge--' + ${order.status}" th:text="${order.status == 'cho_xac_nhan' or order.status == 'processing' ? 'Chờ xác nhận' : (order.status == 'dang_giao' or order.status == 'shipping' ? 'Đang giao' : (order.status == 'da_giao' or order.status == 'delivered' ? 'Đã giao' : (order.status == 'da_huy' or order.status == 'cancelled' ? 'Đã hủy' : order.status)))}">Đang xử lý</span></div>
+                                                                 <span class="manage-o__badge" 
+                                                                       th:classappend="${order.rawStatus == 'cho_thanh_toan' ? 'badge--pending' :
+                                                                                       (order.rawStatus == 'cho_xac_nhan'  ? 'badge--processing' :
+                                                                                       (order.rawStatus == 'da_xac_nhan'   ? 'badge--confirmed' :
+                                                                                       (order.rawStatus == 'dang_lay_hang' ? 'badge--confirmed' :
+                                                                                       (order.rawStatus == 'dang_giao'     ? 'badge--shipping' :
+                                                                                       (order.rawStatus == 'da_giao'       ? 'badge--delivered' :
+                                                                                       (order.rawStatus == 'da_huy'        ? 'badge--cancelled' :
+                                                                                       (order.rawStatus == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}" 
+                                                                       th:text="${order.rawStatus == 'cho_thanh_toan' ? 'Chờ thanh toán' :
+                                                                                 (order.rawStatus == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
+                                                                                 (order.rawStatus == 'da_xac_nhan'   ? 'Đã xác nhận' :
+                                                                                 (order.rawStatus == 'dang_lay_hang' ? 'Đang lấy hàng' :
+                                                                                 (order.rawStatus == 'dang_giao'     ? 'Đang giao' :
+                                                                                 (order.rawStatus == 'da_giao'       ? 'Đã giao' :
+                                                                                 (order.rawStatus == 'da_huy'        ? 'Đã hủy' :
+                                                                                 (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus)))))))}"
+                                                                 >Đang xử lý</span></div>
                                                             <div>
 
                                                                 <span class="manage-o__text-2 u-c-silver">Số lượng:
@@ -239,6 +296,31 @@
 
     <!--====== Ứng dụng ======-->
     <script th:src="@{/js/app.js}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'success') {
+                hienToast('✅ Thanh toán đơn hàng thành công!', 'success');
+                // Remove parameter from URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        });
+
+        function hienToast(msg, type) {
+            const toast = document.getElementById('toastNotify');
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.className = 'toast-notify ' + (type || 'success');
+            toast.classList.add('show');
+            setTimeout(function () {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+    </script>
+
+    <!-- Toast Notification -->
+    <div class="toast-notify" id="toastNotify"></div>
 
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>

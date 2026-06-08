@@ -39,11 +39,11 @@ public class ZaloPayScheduler {
                         null,
                         "HoaDon",
                         Long.valueOf(hd.getId()),
-                        "ZALOPAY_EXPIRE",
+                        "UPDATE",
                         "PENDING",
                         "EXPIRED",
                         "127.0.0.1",
-                        "Auto expired by scheduler (exceeded 30-minute payment timeout window)",
+                        "[ZALOPAY_EXPIRE] Auto expired by scheduler (exceeded 30-minute payment timeout window)",
                         "SYSTEM"
                 );
                 log.info("ZaloPay Scheduler: Successfully transitioned order #{} to EXPIRED", hd.getId());

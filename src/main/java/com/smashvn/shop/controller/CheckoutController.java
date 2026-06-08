@@ -20,6 +20,7 @@ import com.smashvn.shop.service.GioHangService;
 import com.smashvn.shop.service.UserAddressService;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smashvn.shop.config.SepayConfig;
 
 @Controller
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class CheckoutController {
     private final GioHangService gioHangService;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final UserAddressService userAddressService;
+    private final SepayConfig sepayConfig;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping({"/checkout", "/checkout.html"})
@@ -36,6 +38,9 @@ public class CheckoutController {
         if (idNguoiDung == null) {
             return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Bạn chưa đăng nhập. Vui lòng đăng nhập để thanh toán!", java.nio.charset.StandardCharsets.UTF_8);
         }
+
+        // Clean up any old unpaid pending orders when loading the checkout page
+        gioHangService.cleanPendingOrders(idNguoiDung);
 
         List<GioHangChiTiet> danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
         if (danhSachChiTiet.isEmpty()) {
@@ -81,6 +86,9 @@ public class CheckoutController {
         model.addAttribute("listDiaChi", listDiaChi);
         model.addAttribute("hasDefaultAddress", hasDefaultAddress);
         model.addAttribute("addressMapJson", addressMapJson);
+        model.addAttribute("sepayBankAccount", sepayConfig.getBankAccount());
+        model.addAttribute("sepayBankName", sepayConfig.getBankName());
+        model.addAttribute("sepayMemoPrefix", sepayConfig.getMemoPrefix());
 
         return "checkout";
     }
@@ -110,6 +118,7 @@ public class CheckoutController {
             response.put("orderId", hd.getId());
             response.put("paymentMethod", hd.getPaymentMethod());
             response.put("tongTien", hd.getTongTien());
+            response.put("maDonHang", hd.getMaDonHang());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("trangThai", "loi");

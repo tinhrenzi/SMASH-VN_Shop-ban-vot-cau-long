@@ -38,6 +38,10 @@
                 <i class="fas fa-shopping-cart me-2 text-brand"></i> Đơn Hàng
             </a>
             
+            <a th:href="@{/admin/transactions}" th:class="${activeTab == 'giaodich' ? 'active' : ''}">
+                <i class="fas fa-file-invoice-dollar me-2 text-brand"></i> Giao Dịch SePay
+            </a>
+            
             <a th:href="@{/admin/khach-hang}" th:class="${activeTab == 'khachhang' ? 'active' : ''}">
                 <i class="fas fa-users me-2 text-brand"></i> Khách Hàng
             </a>
@@ -48,6 +52,10 @@
 
             <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/nhan-vien}" th:class="${activeTab == 'nhanvien' ? 'active' : ''}">
                 <i class="fas fa-user-shield me-2 text-brand"></i> Nhân Viên
+            </a>
+            
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/shipping-config}" th:class="${activeTab == 'shippingconfig' ? 'active' : ''}">
+                <i class="fas fa-truck me-2 text-brand"></i> Cấu Hình GHN
             </a>
             
             <a th:href="@{/}" class="mt-5 text-warning logout-link">

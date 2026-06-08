@@ -18,23 +18,30 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
     java.util.Optional<HoaDon> findByAppTransId(String appTransId);
 
+    java.util.Optional<HoaDon> findByMaDonHang(String maDonHang);
+
+    @Query("SELECT hd FROM HoaDon hd WHERE hd.maDonHang = :maDonHang OR REPLACE(REPLACE(hd.maDonHang, '-', ''), '_', '') = :normalizedMaDonHang")
+    java.util.Optional<HoaDon> findByMaDonHangOrNormalized(
+            @Param("maDonHang") String maDonHang,
+            @Param("normalizedMaDonHang") String normalizedMaDonHang);
+
     @Query("SELECT hd FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'PENDING' AND hd.ngayTao < :cutoff")
     List<HoaDon> findPendingZaloPayOrdersOlderThan(@Param("cutoff") LocalDateTime cutoff);
 
-    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.ngayTao BETWEEN :start AND :end")
-    Long countZaloPayTransactions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod IN ('ZaloPay', 'zalopay', 'sepay') AND hd.ngayTao BETWEEN :start AND :end")
+    Long countOnlineTransactions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'PAID' AND hd.ngayTao BETWEEN :start AND :end")
-    Long countZaloPaySuccessful(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod IN ('ZaloPay', 'zalopay', 'sepay') AND hd.paymentStatus = 'PAID' AND hd.ngayTao BETWEEN :start AND :end")
+    Long countOnlineSuccessful(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'FAILED' AND hd.ngayTao BETWEEN :start AND :end")
-    Long countZaloPayFailed(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod IN ('ZaloPay', 'zalopay', 'sepay') AND hd.paymentStatus = 'FAILED' AND hd.ngayTao BETWEEN :start AND :end")
+    Long countOnlineFailed(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'PENDING' AND hd.ngayTao BETWEEN :start AND :end")
-    Long countZaloPayPending(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE hd.paymentMethod IN ('ZaloPay', 'zalopay', 'sepay') AND hd.paymentStatus = 'PENDING' AND hd.ngayTao BETWEEN :start AND :end")
+    Long countOnlinePending(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT COALESCE(SUM(hd.tongTien), 0.0) FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'PAID' AND hd.ngayTao BETWEEN :start AND :end")
-    java.math.BigDecimal sumZaloPayRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query("SELECT COALESCE(SUM(hd.tongTien), 0.0) FROM HoaDon hd WHERE hd.paymentMethod IN ('ZaloPay', 'zalopay', 'sepay') AND hd.paymentStatus = 'PAID' AND hd.ngayTao BETWEEN :start AND :end")
+    java.math.BigDecimal sumOnlineRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.GeneralMetricsDTO(" +
            "COUNT(hd.id), " +
@@ -73,4 +80,27 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
            "WHERE hd.ngayTao BETWEEN :start AND :end " +
            "GROUP BY hd.trangThaiDonHang")
     List<OrderStatusCountDTO> getOrderStatusDistribution(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT hd.id, " +
+           "hd.khachHang.hoKh, " +
+           "hd.khachHang.tenKh, " +
+           "hd.ngayTao, " +
+           "hd.paymentMethod, " +
+           "hd.phuongThucThanhToan.tenPhuongThuc, " +
+           "hd.paymentStatus, " +
+           "hd.trangThaiThanhToan, " +
+           "hd.trangThaiDonHang, " +
+           "hd.transactionId, " +
+           "hd.appTransId, " +
+           "hd.maGiaoDich, " +
+           "hd.tongTien " +
+           "FROM HoaDon hd " +
+           "LEFT JOIN hd.khachHang " +
+           "LEFT JOIN hd.phuongThucThanhToan " +
+           "WHERE (LOWER(hd.paymentStatus) = 'paid' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR (LOWER(hd.paymentStatus) = 'cancelled' AND hd.paidAt IS NOT NULL)) AND hd.ngayTao BETWEEN :start AND :end " +
+           "ORDER BY hd.ngayTao DESC")
+    List<Object[]> findRawTransactionsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT COUNT(hd.id) FROM HoaDon hd WHERE (LOWER(hd.paymentStatus) = 'paid' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR (LOWER(hd.paymentStatus) = 'cancelled' AND hd.paidAt IS NOT NULL)) AND hd.ngayTao BETWEEN :start AND :end")
+    Long countTransactionsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

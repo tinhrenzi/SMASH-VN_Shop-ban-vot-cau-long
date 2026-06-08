@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Đơn Hàng - Admin SmashVN</title>
     
+    <!-- CSRF Token -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
@@ -25,6 +29,19 @@
             <div th:if="${warningMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <span th:text="${warningMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Cảnh báo thành công/lỗi thao tác -->
+            <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${errorMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMsg}"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
@@ -50,6 +67,7 @@
                                     <th>Thanh Toán</th>
                                     <th>Vận Chuyển</th>
                                     <th>Trạng Thái HĐ</th>
+                                    <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -69,14 +87,61 @@
                                         <span class="badge bg-light text-dark border" th:text="${hd.donViVanChuyen != null ? hd.donViVanChuyen.tenDonVi : 'N/A'}">GHTK</span>
                                     </td>
                                     <td>
-                                        <span th:if="${hd.trangThaiDonHang == 'cho_xac_nhan'}" class="badge bg-warning text-dark">Chờ xác nhận</span>
-                                        <span th:if="${hd.trangThaiDonHang == 'dang_giao'}" class="badge bg-info text-white">Đang giao</span>
-                                        <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success">Đã giao</span>
-                                        <span th:if="${hd.trangThaiDonHang == 'da_huy'}" class="badge bg-danger">Đã hủy</span>
+                                        <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold">
+                                            <i class="fas fa-check-circle me-1"></i>Đã giao
+                                        </span>
+                                        <span th:if="${hd.trangThaiDonHang == 'da_huy'}" class="badge bg-danger py-2 px-3 fw-bold">
+                                            <i class="fas fa-times-circle me-1"></i>Đã hủy
+                                        </span>
+                                        <span th:if="${hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                              th:class="'badge py-2 px-3 fw-bold ' + 
+                                                        (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'bg-secondary' : 
+                                                        (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'bg-warning text-dark' : 
+                                                        (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'bg-primary' : 
+                                                        (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'bg-info' : 
+                                                        (${hd.trangThaiDonHang == 'dang_giao'} ? 'bg-info' : 'bg-dark')))))" 
+                                              th:text="${@orderViewService.getStatusLabel(hd.trangThaiDonHang)}">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <!-- Nút Chi tiết -->
+                                            <button type="button" class="btn btn-sm btn-info text-white" 
+                                                    th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
+                                                    style="border-radius: 6px;">
+                                                <i class="fas fa-eye me-1"></i> Chi tiết
+                                            </button>
+                                            
+                                            <!-- Nút Tiếp theo -->
+                                            <form th:if="${hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                  th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline">
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                <button type="submit" class="btn btn-sm btn-success" 
+                                                        th:onclick="'return confirm(\'Xác nhận chuyển đơn hàng sang trạng thái: ' + ${@orderViewService.getStatusLabel(@orderViewService.getNextStatus(hd.trangThaiDonHang))} + '?\')'"
+                                                        style="border-radius: 6px;">
+                                                    <i class="fas fa-arrow-right me-1"></i> Tiếp theo
+                                                </button>
+                                            </form>
+                                            
+                                            <!-- Nút Hủy đơn -->
+                                            <form th:if="${hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                  th:action="@{/admin/don-hang/update-status}" method="post" class="d-inline">
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                <input type="hidden" name="expectedStatus" th:value="${hd.trangThaiDonHang}" />
+                                                <input type="hidden" name="trangThai" value="da_huy" />
+                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                        onclick="return confirm('Xác nhận HỦY đơn hàng này?')"
+                                                        style="border-radius: 6px;">
+                                                    <i class="fas fa-times me-1"></i> Hủy đơn
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachDonHang.isEmpty()}">
-                                    <td colspan="7" class="text-center text-muted py-4">Chưa có đơn đặt hàng nào trong hệ thống.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Chưa có đơn đặt hàng nào trong hệ thống.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -87,6 +152,174 @@
     </div>
 </div>
 
+<!-- Modal Chi Tiết Đơn Hàng -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="orderDetailModalLabel"><i class="fas fa-info-circle me-2"></i>Chi Tiết Đơn Hàng <span id="modal-order-id"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="modal-footer-actions">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+function openOrderDetailModal(orderId) {
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+    modal.show();
+    
+    document.getElementById('modal-order-id').innerText = '#' + orderId;
+    const body = document.getElementById('modal-body-content');
+    const footer = document.getElementById('modal-footer-actions');
+    
+    body.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+    `;
+    footer.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>';
+
+    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    fetch('/admin/don-hang/detail-json?id=' + orderId, {
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (response.status === 401) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            if (response.status === 403) throw new Error('Bạn không có quyền xem chi tiết đơn hàng này.');
+            if (response.status === 404) throw new Error('Không tìm thấy đơn hàng #' + orderId);
+            if (!response.ok) {
+                return response.json().then(errData => {
+                    throw new Error(errData.error || ('Lỗi máy chủ: ' + response.status));
+                }).catch(() => {
+                    throw new Error('Lỗi máy chủ: ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Kiểm tra nếu server trả về lỗi dạng JSON
+            if (data.error) {
+                body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.error}</div>`;
+                return;
+            }
+
+            let itemsHtml = '';
+            (data.items || []).forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>
+                            <strong>${item.tenSanPham || 'N/A'}</strong><br>
+                            <small class="text-muted">Màu sắc: ${item.mauSac || 'N/A'}</small>
+                        </td>
+                        <td class="text-center">${item.soLuong}</td>
+                        <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</td>
+                        <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
+                    </tr>
+                `;
+            });
+            
+            body.innerHTML = `
+                <div class="row g-3 mb-4" style="font-size: 13px;">
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin khách hàng</h6>
+                        <p class="mb-1"><strong>Họ tên:</strong> ${data.khachHang || 'N/A'}</p>
+                        <p class="mb-1"><strong>Số điện thoại:</strong> ${data.sdt || 'N/A'}</p>
+                        <p class="mb-1"><strong>Địa chỉ nhận:</strong> ${data.diaChi || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin thanh toán &amp; vận chuyển</h6>
+                        <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${data.paymentMethod || 'N/A'}</p>
+                        <p class="mb-1"><strong>Trạng thái thanh toán:</strong> <span class="badge bg-warning text-dark">${data.paymentStatus || 'N/A'}</span></p>
+                        <p class="mb-1"><strong>Trạng thái đơn hàng:</strong> <span class="badge bg-info">${data.trangThai || 'N/A'}</span></p>
+                    </div>
+                </div>
+                
+                <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Danh sách sản phẩm</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle mb-0" style="font-size: 13px;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center" style="width: 80px;">SL</th>
+                                <th class="text-end" style="width: 120px;">Đơn giá</th>
+                                <th class="text-end" style="width: 140px;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml || '<tr><td colspan="4" class="text-center text-muted">Không có sản phẩm</td></tr>'}
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end fw-bold">Phí vận chuyển:</td>
+                                <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(data.phiVanChuyen)} đ</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end fw-bold" style="font-size: 15px;">Tổng cộng:</td>
+                                <td class="text-end text-danger fw-bold" style="font-size: 15px;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            let actionsHtml = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
+            
+            if (data.trangThaiRaw && data.trangThaiRaw !== 'da_giao' && data.trangThaiRaw !== 'da_huy') {
+                let nextStatusLabel = '';
+                switch(data.trangThaiRaw.toLowerCase()) {
+                    case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
+                    case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
+                    case 'da_xac_nhan': nextStatusLabel = 'Đang giao'; break;
+                    case 'dang_lay_hang': nextStatusLabel = 'Đang giao'; break;
+                    case 'dang_giao': nextStatusLabel = 'Đã giao'; break;
+                    case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
+                }
+                
+                if (nextStatusLabel) {
+                    actionsHtml += `
+                        <form action="/admin/don-hang/next-status" method="post" class="d-inline">
+                            <input type="hidden" name="_csrf" value="${csrfToken}" />
+                            <input type="hidden" name="idHoaDon" value="${data.id}" />
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
+                                <i class="fas fa-arrow-right me-1"></i> Tiếp theo
+                            </button>
+                        </form>
+                    `;
+                }
+                
+                actionsHtml += `
+                    <form action="/admin/don-hang/update-status" method="post" class="d-inline">
+                        <input type="hidden" name="_csrf" value="${csrfToken}" />
+                        <input type="hidden" name="idHoaDon" value="${data.id}" />
+                        <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
+                        <input type="hidden" name="trangThai" value="da_huy" />
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Xác nhận HỦY đơn hàng này?')">
+                            <i class="fas fa-times me-1"></i> Hủy đơn
+                        </button>
+                    </form>
+                `;
+            }
+            
+            footer.innerHTML = actionsHtml;
+        })
+        .catch(err => {
+            body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi khi tải chi tiết đơn hàng: ${err.message}</div>`;
+        });
+}
+</script>
 </body>
 </html>

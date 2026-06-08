@@ -45,6 +45,9 @@ public class UserDangKyService {
         
         taiKhoanMoi.setVaiTro("KH");
         taiKhoanMoi.setTrangThai("hoat_dong");
+        taiKhoanMoi.setLaKhachHang(true);
+        taiKhoanMoi.setLaNhanVien(false);
+        taiKhoanMoi.setLaQuanLy(false);
         
         // Lưu Tài khoản để lấy ID
         TaiKhoan tkDaLuu = taiKhoanRepository.save(taiKhoanMoi);

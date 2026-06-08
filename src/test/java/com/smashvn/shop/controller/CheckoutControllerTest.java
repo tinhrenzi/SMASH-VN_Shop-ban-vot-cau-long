@@ -39,6 +39,9 @@ public class CheckoutControllerTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private com.smashvn.shop.config.SepayConfig sepayConfig;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -49,7 +52,7 @@ public class CheckoutControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService);
+        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig);
 
         when(session.getAttribute("idNguoiDung")).thenReturn(123);
 

@@ -69,6 +69,12 @@ public class HoaDon {
     @Column(name = "thoi_gian_xac_nhan")
     private LocalDateTime thoiGianXacNhan;
 
+    @Column(name = "ma_don_hang", unique = true, length = 50)
+    private String maDonHang;
+
+    @Column(name = "phi_van_chuyen", nullable = false)
+    private BigDecimal phiVanChuyen = BigDecimal.ZERO;
+
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
 

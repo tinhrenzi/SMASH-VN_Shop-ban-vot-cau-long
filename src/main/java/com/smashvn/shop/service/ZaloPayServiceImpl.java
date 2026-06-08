@@ -130,11 +130,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                 hd.getKhachHang().getTaiKhoan() != null ? hd.getKhachHang().getTaiKhoan().getId() : null,
                 "HoaDon",
                 Long.valueOf(hd.getId()),
-                "ZALOPAY_CREATE",
+                "UPDATE",
                 null,
                 "PENDING",
                 "127.0.0.1",
-                "Created ZaloPay order. AppTransId: " + appTransId,
+                "[ZALOPAY_CREATE] Created ZaloPay order. AppTransId: " + appTransId,
                 "CUSTOMER"
         );
 
@@ -262,11 +262,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                         null,
                         "HoaDon",
                         Long.valueOf(hd.getId()),
-                        "ZALOPAY_QUERY_FAILED",
+                        "UPDATE",
                         "PENDING",
                         "FAILED",
                         "127.0.0.1",
-                        "Payment failed or cancelled via gateway query. Response: " + responseStr,
+                        "[ZALOPAY_QUERY_FAILED] Payment failed or cancelled via gateway query. Response: " + responseStr,
                         "SYSTEM"
                 );
             }
@@ -292,11 +292,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                     hd.getKhachHang().getTaiKhoan() != null ? hd.getKhachHang().getTaiKhoan().getId() : null,
                     "HoaDon",
                     Long.valueOf(hd.getId()),
-                    "ZALOPAY_CANCEL",
+                    "UPDATE",
                     "PENDING",
                     "CANCELLED",
                     "127.0.0.1",
-                    "User cancelled ZaloPay payment on checkout page.",
+                    "[ZALOPAY_CANCEL] User cancelled ZaloPay payment on checkout page.",
                     "CUSTOMER"
             );
             log.info("ZaloPay: Order #{} cancelled by user request.", hd.getId());
@@ -356,11 +356,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                     null,
                     "HoaDon",
                     Long.valueOf(hd.getId()),
-                    "ZALOPAY_CALLBACK_PAID",
+                    "UPDATE",
                     "PENDING",
                     "PAID",
                     "127.0.0.1",
-                    "Payment success callback handled. Order stock deducted. Cart items removed.",
+                    "[ZALOPAY_CALLBACK_PAID] Payment success callback handled. Order stock deducted. Cart items removed.",
                     "SYSTEM"
             );
             log.info("ZaloPay: Payment successfully applied to order #{}", hd.getId());
@@ -397,11 +397,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                     null,
                     "HoaDon",
                     Long.valueOf(hd.getId()),
-                    "STOCK_CONFLICT",
+                    "UPDATE",
                     "PENDING",
                     "PAID",
                     "127.0.0.1",
-                    "CRITICAL: ZaloPay paid successfully for order #" + hd.getId() + " but inventory was insufficient. Admin review needed.",
+                    "[STOCK_CONFLICT] CRITICAL: ZaloPay paid successfully for order #" + hd.getId() + " but inventory was insufficient. Admin review needed.",
                     "SYSTEM"
             );
         }

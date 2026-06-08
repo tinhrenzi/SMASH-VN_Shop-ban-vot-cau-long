@@ -14,7 +14,7 @@ public class EditLog {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_tai_khoan", nullable = false)
+    @JoinColumn(name = "id_tai_khoan", nullable = true)
     private TaiKhoan taiKhoan;
 
     @Column(name = "ten_bang", nullable = false, length = 100)
