@@ -18,6 +18,10 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.PaymentMethod;
+import com.smashvn.shop.entity.PaymentStatus;
+import com.smashvn.shop.entity.PaymentTransaction;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.GioHangRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
@@ -25,6 +29,7 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
@@ -42,8 +47,11 @@ public class GioHangService {
     private final TrangThaiGioHangRepository trangThaiGioHangRepository;
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
     private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
+    private final ShippingFeeCalculator shippingFeeCalculator;
+    private final AdminShippingService adminShippingService;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -212,12 +220,36 @@ public class GioHangService {
     }
 
     @org.springframework.transaction.annotation.Transactional
+    public void cleanPendingOrders(Integer idTaiKhoan) {
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (kh == null) {
+            return;
+        }
+        List<HoaDon> existingOrders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+        for (HoaDon oldOrder : existingOrders) {
+            if ("cho_thanh_toan".equals(oldOrder.getTrangThaiDonHang()) && 
+                "pending".equalsIgnoreCase(oldOrder.getPaymentStatus())) {
+                List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(oldOrder.getId());
+                if (txs != null && !txs.isEmpty()) {
+                    paymentTransactionRepository.deleteAll(txs);
+                }
+                List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(oldOrder.getId());
+                hoaDonChiTietRepository.deleteAll(details);
+                hoaDonRepository.delete(oldOrder);
+            }
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan, 
                               Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
             throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
         }
+
+        // Clean up previous unpaid/pending orders for this customer to prevent duplicate display in Order History
+        cleanPendingOrders(idTaiKhoan);
 
         List<GioHangChiTiet> cartItems = layDanhSachSanPhamTrongGio(idTaiKhoan);
         if (cartItems.isEmpty()) {
@@ -237,15 +269,17 @@ public class GioHangService {
             tamTinh = tamTinh.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
         }
 
-        // Load carrier
-        DonViVanChuyen dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen)
+        // Load carrier using cached list
+        DonViVanChuyen dvvc = adminShippingService.getAllCarriers().stream()
+                .filter(c -> c.getId().equals(idDonViVanChuyen))
+                .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị vận chuyển"));
 
-        BigDecimal phiShip = new BigDecimal("30000");
+        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, diaChiNhan);
         BigDecimal totalAmount = tamTinh.add(phiShip);
 
         // Find or create Payment Method
-        String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "ZaloPay";
+        String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "SePay";
         List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
         PhuongThucThanhToan pttt = allPttt.stream()
                 .filter(p -> ptttName.equalsIgnoreCase(p.getTenPhuongThuc()))
@@ -263,13 +297,26 @@ public class GioHangService {
         hd.setDonViVanChuyen(dvvc);
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(totalAmount);
-        hd.setTrangThaiDonHang("cho_xac_nhan");
+        hd.setPhiVanChuyen(phiShip);
+        
+        // Generate secure maDonHang: DHSVN + YYYYMMDDHHMMSS + - + 6 UUID characters
+        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        hd.setMaDonHang("DHSVN" + dateStr + "-" + uuidStr);
+        
+        if ("COD".equalsIgnoreCase(ptttName)) {
+            hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
+            hd.setPaymentMethod(PaymentMethod.COD.getValue()); // "cod"
+        } else {
+            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
+            hd.setPaymentMethod(PaymentMethod.SEPAY.getValue()); // "sepay"
+        }
+        
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
         hd.setDiaChiNhan(diaChiNhan);
         hd.setSdtNhan(sdtNhan);
         hd.setGhiChu(ghiChu);
-        hd.setPaymentMethod(ptttName);
-        hd.setPaymentStatus("PENDING");
+        hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 
         hd = hoaDonRepository.save(hd);
 

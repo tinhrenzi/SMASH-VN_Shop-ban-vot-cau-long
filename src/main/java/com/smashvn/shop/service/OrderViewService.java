@@ -11,17 +11,25 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.PaymentStatus;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 
+import org.springframework.security.access.AccessDeniedException;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -32,6 +40,10 @@ public class OrderViewService {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final SanPhamRepository sanPhamRepository;
     private final KhachHangRepository khachHangRepository;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final AuditService auditService;
+    private final com.smashvn.shop.repository.EditLogRepository editLogRepository;
 
     // Helper to format dates for dash-my-order.html
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss", Locale.US);
@@ -47,13 +59,18 @@ public class OrderViewService {
         if (realOrders != null && !realOrders.isEmpty()) {
             // CÓ ĐƠN HÀNG THẬT
             for (HoaDon hd : realOrders) {
+                // Skip unpaid/pending orders (cho_thanh_toan) to prevent duplicate/misleading display in Order History
+                if ("cho_thanh_toan".equals(hd.getTrangThaiDonHang())) {
+                    continue;
+                }
                 Map<String, Object> orderMap = new HashMap<>();
                 orderMap.put("id", hd.getId());
                 orderMap.put("date", hd.getNgayTao().format(formatter));
 
                 // Ánh xạ trạng thái hiển thị
-                String statusText = getStatusLabel(hd.getTrangThaiDonHang());
+                String statusText = getFrontendStatusLabel(hd.getTrangThaiDonHang());
                 orderMap.put("status", statusText);
+                orderMap.put("rawStatus", hd.getTrangThaiDonHang());
                 orderMap.put("total", hd.getTongTien());
 
                 List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
@@ -86,6 +103,7 @@ public class OrderViewService {
             mock1.put("id", 1001);
             mock1.put("date", LocalDateTime.now().minusHours(2).format(formatter));
             mock1.put("status", "processing");
+            mock1.put("rawStatus", "cho_xac_nhan");
 
             List<Map<String, Object>> items1 = new ArrayList<>();
             Map<String, Object> item1_1 = new HashMap<>();
@@ -121,6 +139,7 @@ public class OrderViewService {
             mock2.put("id", 1002);
             mock2.put("date", LocalDateTime.now().minusDays(5).format(formatter));
             mock2.put("status", "delivered");
+            mock2.put("rawStatus", "da_giao");
 
             List<Map<String, Object>> items2 = new ArrayList<>();
             Map<String, Object> item2_1 = new HashMap<>();
@@ -184,13 +203,13 @@ public class OrderViewService {
 
                 modelMap.put("orderItems", items);
 
-                // Lấy thống kê thật
+                // Lấy thống kê thật (dùng giá trị DB: da_huy, da_giao)
                 List<HoaDon> allUserOrders = hoaDonRepository.findByKhachHang_Id(idKhachHang);
-                long processingCount = allUserOrders.stream().filter(o -> !"delivered".equals(o.getTrangThaiDonHang()) && !"cancelled".equals(o.getTrangThaiDonHang())).count();
-                long cancelCount = allUserOrders.stream().filter(o -> "cancelled".equals(o.getTrangThaiDonHang())).count();
+                // Loại trừ đơn chờ thanh toán (cho_thanh_toan) và đơn đã hủy khi tính tổng đơn đã đặt
+                long cancelCount = allUserOrders.stream().filter(o -> OrderStatus.DA_HUY.getValue().equals(o.getTrangThaiDonHang())).count();
+                long orderCount = allUserOrders.stream().filter(o -> !"cho_thanh_toan".equals(o.getTrangThaiDonHang())).count() - cancelCount;
 
-                modelMap.put("orderCount", allUserOrders.size());
-                modelMap.put("processingCount", processingCount);
+                modelMap.put("orderCount", orderCount);
                 modelMap.put("cancelCount", cancelCount);
                 modelMap.put("wishlistCount", 0);
 
@@ -207,7 +226,7 @@ public class OrderViewService {
         return null;
     }
 
-    private String getStatusLabel(String dbStatus) {
+    private String getFrontendStatusLabel(String dbStatus) {
         if (dbStatus == null) {
             return "processing";
         }
@@ -238,6 +257,13 @@ public class OrderViewService {
         mockOrder.put("phuongThucVanChuyen", "Giao hàng nhanh tiết kiệm (GHTK)");
         mockOrder.put("phiVanChuyen", new BigDecimal("30000"));
         mockOrder.put("phuongThucThanhToan", "Thanh toán khi nhận hàng (COD)");
+        mockOrder.put("trangThaiThanhToan", "CHO_THANH_TOAN");
+        mockOrder.put("trangThaiDonHang", idHoaDon.equals(1001) ? "cho_xac_nhan" : "da_giao");
+        mockOrder.put("status", idHoaDon.equals(1001) ? "processing" : "delivered");
+        mockOrder.put("ngayXacNhan", mockOrder.get("ngayDat"));
+        mockOrder.put("ngayThanhToan", mockOrder.get("ngayDat"));
+        mockOrder.put("ngayGiaoDVVC", mockOrder.get("ngayDat"));
+        mockOrder.put("ngayGiaoThanhCong", mockOrder.get("ngayGiao"));
 
         // Tạo thông tin địa chỉ giao nhận mock
         Map<String, Object> mockAddress = new HashMap<>();
@@ -347,9 +373,12 @@ public class OrderViewService {
         map.put("ngayDat", hd.getNgayTao());
         map.put("ngayGiao", hd.getNgayTao().plusDays(3)); // Giả sử giao sau 3 ngày
         map.put("phuongThucVanChuyen", hd.getDonViVanChuyen() != null ? hd.getDonViVanChuyen().getTenDonVi() : "Standard Delivery");
-        map.put("phiVanChuyen", new BigDecimal("30000")); // Hardcode ship fee cho đơn thật nếu chưa lưu trong DB
+        map.put("phiVanChuyen", hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : BigDecimal.ZERO);
         map.put("phuongThucThanhToan", hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan().getTenPhuongThuc() : "COD");
+        map.put("trangThaiThanhToan", hd.getTrangThaiThanhToan());
         map.put("tongTien", hd.getTongTien());
+        map.put("trangThaiDonHang", hd.getTrangThaiDonHang());
+        map.put("status", getFrontendStatusLabel(hd.getTrangThaiDonHang()));
 
         Map<String, Object> adr = new HashMap<>();
         adr.put("hoTen", hd.getKhachHang().getHoKh() + " " + hd.getKhachHang().getTenKh());
@@ -358,6 +387,310 @@ public class OrderViewService {
 
         map.put("diaChiGiao", adr);
         map.put("diaChiThanhToan", adr);
+
+        map.put("ngayXacNhan", hd.getThoiGianXacNhan());
+        map.put("ngayThanhToan", hd.getPaidAt());
+        
+        Map<String, LocalDateTime> transitions = getStatusTransitionTimes(hd.getId());
+        map.put("ngayGiaoDVVC", transitions.get("dang_giao") != null ? transitions.get("dang_giao") : (transitions.get("dang_lay_hang") != null ? transitions.get("dang_lay_hang") : null));
+        map.put("ngayGiaoThanhCong", transitions.get("da_giao"));
+        map.put("ngayHuy", transitions.get("da_huy"));
+
         return map;
+    }
+
+    @Transactional
+    public boolean huyDonHang(Integer idHoaDon, Integer idKhachHang, String clientIp) {
+        Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+        if (hdOpt.isPresent()) {
+            HoaDon hd = hdOpt.get();
+            // Xác thực đơn hàng thuộc về đúng khách hàng đang đăng nhập
+            if (!hd.getKhachHang().getId().equals(idKhachHang)) {
+                return false;
+            }
+
+            // Chỉ cho phép hủy đơn ở trạng thái cho_thanh_toan, cho_xac_nhan hoặc da_xac_nhan
+            String currentStatus = hd.getTrangThaiDonHang();
+            if (OrderStatus.CHO_THANH_TOAN.getValue().equals(currentStatus)
+                    || OrderStatus.CHO_XAC_NHAN.getValue().equals(currentStatus)
+                    || OrderStatus.DA_XAC_NHAN.getValue().equals(currentStatus)) {
+                
+                // Nếu ở trạng thái cho_xac_nhan hoặc da_xac_nhan, tức là hàng đã bị trừ trong kho
+                // Ta cần khôi phục lại kho cho các biến thể sản phẩm
+                if (OrderStatus.CHO_XAC_NHAN.getValue().equals(currentStatus)
+                        || OrderStatus.DA_XAC_NHAN.getValue().equals(currentStatus)) {
+                    List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+                    for (HoaDonChiTiet item : items) {
+                        SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                        if (spct != null) {
+                            // Khóa ghi và tăng tồn kho
+                            Optional<SanPhamChiTiet> lockedSpctOpt = sanPhamChiTietRepository.findByIdWithLock(spct.getId());
+                            if (lockedSpctOpt.isPresent()) {
+                                SanPhamChiTiet lockedSpct = lockedSpctOpt.get();
+                                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() + item.getSoLuong());
+                                sanPhamChiTietRepository.save(lockedSpct);
+                            }
+                        }
+                    }
+                }
+
+                // Cập nhật trạng thái đơn hàng
+                hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue()); // "da_huy"
+                String refundLogNote = "";
+                if (PaymentStatus.PAID.getValue().equalsIgnoreCase(hd.getPaymentStatus())) {
+                    hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                    refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, customerId=%d",
+                            hd.getId(), hd.getPaymentMethod(), hd.getTongTien().toString(), LocalDateTime.now().toString(), idKhachHang);
+                } else {
+                    hd.setPaymentStatus("CANCELLED");
+                    hd.setTrangThaiThanhToan("HUY");
+                }
+                hoaDonRepository.save(hd);
+
+                // Ghi nhận Audit Log
+                auditService.log(
+                        hd.getKhachHang().getTaiKhoan() != null ? hd.getKhachHang().getTaiKhoan().getId() : null,
+                        "HoaDon",
+                        Long.valueOf(hd.getId()),
+                        "UPDATE",
+                        currentStatus,
+                        "da_huy",
+                        clientIp,
+                        "[CUSTOMER_CANCEL] Khách hàng tự hủy đơn hàng từ trang chi tiết." + refundLogNote,
+                        "CUSTOMER"
+                );
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<String> getValidNextStatuses(String currentStatus) {
+        if (currentStatus == null) return List.of();
+        return switch (currentStatus.toLowerCase()) {
+            case "cho_thanh_toan" -> List.of("cho_xac_nhan", "da_huy");
+            case "cho_xac_nhan" -> List.of("da_xac_nhan", "da_huy");
+            case "da_xac_nhan" -> List.of("dang_lay_hang", "dang_giao", "da_huy");
+            case "dang_lay_hang" -> List.of("dang_giao", "da_huy");
+            case "dang_giao" -> List.of("da_giao", "da_huy");
+            case "stock_conflict" -> List.of("cho_xac_nhan", "da_huy");
+            default -> List.of();
+        };
+    }
+
+    public String getStatusLabel(String status) {
+        if (status == null) return "N/A";
+        return switch (status.toLowerCase()) {
+            case "cho_thanh_toan" -> "Chờ thanh toán";
+            case "cho_xac_nhan" -> "Chờ xác nhận";
+            case "da_xac_nhan" -> "Đã xác nhận";
+            case "dang_lay_hang" -> "Đang lấy hàng";
+            case "dang_giao" -> "Đang giao";
+            case "da_giao" -> "Đã giao";
+            case "da_huy" -> "Đã hủy";
+            case "stock_conflict" -> "Trùng kho";
+            default -> status;
+        };
+    }
+
+    @Transactional
+    public void updateOrderStatusByAdmin(Integer idHoaDon, String newStatus, String expectedStatus, Integer actingTaiKhoanId, String clientIp) {
+        // 1. Service-Level Authorization
+        if (actingTaiKhoanId == null) {
+            throw new AccessDeniedException("Bạn không có quyền cập nhật trạng thái đơn hàng.");
+        }
+        TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId)
+                .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
+        
+        if (!Boolean.TRUE.equals(actingUser.getLaQuanLy()) && !Boolean.TRUE.equals(actingUser.getLaNhanVien())) {
+            throw new AccessDeniedException("Bạn không có quyền cập nhật trạng thái đơn hàng.");
+        }
+
+        // 2. Load order
+        HoaDon hd = hoaDonRepository.findById(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
+        
+        String currentStatus = hd.getTrangThaiDonHang();
+        String currentPaymentStatus = hd.getPaymentStatus();
+        String currentTrangThaiThanhToan = hd.getTrangThaiThanhToan();
+
+        // 3. Lost Update Protection
+        if (!Objects.equals(currentStatus, expectedStatus)) {
+            throw new IllegalStateException("Đơn hàng đã được người khác cập nhật. Vui lòng tải lại trang.");
+        }
+
+        // 4. Delivered and Cancelled orders are immutable
+        if (OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(currentStatus)
+                || OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)) {
+            throw new IllegalArgumentException("Không thể chỉnh sửa đơn hàng đã giao hoặc đã hủy!");
+        }
+
+        // 5. If status is the same, no transition is needed
+        if (Objects.equals(currentStatus, newStatus)) {
+            return;
+        }
+
+        // 6. Transition Matrix Validation
+        List<String> validNext = getValidNextStatuses(currentStatus);
+        if (!validNext.contains(newStatus)) {
+            throw new IllegalArgumentException(String.format("Không thể chuyển trạng thái từ '%s' sang '%s'.", getStatusLabel(currentStatus), getStatusLabel(newStatus)));
+        }
+
+        // 7. Inventory State tracking
+        boolean oldIsDeducted = isStockDeductedState(currentStatus);
+        boolean newIsDeducted = isStockDeductedState(newStatus);
+
+        List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+
+        if (!oldIsDeducted && newIsDeducted) {
+            // Deduct stock: lock variants, validate, deduct
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                    if (locked.getSoLuongTon() < item.getSoLuong()) {
+                        throw new IllegalArgumentException("Sản phẩm '" + locked.getSanPham().getTenSanPham() + "' không đủ hàng tồn kho để kích hoạt đơn hàng!");
+                    }
+                }
+            }
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).get();
+                    locked.setSoLuongTon(locked.getSoLuongTon() - item.getSoLuong());
+                    sanPhamChiTietRepository.save(locked);
+                }
+            }
+        } else if (oldIsDeducted && !newIsDeducted) {
+            // Restock: lock variants, add back stock
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
+                    sanPhamChiTietRepository.save(locked);
+                }
+            }
+        }
+
+        // 8. Payment Method Logic & Cancellation Rules
+        String roleStr = Boolean.TRUE.equals(actingUser.getLaQuanLy()) ? "QUAN_LY" : "NHAN_VIEN";
+        String refundLogNote = "";
+
+        if (OrderStatus.DA_XAC_NHAN.getValue().equalsIgnoreCase(newStatus)) {
+            if (hd.getThoiGianXacNhan() == null) {
+                hd.setThoiGianXacNhan(LocalDateTime.now());
+            }
+        }
+
+        if (OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(newStatus)) {
+            // Explicit check: COD payments set paid when delivered
+            if ("COD".equalsIgnoreCase(hd.getPaymentMethod())) {
+                hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+                hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+                if (hd.getPaidAt() == null) {
+                    hd.setPaidAt(LocalDateTime.now());
+                }
+                if (hd.getThoiGianXacNhan() == null) {
+                    hd.setThoiGianXacNhan(LocalDateTime.now());
+                }
+            }
+        } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
+            if ("paid".equalsIgnoreCase(currentPaymentStatus)) {
+                hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, actingUserId=%d",
+                        hd.getId(), hd.getPaymentMethod(), hd.getTongTien().toString(), LocalDateTime.now().toString(), actingTaiKhoanId);
+            } else {
+                hd.setPaymentStatus("CANCELLED");
+                hd.setTrangThaiThanhToan("HUY");
+            }
+        }
+
+        // 9. Update Order
+        hd.setTrangThaiDonHang(newStatus);
+        hd = hoaDonRepository.save(hd);
+
+        // 10. Audit Log Enhancement
+        String giaTriCu = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", currentStatus, currentPaymentStatus, currentTrangThaiThanhToan);
+        String giaTriMoi = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", newStatus, hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String ghiChu = String.format("[ADMIN_UPDATE] Trạng thái đơn hàng được cập nhật bởi %s.%s", roleStr, refundLogNote);
+
+        auditService.log(
+                actingTaiKhoanId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                giaTriCu,
+                giaTriMoi,
+                clientIp,
+                ghiChu,
+                actingUser.getVaiTro() != null ? actingUser.getVaiTro() : roleStr
+        );
+    }
+
+    private boolean isStockDeductedState(String status) {
+        if (status == null) return false;
+        String lower = status.toLowerCase();
+        return "cho_xac_nhan".equals(lower) || "da_xac_nhan".equals(lower) || "dang_lay_hang".equals(lower) || "dang_giao".equals(lower) || "da_giao".equals(lower);
+    }
+
+    public String getNextStatus(String currentStatus) {
+        if (currentStatus == null) return null;
+        return switch (currentStatus.toLowerCase()) {
+            case "cho_thanh_toan" -> "cho_xac_nhan";
+            case "cho_xac_nhan" -> "da_xac_nhan";
+            case "da_xac_nhan" -> "dang_giao";
+            case "dang_lay_hang" -> "dang_giao";
+            case "dang_giao" -> "da_giao";
+            case "stock_conflict" -> "cho_xac_nhan";
+            default -> null;
+        };
+    }
+
+    @Transactional
+    public void moveOrderToNextStatus(Integer orderId, Integer actingUserId, String clientIp) {
+        HoaDon hd = hoaDonRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
+        
+        String currentStatus = hd.getTrangThaiDonHang();
+        String nextStatus = getNextStatus(currentStatus);
+        if (nextStatus == null) {
+            throw new IllegalStateException("Đơn hàng đã ở trạng thái cuối cùng hoặc không thể tự chuyển tiếp.");
+        }
+        
+        updateOrderStatusByAdmin(orderId, nextStatus, currentStatus, actingUserId, clientIp);
+    }
+
+    public Map<String, LocalDateTime> getStatusTransitionTimes(Integer idHoaDon) {
+        Map<String, LocalDateTime> times = new HashMap<>();
+        try {
+            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(idHoaDon));
+            for (com.smashvn.shop.entity.EditLog log : logs) {
+                String giaTriMoi = log.getGiaTriMoi();
+                if (giaTriMoi != null) {
+                    if (giaTriMoi.contains("status=da_xac_nhan")) {
+                        times.put("da_xac_nhan", log.getThoiGian());
+                    }
+                    if (giaTriMoi.contains("status=dang_lay_hang")) {
+                        times.put("dang_lay_hang", log.getThoiGian());
+                    }
+                    if (giaTriMoi.contains("status=dang_giao")) {
+                        times.put("dang_giao", log.getThoiGian());
+                    }
+                    if (giaTriMoi.contains("status=da_giao")) {
+                        times.put("da_giao", log.getThoiGian());
+                    }
+                    if (giaTriMoi.contains("status=da_huy")) {
+                        times.put("da_huy", log.getThoiGian());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback silent
+        }
+        return times;
     }
 }

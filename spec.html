@@ -60,9 +60,130 @@
     <p><strong>Dự án:</strong> Module Thống Kê Doanh Thu & KPIs Admin - SmashVN</p>
     <p>Tài liệu này tổng hợp chi tiết các yêu cầu nghiệp vụ đã thực hiện, các thay đổi ngoài yêu cầu, và các yêu cầu mới phát sinh (sắp xếp với nội dung cập nhật mới nhất ở trên đầu của mỗi phần).</p>
 
-    <h2>1. Những Yêu Cầu Đã Thực Hiện (Implemented Requirements)</h2>
+    <h2>1. Những Yêu Cấu Đã Thực Hiện (Implemented Requirements)</h2>
     <div class="section-block">
         <ul>
+             <!-- NEWEST FIRST -->
+             <li><strong>Tiến trình Đơn hàng 5 bước Màu xanh lá cây &amp; Trích xuất Mốc thời gian Lịch sử (5-Step Green Stepper &amp; Log-Based Timestamps):</strong>
+                 <ul>
+                     <li><strong> stepper 5 bước màu xanh lá cây:</strong> Thiết kế lại toàn bộ timeline tiến trình đơn hàng trong trang chi tiết đơn hàng của Khách hàng (<code>dash-manage-order.html</code>) thành một Stepper 5 bước màu xanh lá cây sang trọng, trực quan khớp theo hình ảnh thiết kế yêu cầu: 1. Đơn Hàng Đã Đặt, 2. Đã Xác Nhận (hoặc Đã Thanh Toán kèm số tiền nếu đã thanh toán), 3. Đang Giao, 4. Đã Giao Thành Công, 5. Đánh Giá.</li>
+                     <li><strong>Trích xuất mốc thời gian động:</strong> Tích hợp trích xuất tự động và hiển thị thời gian chính xác (format <code>HH:mm dd-MM-yyyy</code>) dưới mỗi node của stepper từ lịch sử log cập nhật <code>EditLog</code> trong CSDL cho các thay đổi trạng thái và sự kiện thanh toán.</li>
+                     <li><strong>Tiến trình đơn bị hủy:</strong> Riêng đối với đơn hàng bị hủy, hiển thị tiến trình 3 bước đặc trưng: <code>Đơn Hàng Đã Đặt</code> &rarr; <code>Đơn Hàng Đã Hủy</code> (vòng tròn và chữ màu đỏ) &rarr; <code>Hoàn Tất</code>.</li>
+                 </ul>
+             </li>
+             <li><strong>Bộ nút Thao tác &amp; Modal Chi tiết Quản trị Đơn hàng (Admin Order Progression Simulation &amp; Details Modal):</strong>
+                 <ul>
+                     <li><strong>Bộ nút thao tác nhanh:</strong> Thay thế select-box thô cũ tại trang danh sách hóa đơn admin (<code>donhang-list.html</code>) bằng cột <strong>Thao tác</strong> mới cung cấp các nút thao tác nhanh: <code>Chi tiết</code>, <code>Tiếp theo</code>, và <code>Hủy đơn</code>. Ẩn nút "Tiếp theo" và "Hủy đơn" khi đơn hàng ở trạng thái <code>da_giao</code> hoặc <code>da_huy</code>.</li>
+                     <li><strong>Modal Chi tiết hóa đơn:</strong> Nút <code>Chi tiết</code> gọi request AJAX lấy JSON dữ liệu đơn hàng và hiển thị trọn vẹn thông tin chi tiết (thông tin khách hàng, số điện thoại, địa chỉ nhận, phương thức thanh toán/vận chuyển, danh sách các mặt hàng, đơn giá, phí ship và tổng tiền hóa đơn) trong một Modal Bootstrap 5 cao cấp.</li>
+                     <li><strong>Cơ chế tự động chuyển tiếp:</strong> Nút <code>Tiếp theo</code> kích hoạt bộ xử lý chuyển trạng thái an toàn tuần tự (<code>moveOrderToNextStatus</code>) tại backend: <code>cho_thanh_toan</code> &rarr; <code>cho_xac_nhan</code> &rarr; <code>da_xac_nhan</code> &rarr; <code>dang_giao</code> &rarr; <code>da_giao</code>. Các nút này cũng được tích hợp ở footer của Modal Chi tiết đơn hàng.</li>
+                     <li><strong>An toàn CSDL &amp; Tồn kho:</strong> Kế thừa toàn bộ logic an toàn backend: bảo toàn tồn kho (restock/deduct chỉ chạy duy nhất 1 lần khi chuyển qua trạng thái liên quan), ghi Audit Log, và kiểm soát quyền hạn (ROLE_QL / ROLE_NV).</li>
+                 </ul>
+             </li>
+             <li><strong>Quản lý Trạng Thái Đơn Hàng & Thêm Trạng Thái Đang Lấy Hàng (Order Status Manual Management & "Dang Lay Hang" Status Integration):</strong>
+                 <ul>
+                     <li><strong>Thêm trạng thái mới (Đang lấy hàng):</strong> Bổ sung <code>DANG_LAY_HANG</code> vào enum <code>OrderStatus</code> biểu thị cho quy trình nhân viên giao nhận đang đến lấy hàng từ kho trước khi chuyển sang đang giao.</li>
+                     <li><strong>Ma trận trạng thái an toàn:</strong> Hạn chế các bước chuyển tiếp trạng thái bất hợp lệ trong CSDL. Cho phép chuyển đổi tuần tự: Đã xác nhận $\rightarrow$ Đang lấy hàng $\rightarrow$ Đang giao $\rightarrow$ Đã giao (hoặc Đã hủy) hoặc đi tắt từ Đã xác nhận thẳng sang Đang giao.</li>
+                     <li><strong>Bảo toàn tồn kho:</strong> Định nghĩa trạng thái <code>DANG_LAY_HANG</code> thuộc nhóm đã trừ kho (isStockDeductedState == true) để tránh hoàn kho hoặc trừ kho lặp lại khi đơn hàng di chuyển qua bước này.</li>
+                     <li><strong>Đồng bộ hiển thị UI Khách hàng:</strong> Cập nhật trang danh sách đơn hàng (<code>dash-my-order.html</code>) và chi tiết đơn hàng (<code>dash-manage-order.html</code>) của khách hàng để hiển thị đúng nhãn tiếng Việt tương ứng cho tất cả trạng thái đơn hàng thay vì luôn hiển thị là "Chờ xác nhận" khi đơn đang xử lý/đang lấy/đang giao như trước.</li>
+                 </ul>
+             </li>
+             <li><strong>Cấu hình Phí Vận Chuyển Thủ Công (Manual Shipping Fee Configuration):</strong>
+                 <ul>
+                     <li><strong>Mở rộng cơ sở dữ liệu (Flyway Migration V1.13 & V1.14):</strong> Bổ sung các cột <code>phi_local</code> (phí nội tỉnh), <code>phi_nationwide</code> (phí toàn quốc) và <code>version</code> (optimistic lock) vào bảng <code>DonViVanChuyen</code> để quản lý cấu hình phí ship động/thủ công cho từng nhà vận chuyển. Thực hiện cập nhật trực tiếp dữ liệu GHN do khách hàng cung cấp qua migration V1.14.</li>
+                     <li><strong>Entity & Optimistic Locking:</strong> Cấu hình thực thể <code>DonViVanChuyen.java</code> sử dụng thuộc tính <code>@Version private Long version;</code> để kích hoạt cơ chế khóa lạc quan (Optimistic Locking) của JPA, chống xung đột ghi đè dữ liệu khi nhiều quản trị viên cùng thao tác chỉnh sửa.</li>
+                     <li><strong>Phân quyền lớp Service (Service-Level Authorization):</strong> Triển khai xác thực và kiểm tra vai trò người thực hiện trực tiếp trong service <code>updateShippingFee(...)</code>. Chỉ tài khoản có vai trò Quản lý (QL) mới được quyền lưu phí mới; Nhân viên (NV) chỉ có quyền xem (Read-only) và giao diện ẩn toàn bộ form/nút chỉnh sửa.</li>
+                     <li><strong>Xác thực và Kiểm tra dữ liệu tập trung (Validation):</strong> Ngăn chặn lưu phí vận chuyển âm ($< 0$), rỗng (null), hoặc vượt mức tối đa ($10.000.000$ VNĐ).</li>
+                     <li><strong>Bộ nhớ đệm (Caffeine Caching):</strong> Sử dụng <code>@Cacheable("shipping-carriers")</code> để tăng tốc độ lấy danh sách nhà vận chuyển khi tính phí ship lúc checkout và tự động xóa cache thông qua <code>@CacheEvict</code> khi phí ship thay đổi.</li>
+                 </ul>
+             </li>
+             <li><strong>Màn hình cấu hình thông tin kết nối API Giao Hàng Nhanh (Giao Hàng Nhanh API Configuration Screen):</strong>
+                <ul>
+                    <li><strong>Mở rộng cơ sở dữ liệu (Flyway Migration V1.12):</strong> Bổ sung các trường <code>token</code>, <code>client_id</code>, <code>dia_chi_kho</code> vào bảng <code>DonViVanChuyen</code>.</li>
+                    <li><strong>Ánh xạ Entity:</strong> Khai báo thêm thuộc tính trong Java entity <code>DonViVanChuyen.java</code> để đồng bộ dữ liệu API động với CSDL.</li>
+                    <li><strong>Giao diện Cấu hình GHN cho Quản lý:</strong> Xây dựng trang giao diện <code>shipping-config.html</code> hiển thị các thông tin kết nối API cho phép cập nhật Token, Shop ID và Địa chỉ kho của GHN, phân quyền chặt chẽ chỉ cho vai trò Quản lý (QL) cấu hình.</li>
+                </ul>
+            </li>
+            <li><strong>Thống kê thêm mục Đơn Hàng Đã Hủy (Cancelled Orders Metric Display in Admin Dashboard):</strong>
+                <ul>
+                    <li><strong>Thêm thẻ hiển thị:</strong> Cải tiến bố cục lưới (grid system) tại <code>thongke.html</code> để hiển thị 3 cột KPIs phụ ngang hàng bao gồm: Khách Hàng Mới Trong Kỳ, Đơn Hàng Đã Hủy, và Tỷ Lệ Hủy Đơn Hàng.</li>
+                    <li><strong>Rút trích dữ liệu tối ưu:</strong> Tận dụng thuộc tính <code>cancelledOrders</code> sẵn có trong DTO trả về từ backend mà không cần viết thêm query SQL mới, đảm bảo hiệu suất tính toán tối đa cho trang Dashboard quản lý.</li>
+                </ul>
+            </li>
+            <li><strong>Khắc phục lỗi Đăng nhập sau khi Đăng ký tài khoản khách hàng mới (Customer Account Registration Flag Fix):</strong>
+                <ul>
+                    <li><strong>Thiếu cờ boolean laKhachHang:</strong> Lỗi đăng nhập xảy ra do tài khoản đăng ký mới không được gán cờ <code>laKhachHang = true</code>, dẫn tới bộ lọc xác thực tại <code>UserDangNhapController</code> từ chối quyền truy cập của khách hàng với mã thông báo lỗi "Tài khoản không hợp lệ!".</li>
+                    <li><strong>Gán cờ vai trò mặc định:</strong> Cập nhật <code>UserDangKyService.dangKy</code> để gán tường minh <code>laKhachHang = true</code>, <code>laNhanVien = false</code>, và <code>laQuanLy = false</code> khi tạo mới thực thể <code>TaiKhoan</code>.</li>
+                    <li><strong>Tự động hóa kiểm thử Service:</strong> Thiết lập bộ test <code>UserDangKyServiceTest.java</code> để kiểm tra độ tin cậy của dịch vụ đăng ký tài khoản, ngăn chặn các hồi quy bảo mật liên quan đến quyền truy cập.</li>
+                </ul>
+            </li>
+            <li><strong>Chuyển hướng trực tiếp sang trang mô phỏng SePay (Direct Redirection to SePay Payment Simulator):</strong>
+                <ul>
+                    <li><strong>Chuyển hướng từ checkout:</strong> Sau khi người dùng chọn phương thức thanh toán chuyển khoản SePay và hoàn tất đặt hàng thành công tại trang checkout, hệ thống thực hiện chuyển hướng trực tiếp đến đường dẫn <code>/payment/sepay/simulate?maDonHang={maDonHang}</code>. Điều này thay thế cho cơ chế modal cũ để mang lại trải nghiệm thanh toán mô phỏng mượt mà và liền mạch hơn.</li>
+                    <li><strong>Mô phỏng VietQR động:</strong> Trang mô phỏng sẽ tạo động mã VietQR từ cổng dịch vụ của SePay chứa đầy đủ thông tin số tài khoản nhận, ngân hàng hưởng, số tiền, và nội dung chuyển khoản tự động điền sẵn tương ứng với mã đơn hàng vừa tạo.</li>
+                    <li><strong>Giả lập IPN callback an toàn phía server:</strong> Nút "MÔ PHỎNG THANH TOÁN THÀNH CÔNG" gửi một POST request AJAX lên server. Tại server, controller sẽ xây dựng payload giao dịch giả lập chứa mã đơn hàng và số tiền chính xác, sau đó trực tiếp gọi hàm <code>handleIpn</code> của <code>SepayGatewayService</code> để kiểm tra và cập nhật trạng thái đơn hàng, trừ kho sản phẩm tương ứng. Giải pháp này giúp bảo mật hoàn toàn <code>ipnSecret</code> không bị lộ ra phía client.</li>
+                    <li><strong>Hủy thanh toán/Thanh toán sau:</strong> Nút "HỦY THANH TOÁN" cho phép người dùng điều hướng an toàn về trang đơn hàng cá nhân (<code>/user/my-order</code>), đơn hàng sẽ được giữ ở trạng thái "Chờ thanh toán" để thanh toán sau.</li>
+                </ul>
+            </li>
+            <li><strong>Phân vùng vận chuyển & Tính phí ship động (Dynamic Shipping Fees & GHN Integration):</strong>
+                <ul>
+                    <li><strong>Đơn vị vận chuyển mới: Giao Hàng Nhanh (GHN):</strong> Đăng ký carrier mới vào bảng <code>DonViVanChuyen</code> qua Flyway migration.</li>
+                    <li><strong>Phân vùng vận chuyển (ShippingZone):</strong> Định nghĩa các phân vùng <code>LOCAL</code> (cho Thái Nguyên, Hà Nội) và <code>NATIONWIDE</code> (cho các tỉnh thành còn lại) thông qua resolver <code>ShippingZoneResolver</code>.</li>
+                    <li><strong>Chuẩn hóa chuỗi địa chỉ nâng cao:</strong> Tự động loại bỏ dấu tiếng Việt, chuyển sang chữ thường, chuẩn hóa dấu cách, loại bỏ các ký tự dấu phẩy, gạch ngang để khớp vùng chính xác (ví dụ: "Ha-Noi" hay "Thái Nguyên" đều nhận diện thành LOCAL).</li>
+                    <li><strong>Tính phí ship động bằng BigDecimal:</strong> Thiết lập bảng phí vận chuyển trung tâm trong <code>ShippingFeeCalculator</code> dùng <code>BigDecimal.valueOf(...)</code>: GHTK (LOCAL: 22k, NATIONWIDE: 30k) và GHN (LOCAL: 25k, NATIONWIDE: 38k), mặc định 30k.</li>
+                    <li><strong>Lưu trữ phí vận chuyển cố định trên hóa đơn:</strong> Bổ sung cột <code>phi_van_chuyen</code> trong thực thể <code>HoaDon</code> để lưu trữ phí ship tại thời điểm tạo đơn. Các trang quản lý admin, hóa đơn, doanh thu và lịch sử đơn hàng luôn hiển thị từ giá trị lưu trữ, không tính toán lại nhằm bảo toàn dữ liệu lịch sử.</li>
+                    <li><strong>API tính phí ship động (/api/shipping/fee):</strong> Cung cấp endpoint bảo mật lấy phí ship, phân vùng và mã carrier theo carrierId và address. AJAX ở phía client tự động gửi yêu cầu cập nhật phí ship và tổng tiền khi thay đổi địa chỉ hoặc đơn vị vận chuyển (có debounce 300ms và abort request cũ tránh race condition).</li>
+                    <li><strong>Validate an toàn server-side:</strong> Khi tạo đơn, server tự động tính toán lại phí ship và tổng tiền từ trạng thái CSDL giỏ hàng, hoàn toàn không tin tưởng dữ liệu gửi lên từ client.</li>
+                </ul>
+            </li>
+            <li><strong>Mở rộng Thống kê Doanh thu & KPIs Thanh toán Online (Online Payment Statistics Expansion):</strong>
+                <ul>
+                    <li><strong>Tích hợp chỉ số SePay vào Thống kê:</strong> Cập nhật các câu lệnh truy vấn trong <code>HoaDonRepository.java</code> để đếm và cộng dồn doanh thu của tất cả các hình thức thanh toán trực tuyến (bao gồm cả cổng <code>sepay</code> và cổng <code>zalopay</code>) thay vì chỉ tính riêng ZaloPay như trước.</li>
+                    <li><strong>Chuẩn hóa giao diện Báo cáo (UI/UX &amp; Excel Reports):</strong> Chuyển đổi tên gọi các nhãn hiển thị và tiêu đề từ "ZaloPay" sang danh mục chung "Thanh toán Online" trên giao diện quản trị (<code>thongke.html</code>) và trong báo cáo xuất Excel, giúp cung cấp số liệu tổng quan chính xác về lưu lượng và doanh thu thanh toán qua ngân hàng/ví điện tử.</li>
+                    <li><strong>Chuẩn hóa hiển thị phương thức trong lịch sử:</strong> Định cấu hình hiển thị biểu tượng và nhãn phương thức thanh toán "SePay" trực quan trong bảng lịch sử giao dịch gần đây.</li>
+                </ul>
+            </li>
+            <li><strong>Sửa lỗi điều hướng trang thanh toán từ giỏ hàng (Checkout Navigation Link Fix):</strong>
+                <ul>
+                    <li><strong>Chuẩn hóa URL điều hướng:</strong> Thay thế toàn bộ các liên kết tĩnh sử dụng <code>/checkout.html</code> tại nút "THANH TOÁN" trong mini-cart (Header), floating-cart dropdown và trang giỏ hàng (<code>cart.html</code>) thành URL <code>/checkout</code>.</li>
+                    <li><strong>Khắc phục lỗi định tuyến Spring Boot:</strong> Ngăn chặn hiện tượng lỗi định tuyến tài nguyên tĩnh hoặc xung đột View Resolver (Circular View Path) khi gọi trực tiếp đuôi mở rộng <code>.html</code> của view Spring MVC, đảm bảo việc nhấn nút chuyển hướng khách hàng sang trang điền thông tin thanh toán hoạt động trơn tru.</li>
+                    <li><strong>Sửa lỗi biên dịch/Import thiếu tại Backend:</strong> Bổ sung khai báo import class <code>PaymentTransaction</code> bị thiếu trong <code>GioHangService.java</code>. Lỗi thiếu import này trước đây đã âm thầm tạo ra một Unresolved Compilation Exception trong file class do cách biên dịch nóng (JDT hot code swap) của một số IDE, dẫn đến việc kích hoạt lỗi hệ thống HTTP 500 (trang báo lỗi chung của hệ thống) khi gọi hàm dọn dẹp hóa đơn chờ thanh toán cũ lúc người dùng nhấn nút checkout.</li>
+                </ul>
+            </li>
+            <li><strong>Thông báo thanh toán trực tuyến thành công (Online Payment Success Notification):</strong>
+                <ul>
+                    <li><strong>Tham số định hướng URL:</strong> Cấu hình trang checkout (<code>checkout.html</code>) sau khi nhận được tín hiệu thanh toán thành công qua cổng SePay sẽ chuyển hướng người dùng về trang danh sách đơn hàng kèm tham số thành công: <code>/user/my-order?payment=success</code>.</li>
+                    <li><strong>Giao diện thông báo Toast:</strong> Tích hợp khung CSS và JS Toast Notification vào <code>dash-my-order.html</code> để tự động nhận diện tham số <code>payment=success</code> khi tải trang, hiển thị thông báo "✅ Thanh toán đơn hàng thành công!", đồng thời tự động xóa tham số khỏi URL trình duyệt bằng <code>window.history.replaceState</code> để tránh hiển thị lại thông báo khi người dùng tải lại trang.</li>
+                </ul>
+            </li>
+            <li><strong>Khắc phục lỗi không hủy được đơn hàng và hiển thị sai số lượng đơn đã đặt (Order Cancellation &amp; Placed Count Fix):</strong>
+                <ul>
+                    <li><strong>Loại bỏ đơn đã hủy khỏi chỉ số Đơn Hàng Đã Đặt:</strong> Điều chỉnh logic tính toán số lượng đơn hàng đã đặt (<code>orderPlaced</code> trong controller và <code>orderCount</code> trong <code>OrderViewService</code>) bằng cách trừ đi số đơn hàng đã hủy (<code>cancelled</code> / <code>cancelCount</code>). Đảm bảo hiển thị chính xác số đơn hàng đang hoạt động dưới nhãn "Đơn Hàng Đã Đặt" và các đơn đã hủy dưới nhãn "Đơn Hàng Đã Hủy" trên toàn bộ trang Dashboard cá nhân.</li>
+                    <li><strong>Thêm các thẻ meta chứa CSRF Token:</strong> Khai báo bổ sung các thẻ meta <code>_csrf</code> và <code>_csrf_header</code> vào phần đầu của trang chi tiết đơn hàng (<code>dash-manage-order.html</code>). Nhờ đó, yêu cầu POST AJAX gửi từ phía máy khách chứa đầy đủ CSRF token hợp lệ để được Spring Security xác thực thành công thay vì bị chặn lại bởi lỗi HTTP 403 Forbidden.</li>
+                    <li><strong>Tối ưu hóa hành vi Modal xác nhận hủy:</strong> Điều chỉnh Javascript của nút xác nhận hủy đơn hàng trì hoãn việc đóng modal cho đến khi nhận được phản hồi thành công từ phía máy chủ. Trong trường hợp xảy ra lỗi mạng hoặc lỗi hệ thống, modal sẽ giữ nguyên trạng thái mở và nút bấm tự động mở khóa để hiển thị thông báo lỗi chi tiết giúp người dùng dễ dàng thử lại.</li>
+                </ul>
+            </li>
+            <li><strong>Tích hợp Cổng thanh toán trực tuyến SePay (SePay IPN Gateway Integration):</strong>
+                <ul>
+                    <li><strong>Mã đơn hàng ngẫu nhiên bảo mật:</strong> Tạo mã đơn hàng dạng <code>DH</code> + <code>yyyyMMddHHmmss</code> + <code>-</code> + <code>UUID 6 ký tự</code> (ví dụ: <code>DH20260608090000-A7F3D2</code>) để bảo mật thông tin mã đơn hàng, tránh bị dò quét mã đơn hàng (enumeration attack) và đảm bảo tính duy nhất ở mức CSDL.</li>
+                    <li><strong>Lưu trữ trạng thái Enum dạng chữ thường:</strong> Sử dụng các enums <code>PaymentStatus</code>, <code>OrderStatus</code>, <code>PaymentMethod</code> và ánh xạ chúng lưu trữ dạng chữ thường dưới CSDL thông qua hàm <code>.getValue()</code> (ví dụ: <code>pending</code>, <code>paid</code>, <code>refunded</code>), đảm bảo tách biệt logic backend và định dạng lưu trữ thực tế.</li>
+                    <li><strong>Ngăn chặn giao dịch trùng lặp và tương tranh (Idempotency &amp; Concurrency):</strong> Thiết lập khóa duy nhất (unique constraint) trên cột <code>transaction_id</code> của bảng giao dịch <code>PaymentTransaction</code>. Xử lý ngoại lệ <code>DataIntegrityViolationException</code> tại webhook callback của SePay và trả về HTTP 200 "Already processed" ngay lập tức để tránh xử lý trừ kho và cập nhật đơn hàng hai lần đối với các callback gửi đồng thời.</li>
+                    <li><strong>Bảo mật API Query Trạng thái Đơn hàng:</strong> API kiểm tra trạng thái đơn hàng (status polling) tại endpoint <code>/api/sepay/check-status</code> xác thực Session <code>idNguoiDung</code> để đảm bảo chỉ có chủ đơn hàng mới có thể kiểm tra trạng thái. API chỉ trả về mã đơn hàng, trạng thái thanh toán và trạng thái đơn hàng dưới dạng JSON chuẩn, không trả về ID CSDL nội bộ để ngăn chặn rò rỉ thông tin.</li>
+                    <li><strong>Che giấu thông tin nhạy cảm trong Nhật ký (Log Masking):</strong> Tự động che giấu số tài khoản ngân hàng trong file log (ví dụ: chuyển từ <code>1234567890</code> thành <code>******7890</code>). Đồng thời loại bỏ các khóa API, khóa bí mật IPN và secret key khỏi chuỗi text Log bằng Lombok <code>@ToString(exclude = ...)</code>.</li>
+                    <li><strong>Thuật toán trích xuất mã đơn hàng thông minh:</strong> Nâng cấp bộ nhận diện mã đơn hàng tự động tìm kiếm và lấy chuỗi khớp dài nhất từ cả hai trường <code>code</code> và <code>content</code> của giao dịch SePay. Hỗ trợ tìm kiếm theo cả mã gốc hoặc mã đã loại bỏ ký tự gạch ngang/ký tự đặc biệt (ví dụ: khớp mã <code>DHSVN202606081104486E113A</code> với đơn gốc <code>DHSVN20260608110448-6E113A</code>) để phòng ngừa việc các app ngân hàng hoặc cổng SePay tự động rút gọn/loại bỏ ký tự đặc biệt.</li>
+                </ul>
+            </li>
+            <li><strong>Khắc phục trùng lặp và ẩn đơn hàng chưa thanh toán (Pending/Unpaid Checkout Improvements):</strong>
+                <ul>
+                    <li><strong>Tự động dọn dẹp đơn hàng chờ thanh toán cũ:</strong> Bổ sung cơ chế tự động tìm kiếm và xóa các đơn hàng ở trạng thái <code>cho_thanh_toan</code>/<code>pending</code> (hóa đơn chưa thanh toán) của khách hàng hiện tại cùng với các chi tiết hóa đơn (order items) và giao dịch thanh toán liên quan khi họ tải trang checkout hoặc bắt đầu submit đơn hàng thanh toán trực tuyến mới. Điều này giúp ngăn chặn tình trạng tồn đọng nhiều hóa đơn rác chưa thanh toán khi người dùng nhấn nút thanh toán rồi thoát ra.</li>
+                    <li><strong>Bộ lọc đơn hàng lịch sử khách hàng:</strong> Cập nhật phương thức <code>layDanhSachOrders</code> trong <code>OrderViewService.java</code> để tự động bỏ qua (không tải lên) các hóa đơn có trạng thái <code>cho_thanh_toan</code> trong danh sách lịch sử đơn hàng của khách hàng. Giúp sửa lỗi hiển thị sai lệch số lượng đơn hàng đã đặt trên Dashboard cá nhân và tránh việc các đơn rác này bị hiển thị lặp lại dưới nhãn "Chờ xác nhận" gây hiểu lầm.</li>
+                </ul>
+            </li>
+            <li><strong>Tạo file chứa API Sandbox SePay &amp; Thư mục thanh toán (SePay Sandbox API &amp; Payment Directory):</strong>
+                <ul>
+                    <li><strong>Khởi tạo thư mục và file:</strong> Tạo thư mục <code>payment</code> tại thư mục gốc của dự án để lưu trữ cấu hình thanh toán.</li>
+                    <li><strong>Mã nguồn Sandbox:</strong> Tạo file <code>sepay.jsx</code> chứa mã khởi tạo <code>SePayPgClient</code> ở môi trường <code>sandbox</code>, cấu hình các thông tin thanh toán chuyển khoản ngân hàng (one-time payment Fields) và trả về form React để thực hiện điều hướng thanh toán an toàn.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục hiện tượng đè chữ và vỡ khung tại trang Bán hàng tại quầy (POS Overlapping Text &amp; Layout Fixes):</strong>
                 <ul>
                     <li><strong>Căn giữa giá bán và nhãn tồn kho:</strong> Thiết lập xếp chồng dọc cho giá bán và nhãn tồn kho thay vì hiển thị dạng ngang. Cả hai phần tử kế thừa căn giữa của thẻ sản phẩm giúp hiển thị đồng dạng, cân xứng.</li>
@@ -70,6 +191,11 @@
                     <li><strong>Ngăn chặn đè chữ thông tin chuyển khoản:</strong> Sử dụng flex-wrap cho danh sách thông tin tài khoản chuyển khoản tại modal xác nhận thanh toán, giúp hiển thị tên ngân hàng dài xuống dòng đúng chuẩn.</li>
                     <li><strong>Tối ưu hóa giỏ hàng và danh tính khách hàng:</strong> Thiết lập <code>min-width: 0</code> và cơ chế tràn chữ (text-ellipsis) cho tên khách hàng và thông tin sản phẩm giỏ hàng để tránh đè lấn lên các nút thao tác chức năng kề cạnh.</li>
                     <li><strong>Chuyển đổi sang Block Layout cho panel thanh toán:</strong> Loại bỏ cấu trúc flexbox (<code>display: flex</code>, <code>flex-direction: column</code>) trên panel <code>.pos-right</code>, thay thế bằng luồng block chuẩn để giỏ hàng <code>.cart-list</code> tự động mở rộng theo kích thước thật của nội dung, đẩy phần chọn khách hàng và các thông tin thanh toán khác xuống dưới một cách tự nhiên và tránh hoàn toàn các lỗi đè lấn khung.</li>
+                </ul>
+            </li>
+            <li><strong>Sửa lỗi vỡ giao diện trang Thống kê Doanh thu (Revenue Dashboard Layout Repair):</strong>
+                <ul>
+                    <li><strong>Bổ sung các thẻ đóng HTML:</strong> Sửa lỗi cấu trúc thẻ div lồng nhau không hợp lệ ở phần thẻ thống kê tỷ lệ hủy đơn hàng bằng cách đóng đầy đủ các thẻ div bị thiếu. Nhờ vậy toàn bộ giao diện lưới của trang thống kê (bảng biểu, biểu đồ, KPI ZaloPay) tự động xếp ngay ngắn đúng hàng cột.</li>
                 </ul>
             </li>
             <li><strong>Sử dụng Sổ địa chỉ đã lưu hoặc Thêm địa chỉ mới tại trang thanh toán (Autofill &amp; Toggle Registered Shipping Address at Checkout):</strong>
@@ -145,6 +271,14 @@
                 </ul>
             </li>
             <!-- NEWEST FIRST -->
+            <li><strong>Lịch sử Giao dịch bao gồm Đơn hàng Hủy/Hoàn tiền & Tối ưu hóa Tiến trình Đơn hàng Online (Transaction History, Cancelled Refund Handling & Stepper Progress Auto-Activation):</strong>
+                <ul>
+                    <li><strong>Bảo toàn giao dịch bị hủy trong Lịch sử:</strong> Cập nhật các câu lệnh truy vấn trong <code>HoaDonRepository.java</code> (<code>findRawTransactionsInPeriod</code> và <code>countTransactionsInPeriod</code>) để hiển thị đầy đủ thông tin các giao dịch đã từng thanh toán thành công nhưng sau đó bị hủy hoặc đang chờ hoàn tiền. Hỗ trợ hiển thị các trạng thái <code>CHO_HOAN_TIEN</code>, <code>HOAN_TIEN</code> và các hóa đơn bị hủy có thông tin thanh toán trước đó (<code>LOWER(paymentStatus) = 'cancelled' AND paidAt IS NOT NULL</code>).</li>
+                    <li><strong>Bảo toàn trạng thái hoàn tiền khi khách hàng hủy đơn:</strong> Điều chỉnh logic tại <code>OrderViewService.huyDonHang</code>, khi khách hàng tự hủy đơn hàng online đã thanh toán thành công (trong các trạng thái được phép hủy), hệ thống sẽ chuyển đổi trạng thái thanh toán sang <code>CHO_HOAN_TIEN</code> và ghi nhận log cảnh báo <code>[REFUND_REQUIRED]</code> thay vì cập nhật trạng thái thanh toán sang <code>CANCELLED</code> và <code>HUY</code> một cách vô điều kiện, đảm bảo khớp nối thông tin kế toán.</li>
+                    <li><strong>Ghi nhận mốc thời gian xác nhận đơn hàng:</strong> Cấu hình hệ thống tự động lưu trữ <code>thoiGianXacNhan</code> (thời gian xác nhận thực tế) ngay khi admin chuyển đổi trạng thái đơn hàng sang <code>da_xac_nhan</code>, giúp hiển thị mốc thời gian chính xác trên timeline đơn hàng của khách hàng.</li>
+                    <li><strong>Tự động kích hoạt Bước 2 (Đã Thanh Toán) trên Stepper:</strong> Cập nhật logic hiển thị trong <code>dash-manage-order.html</code> để tự động chuyển trạng thái Bước 2 sang màu xanh (hoàn thành) và nâng độ rộng thanh tiến trình lên 25% ngay khi đơn hàng online được thanh toán thành công (khi đơn hàng ở trạng thái <code>cho_xac_nhan</code>), tránh làm khách hàng băn khoăn về tiến độ thanh toán của họ.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi Khởi tạo CSDL & Schema Validation (Flyway Auto-Configuration & Programmatic Schema Repair):</strong>
                 <ul>
                     <li><strong>Tích hợp Flyway Auto-Configuration:</strong> Chuyển sang sử dụng dependency <code>spring-boot-starter-flyway</code> thay cho <code>flyway-core</code> để đảm bảo Spring Boot 4 tự động kích hoạt và điều khiển chu kỳ chạy migration của Flyway khi khởi động.</li>
@@ -275,6 +409,13 @@
     <div class="section-block">
         <p>Đây là những giải pháp kỹ thuật được bổ sung ngoài yêu cầu chính để tối ưu hóa thiết kế hệ thống và chất lượng code:</p>
         <ul>
+            <!-- NEWEST FIRST -->
+            <li><strong>Sửa lỗi ràng buộc CSDL và chuẩn hóa Audit Log cho hoạt động chạy ngầm:</strong>
+                <ul>
+                    <li><strong>Cho phép tài khoản ghi log null:</strong> Tạo Flyway migration <code>V1.9__make_editlog_taikhoan_nullable.sql</code> cập nhật cột <code>id_tai_khoan</code> trong bảng <code>EditLog</code> thành <code>nullable = true</code>, cho phép hệ thống tự động ghi nhật ký sửa đổi (Audit Log) đối với các hành động được kích hoạt bởi các tác vụ lập lịch tự động (Scheduler) hoặc webhook ẩn danh không có phiên đăng nhập của người dùng.</li>
+                    <li><strong>Đồng bộ hóa hành động Audit với Check Constraints:</strong> Thay thế toàn bộ các tên hành động ghi nhật ký tùy chỉnh trong scheduler và gateway thanh toán (ví dụ: <code>ZALOPAY_EXPIRE</code>, <code>PAYMENT_CONFIRMED</code>, <code>STOCK_CONFLICT</code>) thành từ khóa hành động chuẩn <code>UPDATE</code> để tuân thủ ràng buộc <code>CHECK CONSTRAINT</code> của SQL Server (chỉ cho phép <code>'INSERT'</code>, <code>'UPDATE'</code>, <code>'DELETE'</code>). Các sự kiện cụ thể này được ghi đệm vào cột <code>ghi_chu</code> dưới dạng nhãn <code>[ZALOPAY_EXPIRE]</code>, <code>[PAYMENT_CONFIRMED]</code>, v.v.</li>
+                </ul>
+            </li>
             <li><strong>Cải tiến nút hành động và dọn dẹp modal tĩnh:</strong> Dọn dẹp thuộc tính gọi modal tĩnh (<code>data-modal-id="#quick-look"</code>) ở các thẻ sản phẩm giả định/cương mẫu (như Ưu đãi trong ngày, Sản phẩm mới, Sản phẩm khách hàng cũng xem) và thay thế bằng các liên kết trực tiếp dẫn đến trang cửa hàng <code>/shop</code> để tránh mở ra popup trống rỗng. Đồng thời cập nhật Sản phẩm nổi bật trên trang chủ để gọi xem nhanh và thêm giỏ hàng động chuẩn xác.</li>
             <li><strong>Loại bỏ cột phuong_thuc_pos trùng lặp:</strong> Để đảm bảo nguyên lý "Single Source of Truth", chúng tôi đã loại bỏ cột <code>phuong_thuc_pos</code> được thêm ở phiên bản trước khỏi CSDL và cấu hình Entity Java, đồng thời chuyển hướng đọc nhãn thanh toán trực tiếp từ liên kết thực thể <code>PhuongThucThanhToan</code>.</li>
             <!-- NEWEST FIRST -->
@@ -300,6 +441,13 @@
     <div class="section-block">
         <p>Các cấu hình và công nghệ mới được đưa vào dự án để hỗ trợ yêu cầu vận hành:</p>
         <ul>
+            <!-- NEWEST FIRST -->
+            <li><strong>Cơ chế Flyway Migrations V1.8 và V1.9:</strong> Bổ sung kịch bản nâng cấp CSDL:
+                <ul>
+                    <li><code>V1.8__create_payment_transaction_table.sql</code>: Tạo bảng lưu trữ thông tin giao dịch thanh toán ngân hàng (SePay), tích hợp xử lý trùng lặp giao dịch tự động trước khi thiết lập ràng buộc duy nhất trên <code>transaction_id</code>.</li>
+                    <li><code>V1.9__make_editlog_taikhoan_nullable.sql</code>: Chuyển đổi thuộc tính khóa tài khoản trong bảng nhật ký hệ thống sang tùy chọn nullable để tương thích với các tiến trình chạy ngầm.</li>
+                </ul>
+            </li>
             <li><strong>Mã giao dịch đối soát & Cờ kiểm toán thanh toán:</strong> Tích hợp các trường thông tin <code>ma_giao_dich</code>, <code>nguoi_xac_nhan_thanh_toan</code>, <code>thoi_gian_xac_nhan</code> để phục vụ mục đích kiểm toán quy trình và in hóa đơn nhiệt.</li>
             <li><strong>Tích hợp thư viện Apache Tika:</strong> Bổ sung dependency <code>tika-core</code> vào file <code>pom.xml</code> để thực hiện dò quét định dạng file (MIME type) thực tế và chính xác dựa trên cấu trúc byte, ngăn chặn hoàn toàn việc đổi đuôi file để qua mặt hệ thống.</li>
             <li><strong>Quản lý cấu hình bằng dotenv-java/Custom Parser:</strong> Triển khai parser tùy biến để đọc trực tiếp file <code>.env</code> ở thư mục gốc của dự án và nạp vào System Properties khi ứng dụng bắt đầu khởi động, giảm thiểu việc lộ lọt key bí mật khi đẩy code lên kho lưu trữ chung.</li>

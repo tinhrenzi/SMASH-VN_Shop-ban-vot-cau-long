@@ -62,7 +62,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
 
@@ -107,7 +107,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
 
@@ -159,7 +159,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
         return "dash-my-order"; // Trỏ đến dash-my-order.html
@@ -181,7 +181,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
 
@@ -204,7 +204,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
 
@@ -227,7 +227,7 @@ public class UserDashboardController {
         long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
         long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
 
-        model.addAttribute("orderPlaced", ordersList.size());
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
 
@@ -268,5 +268,38 @@ public class UserDashboardController {
             e.printStackTrace();
             return "redirect:/user/my-order?loi=loihethong";
         }
+    }
+
+    @PostMapping("/manage-order/cancel/{id}")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> xuLyHuyDonHang(
+            @PathVariable("id") Integer idHoaDon,
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            response.put("success", false);
+            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
+            return org.springframework.http.ResponseEntity.ok(response);
+        }
+        
+        String ipAddress = request.getRemoteAddr();
+        try {
+            boolean success = orderViewService.huyDonHang(idHoaDon, kh.getId(), ipAddress);
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Hủy đơn hàng thành công!");
+            } else {
+                response.put("success", false);
+                response.put("message", "Không thể hủy đơn hàng này. Đơn hàng có thể đã được giao hoặc đang được xử lý.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
+        }
+        return org.springframework.http.ResponseEntity.ok(response);
     }
 }

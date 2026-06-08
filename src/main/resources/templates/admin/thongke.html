@@ -91,6 +91,7 @@
                             <button type="button" class="filter-btn active" data-preset="last_30_days">30 ngày qua</button>
                             <button type="button" class="filter-btn" data-preset="this_month">Tháng này</button>
                             <button type="button" class="filter-btn" data-preset="this_year">Năm nay</button>
+                            <button type="button" class="filter-btn" data-preset="all_time" style="border-color: #6f42c1; color: #6f42c1;">Tất cả</button>
                             <button type="button" class="filter-btn" data-preset="custom">Tùy chỉnh</button>
                         </div>
                         
@@ -178,7 +179,7 @@
                 <!-- Row 1.5: Extra KPIs -->
                 <div class="row g-4 mb-4">
                     <!-- Khách hàng mới -->
-                    <div class="col-md-6 col-lg-6">
+                    <div class="col-md-4 col-lg-4">
                         <div class="card border-0 shadow-sm h-100 py-2 px-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-info bg-opacity-10 text-info">
@@ -192,8 +193,23 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Đơn hàng đã hủy -->
+                    <div class="col-md-4 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100 py-2 px-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-3 rounded-circle bg-danger bg-opacity-10 text-danger">
+                                    <i class="fas fa-times-circle fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Đơn Hàng Đã Hủy</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valCancelledOrders">0</h4>
+                                    <small class="text-muted">Tổng đơn hàng bị hủy bỏ</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Tỷ lệ hủy đơn -->
-                    <div class="col-md-6 col-lg-6">
+                    <div class="col-md-4 col-lg-4">
                         <div class="card border-0 shadow-sm h-100 py-2 px-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-secondary bg-opacity-10 text-secondary">
@@ -204,10 +220,12 @@
                                     <h4 class="mb-0 fw-extrabold text-dark" id="valCancellationRate">0.0%</h4>
                                     <small class="text-muted">Tổng đơn hàng đã hủy / Tổng đơn tạo</small>
                                 </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Row 1.8: ZaloPay Statistics -->
+                <!-- Row 1.8: Online Payment Statistics -->
                 <div class="row g-4 mb-4">
                     <div class="col-xl-3 col-md-6">
                         <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #0084ff !important;">
@@ -216,8 +234,8 @@
                                     <i class="fas fa-money-bill-transfer fa-xl"></i>
                                 </div>
                                 <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Tổng Giao Dịch ZaloPay</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpTotal" style="font-size: 1.35rem; font-weight: 800;">0</h4>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Tổng Giao Dịch Online</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineTotal" style="font-size: 1.35rem; font-weight: 800;">0</h4>
                                     <small class="text-muted" style="font-size: 0.7rem;">Tổng số lượt khởi tạo</small>
                                 </div>
                             </div>
@@ -230,8 +248,8 @@
                                     <i class="fas fa-circle-check fa-xl"></i>
                                 </div>
                                 <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">ZaloPay Thành Công</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpSuccess" style="font-size: 1.35rem; font-weight: 800;">0</h4>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Thanh Toán Online Thành Công</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineSuccess" style="font-size: 1.35rem; font-weight: 800;">0</h4>
                                     <small class="text-muted" style="font-size: 0.7rem;">Đã nhận được tiền</small>
                                 </div>
                             </div>
@@ -245,7 +263,7 @@
                                 </div>
                                 <div>
                                     <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Thất Bại / Đang Chờ</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpFailedPending" style="font-size: 1.35rem; font-weight: 800;">0 / 0</h4>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineFailedPending" style="font-size: 1.35rem; font-weight: 800;">0 / 0</h4>
                                     <small class="text-muted" style="font-size: 0.7rem;">Hủy, lỗi / chưa thanh toán</small>
                                 </div>
                             </div>
@@ -258,9 +276,9 @@
                                     <i class="fas fa-coins fa-xl"></i>
                                 </div>
                                 <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Doanh Thu ZaloPay</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valZpRevenue" style="font-size: 1.35rem; font-weight: 800;">0 đ</h4>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng doanh thu qua ví</small>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Doanh Thu Online</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineRevenue" style="font-size: 1.35rem; font-weight: 800;">0 đ</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng doanh thu qua ví/chuyển khoản</small>
                                 </div>
                             </div>
                         </div>
@@ -328,6 +346,43 @@
                             <div id="noDataOverlayProducts" class="text-center py-5 text-muted d-none">
                                 <i class="fas fa-box-open fa-3x mb-2 text-muted"></i>
                                 <p class="fw-semibold mb-0">Không có sản phẩm nào được bán thành công trong khoảng thời gian đã chọn</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Transaction History -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center py-3 gap-2">
+                        <div>
+                            <span><i class="fas fa-history text-brand me-2"></i>Lịch Sử Giao Dịch</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2" style="font-size: 0.85rem;">
+                            <span class="badge bg-secondary">Tổng giao dịch: <strong id="lblTotalTxCount">0</strong></span>
+                            <span class="badge bg-primary">Đang hiển thị: <strong id="lblShowingTxCount">0</strong> giao dịch gần nhất</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive border-0 shadow-none" style="max-height: 450px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0" id="tableTransactions">
+                                <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 2;">
+                                    <tr>
+                                        <th style="width: 100px;" class="text-center">Mã HĐ</th>
+                                        <th>Khách Hàng</th>
+                                        <th>Thời Gian</th>
+                                        <th>Phương Thức</th>
+                                        <th>Mã Giao Dịch</th>
+                                        <th class="text-end">Số Tiền</th>
+                                        <th class="text-center">Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows from JS -->
+                                </tbody>
+                            </table>
+                            <div id="noDataOverlayTransactions" class="text-center py-5 text-muted d-none">
+                                <i class="fas fa-receipt fa-3x mb-2 text-muted"></i>
+                                <p class="fw-semibold mb-0">Không có giao dịch nào phát sinh trong khoảng thời gian đã chọn</p>
                             </div>
                         </div>
                     </div>
@@ -405,6 +460,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 updateMetrics(data);
                 updateCharts(data);
                 updateTopProducts(data);
+                updateTransactions(data);
             })
             .catch(err => {
                 console.error("Lỗi khi tải dữ liệu thống kê: ", err);
@@ -424,13 +480,14 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
         document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
         document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
+        document.getElementById("valCancelledOrders").textContent = formatNumber(m.cancelledOrders);
         document.getElementById("valCancellationRate").textContent = data.cancellationRate.toFixed(1) + "%";
 
-        // Cập nhật ZaloPay KPI
-        document.getElementById("valZpTotal").textContent = formatNumber(data.zpTotal);
-        document.getElementById("valZpSuccess").textContent = formatNumber(data.zpSuccess);
-        document.getElementById("valZpFailedPending").textContent = formatNumber(data.zpFailed) + " / " + formatNumber(data.zpPending);
-        document.getElementById("valZpRevenue").textContent = formatVND(data.zpRevenue);
+        // Cập nhật Online Payment KPI
+        document.getElementById("valOnlineTotal").textContent = formatNumber(data.onlineTotal);
+        document.getElementById("valOnlineSuccess").textContent = formatNumber(data.onlineSuccess);
+        document.getElementById("valOnlineFailedPending").textContent = formatNumber(data.onlineFailed) + " / " + formatNumber(data.onlinePending);
+        document.getElementById("valOnlineRevenue").textContent = formatVND(data.onlineRevenue);
     }
 
     // Cập nhật và khởi tạo biểu đồ
@@ -590,6 +647,107 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td class="text-secondary fw-semibold">${p.categoryName}</td>
                 <td class="text-center fw-bold text-primary">${formatNumber(p.soldQuantity)}</td>
                 <td class="text-end fw-bold text-danger">${formatVND(p.revenue)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Helper to escape HTML characters securely
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Cập nhật bảng Lịch sử giao dịch
+    function updateTransactions(data) {
+        const list = data.transactions || [];
+        const tbody = document.querySelector("#tableTransactions tbody");
+        const noDataOverlayTransactions = document.getElementById("noDataOverlayTransactions");
+        const table = document.getElementById("tableTransactions");
+
+        // Cập nhật metrics giao dịch riêng biệt
+        document.getElementById("lblTotalTxCount").textContent = formatNumber(data.totalTransactions);
+        document.getElementById("lblShowingTxCount").textContent = formatNumber(data.displayedTransactions);
+
+        tbody.innerHTML = "";
+
+        if (list.length === 0) {
+            noDataOverlayTransactions.classList.remove("d-none");
+            table.classList.add("d-none");
+            return;
+        } else {
+            noDataOverlayTransactions.classList.add("d-none");
+            table.classList.remove("d-none");
+        }
+
+        list.forEach(tx => {
+            const tr = document.createElement("tr");
+
+            // Bản đồ ánh xạ nhãn Badge tường minh
+            let badgeClass = "secondary";
+            let badgeText = tx.paymentStatus;
+            if (tx.paymentStatus === "PAID") {
+                badgeClass = "success";
+                badgeText = "Thành công";
+            } else if (tx.paymentStatus === "PENDING") {
+                badgeClass = "warning";
+                badgeText = "Chờ thanh toán";
+            } else if (tx.paymentStatus === "FAILED") {
+                badgeClass = "danger";
+                badgeText = "Thất bại";
+            } else if (tx.paymentStatus === "REFUNDED") {
+                badgeClass = "info";
+                badgeText = "Hoàn tiền";
+            } else if (tx.paymentStatus === "CANCELLED") {
+                badgeClass = "secondary";
+                badgeText = "Đã hủy";
+            }
+            const statusBadge = `<span class="badge bg-${badgeClass}-subtle text-${badgeClass} border border-${badgeClass}-subtle py-1.5 px-2.5 rounded-pill">${badgeText}</span>`;
+
+            // Chuẩn hóa phương thức thanh toán hiển thị kèm Icon
+            let methodHtml = "";
+            if (tx.paymentMethod === "ZALOPAY") {
+                methodHtml = `<span class="fw-semibold text-primary"><i class="fas fa-wallet me-1 text-primary"></i>ZaloPay</span>`;
+            } else if (tx.paymentMethod === "SEPAY") {
+                methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1 text-info"></i>SePay</span>`;
+            } else if (tx.paymentMethod === "CASH") {
+                methodHtml = `<span class="fw-semibold text-success"><i class="fas fa-money-bill-wave me-1 text-success"></i>Tiền mặt</span>`;
+            } else if (tx.paymentMethod === "BANK_TRANSFER") {
+                methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1 text-info"></i>Chuyển khoản</span>`;
+            } else if (tx.paymentMethod === "COD") {
+                methodHtml = `<span class="fw-semibold text-warning"><i class="fas fa-truck me-1 text-warning"></i>COD</span>`;
+            } else {
+                methodHtml = `<span class="fw-semibold text-dark">${escapeHtml(tx.paymentMethod)}</span>`;
+            }
+
+            // Định dạng thời gian LocalDateTime sang định dạng dd/MM/yyyy HH:mm:ss
+            let formattedTime = "";
+            if (tx.transactionTime) {
+                const dt = new Date(tx.transactionTime);
+                if (!isNaN(dt.getTime())) {
+                    const day = String(dt.getDate()).padStart(2, '0');
+                    const month = String(dt.getMonth() + 1).padStart(2, '0');
+                    const year = dt.getFullYear();
+                    const hours = String(dt.getHours()).padStart(2, '0');
+                    const minutes = String(dt.getMinutes()).padStart(2, '0');
+                    const seconds = String(dt.getSeconds()).padStart(2, '0');
+                    formattedTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+                }
+            }
+
+            tr.innerHTML = `
+                <td class="text-center fw-bold text-secondary">${escapeHtml(tx.invoiceCode)}</td>
+                <td><div class="fw-bold text-dark">${escapeHtml(tx.customerName)}</div></td>
+                <td class="text-muted" style="font-size: 0.85rem;">${formattedTime}</td>
+                <td>${methodHtml}</td>
+                <td><code class="text-dark bg-light px-2 py-1 rounded" style="font-size: 0.8rem;">${escapeHtml(tx.transactionId)}</code></td>
+                <td class="text-end fw-bold text-danger">${formatVND(tx.amount)}</td>
+                <td class="text-center">${statusBadge}</td>
             `;
             tbody.appendChild(tr);
         });

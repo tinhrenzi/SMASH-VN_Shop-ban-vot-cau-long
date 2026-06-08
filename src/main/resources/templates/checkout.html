@@ -80,9 +80,9 @@
             color: #ff4500;
             background-color: rgba(255, 69, 0, 0.1);
         }
-        .icon-zalopay {
-            color: #0084ff;
-            background-color: rgba(0, 132, 255, 0.1);
+        .icon-sepay {
+            color: #ff4500;
+            background-color: rgba(255, 69, 0, 0.1);
         }
         .payment-card-info {
             flex-grow: 1;
@@ -326,7 +326,7 @@
                                         <label class="gl-label" for="idDonViVanChuyen">ĐƠN VỊ VẬN CHUYỂN *</label>
                                         <select class="select-box select-box--primary-style" id="idDonViVanChuyen" name="idDonViVanChuyen" required>
                                             <option value="" disabled selected>Chọn đơn vị vận chuyển...</option>
-                                            <option th:each="dvvc : ${listDvvc}" th:value="${dvvc.id}" th:text="${dvvc.tenDonVi} + ' (Phí ship: 30,000 đ)'"></option>
+                                            <option th:each="dvvc : ${listDvvc}" th:value="${dvvc.id}" th:text="${dvvc.tenDonVi}"></option>
                                         </select>
                                     </div>
                                     <div class="u-s-m-b-15">
@@ -393,14 +393,14 @@
                                             <div class="card-radio"></div>
                                         </div>
 
-                                        <!-- ZaloPay Card -->
-                                        <div class="payment-card" data-value="ZaloPay">
-                                            <div class="payment-card-icon icon-zalopay">
-                                                <i class="wallet-icon"><img th:src="@{/images/favicon.png}" style="width: 28px; height: 28px; object-fit: contain; filter: brightness(0) saturate(100%) invert(43%) sepia(87%) saturate(1478%) hue-rotate(186deg) brightness(101%) contrast(101%);" alt="zp"></i>
+                                        <!-- SePay Card -->
+                                        <div class="payment-card" data-value="SePay">
+                                            <div class="payment-card-icon icon-sepay">
+                                                <i class="fas fa-qrcode text-brand" style="color: #ff4500; font-size: 26px;"></i>
                                             </div>
                                             <div class="payment-card-info">
-                                                <div class="payment-card-title">ZaloPay</div>
-                                                <div class="payment-card-desc">Ví điện tử / QR Code</div>
+                                                <div class="payment-card-title">Chuyển khoản Ngân hàng (SePay)</div>
+                                                <div class="payment-card-desc">Quét mã QR tự động xác nhận</div>
                                             </div>
                                             <div class="card-radio"></div>
                                         </div>
@@ -422,32 +422,35 @@
         <div th:replace="~{layout/modals :: all-modals}"></div>
     </div>
 
-    <!-- ZaloPay Payment Modal overlay -->
+    <!-- SePay Payment Modal overlay -->
     <div class="zp-modal-overlay" id="zp-modal-overlay">
         <div class="zp-modal">
             <div class="zp-modal-header">
                 <div class="zp-modal-title">
-                    <img th:src="@{/images/favicon.png}" style="width: 24px; height: 24px; object-fit: contain;" alt="ZaloPay Logo">
-                    <span>Thanh toán qua ZaloPay</span>
+                    <i class="fas fa-university text-brand" style="color: #ff4500; font-size: 20px;"></i>
+                    <span>Chuyển khoản Ngân hàng (SePay)</span>
                 </div>
                 <button class="zp-modal-close" id="zp-close-btn">&times;</button>
             </div>
             <div class="zp-modal-body">
-                <p class="u-s-m-b-15" style="font-size: 14px; color: #475569;">Quét mã QR dưới đây bằng ứng dụng ZaloPay hoặc Camera điện thoại để thanh toán</p>
+                <p class="u-s-m-b-15" style="font-size: 13px; color: #475569;">Quét mã QR dưới đây bằng bất kỳ ứng dụng Ngân hàng (Mobile Banking) để thanh toán chuyển khoản tự động.</p>
                 
                 <div class="zp-qr-container">
-                    <img src="" alt="Mã QR ZaloPay" class="zp-qr-image" id="zp-qr-img">
+                    <img src="" alt="Mã QR Chuyển khoản" class="zp-qr-image" id="zp-qr-img" style="width: 200px; height: 200px; object-fit: contain;">
                 </div>
 
-                <div class="u-s-m-b-10" style="font-size: 16px; font-weight: 700; color: #ff4500;">
+                <div class="u-s-m-b-10" style="font-size: 15px; font-weight: 700; color: #ff4500;">
                     Tổng tiền: <span id="zp-modal-amount">0 đ</span>
                 </div>
-
-                <a href="#" target="_blank" class="zp-btn-pay" id="zp-deeplink-btn">Thanh toán qua app ZaloPay</a>
+                <div class="u-s-m-b-15" style="font-size: 13px; background-color: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: left;">
+                    <div><strong>Ngân hàng:</strong> <span th:text="${sepayBankName}">Vietcombank</span></div>
+                    <div><strong>Số tài khoản:</strong> <span th:text="${sepayBankAccount}">1234567890</span></div>
+                    <div><strong>Nội dung CK:</strong> <span id="sepay-modal-memo" style="color: #ff4500; font-weight: bold;">DH...</span></div>
+                </div>
 
                 <div class="zp-spinner" id="zp-spinner-loading"></div>
                 <div class="zp-status-text zp-status-pending" id="zp-status-msg">
-                    <i class="fas fa-spinner fa-spin"></i> Đang chờ bạn thanh toán...
+                    <i class="fas fa-spinner fa-spin"></i> Đang chờ hệ thống ghi nhận chuyển khoản...
                 </div>
             </div>
         </div>
@@ -484,7 +487,7 @@
                     const details = addressMap[addressId];
                     $('#hoTenNhan').val(details.hoTen);
                     $('#sdtNhan').val(details.sdt);
-                    $('#diaChiNhan').val(details.diaChi);
+                    $('#diaChiNhan').val(details.diaChi).trigger('change');
                 }
             });
 
@@ -499,7 +502,7 @@
                     // Clear the shipping input fields for manual entry
                     $('#hoTenNhan').val('');
                     $('#sdtNhan').val('');
-                    $('#diaChiNhan').val('');
+                    $('#diaChiNhan').val('').trigger('change');
                 }
             });
 
@@ -517,22 +520,55 @@
                 $('#phuongThucThanhToan').val(pMethod);
             });
 
-            // Recalculate Shipping Fee
-            $('#idDonViVanChuyen').on('change', function() {
-                const selectedVal = $(this).val();
-                if (selectedVal) {
-                    const shipFee = 30000;
-                    const formattedShipFee = new Intl.NumberFormat('vi-VN').format(shipFee) + ' đ';
-                    $('.js-ship-fee').text(formattedShipFee);
-                    
-                    const totalAmount = baseTongTien + shipFee;
-                    const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
-                    $('.js-checkout-total').text(formattedTotal);
-                } else {
+            // Recalculate Shipping Fee dynamically
+            let pendingShippingRequest = null;
+            let debounceTimeout = null;
+
+            function calculateShippingFee() {
+                const carrierId = $('#idDonViVanChuyen').val();
+                const address = $('#diaChiNhan').val().trim();
+
+                if (!carrierId) {
                     $('.js-ship-fee').text('0 đ');
                     const formattedTotal = new Intl.NumberFormat('vi-VN').format(baseTongTien) + ' đ';
                     $('.js-checkout-total').text(formattedTotal);
+                    return;
                 }
+
+                // Abort any pending requests to prevent race conditions
+                if (pendingShippingRequest) {
+                    pendingShippingRequest.abort();
+                }
+
+                pendingShippingRequest = $.ajax({
+                    url: '/api/shipping/fee',
+                    type: 'GET',
+                    data: {
+                        carrierId: carrierId,
+                        address: address
+                    },
+                    success: function(response) {
+                        const fee = response.shippingFee;
+                        const formattedFee = new Intl.NumberFormat('vi-VN').format(fee) + ' đ';
+                        $('.js-ship-fee').text(formattedFee);
+
+                        const totalAmount = baseTongTien + fee;
+                        const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
+                        $('.js-checkout-total').text(formattedTotal);
+                    },
+                    error: function(xhr, status, error) {
+                        if (status !== 'abort') {
+                            console.error("Lỗi tính phí vận chuyển:", error);
+                        }
+                    }
+                });
+            }
+
+            $('#idDonViVanChuyen').on('change', calculateShippingFee);
+
+            $('#diaChiNhan').on('input change', function() {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(calculateShippingFee, 300);
             });
 
             // Form Submit Interceptor
@@ -584,8 +620,8 @@
                                 alert('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.');
                                 window.location.href = '/user/my-order';
                             } else {
-                                // ZaloPay payment method selected
-                                createZaloPayOrder(orderId, response.tongTien);
+                                // Redirect directly to simulated SePay gateway
+                                window.location.href = '/payment/sepay/simulate?maDonHang=' + encodeURIComponent(response.maDonHang);
                             }
                         } else {
                             alert('Đặt hàng thất bại: ' + response.message);
@@ -598,67 +634,56 @@
                 });
             });
 
-            function createZaloPayOrder(orderId, amount) {
-                $('.preloader').addClass('is-active');
+            function createSePayOrder(orderId, maDonHang, amount) {
+                attempts = 0;
 
-                $.ajax({
-                    url: '/api/payment/zalopay/create',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ orderId: orderId }),
-                    success: function(resp) {
-                        $('.preloader').removeClass('is-active');
-                        
-                        if (resp.status === 'PENDING') {
-                            currentAppTransId = resp.appTransId;
-                            attempts = 0;
+                // Build VietQR image URL
+                const sepayAcc = /*[[${sepayBankAccount}]]*/ '';
+                const sepayBank = /*[[${sepayBankName}]]*/ '';
+                const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
+                
+                // Formulate the full memo with optional prefix
+                const fullMemo = sepayPrefix ? (sepayPrefix.trim() + ' ' + maDonHang) : maDonHang;
+                
+                const qrUrl = 'https://qr.sepay.vn/img?acc=' + sepayAcc + 
+                              '&bank=' + encodeURIComponent(sepayBank) + 
+                              '&amount=' + amount + 
+                              '&des=' + encodeURIComponent(fullMemo);
 
-                            // Update Modal details
-                            $('#zp-qr-img').attr('src', 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(resp.paymentUrl));
-                            $('#zp-deeplink-btn').attr('href', resp.paymentUrl);
-                            $('#zp-modal-amount').text(new Intl.NumberFormat('vi-VN').format(amount) + ' đ');
+                // Update Modal details
+                $('#zp-qr-img').attr('src', qrUrl);
+                $('#zp-modal-amount').text(new Intl.NumberFormat('vi-VN').format(amount) + ' đ');
+                $('#sepay-modal-memo').text(fullMemo);
 
-                            // Reset status view
-                            $('#zp-spinner-loading').show();
-                            $('#zp-status-msg').removeClass('zp-status-success zp-status-error').addClass('zp-status-pending')
-                                .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ bạn thanh toán...');
-                            
-                            // Show modal
-                            $('#zp-modal-overlay').addClass('active');
+                // Reset status view
+                $('#zp-spinner-loading').show();
+                $('#zp-status-msg').removeClass('zp-status-success zp-status-error').addClass('zp-status-pending')
+                    .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ hệ thống ghi nhận chuyển khoản...');
+                
+                // Show modal
+                $('#zp-modal-overlay').addClass('active');
 
-                            // Start polling every 5 seconds
-                            pollingInterval = setInterval(function() {
-                                queryPaymentStatus(resp.appTransId);
-                            }, 5000);
-                        } else {
-                            alert('Không thể khởi tạo giao dịch ZaloPay. Vui lòng thử lại.');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        $('.preloader').removeClass('is-active');
-                        alert('Đã xảy ra lỗi khởi tạo ZaloPay: ' + error);
-                    }
-                });
+                // Start polling every 5 seconds
+                pollingInterval = setInterval(function() {
+                    queryPaymentStatus(maDonHang);
+                }, 5000);
             }
 
-            function queryPaymentStatus(appTransId) {
+            function queryPaymentStatus(maDonHang) {
                 attempts++;
-                if (attempts > 30) {
-                    // Timeout
+                if (attempts > 60) { // 60 attempts * 5 seconds = 300 seconds (5 minutes)
                     clearInterval(pollingInterval);
-                    cancelZaloPayOrder(appTransId);
-                    
                     $('#zp-spinner-loading').hide();
                     $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
-                        .html('<i class="fas fa-exclamation-triangle"></i> Giao dịch hết hạn thanh toán (Quá 2.5 phút). Vui lòng thử lại!');
+                        .html('<i class="fas fa-exclamation-triangle"></i> Chúng tôi vẫn đang chờ xác nhận thanh toán. Bạn có thể kiểm tra lại trong trang đơn hàng.');
                     return;
                 }
 
                 $.ajax({
-                    url: '/api/payment/zalopay/query/' + appTransId,
+                    url: '/api/payment/sepay/query/' + maDonHang,
                     type: 'GET',
                     success: function(resp) {
-                        if (resp.status === 'PAID') {
+                        if (resp.paymentStatus === 'paid') {
                             clearInterval(pollingInterval);
                             $('#zp-spinner-loading').hide();
                             $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
@@ -666,13 +691,8 @@
                             
                             // Redirect after 2 seconds
                             setTimeout(function() {
-                                window.location.href = '/user/my-order';
+                                window.location.href = '/user/my-order?payment=success';
                             }, 2000);
-                        } else if (resp.status === 'FAILED' || resp.status === 'CANCELLED' || resp.status === 'EXPIRED') {
-                            clearInterval(pollingInterval);
-                            $('#zp-spinner-loading').hide();
-                            $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
-                                .html('<i class="fas fa-times-circle"></i> Giao dịch thất bại, đã bị hủy hoặc hết hạn.');
                         }
                     },
                     error: function() {
@@ -681,28 +701,11 @@
                 });
             }
 
-            function cancelZaloPayOrder(appTransId) {
-                $.ajax({
-                    url: '/api/payment/zalopay/cancel/' + appTransId,
-                    type: 'POST',
-                    success: function() {
-                        console.log('AppTransId ' + appTransId + ' cancelled successfully.');
-                    },
-                    error: function() {
-                        console.error('Failed to cancel order: ' + appTransId);
-                    }
-                });
-            }
-
             // Close Modal handler
             $('#zp-close-btn').on('click', function() {
-                if (confirm('Bạn có chắc chắn muốn hủy giao dịch thanh toán ZaloPay này? Đơn hàng sẽ ở trạng thái chờ thanh toán.')) {
+                if (confirm('Bạn có chắc chắn muốn thoát khỏi màn hình thanh toán này? Đơn hàng sẽ ở trạng thái chờ thanh toán.')) {
                     if (pollingInterval) clearInterval(pollingInterval);
-                    if (currentAppTransId) {
-                        cancelZaloPayOrder(currentAppTransId);
-                    }
                     $('#zp-modal-overlay').removeClass('active');
-                    // Redirect to my-order so they can retry or pay later
                     window.location.href = '/user/my-order';
                 }
             });

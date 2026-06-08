@@ -17,7 +17,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             // Kích hoạt lại bảo mật CSRF
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat", "/admin/dang-xuat", "/api/payment/zalopay/callback"))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat", "/admin/dang-xuat", "/api/payment/zalopay/callback", "/api/payment/sepay/ipn"))
             // Cấu hình các Header bảo mật nâng cao
             .headers(headers -> {
                 headers.frameOptions(frame -> frame.deny());
@@ -36,11 +36,13 @@ public class SecurityConfig {
                 .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")
                 .requestMatchers("/admin/thong-ke", "/admin/thong-ke/**").hasRole("QL")
                 
+                .requestMatchers("/admin/shipping-config", "/admin/shipping-config/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/don-hang", "/admin/don-hang/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/san-pham", "/admin/san-pham/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/danh-muc", "/admin/danh-muc/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/pos", "/admin/pos/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/khach-hang", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/transactions", "/admin/transactions/**").hasAnyRole("QL", "NV")
                 
                 // Các trang quản trị còn lại chỉ dành cho QL
                 .requestMatchers("/admin", "/admin/**").hasRole("QL")
