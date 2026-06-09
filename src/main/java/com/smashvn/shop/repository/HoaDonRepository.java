@@ -20,6 +20,8 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
     java.util.Optional<HoaDon> findByMaDonHang(String maDonHang);
 
+    java.util.Optional<HoaDon> findByGhnOrderCode(String ghnOrderCode);
+
     @Query("SELECT hd FROM HoaDon hd WHERE hd.maDonHang = :maDonHang OR REPLACE(REPLACE(hd.maDonHang, '-', ''), '_', '') = :normalizedMaDonHang")
     java.util.Optional<HoaDon> findByMaDonHangOrNormalized(
             @Param("maDonHang") String maDonHang,

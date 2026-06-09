@@ -35,6 +35,7 @@ public class SepayGatewayService implements PaymentGatewayService {
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final AuditService auditService;
+    private final GhnService ghnService;
 
     @Override
     @Transactional
@@ -157,6 +158,26 @@ public class SepayGatewayService implements PaymentGatewayService {
                     "[PAYMENT_CONFIRMED] Payment success callback handled. Order stock deducted. Cart items removed.", "SYSTEM");
 
             log.info("SePay IPN: Payment successfully applied to order {}", orderCode);
+
+            // Tạo đơn GHN nếu đơn hàng đã có thông tin địa chỉ GHN
+            if (order.getGhnToDistrictId() != null && order.getGhnToWardCode() != null
+                    && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
+                try {
+                    String ghnCode = ghnService.createShippingOrder(
+                            order, orderItems, order.getGhnToDistrictId(), order.getGhnToWardCode());
+                    if (ghnCode != null) {
+                        order.setGhnOrderCode(ghnCode);
+                        order.setGhnStatus("ready_to_pick");
+                        hoaDonRepository.save(order);
+                        log.info("[GHN] Tạo đơn vận chuyển GHN sau SePay thành công: orderId={}, ghnCode={}",
+                                order.getId(), ghnCode);
+                    }
+                } catch (Exception ghnEx) {
+                    log.error("[GHN] Lỗi tạo đơn GHN sau SePay: orderId={}, error={}",
+                            order.getId(), ghnEx.getMessage());
+                    // Không throw – lỗi GHN không làm hỏng thanh toán
+                }
+            }
         } else {
             // STOCK_CONFLICT: Payment succeeded but stock is depleted
             log.error("[SYSTEM_ALERT] SePay payment succeeded for order {} but inventory is insufficient! Setting status to stock_conflict.", orderCode);

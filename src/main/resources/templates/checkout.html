@@ -322,6 +322,25 @@
                                         <label class="gl-label" for="diaChiNhan">ĐỊA CHỈ NHẬN HÀNG *</label>
                                         <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Số nhà, tên đường, xã/phường, quận/huyện, tỉnh/thành...">
                                     </div>
+                                    <!-- GHN Address Dropdowns -->
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="ghnProvinceId">TỈNH/THÀNH PHỐ (GHN)</label>
+                                        <select class="select-box select-box--primary-style" id="ghnProvinceId">
+                                            <option value="">-- Chọn tỉnh/thành (tuỳ chọn) --</option>
+                                        </select>
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="ghnDistrictId">QUẬN/HUYỆN (GHN)</label>
+                                        <select class="select-box select-box--primary-style" id="ghnDistrictId" name="ghnToDistrictId" disabled>
+                                            <option value="">-- Chọn quận/huyện --</option>
+                                        </select>
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <label class="gl-label" for="ghnWardCode">PHƯỜNG/XÃ (GHN)</label>
+                                        <select class="select-box select-box--primary-style" id="ghnWardCode" name="ghnToWardCode" disabled>
+                                            <option value="">-- Chọn phường/xã --</option>
+                                        </select>
+                                    </div>
                                     <div class="u-s-m-b-15">
                                         <label class="gl-label" for="idDonViVanChuyen">ĐƠN VỊ VẬN CHUYỂN *</label>
                                         <select class="select-box select-box--primary-style" id="idDonViVanChuyen" name="idDonViVanChuyen" required>
@@ -564,7 +583,21 @@
                 });
             }
 
-            $('#idDonViVanChuyen').on('change', calculateShippingFee);
+            $('#idDonViVanChuyen').on('change', function() {
+                calculateShippingFee();
+                
+                const carrierText = $('#idDonViVanChuyen option:selected').text().toUpperCase();
+                const isGhn = carrierText.includes('GIAO HÀNG NHANH') || carrierText.includes('GHN');
+                if (isGhn) {
+                    $('label[for="ghnProvinceId"]').html('TỈNH/THÀNH PHỐ (GHN) <span style="color:red">*</span>');
+                    $('label[for="ghnDistrictId"]').html('QUẬN/HUYỆN (GHN) <span style="color:red">*</span>');
+                    $('label[for="ghnWardCode"]').html('PHƯỜNG/XÃ (GHN) <span style="color:red">*</span>');
+                } else {
+                    $('label[for="ghnProvinceId"]').text('TỈNH/THÀNH PHỐ (GHN)');
+                    $('label[for="ghnDistrictId"]').text('QUẬN/HUYỆN (GHN)');
+                    $('label[for="ghnWardCode"]').text('PHƯỜNG/XÃ (GHN)');
+                }
+            });
 
             $('#diaChiNhan').on('input change', function() {
                 clearTimeout(debounceTimeout);
@@ -592,6 +625,19 @@
                     return;
                 }
 
+                // Validate GHN fields if Giao Hàng Nhanh is selected
+                const carrierText = $('#idDonViVanChuyen option:selected').text().toUpperCase();
+                const isGhn = carrierText.includes('GIAO HÀNG NHANH') || carrierText.includes('GHN');
+                if (isGhn) {
+                    const provinceVal = $('#ghnProvinceId').val();
+                    const districtVal = $('#ghnDistrictId').val();
+                    const wardVal = $('#ghnWardCode').val();
+                    if (!provinceVal || !districtVal || !wardVal) {
+                        alert('Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.');
+                        return;
+                    }
+                }
+
                 // Call submitCheckout
                 const submitData = {
                     hoTenNhan: hoTen,
@@ -599,7 +645,9 @@
                     diaChiNhan: diaChi,
                     idDonViVanChuyen: parseInt(dvvcId),
                     phuongThucThanhToan: paymentMethod,
-                    ghiChu: ghiChu
+                    ghiChu: ghiChu,
+                    ghnToDistrictId: $('#ghnDistrictId').val() || '',
+                    ghnToWardCode: $('#ghnWardCode').val() || ''
                 };
 
                 // Loader
@@ -708,6 +756,105 @@
                     $('#zp-modal-overlay').removeClass('active');
                     window.location.href = '/user/my-order';
                 }
+            });
+        });
+    </script>
+
+    <!-- GHN Address Dropdowns Script -->
+    <script th:inline="none">
+        $(document).ready(function() {
+            // ── Load danh sách tỉnh/thành từ GHN ────────────────────────────────────
+            $.ajax({
+                url: '/api/ghn/provinces',
+                type: 'GET',
+                success: function(resp) {
+                    if (resp.status === 'ok' && resp.data) {
+                        const $sel = $('#ghnProvinceId');
+                        resp.data.sort(function(a, b) {
+                            return (a.ProvinceName || '').localeCompare(b.ProvinceName || '', 'vi');
+                        }).forEach(function(p) {
+                            $sel.append($('<option>').val(p.ProvinceID).text(p.ProvinceName));
+                        });
+                    }
+                },
+                error: function() {
+                    console.warn('[GHN] Không thể tải danh sách tỉnh/thành');
+                }
+            });
+
+            // ── Khi chọn tỉnh → load quận/huyện ─────────────────────────────────────
+            $('#ghnProvinceId').on('change', function() {
+                const provinceId = $(this).val();
+                const $distSel = $('#ghnDistrictId');
+                const $wardSel = $('#ghnWardCode');
+
+                $distSel.html('<option value="">-- Chọn quận/huyện --</option>').prop('disabled', true);
+                $wardSel.html('<option value="">-- Chọn phường/xã --</option>').prop('disabled', true);
+
+                if (!provinceId) return;
+
+                $.ajax({
+                    url: '/api/ghn/districts?provinceId=' + provinceId,
+                    type: 'GET',
+                    success: function(resp) {
+                        if (resp.status === 'ok' && resp.data) {
+                            resp.data.forEach(function(d) {
+                                $distSel.append($('<option>').val(d.DistrictID).text(d.DistrictName));
+                            });
+                            $distSel.prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        console.warn('[GHN] Không thể tải danh sách quận/huyện');
+                    }
+                });
+            });
+
+            // ── Khi chọn quận/huyện → load phường/xã ────────────────────────────────
+            $('#ghnDistrictId').on('change', function() {
+                const districtId = $(this).val();
+                const $wardSel = $('#ghnWardCode');
+                $wardSel.html('<option value="">-- Chọn phường/xã --</option>').prop('disabled', true);
+
+                if (!districtId) return;
+
+                $.ajax({
+                    url: '/api/ghn/wards?districtId=' + districtId,
+                    type: 'GET',
+                    success: function(resp) {
+                        if (resp.status === 'ok' && resp.data) {
+                            resp.data.forEach(function(w) {
+                                $wardSel.append($('<option>').val(w.WardCode).text(w.WardName));
+                            });
+                            $wardSel.prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        console.warn('[GHN] Không thể tải danh sách phường/xã');
+                    }
+                });
+            });
+
+            // ── Khi chọn xong phường/xã → tính lại phí ship GHN ─────────────────────
+            $('#ghnWardCode').on('change', function() {
+                const districtId = $('#ghnDistrictId').val();
+                const wardCode = $(this).val();
+                if (!districtId || !wardCode) return;
+
+                $.ajax({
+                    url: '/api/ghn/fee',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ toDistrictId: parseInt(districtId), toWardCode: wardCode }),
+                    success: function(resp) {
+                        if (resp.status === 'ok') {
+                            // Cập nhật hiển thị phí ship nếu có element
+                            if ($('#shipping-fee-ghn').length) {
+                                $('#shipping-fee-ghn').text(resp.feeFormatted);
+                            }
+                        }
+                    }
+                });
             });
         });
     </script>
