@@ -39,6 +39,11 @@ public class SepaySimulationController {
         }
 
         HoaDon hd = orderOpt.get();
+        if ("DA_THANH_TOAN".equals(hd.getTrangThaiThanhToan()) || "paid".equals(hd.getPaymentStatus())) {
+            log.info("Order {} is already paid. Redirecting to order history.", maDonHang);
+            return "redirect:/user/my-order?payment=already_paid";
+        }
+
         model.addAttribute("order", hd);
         return "sepay-simulate";
     }
@@ -52,6 +57,17 @@ public class SepaySimulationController {
         log.info("Simulating successful SePay payment for order {}", maDonHang);
 
         try {
+            Optional<HoaDon> orderOpt = hoaDonRepository.findByMaDonHang(maDonHang);
+            if (orderOpt.isPresent()) {
+                HoaDon hd = orderOpt.get();
+                if ("DA_THANH_TOAN".equals(hd.getTrangThaiThanhToan()) || "paid".equals(hd.getPaymentStatus())) {
+                    log.info("Order {} is already paid. Skipping duplicate simulation processing.", maDonHang);
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", true);
+                    response.put("message", "Đơn hàng đã được thanh toán trước đó.");
+                    return ResponseEntity.ok(response);
+                }
+            }
             // Construct simulated transaction DTO
             SepayTransactionDto tx = new SepayTransactionDto();
             String transactionId = "SIM_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();

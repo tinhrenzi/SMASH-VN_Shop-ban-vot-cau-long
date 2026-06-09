@@ -218,7 +218,7 @@
             <!-- Left Side: QR Code -->
             <div class="col-lg-5 col-md-12 text-center d-flex flex-column justify-content-center">
                 <div class="qr-section">
-                    <img th:src="@{'https://qr.sepay.vn/img?acc=1234567890&bank=Vietcombank&amount=' + ${#numbers.formatDecimal(order.tongTien, 0, 0)} + '&des=' + ${order.maDonHang}}" 
+                    <img th:src="@{'https://qr.sepay.vn/img?acc=1234567890&bank=Vietcombank&amount=' + ${#numbers.formatDecimal(order.tongTien, 1, 'NONE', 0, 'POINT')} + '&des=' + ${order.maDonHang}}" 
                          alt="Mã QR Chuyển khoản" class="qr-img mb-3">
                     <div style="font-size: 0.85rem; color: #94a3b8;">
                         <i class="fas fa-qrcode me-1"></i> Quét để tự động điền thông tin chuyển khoản
@@ -292,6 +292,13 @@
     const orderCode = /*[[${order != null ? order.maDonHang : ''}]]*/ '';
     const amountVal = /*[[${order != null ? order.tongTien : 0}]]*/ 0;
     /*]]>*/
+
+    // Force page reload when loaded from cache/history (e.g. Back button)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            window.location.reload();
+        }
+    });
 
     $(document).ready(function() {
         // CSRF Setup

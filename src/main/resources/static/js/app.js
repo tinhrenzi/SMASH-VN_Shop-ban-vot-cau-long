@@ -602,13 +602,13 @@ function checkAndApplyVariant(container) {
     const stockStatus = container.querySelector('.js-stock-status');
     const inputId = container.querySelector('.js-variant-id');
     const quantityInput = container.querySelector('.js-quantity-input');
-    // Ưu tiên dùng id #js-display-price nếu có, fallback sang class
-    const priceDisplay = document.getElementById('js-display-price') || container.querySelector('.pd-detail__price');
+    // Tìm phần tử hiển thị giá và tồn kho bên trong container trước để tránh trùng lặp giữa trang chi tiết và quick-look modal
+    const priceDisplay = container.querySelector('.pd-detail__price') || document.getElementById('js-display-price');
     
-    // Panel tồn kho riêng (chỉ có ở trang chi tiết)
-    const stockInfoPanel = document.getElementById('js-variant-stock-info');
-    const stockCountEl = document.getElementById('js-variant-stock-count');
-    const stockBadgeEl = document.getElementById('js-variant-stock-badge');
+    // Panel tồn kho riêng
+    const stockInfoPanel = container.querySelector('.js-variant-stock-info') || document.getElementById('js-variant-stock-info');
+    const stockCountEl = container.querySelector('.js-variant-stock-count') || document.getElementById('js-variant-stock-count');
+    const stockBadgeEl = container.querySelector('.js-variant-stock-badge') || document.getElementById('js-variant-stock-badge');
 
     const selectedColor = container.getAttribute('data-selected-color');
     const selectedSize = container.getAttribute('data-selected-size');
@@ -666,10 +666,10 @@ function checkAndApplyVariant(container) {
             if (stockBadgeEl) {
                 if (conHang) {
                     stockBadgeEl.innerText = 'Còn hàng';
-                    stockBadgeEl.className = 'pd-detail__stock';
+                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
                 } else {
                     stockBadgeEl.innerText = 'Hết hàng';
-                    stockBadgeEl.className = 'pd-detail__left';
+                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
                 }
             }
         }

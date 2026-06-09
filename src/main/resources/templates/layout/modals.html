@@ -118,6 +118,13 @@
 	                                </div>
 	                                
 	                                <div class="js-stock-status u-s-m-b-15 text-danger fw-bold" style="display: none;"></div>
+	                                
+	                                <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
+	                                <div class="js-variant-stock-info u-s-m-b-15" style="display:none;">
+	                                    <span class="pd-detail__label">Kho: </span>
+	                                    <span class="js-variant-stock-count fw-bold"></span>
+	                                    <span class="js-variant-stock-badge pd-detail__stock" style="margin-left:8px;"></span>
+	                                </div>
 	                        
 	                                <div class="u-s-m-b-15">
 	                                    <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
