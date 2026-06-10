@@ -1113,15 +1113,17 @@ input::-ms-clear {
   color: #a0a0a0; }
 
 .product-o__price {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: #333333;
   font-size: 14px;
-  font-weight: 600; }
+  font-weight: 600;
+  white-space: nowrap; }
 
 .product-o__discount {
   font-weight: 600;
-  margin-left: 30px;
-  color: #333333;
+  color: #a0a0a0;
   font-size: 14px;
   text-decoration: line-through; }
 

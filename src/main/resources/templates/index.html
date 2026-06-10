@@ -265,8 +265,8 @@
 											    </div>
 											
 											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
-											        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-											        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+											        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+											        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
 											    </span>
 											    
 											</div>
@@ -364,8 +364,8 @@
                                     </div>
 
                                     <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
-                                        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                                        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
                                     </span>
                                 </div>
                             </div>
@@ -447,8 +447,8 @@
                                             <span class="product-o__review">(0)</span>
                                         </div>
                                         <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
-                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -566,8 +566,8 @@
 							        </span>
 							        
 							        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
-							            Từ <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
-							            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+							            Từ <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')}"></span> đ
+							            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
 							        </span>
 							    </div>
 							</div>

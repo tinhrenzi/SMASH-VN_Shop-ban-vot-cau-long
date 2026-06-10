@@ -1,7 +1,12 @@
 package com.smashvn.shop.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,25 +54,72 @@ public class HomeController {
     public String hienThiCuaHang(
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "brandId", required = false) Integer brandId,
+            @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort,
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "12") int size,
             Model model) {
-        
-        List<SanPham> danhSachSanPham;
-        if (categoryId != null) {
-            danhSachSanPham = sanPhamRepository.findByDanhMucId(categoryId);
-        } else if (brandId != null) {
-            danhSachSanPham = sanPhamRepository.findByThuongHieuId(brandId);
-        } else {
-            danhSachSanPham = sanPhamRepository.findAll();
+
+        // Xây dựng Sort dựa trên tham số sort
+        Sort sortOrder;
+        switch (sort) {
+            case "price_asc":
+                sortOrder = Sort.by(Sort.Direction.ASC, "id"); // sẽ sort bởi giá ở phía client hoặc dùng subquery
+                break;
+            case "price_desc":
+                sortOrder = Sort.by(Sort.Direction.DESC, "id");
+                break;
+            default: // newest
+                sortOrder = Sort.by(Sort.Direction.DESC, "id");
+                break;
         }
+
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        // Sử dụng query kết hợp nhiều điều kiện
+        Page<SanPham> productPage = sanPhamRepository.findByFilters(
+            categoryId, brandId, minPrice, maxPrice, pageable
+        );
+
+        // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
+        BigDecimal globalMinPrice = sanPhamRepository.findMinPrice();
+        BigDecimal globalMaxPrice = sanPhamRepository.findMaxPrice();
+        if (globalMinPrice == null) globalMinPrice = BigDecimal.ZERO;
+        if (globalMaxPrice == null) globalMaxPrice = new BigDecimal("10000000");
 
         List<DanhMuc> danhSachDanhMuc = danhMucRepository.findAll();
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
 
-        model.addAttribute("products", danhSachSanPham);
+        java.util.Map<Integer, Long> categoryCounts = new java.util.HashMap<>();
+        for (DanhMuc dm : danhSachDanhMuc) {
+            categoryCounts.put(dm.getId(), sanPhamRepository.countByDanhMucId(dm.getId()));
+        }
+
+        java.util.Map<Integer, Long> brandCounts = new java.util.HashMap<>();
+        for (ThuongHieu th : danhSachThuongHieu) {
+            brandCounts.put(th.getId(), sanPhamRepository.countByThuongHieuId(th.getId()));
+        }
+
+        long totalProductsCount = sanPhamRepository.count();
+
+        model.addAttribute("productPage", productPage);
+        model.addAttribute("products", productPage.getContent());
         model.addAttribute("categories", danhSachDanhMuc);
         model.addAttribute("brands", danhSachThuongHieu);
+        model.addAttribute("totalProductsCount", totalProductsCount);
+        model.addAttribute("categoryCounts", categoryCounts);
+        model.addAttribute("brandCounts", brandCounts);
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("selectedBrandId", brandId);
+        model.addAttribute("selectedMinPrice", minPrice != null ? minPrice : globalMinPrice);
+        model.addAttribute("selectedMaxPrice", maxPrice != null ? maxPrice : globalMaxPrice);
+        model.addAttribute("globalMinPrice", globalMinPrice);
+        model.addAttribute("globalMaxPrice", globalMaxPrice);
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", productPage.getTotalPages());
+        model.addAttribute("totalElements", productPage.getTotalElements());
 
         return "shop";
     }
@@ -96,3 +148,4 @@ public class HomeController {
         return "redirect:/";
     }
 }
+

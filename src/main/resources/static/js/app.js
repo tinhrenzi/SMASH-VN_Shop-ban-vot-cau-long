@@ -684,7 +684,11 @@ function checkAndApplyVariant(container) {
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if (btnAdd) {
             btnAdd.disabled = true;
-            btnAdd.innerText = 'THÊM VÀO GIỎ';
+            if (container.id === 'quick-look-modal-container') {
+                btnAdd.innerText = 'Add to Cart';
+            } else {
+                btnAdd.innerText = 'THÊM VÀO GIỎ';
+            }
             btnAdd.style.backgroundColor = '';
             btnAdd.style.borderColor = '';
         }
@@ -720,11 +724,19 @@ function checkAndApplyVariant(container) {
         if (btnAdd) {
             btnAdd.disabled = !conHang;
             if (conHang) {
-                btnAdd.innerText = 'THÊM VÀO GIỎ';
+                if (container.id === 'quick-look-modal-container') {
+                    btnAdd.innerText = 'Add to Cart';
+                } else {
+                    btnAdd.innerText = 'THÊM VÀO GIỎ';
+                }
                 btnAdd.style.backgroundColor = '';
                 btnAdd.style.borderColor = '';
             } else {
-                btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+                if (container.id === 'quick-look-modal-container') {
+                    btnAdd.innerText = 'Out of Stock';
+                } else {
+                    btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+                }
                 btnAdd.style.backgroundColor = '#a0a0a0';
                 btnAdd.style.borderColor = '#a0a0a0';
             }
@@ -743,12 +755,37 @@ function checkAndApplyVariant(container) {
                 stockCountEl.style.color = conHang ? '#009444' : '#ff4500';
             }
             if (stockBadgeEl) {
-                if (conHang) {
-                    stockBadgeEl.innerText = 'Còn hàng';
-                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                if (container.id === 'quick-look-modal-container') {
+                    if (conHang) {
+                        stockBadgeEl.innerText = soLuong + ' in stock';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                        stockBadgeEl.style.display = 'inline-block';
+                    } else {
+                        stockBadgeEl.innerText = 'Out of stock';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                        stockBadgeEl.style.display = 'inline-block';
+                    }
                 } else {
-                    stockBadgeEl.innerText = 'Hết hàng';
-                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                    if (conHang) {
+                        stockBadgeEl.innerText = 'Còn hàng';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                        stockBadgeEl.style.display = 'inline-block';
+                    } else {
+                        stockBadgeEl.innerText = 'Hết hàng';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                        stockBadgeEl.style.display = 'inline-block';
+                    }
+                }
+            }
+            
+            // Xử lý warning badge cho quick look
+            const lowStockEl = container.querySelector('.js-variant-low-stock');
+            if (lowStockEl) {
+                if (conHang && soLuong <= 5) {
+                    lowStockEl.innerText = 'Only ' + soLuong + ' left';
+                    lowStockEl.style.display = 'inline-block';
+                } else {
+                    lowStockEl.style.display = 'none';
                 }
             }
         }
@@ -795,7 +832,11 @@ function checkAndApplyVariant(container) {
         if (inputId) inputId.value = "";
         if (btnAdd) {
             btnAdd.disabled = true;
-            btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+            if (container.id === 'quick-look-modal-container') {
+                btnAdd.innerText = 'Out of Stock';
+            } else {
+                btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+            }
             btnAdd.style.backgroundColor = '#a0a0a0';
             btnAdd.style.borderColor = '#a0a0a0';
         }
@@ -1131,6 +1172,16 @@ function checkAndApplyVariant(container) {
           $container = $('<div id="custom-toast-container"></div>').appendTo('body');
       }
       
+      // Limit to 2 toasts. Hide/remove the oldest one.
+      var $activeToasts = $container.children('.custom-toast.show:not(.hiding)');
+      if ($activeToasts.length >= 2) {
+          var $oldest = $activeToasts.first();
+          $oldest.addClass('hiding').removeClass('show');
+          setTimeout(function() {
+              $oldest.remove();
+          }, 300);
+      }
+      
       var iconClass = 'fa-check-circle';
       if (type === 'error') {
           iconClass = 'fa-exclamation-circle';
@@ -1353,6 +1404,23 @@ function checkAndApplyVariant(container) {
           container = document.createElement('div');
           container.className = 'custom-toast-container';
           document.body.appendChild(container);
+      }
+      
+      // Limit to 2 toasts. Hide/remove the oldest one.
+      const activeToasts = container.querySelectorAll('.custom-toast.show:not(.hiding)');
+      if (activeToasts.length >= 2) {
+          const oldestToast = activeToasts[0];
+          oldestToast.classList.add('hiding');
+          oldestToast.classList.remove('show');
+          let removed = false;
+          const removeOldest = () => {
+              if (!removed) {
+                  removed = true;
+                  oldestToast.remove();
+              }
+          };
+          oldestToast.addEventListener('transitionend', removeOldest);
+          setTimeout(removeOldest, 400);
       }
       
       const toast = document.createElement('div');
