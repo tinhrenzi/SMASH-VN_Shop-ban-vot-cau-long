@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,39 +39,16 @@ public class AdminPaymentTransactionController {
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate,
-            HttpSession session,
-            Model model) {
-
-        String role = (String) session.getAttribute("vaiTro");
-        if (role == null) {
-            return "redirect:/admin/dang-nhap";
-        }
-
-        // Parse dates
-        LocalDateTime start = parseStartDate(startDate);
-        LocalDateTime end = parseEndDate(endDate);
-
-        // Filter transactions (clean, dynamic JPQL query)
-        List<PaymentTransaction> list = paymentTransactionRepository.filterTransactions(
-                cleanParam(orderCode),
-                cleanParam(transactionId),
-                cleanParam(status),
-                start,
-                end
-        );
-
-        // Security role checks: QL has export rights, NV is view-only
-        boolean isManager = "QL".equals(role);
-
-        model.addAttribute("danhSachGiaoDich", list);
-        model.addAttribute("orderCode", orderCode);
-        model.addAttribute("transactionId", transactionId);
-        model.addAttribute("status", status);
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-        model.addAttribute("isManager", isManager);
-
-        return "admin/transactions";
+            RedirectAttributes redirectAttributes) {
+        
+        redirectAttributes.addAttribute("orderCode", orderCode);
+        redirectAttributes.addAttribute("transactionId", transactionId);
+        redirectAttributes.addAttribute("status", status);
+        redirectAttributes.addAttribute("startDate", startDate);
+        redirectAttributes.addAttribute("endDate", endDate);
+        redirectAttributes.addAttribute("activeTab", "transactions");
+        
+        return "redirect:/admin/don-hang";
     }
 
     @GetMapping("/admin/transactions/export/excel")

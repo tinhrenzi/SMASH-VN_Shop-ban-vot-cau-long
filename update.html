@@ -62,6 +62,159 @@
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
+    <h2>62. Chức năng: Tích hợp Lịch sử Giao dịch SePay vào trang Quản lý Đơn hàng (Unified Order & SePay Transaction Management)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Loại bỏ tab riêng biệt trên sidebar:</strong> Loại bỏ đường dẫn "Giao dịch SePay" trong <code>sidebar.html</code> để tránh dư thừa và gom nhóm quản trị tập trung.</li>
+            <li><strong>Tích hợp song song bằng Bootstrap Tabs:</strong> Sử dụng hệ thống Bootstrap Nav Tabs/Pills trên trang <code>donhang-list.html</code> để tích hợp danh sách đơn hàng và danh sách giao dịch SePay trên cùng một giao diện.</li>
+            <li><strong>Hợp nhất dữ liệu ở Controller:</strong> Nâng cấp API Controller <code>AdminController.java</code> tại endpoint <code>/admin/don-hang</code> để truy vấn và truyền cả dữ liệu đơn hàng lẫn lịch sử giao dịch SePay (kèm theo bộ lọc nâng cao và mốc thời gian nhận).</li>
+            <li><strong>Đảm bảo khả năng tương thích ngược:</strong> Chuyển hướng (Redirect) các request gửi tới endpoint cũ <code>/admin/transactions</code> sang <code>/admin/don-hang?activeTab=transactions</code> cùng đầy đủ các tham số lọc tìm kiếm, tránh đứt gãy trải nghiệm người dùng hoặc hỏng bookmark cũ.</li>
+            <li><strong>Tải payload chi tiết an toàn:</strong> Sử dụng thuộc tính HTML5 <code>data-*</code> để truyền payload JSON thô của webhook vào modal hiển thị thay vì nội suy Javascript chuỗi trực tiếp, loại bỏ hoàn toàn các lỗi cú pháp khi dữ liệu chứa ký tự đặc biệt.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/layout/sidebar.html</code> &mdash; Xóa bỏ liên kết Giao dịch SePay.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/donhang-list.html</code> &mdash; Thiết lập Bootstrap Pills tabs, tích hợp bảng lịch sử giao dịch SePay, form lọc tìm kiếm và modal hiển thị raw JSON callback payload.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/AdminController.java</code> &mdash; Tích hợp nạp dữ liệu giao dịch SePay, xử lý bộ lọc thời gian và xác định tab hiển thị mặc định.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/AdminPaymentTransactionController.java</code> &mdash; Cấu hình redirect endpoint <code>/admin/transactions</code> về trang đơn hàng.</li>
+        </ul>
+    </div>
+
+    <h2>61. Chức năng: Hiển thị Đơn hàng Thanh toán Online & Đồng bộ Sản phẩm Trang chủ (Admin Online Order Display & Homepage Product Sync)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Hiển thị mã giao dịch trong danh sách:</strong> Bổ sung cột hiển thị mã giao dịch <code>maGiaoDich</code> dưới mục phương thức thanh toán trong danh sách đơn hàng Admin, giúp dễ dàng nhận diện đơn hàng thanh toán online (SePay/ZaloPay).</li>
+            <li><strong>Cải tiến bộ lọc tìm kiếm đơn hàng:</strong> Cập nhật hàm JavaScript <code>filterOrders()</code> để quét thêm nội dung trong cột "Thanh toán", cho phép Admin tìm kiếm nhanh các đơn hàng theo mã giao dịch chuyển khoản hoặc theo phương thức thanh toán (như <code>sepay</code>, <code>cod</code>, <code>zalopay</code>).</li>
+            <li><strong>Hiển thị mã giao dịch trong Modal Chi tiết:</strong> Cập nhật API endpoint <code>/admin/don-hang/detail-json</code> trả về trường <code>maGiaoDich</code> và hiển thị trực tiếp trong Modal chi tiết đơn hàng dạng AJAX.</li>
+            <li><strong>Đồng bộ sản phẩm động trang chủ:</strong> Thay thế toàn bộ sản phẩm đồ điện tử hardcoded tĩnh trong mục "ƯU ĐÃI TRONG NGÀY" (Deals of the day) và "SẢN PHẨM MỚI" (New arrivals) trên trang chủ bằng việc truy vấn động từ danh sách <code>products</code> trong database thông qua Thymeleaf loops.</li>
+            <li><strong>Khắc phục liên kết "Chi tiết" bị hỏng:</strong> Thay thế tất cả các link cứng <code>/product-detail.html</code> (trước đây tự động chuyển hướng ngược về trang chủ) bằng link động <code>/san-pham/{id}</code> trỏ chính xác đến trang chi tiết sản phẩm.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/donhang-list.html</code> &mdash; Hiển thị mã giao dịch ở danh sách và modal chi tiết; nâng cấp hàm <code>filterOrders()</code> để lọc theo cột thanh toán.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/AdminController.java</code> &mdash; Bổ sung trường <code>maGiaoDich</code> vào đối tượng JSON phản hồi chi tiết đơn hàng.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/index.html</code> &mdash; Chuyển đổi các danh mục sản phẩm trang chủ sang Thymeleaf lặp động và cập nhật đường dẫn chi tiết sản phẩm sang URL động.</li>
+        </ul>
+    </div>
+
+    <h2>60. Chức năng: Khắc phục lỗi nút Chi tiết và hiển thị danh sách đơn hàng Admin (Admin Order List &amp; Detail Modal Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Khắc phục lỗi nút Chi tiết không hoạt động:</strong> Thay đổi thuộc tính thẻ script từ <code>th:inline="javascript"</code> sang <code>th:inline="none"</code> trong trang <code>donhang-list.html</code>. Việc này ngăn chặn Thymeleaf tự động thông dịch sai các biểu thức nội suy chuỗi ES6 (như <code>${item.tenSanPham}</code>) thành biểu thức Thymeleaf trên máy chủ gây lỗi SpEL và làm ngắt quãng (truncate) phản hồi HTML.</li>
+            <li><strong>Khắc phục lỗi ngắt quãng trang danh sách đơn hàng:</strong> Cấu hình null-safe cho việc hiển thị và format giá trị <code>tongTien</code> (<code>hd.tongTien != null ? ... : '0 đ'</code>) cùng các biểu thức trạng thái đơn hàng trong vòng lặp Thymeleaf, giúp trang web render đầy đủ toàn bộ danh sách đơn hàng từ CSDL mà không bị ngắt quãng giữa chừng khi gặp dữ liệu bị khuyết.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/donhang-list.html</code> &mdash; Cập nhật thẻ script thành <code>th:inline="none"</code> và làm cho hiển thị <code>tongTien</code>, so sánh trạng thái đơn hàng trở nên null-safe.</li>
+        </ul>
+    </div>
+
+    <h2>59. Chức năng: Tự động hóa quy trình thanh toán SePay QR &amp; Loại bỏ nút mô phỏng (Automated SePay QR Payment Flow &amp; Simulation Controls Removal)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tự động hóa kiểm tra và cập nhật trạng thái:</strong> Thiết lập cơ chế polling tự động bằng JavaScript gửi yêu cầu HTTP GET đến endpoint <code>/api/payment/sepay/query/{maDonHang}</code> mỗi 3 giây một lần.</li>
+            <li><strong>Chuyển đổi trạng thái tự động và điều hướng:</strong> Khi SePay webhook cập nhật đơn hàng thành công (<code>paymentStatus</code> chuyển thành <code>paid</code>), trang web tự động khóa giao diện bằng overlay báo "Thanh toán thành công!" và chuyển hướng khách hàng sang <code>/user/my-order?payment=success</code> sau 2 giây.</li>
+            <li><strong>Giao diện thanh toán chuyên nghiệp:</strong> Xóa bỏ hoàn toàn nút bấm "MÔ PHỎNG THANH TOÁN THÀNH CÔNG" và nhãn <code>SANDBOX SIMULATOR</code>. Người dùng chỉ nhìn thấy thông tin chuyển khoản ngân hàng và mã VietQR.</li>
+            <li><strong>Chỉ báo trạng thái thời gian thực:</strong> Thêm hiệu ứng hoạt họa <code>spinner-grow</code> nhấp nháy màu xanh dương và hiển thị dòng chữ "Đang chờ bạn quét mã thanh toán..." dưới mã QR, xác nhận hệ thống đang trực quan lắng nghe giao dịch.</li>
+            <li><strong>Nút điều hướng quay lại:</strong> Thay đổi nút hủy giao dịch thành nút có icon mũi tên "Quay lại đơn hàng", giúp quay về trang cá nhân của khách hàng một cách tự nhiên và an toàn.</li>
+            <li><strong>Cập nhật dải IP Whitelist của SePay:</strong> Bổ sung toàn bộ dải địa chỉ IP chính thức mới nhất của SePay vào cấu hình mặc định (gồm 6 IP: <code>172.236.138.20, 172.233.83.68, 171.244.35.2, 151.158.108.68, 151.158.109.79, 103.255.238.139</code>) để tránh bị chặn HTTP 403 Forbidden khi chạy webhook qua Ngrok hoặc môi trường production.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/sepay-simulate.html</code> &mdash; Tái cấu trúc giao diện HTML loại bỏ các nút mô phỏng, thay thế nút quay lại và tích hợp mã jQuery AJAX polling tự động.</li>
+            <li>[MODIFY] <code>src/main/resources/application.properties</code>, <code>.env</code>, <code>.env.example</code> &mdash; Cập nhật dải IP Whitelist của SePay để cho phép nhận webhook từ các dải IP mới.</li>
+        </ul>
+    </div>
+
+    <h2>58. Chức năng: Tích hợp Lưu vết Giao dịch SePay bị lỗi &amp; Lọc Tìm kiếm Hóa đơn Admin (SePay Failed Transaction Logger &amp; Admin Order Search)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Lưu vết giao dịch khi sai số tiền/sai nội dung:</strong> Nâng cấp <code>SepayIpnController.java</code> tự động ghi nhận giao dịch lỗi vào bảng <code>PaymentTransaction</code> (với status <code>amount_mismatch</code> hoặc <code>order_not_found</code>) khi SePay webhook gửi thông báo thanh toán sai lệch số tiền (<code>InvalidPaymentException</code>) hoặc không tìm thấy mã đơn hàng (<code>OrderNotFoundException</code>). Trạng thái thanh toán của hóa đơn cũng được đổi sang "Sai lệch số tiền" để phục vụ đối soát, không bị rollback và mất dấu như trước.</li>
+            <li><strong>Tự động tìm kiếm/lọc hóa đơn trên danh sách Admin:</strong> Bổ sung mã Javascript vào <code>donhang-list.html</code> để tự động đọc tham số <code>search</code> từ URL và điền vào ô tìm kiếm, tự động chạy bộ lọc hiển thị riêng hóa đơn đó ngay khi tải trang.</li>
+            <li><strong>Cột order_id trong bảng giao dịch chấp nhận NULL:</strong> Viết tệp migration Flyway <code>V1.16__make_payment_transaction_order_nullable.sql</code> để thay đổi cấu trúc bảng <code>PaymentTransaction</code>, cho phép <code>order_id</code> là NULL khi không tìm thấy hóa đơn khớp với nội dung chuyển khoản.</li>
+            <li><strong>Mock cấu hình trong Unit Test:</strong> Mock bổ sung <code>sepayConfig</code> trong <code>SepaySimulationControllerTest.java</code> để khắc phục lỗi NullPointerException khi chạy test suite.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[NEW] <code>src/main/resources/db/migration/V1.16__make_payment_transaction_order_nullable.sql</code> &mdash; File migration SQL Server thay đổi cấu trúc cột order_id thành NULL.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/entity/PaymentTransaction.java</code> &mdash; Cập nhật <code>@JoinColumn</code> nullable = true cho thuộc tính order.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/entity/PaymentStatus.java</code> &mdash; Thêm hằng số <code>AMOUNT_MISMATCH("amount_mismatch")</code> vào enum.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/SepayIpnController.java</code> &mdash; Tích hợp logic bắt exception và gọi lưu vết giao dịch lỗi riêng biệt.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/transactions.html</code> &mdash; Bổ sung các badge hiển thị trạng thái "Sai lệch số tiền" và "Sai nội dung CK".</li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/donhang-list.html</code> &mdash; Tích hợp live search và logic onload tìm kiếm từ URL parameter.</li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/controller/SepaySimulationControllerTest.java</code> &mdash; Bổ sung mock cho <code>sepayConfig</code> để tránh lỗi test.</li>
+        </ul>
+    </div>
+
+    <h2>57. Chức năng: Đồng bộ hiển thị Tạm tính &amp; Tổng cộng khi thay đổi số lượng giỏ hàng (Cart Summary Price Sync)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Cập nhật Tạm tính và Tổng cộng đồng thời:</strong> Thêm class <code>js-cart-summary-subtotal</code> vào ô hiển thị TẠM TÍNH trong trang giỏ hàng (<code>cart.html</code>) và cập nhật đồng thời cả hai giá trị TẠM TÍNH (subtotal) và TỔNG CỘNG (total) khi người dùng tăng/giảm số lượng bằng các nút <code>+</code> / <code>-</code> hoặc chỉnh sửa số lượng bằng tay.</li>
+            <li><strong>Đồng bộ hóa logic xóa:</strong> Cập nhật JS xử lý xóa sản phẩm trong <code>app.js</code> để sử dụng chung selector class <code>.js-cart-summary-subtotal</code> nhằm cập nhật nhất quán giá trị Tạm tính khi sản phẩm bị xóa khỏi giỏ.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/cart.html</code> &mdash; Thêm class định danh cho ô TẠM TÍNH và cập nhật giá trị trong AJAX callback khi thay đổi số lượng.</li>
+            <li>[MODIFY] <code>src/main/resources/static/js/app.js</code> &mdash; Sử dụng class selector mới khi cập nhật Tạm tính trong sự kiện xóa sản phẩm.</li>
+        </ul>
+    </div>
+
+    <h2>56. Chức năng: Sửa lỗi Crash trang Thanh toán do Ràng buộc Foreign Key &amp; Sai lệch ID Khách hàng (Checkout Crash Fix)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Xóa lịch sử trạng thái trước khi xóa hóa đơn nháp:</strong> Thêm native query <code>deleteOrderStatusHistoryByOrderId</code> trong <code>HoaDonRepository.java</code> và gọi nó trước khi xóa hóa đơn nháp ở <code>cleanPendingOrders</code> (trong <code>GioHangService.java</code>). Điều này xóa sạch các bản ghi liên quan trong bảng <code>LichSuTrangThaiDonHang</code> (được tạo tự động bởi database triggers/legacy flow) để tránh lỗi Foreign Key Constraint làm sập hệ thống khi vào trang thanh toán.</li>
+            <li><strong>Sửa lỗi lấy danh sách địa chỉ:</strong> Trong <code>CheckoutController.java</code>, chuyển đổi tham số từ <code>idNguoiDung</code> (Account ID) sang <code>idKhachHang</code> (Customer ID) trước khi truy cập danh sách địa chỉ. Đảm bảo hiển thị đúng danh sách địa chỉ giao hàng đã lưu của khách hàng.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/repository/HoaDonRepository.java</code> &mdash; Thêm native query xóa lịch sử trạng thái theo ID hóa đơn.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/GioHangService.java</code> &mdash; Tích hợp xóa lịch sử trạng thái trước khi xóa hóa đơn nháp trong <code>cleanPendingOrders</code>.</li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/CheckoutController.java</code> &mdash; Lấy thông tin <code>KhachHang</code> và sử dụng Customer ID thay vì Account ID để truy vấn sổ địa chỉ.</li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/controller/CheckoutControllerTest.java</code> &mdash; Cập nhật mock test tương thích với constructor và logic mới.</li>
+        </ul>
+    </div>
+
+    <h2>55. Chức năng: Khắc phục lỗi nút quay lại (Back Button) gây lặp giao dịch &amp; Định dạng số tiền gửi SePay QR</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Chặn lặp giao dịch khi quay lại:</strong> Thêm cơ chế kiểm tra trạng thái đơn hàng tại endpoint hiển thị trang mô phỏng thanh toán <code>/payment/sepay/simulate</code> và endpoint xử lý thành công <code>/payment/sepay/simulate/success</code>. Nếu đơn hàng đã được thanh toán, hệ thống sẽ thực hiện Redirect (302) về trang danh sách đơn hàng và bỏ qua xử lý tạo IPN giả lập, tránh tạo ra nhiều giao dịch trùng lặp trong cơ sở dữ liệu.</li>
+            <li><strong>Ép buộc reload trang từ cache lịch sử:</strong> Bổ sung trình lắng nghe sự kiện <code>pageshow</code> trong Javascript của tệp <code>sepay-simulate.html</code> để phát hiện khi người dùng nhấn nút Back của trình duyệt (trang lấy từ bfcache) và ép buộc tải lại trang từ máy chủ nhằm kích hoạt logic chuyển hướng an toàn.</li>
+            <li><strong>Chuẩn hóa số tiền trong mã QR:</strong> Thay đổi tham số <code>amount</code> trong URL gọi ảnh QR code SePay từ định dạng mặc định (chứa dấu chấm phân cách hàng ngàn trong môi trường locale vi-VN) thành dạng số nguyên thuần túy (sử dụng <code>NONE</code> thousands separator trong Thymeleaf), ngăn chặn các app ngân hàng hoặc API giải mã sai số tiền (ví dụ từ 9,000,000 xuống thành 9,000 VND).</li>
+            <li><strong>Bổ sung Unit Test:</strong> Viết tệp kiểm thử <code>SepaySimulationControllerTest.java</code> kiểm tra đầy đủ các kịch bản chuyển hướng đơn hàng đã thanh toán và chặn xử lý IPN trùng lặp.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/SepaySimulationController.java</code> &mdash; Thêm logic kiểm tra đơn hàng đã thanh toán và redirect/skip xử lý.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/sepay-simulate.html</code> &mdash; Thêm Javascript <code>pageshow</code> reload và sửa định dạng <code>amount</code> trong URL QR code.</li>
+            <li>[NEW] <code>src/test/java/com/smashvn/shop/controller/SepaySimulationControllerTest.java</code> &mdash; Tạo bộ unit test tự động kiểm tra luồng mô phỏng thanh toán.</li>
+        </ul>
+    </div>
+
+    <h2>54. Chức năng: Hiển thị Số lượng Tồn kho &amp; Kiểm soát Thao tác Giỏ hàng tại Quick Look (Quick Look Variant Stock &amp; Out-of-Stock Disabled)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Hiển thị số lượng tồn kho:</strong> Tích hợp khối HTML hiển thị thông tin tồn kho (Số lượng còn lại, badges Còn hàng/Hết hàng) vào Quick Look Modal.</li>
+            <li><strong>Tự động kích hoạt kiểm tra tồn kho khi mở trang/modal:</strong> Bổ sung lệnh gọi hàm <code>checkAndApplyVariant</code> ngay khi khởi tạo dữ liệu trong tệp <code>modals.html</code> và <code>product-detail.html</code>, giúp tự động hiển thị số lượng tồn kho và cập nhật trạng thái hoạt động của nút Thêm vào giỏ hàng ngay khi tải trang/modal.</li>
+            <li><strong>Hỗ trợ sản phẩm không có tùy chọn thuộc tính:</strong> Nâng cấp hàm <code>checkAndApplyVariant</code> trong <code>app.js</code> để tự động phát hiện nếu sản phẩm chỉ có một biến thể duy nhất (không hiển thị các nút chọn thuộc tính) và tự động áp dụng biến thể đó.</li>
+            <li><strong>Vô hiệu hóa và đổi màu nút khi hết hàng:</strong> Đảm bảo nút "THÊM VÀO GIỎ" sẽ bị vô hiệu hóa (<code>disabled</code>), chuyển màu nền sang màu xám (<code>#a0a0a0</code>) và thay đổi văn bản hiển thị thành "ĐÃ HẾT HÀNG" khi số lượng tồn kho bằng 0. Khi người dùng chọn lại phân loại còn hàng, nút tự động khôi phục màu cam gốc và văn bản "THÊM VÀO GIỎ".</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/static/js/app.js</code> &mdash; Nâng cấp <code>checkAndApplyVariant</code> để kiểm tra động các tùy chọn thuộc tính trên giao diện và tự động áp dụng biến thể mặc định.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/layout/modals.html</code> &mdash; Thêm HTML hiển thị tồn kho và gọi hàm khởi tạo trong khối script khi mở modal.</li>
+            <li>[MODIFY] <code>src/main/resources/templates/product-detail.html</code> &mdash; Đồng bộ class và gọi hàm khởi tạo trong khối script khi tải trang chi tiết.</li>
+        </ul>
+    </div>
+
     <h2>53. Chức năng: Lịch sử Giao dịch Hủy/Hoàn tiền &amp; Tối ưu hóa Tiến trình Đơn hàng Online (Transaction History, Cancelled Refund Handling &amp; Stepper Progress Auto-Activation)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

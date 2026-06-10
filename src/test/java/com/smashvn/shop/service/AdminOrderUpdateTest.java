@@ -23,6 +23,8 @@ public class AdminOrderUpdateTest {
     @Autowired
     private OrderViewService orderViewService;
 
+
+
     @Autowired
     private HoaDonRepository hoaDonRepository;
 
@@ -404,6 +406,59 @@ public class AdminOrderUpdateTest {
     }
 
     @Test
+    void testApproveAndRejectRefund() {
+        HoaDon hd = createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, 1);
+
+        // Cancel order using admin update, which sets CHO_HOAN_TIEN and generates token
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_huy", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
+
+        HoaDon cancelled = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertNotNull(cancelled);
+        assertEquals("da_huy", cancelled.getTrangThaiDonHang());
+        assertEquals("CHO_HOAN_TIEN", cancelled.getTrangThaiThanhToan());
+
+        // Extract token
+        String response = cancelled.getGatewayResponse();
+        assertNotNull(response);
+        assertTrue(response.contains("REFUND_TOKEN:"));
+        int start = response.indexOf("REFUND_TOKEN:") + 13;
+        int end = response.indexOf(";", start);
+        if (end == -1) end = response.length();
+        String token = response.substring(start, end);
+        assertFalse(token.isEmpty());
+
+        // Test approve refund
+        orderViewService.approveRefund(hd.getId(), token, adminUser.getId(), "127.0.0.1");
+        
+        HoaDon approved = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertNotNull(approved);
+        assertEquals("REFUNDED", approved.getPaymentStatus());
+        assertEquals("REFUNDED", approved.getTrangThaiThanhToan());
+        assertFalse(approved.getGatewayResponse().contains("REFUND_TOKEN:"));
+
+        // Setup for reject refund
+        HoaDon hd2 = createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, 1);
+        orderViewService.updateOrderStatusByAdmin(hd2.getId(), "da_huy", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
+
+        HoaDon cancelled2 = hoaDonRepository.findById(hd2.getId()).orElse(null);
+        assertNotNull(cancelled2);
+        String response2 = cancelled2.getGatewayResponse();
+        int start2 = response2.indexOf("REFUND_TOKEN:") + 13;
+        int end2 = response2.indexOf(";", start2);
+        if (end2 == -1) end2 = response2.length();
+        String token2 = response2.substring(start2, end2);
+
+        // Test reject refund
+        orderViewService.rejectRefund(hd2.getId(), token2, adminUser.getId(), "127.0.0.1");
+
+        HoaDon rejected = hoaDonRepository.findById(hd2.getId()).orElse(null);
+        assertNotNull(rejected);
+        assertEquals("paid", rejected.getPaymentStatus());
+        assertEquals("DA_THANH_TOAN", rejected.getTrangThaiThanhToan());
+        assertFalse(rejected.getGatewayResponse().contains("REFUND_TOKEN:"));
+    }
+
+    @Test
     void testAdminConfirmationSetsThoiGianXacNhan() {
         HoaDon hd = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 1);
         assertNull(hd.getThoiGianXacNhan());
@@ -459,5 +514,31 @@ public class AdminOrderUpdateTest {
         assertTrue(hasHd2);
         assertTrue(hasHd3);
         assertFalse(hasHd4);
+    }
+
+    @Test
+    void testCancellationReasonSavingAndAppending() {
+        // 1. Customer cancellation reason
+        HoaDon hd1 = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 1);
+        hd1.setGhiChu("Ghi chú ban đầu");
+        hoaDonRepository.save(hd1);
+
+        boolean success = orderViewService.huyDonHang(hd1.getId(), testKhachHang.getId(), "127.0.0.1", "Muốn đổi sản phẩm khác");
+        assertTrue(success);
+
+        HoaDon updated1 = hoaDonRepository.findById(hd1.getId()).orElse(null);
+        assertNotNull(updated1);
+        assertEquals("Ghi chú ban đầu\nLý do hủy: Muốn đổi sản phẩm khác", updated1.getGhiChu());
+
+        // 2. Admin cancellation reason
+        HoaDon hd2 = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 1);
+        hd2.setGhiChu("Ghi chú cũ");
+        hoaDonRepository.save(hd2);
+
+        orderViewService.updateOrderStatusByAdmin(hd2.getId(), "da_huy", "cho_xac_nhan", adminUser.getId(), "127.0.0.1", "Sản phẩm hết hàng");
+
+        HoaDon updated2 = hoaDonRepository.findById(hd2.getId()).orElse(null);
+        assertNotNull(updated2);
+        assertEquals("Ghi chú cũ\nLý do hủy: Sản phẩm hết hàng", updated2.getGhiChu());
     }
 }

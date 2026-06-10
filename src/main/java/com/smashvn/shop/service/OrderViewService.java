@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +48,10 @@ public class OrderViewService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final AuditService auditService;
     private final com.smashvn.shop.repository.EditLogRepository editLogRepository;
+    private final JavaMailSender mailSender;
+
+    @Value("${app.admin.emails}")
+    private String adminEmailsConfig;
 
     // Helper to format dates for dash-my-order.html
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss", Locale.US);
@@ -401,6 +409,11 @@ public class OrderViewService {
 
     @Transactional
     public boolean huyDonHang(Integer idHoaDon, Integer idKhachHang, String clientIp) {
+        return huyDonHang(idHoaDon, idKhachHang, clientIp, null);
+    }
+
+    @Transactional
+    public boolean huyDonHang(Integer idHoaDon, Integer idKhachHang, String clientIp, String lyDoHuy) {
         Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
         if (hdOpt.isPresent()) {
             HoaDon hd = hdOpt.get();
@@ -437,15 +450,32 @@ public class OrderViewService {
                 // Cập nhật trạng thái đơn hàng
                 hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue()); // "da_huy"
                 String refundLogNote = "";
+                
+                String standardizedReason = "Không cung cấp lý do";
+                if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
+                    standardizedReason = lyDoHuy.trim();
+                }
+
+                String addition = "Lý do hủy: " + standardizedReason;
+                String currentGhiChu = hd.getGhiChu();
+                if (currentGhiChu == null || currentGhiChu.trim().isEmpty()) {
+                    hd.setGhiChu(addition.length() > 500 ? addition.substring(0, 500) : addition);
+                } else {
+                    String newGhiChu = currentGhiChu + "\n" + addition;
+                    hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
+                }
+
                 if (PaymentStatus.PAID.getValue().equalsIgnoreCase(hd.getPaymentStatus())) {
                     hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
                     refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, customerId=%d",
                             hd.getId(), hd.getPaymentMethod(), hd.getTongTien().toString(), LocalDateTime.now().toString(), idKhachHang);
+                    hoaDonRepository.save(hd);
+                    guiEmailYeuCauHoanTien(hd, standardizedReason);
                 } else {
                     hd.setPaymentStatus("CANCELLED");
                     hd.setTrangThaiThanhToan("HUY");
+                    hoaDonRepository.save(hd);
                 }
-                hoaDonRepository.save(hd);
 
                 // Ghi nhận Audit Log
                 auditService.log(
@@ -496,6 +526,11 @@ public class OrderViewService {
 
     @Transactional
     public void updateOrderStatusByAdmin(Integer idHoaDon, String newStatus, String expectedStatus, Integer actingTaiKhoanId, String clientIp) {
+        updateOrderStatusByAdmin(idHoaDon, newStatus, expectedStatus, actingTaiKhoanId, clientIp, null);
+    }
+
+    @Transactional
+    public void updateOrderStatusByAdmin(Integer idHoaDon, String newStatus, String expectedStatus, Integer actingTaiKhoanId, String clientIp, String lyDoHuy) {
         // 1. Service-Level Authorization
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền cập nhật trạng thái đơn hàng.");
@@ -599,6 +634,10 @@ public class OrderViewService {
                 }
             }
         } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
+            String standardizedReason = "Không cung cấp lý do";
+            if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
+                standardizedReason = lyDoHuy.trim();
+            }
             if ("paid".equalsIgnoreCase(currentPaymentStatus)) {
                 hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
                 refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, actingUserId=%d",
@@ -607,11 +646,28 @@ public class OrderViewService {
                 hd.setPaymentStatus("CANCELLED");
                 hd.setTrangThaiThanhToan("HUY");
             }
+            
+            String addition = "Lý do hủy: " + standardizedReason;
+            String currentGhiChu = hd.getGhiChu();
+            if (currentGhiChu == null || currentGhiChu.trim().isEmpty()) {
+                hd.setGhiChu(addition.length() > 500 ? addition.substring(0, 500) : addition);
+            } else {
+                String newGhiChu = currentGhiChu + "\n" + addition;
+                hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
+            }
         }
 
         // 9. Update Order
         hd.setTrangThaiDonHang(newStatus);
         hd = hoaDonRepository.save(hd);
+
+        if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus) && "CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
+            String standardizedReason = "Không cung cấp lý do";
+            if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
+                standardizedReason = lyDoHuy.trim();
+            }
+            guiEmailYeuCauHoanTien(hd, standardizedReason);
+        }
 
         // 10. Audit Log Enhancement
         String giaTriCu = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", currentStatus, currentPaymentStatus, currentTrangThaiThanhToan);
@@ -692,5 +748,263 @@ public class OrderViewService {
             // Fallback silent
         }
         return times;
+    }
+
+    private boolean isTestEnvironment() {
+        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+            if (element.getClassName().startsWith("org.junit.") || element.getClassName().startsWith("org.spockframework.")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void guiEmailYeuCauHoanTien(HoaDon hd, String lyDoHuy) {
+        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
+            System.err.println("Không có email quản trị nào được cấu hình trong app.admin.emails!");
+            return;
+        }
+        String token = java.util.UUID.randomUUID().toString();
+        // Store token in gatewayResponse
+        String oldResponse = hd.getGatewayResponse() != null ? hd.getGatewayResponse() : "";
+        hd.setGatewayResponse("REFUND_TOKEN:" + token + ";" + oldResponse);
+        hoaDonRepository.save(hd);
+
+        String maDonHang = hd.getMaDonHang() != null ? hd.getMaDonHang() : "POS#" + hd.getId();
+        
+        // Tránh spam gửi email thật khi chạy test cases
+        if (isTestEnvironment() || maDonHang.startsWith("TEST-")) {
+            System.out.println("[TEST] Bỏ qua gửi email xác nhận hoàn tiền cho đơn hàng test: " + maDonHang);
+            return;
+        }
+
+        String appUrl = resolveAppUrl();
+        String approveLink = appUrl + "/admin/don-hang/approve-refund?id=" + hd.getId() + "&token=" + token;
+        String rejectLink = appUrl + "/admin/don-hang/reject-refund?id=" + hd.getId() + "&token=" + token;
+
+        String tenKhachHang = hd.getKhachHang() != null ? (hd.getKhachHang().getHoKh() + " " + hd.getKhachHang().getTenKh()) : "Khách lẻ";
+        String sdt = hd.getSdtNhan() != null ? hd.getSdtNhan() : "N/A";
+        String phuongThuc = hd.getPaymentMethod() != null ? hd.getPaymentMethod() : (hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan().getTenPhuongThuc() : "N/A");
+        String formattedTongTien = hd.getTongTien() != null ? String.format("%,.0f", hd.getTongTien()) : "0";
+        String hienThiLyDo = (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) ? lyDoHuy.trim() : "Không cung cấp lý do";
+
+        String htmlMsg = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <meta charset=\"utf-8\">" +
+                "    <title>Yêu cầu xác nhận hoàn tiền</title>" +
+                "</head>" +
+                "<body style=\"margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Inter', system-ui, -apple-system, sans-serif;\">" +
+                "    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" width=\"100%\" style=\"max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e9ecef;\">" +
+                "        <tr>" +
+                "            <td style=\"padding: 32px 40px; background-color: #212529; text-align: center;\">" +
+                "                <h2 style=\"margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;\">SMASH VN</h2>" +
+                "                <p style=\"margin: 4px 0 0 0; color: #adb5bd; font-size: 14px;\">Yêu cầu xác nhận hoàn tiền đơn hàng</p>" +
+                "            </td>" +
+                "        </tr>" +
+                "        <tr>" +
+                "            <td style=\"padding: 40px;\">" +
+                "                <p style=\"margin: 0 0 24px 0; color: #495057; font-size: 16px; line-height: 1.6;\">Chào Quản lý hệ thống,</p>" +
+                "                <p style=\"margin: 0 0 24px 0; color: #495057; font-size: 16px; line-height: 1.6;\">Một yêu cầu hoàn tiền cho đơn hàng đã thanh toán trực tuyến vừa được tạo và đang chờ bạn phê duyệt:</p>" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 32px; border: 1px solid #e9ecef;\">" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px; width: 40%;\">Mã đơn hàng:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600; font-family: monospace;\">" + maDonHang + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Khách hàng:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600;\">" + tenKhachHang + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Số điện thoại:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px;\">" + sdt + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Phương thức:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600; color: #0d6efd;\">" + phuongThuc + "</td>" +
+                "                    </tr>" +
+                "                    <tr style=\"background-color: #fff5f5;\">" +
+                "                        <td style=\"padding: 8px 10px; color: #dc3545; font-size: 14px; font-weight: bold;\">Lý do hủy:</td>" +
+                "                        <td style=\"padding: 8px 10px; color: #dc3545; font-size: 14px; font-weight: bold;\">" + hienThiLyDo + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 8px 0 6px 0; color: #6c757d; font-size: 14px; border-top: 1px dashed #dee2e6;\">Số tiền cần hoàn:</td>" +
+                "                        <td style=\"padding: 8px 0 6px 0; color: #dc3545; font-size: 16px; font-weight: 700; border-top: 1px dashed #dee2e6;\">" + formattedTongTien + " đ</td>" +
+                "                    </tr>" +
+                "                </table>" +
+                "                <p style=\"margin: 0 0 24px 0; color: #495057; font-size: 15px; line-height: 1.6; text-align: center; font-weight: 600;\">" +
+                "                    Vui lòng chọn một trong các thao tác bên dưới để xử lý yêu cầu:" +
+                "                </p>" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" style=\"margin: 0 auto 32px auto;\">" +
+                "                    <tr>" +
+                "                        <td align=\"center\" style=\"padding: 0 10px;\">" +
+                "                            <a href=\"" + approveLink + "\" style=\"background-color: #198754; color: #ffffff; text-decoration: none; padding: 14px 24px; font-size: 14px; font-weight: bold; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(25, 135, 84, 0.2);\">" +
+                "                                Phê duyệt hoàn tiền" +
+                "                            </a>" +
+                "                        </td>" +
+                "                        <td align=\"center\" style=\"padding: 0 10px;\">" +
+                "                            <a href=\"" + rejectLink + "\" style=\"background-color: #dc3545; color: #ffffff; text-decoration: none; padding: 14px 24px; font-size: 14px; font-weight: bold; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);\">" +
+                "                                Từ chối hoàn tiền" +
+                "                            </a>" +
+                "                        </td>" +
+                "                    </tr>" +
+                "                </table>" +
+                "                <p style=\"margin: 16px 0 0 0; font-size: 13px; color: #6c757d; text-align: center;\">" +
+                "                   Hoặc bạn cũng có thể duyệt/từ chối trực tiếp trên Dashboard Smash VN." +
+                "                </p>" +
+                "                <hr style=\"border: 0; border-top: 1px solid #e9ecef; margin: 32px 0;\">" +
+                "                <p style=\"margin: 0; color: #868e96; font-size: 12px; line-height: 1.5; text-align: center;\">" +
+                "                    * Lưu ý: Khi nhấp <strong>Phê duyệt hoàn tiền</strong>, số tiền này sẽ bị trừ khỏi thống kê doanh thu.<br>" +
+                "                    Nếu nhấp <strong>Từ chối hoàn tiền</strong>, trạng thái thanh toán sẽ được khôi phục và doanh thu được giữ nguyên." +
+                "                </p>" +
+                "            </td>" +
+                "        </tr>" +
+                "        <tr>" +
+                "            <td style=\"padding: 24px; background-color: #f8f9fa; text-align: center; border-top: 1px solid #e9ecef;\">" +
+                "                <p style=\"margin: 0; color: #adb5bd; font-size: 12px;\">Hệ thống Quản trị Smash VN &copy; 2026</p>" +
+                "            </td>" +
+                "        </tr>" +
+                "    </table>" +
+                "</body>" +
+                "</html>";
+
+        String[] admins = adminEmailsConfig.split(",");
+        for (String email : admins) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setTo(email.trim());
+                helper.setSubject("[Smash VN] Yêu cầu xác nhận hoàn tiền - Đơn hàng " + maDonHang);
+                helper.setText(htmlMsg, true);
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("Lỗi gửi mail yêu cầu hoàn tiền đến " + email + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private String resolveAppUrl() {
+        try {
+            org.springframework.web.context.request.ServletRequestAttributes attrs = 
+                (org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                jakarta.servlet.http.HttpServletRequest request = attrs.getRequest();
+                
+                // 1. Resolve scheme (taking X-Forwarded-Proto into account)
+                String scheme = request.getHeader("X-Forwarded-Proto");
+                if (scheme == null || scheme.isEmpty()) {
+                    scheme = request.getScheme();
+                }
+                
+                // 2. Resolve host (taking X-Forwarded-Host or Host header into account)
+                String host = request.getHeader("X-Forwarded-Host");
+                if (host == null || host.isEmpty()) {
+                    host = request.getHeader("Host");
+                }
+                if (host == null || host.isEmpty()) {
+                    String serverName = request.getServerName();
+                    int serverPort = request.getServerPort();
+                    if (serverPort == 80 || serverPort == 443) {
+                        host = serverName;
+                    } else {
+                        host = serverName + ":" + serverPort;
+                    }
+                }
+                
+                // Thêm ":8080" nếu host là localhost hoặc 127.0.0.1 (không kèm cổng)
+                if ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equalsIgnoreCase(host)) {
+                    host = host + ":8080";
+                }
+                
+                String contextPath = request.getContextPath();
+                return scheme + "://" + host + contextPath;
+            }
+        } catch (Exception e) {
+            // fallback silent
+        }
+        return "http://localhost:8080";
+    }
+
+    @Transactional
+    public void approveRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
+        HoaDon hd = hoaDonRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
+        
+        String response = hd.getGatewayResponse();
+        if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
+            throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+        }
+
+        if (!"CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
+            throw new IllegalStateException("Đơn hàng này không ở trạng thái chờ hoàn tiền!");
+        }
+
+        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+
+        // Update payment status to REFUNDED
+        hd.setPaymentStatus("REFUNDED");
+        hd.setTrangThaiThanhToan("REFUNDED");
+        
+        // Remove token from response
+        String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
+        hd.setGatewayResponse(newToken);
+        
+        hoaDonRepository.save(hd);
+
+        // Audit log
+        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        auditService.log(
+                actingUserId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                oldState,
+                newState,
+                clientIp,
+                "[REFUND_APPROVED] Quản lý phê duyệt hoàn tiền thành công. Đơn hàng hiện đã chính thức trừ khỏi thống kê doanh thu.",
+                "QUAN_LY"
+        );
+    }
+
+    @Transactional
+    public void rejectRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
+        HoaDon hd = hoaDonRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
+        
+        String response = hd.getGatewayResponse();
+        if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
+            throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+        }
+
+        if (!"CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
+            throw new IllegalStateException("Đơn hàng này không ở trạng thái chờ hoàn tiền!");
+        }
+
+        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+
+        // Revert to PAID and DA_THANH_TOAN
+        hd.setPaymentStatus("paid");
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        
+        // Remove token from response
+        String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
+        hd.setGatewayResponse(newToken);
+        
+        hoaDonRepository.save(hd);
+
+        // Audit log
+        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        auditService.log(
+                actingUserId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                oldState,
+                newState,
+                clientIp,
+                "[REFUND_REJECTED] Quản lý từ chối yêu cầu hoàn tiền. Đơn hàng được giữ nguyên trạng thái thanh toán và thống kê doanh thu.",
+                "QUAN_LY"
+        );
     }
 }

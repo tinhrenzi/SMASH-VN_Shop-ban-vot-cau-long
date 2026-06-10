@@ -17,7 +17,6 @@ class SmashVnApplicationTests {
 
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
-
     @Test
     @org.springframework.transaction.annotation.Transactional
     void contextLoads() {

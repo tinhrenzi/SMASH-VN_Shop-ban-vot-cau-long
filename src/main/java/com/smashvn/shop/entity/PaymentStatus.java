@@ -5,7 +5,8 @@ public enum PaymentStatus {
     PAID("paid"),
     FAILED("failed"),
     REFUNDED("refunded"),
-    PAID_RECEIVED_AFTER_CANCEL("paid_received_after_cancel");
+    PAID_RECEIVED_AFTER_CANCEL("paid_received_after_cancel"),
+    AMOUNT_MISMATCH("amount_mismatch");
 
     private final String value;
 

@@ -285,6 +285,8 @@ public class AdminThongKeService {
         Long onlinePending = hoaDonRepository.countOnlinePending(start, end);
         BigDecimal onlineRevenue = hoaDonRepository.sumOnlineRevenue(start, end);
 
+        BigDecimal expectedRevenue = hoaDonRepository.sumExpectedRevenue(start, end);
+
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
         data.put("cancellationRate", cancellationRate);
@@ -294,6 +296,8 @@ public class AdminThongKeService {
         data.put("chartValues", chartValues);
         data.put("topProducts", topProducts);
         data.put("grouping", grouping);
+        data.put("expectedRevenue", expectedRevenue != null ? expectedRevenue : BigDecimal.ZERO);
+        data.put("actualRevenue", metrics.totalRevenue());
         
         // Put Online statistics
         data.put("onlineTotal", onlineTotal != null ? onlineTotal : 0L);
@@ -361,12 +365,12 @@ public class AdminThongKeService {
 
             String[] kpiNames = {
                     "Tổng số đơn hàng", "Đơn hàng thành công", "Đơn hàng đã hủy", 
-                    "Tổng doanh thu thuần", "Giá trị trung bình đơn hàng", 
+                    "Doanh thu thực tế", "Doanh thu dự kiến", "Giá trị trung bình đơn hàng", 
                     "Tổng sản phẩm đã bán", "Khách hàng mới", "Tỷ lệ hủy đơn"
             };
             Object[] kpiValues = {
                     metrics.totalOrders(), metrics.successfulOrders(), metrics.cancelledOrders(),
-                    metrics.totalRevenue(), metrics.avgOrderValue(),
+                    stats.get("actualRevenue"), stats.get("expectedRevenue"), metrics.avgOrderValue(),
                     metrics.totalProductsSold(), newCustomers, cancellationRate
             };
 
@@ -382,10 +386,10 @@ public class AdminThongKeService {
                     valCell.setCellValue(((BigDecimal) kpiValues[i]).doubleValue());
                     valCell.setCellStyle(currencyStyle);
                 } else if (kpiValues[i] instanceof Double) {
-                    if (i == 4) { // Giá trị trung bình đơn
+                    if (i == 5) { // Giá trị trung bình đơn (index 5)
                         valCell.setCellValue((Double) kpiValues[i]);
                         valCell.setCellStyle(currencyStyle);
-                    } else if (i == 7) { // Tỷ lệ hủy đơn
+                    } else if (i == 8) { // Tỷ lệ hủy đơn (index 8)
                         valCell.setCellValue((Double) kpiValues[i] / 100.0);
                         CellStyle pctStyle = workbook.createCellStyle();
                         pctStyle.setDataFormat(format.getFormat("0.0%"));

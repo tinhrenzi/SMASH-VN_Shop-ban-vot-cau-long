@@ -274,6 +274,7 @@ public class UserDashboardController {
     @ResponseBody
     public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> xuLyHuyDonHang(
             @PathVariable("id") Integer idHoaDon,
+            @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
             HttpSession session,
             jakarta.servlet.http.HttpServletRequest request) {
         java.util.Map<String, Object> response = new java.util.HashMap<>();
@@ -287,7 +288,7 @@ public class UserDashboardController {
         
         String ipAddress = request.getRemoteAddr();
         try {
-            boolean success = orderViewService.huyDonHang(idHoaDon, kh.getId(), ipAddress);
+            boolean success = orderViewService.huyDonHang(idHoaDon, kh.getId(), ipAddress, lyDoHuy);
             if (success) {
                 response.put("success", true);
                 response.put("message", "Hủy đơn hàng thành công!");

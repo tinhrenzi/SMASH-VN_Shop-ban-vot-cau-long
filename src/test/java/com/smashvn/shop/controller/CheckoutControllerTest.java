@@ -42,6 +42,9 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.config.SepayConfig sepayConfig;
 
+    @Mock
+    private com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -52,7 +55,11 @@ public class CheckoutControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig);
+        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig, khachHangRepository);
+
+        com.smashvn.shop.entity.KhachHang kh = new com.smashvn.shop.entity.KhachHang();
+        kh.setId(123);
+        when(khachHangRepository.findByTaiKhoan_Id(123)).thenReturn(kh);
 
         when(session.getAttribute("idNguoiDung")).thenReturn(123);
 

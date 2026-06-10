@@ -119,6 +119,7 @@ public class ShippingIntegrationTest {
         hd.setDiaChiNhan("Hà Nội");
         hd.setSdtNhan("0912345678");
         hd.setTongTien(new BigDecimal("1000000"));
+        hd.setMaDonHang("TEST-HIST-FEE-" + System.nanoTime());
         
         // Persist shipping fee as 22000
         BigDecimal persistedFee = BigDecimal.valueOf(22000);
@@ -269,6 +270,7 @@ public class ShippingIntegrationTest {
         hd.setSdtNhan("0912345678");
         hd.setTongTien(BigDecimal.valueOf(100000));
         hd.setPhiVanChuyen(BigDecimal.valueOf(22000));
+        hd.setMaDonHang("TEST-HIST-FEE-UNAF-" + System.nanoTime());
         hd = hoaDonRepository.save(hd);
 
         // Update carrier fee to 99000 in database

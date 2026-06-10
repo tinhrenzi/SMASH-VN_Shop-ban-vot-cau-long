@@ -92,5 +92,22 @@ public class HoaDon {
 
     @Column(name = "app_trans_id", length = 100)
     private String appTransId;
+
+    // ─── GHN shipping fields ───────────────────────────────────────────────
+    /** Mã vận đơn GHN (order_code) */
+    @Column(name = "ghn_order_code", length = 50)
+    private String ghnOrderCode;
+
+    /** Trạng thái vận chuyển GHN (ready_to_pick, delivering, delivered, …) */
+    @Column(name = "ghn_status", length = 100)
+    private String ghnStatus;
+
+    /** District ID của người nhận (GHN) */
+    @Column(name = "ghn_to_district_id")
+    private Integer ghnToDistrictId;
+
+    /** Ward Code của người nhận (GHN) */
+    @Column(name = "ghn_to_ward_code", length = 20)
+    private String ghnToWardCode;
 }
 

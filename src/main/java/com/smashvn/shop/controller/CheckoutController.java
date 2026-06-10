@@ -30,6 +30,7 @@ public class CheckoutController {
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final UserAddressService userAddressService;
     private final SepayConfig sepayConfig;
+    private final com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping({"/checkout", "/checkout.html"})
@@ -61,7 +62,9 @@ public class CheckoutController {
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll();
 
-        List<SoDiaChi> listDiaChi = userAddressService.layDanhSachDiaChi(idNguoiDung);
+        com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+        Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
+        List<SoDiaChi> listDiaChi = userAddressService.layDanhSachDiaChi(idKhachHang);
         boolean hasDefaultAddress = listDiaChi.stream().anyMatch(SoDiaChi::isDefaultShipping);
 
         Map<Integer, Map<String, Object>> addressMap = new java.util.HashMap<>();
@@ -102,6 +105,8 @@ public class CheckoutController {
             @RequestParam("idDonViVanChuyen") Integer idDonViVanChuyen,
             @RequestParam("phuongThucThanhToan") String phuongThucThanhToan,
             @RequestParam(value = "ghiChu", required = false) String ghiChu,
+            @RequestParam(value = "ghnToDistrictId", required = false) Integer ghnToDistrictId,
+            @RequestParam(value = "ghnToWardCode", required = false) String ghnToWardCode,
             HttpSession session) {
         
         Map<String, Object> response = new HashMap<>();
@@ -113,12 +118,14 @@ public class CheckoutController {
         }
 
         try {
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu);
+            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode);
             response.put("trangThai", "ok");
             response.put("orderId", hd.getId());
             response.put("paymentMethod", hd.getPaymentMethod());
             response.put("tongTien", hd.getTongTien());
             response.put("maDonHang", hd.getMaDonHang());
+            response.put("ghnToDistrictId", ghnToDistrictId);
+            response.put("ghnToWardCode", ghnToWardCode);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("trangThai", "loi");

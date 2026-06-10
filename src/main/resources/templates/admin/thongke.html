@@ -130,8 +130,11 @@
                     <div class="col-xl-3 col-md-6">
                         <div class="stat-card-premium d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Thuần</h6>
-                                <h2 class="mb-0 metric-value text-danger" id="valRevenue">0 đ</h2>
+                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Thực Tế</h6>
+                                <h2 class="mb-0 metric-value text-danger" id="valRevenue" style="font-size: 1.45rem;">0 đ</h2>
+                                <div class="mt-1" style="font-size: 0.85rem; color: #6c757d;">
+                                    Dự kiến: <span id="valExpectedRevenue" class="fw-bold text-dark">0 đ</span>
+                                </div>
                             </div>
                             <div class="stat-icon-wrapper p-3 rounded-circle bg-danger bg-opacity-10">
                                 <i class="fas fa-wallet stat-icon text-danger"></i>
@@ -475,7 +478,8 @@ document.addEventListener("DOMContentLoaded", function() {
     function updateMetrics(data) {
         const m = data.metrics;
         
-        document.getElementById("valRevenue").textContent = formatVND(m.totalRevenue);
+        document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
+        document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
         document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
         document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
         document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);

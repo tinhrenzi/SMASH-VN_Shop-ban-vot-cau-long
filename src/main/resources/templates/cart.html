@@ -162,7 +162,7 @@
                                                     <tbody>
                                                         <tr>
                                                             <td>TẠM TÍNH</td>
-                                                            <td th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                            <td class="js-cart-summary-subtotal" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
                                                         </tr>
                                                         <tr>
                                                             <td>VẬN CHUYỂN</td>
@@ -232,6 +232,7 @@
                                     if (res.trangThai === 'ok') {
                                         var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
                                         // Cập nhật text mà không cần load lại trang
+                                        $('.js-cart-summary-subtotal').text(formattedTotal);
                                         $('.js-cart-summary-total').text(formattedTotal);
                                     }
                                 }

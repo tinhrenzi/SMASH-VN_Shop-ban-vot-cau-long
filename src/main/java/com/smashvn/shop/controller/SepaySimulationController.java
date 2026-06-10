@@ -1,6 +1,7 @@
 package com.smashvn.shop.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smashvn.shop.config.SepayConfig;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.dto.SepayIpnRequest;
@@ -28,6 +29,7 @@ public class SepaySimulationController {
 
     private final HoaDonRepository hoaDonRepository;
     private final SepayGatewayService sepayGatewayService;
+    private final SepayConfig sepayConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/payment/sepay/simulate")
@@ -45,6 +47,9 @@ public class SepaySimulationController {
         }
 
         model.addAttribute("order", hd);
+        model.addAttribute("sepayBankAccount", sepayConfig.getBankAccount());
+        model.addAttribute("sepayBankName", sepayConfig.getBankName());
+        model.addAttribute("sepayMemoPrefix", sepayConfig.getMemoPrefix());
         return "sepay-simulate";
     }
 

@@ -613,15 +613,24 @@ function checkAndApplyVariant(container) {
     const selectedColor = container.getAttribute('data-selected-color');
     const selectedSize = container.getAttribute('data-selected-size');
 
-    // Nếu chưa chọn đủ Màu và Size
-    if (!selectedColor || !selectedSize) {
+    // Kiểm tra xem trên giao diện thực tế có hiển thị các tùy chọn để chọn không
+    const hasColorOptions = container.querySelector('.color-btn') !== null;
+    const hasSizeOptions = container.querySelector('.size-btn') !== null;
+
+    // Nếu có tùy chọn nhưng chưa chọn đủ
+    if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
         if(stockStatus) {
             stockStatus.style.display = 'block';
             stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
             stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
-        if(btnAdd) btnAdd.disabled = true;
+        if (btnAdd) {
+            btnAdd.disabled = true;
+            btnAdd.innerText = 'THÊM VÀO GIỎ';
+            btnAdd.style.backgroundColor = '';
+            btnAdd.style.borderColor = '';
+        }
         return;
     }
 
@@ -637,10 +646,12 @@ function checkAndApplyVariant(container) {
     }
 
     // Tìm biến thể khớp với Màu và Size đã chọn (Bọc trim() và toLowerCase() phòng trường hợp khoảng trắng thừa trong DB)
-    const matchedVariant = variants.find(v => 
-        v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
-        v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()
-    );
+    // Nếu giao diện không hiển thị tùy chọn nào, mặc định khớp với biến thể đầu tiên
+    const matchedVariant = variants.find(v => {
+        const matchColor = !hasColorOptions || (v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase());
+        const matchSize = !hasSizeOptions || (v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase());
+        return matchColor && matchSize;
+    });
 
     if (matchedVariant) {
         // --- CẬP NHẬT THÔNG TIN CƠ BẢN ---
@@ -649,7 +660,18 @@ function checkAndApplyVariant(container) {
         const soLuong = matchedVariant.soLuongTon || 0;
         const conHang = soLuong > 0;
         
-        if(btnAdd) btnAdd.disabled = !conHang;
+        if (btnAdd) {
+            btnAdd.disabled = !conHang;
+            if (conHang) {
+                btnAdd.innerText = 'THÊM VÀO GIỎ';
+                btnAdd.style.backgroundColor = '';
+                btnAdd.style.borderColor = '';
+            } else {
+                btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+                btnAdd.style.backgroundColor = '#a0a0a0';
+                btnAdd.style.borderColor = '#a0a0a0';
+            }
+        }
         
         // Ẩn thông báo cảnh báo
         if(stockStatus) {
@@ -714,7 +736,12 @@ function checkAndApplyVariant(container) {
     } else {
         // Trường hợp hết hàng / Không có biến thể này
         if (inputId) inputId.value = "";
-        if (btnAdd) btnAdd.disabled = true;
+        if (btnAdd) {
+            btnAdd.disabled = true;
+            btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+            btnAdd.style.backgroundColor = '#a0a0a0';
+            btnAdd.style.borderColor = '#a0a0a0';
+        }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if(stockStatus) {
             stockStatus.style.display = 'block';
@@ -821,6 +848,12 @@ function checkAndApplyVariant(container) {
   // Lệnh này ép trình duyệt: "Ngay khi trang web vừa load xong thì chạy hàm loadMiniCart() ngay cho tao!"
   $(document).ready(function() {
       loadMiniCart();
+      
+      // Tự động chạy checkAndApplyVariant cho trang chi tiết sản phẩm khi vừa load trang
+      var detailContainer = document.getElementById('product-detail-container');
+      if (detailContainer && typeof checkAndApplyVariant === 'function') {
+          checkAndApplyVariant(detailContainer);
+      }
   });
   /*==============================================================
     # CUSTOM JS: Xử lý Thêm vào giỏ hàng bằng AJAX (Chống reload trang)
@@ -932,8 +965,8 @@ function checkAndApplyVariant(container) {
                           success: function(res) {
                               if (res.trangThai === 'ok') {
                                   var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
+                                  $('.js-cart-summary-subtotal').text(formattedTotal);
                                   $('.js-cart-summary-total').text(formattedTotal);
-                                  $('.f-cart__table tr:first-child td:last-child').text(formattedTotal); // Cập nhật Tạm tính
                               }
                           }
                       });

@@ -152,6 +152,10 @@
 	                                        var container = document.getElementById('quick-look-modal-container');
 	                                        if (container) {
 	                                            container.danhSachBienThe = variants;
+	                                            // Tự động kích hoạt kiểm tra tồn kho & khởi tạo biến thể ban đầu
+	                                            if (typeof checkAndApplyVariant === 'function') {
+	                                                checkAndApplyVariant(container);
+	                                            }
 	                                        } else {
 	                                            console.error("Lỗi: Không tìm thấy #quick-look-modal-container!");
 	                                        }

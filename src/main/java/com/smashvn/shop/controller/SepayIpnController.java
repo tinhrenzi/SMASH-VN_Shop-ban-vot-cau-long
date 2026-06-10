@@ -3,11 +3,15 @@ package com.smashvn.shop.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smashvn.shop.config.SepayConfig;
 import com.smashvn.shop.dto.SepayIpnRequest;
+import com.smashvn.shop.dto.SepayTransactionDto;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.PaymentStatus;
+import com.smashvn.shop.entity.PaymentTransaction;
 import com.smashvn.shop.exception.InvalidPaymentException;
 import com.smashvn.shop.exception.OrderNotFoundException;
 import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
+import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.PaymentGatewayService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -18,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +35,8 @@ public class SepayIpnController {
     private final SepayConfig sepayConfig;
     private final PaymentGatewayService paymentGatewayService;
     private final HoaDonRepository hoaDonRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final AuditService auditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/api/payment/sepay/ipn")
@@ -46,7 +53,7 @@ public class SepayIpnController {
                 String clientIp = getClientIp(request);
                 if (!isValidIp(clientIp)) {
                     log.warn("SePay IPN: Request rejected. Unauthorized IP: {}", clientIp);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Unauthorized IP address."));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Unauthorized IP address: " + clientIp + ". Please whitelist this IP or disable IP verification in your configuration."));
                 }
             }
 
@@ -73,9 +80,39 @@ public class SepayIpnController {
 
         } catch (InvalidPaymentException e) {
             log.error("SePay IPN Validation Error: {}", e.getMessage());
+            try {
+                SepayIpnRequest ipnRequest = objectMapper.readValue(rawPayload, SepayIpnRequest.class);
+                String orderCode = ipnRequest.getTransactionData().getCode();
+                if (orderCode != null) {
+                    String normalizedCode = orderCode.replace("-", "").replace("_", "").trim().toUpperCase();
+                    Optional<HoaDon> orderOpt = hoaDonRepository.findByMaDonHangOrNormalized(orderCode, normalizedCode);
+                    if (orderOpt.isPresent()) {
+                        HoaDon order = orderOpt.get();
+                        saveFailedTransaction(ipnRequest, order, "amount_mismatch", rawPayload);
+                        order.setPaymentStatus(PaymentStatus.AMOUNT_MISMATCH.getValue());
+                        order.setTrangThaiThanhToan("Sai lệch số tiền");
+                        order.setTransactionId(ipnRequest.getTransactionData().getTransactionId());
+                        order.setMaGiaoDich(ipnRequest.getTransactionData().getTransactionId());
+                        order.setGatewayResponse("SePay: " + e.getMessage());
+                        hoaDonRepository.save(order);
+                        
+                        auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
+                                order.getTrangThaiDonHang(), order.getTrangThaiDonHang(), "127.0.0.1",
+                                "[PAYMENT_AMOUNT_MISMATCH] SePay payment amount mismatch: " + e.getMessage(), "SYSTEM");
+                    }
+                }
+            } catch (Exception ex) {
+                log.error("Error logging mismatched payment in controller: ", ex);
+            }
             return ResponseEntity.ok(createSuccessResponse(e.getMessage()));
         } catch (OrderNotFoundException e) {
             log.error("SePay IPN Order Error: {}", e.getMessage());
+            try {
+                SepayIpnRequest ipnRequest = objectMapper.readValue(rawPayload, SepayIpnRequest.class);
+                saveFailedTransaction(ipnRequest, null, "order_not_found", rawPayload);
+            } catch (Exception ex) {
+                log.error("Error logging order not found payment in controller: ", ex);
+            }
             return ResponseEntity.ok(createSuccessResponse(e.getMessage()));
         } catch (Exception e) {
             log.error("SePay IPN Unhandled Exception: ", e);
@@ -120,10 +157,19 @@ public class SepayIpnController {
 
     private String getClientIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
+        String ip;
         if (xff != null && !xff.isEmpty()) {
-            return xff.split(",")[0].trim();
+            ip = xff.split(",")[0].trim();
+        } else {
+            ip = request.getRemoteAddr();
         }
-        return request.getRemoteAddr();
+        if (ip != null) {
+            ip = ip.trim();
+            if (ip.startsWith("::ffff:")) {
+                ip = ip.substring(7);
+            }
+        }
+        return ip;
     }
 
     private boolean isValidIp(String clientIp) {
@@ -145,6 +191,32 @@ public class SepayIpnController {
             }
         }
         return false;
+    }
+
+    private void saveFailedTransaction(SepayIpnRequest ipnRequest, HoaDon order, String status, String rawPayload) {
+        try {
+            SepayTransactionDto transactionDto = ipnRequest.getTransactionData();
+            if (transactionDto == null || transactionDto.getTransactionId() == null) {
+                return;
+            }
+            Optional<PaymentTransaction> existingTx = paymentTransactionRepository.findByTransactionId(transactionDto.getTransactionId());
+            if (existingTx.isPresent()) {
+                return;
+            }
+            PaymentTransaction tx = new PaymentTransaction();
+            tx.setTransactionId(transactionDto.getTransactionId());
+            tx.setOrder(order);
+            tx.setAmount(transactionDto.getTransferAmount() != null ? transactionDto.getTransferAmount() : java.math.BigDecimal.ZERO);
+            tx.setGateway(transactionDto.getGateway() != null ? transactionDto.getGateway() : "N/A");
+            tx.setStatus(status);
+            tx.setCreatedAt(LocalDateTime.now());
+            if (sepayConfig.isDebug()) {
+                tx.setRawPayload(rawPayload);
+            }
+            paymentTransactionRepository.saveAndFlush(tx);
+        } catch (Exception e) {
+            log.error("Failed to save failed transaction record: ", e);
+        }
     }
 
     private Map<String, Object> createSuccessResponse(String message) {

@@ -109,6 +109,8 @@
                                         <span th:if="${tx.status == 'success'}" class="badge bg-success">Thành công</span>
                                         <span th:if="${tx.status == 'stock_conflict'}" class="badge bg-warning text-dark">Tranh chấp kho</span>
                                         <span th:if="${tx.status == 'paid_received_after_cancel'}" class="badge bg-danger">Thanh toán sau hủy</span>
+                                        <span th:if="${tx.status == 'amount_mismatch'}" class="badge bg-danger">Sai lệch số tiền</span>
+                                        <span th:if="${tx.status == 'order_not_found'}" class="badge bg-secondary">Sai nội dung CK</span>
                                     </td>
                                     <td th:text="${#temporals.format(tx.createdAt, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 12:00:00</td>
                                     <td>

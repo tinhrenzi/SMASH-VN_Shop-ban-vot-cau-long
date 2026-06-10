@@ -35,9 +35,11 @@ import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GioHangService {
 
     private final KhachHangRepository khachHangRepository;
@@ -52,6 +54,7 @@ public class GioHangService {
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final ShippingFeeCalculator shippingFeeCalculator;
     private final AdminShippingService adminShippingService;
+    private final GhnService ghnService;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -235,14 +238,17 @@ public class GioHangService {
                 }
                 List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(oldOrder.getId());
                 hoaDonChiTietRepository.deleteAll(details);
+                // Xóa lịch sử trạng thái đơn hàng (được tạo bởi database triggers/legacy flow) trước để tránh lỗi Foreign Key
+                hoaDonRepository.deleteOrderStatusHistoryByOrderId(oldOrder.getId());
                 hoaDonRepository.delete(oldOrder);
             }
         }
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan, 
-                              Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu) {
+    public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
+                              Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
+                              Integer ghnToDistrictId, String ghnToWardCode) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
             throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
@@ -274,6 +280,15 @@ public class GioHangService {
                 .filter(c -> c.getId().equals(idDonViVanChuyen))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị vận chuyển"));
+
+        // Server-side validation: enforce GHN location selection if GHN carrier is selected
+        String carrierName = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toUpperCase() : "";
+        boolean isGhn = carrierName.contains("GIAO HÀNG NHANH") || carrierName.contains("GHN");
+        if (isGhn) {
+            if (ghnToDistrictId == null || ghnToWardCode == null || ghnToWardCode.trim().isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.");
+            }
+        }
 
         BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, diaChiNhan);
         BigDecimal totalAmount = tamTinh.add(phiShip);
@@ -318,6 +333,14 @@ public class GioHangService {
         hd.setGhiChu(ghiChu);
         hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 
+        // Lưu thông tin địa chỉ GHN để tạo đơn vận chuyển sau này
+        if (ghnToDistrictId != null) {
+            hd.setGhnToDistrictId(ghnToDistrictId);
+        }
+        if (ghnToWardCode != null && !ghnToWardCode.isBlank()) {
+            hd.setGhnToWardCode(ghnToWardCode);
+        }
+
         hd = hoaDonRepository.save(hd);
 
         // Create HoaDonChiTiet
@@ -344,9 +367,29 @@ public class GioHangService {
             hoaDonChiTietRepository.save(hdct);
         }
 
-        // For COD orders: clear cart immediately
+        // For COD orders: clear cart + tạo đơn GHN
         if ("COD".equalsIgnoreCase(ptttName)) {
             xoaTatCa(idTaiKhoan);
+
+            // Tạo đơn vận chuyển GHN (nếu có thông tin địa chỉ GHN)
+            if (ghnToDistrictId != null && ghnToWardCode != null && !ghnToWardCode.isBlank()) {
+                final HoaDon finalHd = hd;
+                final List<HoaDonChiTiet> savedItems = hoaDonChiTietRepository.findByHoaDon_Id(finalHd.getId());
+                try {
+                    String ghnCode = ghnService.createShippingOrder(finalHd, savedItems, ghnToDistrictId, ghnToWardCode);
+                    if (ghnCode != null) {
+                        finalHd.setGhnOrderCode(ghnCode);
+                        finalHd.setGhnStatus("ready_to_pick");
+                        finalHd.setGhnToDistrictId(ghnToDistrictId);
+                        finalHd.setGhnToWardCode(ghnToWardCode);
+                        hd = hoaDonRepository.save(finalHd);
+                        log.info("[GHN] Tạo đơn vận chuyển thành công cho HoaDon #{}: {}", finalHd.getId(), ghnCode);
+                    }
+                } catch (Exception e) {
+                    log.error("[GHN] Lỗi tạo đơn GHN cho HoaDon #{}: {}", finalHd.getId(), e.getMessage());
+                    // Không throw – lỗi GHN không làm hỏng đơn hàng
+                }
+            }
         }
 
         return hd;

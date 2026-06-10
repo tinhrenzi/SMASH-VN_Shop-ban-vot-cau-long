@@ -33,12 +33,18 @@ public class SepaySimulationControllerTest {
     @Mock
     private SepayGatewayService sepayGatewayService;
 
+    @Mock
+    private com.smashvn.shop.config.SepayConfig sepayConfig;
+
     @InjectMocks
     private SepaySimulationController sepaySimulationController;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(sepayConfig.getBankAccount()).thenReturn("123456");
+        when(sepayConfig.getBankName()).thenReturn("Vietcombank");
+        when(sepayConfig.getMemoPrefix()).thenReturn("SMASHVN");
         mockMvc = MockMvcBuilders.standaloneSetup(sepaySimulationController).build();
     }
 
