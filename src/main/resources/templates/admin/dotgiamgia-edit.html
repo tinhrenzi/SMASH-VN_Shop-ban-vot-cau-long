@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
         if (checkedCount === 0) {
             e.preventDefault();
-            alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!');
+            showToast('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!', 'warning');
         }
     });
 });

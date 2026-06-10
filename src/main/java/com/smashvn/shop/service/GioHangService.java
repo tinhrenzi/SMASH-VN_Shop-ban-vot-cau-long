@@ -159,6 +159,8 @@ public class GioHangService {
             map.put("giaBan", item.getSanPhamChiTiet().getGiaBan());
             map.put("soLuong", item.getSoLuong());
             map.put("idSanPham", sp.getId());
+            map.put("mauSac", item.getSanPhamChiTiet().getMauSac());
+            map.put("trongLuong", item.getSanPhamChiTiet().getTrongLuong());
             danhSachMini.add(map);
         }
 

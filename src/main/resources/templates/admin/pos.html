@@ -651,14 +651,14 @@
     // Add item to cart
     function addToCart(variant) {
         if (variant.soLuongTon <= 0) {
-            alert(`Sản phẩm '${variant.tenSanPham}' đã hết hàng! Không thể thêm vào hóa đơn.`);
+            showToast(`Sản phẩm '${variant.tenSanPham}' đã hết hàng! Không thể thêm vào hóa đơn.`, 'error');
             return;
         }
 
         const existing = cart.find(item => item.id === variant.id);
         if (existing) {
             if (existing.soLuong + 1 > variant.soLuongTon) {
-                alert(`Không thể thêm thêm! Số lượng tồn kho tối đa là: ${variant.soLuongTon}`);
+                showToast(`Không thể thêm thêm! Số lượng tồn kho tối đa là: ${variant.soLuongTon}`, 'warning');
                 return;
             }
             existing.soLuong += 1;
@@ -724,7 +724,7 @@
         }
         const item = cart[index];
         if (qty > item.soLuongTon) {
-            alert(`Chỉ còn ${item.soLuongTon} sản phẩm trong kho!`);
+            showToast(`Chỉ còn ${item.soLuongTon} sản phẩm trong kho!`, 'warning');
             qty = item.soLuongTon;
         }
         item.soLuong = qty;
@@ -879,7 +879,7 @@
     // Open Payment Confirmation Modal
     function openPaymentConfirmationModal() {
         if (cart.length === 0) {
-            alert("Giỏ hàng trống! Không thể thanh toán.");
+            showToast("Giỏ hàng trống! Không thể thanh toán.", "warning");
             return;
         }
 
@@ -1005,7 +1005,7 @@
     // Execute checkout (called only after employee clicks confirm in modal)
     function executeCheckout() {
         if (cart.length === 0) {
-            alert("Giỏ hàng trống! Không thể thanh toán.");
+            showToast("Giỏ hàng trống! Không thể thanh toán.", "warning");
             return;
         }
 
@@ -1063,13 +1063,13 @@
                 // Clear POS page state
                 clearPOSState();
             } else {
-                alert(`Thao tác thanh toán thất bại: \n${data.message}`);
+                showToast(`Thao tác thanh toán thất bại: ${data.message}`, 'error');
             }
         })
         .catch(err => {
             console.error(err);
             overlay.style.display = "none";
-            alert("Đã xảy ra lỗi kết nối mạng. Vui lòng kiểm tra lại!");
+            showToast("Đã xảy ra lỗi kết nối mạng. Vui lòng kiểm tra lại!", "error");
         });
     }
 

@@ -238,7 +238,7 @@
 											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
 											                        <i class="fas fa-plus-circle text-success"></i>
 											                    </a>
-											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
 											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
 											                    </a>
 											                </li>
@@ -338,7 +338,7 @@
                                                     <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
                                                         <i class="fas fa-plus-circle text-success"></i>
                                                     </a>
-                                                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
                                                         <i class="fas fa-plus-circle" style="color: #ccc;"></i>
                                                     </a>
                                                 </li>
@@ -422,7 +422,7 @@
                                                         <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
                                                             <i class="fas fa-plus-circle text-success"></i>
                                                         </a>
-                                                        <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                        <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
                                                             <i class="fas fa-plus-circle" style="color: #ccc;"></i>
                                                         </a>
                                                     </li>
@@ -544,7 +544,7 @@
 											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
 											                        <i class="fas fa-plus-circle text-success"></i>
 											                    </a>
-											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
 											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
 											                    </a>
 											                </li>

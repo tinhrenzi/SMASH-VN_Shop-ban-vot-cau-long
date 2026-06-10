@@ -621,7 +621,7 @@
                 const ghiChu = $('#ghiChu').val();
 
                 if (!hoTen || !sdt || !diaChi || !dvvcId) {
-                    alert('Vui lòng nhập đầy đủ các thông tin bắt buộc.');
+                    showToast('Vui lòng nhập đầy đủ các thông tin bắt buộc.', 'error');
                     return;
                 }
 
@@ -633,7 +633,7 @@
                     const districtVal = $('#ghnDistrictId').val();
                     const wardVal = $('#ghnWardCode').val();
                     if (!provinceVal || !districtVal || !wardVal) {
-                        alert('Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.');
+                        showToast('Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.', 'error');
                         return;
                     }
                 }
@@ -665,19 +665,21 @@
                             
                             if (paymentMethod === 'COD') {
                                 // COD order placed successfully
-                                alert('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.');
-                                window.location.href = '/user/my-order';
+                                showToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
+                                setTimeout(function() {
+                                    window.location.href = '/user/my-order';
+                                }, 1500);
                             } else {
                                 // Redirect directly to simulated SePay gateway
                                 window.location.href = '/payment/sepay/simulate?maDonHang=' + encodeURIComponent(response.maDonHang);
                             }
                         } else {
-                            alert('Đặt hàng thất bại: ' + response.message);
+                            showToast('Đặt hàng thất bại: ' + response.message, 'error');
                         }
                     },
                     error: function(xhr, status, error) {
                         $('.preloader').removeClass('is-active');
-                        alert('Đã xảy ra lỗi kết nối: ' + error);
+                        showToast('Đã xảy ra lỗi kết nối: ' + error, 'error');
                     }
                 });
             });
