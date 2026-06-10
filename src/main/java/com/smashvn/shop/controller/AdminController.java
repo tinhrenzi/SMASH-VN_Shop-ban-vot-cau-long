@@ -17,6 +17,8 @@ import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AdminKhuyenMaiService;
 import com.smashvn.shop.service.OrderViewService;
 import com.smashvn.shop.entity.PaymentTransaction;
+import com.smashvn.shop.entity.ReturnStatus;
+import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
 
 import jakarta.servlet.http.HttpSession;
@@ -409,6 +411,18 @@ public class AdminController {
             map.put("transactionId", hd.getTransactionId() != null ? hd.getTransactionId() : "");
             map.put("gatewayResponse", hd.getGatewayResponse() != null ? hd.getGatewayResponse() : "");
             map.put("ghiChu", hd.getGhiChu() != null ? hd.getGhiChu() : "");
+            
+            // Return status details
+            map.put("trangThaiHoanHang", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "");
+            map.put("trangThaiHoanHangLabel", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().getLabel() : "");
+            map.put("ngayXacNhanHoanHang", hd.getNgayXacNhanHoanHang() != null ? hd.getNgayXacNhanHoanHang().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "");
+            map.put("nhanVienXacNhan", hd.getNhanVienXacNhan() != null ? hd.getNhanVienXacNhan().getHoTenNv() : "");
+
+            // Refund status details
+            map.put("refundStatus", hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "");
+            map.put("refundStatusLabel", hd.getRefundStatus() != null ? hd.getRefundStatus().getLabel() : "");
+            map.put("refundTime", hd.getRefundTime() != null ? hd.getRefundTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "");
+            map.put("refundConfirmedBy", hd.getRefundConfirmedBy() != null ? hd.getRefundConfirmedBy().getHoTenNv() : "");
 
             // Linked transactions from PaymentTransaction
             java.util.List<com.smashvn.shop.entity.PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(id);
@@ -462,5 +476,30 @@ public class AdminController {
             err.put("error", "Lỗi khi tải chi tiết đơn hàng: " + e.getMessage());
             return org.springframework.http.ResponseEntity.status(500).body(err);
         }
+    }
+
+    @PostMapping("/don-hang/update-return-status")
+    public String updateReturnStatus(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam("trangThaiHoanHang") String trangThaiHoanHang,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+        
+        try {
+            orderViewService.updateReturnStatusByAdmin(idHoaDon, trangThaiHoanHang, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái hoàn hàng thành công!");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/don-hang";
     }
 }

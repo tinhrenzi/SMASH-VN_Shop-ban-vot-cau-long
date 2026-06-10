@@ -109,5 +109,28 @@ public class HoaDon {
     /** Ward Code của người nhận (GHN) */
     @Column(name = "ghn_to_ward_code", length = 20)
     private String ghnToWardCode;
+
+    // ─── Return and Refund fields ──────────────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai_hoan_hang", length = 50)
+    private ReturnStatus trangThaiHoanHang;
+
+    @Column(name = "ngay_xac_nhan_hoan_hang")
+    private LocalDateTime ngayXacNhanHoanHang;
+
+    @ManyToOne
+    @JoinColumn(name = "id_nhan_vien_xac_nhan")
+    private NhanVien nhanVienXacNhan;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status", length = 50)
+    private RefundStatus refundStatus;
+
+    @Column(name = "refund_time")
+    private LocalDateTime refundTime;
+
+    @ManyToOne
+    @JoinColumn(name = "id_nhan_vien_xac_nhan_hoan_tien")
+    private NhanVien refundConfirmedBy;
 }
 

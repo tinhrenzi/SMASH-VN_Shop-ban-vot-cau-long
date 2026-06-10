@@ -322,6 +322,23 @@ body {
     background-color: var(--brand-primary);
 }
 
+.stat-card-premium.accent-success::before {
+    background-color: #198754;
+}
+
+.stat-card-premium.accent-primary::before {
+    background-color: #0d6efd;
+}
+
+.stat-card-premium.accent-warning::before {
+    background-color: #ffc107;
+}
+
+.stat-card-premium.accent-danger::before {
+    background-color: #dc3545;
+}
+
+
 .stat-icon {
     font-size: 2.2rem;
     color: var(--brand-accent);

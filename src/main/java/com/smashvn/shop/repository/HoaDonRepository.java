@@ -56,12 +56,16 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     GeneralMetricsDTO getGeneralMetricsWithoutProductCount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT COALESCE(SUM(hd.tongTien), 0.0) FROM HoaDon hd " +
-           "WHERE (hd.trangThaiDonHang IN ('da_xac_nhan', 'dang_lay_hang', 'dang_giao', 'da_giao') " +
-           "OR (hd.trangThaiDonHang = 'da_huy' AND hd.trangThaiThanhToan = 'CHO_HOAN_TIEN')) " +
+           "WHERE hd.trangThaiDonHang = 'dang_giao' " +
            "AND (hd.paymentStatus IS NULL OR LOWER(hd.paymentStatus) <> 'refunded') " +
            "AND (hd.trangThaiThanhToan IS NULL OR hd.trangThaiThanhToan <> 'REFUNDED') " +
            "AND hd.ngayTao BETWEEN :start AND :end")
     java.math.BigDecimal sumExpectedRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT COALESCE(SUM(hd.tongTien), 0.0) FROM HoaDon hd " +
+           "WHERE hd.refundStatus = com.smashvn.shop.entity.RefundStatus.PENDING " +
+           "AND hd.ngayTao BETWEEN :start AND :end")
+    java.math.BigDecimal sumPendingRefundAmount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.ChartPointDTO(HOUR(hd.ngayTao), COALESCE(SUM(hd.tongTien), 0.0)) " +
            "FROM HoaDon hd " +
@@ -119,4 +123,9 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     @org.springframework.transaction.annotation.Transactional
     @Query(value = "DELETE FROM LichSuTrangThaiDonHang WHERE id_hoa_don = :orderId", nativeQuery = true)
     void deleteOrderStatusHistoryByOrderId(@Param("orderId") Integer orderId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT hd FROM HoaDon hd WHERE hd.id = :id")
+    java.util.Optional<HoaDon> findByIdWithLock(@Param("id") Integer id);
 }
+

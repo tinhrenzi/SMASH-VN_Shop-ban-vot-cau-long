@@ -29,6 +29,9 @@ public class AdminOrderUpdateTest {
     private HoaDonRepository hoaDonRepository;
 
     @Autowired
+    private EditLogRepository editLogRepository;
+
+    @Autowired
     private HoaDonChiTietRepository hoaDonChiTietRepository;
 
     @Autowired
@@ -540,5 +543,123 @@ public class AdminOrderUpdateTest {
         HoaDon updated2 = hoaDonRepository.findById(hd2.getId()).orElse(null);
         assertNotNull(updated2);
         assertEquals("Ghi chú cũ\nLý do hủy: Sản phẩm hết hàng", updated2.getGhiChu());
+    }
+
+    @org.junit.jupiter.api.Test
+    void testGhnWebhookExceptionAndRefundStatus() {
+        HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
+        
+        // Call webhook with exception
+        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "exception");
+        
+        HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertNotNull(updated);
+        assertEquals("da_huy", updated.getTrangThaiDonHang());
+        assertEquals(ReturnStatus.PENDING_RETURN, updated.getTrangThaiHoanHang());
+        assertEquals(RefundStatus.PENDING, updated.getRefundStatus());
+    }
+
+    @org.junit.jupiter.api.Test
+    void testDuplicateWebhookIdempotency() {
+        HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
+        
+        // Call webhook with lost twice
+        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
+        int logCount1 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId())).size();
+        
+        // Second call
+        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
+        int logCount2 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId())).size();
+        
+        // Log count should not increase
+        assertEquals(logCount1, logCount2);
+    }
+
+    @org.junit.jupiter.api.Test
+    void testInvalidReturnStatusTransitions() {
+        HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
+        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost"); // Set to LOST
+        
+        HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertEquals(ReturnStatus.LOST, updated.getTrangThaiHoanHang());
+        
+        // Attempting to move from LOST to RETURNED should throw IllegalStateException
+        assertThrows(IllegalStateException.class, () -> {
+            orderViewService.updateReturnStatusByAdmin(hd.getId(), "RETURNED", adminUser.getId(), "127.0.0.1");
+        });
+        
+        // Check that a WARNING log was generated
+        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId()));
+        boolean hasWarning = logs.stream().anyMatch(log -> log.getGhiChu() != null && log.getGhiChu().contains("[WARNING]"));
+        assertTrue(hasWarning);
+    }
+
+    @org.junit.jupiter.api.Test
+    void testDetailedInventoryAdjustmentLogAndRestoration() {
+        // Fetch fresh copy of testSpct to get its initial stock in transactional boundary
+        SanPhamChiTiet freshSpct = sanPhamChiTietRepository.findById(testSpct.getId()).get();
+        int initialStock = freshSpct.getSoLuongTon();
+        HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
+        
+        // Cancel order -> PENDING_RETURN (stock not restored yet)
+        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "return");
+        
+        SanPhamChiTiet spctPending = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
+        assertEquals(initialStock, spctPending.getSoLuongTon()); // Not restored
+        
+        // Confirm returned
+        orderViewService.updateReturnStatusByAdmin(hd.getId(), "RETURNED", adminUser.getId(), "127.0.0.1");
+        
+        SanPhamChiTiet spctReturned = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
+        assertEquals(initialStock + 2, spctReturned.getSoLuongTon()); // Restored
+        
+        // Verify detailed audit log contents
+        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId()));
+        EditLog returnLog = logs.stream()
+                .filter(l -> l.getGhiChu() != null && l.getGhiChu().contains("[WAREHOUSE_RETURN_RETURNED]"))
+                .findFirst().orElse(null);
+        assertNotNull(returnLog);
+        assertTrue(returnLog.getGhiChu().contains("SPCT-" + testSpct.getId() + " : +2"));
+        
+        // Second call should throw Exception (Idempotency / transition lock)
+        assertThrows(IllegalStateException.class, () -> {
+            orderViewService.updateReturnStatusByAdmin(hd.getId(), "RETURNED", adminUser.getId(), "127.0.0.1");
+        });
+    }
+
+    @org.junit.jupiter.api.Test
+    void testRefundAndInventoryIsolation() {
+        SanPhamChiTiet freshSpct = sanPhamChiTietRepository.findById(testSpct.getId()).get();
+        int initialStock = freshSpct.getSoLuongTon();
+        HoaDon hd = createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, 2);
+        
+        // Cancel order -> CHO_HOAN_TIEN (since it was cho_xac_nhan and not shipped, it restores stock immediately)
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_huy", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
+        
+        // Since it wasn't shipped, stock is already restored
+        SanPhamChiTiet spctCancelled = sanPhamChiTietRepository.findById(testSpct.getId()).get();
+        assertEquals(initialStock + 2, spctCancelled.getSoLuongTon());
+        
+        HoaDon cancelled = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertNotNull(cancelled);
+        assertEquals(RefundStatus.PENDING, cancelled.getRefundStatus());
+        assertNull(cancelled.getTrangThaiHoanHang()); // null because not shipped
+        
+        String response = cancelled.getGatewayResponse();
+        int start = response.indexOf("REFUND_TOKEN:") + 13;
+        int end = response.indexOf(";", start);
+        if (end == -1) end = response.length();
+        String token = response.substring(start, end);
+        
+        // Approve Refund
+        orderViewService.approveRefund(hd.getId(), token, adminUser.getId(), "127.0.0.1");
+        
+        HoaDon refunded = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertEquals(RefundStatus.COMPLETED, refunded.getRefundStatus());
+        assertNotNull(refunded.getRefundTime());
+        
+        // Stock should remain unchanged when refund is confirmed (it was already restored when cancelled, no extra restoration)
+        SanPhamChiTiet spctRefunded = sanPhamChiTietRepository.findById(testSpct.getId()).get();
+        assertEquals(initialStock + 2, spctRefunded.getSoLuongTon());
     }
 }

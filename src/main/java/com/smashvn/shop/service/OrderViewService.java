@@ -25,6 +25,10 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.PaymentStatus;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.ReturnStatus;
+import com.smashvn.shop.entity.RefundStatus;
+import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
@@ -49,6 +53,7 @@ public class OrderViewService {
     private final AuditService auditService;
     private final com.smashvn.shop.repository.EditLogRepository editLogRepository;
     private final JavaMailSender mailSender;
+    private final NhanVienRepository nhanVienRepository;
 
     @Value("${app.admin.emails}")
     private String adminEmailsConfig;
@@ -272,6 +277,7 @@ public class OrderViewService {
         mockOrder.put("ngayThanhToan", mockOrder.get("ngayDat"));
         mockOrder.put("ngayGiaoDVVC", mockOrder.get("ngayDat"));
         mockOrder.put("ngayGiaoThanhCong", mockOrder.get("ngayGiao"));
+        mockOrder.put("ghiChu", null);
 
         // Tạo thông tin địa chỉ giao nhận mock
         Map<String, Object> mockAddress = new HashMap<>();
@@ -320,6 +326,7 @@ public class OrderViewService {
 
             itemMap.put("sanPhamChiTiet", spctMap);
             itemMap.put("soLuong", 1);
+            itemMap.put("donGia", pPrice);
             mockItems.add(itemMap);
 
             totalItems = pPrice;
@@ -356,6 +363,7 @@ public class OrderViewService {
 
             itemMap.put("sanPhamChiTiet", spctMap);
             itemMap.put("soLuong", 2);
+            itemMap.put("donGia", pPrice);
             mockItems.add(itemMap);
 
             totalItems = pPrice.multiply(new BigDecimal(2));
@@ -387,6 +395,7 @@ public class OrderViewService {
         map.put("tongTien", hd.getTongTien());
         map.put("trangThaiDonHang", hd.getTrangThaiDonHang());
         map.put("status", getFrontendStatusLabel(hd.getTrangThaiDonHang()));
+        map.put("ghiChu", hd.getGhiChu());
 
         Map<String, Object> adr = new HashMap<>();
         adr.put("hoTen", hd.getKhachHang().getHoKh() + " " + hd.getKhachHang().getTenKh());
@@ -414,7 +423,7 @@ public class OrderViewService {
 
     @Transactional
     public boolean huyDonHang(Integer idHoaDon, Integer idKhachHang, String clientIp, String lyDoHuy) {
-        Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+        Optional<HoaDon> hdOpt = hoaDonRepository.findByIdWithLock(idHoaDon);
         if (hdOpt.isPresent()) {
             HoaDon hd = hdOpt.get();
             // Xác thực đơn hàng thuộc về đúng khách hàng đang đăng nhập
@@ -467,10 +476,20 @@ public class OrderViewService {
 
                 if (PaymentStatus.PAID.getValue().equalsIgnoreCase(hd.getPaymentStatus())) {
                     hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                    String pm = hd.getPaymentMethod();
+                    boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
+                            || (hd.getPhuongThucThanhToan() != null && !"COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()));
+                    if (isPrepaid) {
+                        hd.setRefundStatus(RefundStatus.PENDING);
+                    }
                     refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, customerId=%d",
                             hd.getId(), hd.getPaymentMethod(), hd.getTongTien().toString(), LocalDateTime.now().toString(), idKhachHang);
                     hoaDonRepository.save(hd);
-                    guiEmailYeuCauHoanTien(hd, standardizedReason);
+                    try {
+                        guiEmailYeuCauHoanTien(hd, standardizedReason);
+                    } catch (Exception e) {
+                        System.err.println("Lỗi gửi email yêu cầu hoàn tiền khi khách hàng hủy đơn: " + e.getMessage());
+                    }
                 } else {
                     hd.setPaymentStatus("CANCELLED");
                     hd.setTrangThaiThanhToan("HUY");
@@ -543,7 +562,7 @@ public class OrderViewService {
         }
 
         // 2. Load order
-        HoaDon hd = hoaDonRepository.findById(idHoaDon)
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
         
         String currentStatus = hd.getTrangThaiDonHang();
@@ -599,14 +618,20 @@ public class OrderViewService {
                 }
             }
         } else if (oldIsDeducted && !newIsDeducted) {
-            // Restock: lock variants, add back stock
-            for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
-                    sanPhamChiTietRepository.save(locked);
+            boolean restoreStock = true;
+            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus)) {
+                restoreStock = false;
+                hd.setTrangThaiHoanHang(ReturnStatus.PENDING_RETURN);
+            }
+            if (restoreStock) {
+                for (HoaDonChiTiet item : items) {
+                    SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                    if (spct != null) {
+                        SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                        locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
+                        sanPhamChiTietRepository.save(locked);
+                    }
                 }
             }
         }
@@ -638,8 +663,16 @@ public class OrderViewService {
             if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
                 standardizedReason = lyDoHuy.trim();
             }
-            if ("paid".equalsIgnoreCase(currentPaymentStatus)) {
+            
+            String pm = hd.getPaymentMethod();
+            boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
+                    || (hd.getPhuongThucThanhToan() != null && !"COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()));
+
+            if ("paid".equalsIgnoreCase(currentPaymentStatus) || "PAID".equalsIgnoreCase(hd.getPaymentStatus())) {
                 hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                if (isPrepaid) {
+                    hd.setRefundStatus(RefundStatus.PENDING);
+                }
                 refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, actingUserId=%d",
                         hd.getId(), hd.getPaymentMethod(), hd.getTongTien().toString(), LocalDateTime.now().toString(), actingTaiKhoanId);
             } else {
@@ -666,12 +699,21 @@ public class OrderViewService {
             if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
                 standardizedReason = lyDoHuy.trim();
             }
-            guiEmailYeuCauHoanTien(hd, standardizedReason);
+            try {
+                guiEmailYeuCauHoanTien(hd, standardizedReason);
+            } catch (Exception e) {
+                System.err.println("Lỗi gửi email yêu cầu hoàn tiền khi admin hủy đơn: " + e.getMessage());
+            }
         }
 
         // 10. Audit Log Enhancement
-        String giaTriCu = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", currentStatus, currentPaymentStatus, currentTrangThaiThanhToan);
-        String giaTriMoi = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", newStatus, hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String giaTriCu = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s, trangThaiHoanHang=%s", 
+                currentStatus, currentPaymentStatus, currentTrangThaiThanhToan,
+                "NULL", "NULL");
+        String giaTriMoi = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s, trangThaiHoanHang=%s", 
+                newStatus, hd.getPaymentStatus(), hd.getTrangThaiThanhToan(),
+                hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL",
+                hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "NULL");
         String ghiChu = String.format("[ADMIN_UPDATE] Trạng thái đơn hàng được cập nhật bởi %s.%s", roleStr, refundLogNote);
 
         auditService.log(
@@ -684,6 +726,179 @@ public class OrderViewService {
                 clientIp,
                 ghiChu,
                 actingUser.getVaiTro() != null ? actingUser.getVaiTro() : roleStr
+        );
+    }
+
+    @Transactional
+    public void updateOrderStatusByWebhook(Integer idHoaDon, String newStatus, String ghnStatus) {
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        String currentStatus = hd.getTrangThaiDonHang();
+        String currentPaymentStatus = hd.getPaymentStatus();
+        String currentTrangThaiThanhToan = hd.getTrangThaiThanhToan();
+
+        // Determine target return status if transitioning to da_huy (or already da_huy)
+        ReturnStatus targetReturnStatus = hd.getTrangThaiHoanHang();
+        if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
+            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus) || OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)) {
+                if ("lost".equalsIgnoreCase(ghnStatus)) {
+                    targetReturnStatus = ReturnStatus.LOST;
+                } else if ("damage".equalsIgnoreCase(ghnStatus)) {
+                    targetReturnStatus = ReturnStatus.DAMAGED;
+                } else if ("cancel".equalsIgnoreCase(ghnStatus) || "return".equalsIgnoreCase(ghnStatus) || "exception".equalsIgnoreCase(ghnStatus)) {
+                    targetReturnStatus = ReturnStatus.PENDING_RETURN;
+                } else {
+                    if (targetReturnStatus == null) {
+                        targetReturnStatus = ReturnStatus.PENDING_RETURN;
+                    }
+                }
+            }
+        }
+
+        if (Objects.equals(currentStatus, newStatus)) {
+            // Duplicate webhook / same status check
+            if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)) {
+                if (Objects.equals(hd.getTrangThaiHoanHang(), targetReturnStatus)) {
+                    return; // Duplicate webhook, skip completely
+                } else {
+                    // Update return status only
+                    hd.setTrangThaiHoanHang(targetReturnStatus);
+                    hd.setGhnStatus(ghnStatus);
+                    hd = hoaDonRepository.save(hd);
+                    
+                    // Audit Log for return status update
+                    String giaTriCu = String.format("status=%s, trangThaiHoanHang=%s", currentStatus, hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "NULL");
+                    String giaTriMoi = String.format("status=%s, trangThaiHoanHang=%s", newStatus, targetReturnStatus != null ? targetReturnStatus.name() : "NULL");
+                    String ghiChuLog = String.format("[GHN_WEBHOOK] Cập nhật trạng thái hoàn hàng từ webhook GHN. Mã vận đơn: %s, Trạng thái GHN: %s, Trạng thái hoàn hàng mới: %s", hd.getGhnOrderCode(), ghnStatus, targetReturnStatus != null ? targetReturnStatus.name() : "NULL");
+                    auditService.log(
+                            null,
+                            "HoaDon",
+                            Long.valueOf(hd.getId()),
+                            "UPDATE",
+                            giaTriCu,
+                            giaTriMoi,
+                            "127.0.0.1",
+                            ghiChuLog,
+                            "SYSTEM"
+                    );
+                }
+            } else {
+                // Cập nhật trạng thái GHN nếu có thay đổi mà không thay đổi trạng thái đơn hàng
+                if (!Objects.equals(hd.getGhnStatus(), ghnStatus)) {
+                    hd.setGhnStatus(ghnStatus);
+                    hoaDonRepository.save(hd);
+                }
+            }
+            return;
+        }
+
+        // Cập nhật trạng thái GHN
+        hd.setGhnStatus(ghnStatus);
+
+        // Inventory State tracking
+        boolean oldIsDeducted = isStockDeductedState(currentStatus);
+        boolean newIsDeducted = isStockDeductedState(newStatus);
+
+        List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+
+        boolean restoreStock = false;
+        if (!oldIsDeducted && newIsDeducted) {
+            // Deduct stock: lock variants, deduct
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                    locked.setSoLuongTon(Math.max(0, locked.getSoLuongTon() - item.getSoLuong()));
+                    sanPhamChiTietRepository.save(locked);
+                }
+            }
+        } else if (oldIsDeducted && !newIsDeducted) {
+            // If cancellation, check if already shipped
+            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus)) {
+                // Shipped cancellation -> do NOT restore stock, set return status
+                restoreStock = false;
+                hd.setTrangThaiHoanHang(targetReturnStatus);
+            } else {
+                // Not yet shipped -> restore stock immediately
+                restoreStock = true;
+            }
+        }
+
+        if (restoreStock) {
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
+                    sanPhamChiTietRepository.save(locked);
+                }
+            }
+        }
+
+        // Cập nhật trạng thái thanh toán và refund status
+        String pm = hd.getPaymentMethod();
+        boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
+                || (hd.getPhuongThucThanhToan() != null && !"COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()));
+
+        if (OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(newStatus)) {
+            hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+            if (hd.getPaidAt() == null) {
+                hd.setPaidAt(LocalDateTime.now());
+            }
+            if (hd.getThoiGianXacNhan() == null) {
+                hd.setThoiGianXacNhan(LocalDateTime.now());
+            }
+        } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
+            if ("paid".equalsIgnoreCase(currentPaymentStatus) || "PAID".equalsIgnoreCase(hd.getPaymentStatus())) {
+                hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                if (isPrepaid) {
+                    hd.setRefundStatus(RefundStatus.PENDING);
+                }
+            } else {
+                hd.setPaymentStatus("CANCELLED");
+                hd.setTrangThaiThanhToan("HUY");
+            }
+        }
+
+        hd.setTrangThaiDonHang(newStatus);
+        hd = hoaDonRepository.save(hd);
+
+        // Gửi email nếu hủy đơn và trạng thái là chờ hoàn tiền
+        if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus) && "CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
+            try {
+                guiEmailYeuCauHoanTien(hd, "Hủy tự động qua webhook GHN do lỗi vận chuyển hoặc khách hàng từ chối nhận (Trạng thái GHN: " + ghnStatus + ")");
+            } catch (Exception e) {
+                // log error but do not rollback
+            }
+        }
+
+        // Audit Log
+        String giaTriCu = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s, trangThaiHoanHang=%s", 
+                currentStatus, currentPaymentStatus, currentTrangThaiThanhToan, 
+                hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL", 
+                hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "NULL");
+        
+        String giaTriMoi = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s, trangThaiHoanHang=%s", 
+                newStatus, hd.getPaymentStatus(), hd.getTrangThaiThanhToan(), 
+                hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL", 
+                hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "NULL");
+        
+        String ghiChuLog = String.format("[GHN_WEBHOOK] Cập nhật trạng thái tự động từ webhook GHN. Mã vận đơn: %s, Trạng thái GHN: %s", hd.getGhnOrderCode(), ghnStatus);
+        
+        auditService.log(
+                null,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                giaTriCu,
+                giaTriMoi,
+                "127.0.0.1",
+                ghiChuLog,
+                "SYSTEM"
         );
     }
 
@@ -708,7 +923,7 @@ public class OrderViewService {
 
     @Transactional
     public void moveOrderToNextStatus(Integer orderId, Integer actingUserId, String clientIp) {
-        HoaDon hd = hoaDonRepository.findById(orderId)
+        HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
         
         String currentStatus = hd.getTrangThaiDonHang();
@@ -823,6 +1038,14 @@ public class OrderViewService {
                 "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Phương thức:</td>" +
                 "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600; color: #0d6efd;\">" + phuongThuc + "</td>" +
                 "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Yêu cầu hoàn tiền:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600; color: #dc3545;\">" + (hd.getRefundStatus() != null ? hd.getRefundStatus().getLabel() : "Không yêu cầu") + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #6c757d; font-size: 14px;\">Trạng thái hoàn kho:</td>" +
+                "                        <td style=\"padding: 6px 0; color: #212529; font-size: 14px; font-weight: 600;\">" + (hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().getLabel() : "Đã hoàn kho lập tức (Chưa xuất kho)") + "</td>" +
+                "                    </tr>" +
                 "                    <tr style=\"background-color: #fff5f5;\">" +
                 "                        <td style=\"padding: 8px 10px; color: #dc3545; font-size: 14px; font-weight: bold;\">Lý do hủy:</td>" +
                 "                        <td style=\"padding: 8px 10px; color: #dc3545; font-size: 14px; font-weight: bold;\">" + hienThiLyDo + "</td>" +
@@ -928,7 +1151,7 @@ public class OrderViewService {
 
     @Transactional
     public void approveRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
-        HoaDon hd = hoaDonRepository.findById(orderId)
+        HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
         
         String response = hd.getGatewayResponse();
@@ -940,11 +1163,20 @@ public class OrderViewService {
             throw new IllegalStateException("Đơn hàng này không ở trạng thái chờ hoàn tiền!");
         }
 
-        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s", 
+                hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan(),
+                hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL");
 
         // Update payment status to REFUNDED
         hd.setPaymentStatus("REFUNDED");
         hd.setTrangThaiThanhToan("REFUNDED");
+        hd.setRefundStatus(RefundStatus.COMPLETED);
+        hd.setRefundTime(LocalDateTime.now());
+        
+        NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingUserId);
+        if (nv != null) {
+            hd.setRefundConfirmedBy(nv);
+        }
         
         // Remove token from response
         String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
@@ -953,7 +1185,17 @@ public class OrderViewService {
         hoaDonRepository.save(hd);
 
         // Audit log
-        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s", 
+                hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan(), hd.getRefundStatus().name());
+        
+        String actingUserRole = "QUAN_LY";
+        if (actingUserId != null) {
+            TaiKhoan tk = taiKhoanRepository.findById(actingUserId).orElse(null);
+            if (tk != null && tk.getVaiTro() != null) {
+                actingUserRole = tk.getVaiTro();
+            }
+        }
+
         auditService.log(
                 actingUserId,
                 "HoaDon",
@@ -962,14 +1204,14 @@ public class OrderViewService {
                 oldState,
                 newState,
                 clientIp,
-                "[REFUND_APPROVED] Quản lý phê duyệt hoàn tiền thành công. Đơn hàng hiện đã chính thức trừ khỏi thống kê doanh thu.",
-                "QUAN_LY"
+                "[REFUND_APPROVED] Quản lý phê duyệt hoàn tiền thành công. Trạng thái hoàn tiền: COMPLETED. Đơn hàng hiện đã chính thức trừ khỏi thống kê doanh thu.",
+                actingUserRole
         );
     }
 
     @Transactional
     public void rejectRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
-        HoaDon hd = hoaDonRepository.findById(orderId)
+        HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
         
         String response = hd.getGatewayResponse();
@@ -981,11 +1223,16 @@ public class OrderViewService {
             throw new IllegalStateException("Đơn hàng này không ở trạng thái chờ hoàn tiền!");
         }
 
-        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String oldState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s", 
+                hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan(),
+                hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL");
 
         // Revert to PAID and DA_THANH_TOAN
         hd.setPaymentStatus("paid");
         hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        hd.setRefundStatus(null);
+        hd.setRefundTime(null);
+        hd.setRefundConfirmedBy(null);
         
         // Remove token from response
         String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
@@ -994,7 +1241,17 @@ public class OrderViewService {
         hoaDonRepository.save(hd);
 
         // Audit log
-        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s", hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan());
+        String newState = String.format("status=%s, paymentStatus=%s, trangThaiThanhToan=%s, refundStatus=%s", 
+                hd.getTrangThaiDonHang(), hd.getPaymentStatus(), hd.getTrangThaiThanhToan(), "NULL");
+        
+        String actingUserRole = "QUAN_LY";
+        if (actingUserId != null) {
+            TaiKhoan tk = taiKhoanRepository.findById(actingUserId).orElse(null);
+            if (tk != null && tk.getVaiTro() != null) {
+                actingUserRole = tk.getVaiTro();
+            }
+        }
+
         auditService.log(
                 actingUserId,
                 "HoaDon",
@@ -1004,7 +1261,99 @@ public class OrderViewService {
                 newState,
                 clientIp,
                 "[REFUND_REJECTED] Quản lý từ chối yêu cầu hoàn tiền. Đơn hàng được giữ nguyên trạng thái thanh toán và thống kê doanh thu.",
-                "QUAN_LY"
+                actingUserRole
+        );
+    }
+
+    @Transactional
+    public void updateReturnStatusByAdmin(Integer idHoaDon, String newReturnStatusStr, Integer actingTaiKhoanId, String clientIp) {
+        // 1. Authorization Check
+        if (actingTaiKhoanId == null) {
+            throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
+        }
+        TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId)
+                .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
+        if (!Boolean.TRUE.equals(actingUser.getLaQuanLy()) && !Boolean.TRUE.equals(actingUser.getLaNhanVien())) {
+            throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
+        }
+
+        // 2. Lock HoaDon
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        ReturnStatus currentReturnStatus = hd.getTrangThaiHoanHang();
+        ReturnStatus newReturnStatus = ReturnStatus.valueOf(newReturnStatusStr.toUpperCase());
+
+        String roleStr = Boolean.TRUE.equals(actingUser.getLaQuanLy()) ? "QUAN_LY" : "NHAN_VIEN";
+
+        // 3. Validation Of Allowed Return Status Transitions
+        // Only allow transition when order is cancelled (da_huy) and return status is PENDING_RETURN
+        if (!OrderStatus.DA_HUY.getValue().equalsIgnoreCase(hd.getTrangThaiDonHang()) || currentReturnStatus != ReturnStatus.PENDING_RETURN) {
+            String warningMsg = String.format("[WARNING] Yêu cầu chuyển đổi trạng thái hoàn hàng không hợp lệ từ %s sang %s cho hóa đơn #%d",
+                    currentReturnStatus != null ? currentReturnStatus.name() : "NULL",
+                    newReturnStatus.name(),
+                    hd.getId());
+            
+            auditService.log(
+                    actingTaiKhoanId,
+                    "HoaDon",
+                    Long.valueOf(hd.getId()),
+                    "UPDATE",
+                    String.format("trangThaiHoanHang=%s", currentReturnStatus != null ? currentReturnStatus.name() : "NULL"),
+                    String.format("trangThaiHoanHang=%s", newReturnStatus.name()),
+                    clientIp,
+                    warningMsg,
+                    roleStr
+            );
+            throw new IllegalStateException("Chỉ cho phép chuyển trạng thái hoàn hàng từ PENDING_RETURN sang RETURNED, LOST hoặc DAMAGED.");
+        }
+
+        // 4. Perform stock adjustment if new status is RETURNED
+        String adjustmentDetails = "Không có điều chỉnh kho";
+        if (newReturnStatus == ReturnStatus.RETURNED) {
+            List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+            StringBuilder detailsBuilder = new StringBuilder("Chi tiết điều chỉnh tồn kho:\n");
+            for (HoaDonChiTiet item : items) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
+                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
+                    sanPhamChiTietRepository.save(locked);
+                    
+                    detailsBuilder.append(String.format("SPCT-%d : +%d\n", spct.getId(), item.getSoLuong()));
+                }
+            }
+            adjustmentDetails = detailsBuilder.toString().trim();
+        } else if (newReturnStatus == ReturnStatus.LOST || newReturnStatus == ReturnStatus.DAMAGED) {
+            adjustmentDetails = "Không hoàn trả tồn kho (Hàng bị mất/hỏng)";
+        }
+
+        // 5. Update Audit Information
+        hd.setTrangThaiHoanHang(newReturnStatus);
+        hd.setNgayXacNhanHoanHang(LocalDateTime.now());
+        
+        NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
+        if (nv != null) {
+            hd.setNhanVienXacNhan(nv);
+        }
+
+        hoaDonRepository.save(hd);
+
+        // 6. Log Audit
+        String logNote = String.format("[WAREHOUSE_RETURN_%s] Xác nhận trạng thái hoàn hàng: %s. %s", 
+                newReturnStatus.name(), newReturnStatus.getLabel(), adjustmentDetails);
+        
+        auditService.log(
+                actingTaiKhoanId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                String.format("trangThaiHoanHang=PENDING_RETURN"),
+                String.format("trangThaiHoanHang=%s", newReturnStatus.name()),
+                clientIp,
+                logNote,
+                roleStr
         );
     }
 }

@@ -286,6 +286,7 @@ public class AdminThongKeService {
         BigDecimal onlineRevenue = hoaDonRepository.sumOnlineRevenue(start, end);
 
         BigDecimal expectedRevenue = hoaDonRepository.sumExpectedRevenue(start, end);
+        BigDecimal pendingRefund = hoaDonRepository.sumPendingRefundAmount(start, end);
 
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
@@ -298,6 +299,7 @@ public class AdminThongKeService {
         data.put("grouping", grouping);
         data.put("expectedRevenue", expectedRevenue != null ? expectedRevenue : BigDecimal.ZERO);
         data.put("actualRevenue", metrics.totalRevenue());
+        data.put("pendingRefund", pendingRefund != null ? pendingRefund : BigDecimal.ZERO);
         
         // Put Online statistics
         data.put("onlineTotal", onlineTotal != null ? onlineTotal : 0L);

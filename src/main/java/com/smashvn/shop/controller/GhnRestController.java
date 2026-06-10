@@ -5,6 +5,7 @@ import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.service.GhnService;
+import com.smashvn.shop.service.OrderViewService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class GhnRestController {
     private final GhnService ghnService;
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final OrderViewService orderViewService;
 
     /** Lấy danh sách tỉnh/thành phố */
     @GetMapping("/provinces")
@@ -252,9 +254,6 @@ public class GhnRestController {
                 String oldStatus = hd.getTrangThaiDonHang();
                 String oldGhnStatus = hd.getGhnStatus();
 
-                // Cập nhật trạng thái GHN
-                hd.setGhnStatus(status);
-
                 // Ánh xạ trạng thái GHN sang trạng thái đơn hàng nội bộ (trangThaiDonHang)
                 String internalStatus = oldStatus;
                 switch (status.toLowerCase()) {
@@ -273,20 +272,18 @@ public class GhnRestController {
                         break;
                     case "delivered":
                         internalStatus = "da_giao";
-                        // Cập nhật trạng thái thanh toán là đã thanh toán nếu giao hàng thành công
-                        hd.setPaymentStatus("PAID");
-                        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
-                        hd.setPaidAt(java.time.LocalDateTime.now());
                         break;
                     case "cancel":
                     case "exception":
                     case "lost":
                     case "damage":
+                    case "return":
                         internalStatus = "da_huy";
                         break;
                 }
-                hd.setTrangThaiDonHang(internalStatus);
-                hoaDonRepository.save(hd);
+
+                // Cập nhật trạng thái đơn hàng và tồn kho thông qua OrderViewService
+                orderViewService.updateOrderStatusByWebhook(hd.getId(), internalStatus, status);
 
                 log.info("[GHN_WEBHOOK] Updated HoaDon #{}: oldStatus={}, oldGhnStatus={} -> newStatus={}, newGhnStatus={}",
                         hd.getId(), oldStatus, oldGhnStatus, internalStatus, status);

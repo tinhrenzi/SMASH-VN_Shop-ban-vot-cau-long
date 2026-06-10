@@ -144,6 +144,7 @@
             position: absolute;
             top: 32px;
             left: 8%;
+            max-width: 84%;
             height: 4px;
             background-color: #2ec155;
             z-index: 2;
@@ -331,31 +332,31 @@
                                                     <!-- ===== Badge trạng thái đầy đủ ===== -->
                                                     <div>
                                                         <span class="manage-o__badge"
-                                                              th:classappend="${order.trangThaiDonHang == 'cho_thanh_toan' ? 'badge--pending' :
-                                                                              (order.trangThaiDonHang == 'cho_xac_nhan'  ? 'badge--processing' :
-                                                                              (order.trangThaiDonHang == 'da_xac_nhan'   ? 'badge--confirmed' :
-                                                                              (order.trangThaiDonHang == 'dang_lay_hang' ? 'badge--confirmed' :
-                                                                              (order.trangThaiDonHang == 'dang_giao'     ? 'badge--shipping' :
-                                                                              (order.trangThaiDonHang == 'da_giao'       ? 'badge--delivered' :
-                                                                              (order.trangThaiDonHang == 'da_huy'        ? 'badge--cancelled' :
-                                                                              (order.trangThaiDonHang == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}"
-                                                              th:text="${order.trangThaiDonHang == 'cho_thanh_toan' ? 'Chờ thanh toán' :
-                                                                        (order.trangThaiDonHang == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
-                                                                        (order.trangThaiDonHang == 'da_xac_nhan'   ? 'Đã xác nhận' :
-                                                                        (order.trangThaiDonHang == 'dang_lay_hang' ? 'Đang lấy hàng' :
-                                                                        (order.trangThaiDonHang == 'dang_giao'     ? 'Đang giao hàng' :
-                                                                        (order.trangThaiDonHang == 'da_giao'       ? 'Đã giao thành công' :
-                                                                        (order.trangThaiDonHang == 'da_huy'        ? 'Đã hủy' :
-                                                                        (order.trangThaiDonHang == 'stock_conflict'? 'Lỗi tồn kho' : order.trangThaiDonHang)))))))}"
+                                                              th:classappend="${order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'badge--pending' :
+                                                                              (order['trangThaiDonHang'] == 'cho_xac_nhan'  ? 'badge--processing' :
+                                                                              (order['trangThaiDonHang'] == 'da_xac_nhan'   ? 'badge--confirmed' :
+                                                                              (order['trangThaiDonHang'] == 'dang_lay_hang' ? 'badge--confirmed' :
+                                                                              (order['trangThaiDonHang'] == 'dang_giao'     ? 'badge--shipping' :
+                                                                              (order['trangThaiDonHang'] == 'da_giao'       ? 'badge--delivered' :
+                                                                              (order['trangThaiDonHang'] == 'da_huy'        ? 'badge--cancelled' :
+                                                                              (order['trangThaiDonHang'] == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}"
+                                                              th:text="${order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'Chờ thanh toán' :
+                                                                        (order['trangThaiDonHang'] == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
+                                                                        (order['trangThaiDonHang'] == 'da_xac_nhan'   ? 'Đã xác nhận' :
+                                                                        (order['trangThaiDonHang'] == 'dang_lay_hang' ? 'Đang lấy hàng' :
+                                                                        (order['trangThaiDonHang'] == 'dang_giao'     ? 'Đang giao hàng' :
+                                                                        (order['trangThaiDonHang'] == 'da_giao'       ? 'Đã giao thành công' :
+                                                                        (order['trangThaiDonHang'] == 'da_huy'        ? 'Đã hủy' :
+                                                                        (order['trangThaiDonHang'] == 'stock_conflict'? 'Lỗi tồn kho' : order['trangThaiDonHang'])))))))}"
                                                         >Trạng thái</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- ===== Nút hủy đơn hàng (chỉ hiện khi được phép hủy) ===== -->
-                                            <div th:if="${order.trangThaiDonHang == 'cho_thanh_toan'
-                                                          or order.trangThaiDonHang == 'cho_xac_nhan'
-                                                          or order.trangThaiDonHang == 'da_xac_nhan'}"
+                                             <div th:if="${order['trangThaiDonHang'] == 'cho_thanh_toan'
+                                                           or order['trangThaiDonHang'] == 'cho_xac_nhan'
+                                                           or order['trangThaiDonHang'] == 'da_xac_nhan'}"
                                                  style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end;">
                                                 <button id="btn-huy-don"
                                                         th:data-order-id="${order.id}"
@@ -368,14 +369,14 @@
                                             </div>
 
                                             <!-- Thông báo không thể hủy (khi đang giao / đã giao) -->
-                                            <div th:if="${order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao'}"
+                                             <div th:if="${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao'}"
                                                  style="margin-top: 14px; padding: 10px 14px; background: #f8f9fa; border-left: 4px solid #90a4ae; border-radius: 4px; font-size: 13px; color: #546e7a;">
                                                 <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
                                                 Đơn hàng đang được vận chuyển hoặc đã giao, không thể hủy.
                                             </div>
 
                                             <!-- Thông báo đơn đã bị hủy -->
-                                            <div th:if="${order.trangThaiDonHang == 'da_huy'}"
+                                            <div th:if="${order['trangThaiDonHang'] == 'da_huy'}"
                                                  style="margin-top: 14px; padding: 12px 16px; background: #fff5f5; border-left: 4px solid #e53935; border-radius: 6px; font-size: 13px; color: #c62828; line-height: 1.6;">
                                                  <div>
                                                      <i class="fas fa-ban" style="margin-right: 6px;"></i>
@@ -384,9 +385,10 @@
                                                  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(229, 57, 53, 0.2); color: #7f1d1d;">
                                                      <i class="fas fa-comment-dots" style="margin-right: 6px;"></i>
                                                      <strong>Lý do hủy đơn hàng:</strong> 
-                                                     <span th:text="${order.ghiChu != null and order.ghiChu.contains('Lý do hủy:') 
-                                                                     ? order.ghiChu.substring(order.ghiChu.lastIndexOf('Lý do hủy:') + 10).trim() 
-                                                                     : 'Không cung cấp lý do'}"></span>
+                                                     <span th:with="rawNote=${order['ghiChu']}"
+                                                            th:text="${rawNote != null and rawNote.contains('Lý do hủy:') and !#strings.isEmpty(rawNote.substring(rawNote.lastIndexOf('Lý do hủy:') + 10).trim()) 
+                                                                      ? rawNote.substring(rawNote.lastIndexOf('Lý do hủy:') + 10).trim() 
+                                                                      : 'Không cung cấp lý do'}"></span>
                                                  </div>
                                             </div>
                                         </div>
@@ -403,17 +405,17 @@
                                                     </div>
                                                 </div>
                                                 <div class="dash-l-r" style="margin-bottom: 16px;">
-                                                    <div class="manage-o__text u-c-secondary" th:text="'Dự kiến giao: ' + ${#temporals.format(order.ngayGiao, 'dd/MM/yyyy')}">Dự kiến giao: 26 Oct 2016</div>
-                                                    <div class="manage-o__icon">
-                                                        <i class="fas fa-truck u-s-m-r-5"></i>
-                                                        <span class="manage-o__text" th:text="${order.phuongThucVanChuyen}">Standard</span>
-                                                    </div>
-                                                </div>
+                                                     <div class="manage-o__text u-c-secondary" th:text="'Dự kiến giao: ' + ${#temporals.format(order['ngayGiao'], 'dd/MM/yyyy')}">Dự kiến giao: 26 Oct 2016</div>
+                                                     <div class="manage-o__icon">
+                                                         <i class="fas fa-truck u-s-m-r-5"></i>
+                                                         <span class="manage-o__text" th:text="${order['phuongThucVanChuyen']}">Standard</span>
+                                                     </div>
+                                                 </div>
 
                                                 <!-- Timeline - hiển thị theo trạng thái -->
                                                 <!-- Trường hợp: ĐÃ HỦY -->
-                                                <div th:if="${order.trangThaiDonHang == 'da_huy'}" class="timeline-stepper">
-                                                    <div class="timeline-stepper-progress" style="width: 50%; background-color: #e53935;"></div>
+                                                <div th:if="${order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
+                                                    <div class="timeline-stepper-progress" style="width: 42%; background-color: #e53935;"></div>
                                                     
                                                     <div class="timeline-stepper-step finish">
                                                         <div class="timeline-stepper-icon-circle">
@@ -428,7 +430,7 @@
                                                             <i class="fas fa-times-circle"></i>
                                                         </div>
                                                         <span class="timeline-stepper-label" style="color: #e53935;">Đơn Hàng Đã Hủy</span>
-                                                        <span class="timeline-stepper-time" style="color: #e53935;" th:text="${order.ngayHuy != null ? #temporals.format(order.ngayHuy, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                        <span class="timeline-stepper-time" style="color: #e53935;" th:text="${order['ngayHuy'] != null ? #temporals.format(order['ngayHuy'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
                                                     <div class="timeline-stepper-step">
@@ -441,11 +443,11 @@
                                                 </div>
 
                                                 <!-- Trường hợp: BÌNH THƯỜNG (chờ/xác nhận/giao/đã giao) -->
-                                                <div th:unless="${order.trangThaiDonHang == 'da_huy'}" class="timeline-stepper">
-                                                    <div class="timeline-stepper-progress" th:style="'width: ' + 
-                                                         (${order.trangThaiDonHang == 'da_giao'} ? '100%' : 
-                                                         ((${order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'dang_lay_hang'} ? '50%' : 
-                                                         ((${order.trangThaiDonHang == 'da_xac_nhan' or order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid'} ? '25%' : '0%')))))"></div>
+                                                <div th:unless="${order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
+                                                     <div class="timeline-stepper-progress" th:style="'width: ' + 
+                                                          (${order['trangThaiDonHang'] == 'da_giao'} ? '84%' : 
+                                                          ((${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'dang_lay_hang'} ? '42%' : 
+                                                          ((${order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid'} ? '21%' : '0%')))))"></div>
                                                     
                                                     <!-- Bước 1: Đơn Hàng Đã Đặt -->
                                                     <div class="timeline-stepper-step finish">
@@ -457,38 +459,38 @@
                                                     </div>
                                                     
                                                     <!-- Bước 2: Đã Xác Nhận / Thanh Toán -->
-                                                    <div th:class="'timeline-stepper-step ' + 
-                                                         (${order.trangThaiDonHang == 'da_xac_nhan' or order.trangThaiDonHang == 'dang_lay_hang' or order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao' or order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid' ? 'finish' : ''})">
+                                                     <div th:class="'timeline-stepper-step ' + 
+                                                          (${order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-money-bill-wave"></i>
                                                         </div>
                                                         <span class="timeline-stepper-label" th:text="${(order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid') ? 'Đơn Hàng Đã Thanh Toán (' + #numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT') + 'đ)' : 'Đã Xác Nhận'}">Đã xác nhận</span>
-                                                        <span class="timeline-stepper-time" th:text="${(order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid') ? (order.ngayThanhToan != null ? #temporals.format(order.ngayThanhToan, 'HH:mm dd-MM-yyyy') : '') : (order.ngayXacNhan != null ? #temporals.format(order.ngayXacNhan, 'HH:mm dd-MM-yyyy') : '')}"></span>
+                                                        <span class="timeline-stepper-time" th:text="${(order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid') ? (order['ngayThanhToan'] != null ? #temporals.format(order['ngayThanhToan'], 'HH:mm dd-MM-yyyy') : '') : (order['ngayXacNhan'] != null ? #temporals.format(order['ngayXacNhan'], 'HH:mm dd-MM-yyyy') : '')}"></span>
                                                     </div>
                                                     
                                                     <!-- Bước 3: Đang Giao (Đã Giao Cho ĐVVC) -->
-                                                    <div th:class="'timeline-stepper-step ' + 
-                                                         (${order.trangThaiDonHang == 'dang_lay_hang' or order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao' ? 'finish' : ''})">
+                                                     <div th:class="'timeline-stepper-step ' + 
+                                                          (${order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-truck"></i>
                                                         </div>
                                                         <span class="timeline-stepper-label">Đang Giao</span>
-                                                        <span class="timeline-stepper-time" th:text="${order.ngayGiaoDVVC != null ? #temporals.format(order.ngayGiaoDVVC, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                        <span class="timeline-stepper-time" th:text="${order['ngayGiaoDVVC'] != null ? #temporals.format(order['ngayGiaoDVVC'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
                                                     <!-- Bước 4: Đã giao thành công -->
-                                                    <div th:class="'timeline-stepper-step ' + 
-                                                         (${order.trangThaiDonHang == 'da_giao' ? 'finish' : ''})">
+                                                     <div th:class="'timeline-stepper-step ' + 
+                                                          (${order['trangThaiDonHang'] == 'da_giao' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-inbox"></i>
                                                         </div>
                                                         <span class="timeline-stepper-label">Đã Giao Thành Công</span>
-                                                        <span class="timeline-stepper-time" th:text="${order.ngayGiaoThanhCong != null ? #temporals.format(order.ngayGiaoThanhCong, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                        <span class="timeline-stepper-time" th:text="${order['ngayGiaoThanhCong'] != null ? #temporals.format(order['ngayGiaoThanhCong'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
                                                     <!-- Bước 5: Đánh Giá -->
-                                                    <div th:class="'timeline-stepper-step ' + 
-                                                         (${order.trangThaiDonHang == 'da_giao' ? 'active' : ''})">
+                                                     <div th:class="'timeline-stepper-step ' + 
+                                                          (${order['trangThaiDonHang'] == 'da_giao' ? 'active' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-star"></i>
                                                         </div>
@@ -513,7 +515,13 @@
                                                                 <div class="description-title"
                                                                      th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}"
                                                                      style="font-weight: 700; color: #333; margin-bottom: 4px;"></div>
-                                                                <div style="font-size: 12px; color: #888;" th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}"></div>
+                                                                 <div style="font-size: 12px; color: #888;">
+                                                                     <span th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}"></span>
+                                                                     <span th:if="${item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty()}" 
+                                                                           th:text="' | Trọng lượng: ' + ${item.sanPhamChiTiet.trongLuong}"></span>
+                                                                     <span th:if="${item.sanPhamChiTiet.mucCang != null and !item.sanPhamChiTiet.mucCang.trim().isEmpty()}" 
+                                                                           th:text="' | Mức căng: ' + ${item.sanPhamChiTiet.mucCang}"></span>
+                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div class="description__info-wrap" style="display: flex; gap: 30px; align-items: center;">
@@ -525,7 +533,7 @@
                                                             <div>
                                                                 <span class="manage-o__text-2 u-c-silver">Thành tiền:&nbsp;
                                                                     <span class="manage-o__text-2 u-c-secondary"
-                                                                          th:text="${#numbers.formatDecimal(item.sanPhamChiTiet.giaBan * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
+                                                                          th:text="${#numbers.formatDecimal(item.donGia * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
                                                                 </span>
                                                             </div>
                                                         </div>
