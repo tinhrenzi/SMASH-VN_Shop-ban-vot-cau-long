@@ -28,7 +28,7 @@ public class SanPhamYeuThichService {
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
 
-    // 1. Thêm sản phẩm vào Wishlist
+    // 1. Thêm hoặc Bỏ sản phẩm khỏi Wishlist (Toggle)
     @Transactional
     public String themVaoWishlist(Integer idTaiKhoan, Integer idSanPham) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
@@ -36,9 +36,10 @@ public class SanPhamYeuThichService {
             return "chuadangnhap";
         }
 
-        // Kiểm tra xem đã có trong Wishlist chưa
+        // Kiểm tra xem đã có trong Wishlist chưa, nếu có thì xóa đi (Bỏ yêu thích)
         if (yeuThichRepository.existsById_KhachHangIdAndId_SanPhamId(kh.getId(), idSanPham)) {
-            return "datontai";
+            yeuThichRepository.deleteById_KhachHangIdAndId_SanPhamId(kh.getId(), idSanPham);
+            return "xoa";
         }
 
         SanPham sp = sanPhamRepository.findById(idSanPham)

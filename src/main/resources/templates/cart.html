@@ -78,10 +78,18 @@
 											                <span class="table-p__category" th:if="${item.sanPhamChiTiet.sanPham.danhMuc != null}">
 											                    <a th:href="@{#}" th:text="${item.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc}">Danh Mục</a>
 											                </span>
-											                <ul class="table-p__variant-list">
-											                    <li><span th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}">Màu</span></li>
-											                    <li><span th:text="'Size/Trọng lượng: ' + ${item.sanPhamChiTiet.trongLuong}">Size</span></li>
-											                </ul>
+											                <div class="cart-product__variants u-s-m-t-8" th:if="${(item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()) or (item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty())}">
+											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()}">
+											                        <i class="fas fa-palette"></i>
+											                        <span class="badge-label">Màu sắc:</span>
+											                        <strong th:text="${item.sanPhamChiTiet.mauSac}">Màu</strong>
+											                    </span>
+											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty()}">
+											                        <i class="fas fa-ruler-combined"></i>
+											                        <span class="badge-label">Size:</span>
+											                        <strong th:text="${item.sanPhamChiTiet.trongLuong}">Size</strong>
+											                    </span>
+											                </div>
 											                
 											                <div th:if="${ngungBan}" class="text-danger fw-bold u-s-m-t-8">
 											                    <i class="fas fa-exclamation-circle"></i> Sản phẩm đã ngừng kinh doanh
@@ -239,8 +247,8 @@
                             });
                         },
                         error: function() {
-                            alert("Có lỗi xảy ra khi cập nhật số lượng!");
-                        }
+                             showToast("Có lỗi xảy ra khi cập nhật số lượng!", "error");
+                         }
                     });
                 }, 500); 
             });

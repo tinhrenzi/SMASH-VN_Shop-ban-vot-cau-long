@@ -119,11 +119,9 @@
 								    
 								    <div class="u-s-m-b-15">
 										<div class="pd-detail__inline">
-											<span class="pd-detail__click-wrap"><i class="far fa-heart u-s-m-r-6"></i>
-												 <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ')'" >
-												 Thêm vào yêu thích
-												</a>
-											</span>
+											<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ', this)'" class="pd-detail__wishlist-btn" title="Yêu thích">
+												<i th:class="${inWishlist} ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
+											</a>
 										 </div>
 									</div>
 								    

@@ -68,7 +68,79 @@
                 color: #ff4500 !important;
             }
         </style>
+        
+        <script>
+            // Global Toast Notification for Admin Panel
+            function showToast(message, type) {
+                type = type || 'info'; // 'success', 'error', 'warning', 'info'
+                
+                // Prevent duplicate container creation
+                var container = document.getElementById('custom-toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'custom-toast-container';
+                    document.body.appendChild(container);
+                }
+                
+                var iconClass = 'fa-check-circle';
+                if (type === 'error' || type === 'danger') {
+                    iconClass = 'fa-times-circle';
+                    type = 'error'; // normalize to error
+                } else if (type === 'warning') {
+                    iconClass = 'fa-exclamation-triangle';
+                } else if (type === 'info') {
+                    iconClass = 'fa-info-circle';
+                }
+                
+                var toast = document.createElement('div');
+                toast.className = 'custom-toast toast-' + type;
+                
+                toast.innerHTML = `
+                    <div class="custom-toast-content">
+                        <i class="fas ${iconClass}"></i>
+                        <span class="custom-toast__message">${message}</span>
+                    </div>
+                    <button class="toast-close" type="button"><i class="fas fa-times"></i></button>
+                `;
+                
+                container.appendChild(toast);
+                
+                // Trigger reflow to start transition
+                toast.offsetHeight;
+                toast.classList.add('show');
+                
+                // Auto dismiss timer
+                var dismissTimer = setTimeout(function() {
+                    dismissToast(toast);
+                }, 4000);
+                
+                // Close button handler
+                var closeBtn = toast.querySelector('.toast-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        clearTimeout(dismissTimer);
+                        dismissToast(toast);
+                    });
+                }
+            }
+
+            function dismissToast(toast) {
+                toast.classList.remove('show');
+                // Wait for CSS transition to finish before removing element
+                setTimeout(function() {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 400);
+            }
+
+            // Override standard browser alert after showToast is defined
+            window.alert = function(message) {
+                showToast(message, 'warning');
+            };
+        </script>
     </div>
+
 
 </body>
 </html>

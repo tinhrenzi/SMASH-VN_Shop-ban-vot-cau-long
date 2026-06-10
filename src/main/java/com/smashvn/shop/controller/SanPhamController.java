@@ -8,8 +8,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.List;
 import java.util.Map;
@@ -22,9 +26,11 @@ public class SanPhamController {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final KhachHangRepository khachHangRepository;
+    private final SanPhamYeuThichRepository wishlistRepository;
 
     @GetMapping("/san-pham/{id}")
-    public String hienThiChiTietSanPham(@PathVariable("id") Integer id, Model model) {
+    public String hienThiChiTietSanPham(@PathVariable("id") Integer id, Model model, HttpSession session) {
         
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm này!"));
@@ -56,20 +62,31 @@ public class SanPhamController {
         }).collect(Collectors.toList());
         // --- KẾT THÚC CODE FIX LỖI ---
 
+        boolean inWishlist = false;
+        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        if (idTaiKhoan != null) {
+            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+            if (kh != null) {
+                inWishlist = wishlistRepository.existsById_KhachHangIdAndId_SanPhamId(kh.getId(), id);
+            }
+        }
+
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("sp", sanPham);
         model.addAttribute("listChiTiet", danhSachChiTiet);
         model.addAttribute("anhDaiDien", anhDaiDien);
+        model.addAttribute("inWishlist", inWishlist);
         
         // Ném list đã tối ưu này sang giao diện cho JS dùng
         model.addAttribute("listBienTheJS", listBienTheJS); 
         
         return "product-detail"; 
     }
- // Trả về một đoạn HTML (fragment) thay vì trả về toàn bộ trang web
+
+    // Trả về một đoạn HTML (fragment) thay vì trả về toàn bộ trang web
     @GetMapping("/modal/quick-look/{id}")
-    public String hienThiQuickLookModal(@PathVariable("id") Integer id, Model model) {
+    public String hienThiQuickLookModal(@PathVariable("id") Integer id, Model model, HttpSession session) {
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
                 
@@ -90,6 +107,15 @@ public class SanPhamController {
             return map;
         }).collect(java.util.stream.Collectors.toList());
 
+        boolean inWishlist = false;
+        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        if (idTaiKhoan != null) {
+            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+            if (kh != null) {
+                inWishlist = wishlistRepository.existsById_KhachHangIdAndId_SanPhamId(kh.getId(), id);
+            }
+        }
+
         // Đổ dữ liệu vào Model (Đổi 'sp' thành 'spQuickLook' để tránh xung đột với trang chi tiết)
         model.addAttribute("spQuickLook", sanPham); 
         model.addAttribute("listChiTiet", danhSachChiTiet);
@@ -97,6 +123,7 @@ public class SanPhamController {
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("listBienTheJS", listBienTheJS);
+        model.addAttribute("inWishlist", inWishlist);
         
         return "/layout/modals :: quick-look-fragment"; 
     }

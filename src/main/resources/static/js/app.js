@@ -831,7 +831,7 @@ function checkAndApplyVariant(container) {
           },
           error: function(error) {
               console.log("Lỗi khi tải dữ liệu Quick Look", error);
-              alert("Có lỗi xảy ra khi tải dữ liệu sản phẩm!");
+              showToast("Có lỗi xảy ra khi tải dữ liệu sản phẩm!", "error");
           }
       });
   }
@@ -868,6 +868,30 @@ function checkAndApplyVariant(container) {
                   var productUrl = '/san-pham/' + item.idSanPham;
                   var imageUrl = '/uploads/product/' + item.hinhAnh;
 
+                  var variantHtml = '';
+                  var hasMau = item.mauSac && item.mauSac.trim().length > 0;
+                  var hasTrongLuong = item.trongLuong && item.trongLuong.trim().length > 0;
+                  if (hasMau || hasTrongLuong) {
+                      variantHtml += '<div class="mini-product__variants">';
+                      if (hasMau) {
+                          variantHtml += `
+                              <span class="mini-product__badge">
+                                  <i class="fas fa-palette"></i>
+                                  <span>Màu:</span>
+                                  <strong>${item.mauSac}</strong>
+                              </span>`;
+                      }
+                      if (hasTrongLuong) {
+                          variantHtml += `
+                              <span class="mini-product__badge">
+                                  <i class="fas fa-ruler-combined"></i>
+                                  <span>Size:</span>
+                                  <strong>${item.trongLuong}</strong>
+                              </span>`;
+                      }
+                      variantHtml += '</div>';
+                  }
+
                   // TẠO HTML CHO TỪNG SẢN PHẨM TRONG GIỎ (Dùng Template Literal)
                   htmlContent += `
                       <div class="card-mini-product">
@@ -881,6 +905,7 @@ function checkAndApplyVariant(container) {
                                   <span class="mini-product__name">
                                       <a href="${productUrl}">${item.tenSanPham}</a>
                                   </span>
+                                  ${variantHtml}
                                   <span class="mini-product__quantity">${item.soLuong} x</span>
                                   <span class="mini-product__price">${formattedPrice}</span>
                               </div>
@@ -962,12 +987,12 @@ function checkAndApplyVariant(container) {
                       loadMiniCart();
                   }
               } else {
-                  alert("Lỗi: " + response.message);
+                  showToast("Lỗi: " + response.message, "error");
               }
           },
           error: function(error) {
               submitBtn.prop('disabled', false).html(originalBtnText);
-              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
               console.log(error);
           }
       });
@@ -1029,12 +1054,12 @@ function checkAndApplyVariant(container) {
                       });
 
                   } else {
-                      alert("Có lỗi xảy ra khi xóa!");
+                      showToast("Có lỗi xảy ra khi xóa!", "error");
                       btn.css('opacity', '1');
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast("Lỗi kết nối máy chủ!", "error");
                   btn.css('opacity', '1');
               }
           });
@@ -1075,11 +1100,11 @@ function checkAndApplyVariant(container) {
                       loadMiniCart();
                   }
               } else {
-                  alert("Không thể thêm: " + response.message);
+                  showToast("Không thể thêm: " + response.message, "error");
               }
           },
           error: function(error) {
-              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
               console.log(error);
           }
       });
@@ -1097,9 +1122,47 @@ function checkAndApplyVariant(container) {
       }
   });
   /*==============================================================
+    # CUSTOM JS: Toast Notification (No Browser Alerts)
+  ==============================================================*/
+  function showToast(message, type) {
+      type = type || 'success';
+      var $container = $('#custom-toast-container');
+      if ($container.length === 0) {
+          $container = $('<div id="custom-toast-container"></div>').appendTo('body');
+      }
+      
+      var iconClass = 'fa-check-circle';
+      if (type === 'error') {
+          iconClass = 'fa-exclamation-circle';
+      } else if (type === 'info') {
+          iconClass = 'fa-info-circle';
+      }
+      
+      var $toast = $(`
+          <div class="custom-toast custom-toast--${type}">
+              <i class="fas ${iconClass}"></i>
+              <span class="custom-toast__message">${message}</span>
+          </div>
+      `);
+      
+      $container.append($toast);
+      
+      setTimeout(function() {
+          $toast.addClass('show');
+      }, 10);
+      
+      setTimeout(function() {
+          $toast.removeClass('show');
+          setTimeout(function() {
+              $toast.remove();
+          }, 300);
+      }, 3000);
+  }
+
+  /*==============================================================
     # CUSTOM JS: Thêm vào Wishlist bằng AJAX
   ==============================================================*/
-  function addToWishlist(idSanPham) {
+  function addToWishlist(idSanPham, element) {
       $.ajax({
           url: '/wishlist/them',
           type: 'POST',
@@ -1107,15 +1170,22 @@ function checkAndApplyVariant(container) {
           success: function(res) {
               if (res === 'chuadangnhap') {
                   window.location.href = '/user/dang-nhap';
-              } else if (res === 'datontai') {
-                  alert('Sản phẩm này đã có trong danh sách yêu thích của bạn!');
+              } else if (res === 'xoa') {
+                  showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
+                  if (element) {
+                      var $icon = $(element).find('i');
+                      $icon.removeClass('fas text-danger').addClass('far');
+                  }
               } else if (res === 'ok') {
-                  alert('Đã thêm vào danh sách yêu thích!');
-                  // Có thể cập nhật số đếm trên Header ở đây nếu cần
+                  showToast('Đã thêm sản phẩm vào danh sách yêu thích thành công!', 'success');
+                  if (element) {
+                      var $icon = $(element).find('i');
+                      $icon.removeClass('far').addClass('fas text-danger');
+                  }
               }
           },
           error: function() {
-              alert('Có lỗi xảy ra, vui lòng thử lại!');
+              showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
           }
       });
   }
@@ -1140,6 +1210,7 @@ function checkAndApplyVariant(container) {
                   }
                   
                   if (response.trangThai === 'ok') {
+                      showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
                       // Tìm thẻ bọc ngoài cùng của sản phẩm (class .w-r) và làm mờ nó đi
                       var row = btn.closest('.w-r');
                       if (row.length) {
@@ -1155,12 +1226,12 @@ function checkAndApplyVariant(container) {
                           });
                       }
                   } else {
-                      alert("Có lỗi xảy ra khi xóa!");
+                      showToast('Có lỗi xảy ra khi xóa!', 'error');
                       btn.css('opacity', '1');
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast('Lỗi kết nối máy chủ!', 'error');
                   btn.css('opacity', '1');
               }
           });
@@ -1931,12 +2002,12 @@ function checkAndApplyVariant(container) {
                       });
                   } else {
                       // Báo lỗi (Ví dụ: Lỗi cố tình xóa địa chỉ mặc định)
-                      alert(response.message);
+                      showToast(response.message, "error");
                       tr.css('opacity', '1'); // Khôi phục lại hiển thị
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast("Lỗi kết nối máy chủ!", "error");
                   tr.css('opacity', '1');
               }
           });
