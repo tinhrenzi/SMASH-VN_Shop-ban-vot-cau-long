@@ -13,6 +13,7 @@ import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.service.BlogService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ public class HomeController {
     private final SanPhamRepository sanPhamRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final DanhMucRepository danhMucRepository;
+    private final BlogService blogService;
 
     @GetMapping("/")
     public String hienThiTrangChu(Model model) {
@@ -33,6 +35,7 @@ public class HomeController {
 
         model.addAttribute("products", danhSachSanPham);
         model.addAttribute("brands", danhSachThuongHieu);
+        model.addAttribute("blogs", blogService.getRecentBlogs(3));
 
         return "index";
     }

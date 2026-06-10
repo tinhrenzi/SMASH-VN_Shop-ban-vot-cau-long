@@ -542,28 +542,85 @@
         }
     });
 
+    // Countdown Component Initialization
+    RESHOP.initCountdown = function() {
+        var $countdownElements = $('[data-countdown]');
+        if ($countdownElements.length) {
+            $countdownElements.each(function() {
+                var $this = $(this), finalDate = $(this).data('countdown');
+                $this.countdown(finalDate, function(event) {
+                    $this.html(event.strftime('<div class="countdown__content"><span class="countdown__value">%D</span><span class="countdown__key">Ngày</span></div><div class="countdown__content"><span class="countdown__value">%H</span><span class="countdown__key">Giờ</span></div><div class="countdown__content"><span class="countdown__value">%M</span><span class="countdown__key">Phút</span></div><div class="countdown__content"><span class="countdown__value">%S</span><span class="countdown__key">Giây</span></div>'));
+                });
+            });
+        }
+    };
 
-        RESHOP.initScrollUp();
-        RESHOP.initTooltip();
-        RESHOP.initModal();
-        RESHOP.defaultAddressCheckbox();
-        RESHOP.initScrollSpy();
-        RESHOP.onClickScroll();
-        RESHOP.reshopNavigation();
-        RESHOP.primarySlider();
-        RESHOP.productSlider();
-        RESHOP.tabSlider();
-        RESHOP.onTabActiveRefreshSlider();
-        RESHOP.brandSlider();
-        RESHOP.testimonialSlider();
-        RESHOP.appConfiguration();
-        RESHOP.initInputCounter();
-        RESHOP.productDetailInit();
-        RESHOP.modalProductDetailInit();
-        RESHOP.shopCategoryToggle();
-        RESHOP.shopPerspectiveChange();
-        RESHOP.shopSideFilter();
-		window.RESHOP = RESHOP;
+    // Isotope Filter Component Initialization
+    RESHOP.initIsotopeFilter = function() {
+        console.log("[Isotope] initIsotopeFilter started");
+        var $wrapper = $('.filter__grid-wrapper');
+        var $btns = $('.filter__btn');
+        
+        console.log("[Isotope] wrapper length:", $wrapper.length, "buttons length:", $btns.length);
+        
+        if ($wrapper.length && typeof $.fn.isotope === 'function') {
+            var $row = $wrapper.find('.row');
+            console.log("[Isotope] Row container found:", $row.length);
+            
+            var $grid = $row.isotope({
+                itemSelector: '.filter__item',
+                layoutMode: 'fitRows'
+            });
+            
+            if (typeof $.fn.imagesLoaded === 'function') {
+                console.log("[Isotope] imagesLoaded is defined");
+                $grid.imagesLoaded().progress(function() {
+                    $grid.isotope('layout');
+                });
+            } else {
+                console.warn("[Isotope] imagesLoaded is NOT defined on jQuery, using fallback");
+                setTimeout(function() {
+                    $grid.isotope('layout');
+                }, 500);
+            }
+            
+            $btns.on('click', function() {
+                var filterValue = $(this).attr('data-filter');
+                console.log("[Isotope] Filter button clicked:", filterValue);
+                $grid.isotope({ filter: filterValue });
+                $btns.removeClass('js-checked');
+                $(this).addClass('js-checked');
+            });
+            console.log("[Isotope] Click handlers bound successfully");
+        } else {
+            console.warn("[Isotope] Skipping initialization. Wrapper length:", $wrapper.length, "Isotope defined:", (typeof $.fn.isotope === 'function'));
+        }
+    };
+
+
+    try { RESHOP.initScrollUp(); } catch (e) { console.error("Error in initScrollUp:", e); }
+    try { RESHOP.initTooltip(); } catch (e) { console.error("Error in initTooltip:", e); }
+    try { RESHOP.initModal(); } catch (e) { console.error("Error in initModal:", e); }
+    try { RESHOP.defaultAddressCheckbox(); } catch (e) { console.error("Error in defaultAddressCheckbox:", e); }
+    try { RESHOP.initScrollSpy(); } catch (e) { console.error("Error in initScrollSpy:", e); }
+    try { RESHOP.onClickScroll(); } catch (e) { console.error("Error in onClickScroll:", e); }
+    try { RESHOP.reshopNavigation(); } catch (e) { console.error("Error in reshopNavigation:", e); }
+    try { RESHOP.primarySlider(); } catch (e) { console.error("Error in primarySlider:", e); }
+    try { RESHOP.productSlider(); } catch (e) { console.error("Error in productSlider:", e); }
+    try { RESHOP.tabSlider(); } catch (e) { console.error("Error in tabSlider:", e); }
+    try { RESHOP.onTabActiveRefreshSlider(); } catch (e) { console.error("Error in onTabActiveRefreshSlider:", e); }
+    try { RESHOP.brandSlider(); } catch (e) { console.error("Error in brandSlider:", e); }
+    try { RESHOP.testimonialSlider(); } catch (e) { console.error("Error in testimonialSlider:", e); }
+    try { RESHOP.appConfiguration(); } catch (e) { console.error("Error in appConfiguration:", e); }
+    try { RESHOP.initInputCounter(); } catch (e) { console.error("Error in initInputCounter:", e); }
+    try { RESHOP.productDetailInit(); } catch (e) { console.error("Error in productDetailInit:", e); }
+    try { RESHOP.modalProductDetailInit(); } catch (e) { console.error("Error in modalProductDetailInit:", e); }
+    try { RESHOP.initCountdown(); } catch (e) { console.error("Error in initCountdown:", e); }
+    try { RESHOP.initIsotopeFilter(); } catch (e) { console.error("Error in initIsotopeFilter:", e); }
+    try { RESHOP.shopCategoryToggle(); } catch (e) { console.error("Error in shopCategoryToggle:", e); }
+    try { RESHOP.shopPerspectiveChange(); } catch (e) { console.error("Error in shopPerspectiveChange:", e); }
+    try { RESHOP.shopSideFilter(); } catch (e) { console.error("Error in shopSideFilter:", e); }
+    window.RESHOP = RESHOP;
 })(jQuery);
 
 /*==============================================================
