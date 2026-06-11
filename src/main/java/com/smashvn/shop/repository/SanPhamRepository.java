@@ -46,4 +46,28 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT MAX(spct.giaBan) FROM SanPhamChiTiet spct")
     BigDecimal findMaxPrice();
+
+    /**
+     * Lấy các sản phẩm mới nhất (sắp xếp theo ID giảm dần)
+     */
+    @Query("SELECT sp FROM SanPham sp WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' ORDER BY sp.id DESC")
+    java.util.List<SanPham> findNewProducts(Pageable pageable);
+
+    /**
+     * Lấy các sản phẩm bán chạy nhất (sắp xếp theo tổng số lượng bán được)
+     */
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
+           "ORDER BY (SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct " +
+           "          WHERE hdct.sanPhamChiTiet.sanPham = sp) DESC, sp.id DESC")
+    java.util.List<SanPham> findBestSellers(Pageable pageable);
+
+    /**
+     * Lấy các sản phẩm nổi bật nhất (sắp xếp theo điểm đánh giá trung bình)
+     */
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
+           "ORDER BY (SELECT COALESCE(AVG(dg.soSao), 0.0) FROM DanhGia dg " +
+           "          WHERE dg.sanPham = sp) DESC, sp.id DESC")
+    java.util.List<SanPham> findFeaturedProducts(Pageable pageable);
 }

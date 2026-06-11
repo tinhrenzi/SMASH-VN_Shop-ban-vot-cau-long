@@ -72,6 +72,12 @@ public class CheckoutController {
             Map<String, Object> details = new java.util.HashMap<>();
             details.put("hoTen", dc.getHoNguoiNhan() + " " + dc.getTenNguoiNhan());
             details.put("sdt", dc.getSdtNguoiNhan());
+            details.put("diaChiCuThe", dc.getDiaChiCuThe());
+            details.put("tinhThanh", dc.getTinhThanh());
+            details.put("thanhPho", dc.getThanhPho());
+            details.put("quocGia", dc.getQuocGia());
+            details.put("latitude", dc.getLatitude());
+            details.put("longitude", dc.getLongitude());
             details.put("diaChi", dc.getDiaChiCuThe() + ", " + dc.getTinhThanh() + ", " + dc.getQuocGia());
             addressMap.put(dc.getId(), details);
         }

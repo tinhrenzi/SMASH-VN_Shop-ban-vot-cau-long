@@ -213,7 +213,7 @@
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:classappend="${product.thuongHieu.tenThuongHieu.replaceAll(' ', '')}" th:each="product : ${products}">
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:classappend="${product.thuongHieu.tenThuongHieu.replaceAll(' ', '')}" th:each="product, iterStat : ${bestSellers}" th:if="${iterStat.index &lt; 14}">
 									    
 											<div class="product-o product-o--hover-on product-o--radius">
 											    
@@ -278,7 +278,7 @@
                             <div class="col-lg-12">
                                 <div class="load-more">
 
-                                    <button class="btn btn--e-brand" type="button">Xem Thêm</button></div>
+                                     <a class="btn btn--e-brand" th:href="@{/shop}" style="padding: 22px 56px; border-radius: 5px; font-size: 13px; display: inline-block; line-height: 1;">Xem Thêm</a></div>
                             </div>
                         </div>
                     </div>
@@ -402,7 +402,7 @@
                     <div class="container">
                         <div class="slider-fouc">
                             <div class="owl-carousel product-slider" data-item="6">
-                                <div class="u-s-m-b-30" th:each="product : ${products}">
+                                <div class="u-s-m-b-30" th:each="product : ${newProducts}">
                                     <div class="product-o product-o--hover-on product-o--radius">
                                         <div class="product-o__wrap">
                                             <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
@@ -521,7 +521,7 @@
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
-						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
+						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${featuredProducts}">
 							    <div class="product-o product-o--hover-on product-o--radius">
 							        <div class="product-o__wrap">
 							            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
@@ -606,7 +606,7 @@
                                 
                                 <!-- Danh sách gợi ý: Sản phẩm mới -->
                                 <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">SẢN PHẨM MỚI</h2>
-                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${products}" th:if="${iter.index >= 0 && iter.index < 3}">
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${newProducts}" th:if="${iter.index < 3}">
                                     <div class="col-4">
                                         <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
                                             <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">
@@ -643,7 +643,7 @@
                                 
                                 <!-- Danh sách gợi ý: Bán chạy -->
                                 <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">BÁN CHẠY NHẤT</h2>
-                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${products}" th:if="${iter.index >= 3 && iter.index < 6}">
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${bestSellers}" th:if="${iter.index < 3}">
                                     <div class="col-4">
                                         <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
                                             <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">
@@ -680,7 +680,7 @@
                                 
                                 <!-- Danh sách gợi ý: Nổi bật -->
                                 <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">NỔI BẬT NHẤT</h2>
-                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${products}" th:if="${iter.index >= 6 && iter.index < 9}">
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${featuredProducts}" th:if="${iter.index < 3}">
                                     <div class="col-4">
                                         <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
                                             <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">

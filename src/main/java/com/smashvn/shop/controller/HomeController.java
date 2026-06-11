@@ -38,7 +38,16 @@ public class HomeController {
 
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
 
-        model.addAttribute("products", danhSachSanPham);
+        // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm)
+        Pageable pageLimit14 = PageRequest.of(0, 14);
+        List<SanPham> newProductsList = sanPhamRepository.findNewProducts(pageLimit14);
+        List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimit14);
+        List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit14);
+
+        model.addAttribute("products", danhSachSanPham); // để đảm bảo tương thích ngược
+        model.addAttribute("newProducts", newProductsList);
+        model.addAttribute("bestSellers", bestSellersList);
+        model.addAttribute("featuredProducts", featuredProductsList);
         model.addAttribute("brands", danhSachThuongHieu);
         model.addAttribute("blogs", blogService.getRecentBlogs(3));
 
