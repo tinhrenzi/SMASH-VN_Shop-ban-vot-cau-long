@@ -20,6 +20,9 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.UserAddressService;
 import com.smashvn.shop.service.UserDashboardService;
+import com.smashvn.shop.service.OrderViewService;
+import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import java.util.List;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -32,6 +35,8 @@ public class UserAddressController {
 
     private final UserAddressService addressService;
     private final UserDashboardService dashboardService;
+    private final OrderViewService orderViewService;
+    private final SanPhamYeuThichRepository wishlistRepository;
 
     private KhachHang getLoggedInCustomer(HttpSession session) {
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
@@ -49,6 +54,16 @@ public class UserAddressController {
         return null;
     }
 
+    private void populateUserStats(KhachHang kh, Model model) {
+        List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
+        long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
+        model.addAttribute("cancelOrders", cancelled);
+        model.addAttribute("wishlist", wishlistCount);
+    }
+
     // 1. Trang danh sách
     @GetMapping
     public String hienThiSoDiaChi(HttpSession session, Model model) {
@@ -63,6 +78,7 @@ public class UserAddressController {
         }
 
         model.addAttribute("kh", kh);
+        populateUserStats(kh, model);
         model.addAttribute("danhSachDiaChi", addressService.layDanhSachDiaChi(kh.getId()));
         return "dash-address-book";
     }
@@ -81,6 +97,7 @@ public class UserAddressController {
         }
 
         model.addAttribute("kh", kh);
+        populateUserStats(kh, model);
         if (!model.containsAttribute("addressDto")) {
             model.addAttribute("addressDto", new UserAddressDto());
         }
@@ -143,6 +160,7 @@ public class UserAddressController {
         try {
             SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             model.addAttribute("dc", dc);
 
             if (!model.containsAttribute("addressDto")) {

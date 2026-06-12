@@ -59,6 +59,11 @@ public class HomeController {
         return "about";
     }
 
+    @GetMapping("/contact")
+    public String hienThiTrangLienHe() {
+        return "about";
+    }
+
     @GetMapping("/shop")
     public String hienThiCuaHang(
             @RequestParam(value = "categoryId", required = false) Integer categoryId,

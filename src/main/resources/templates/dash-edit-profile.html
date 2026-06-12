@@ -20,6 +20,18 @@
 
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .error-msg {
+            color: #ff4500;
+            font-size: 0.78rem;
+            margin-top: 5px;
+            display: none;
+        }
+        .input-text.invalid-input {
+            border-color: #ff4500 !important;
+            box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.1) !important;
+        }
+    </style>
 </head>
 <body class="config">
     <div class="preloader is-active">

@@ -122,26 +122,19 @@
                                             <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
                                             <ul class="dash__f-list">
                                                 <li>
-
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
+                                                    <a th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
-
                                                     <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
-
                                                     <a th:href="@{/user/address}">Địa chỉ</a></li>
                                                 <li>
-
                                                     <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
+                                                    <a class="dash-active" th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
-
                                                     <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
-
-                                                     <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
+                                                    <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -197,62 +190,71 @@
                                                         <option>Tất cả đơn hàng</option>
                                                     </select></div>
                                             </form>
-                                            <div class="m-order__list">
-                                                <div class="m-order__get" th:each="order : ${orders}">
-                                                    <div class="manage-o__header u-s-m-b-30">
-                                                        <div class="dash-l-r">
-                                                            <div>
-                                                                <div class="manage-o__text-2 u-c-secondary" th:text="'Đơn hàng #' + ${order.id}">Đơn hàng #305423126</div>
-                                                                <div class="manage-o__text u-c-silver" th:text="'Đặt ngày ' + ${order.date}">Đặt ngày 26 Oct 2016 09:08:37</div>
-                                                            </div>
-                                                            <div>
-                                                                <div class="dash__link dash__link--brand">
-
-                                                                    <a th:href="@{/user/manage-order(id=${order.id})}">CHI TIẾT</a></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="manage-o__description" th:each="item : ${order.items}">
-                                                        <div class="description__container">
-                                                            <div class="description__img-wrap">
-
-                                                                <img class="u-img-fluid" th:src="@{/images/} + ${item.image}" alt=""></div>
-                                                            <div class="description-title" th:text="${item.title}">Yellow Wireless Headphone</div>
-                                                        </div>
-                                                        <div class="description__info-wrap">
-                                                            <div>
-
-                                                                 <span class="manage-o__badge" 
-                                                                       th:classappend="${order.rawStatus == 'cho_thanh_toan' ? 'badge--pending' :
-                                                                                       (order.rawStatus == 'cho_xac_nhan'  ? 'badge--processing' :
-                                                                                       (order.rawStatus == 'da_xac_nhan'   ? 'badge--confirmed' :
-                                                                                       (order.rawStatus == 'dang_lay_hang' ? 'badge--confirmed' :
-                                                                                       (order.rawStatus == 'dang_giao'     ? 'badge--shipping' :
-                                                                                       (order.rawStatus == 'da_giao'       ? 'badge--delivered' :
-                                                                                       (order.rawStatus == 'da_huy'        ? 'badge--cancelled' :
-                                                                                       (order.rawStatus == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}" 
-                                                                       th:text="${order.rawStatus == 'cho_thanh_toan' ? 'Chờ thanh toán' :
-                                                                                 (order.rawStatus == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
-                                                                                 (order.rawStatus == 'da_xac_nhan'   ? 'Đã xác nhận' :
-                                                                                 (order.rawStatus == 'dang_lay_hang' ? 'Đang lấy hàng' :
-                                                                                 (order.rawStatus == 'dang_giao'     ? 'Đang giao' :
-                                                                                 (order.rawStatus == 'da_giao'       ? 'Đã giao' :
-                                                                                 (order.rawStatus == 'da_huy'        ? 'Đã hủy' :
-                                                                                 (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus)))))))}"
-                                                                 >Đang xử lý</span></div>
-                                                            <div>
-
-                                                                <span class="manage-o__text-2 u-c-silver">Số lượng:
-
-                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="${item.quantity}">1</span></span></div>
-                                                            <div>
-
-                                                                <span class="manage-o__text-2 u-c-silver">Thành tiền:
-
-                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="${#numbers.formatDecimal(item.total, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span></span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div class="dash__table-2-wrap gl-scroll" style="max-height: 520px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                                                <table class="dash__table-2">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Mã đơn hàng</th>
+                                                            <th>Ngày đặt</th>
+                                                            <th>Sản phẩm</th>
+                                                            <th>Tổng tiền</th>
+                                                            <th>Trạng thái</th>
+                                                            <th class="text-center">Thao tác</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr th:each="order : ${orders}">
+                                                            <td>
+                                                                <span class="manage-o__text-2 u-c-secondary" th:text="'#' + ${order.id}">#305423126</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="manage-o__text u-c-silver" th:text="${order.date}">26 Oct 2016 09:08:37</span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="manage-o__products-list">
+                                                                    <div class="manage-o__product-item" th:each="item : ${order.items}" style="display: flex; align-items: center; margin-bottom: 8px; gap: 10px;">
+                                                                        <img th:src="@{/images/} + ${item.image}" alt="" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #eee;">
+                                                                        <div style="display: flex; flex-direction: column;">
+                                                                            <span th:text="${item.title}" style="font-size: 13px; font-weight: 600; color: #333; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Product Name</span>
+                                                                            <span style="font-size: 12px; color: #888;" th:text="'Số lượng: ' + ${item.quantity}">Số lượng: 1</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="manage-o__text-2 u-c-secondary" th:text="${#numbers.formatDecimal(order.total, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="manage-o__badge" 
+                                                                      th:classappend="${order.rawStatus == 'cho_thanh_toan' ? 'badge--pending' :
+                                                                                      (order.rawStatus == 'cho_xac_nhan'  ? 'badge--processing' :
+                                                                                      (order.rawStatus == 'da_xac_nhan'   ? 'badge--confirmed' :
+                                                                                      (order.rawStatus == 'dang_lay_hang' ? 'badge--confirmed' :
+                                                                                      (order.rawStatus == 'dang_giao'     ? 'badge--shipping' :
+                                                                                      (order.rawStatus == 'da_giao'       ? 'badge--delivered' :
+                                                                                      (order.rawStatus == 'da_huy'        ? 'badge--cancelled' :
+                                                                                      (order.rawStatus == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}" 
+                                                                      th:text="${order.rawStatus == 'cho_thanh_toan' ? 'Chờ thanh toán' :
+                                                                                (order.rawStatus == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
+                                                                                (order.rawStatus == 'da_xac_nhan'   ? 'Đã xác nhận' :
+                                                                                (order.rawStatus == 'dang_lay_hang' ? 'Đang lấy hàng' :
+                                                                                (order.rawStatus == 'dang_giao'     ? 'Đang giao' :
+                                                                                (order.rawStatus == 'da_giao'       ? 'Đã giao' :
+                                                                                (order.rawStatus == 'da_huy'        ? 'Đã hủy' :
+                                                                                (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus)))))))}"
+                                                                >Đang xử lý</span>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <a class="address-book-edit btn--e-transparent-platinum-b-2" th:href="@{/user/manage-order(id=${order.id})}">Chi tiết</a>
+                                                            </td>
+                                                        </tr>
+                                                        <tr th:if="${orders.isEmpty()}">
+                                                            <td colspan="6" class="text-center text-muted py-4">
+                                                                Bạn chưa có đơn hàng nào.
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
