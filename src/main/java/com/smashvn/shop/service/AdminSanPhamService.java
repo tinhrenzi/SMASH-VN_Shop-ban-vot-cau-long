@@ -124,14 +124,27 @@ public class AdminSanPhamService {
         
         try {
             // 1. Validate dữ liệu đầu vào cơ bản
-            if (tenSanPham == null || tenSanPham.trim().length() < 3) {
-                throw new RuntimeException("Tên sản phẩm bắt buộc và phải có ít nhất 3 ký tự!");
+            String trimmedTen = (tenSanPham == null) ? "" : tenSanPham.trim();
+            String sanitizedTen = org.jsoup.Jsoup.clean(trimmedTen, org.jsoup.safety.Safelist.none());
+            if (sanitizedTen.isEmpty()) {
+                throw new RuntimeException("Tên sản phẩm bắt buộc!");
+            }
+            if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
+                throw new RuntimeException("Tên sản phẩm phải có độ dài từ 2 đến 100 ký tự!");
             }
             if (idDanhMuc == null || idDanhMuc < 1) {
                 throw new RuntimeException("Vui lòng chọn danh mục hợp lệ!");
             }
             if (idThuongHieu == null || idThuongHieu < 1) {
                 throw new RuntimeException("Vui lòng chọn thương hiệu hợp lệ!");
+            }
+            String sanitizedMoTa = "";
+            if (moTa != null) {
+                String trimmedMoTa = moTa.trim();
+                sanitizedMoTa = org.jsoup.Jsoup.clean(trimmedMoTa, org.jsoup.safety.Safelist.none());
+                if (sanitizedMoTa.length() > 2000) {
+                    throw new RuntimeException("Mô tả sản phẩm không được vượt quá 2000 ký tự!");
+                }
             }
             if (giaBan == null || giaBan.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Giá bán phải lớn hơn 0 VNĐ!");
@@ -165,8 +178,8 @@ public class AdminSanPhamService {
 
             // 5. Lưu sản phẩm gốc
             SanPham sp = new SanPham();
-            sp.setTenSanPham(tenSanPham.trim());
-            sp.setMoTa(moTa);
+            sp.setTenSanPham(sanitizedTen);
+            sp.setMoTa(sanitizedMoTa);
             sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());
             sp.setThuongHieu(thuongHieuRepository.findById(idThuongHieu).orElseThrow());
             sp.setTrangThai("dang_ban");
@@ -250,16 +263,39 @@ public class AdminSanPhamService {
     // --- HÀM CẬP NHẬT (CHỈ SỬA SẢN PHẨM GỐC) ---
     @Transactional
     public void capNhatSanPham(Integer idSanPham, String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa, Integer idNguoiDung, String remoteAddr) {
+        String trimmedTen = (tenSanPham == null) ? "" : tenSanPham.trim();
+        String sanitizedTen = org.jsoup.Jsoup.clean(trimmedTen, org.jsoup.safety.Safelist.none());
+        if (sanitizedTen.isEmpty()) {
+            throw new RuntimeException("Tên sản phẩm bắt buộc!");
+        }
+        if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
+            throw new RuntimeException("Tên sản phẩm phải có độ dài từ 2 đến 100 ký tự!");
+        }
+        if (idDanhMuc == null || idDanhMuc < 1) {
+            throw new RuntimeException("Vui lòng chọn danh mục hợp lệ!");
+        }
+        if (idThuongHieu == null || idThuongHieu < 1) {
+            throw new RuntimeException("Vui lòng chọn thương hiệu hợp lệ!");
+        }
+        String sanitizedMoTa = "";
+        if (moTa != null) {
+            String trimmedMoTa = moTa.trim();
+            sanitizedMoTa = org.jsoup.Jsoup.clean(trimmedMoTa, org.jsoup.safety.Safelist.none());
+            if (sanitizedMoTa.length() > 2000) {
+                throw new RuntimeException("Mô tả sản phẩm không được vượt quá 2000 ký tự!");
+            }
+        }
+
         SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
         String oldVal = "Ten: " + sp.getTenSanPham() + ", DanhMuc: " + sp.getDanhMuc().getId() + ", ThuongHieu: " + sp.getThuongHieu().getId();
         
-        sp.setTenSanPham(tenSanPham);
-        sp.setMoTa(moTa);
+        sp.setTenSanPham(sanitizedTen);
+        sp.setMoTa(sanitizedMoTa);
         sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());
         sp.setThuongHieu(thuongHieuRepository.findById(idThuongHieu).orElseThrow());
         sanPhamRepository.save(sp);
 
-        String newVal = "Ten: " + tenSanPham + ", DanhMuc: " + idDanhMuc + ", ThuongHieu: " + idThuongHieu;
+        String newVal = "Ten: " + sanitizedTen + ", DanhMuc: " + idDanhMuc + ", ThuongHieu: " + idThuongHieu;
         NhanVien creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
         String role = (creator != null) ? creator.getChucVu() : "UNKNOWN";
         auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", oldVal, newVal, remoteAddr, "Cập nhật thông tin sản phẩm gốc", role);

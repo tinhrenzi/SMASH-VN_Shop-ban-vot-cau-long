@@ -33,6 +33,7 @@ public class ChatRestController {
 
     private final ChatService chatService;
     private final KhachHangRepository khachHangRepository;
+    private final com.smashvn.shop.repository.ChatMessageRepository chatMessageRepository;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
 
     @Data
@@ -117,13 +118,21 @@ public class ChatRestController {
         }
 
         String userText = payload.getContent().trim();
+        String sanitizedText = org.jsoup.Jsoup.clean(userText, org.jsoup.safety.Safelist.none());
+        if (sanitizedText.isEmpty()) {
+            return ResponseEntity.badRequest().body("Nội dung tin nhắn trống sau khi làm sạch!");
+        }
+        if (sanitizedText.length() > 2000) {
+            return ResponseEntity.badRequest().body("Nội dung tin nhắn không được vượt quá 2000 ký tự!");
+        }
+
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
 
         if (idTaiKhoan == null) {
             // Khách vãng lai: Xử lý in-memory trực tiếp bằng AI nhưng không lưu database
-            String botReply = chatService.generateAIResponseForGuest(userText);
+            String botReply = chatService.generateAIResponseForGuest(sanitizedText);
             List<MessageResponse> replies = new ArrayList<>();
-            replies.add(new MessageResponse(0L, "USER", userText, ""));
+            replies.add(new MessageResponse(0L, "USER", sanitizedText, ""));
             replies.add(new MessageResponse(0L, "BOT", botReply, ""));
             return ResponseEntity.ok(replies);
         }
@@ -136,9 +145,9 @@ public class ChatRestController {
         ChatConversation conv = chatService.getOrCreateConversation(kh.getId());
 
         // 1. Lưu tin nhắn của User
-        ChatMessage userMsg = chatService.saveUserMessage(conv.getId(), userText);
+        ChatMessage userMsg = chatService.saveUserMessage(conv.getId(), sanitizedText);
         // 2. Sinh và lưu tin nhắn phản hồi của Bot
-        ChatMessage botMsg = chatService.generateBotResponse(conv.getId(), userText);
+        ChatMessage botMsg = chatService.generateBotResponse(conv.getId(), sanitizedText);
 
         List<MessageResponse> replies = new ArrayList<>();
         replies.add(new MessageResponse(
@@ -169,7 +178,33 @@ public class ChatRestController {
             return ResponseEntity.ok("Cảm ơn đóng góp của bạn!");
         }
 
-        ChatFeedback fb = chatService.saveFeedback(payload.getMessageId(), payload.isPositive(), payload.getNote());
+        KhachHang currentKhachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (currentKhachHang == null) {
+            return ResponseEntity.badRequest().body("Không tìm thấy thông tin khách hàng liên kết!");
+        }
+
+        ChatMessage msg = chatMessageRepository.findById(payload.getMessageId()).orElse(null);
+        if (msg == null) {
+            return ResponseEntity.badRequest().body("Không tìm thấy tin nhắn!");
+        }
+
+        if (msg.getConversation() == null || msg.getConversation().getKhachHang() == null
+                || !msg.getConversation().getKhachHang().getId().equals(currentKhachHang.getId())) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body("Bạn không có quyền đánh giá tin nhắn này!");
+        }
+
+        String note = payload.getNote();
+        String sanitizedNote = null;
+        if (note != null) {
+            String trimmed = note.trim();
+            sanitizedNote = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
+            if (sanitizedNote.length() > 500) {
+                return ResponseEntity.badRequest().body("Ghi chú phản hồi không được vượt quá 500 ký tự!");
+            }
+        }
+
+        ChatFeedback fb = chatService.saveFeedback(payload.getMessageId(), payload.isPositive(), sanitizedNote);
         return ResponseEntity.ok("Cập nhật đánh giá thành công! Cảm ơn đóng góp của bạn.");
     }
 }

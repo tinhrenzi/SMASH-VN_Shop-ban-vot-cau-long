@@ -169,22 +169,42 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         // 3. Find order
         Optional<HoaDon> hdOpt = hoaDonRepository.findByAppTransId(appTransId);
-        if (hdOpt.isPresent()) {
-            HoaDon hd = hdOpt.get();
-
-            // 4. Validate transition
-            if (!canTransition(hd.getPaymentStatus(), "PAID")) {
-                log.info("ZaloPay Callback: Order #{} already processed or in paid state. Current status: {}", hd.getId(), hd.getPaymentStatus());
-                result.put("return_code", 1);
-                result.put("return_message", "success (already processed)");
-                return result;
-            }
-
-            // 5. Process success and revalidate stock with lock
-            processPaymentSuccess(hd, zpTransId, callbackReq.getData());
-        } else {
-            log.warn("ZaloPay Callback: Order not found for AppTransId: {}", appTransId);
+        if (!hdOpt.isPresent()) {
+            log.error("ZaloPay Callback: Order not found for AppTransId: {}", appTransId);
+            result.put("return_code", -1);
+            result.put("return_message", "order not found");
+            return result;
         }
+
+        HoaDon hd = hdOpt.get();
+
+        // 4. Extract payment amount from callback payload and compare with invoice total
+        Object amountObj = dataMap.get("amount");
+        if (amountObj == null) {
+            log.warn("[SECURITY_ALERT] ZaloPay Callback: Missing amount in payload for AppTransId: {}", appTransId);
+            result.put("return_code", -1);
+            result.put("return_message", "amount missing");
+            return result;
+        }
+        BigDecimal callbackAmount = new BigDecimal(amountObj.toString());
+        if (callbackAmount.compareTo(hd.getTongTien()) != 0) {
+            log.warn("[SECURITY_ALERT] ZaloPay Callback: Amount mismatch! Expected: {}, Received: {} for order: {}",
+                    hd.getTongTien(), callbackAmount, hd.getId());
+            result.put("return_code", -1);
+            result.put("return_message", "amount mismatch");
+            return result;
+        }
+
+        // 5. Validate transition
+        if (!canTransition(hd.getPaymentStatus(), "PAID")) {
+            log.info("ZaloPay Callback: Order #{} already processed or in paid state. Current status: {}", hd.getId(), hd.getPaymentStatus());
+            result.put("return_code", 1);
+            result.put("return_message", "success (already processed)");
+            return result;
+        }
+
+        // 6. Process success and revalidate stock with lock
+        processPaymentSuccess(hd, zpTransId, callbackReq.getData());
 
         result.put("return_code", 1);
         result.put("return_message", "success");
@@ -304,6 +324,34 @@ public class ZaloPayServiceImpl implements ZaloPayService {
     }
 
     private void processPaymentSuccess(HoaDon hd, String zpTransId, String rawResponse) throws Exception {
+        // Cancelled Order Protection
+        if ("da_huy".equals(hd.getTrangThaiDonHang()) || "CANCELLED".equals(hd.getPaymentStatus())) {
+            log.warn("[PAYMENT_RECEIVED_AFTER_CANCEL] ZaloPay: Payment received for already cancelled order #{}", hd.getId());
+            
+            hd.setPaymentStatus("PAID_RECEIVED_AFTER_CANCEL");
+            hd.setTrangThaiThanhToan("HUY");
+            hd.setTransactionId(zpTransId);
+            hd.setMaGiaoDich(zpTransId);
+            hd.setPaidAt(LocalDateTime.now());
+            hd.setThoiGianXacNhan(LocalDateTime.now());
+            hd.setNguoiXacNhanThanhToan("ZaloPay Gateway");
+            hd.setGatewayResponse(rawResponse);
+            hoaDonRepository.save(hd);
+            
+            auditService.log(
+                    null,
+                    "HoaDon",
+                    Long.valueOf(hd.getId()),
+                    "UPDATE",
+                    "da_huy",
+                    "da_huy",
+                    "127.0.0.1",
+                    "[PAYMENT_RECEIVED_AFTER_CANCEL] CRITICAL: ZaloPay payment received after order cancellation. Ref: " + zpTransId,
+                    "SYSTEM"
+            );
+            return;
+        }
+
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
 
         // 1. Revalidate stock inside transaction using PESSIMISTIC_WRITE lock

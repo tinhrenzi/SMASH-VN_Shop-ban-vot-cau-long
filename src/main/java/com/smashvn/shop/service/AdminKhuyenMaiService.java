@@ -57,6 +57,19 @@ public class AdminKhuyenMaiService {
             Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
             Integer actingTaiKhoanId, String ipAddress) {
         // 1. Validation
+        if (tenChienDich == null || tenChienDich.trim().isEmpty()) {
+            throw new RuntimeException("Tên chiến dịch không được để trống!");
+        }
+        String cleanTen = tenChienDich.trim();
+        String sanitizedTen = org.jsoup.Jsoup.clean(cleanTen, org.jsoup.safety.Safelist.none());
+        if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
+            throw new RuntimeException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
+        }
+
+        if (!"Theo Phần Trăm".equals(loaiGiamGia) && !"Theo Khoảng".equals(loaiGiamGia)) {
+            throw new RuntimeException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
+        }
+
         validateCampaignDates(start, end);
         if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > 100) {
             throw new RuntimeException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!");
@@ -76,7 +89,7 @@ public class AdminKhuyenMaiService {
 
         // 4. Save campaign entity first
         DotGiamGia dgg = new DotGiamGia();
-        dgg.setTenChienDich(tenChienDich);
+        dgg.setTenChienDich(sanitizedTen);
         dgg.setNgayBatDau(start);
         dgg.setNgayKetThuc(end);
         dgg.setPhanTramGiam(phanTramGiam);
@@ -92,7 +105,7 @@ public class AdminKhuyenMaiService {
 
         // 5. Audit Log
         writeEditLog(actingTaiKhoanId, "DotGiamGia", saved.getId().longValue(), "INSERT",
-                null, formatCampaignState(saved), ipAddress, "Tạo mới đợt giảm giá: " + tenChienDich);
+                null, formatCampaignState(saved), ipAddress, "Tạo mới đợt giảm giá: " + sanitizedTen);
 
         return saved;
     }
@@ -104,6 +117,19 @@ public class AdminKhuyenMaiService {
         DotGiamGia dgg = getDotGiamGiaById(id);
 
         // 1. Validation
+        if (tenChienDich == null || tenChienDich.trim().isEmpty()) {
+            throw new RuntimeException("Tên chiến dịch không được để trống!");
+        }
+        String cleanTen = tenChienDich.trim();
+        String sanitizedTen = org.jsoup.Jsoup.clean(cleanTen, org.jsoup.safety.Safelist.none());
+        if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
+            throw new RuntimeException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
+        }
+
+        if (!"Theo Phần Trăm".equals(loaiGiamGia) && !"Theo Khoảng".equals(loaiGiamGia)) {
+            throw new RuntimeException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
+        }
+
         validateCampaignDates(start, end);
         if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > 100) {
             throw new RuntimeException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!");
@@ -118,7 +144,7 @@ public class AdminKhuyenMaiService {
         String oldState = formatCampaignState(dgg);
 
         // 3. Update properties
-        dgg.setTenChienDich(tenChienDich);
+        dgg.setTenChienDich(sanitizedTen);
         dgg.setNgayBatDau(start);
         dgg.setNgayKetThuc(end);
         dgg.setPhanTramGiam(phanTramGiam);
@@ -133,7 +159,7 @@ public class AdminKhuyenMaiService {
 
         // 4. Audit Log
         writeEditLog(actingTaiKhoanId, "DotGiamGia", updated.getId().longValue(), "UPDATE",
-                oldState, formatCampaignState(updated), ipAddress, "Cập nhật đợt giảm giá: " + tenChienDich);
+                oldState, formatCampaignState(updated), ipAddress, "Cập nhật đợt giảm giá: " + sanitizedTen);
 
         return updated;
     }
@@ -238,12 +264,17 @@ public class AdminKhuyenMaiService {
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
             BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
             Integer actingTaiKhoanId, String ipAddress) {
+        if (maPhieu == null || maPhieu.trim().isEmpty()) {
+            throw new RuntimeException("Mã phiếu không được để trống!");
+        }
+        String uppercaseCode = maPhieu.trim().toUpperCase();
+
         // 1. Validation
-        validateVoucherInputs(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia);
 
         // Check duplicate code
-        if (phieuGiamGiaRepository.findByMaPhieu(maPhieu).isPresent()) {
-            throw new RuntimeException("Mã phiếu giảm giá '" + maPhieu + "' đã tồn tại trên hệ thống!");
+        if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCase(uppercaseCode)) {
+            throw new RuntimeException("Mã phiếu giảm giá '" + uppercaseCode + "' đã tồn tại trên hệ thống!");
         }
 
         NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
@@ -253,7 +284,7 @@ public class AdminKhuyenMaiService {
 
         // 2. Save
         PhieuGiamGia pgg = new PhieuGiamGia();
-        pgg.setMaPhieu(maPhieu.toUpperCase().trim());
+        pgg.setMaPhieu(uppercaseCode);
         pgg.setGiaTri(giaTri);
         pgg.setDonVi(donVi);
         pgg.setNgayBatDau(start);
@@ -268,7 +299,7 @@ public class AdminKhuyenMaiService {
 
         // 3. Audit Log
         writeEditLog(actingTaiKhoanId, "PhieuGiamGia", saved.getId().longValue(), "INSERT",
-                null, formatVoucherState(saved), ipAddress, "Tạo mới voucher: " + maPhieu);
+                null, formatVoucherState(saved), ipAddress, "Tạo mới voucher: " + uppercaseCode);
 
         return saved;
     }
@@ -280,19 +311,23 @@ public class AdminKhuyenMaiService {
             Integer actingTaiKhoanId, String ipAddress) {
         PhieuGiamGia pgg = getPhieuGiamGiaById(id);
 
+        if (maPhieu == null || maPhieu.trim().isEmpty()) {
+            throw new RuntimeException("Mã phiếu không được để trống!");
+        }
+        String uppercaseCode = maPhieu.trim().toUpperCase();
+
         // 1. Validation
-        validateVoucherInputs(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia);
 
         // Check duplicate code excluding current
-        Optional<PhieuGiamGia> existing = phieuGiamGiaRepository.findByMaPhieu(maPhieu);
-        if (existing.isPresent() && !existing.get().getId().equals(id)) {
-            throw new RuntimeException("Mã phiếu giảm giá '" + maPhieu + "' đã được sử dụng bởi voucher khác!");
+        if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCaseAndIdNot(uppercaseCode, id)) {
+            throw new RuntimeException("Mã phiếu giảm giá '" + uppercaseCode + "' đã được sử dụng bởi voucher khác!");
         }
 
         String oldState = formatVoucherState(pgg);
 
         // 2. Update properties
-        pgg.setMaPhieu(maPhieu.toUpperCase().trim());
+        pgg.setMaPhieu(uppercaseCode);
         pgg.setGiaTri(giaTri);
         pgg.setDonVi(donVi);
         pgg.setNgayBatDau(start);
@@ -305,7 +340,7 @@ public class AdminKhuyenMaiService {
 
         // 3. Audit Log
         writeEditLog(actingTaiKhoanId, "PhieuGiamGia", updated.getId().longValue(), "UPDATE",
-                oldState, formatVoucherState(updated), ipAddress, "Cập nhật voucher: " + maPhieu);
+                oldState, formatVoucherState(updated), ipAddress, "Cập nhật voucher: " + uppercaseCode);
 
         return updated;
     }
@@ -336,9 +371,12 @@ public class AdminKhuyenMaiService {
 
     private void validateVoucherInputs(String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-            BigDecimal giaTriDonHangToiThieu) {
+            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
             throw new RuntimeException("Mã phiếu không được để trống!");
+        }
+        if (!maPhieu.matches("^[A-Z0-9_]{2,50}$")) {
+            throw new RuntimeException("Mã phiếu giảm giá không hợp lệ! Chỉ cho phép ký tự chữ in hoa, số và dấu gạch dưới từ 2 đến 50 ký tự.");
         }
         if (giaTri == null || giaTri.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Giá trị giảm giá phải lớn hơn 0!");
@@ -346,8 +384,14 @@ public class AdminKhuyenMaiService {
         if (donVi == null || donVi.trim().isEmpty()) {
             throw new RuntimeException("Đơn vị giảm giá không được để trống!");
         }
+        if (!"%".equals(donVi) && !"VNĐ".equals(donVi)) {
+            throw new RuntimeException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VNĐ'.");
+        }
         if ("%".equals(donVi) && giaTri.compareTo(new BigDecimal("100")) > 0) {
             throw new RuntimeException("Nếu giảm theo phần trăm, giá trị không được vượt quá 100%!");
+        }
+        if (!"Giảm trực tiếp".equals(loaiGiamGia) && !"Giảm phần trăm".equals(loaiGiamGia)) {
+            throw new RuntimeException("Phân loại voucher không hợp lệ! Chỉ cho phép 'Giảm trực tiếp' hoặc 'Giảm phần trăm'.");
         }
         if (start == null || end == null) {
             throw new RuntimeException("Hạn sử dụng (ngày bắt đầu và kết thúc) không được để trống!");

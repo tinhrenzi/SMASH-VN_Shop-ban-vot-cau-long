@@ -112,25 +112,14 @@ public class AdminShippingControllerTest {
     @Test
     void testSaveConfig() {
         when(session.getAttribute("idNguoiDung")).thenReturn(1);
-        TaiKhoan tk = new TaiKhoan();
-        tk.setId(1);
-        tk.setLaQuanLy(true);
-        when(taiKhoanRepository.findById(1)).thenReturn(Optional.of(tk));
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
 
-        DonViVanChuyen ghn = new DonViVanChuyen();
-        ghn.setId(1);
-        ghn.setTenDonVi("GHN");
-
-        when(donViVanChuyenDAO.findById(1)).thenReturn(Optional.of(ghn));
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
 
-        String view = adminShippingController.saveConfig(1, "new-token", "new-client", "new-warehouse", session, redirectAttributes);
+        String view = adminShippingController.saveConfig(1, "new-token", "new-client", "new-warehouse", session, request, redirectAttributes);
 
         assertEquals("redirect:/admin/shipping-config", view);
-        assertEquals("new-token", ghn.getToken());
-        assertEquals("new-client", ghn.getClientId());
-        assertEquals("new-warehouse", ghn.getDiaChiKho());
-        verify(donViVanChuyenDAO).save(ghn);
+        verify(adminShippingService).updateGhnConfig(1, "new-token", "new-client", "new-warehouse", 1, "127.0.0.1");
         assertEquals("Cập nhật kết nối GHN thành công!", redirectAttributes.getFlashAttributes().get("successMsg"));
     }
 

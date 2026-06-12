@@ -134,6 +134,24 @@ public class AdminPosService {
     public HoaDon thanhToanPos(Integer idKhachHang, String maVoucher, List<PosItem> items,
             String phuongThucPos, String maGiaoDich, String ghiChu,
             Integer idNhanVienTaiKhoan, String clientIp) {
+        String sanitizedGiaoDich = null;
+        if (maGiaoDich != null) {
+            String trimmed = maGiaoDich.trim();
+            sanitizedGiaoDich = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
+            if (sanitizedGiaoDich.length() > 100) {
+                throw new RuntimeException("Mã giao dịch không được vượt quá 100 ký tự!");
+            }
+        }
+
+        String sanitizedGhiChu = null;
+        if (ghiChu != null) {
+            String trimmed = ghiChu.trim();
+            sanitizedGhiChu = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
+            if (sanitizedGhiChu.length() > 500) {
+                throw new RuntimeException("Ghi chú không được vượt quá 500 ký tự!");
+            }
+        }
+
         if (items == null || items.isEmpty()) {
             throw new RuntimeException("Đơn hàng không có sản phẩm nào!");
         }
@@ -300,8 +318,8 @@ public class AdminPosService {
         hd.setSdtNhan(khachHang.getSoDienThoaiKh() != null && !khachHang.getSoDienThoaiKh().trim().isEmpty()
                 ? khachHang.getSoDienThoaiKh()
                 : "0000000000");
-        hd.setGhiChu(ghiChu);
-        hd.setMaGiaoDich(maGiaoDich);
+        hd.setGhiChu(sanitizedGhiChu);
+        hd.setMaGiaoDich(sanitizedGiaoDich);
         hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
         hd.setThoiGianXacNhan(LocalDateTime.now());
 

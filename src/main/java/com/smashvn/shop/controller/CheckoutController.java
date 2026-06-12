@@ -1,26 +1,31 @@
 package com.smashvn.shop.controller;
 
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.smashvn.shop.entity.GioHangChiTiet;
-import com.smashvn.shop.entity.SanPham;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smashvn.shop.config.SepayConfig;
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.GioHangChiTiet;
 import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.GioHangService;
 import com.smashvn.shop.service.UserAddressService;
-import com.smashvn.shop.dao.DonViVanChuyenDAO;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smashvn.shop.config.SepayConfig;
+
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
@@ -50,14 +55,26 @@ public class CheckoutController {
 
         BigDecimal tongTien = BigDecimal.ZERO;
         for (GioHangChiTiet item : danhSachChiTiet) {
+            if (item.getSanPhamChiTiet() == null || item.getSanPhamChiTiet().getSanPham() == null) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng chứa sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
+            }
             SanPham sp = item.getSanPhamChiTiet().getSanPham();
             int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
             String trangThai = sp.getTrangThai();
 
-            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban"));
-            if (hopLe) {
-                tongTien = tongTien.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm trong giỏ hàng không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
             }
+            if (!"dang_ban".equals(trangThai)) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (tonKho <= 0) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (item.getSoLuong() > tonKho) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+            tongTien = tongTien.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
         }
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll();
@@ -114,7 +131,7 @@ public class CheckoutController {
             @RequestParam(value = "ghnToDistrictId", required = false) Integer ghnToDistrictId,
             @RequestParam(value = "ghnToWardCode", required = false) String ghnToWardCode,
             HttpSession session) {
-        
+
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {

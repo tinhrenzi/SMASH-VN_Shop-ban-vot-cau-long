@@ -189,6 +189,11 @@ public class AdminController {
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
+        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            return "redirect:/admin/don-hang";
+        }
 
         try {
             orderViewService.updateOrderStatusByAdmin(idHoaDon, trangThai, expectedStatus, actingTaiKhoanId, request.getRemoteAddr(), lyDoHuy);
@@ -293,6 +298,11 @@ public class AdminController {
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
+        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này. Chỉ Quản lý mới có thể phê duyệt hoàn tiền.");
+            return "redirect:/admin/don-hang";
+        }
 
         try {
             com.smashvn.shop.entity.HoaDon hd = hoaDonRepository.findById(idHoaDon)
@@ -327,6 +337,11 @@ public class AdminController {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này. Chỉ Quản lý mới có thể từ chối hoàn tiền.");
+            return "redirect:/admin/don-hang";
         }
 
         try {
@@ -491,6 +506,11 @@ public class AdminController {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            return "redirect:/admin/don-hang";
         }
 
         try {

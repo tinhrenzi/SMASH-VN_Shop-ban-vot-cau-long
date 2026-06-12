@@ -30,6 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "sepay.debug",
+    havingValue = "true"
+)
 public class SepaySimulationController {
 
     private final HoaDonRepository hoaDonRepository;

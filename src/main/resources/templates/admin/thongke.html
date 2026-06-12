@@ -152,6 +152,19 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Doanh thu đã hoàn -->
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-secondary d-flex justify-content-between align-items-center" style="border-top: 4px solid #6c757d;">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Đã Hoàn</h6>
+                                <h2 class="mb-0 metric-value text-secondary" id="valRefundedRevenue" style="font-size: 1.45rem;">0 đ</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Đơn giao đã hoàn trả tiền</small>
+                            </div>
+                            <div class="stat-icon-wrapper p-3 rounded-circle bg-secondary bg-opacity-10">
+                                <i class="fas fa-undo-alt stat-icon text-secondary"></i>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Đơn hàng thành công -->
                     <div class="col-xl col-md-6">
                         <div class="stat-card-premium accent-success d-flex justify-content-between align-items-center">
@@ -509,6 +522,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
         document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
+        document.getElementById("valRefundedRevenue").textContent = formatVND(data.refundedRevenue);
         document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
         document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
         document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);

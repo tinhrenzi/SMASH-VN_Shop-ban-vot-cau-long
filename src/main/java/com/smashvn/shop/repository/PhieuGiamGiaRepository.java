@@ -14,4 +14,8 @@ public interface PhieuGiamGiaRepository extends JpaRepository<PhieuGiamGia, Inte
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PhieuGiamGia p WHERE p.maPhieu = :maPhieu")
     Optional<PhieuGiamGia> findByMaPhieuWithLock(@Param("maPhieu") String maPhieu);
+
+    boolean existsByMaPhieuIgnoreCase(String maPhieu);
+
+    boolean existsByMaPhieuIgnoreCaseAndIdNot(String maPhieu, Integer id);
 }

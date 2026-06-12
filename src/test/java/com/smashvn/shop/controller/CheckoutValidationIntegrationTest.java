@@ -404,4 +404,338 @@ public class CheckoutValidationIntegrationTest {
         assertEquals("Hà Nội", savedOrder.getDiaChiNhan());
         assertEquals("Ghi chú", savedOrder.getGhiChu());
     }
+
+    private static String computeHmacSha256(String data, String key) throws Exception {
+        byte[] keyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        javax.crypto.spec.SecretKeySpec signingKey = new javax.crypto.spec.SecretKeySpec(keyBytes, "HmacSHA256");
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(signingKey);
+        byte[] rawHmac = mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        for (byte b : rawHmac) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    @Test
+    void testZaloPayAuthorization_IDOR() throws Exception {
+        // Create an order owned by testUser
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(testKhachHang);
+        hd.setTongTien(new BigDecimal("100000"));
+        hd.setPaymentStatus("PENDING");
+        hd.setTrangThaiDonHang("cho_thanh_toan");
+        hd.setAppTransId("260612_9999_123");
+        
+        hd.setDiaChiNhan("Hà Nội");
+        hd.setSdtNhan("0912345678");
+        hd.setMaDonHang("TEST_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        hd.setDonViVanChuyen(testDvvc);
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElse(null);
+        hd.setPhuongThucThanhToan(pttt);
+
+        hd = hoaDonRepository.save(hd);
+
+        // Create user B
+        TaiKhoan userB = new TaiKhoan();
+        userB.setEmail("userb@gmail.com");
+        userB.setMatKhau("testpass123");
+        userB.setVaiTro("KH");
+        userB.setTrangThai("hoat_dong");
+        userB.setLaKhachHang(true);
+        userB = taiKhoanRepository.save(userB);
+
+        // User B attempts to create payment for User A's order -> HTTP 403
+        com.smashvn.shop.dto.ZaloPayCreateOrderRequestDTO createReq = new com.smashvn.shop.dto.ZaloPayCreateOrderRequestDTO();
+        createReq.setOrderId(hd.getId());
+        mockMvc.perform(post("/api/payment/zalopay/create")
+                        .sessionAttr("idNguoiDung", userB.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isForbidden());
+
+        // User B attempts to query User A's payment -> HTTP 403
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payment/zalopay/query/260612_9999_123")
+                        .sessionAttr("idNguoiDung", userB.getId()))
+                .andExpect(status().isForbidden());
+
+        // User B attempts to cancel User A's payment -> HTTP 403
+        mockMvc.perform(post("/api/payment/zalopay/cancel/260612_9999_123")
+                        .sessionAttr("idNguoiDung", userB.getId())
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testZaloPayCallback_AmountValidation() throws Exception {
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(testKhachHang);
+        hd.setTongTien(new BigDecimal("100000"));
+        hd.setPaymentStatus("PENDING");
+        hd.setTrangThaiDonHang("cho_thanh_toan");
+        hd.setAppTransId("260612_amount_val");
+        
+        hd.setDiaChiNhan("Hà Nội");
+        hd.setSdtNhan("0912345678");
+        hd.setMaDonHang("TEST_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        hd.setDonViVanChuyen(testDvvc);
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElse(null);
+        hd.setPhuongThucThanhToan(pttt);
+
+        hd = hoaDonRepository.save(hd);
+
+        // Seed order details to avoid null pointer when fetching items
+        HoaDonChiTiet hdct = new HoaDonChiTiet();
+        hdct.setHoaDon(hd);
+        hdct.setSanPhamChiTiet(testSpct);
+        hdct.setSoLuong(1);
+        hdct.setDonGia(new BigDecimal("100000"));
+        com.smashvn.shop.repository.HoaDonChiTietRepository hdctRepo = webApplicationContext.getBean(com.smashvn.shop.repository.HoaDonChiTietRepository.class);
+        hdctRepo.save(hdct);
+
+        // 1. Wrong amount -> Rejected (code = -1)
+        Map<String, Object> dataMapWrong = Map.of(
+                "app_trans_id", "260612_amount_val",
+                "zp_trans_id", "12345678",
+                "amount", 50000
+        );
+        String rawDataWrong = objectMapper.writeValueAsString(dataMapWrong);
+        com.smashvn.shop.dto.ZaloPayCallbackDTO callbackDtoWrong = new com.smashvn.shop.dto.ZaloPayCallbackDTO();
+        callbackDtoWrong.setData(rawDataWrong);
+        
+        com.smashvn.shop.config.ZaloPayConfig zaloPayConfig = webApplicationContext.getBean(com.smashvn.shop.config.ZaloPayConfig.class);
+        String macWrong = computeHmacSha256(rawDataWrong, zaloPayConfig.getKey2());
+        callbackDtoWrong.setMac(macWrong);
+
+        mockMvc.perform(post("/api/payment/zalopay/callback")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(callbackDtoWrong)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.return_code").value(-1))
+                .andExpect(jsonPath("$.return_message").value("amount mismatch"));
+
+        // 2. Correct amount -> Success (code = 1)
+        Map<String, Object> dataMapCorrect = Map.of(
+                "app_trans_id", "260612_amount_val",
+                "zp_trans_id", "12345678",
+                "amount", 100000
+        );
+        String rawDataCorrect = objectMapper.writeValueAsString(dataMapCorrect);
+        com.smashvn.shop.dto.ZaloPayCallbackDTO callbackDtoCorrect = new com.smashvn.shop.dto.ZaloPayCallbackDTO();
+        callbackDtoCorrect.setData(rawDataCorrect);
+        String macCorrect = computeHmacSha256(rawDataCorrect, zaloPayConfig.getKey2());
+        callbackDtoCorrect.setMac(macCorrect);
+
+        mockMvc.perform(post("/api/payment/zalopay/callback")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(callbackDtoCorrect)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.return_code").value(1));
+    }
+
+    @Test
+    void testZaloPayCallback_ReplayProtection() throws Exception {
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(testKhachHang);
+        hd.setTongTien(new BigDecimal("100000"));
+        hd.setPaymentStatus("PENDING");
+        hd.setTrangThaiDonHang("cho_thanh_toan");
+        hd.setAppTransId("260612_replay");
+        
+        hd.setDiaChiNhan("Hà Nội");
+        hd.setSdtNhan("0912345678");
+        hd.setMaDonHang("TEST_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        hd.setDonViVanChuyen(testDvvc);
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElse(null);
+        hd.setPhuongThucThanhToan(pttt);
+
+        hd = hoaDonRepository.save(hd);
+
+        HoaDonChiTiet hdct = new HoaDonChiTiet();
+        hdct.setHoaDon(hd);
+        hdct.setSanPhamChiTiet(testSpct);
+        hdct.setSoLuong(1);
+        hdct.setDonGia(new BigDecimal("100000"));
+        com.smashvn.shop.repository.HoaDonChiTietRepository hdctRepo = webApplicationContext.getBean(com.smashvn.shop.repository.HoaDonChiTietRepository.class);
+        hdctRepo.save(hdct);
+
+        int originalStock = testSpct.getSoLuongTon();
+
+        // Callback 1
+        Map<String, Object> data = Map.of(
+                "app_trans_id", "260612_replay",
+                "zp_trans_id", "zp_rep_1",
+                "amount", 100000
+        );
+        String rawData = objectMapper.writeValueAsString(data);
+        com.smashvn.shop.dto.ZaloPayCallbackDTO callbackDto = new com.smashvn.shop.dto.ZaloPayCallbackDTO();
+        callbackDto.setData(rawData);
+        com.smashvn.shop.config.ZaloPayConfig zaloPayConfig = webApplicationContext.getBean(com.smashvn.shop.config.ZaloPayConfig.class);
+        callbackDto.setMac(computeHmacSha256(rawData, zaloPayConfig.getKey2()));
+
+        mockMvc.perform(post("/api/payment/zalopay/callback")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(callbackDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.return_code").value(1));
+
+        // Verify stock reduced by 1
+        SanPhamChiTiet spctAfterFirst = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
+        assertNotNull(spctAfterFirst);
+        assertEquals(originalStock - 1, spctAfterFirst.getSoLuongTon());
+
+        // Callback 2 (Replay)
+        mockMvc.perform(post("/api/payment/zalopay/callback")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(callbackDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.return_code").value(1))
+                .andExpect(jsonPath("$.return_message").value("success (already processed)"));
+
+        // Verify stock is still the same (not reduced again)
+        SanPhamChiTiet spctAfterSecond = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
+        assertNotNull(spctAfterSecond);
+        assertEquals(originalStock - 1, spctAfterSecond.getSoLuongTon());
+    }
+
+    @Test
+    void testZaloPayCallback_CancelledOrder() throws Exception {
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(testKhachHang);
+        hd.setTongTien(new BigDecimal("100000"));
+        hd.setPaymentStatus("PENDING");
+        hd.setTrangThaiDonHang("da_huy");
+        hd.setAppTransId("260612_cancelled");
+        
+        hd.setDiaChiNhan("Hà Nội");
+        hd.setSdtNhan("0912345678");
+        hd.setMaDonHang("TEST_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        hd.setDonViVanChuyen(testDvvc);
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElse(null);
+        hd.setPhuongThucThanhToan(pttt);
+
+        hd = hoaDonRepository.save(hd);
+
+        HoaDonChiTiet hdct = new HoaDonChiTiet();
+        hdct.setHoaDon(hd);
+        hdct.setSanPhamChiTiet(testSpct);
+        hdct.setSoLuong(1);
+        hdct.setDonGia(new BigDecimal("100000"));
+        com.smashvn.shop.repository.HoaDonChiTietRepository hdctRepo = webApplicationContext.getBean(com.smashvn.shop.repository.HoaDonChiTietRepository.class);
+        hdctRepo.save(hdct);
+
+        int originalStock = testSpct.getSoLuongTon();
+
+        Map<String, Object> data = Map.of(
+                "app_trans_id", "260612_cancelled",
+                "zp_trans_id", "zp_cancel_1",
+                "amount", 100000
+        );
+        String rawData = objectMapper.writeValueAsString(data);
+        com.smashvn.shop.dto.ZaloPayCallbackDTO callbackDto = new com.smashvn.shop.dto.ZaloPayCallbackDTO();
+        callbackDto.setData(rawData);
+        com.smashvn.shop.config.ZaloPayConfig zaloPayConfig = webApplicationContext.getBean(com.smashvn.shop.config.ZaloPayConfig.class);
+        callbackDto.setMac(computeHmacSha256(rawData, zaloPayConfig.getKey2()));
+
+        mockMvc.perform(post("/api/payment/zalopay/callback")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(callbackDto)))
+                .andExpect(status().isOk());
+
+        // Verify order remains cancelled
+        HoaDon orderAfter = hoaDonRepository.findById(hd.getId()).orElse(null);
+        assertNotNull(orderAfter);
+        assertEquals("da_huy", orderAfter.getTrangThaiDonHang());
+        assertEquals("PAID_RECEIVED_AFTER_CANCEL", orderAfter.getPaymentStatus());
+
+        // Verify stock was not modified
+        SanPhamChiTiet spctAfter = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
+        assertNotNull(spctAfter);
+        assertEquals(originalStock, spctAfter.getSoLuongTon());
+    }
+
+    @Autowired
+    private com.smashvn.shop.config.GhnConfig ghnConfig;
+
+    @Test
+    void testGhnWebhook_Authentication() throws Exception {
+        Map<String, Object> payload = Map.of(
+                "OrderCode", "GHN123456",
+                "Status", "ready_to_pick"
+        );
+
+        // 1. No token -> 401
+        mockMvc.perform(post("/api/ghn/webhook")
+                        .requestAttr("_csrf", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized());
+
+        // 2. Wrong token -> 401
+        mockMvc.perform(post("/api/ghn/webhook")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("token", "wrong_token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized());
+
+        // 3. Valid token -> 200/Ok (order not found returns 200 with not_found status)
+        mockMvc.perform(post("/api/ghn/webhook")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("token", ghnConfig.getWebhookToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("not_found"));
+    }
+
+    @Test
+    void testCheckoutPageValidation_OutofStock() throws Exception {
+        testSpct.setSoLuongTon(0);
+        sanPhamChiTietRepository.save(testSpct);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/checkout")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/gio-hang?loi=*"));
+    }
+
+    @Test
+    void testCheckoutPageValidation_NotSelling() throws Exception {
+        SanPham sp = testSpct.getSanPham();
+        sp.setTrangThai("ngung_ban");
+        sanPhamRepository.save(sp);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/checkout")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/gio-hang?loi=*"));
+    }
+
+    @Test
+    void testCheckoutPageValidation_QuantityExceeded() throws Exception {
+        // Add more items to cart to make quantity 2 (original cart had 1)
+        mockMvc.perform(post("/gio-hang/them")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
+                        .param("soLuong", "1"))
+                .andExpect(status().isOk());
+
+        // Now set stock to 1 (cart quantity is 2, stock is 1)
+        testSpct.setSoLuongTon(1);
+        sanPhamChiTietRepository.save(testSpct);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/checkout")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/gio-hang?loi=*"));
+    }
 }

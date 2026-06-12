@@ -325,17 +325,20 @@ public class GioHangService {
             throw new RuntimeException("Giỏ hàng trống!");
         }
 
-        // Validate items eligibility (stock & status)
+        // Validate items eligibility (stock & status) with lock
         BigDecimal tamTinh = BigDecimal.ZERO;
         for (GioHangChiTiet item : cartItems) {
-            SanPham sp = item.getSanPhamChiTiet().getSanPham();
-            int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
+            SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(item.getSanPhamChiTiet().getId())
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
+            SanPham sp = lockedSpct.getSanPham();
+            int tonKho = lockedSpct.getSoLuongTon();
             String trangThai = sp.getTrangThai();
             boolean hopLe = item.getSoLuong() != null && item.getSoLuong() > 0 && tonKho >= item.getSoLuong() && (trangThai == null || "dang_ban".equals(trangThai));
             if (!hopLe) {
                 throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc đã ngưng kinh doanh!");
             }
-            tamTinh = tamTinh.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            tamTinh = tamTinh.add(lockedSpct.getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
         }
 
         // Load carrier using cached list

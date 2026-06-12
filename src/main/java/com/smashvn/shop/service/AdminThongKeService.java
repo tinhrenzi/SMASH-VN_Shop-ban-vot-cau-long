@@ -3,24 +3,41 @@ package com.smashvn.shop.service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.smashvn.shop.dto.GeneralMetricsDTO;
-import com.smashvn.shop.dto.ChartPointDTO;
 import com.smashvn.shop.dto.TopProductDTO;
-import com.smashvn.shop.dto.OrderStatusCountDTO;
 import com.smashvn.shop.dto.TransactionHistoryDTO;
-import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +49,50 @@ public class AdminThongKeService {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    public enum RevenueClassification {
+        ACTUAL_REVENUE,
+        ACTUAL_REVENUE_REVERSAL,
+        PROJECTED_REVENUE,
+        EXCLUDED
+    }
+
+    public static class OrderClassifier {
+
+        public static RevenueClassification classify(
+                String trangThaiDonHang,
+                String paymentStatus,
+                String trangThaiThanhToan,
+                RefundStatus refundStatus) {
+
+            String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
+            String pStatus = paymentStatus != null ? paymentStatus.toLowerCase() : "";
+            String tStatus = trangThaiThanhToan != null ? trangThaiThanhToan.toUpperCase() : "";
+
+            // 1. Actual Revenue: only successful/delivered orders
+            if ("da_giao".equals(status) || "hoan_thanh".equals(status)) {
+                // If it is refunded, it is a reversal
+                if ("refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
+                    return RevenueClassification.ACTUAL_REVENUE_REVERSAL;
+                }
+                return RevenueClassification.ACTUAL_REVENUE;
+            }
+
+            // 2. Projected Revenue: successfully paid but not delivered or cancelled
+            boolean isPaid = "paid".equals(pStatus) || "DA_THANH_TOAN".equals(tStatus);
+            boolean isProjectedStatus = "cho_xac_nhan".equals(status)
+                    || "da_xac_nhan".equals(status)
+                    || "dang_lay_hang".equals(status)
+                    || "dang_giao".equals(status);
+            boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
+
+            if (isPaid && isProjectedStatus && !isRefunded) {
+                return RevenueClassification.PROJECTED_REVENUE;
+            }
+
+            return RevenueClassification.EXCLUDED;
+        }
+    }
 
     // Xử lý Lấy khoảng thời gian từ bộ lọc nhanh (Preset)
     public Map<String, LocalDateTime> getDateRange(String preset, String startDateStr, String endDateStr) {
@@ -103,11 +164,19 @@ public class AdminThongKeService {
     }
 
     private String standardizePaymentMethod(String raw) {
-        if (raw == null) return "CASH";
+        if (raw == null) {
+            return "CASH";
+        }
         raw = raw.toUpperCase().trim();
-        if (raw.contains("ZALOPAY")) return "ZALOPAY";
-        if (raw.contains("SEPAY")) return "SEPAY";
-        if (raw.contains("COD")) return "COD";
+        if (raw.contains("ZALOPAY")) {
+            return "ZALOPAY";
+        }
+        if (raw.contains("SEPAY")) {
+            return "SEPAY";
+        }
+        if (raw.contains("COD")) {
+            return "COD";
+        }
         if (raw.contains("CHUYEN_KHOAN") || raw.contains("CHUYỂN KHOẢN") || raw.contains("BANK") || raw.contains("TRANSFER") || raw.contains("BANKING")) {
             return "BANK_TRANSFER";
         }
@@ -118,13 +187,25 @@ public class AdminThongKeService {
     }
 
     private String standardizePaymentStatus(String status, String trangThaiDonHang) {
-        if (status == null) return "PENDING";
+        if (status == null) {
+            return "PENDING";
+        }
         status = status.toUpperCase().trim();
-        if ("PAID".equals(status) || "DA_THANH_TOAN".equals(status)) return "PAID";
-        if ("CANCELLED".equals(status) || "DA_HUY".equals(status) || "da_huy".equalsIgnoreCase(trangThaiDonHang)) return "CANCELLED";
-        if ("FAILED".equals(status) || "THAT_BAI".equals(status)) return "FAILED";
-        if ("REFUNDED".equals(status) || "HOAN_TIEN".equals(status)) return "REFUNDED";
-        if ("PENDING".equals(status) || "CHO_THANH_TOAN".equals(status)) return "PENDING";
+        if ("PAID".equals(status) || "DA_THANH_TOAN".equals(status)) {
+            return "PAID";
+        }
+        if ("CANCELLED".equals(status) || "DA_HUY".equals(status) || "da_huy".equalsIgnoreCase(trangThaiDonHang)) {
+            return "CANCELLED";
+        }
+        if ("FAILED".equals(status) || "THAT_BAI".equals(status)) {
+            return "FAILED";
+        }
+        if ("REFUNDED".equals(status) || "HOAN_TIEN".equals(status)) {
+            return "REFUNDED";
+        }
+        if ("PENDING".equals(status) || "CHO_THANH_TOAN".equals(status)) {
+            return "PENDING";
+        }
         return "PENDING";
     }
 
@@ -173,14 +254,14 @@ public class AdminThongKeService {
             }
 
             dtos.add(new TransactionHistoryDTO(
-                id,
-                invoiceCode,
-                customerName,
-                ngayTao,
-                paymentMethod,
-                paymentStatus,
-                transactionId,
-                amount != null ? amount : BigDecimal.ZERO
+                    id,
+                    invoiceCode,
+                    customerName,
+                    ngayTao,
+                    paymentMethod,
+                    paymentStatus,
+                    transactionId,
+                    amount != null ? amount : BigDecimal.ZERO
             ));
         }
         return dtos;
@@ -189,126 +270,213 @@ public class AdminThongKeService {
     // Cache kết quả thống kê 30 giây (được cấu hình bằng Caffeine TTL ở application.properties)
     @Cacheable(value = "thongke", key = "#start.toString() + '-' + #end.toString()")
     public Map<String, Object> getStatisticsData(LocalDateTime start, LocalDateTime end) {
-        // 1. Chỉ số tổng hợp KPIs
-        GeneralMetricsDTO rawMetrics = hoaDonRepository.getGeneralMetricsWithoutProductCount(start, end);
-        Long totalSold = hoaDonChiTietRepository.getTotalProductsSold(start, end);
-        GeneralMetricsDTO metrics = new GeneralMetricsDTO(
-                rawMetrics.totalOrders(),
-                rawMetrics.successfulOrders(),
-                rawMetrics.cancelledOrders(),
-                rawMetrics.totalRevenue(),
-                rawMetrics.avgOrderValue(),
-                totalSold
-        );
+        List<Object[]> rawOrders = hoaDonRepository.findAllOrdersInPeriod(start, end);
 
-        // Tỷ lệ hủy đơn
-        double cancellationRate = 0.0;
-        if (metrics.totalOrders() > 0) {
-            cancellationRate = ((double) metrics.cancelledOrders() / metrics.totalOrders()) * 100.0;
-        }
+        long totalOrders = rawOrders.size();
+        long successfulOrders = 0;
+        long cancelledOrders = 0;
+        BigDecimal actualRevenue = BigDecimal.ZERO;
+        BigDecimal expectedRevenue = BigDecimal.ZERO;
+        BigDecimal refundedRevenue = BigDecimal.ZERO; // New Metric: total value of refunded orders
+        BigDecimal pendingRefund = BigDecimal.ZERO;
 
-        // Khách hàng mới (Có đơn đầu tiên hoàn thành trong kỳ)
-        Long newCustomersCount = hoaDonRepository.countNewCustomers(start, end);
+        List<BigDecimal> successfulOrderAmounts = new ArrayList<>();
 
-        // 2. Tỷ lệ trạng thái đơn hàng
-        List<OrderStatusCountDTO> statusCounts = hoaDonRepository.getOrderStatusDistribution(start, end);
         Map<String, Long> statusMap = new HashMap<>();
         statusMap.put("cho_xac_nhan", 0L);
         statusMap.put("dang_giao", 0L);
         statusMap.put("da_giao", 0L);
         statusMap.put("da_huy", 0L);
-        for (OrderStatusCountDTO osc : statusCounts) {
-            String dbStatus = osc.status();
-            if (dbStatus != null) {
-                String normalizedStatus = switch (dbStatus.toLowerCase()) {
-                    case "da_giao", "delivered" -> "da_giao";
-                    case "da_huy", "cancelled" -> "da_huy";
-                    case "dang_giao", "shipping", "dang_lay_hang" -> "dang_giao";
-                    case "cho_xac_nhan", "processing", "da_xac_nhan" -> "cho_xac_nhan";
-                    default -> dbStatus;
-                };
-                statusMap.put(normalizedStatus, statusMap.getOrDefault(normalizedStatus, 0L) + osc.count());
+
+        Map<String, BigDecimal> groupedRevenue = new HashMap<>();
+        String grouping = getGroupingType(start, end);
+
+        long onlineTotal = 0;
+        long onlineSuccess = 0;
+        long onlineFailed = 0;
+        long onlinePending = 0;
+        BigDecimal onlineRevenue = BigDecimal.ZERO;
+
+        for (Object[] row : rawOrders) {
+            LocalDateTime ngayTao = (LocalDateTime) row[3];
+            String paymentMethod = (String) row[4];
+            String paymentStatus = (String) row[6];
+            String trangThaiThanhToan = (String) row[7];
+            String trangThaiDonHang = (String) row[8];
+            BigDecimal tongTien = (BigDecimal) row[12];
+            RefundStatus refundStatus = (RefundStatus) row[13];
+
+            if (tongTien == null) {
+                tongTien = BigDecimal.ZERO;
+            }
+
+            // Centralized classification
+            RevenueClassification classification = OrderClassifier.classify(trangThaiDonHang, paymentStatus, trangThaiThanhToan, refundStatus);
+
+            BigDecimal revenueContribution = BigDecimal.ZERO;
+            if (classification == RevenueClassification.ACTUAL_REVENUE) {
+                actualRevenue = actualRevenue.add(tongTien);
+                successfulOrders++;
+                successfulOrderAmounts.add(tongTien);
+                revenueContribution = tongTien;
+            } else if (classification == RevenueClassification.ACTUAL_REVENUE_REVERSAL) {
+                actualRevenue = actualRevenue.subtract(tongTien);
+                refundedRevenue = refundedRevenue.add(tongTien); // Add to new metric
+                revenueContribution = tongTien.negate();
+            } else if (classification == RevenueClassification.PROJECTED_REVENUE) {
+                expectedRevenue = expectedRevenue.add(tongTien);
+            }
+
+            // If the order has actual revenue contribution (regular or reversal), add to chart grouping
+            if (revenueContribution.compareTo(BigDecimal.ZERO) != 0) {
+                if ("HOUR".equals(grouping)) {
+                    String key = String.valueOf(ngayTao.getHour());
+                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
+                } else if ("DAY".equals(grouping)) {
+                    String key = String.format("%02d/%02d", ngayTao.getDayOfMonth(), ngayTao.getMonthValue());
+                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
+                } else { // MONTH
+                    String key = String.format("%02d/%d", ngayTao.getMonthValue(), ngayTao.getYear());
+                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
+                }
+            }
+
+            // Count cancelled orders
+            String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
+            if ("da_huy".equals(status)) {
+                cancelledOrders++;
+            }
+
+            // Count pending refund
+            if (RefundStatus.PENDING == refundStatus) {
+                pendingRefund = pendingRefund.add(tongTien);
+            }
+
+            // Status map distribution
+            String normalizedStatus = switch (status) {
+                case "da_giao", "delivered" ->
+                    "da_giao";
+                case "da_huy", "cancelled" ->
+                    "da_huy";
+                case "dang_giao", "shipping", "dang_lay_hang" ->
+                    "dang_giao";
+                case "cho_xac_nhan", "processing", "da_xac_nhan" ->
+                    "cho_xac_nhan";
+                default ->
+                    status;
+            };
+            if (statusMap.containsKey(normalizedStatus)) {
+                statusMap.put(normalizedStatus, statusMap.get(normalizedStatus) + 1);
+            }
+
+            // Online stats
+            if (paymentMethod != null) {
+                String pm = paymentMethod.toLowerCase();
+                if (pm.contains("zalopay") || pm.contains("sepay")) {
+                    onlineTotal++;
+
+                    String pStatus = paymentStatus != null ? paymentStatus.toUpperCase() : "";
+                    String tStatus = trangThaiThanhToan != null ? trangThaiThanhToan.toUpperCase() : "";
+
+                    if ("PAID".equals(pStatus) || "DA_THANH_TOAN".equals(tStatus)) {
+                        onlineSuccess++;
+                        // Revenue: only count if delivered
+                        if ("da_giao".equalsIgnoreCase(trangThaiDonHang) || "hoan_thanh".equalsIgnoreCase(trangThaiDonHang)) {
+                            if ("REFUNDED".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
+                                onlineRevenue = onlineRevenue.subtract(tongTien);
+                            } else {
+                                onlineRevenue = onlineRevenue.add(tongTien);
+                            }
+                        }
+                    } else if ("FAILED".equals(pStatus) || "FAILED".equals(tStatus)) {
+                        onlineFailed++;
+                    } else if ("PENDING".equals(pStatus) || "PENDING".equals(tStatus) || "CHO_THANH_TOAN".equals(tStatus)) {
+                        onlinePending++;
+                    } else {
+                        onlinePending++;
+                    }
+                }
             }
         }
 
-        // 3. Gom nhóm doanh thu cho biểu đồ
-        String grouping = getGroupingType(start, end);
+        // Avg order value
+        double avgOrderValue = 0.0;
+        if (!successfulOrderAmounts.isEmpty()) {
+            BigDecimal sum = successfulOrderAmounts.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            avgOrderValue = sum.doubleValue() / successfulOrderAmounts.size();
+        }
+
+        // Tỷ lệ hủy đơn
+        double cancellationRate = 0.0;
+        if (totalOrders > 0) {
+            cancellationRate = ((double) cancelledOrders / totalOrders) * 100.0;
+        }
+
+        // Khách hàng mới (Có đơn đầu tiên hoàn thành trong kỳ)
+        Long newCustomersCount = hoaDonRepository.countNewCustomers(start, end);
+
+        // Chart labels & values
         List<String> chartLabels = new ArrayList<>();
         List<BigDecimal> chartValues = new ArrayList<>();
 
         if ("HOUR".equals(grouping)) {
-            List<ChartPointDTO> points = hoaDonRepository.getRevenueByHour(start, end);
-            Map<Integer, BigDecimal> hourMap = points.stream()
-                    .collect(Collectors.toMap(ChartPointDTO::getHour, ChartPointDTO::getRevenue));
             for (int i = 0; i < 24; i++) {
                 chartLabels.add(String.format("%02dh", i));
-                chartValues.add(hourMap.getOrDefault(i, BigDecimal.ZERO));
+                chartValues.add(groupedRevenue.getOrDefault(String.valueOf(i), BigDecimal.ZERO));
             }
         } else if ("DAY".equals(grouping)) {
-            List<ChartPointDTO> points = hoaDonRepository.getRevenueByDay(start, end);
-            Map<String, BigDecimal> dayMap = points.stream()
-                    .collect(Collectors.toMap(
-                            p -> String.format("%02d/%02d", p.getDay(), p.getMonth()),
-                            ChartPointDTO::getRevenue
-                    ));
-            // Tạo tất cả các ngày trong khoảng
             LocalDateTime temp = start;
             while (!temp.isAfter(end)) {
                 String dayKey = String.format("%02d/%02d", temp.getDayOfMonth(), temp.getMonthValue());
                 chartLabels.add(dayKey);
-                chartValues.add(dayMap.getOrDefault(dayKey, BigDecimal.ZERO));
+                chartValues.add(groupedRevenue.getOrDefault(dayKey, BigDecimal.ZERO));
                 temp = temp.plusDays(1);
             }
         } else { // MONTH
-            List<ChartPointDTO> points = hoaDonRepository.getRevenueByMonth(start, end);
-            Map<String, BigDecimal> monthMap = points.stream()
-                    .collect(Collectors.toMap(
-                            p -> String.format("%02d/%d", p.getMonth(), p.getYear()),
-                            ChartPointDTO::getRevenue
-                    ));
             LocalDateTime temp = start;
             while (temp.isBefore(end) || temp.getYear() == end.getYear() && temp.getMonthValue() == end.getMonthValue()) {
                 String monthKey = String.format("%02d/%d", temp.getMonthValue(), temp.getYear());
                 chartLabels.add("Tháng " + temp.getMonthValue() + "/" + temp.getYear());
-                chartValues.add(monthMap.getOrDefault(monthKey, BigDecimal.ZERO));
+                chartValues.add(groupedRevenue.getOrDefault(monthKey, BigDecimal.ZERO));
                 temp = temp.plusMonths(1);
             }
         }
 
-        // 4. Top 5 sản phẩm bán chạy nhất
+        // Top 5 products
         List<TopProductDTO> topProducts = hoaDonChiTietRepository.findBestSellingProducts(start, end, PageRequest.of(0, 5));
 
-        // 5. Thống kê Online
-        Long onlineTotal = hoaDonRepository.countOnlineTransactions(start, end);
-        Long onlineSuccess = hoaDonRepository.countOnlineSuccessful(start, end);
-        Long onlineFailed = hoaDonRepository.countOnlineFailed(start, end);
-        Long onlinePending = hoaDonRepository.countOnlinePending(start, end);
-        BigDecimal onlineRevenue = hoaDonRepository.sumOnlineRevenue(start, end);
-
-        BigDecimal expectedRevenue = hoaDonRepository.sumExpectedRevenue(start, end);
-        BigDecimal pendingRefund = hoaDonRepository.sumPendingRefundAmount(start, end);
+        // General DTO
+        GeneralMetricsDTO metrics = new GeneralMetricsDTO(
+                totalOrders,
+                successfulOrders,
+                cancelledOrders,
+                actualRevenue,
+                avgOrderValue,
+                hoaDonChiTietRepository.getTotalProductsSold(start, end)
+        );
 
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
         data.put("cancellationRate", cancellationRate);
-        data.put("newCustomers", newCustomersCount);
+        data.put("newCustomers", newCustomersCount != null ? newCustomersCount : 0L);
         data.put("statusDistribution", statusMap);
         data.put("chartLabels", chartLabels);
         data.put("chartValues", chartValues);
         data.put("topProducts", topProducts);
         data.put("grouping", grouping);
-        data.put("expectedRevenue", expectedRevenue != null ? expectedRevenue : BigDecimal.ZERO);
-        data.put("actualRevenue", metrics.totalRevenue());
-        data.put("pendingRefund", pendingRefund != null ? pendingRefund : BigDecimal.ZERO);
-        
-        // Put Online statistics
-        data.put("onlineTotal", onlineTotal != null ? onlineTotal : 0L);
-        data.put("onlineSuccess", onlineSuccess != null ? onlineSuccess : 0L);
-        data.put("onlineFailed", onlineFailed != null ? onlineFailed : 0L);
-        data.put("onlinePending", onlinePending != null ? onlinePending : 0L);
-        data.put("onlineRevenue", onlineRevenue != null ? onlineRevenue : BigDecimal.ZERO);
+        data.put("expectedRevenue", expectedRevenue);
+        data.put("actualRevenue", actualRevenue);
+        data.put("refundedRevenue", refundedRevenue); // New Metric: Refund Revenue
+        data.put("pendingRefund", pendingRefund);
 
-        // 6. Lịch sử giao dịch (Shared Data Source)
+        // Put Online statistics
+        data.put("onlineTotal", onlineTotal);
+        data.put("onlineSuccess", onlineSuccess);
+        data.put("onlineFailed", onlineFailed);
+        data.put("onlinePending", onlinePending);
+        data.put("onlineRevenue", onlineRevenue);
+
+        // Transaction history
         Long totalTransactions = hoaDonRepository.countTransactionsInPeriod(start, end);
         List<TransactionHistoryDTO> transactions = getTransactionHistory(start, end, 100);
         data.put("totalTransactions", totalTransactions != null ? totalTransactions : 0L);
@@ -366,14 +534,14 @@ public class AdminThongKeService {
             kpiSheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 1));
 
             String[] kpiNames = {
-                    "Tổng số đơn hàng", "Đơn hàng thành công", "Đơn hàng đã hủy", 
-                    "Doanh thu thực tế", "Doanh thu dự kiến", "Giá trị trung bình đơn hàng", 
-                    "Tổng sản phẩm đã bán", "Khách hàng mới", "Tỷ lệ hủy đơn"
+                "Tổng số đơn hàng", "Đơn hàng thành công", "Đơn hàng đã hủy",
+                "Doanh thu thực tế", "Doanh thu dự kiến", "Doanh thu đã hoàn", "Giá trị trung bình đơn hàng",
+                "Tổng sản phẩm đã bán", "Khách hàng mới", "Tỷ lệ hủy đơn"
             };
             Object[] kpiValues = {
-                    metrics.totalOrders(), metrics.successfulOrders(), metrics.cancelledOrders(),
-                    stats.get("actualRevenue"), stats.get("expectedRevenue"), metrics.avgOrderValue(),
-                    metrics.totalProductsSold(), newCustomers, cancellationRate
+                metrics.totalOrders(), metrics.successfulOrders(), metrics.cancelledOrders(),
+                stats.get("actualRevenue"), stats.get("expectedRevenue"), stats.get("refundedRevenue"), metrics.avgOrderValue(),
+                metrics.totalProductsSold(), newCustomers, cancellationRate
             };
 
             for (int i = 0; i < kpiNames.length; i++) {
@@ -388,10 +556,10 @@ public class AdminThongKeService {
                     valCell.setCellValue(((BigDecimal) kpiValues[i]).doubleValue());
                     valCell.setCellStyle(currencyStyle);
                 } else if (kpiValues[i] instanceof Double) {
-                    if (i == 5) { // Giá trị trung bình đơn (index 5)
+                    if (kpiNames[i].contains("trung bình")) {
                         valCell.setCellValue((Double) kpiValues[i]);
                         valCell.setCellStyle(currencyStyle);
-                    } else if (i == 8) { // Tỷ lệ hủy đơn (index 8)
+                    } else if (kpiNames[i].contains("Tỷ lệ")) {
                         valCell.setCellValue((Double) kpiValues[i] / 100.0);
                         CellStyle pctStyle = workbook.createCellStyle();
                         pctStyle.setDataFormat(format.getFormat("0.0%"));
@@ -428,12 +596,12 @@ public class AdminThongKeService {
             kpiSheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(startRowZp, startRowZp, 0, 1));
 
             String[] zpLabels = {
-                    "Tổng số giao dịch Online", "Giao dịch thành công", 
-                    "Giao dịch thất bại", "Giao dịch đang chờ", "Doanh thu Online"
+                "Tổng số giao dịch Online", "Giao dịch thành công",
+                "Giao dịch thất bại", "Giao dịch đang chờ", "Doanh thu Online"
             };
             Object[] zpValues = {
-                    stats.get("onlineTotal"), stats.get("onlineSuccess"), 
-                    stats.get("onlineFailed"), stats.get("onlinePending"), stats.get("onlineRevenue")
+                stats.get("onlineTotal"), stats.get("onlineSuccess"),
+                stats.get("onlineFailed"), stats.get("onlinePending"), stats.get("onlineRevenue")
             };
 
             for (int i = 0; i < zpLabels.length; i++) {
@@ -516,8 +684,8 @@ public class AdminThongKeService {
 
             Row rTxHeader = txSheet.createRow(0);
             String[] txHeaders = {
-                    "Mã Hóa Đơn", "Khách Hàng", "Thời Gian", 
-                    "Phương Thức", "Mã Giao Dịch", "Số Tiền", "Trạng Thái Thanh Toán"
+                "Mã Hóa Đơn", "Khách Hàng", "Thời Gian",
+                "Phương Thức", "Mã Giao Dịch", "Số Tiền", "Trạng Thái Thanh Toán"
             };
             for (int i = 0; i < txHeaders.length; i++) {
                 Cell cell = rTxHeader.createCell(i);
@@ -532,28 +700,28 @@ public class AdminThongKeService {
                 for (int i = 0; i < transactionsList.size(); i++) {
                     TransactionHistoryDTO tx = transactionsList.get(i);
                     Row row = txSheet.createRow(i + 1);
-                    
+
                     // Mã Hóa Đơn (String)
                     row.createCell(0).setCellValue(tx.invoiceCode());
-                    
+
                     // Khách Hàng (String)
                     row.createCell(1).setCellValue(tx.customerName());
-                    
+
                     // Thời Gian (String)
                     String formattedTime = tx.transactionTime() != null ? excelDateFormatter.format(tx.transactionTime()) : "";
                     row.createCell(2).setCellValue(formattedTime);
-                    
+
                     // Phương Thức (String)
                     row.createCell(3).setCellValue(tx.paymentMethod());
-                    
+
                     // Mã Giao Dịch (String)
                     row.createCell(4).setCellValue(tx.transactionId());
-                    
+
                     // Số Tiền (Numeric)
                     Cell cellAmt = row.createCell(5);
                     cellAmt.setCellValue(tx.amount() != null ? tx.amount().doubleValue() : 0.0);
                     cellAmt.setCellStyle(currencyStyle);
-                    
+
                     // Trạng Thái Thanh Toán (String)
                     row.createCell(6).setCellValue(tx.paymentStatus());
                 }

@@ -1,5 +1,6 @@
 package com.smashvn.shop.controller;
 
+import com.smashvn.shop.config.GhnConfig;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
@@ -9,6 +10,7 @@ import com.smashvn.shop.service.OrderViewService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +36,7 @@ public class GhnRestController {
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final OrderViewService orderViewService;
+    private final GhnConfig ghnConfig;
 
     /** Lấy danh sách tỉnh/thành phố */
     @GetMapping("/provinces")
@@ -225,8 +228,14 @@ public class GhnRestController {
      * POST /api/ghn/webhook
      */
     @PostMapping("/webhook")
-    public ResponseEntity<?> ghnWebhook(@RequestBody Map<String, Object> payload) {
-        log.info("[GHN_WEBHOOK] Received payload: {}", payload);
+    public ResponseEntity<?> ghnWebhook(
+            @RequestBody Map<String, Object> payload,
+            @RequestParam(value = "token", required = false) String token) {
+        if (token == null || !token.equals(ghnConfig.getWebhookToken())) {
+            log.warn("[GHN_WEBHOOK] Webhook rejected. Invalid or missing token.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("status", "error", "message", "Unauthorized"));
+        }
+        log.info("[GHN_WEBHOOK] Webhook accepted.");
         try {
             String orderCode = (String) payload.get("OrderCode");
             String status = (String) payload.get("Status");
@@ -280,6 +289,12 @@ public class GhnRestController {
                     case "return":
                         internalStatus = "da_huy";
                         break;
+                }
+
+                // Tránh xử lý trùng lặp do GHN retry webhook
+                if (status.equalsIgnoreCase(oldGhnStatus) && internalStatus.equalsIgnoreCase(oldStatus)) {
+                    log.info("[GHN_WEBHOOK] Duplicate update ignored. Order #{} is already in status {} and state {}", hd.getId(), status, internalStatus);
+                    return ResponseEntity.ok(Map.of("status", "ok", "message", "Duplicate update ignored"));
                 }
 
                 // Cập nhật trạng thái đơn hàng và tồn kho thông qua OrderViewService

@@ -1,25 +1,32 @@
 package com.smashvn.shop.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-
-import com.smashvn.shop.entity.HoaDon;
-import com.smashvn.shop.entity.HoaDonChiTiet;
-import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.repository.TaiKhoanRepository;
-import com.smashvn.shop.repository.HoaDonRepository;
-import com.smashvn.shop.repository.HoaDonChiTietRepository;
-import com.smashvn.shop.service.AdminPosService;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.AdminPosService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/admin/pos")
@@ -107,10 +114,13 @@ public class AdminPosController {
 
     // ─── DTO request checkout ────────────────────────────────────────────────────
     public static class PosCheckoutRequest {
+
         public Integer idKhachHang;
         public String maVoucher;
         public List<AdminPosService.PosItem> items;
-        /** TIEN_MAT | CHUYEN_KHOAN */
+        /**
+         * TIEN_MAT | CHUYEN_KHOAN
+         */
         public String phuongThucPos;
         public String maGiaoDich;
         public String ghiChu;
@@ -120,15 +130,15 @@ public class AdminPosController {
     @PostMapping("/checkout")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> checkout(@RequestBody PosCheckoutRequest req,
-                                                         HttpServletRequest request,
-                                                         HttpSession session) {
+            HttpServletRequest request,
+            HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
         // Xác định nhân viên đang thao tác
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
-            org.springframework.security.core.Authentication auth =
-                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            org.springframework.security.core.Authentication auth
+                    = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
                 TaiKhoan tk = taiKhoanRepository.findByEmail(auth.getName());
                 if (tk != null) {
@@ -159,14 +169,14 @@ public class AdminPosController {
 
         try {
             HoaDon hd = adminPosService.thanhToanPos(
-                req.idKhachHang,
-                req.maVoucher,
-                req.items,
-                req.phuongThucPos,
-                req.maGiaoDich,
-                req.ghiChu,
-                idNguoiDung,
-                ipAddress
+                    req.idKhachHang,
+                    req.maVoucher,
+                    req.items,
+                    req.phuongThucPos,
+                    req.maGiaoDich,
+                    req.ghiChu,
+                    idNguoiDung,
+                    ipAddress
             );
 
             response.put("success", true);

@@ -75,6 +75,7 @@ public class AdminShippingController {
             @RequestParam("clientId") String clientId,
             @RequestParam("diaChiKho") String diaChiKho,
             HttpSession session,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
@@ -82,21 +83,13 @@ public class AdminShippingController {
             return "redirect:/admin/dang-nhap";
         }
 
-        TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
-        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
-            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền thực hiện chức năng này.");
+        try {
+            adminShippingService.updateGhnConfig(id, token, clientId, diaChiKho, idNguoiDung, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Cập nhật kết nối GHN thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
         }
 
-        Optional<DonViVanChuyen> opt = donViVanChuyenDAO.findById(id);
-        if (opt.isPresent()) {
-            DonViVanChuyen dv = opt.get();
-            dv.setToken(token);
-            dv.setClientId(clientId);
-            dv.setDiaChiKho(diaChiKho);
-            donViVanChuyenDAO.save(dv);
-        }
-
-        redirectAttributes.addFlashAttribute("successMsg", "Cập nhật kết nối GHN thành công!");
         return "redirect:/admin/shipping-config";
     }
 
