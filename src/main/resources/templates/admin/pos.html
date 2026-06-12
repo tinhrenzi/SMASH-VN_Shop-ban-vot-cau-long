@@ -8,18 +8,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
     <style>
-        body {
+        html, body {
             height: 100vh;
             overflow: hidden;
         }
+
+        /* Fix sidebar: luôn cố định, không bị kéo theo scroll của content */
+        .sidebar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            height: 100vh !important;
+            width: 16.6667% !important;
+            overflow-y: auto;
+            scrollbar-width: none;
+            z-index: 1000;
+            align-self: auto !important;
+        }
+        .sidebar::-webkit-scrollbar { display: none; }
+
+        /* Fix main-content: lùi sang phải đúng độ rộng sidebar */
         .main-content {
+            margin-left: 16.6667% !important;
+            width: 83.3333% !important;
+            max-width: 83.3333% !important;
             height: 100vh !important;
             min-height: 100vh !important;
             display: flex;
             flex-direction: column;
             padding: 15px 30px 15px 30px !important;
             overflow: hidden;
+            flex: none !important;
         }
+
+        /* Row không được scroll ngang */
+        .container-fluid > .row {
+            height: 100vh;
+            overflow: hidden;
+            flex-wrap: nowrap;
+        }
+
         .pos-container {
             display: flex;
             gap: 20px;
@@ -421,7 +449,7 @@
                 <!-- Bank Transfer Section -->
                 <div id="modalBankSection" class="d-none">
                     <div class="p-3 border rounded-3 bg-light mb-3">
-                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-university me-1"></i> Thông tin tài khoản cửa hàng:</h6>
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-university me-1"></i> Thông tin chuyển khoản:</h6>
                         <div class="d-flex flex-column gap-2 small">
                             <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Ngân hàng:</span>
@@ -437,48 +465,30 @@
                             </div>
                             <div class="d-flex justify-content-between flex-wrap gap-2 pb-1">
                                 <span class="text-muted">Nội dung chuyển khoản:</span>
-                                <strong class="text-danger" id="txtTransferCode">SMASHVN...</strong>
+                                <strong class="text-danger fw-bold" id="txtTransferCode">SMASHVNPOS...</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- QR Code Placeholder -->
-                    <div class="text-center my-3 p-3 border rounded-3 bg-white">
-                        <div class="fw-bold text-muted mb-2 small"><i class="fas fa-qrcode me-1"></i> MÃ QR THANH TOÁN (MOCKUP)</div>
-                        <div class="d-flex justify-content-center align-items-center bg-light mx-auto" style="width: 150px; height: 150px; border-radius: 8px;">
-                            <svg width="120" height="120" viewBox="0 0 100 100" class="text-dark">
-                                <rect width="100" height="100" fill="none"/>
-                                <rect x="5" y="5" width="25" height="25" fill="currentColor"/>
-                                <rect x="10" y="10" width="15" height="15" fill="white"/>
-                                <rect x="15" y="15" width="5" height="5" fill="currentColor"/>
-
-                                <rect x="70" y="5" width="25" height="25" fill="currentColor"/>
-                                <rect x="75" y="10" width="15" height="15" fill="white"/>
-                                <rect x="80" y="15" width="5" height="5" fill="currentColor"/>
-
-                                <rect x="5" y="70" width="25" height="25" fill="currentColor"/>
-                                <rect x="10" y="75" width="15" height="15" fill="white"/>
-                                <rect x="15" y="80" width="5" height="5" fill="currentColor"/>
-
-                                <rect x="40" y="10" width="10" height="5" fill="currentColor"/>
-                                <rect x="55" y="5" width="5" height="15" fill="currentColor"/>
-                                <rect x="45" y="25" width="15" height="5" fill="currentColor"/>
-                                <rect x="35" y="40" width="20" height="20" fill="currentColor"/>
-                                <rect x="40" y="45" width="10" height="10" fill="white"/>
-                                <rect x="65" y="40" width="10" height="5" fill="currentColor"/>
-                                <rect x="80" y="55" width="15" height="10" fill="currentColor"/>
-                                <rect x="40" y="70" width="5" height="25" fill="currentColor"/>
-                                <rect x="55" y="80" width="20" height="5" fill="currentColor"/>
-                                <rect x="85" y="80" width="10" height="10" fill="currentColor"/>
-                            </svg>
+                    <!-- QR Code thực tế từ VietQR (chuẩn Napas 247 liên ngân hàng) -->
+                    <div class="text-center my-3 p-2 border rounded-3 bg-white">
+                        <div class="fw-bold text-muted mb-2 small"><i class="fas fa-qrcode me-1"></i> QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+                        <img id="posQrImage"
+                             src=""
+                             alt="QR chuyển khoản"
+                             style="width:200px; height:200px; border-radius:8px; object-fit:contain; display:none;"
+                             onerror="this.style.display='none'; document.getElementById('posQrFallback').style.display='flex';">
+                        <div id="posQrFallback" style="display:none; width:200px; height:200px; margin:0 auto; background:#f0f2f5; border-radius:8px; align-items:center; justify-content:center; color:#888; font-size:13px; flex-direction:column; gap:6px;">
+                            <i class="fas fa-qrcode fa-3x"></i>
+                            <span>Không tải được QR</span>
                         </div>
-                        <div class="text-muted small mt-2">Nội dung QR chứa mã đơn hàng và số tiền tự động</div>
+                        <div class="text-muted small mt-2">Mở app ngân hàng → Quét mã → Kiểm tra nội dung và số tiền → Xác nhận</div>
                     </div>
 
                     <!-- Transfer transaction reference -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Mã giao dịch ngân hàng (Traceability)</label>
-                        <input type="text" id="inputTransferRef" class="form-control" placeholder="Nhập mã giao dịch chuyển khoản...">
+                        <label class="form-label fw-bold">Mã giao dịch ngân hàng <span class="text-muted fw-normal">(tùy chọn)</span></label>
+                        <input type="text" id="inputTransferRef" class="form-control" placeholder="Nhập mã giao dịch nếu có...">
                     </div>
                 </div>
 
