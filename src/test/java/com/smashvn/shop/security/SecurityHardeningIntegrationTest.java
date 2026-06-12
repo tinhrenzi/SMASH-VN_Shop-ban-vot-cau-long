@@ -1,10 +1,15 @@
 package com.smashvn.shop.security;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
-import com.smashvn.shop.service.*;
-import com.smashvn.shop.controller.*;
-import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,17 +17,43 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.entity.ChatConversation;
+import com.smashvn.shop.entity.ChatMessage;
+import com.smashvn.shop.entity.DanhMuc;
+import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.ThuongHieu;
+import com.smashvn.shop.repository.ChatConversationRepository;
+import com.smashvn.shop.repository.ChatMessageRepository;
+import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.service.AdminKhuyenMaiService;
+import com.smashvn.shop.service.AdminPosService;
+import com.smashvn.shop.service.AdminSanPhamService;
+import com.smashvn.shop.service.AdminShippingService;
+import com.smashvn.shop.service.OrderViewService;
 
 @SpringBootTest
 @Transactional
@@ -185,7 +216,6 @@ public class SecurityHardeningIntegrationTest {
     // ================================================================
     // BOUNDARY TESTS
     // ================================================================
-
     @Test
     void testCampaignNameBoundary_100Chars() {
         String name100 = repeat('a', 100);
@@ -200,7 +230,7 @@ public class SecurityHardeningIntegrationTest {
         List<Integer> productIds = Collections.singletonList(sp.getId());
         LocalDateTime start = LocalDateTime.now().plusDays(1);
         LocalDateTime end = LocalDateTime.now().plusDays(2);
-        
+
         try {
             adminKhuyenMaiService.createDotGiamGia(name100, start, end, 10, "Theo Phần Trăm", productIds, managerTk.getId(), "127.0.0.1");
         } catch (Exception e) {
@@ -380,7 +410,6 @@ public class SecurityHardeningIntegrationTest {
     // ================================================================
     // AUTHORIZATION TESTS
     // ================================================================
-
     @Test
     void testCapNhatTrangThaiDonHang_Authorization() throws Exception {
         HoaDon hd = createTestHoaDon("cho_xac_nhan");
@@ -497,7 +526,6 @@ public class SecurityHardeningIntegrationTest {
     // ================================================================
     // BOLA TESTS
     // ================================================================
-
     @Test
     void testChatFeedbackBOLA_SuccessOnOwnMessage() throws Exception {
         ChatConversation conv = new ChatConversation();
@@ -568,7 +596,6 @@ public class SecurityHardeningIntegrationTest {
     // ================================================================
     // VOUCHER TESTS
     // ================================================================
-
     @Test
     void testVoucherCodeValidationAndDuplicates() {
         PhieuGiamGia pgg = new PhieuGiamGia();
@@ -586,10 +613,10 @@ public class SecurityHardeningIntegrationTest {
 
         assertTrue(phieuGiamGiaRepository.existsByMaPhieuIgnoreCase("happy_new_year"));
         assertTrue(phieuGiamGiaRepository.existsByMaPhieuIgnoreCase("Happy_New_Year"));
-        
+
         assertTrue(phieuGiamGiaRepository.existsByMaPhieuIgnoreCaseAndIdNot("HAPPY_NEW_YEAR", -1));
         assertFalse(phieuGiamGiaRepository.existsByMaPhieuIgnoreCaseAndIdNot("HAPPY_NEW_YEAR", pgg.getId()));
-        
+
         final String duplicateCode = "happy_new_year";
         Exception e1 = assertThrows(RuntimeException.class, () -> {
             adminKhuyenMaiService.createPhieuGiamGia(duplicateCode, BigDecimal.TEN, "%", LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(5), 10, BigDecimal.ZERO, "Giảm phần trăm", managerTk.getId(), "127.0.0.1");

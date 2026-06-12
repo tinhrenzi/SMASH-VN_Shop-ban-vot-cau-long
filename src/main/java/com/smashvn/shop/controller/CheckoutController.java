@@ -130,6 +130,8 @@ public class CheckoutController {
             @RequestParam(value = "ghiChu", required = false) String ghiChu,
             @RequestParam(value = "ghnToDistrictId", required = false) Integer ghnToDistrictId,
             @RequestParam(value = "ghnToWardCode", required = false) String ghnToWardCode,
+            @RequestParam(value = "ghnProvinceId", required = false) Integer ghnProvinceId,
+            @RequestParam(value = "idDiaChiLuu", required = false) Integer idDiaChiLuu,
             HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
@@ -140,21 +142,35 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
         }
 
-        if (hoTenNhan == null || hoTenNhan.trim().isEmpty()) {
-            response.put("trangThai", "loi");
-            response.put("message", "Họ và tên người nhận không được để trống.");
-            return ResponseEntity.ok(response);
+        com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+        Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
+
+        if (idDiaChiLuu != null) {
+            try {
+                userAddressService.layDiaChiTheoId(idDiaChiLuu, idKhachHang);
+            } catch (Exception e) {
+                response.put("trangThai", "loi");
+                response.put("message", "Địa chỉ đã lưu không tồn tại hoặc không thuộc về tài khoản của bạn. Vui lòng chọn địa chỉ khác hoặc nhập địa chỉ mới.");
+                return ResponseEntity.ok(response);
+            }
+        } else {
+            if (hoTenNhan == null || hoTenNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Họ và tên người nhận không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+            if (sdtNhan == null || sdtNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Số điện thoại không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+            if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Địa chỉ nhận hàng không được để trống.");
+                return ResponseEntity.ok(response);
+            }
         }
-        if (sdtNhan == null || sdtNhan.trim().isEmpty()) {
-            response.put("trangThai", "loi");
-            response.put("message", "Số điện thoại không được để trống.");
-            return ResponseEntity.ok(response);
-        }
-        if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
-            response.put("trangThai", "loi");
-            response.put("message", "Địa chỉ nhận hàng không được để trống.");
-            return ResponseEntity.ok(response);
-        }
+
         if (idDonViVanChuyen == null) {
             response.put("trangThai", "loi");
             response.put("message", "Vui lòng chọn đơn vị vận chuyển.");
@@ -167,14 +183,14 @@ public class CheckoutController {
         }
 
         try {
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode);
+            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu);
             response.put("trangThai", "ok");
             response.put("orderId", hd.getId());
             response.put("paymentMethod", hd.getPaymentMethod());
             response.put("tongTien", hd.getTongTien());
             response.put("maDonHang", hd.getMaDonHang());
-            response.put("ghnToDistrictId", ghnToDistrictId);
-            response.put("ghnToWardCode", ghnToWardCode);
+            response.put("ghnToDistrictId", hd.getGhnToDistrictId());
+            response.put("ghnToWardCode", hd.getGhnToWardCode());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("trangThai", "loi");

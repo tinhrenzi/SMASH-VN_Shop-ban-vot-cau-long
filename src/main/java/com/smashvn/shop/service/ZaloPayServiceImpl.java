@@ -60,8 +60,12 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         long amount = hd.getTongTien().longValue();
 
+        String dynamicBaseUrl = getDynamicBaseUrl();
+        String redirectUrl = (dynamicBaseUrl != null) ? (dynamicBaseUrl + "/user/my-order") : zaloPayConfig.getRedirectUrl();
+        String callbackUrl = (dynamicBaseUrl != null) ? (dynamicBaseUrl + "/api/payment/zalopay/callback") : zaloPayConfig.getCallbackUrl();
+
         Map<String, Object> embedData = new HashMap<>();
-        embedData.put("redirecturl", zaloPayConfig.getRedirectUrl());
+        embedData.put("redirecturl", redirectUrl);
 
         String embedDataStr = objectMapper.writeValueAsString(embedData);
         String itemStr = "[]"; // Empty JSON array for simplicity
@@ -90,7 +94,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         params.put("embed_data", embedDataStr);
         params.put("description", "Thanh toan don hang #" + orderId);
         params.put("bank_code", ""); // empty to open ZaloPay portal
-        params.put("callback_url", zaloPayConfig.getCallbackUrl());
+        params.put("callback_url", callbackUrl);
         params.put("mac", mac);
 
         HttpHeaders headers = new HttpHeaders();
@@ -484,5 +488,43 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private String getDynamicBaseUrl() {
+        try {
+            org.springframework.web.context.request.ServletRequestAttributes attrs = 
+                (org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                jakarta.servlet.http.HttpServletRequest request = attrs.getRequest();
+                String scheme = request.getHeader("X-Forwarded-Proto");
+                if (scheme == null || scheme.isEmpty()) {
+                    scheme = request.getScheme();
+                }
+                String host = request.getHeader("X-Forwarded-Host");
+                if (host == null || host.isEmpty()) {
+                    host = request.getHeader("Host");
+                }
+                if (host == null || host.isEmpty()) {
+                    String serverName = request.getServerName();
+                    int serverPort = request.getServerPort();
+                    if (serverPort == 80 || serverPort == 443) {
+                        host = serverName;
+                    } else {
+                        host = serverName + ":" + serverPort;
+                    }
+                }
+                if ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equalsIgnoreCase(host)) {
+                    if (!host.contains(":")) {
+                        host = host + ":8080";
+                    }
+                }
+                String contextPath = request.getContextPath();
+                return scheme + "://" + host + contextPath;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 }

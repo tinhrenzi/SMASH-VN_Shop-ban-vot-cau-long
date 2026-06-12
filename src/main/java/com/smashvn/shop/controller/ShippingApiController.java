@@ -32,9 +32,10 @@ public class ShippingApiController {
     @GetMapping("/fee")
     public ResponseEntity<Map<String, Object>> getShippingFee(
             @RequestParam(value = "carrierId", required = false) Integer carrierId,
+            @RequestParam(value = "districtId", required = false) Integer districtId,
             @RequestParam(value = "address", required = false) String address) {
 
-        log.debug("Received request to calculate shipping fee: carrierId={}, address={}", carrierId, address);
+        log.debug("Received request to calculate shipping fee: carrierId={}, districtId={}, address={}", carrierId, districtId, address);
 
         DonViVanChuyen carrier = null;
         if (carrierId != null) {
@@ -53,8 +54,8 @@ public class ShippingApiController {
         String carrierCode;
 
         try {
-            fee = feeCalculator.calculateFee(carrier, address);
-            zone = zoneResolver.resolveZone(address);
+            fee = feeCalculator.calculateFee(carrier, districtId, address);
+            zone = zoneResolver.resolveZone(districtId, address);
             carrierCode = feeCalculator.getCarrierCode(carrier);
         } catch (Exception e) {
             log.error("Error calculating shipping fee, falling back to safe default", e);

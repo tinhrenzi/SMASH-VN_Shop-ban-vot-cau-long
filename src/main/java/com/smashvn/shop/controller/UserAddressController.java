@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -85,7 +86,8 @@ public class UserAddressController {
 
     // 2. Form thêm mới
     @GetMapping("/add")
-    public String hienThiThemDiaChi(HttpSession session, Model model) {
+    public String hienThiThemDiaChi(HttpSession session, Model model,
+            @RequestParam(value = "from", required = false) String from) {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) {
             return redirect;
@@ -98,6 +100,7 @@ public class UserAddressController {
 
         model.addAttribute("kh", kh);
         populateUserStats(kh, model);
+        model.addAttribute("fromPage", from); // Truyền trang nguồn vào view
         if (!model.containsAttribute("addressDto")) {
             model.addAttribute("addressDto", new UserAddressDto());
         }
@@ -109,6 +112,7 @@ public class UserAddressController {
     public String xuLyThemDiaChi(HttpSession session,
             @Valid @ModelAttribute("addressDto") UserAddressDto addressDto,
             BindingResult bindingResult,
+            @RequestParam(value = "from", required = false) String from,
             Model model,
             RedirectAttributes redirectAttributes) {
 
@@ -122,24 +126,30 @@ public class UserAddressController {
             return "redirect:/user/dang-nhap";
         }
 
+        // Xác định trang đích sau khi thêm thành công
+        String successRedirect = "checkout".equals(from) ? "redirect:/checkout" : "redirect:/user/address";
+
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
             model.addAttribute("kh", kh);
             model.addAttribute("loi", errorMessage);
+            model.addAttribute("fromPage", from);
             return "dash-address-add";
         }
 
         try {
             addressService.themDiaChiMoi(kh, addressDto);
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Đã thêm địa chỉ mới thành công!");
-            return "redirect:/user/address";
+            return successRedirect;
         } catch (IllegalArgumentException e) {
             model.addAttribute("kh", kh);
             model.addAttribute("loi", e.getMessage());
+            model.addAttribute("fromPage", from);
             return "dash-address-add";
         } catch (Exception e) {
             model.addAttribute("kh", kh);
             model.addAttribute("loi", "Có lỗi xảy ra khi thêm địa chỉ.");
+            model.addAttribute("fromPage", from);
             return "dash-address-add";
         }
     }

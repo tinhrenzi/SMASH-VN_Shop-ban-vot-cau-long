@@ -167,7 +167,7 @@
                                                 <span th:text="${loi}"></span>
                                             </div>
 
-                                            <form class="dash-address-manipulation" th:action="@{/user/address/add}" th:object="${addressDto}" method="post">
+                                            <form class="dash-address-manipulation" th:action="@{/user/address/add(from=${fromPage})}" th:object="${addressDto}" method="post">
                                                 <!-- Tọa độ bản đồ chọn -->
                                                 <input type="hidden" id="address-lat" th:field="*{latitude}">
                                                 <input type="hidden" id="address-lon" th:field="*{longitude}">
@@ -268,7 +268,7 @@
     <!-- Realtime Validation script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('.dash-address-manipulation');
+            const form = document.querySelector('form.dash-address-manipulation');
             if (!form) return;
 
             const fname = document.getElementById('address-fname');
@@ -298,117 +298,146 @@
                 element.style.borderColor = '';
             }
 
-            function validateFname() {
+            function validateFname(showFeedback = true) {
                 const val = fname.value.trim();
                 if (!val) {
-                    showError(fname, errFname, 'Họ người nhận không được để trống.');
+                    if (showFeedback) showError(fname, errFname, 'Họ người nhận không được để trống.');
                     return false;
                 }
                 if (val.length > 50) {
-                    showError(fname, errFname, 'Họ người nhận không được vượt quá 50 ký tự.');
+                    if (showFeedback) showError(fname, errFname, 'Họ người nhận không được vượt quá 50 ký tự.');
                     return false;
                 }
                 hideError(fname, errFname);
                 return true;
             }
 
-            function validateLname() {
+            function validateLname(showFeedback = true) {
                 const val = lname.value.trim();
                 if (!val) {
-                    showError(lname, errLname, 'Tên người nhận không được để trống.');
+                    if (showFeedback) showError(lname, errLname, 'Tên người nhận không được để trống.');
                     return false;
                 }
                 if (val.length > 50) {
-                    showError(lname, errLname, 'Tên người nhận không được vượt quá 50 ký tự.');
+                    if (showFeedback) showError(lname, errLname, 'Tên người nhận không được vượt quá 50 ký tự.');
                     return false;
                 }
                 hideError(lname, errLname);
                 return true;
             }
 
-            function validatePhone() {
+            function validatePhone(showFeedback = true) {
                 const val = phone.value.trim();
                 if (!val) {
-                    showError(phone, errPhone, 'Số điện thoại không được để trống.');
+                    if (showFeedback) showError(phone, errPhone, 'Số điện thoại không được để trống.');
                     return false;
                 }
                 const phoneRegex = /^(0|\+84)[0-9]{9}$/;
                 if (!phoneRegex.test(val)) {
-                    showError(phone, errPhone, 'Số điện thoại không đúng định dạng!');
+                    if (showFeedback) showError(phone, errPhone, 'Số điện thoại không đúng định dạng!');
                     return false;
                 }
                 hideError(phone, errPhone);
                 return true;
             }
 
-            function validateStreet() {
+            function validateStreet(showFeedback = true) {
                 const val = street.value.trim();
                 if (!val) {
-                    showError(street, errStreet, 'Địa chỉ cụ thể không được để trống.');
+                    if (showFeedback) showError(street, errStreet, 'Địa chỉ cụ thể không được để trống.');
                     return false;
                 }
                 if (val.length < 5 || val.length > 255) {
-                    showError(street, errStreet, 'Địa chỉ cụ thể phải từ 5 đến 255 ký tự.');
+                    if (showFeedback) showError(street, errStreet, 'Địa chỉ cụ thể phải từ 5 đến 255 ký tự.');
                     return false;
                 }
                 hideError(street, errStreet);
                 return true;
             }
 
-            function validateState() {
+            function validateState(showFeedback = true) {
                 const val = state.value.trim();
                 if (!val) {
-                    showError(state, errState, 'Tỉnh/Thành phố không được để trống.');
+                    if (showFeedback) showError(state, errState, 'Tỉnh/Thành phố không được để trống.');
                     return false;
                 }
                 if (val.length > 100) {
-                    showError(state, errState, 'Tỉnh/Thành phố không được vượt quá 100 ký tự.');
+                    if (showFeedback) showError(state, errState, 'Tỉnh/Thành phố không được vượt quá 100 ký tự.');
                     return false;
                 }
                 hideError(state, errState);
                 return true;
             }
 
-            function validateCountry() {
+            function validateCountry(showFeedback = true) {
                 const val = country.value.trim();
                 if (!val) {
-                    showError(country, errCountry, 'Quốc gia không được để trống.');
+                    if (showFeedback) showError(country, errCountry, 'Quốc gia không được để trống.');
                     return false;
                 }
                 if (val.length > 100) {
-                    showError(country, errCountry, 'Quốc gia không được vượt quá 100 ký tự.');
+                    if (showFeedback) showError(country, errCountry, 'Quốc gia không được vượt quá 100 ký tự.');
                     return false;
                 }
                 hideError(country, errCountry);
                 return true;
             }
 
-            function checkFormValidity() {
-                const isFnameValid = validateFname();
-                const isLnameValid = validateLname();
-                const isPhoneValid = validatePhone();
-                const isStreetValid = validateStreet();
-                const isStateValid = validateState();
-                const isCountryValid = validateCountry();
+            function checkFormValidity(showFeedback = false) {
+                const isFnameValid = validateFname(showFeedback);
+                const isLnameValid = validateLname(showFeedback);
+                const isPhoneValid = validatePhone(showFeedback);
+                const isStreetValid = validateStreet(showFeedback);
+                const isStateValid = validateState(showFeedback);
+                const isCountryValid = validateCountry(showFeedback);
 
                 const isValid = isFnameValid && isLnameValid && isPhoneValid && isStreetValid && isStateValid && isCountryValid;
                 submitBtn.disabled = !isValid;
+                return isValid;
             }
 
-            [fname, lname, phone, street, state, country].forEach(input => {
-                input.addEventListener('input', checkFormValidity);
-                input.addEventListener('blur', checkFormValidity);
+            const inputs = [fname, lname, phone, street, state, country];
+
+            inputs.forEach(input => {
+                input.dataset.touched = 'false';
+            });
+
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const showFeedback = input.dataset.touched === 'true';
+                    if (input === fname) validateFname(showFeedback);
+                    else if (input === lname) validateLname(showFeedback);
+                    else if (input === phone) validatePhone(showFeedback);
+                    else if (input === street) validateStreet(showFeedback);
+                    else if (input === state) validateState(showFeedback);
+                    else if (input === country) validateCountry(showFeedback);
+                    checkFormValidity(false);
+                });
+
+                input.addEventListener('blur', function() {
+                    input.dataset.touched = 'true';
+                    if (input === fname) validateFname(true);
+                    else if (input === lname) validateLname(true);
+                    else if (input === phone) validatePhone(true);
+                    else if (input === street) validateStreet(true);
+                    else if (input === state) validateState(true);
+                    else if (input === country) validateCountry(true);
+                    checkFormValidity(false);
+                });
             });
 
             form.addEventListener('submit', function(e) {
-                checkFormValidity();
-                if (submitBtn.disabled) {
+                inputs.forEach(input => {
+                    input.dataset.touched = 'true';
+                });
+                const isValid = checkFormValidity(true);
+                if (!isValid) {
                     e.preventDefault();
                 }
             });
 
-            // Run check initially
-            checkFormValidity();
+            // Run check initially without feedback
+            checkFormValidity(false);
         });
     </script>
 

@@ -42,6 +42,11 @@ public class ShippingFeeCalculator {
     public static final BigDecimal DEFAULT_LOCAL_FALLBACK = BigDecimal.valueOf(30000);
     public static final BigDecimal DEFAULT_NATIONWIDE_FALLBACK = BigDecimal.valueOf(30000);
 
+    public BigDecimal calculateFee(DonViVanChuyen carrier, Integer districtId, String address) {
+        ShippingZone zone = zoneResolver.resolveZone(districtId, address);
+        return calculateFee(carrier, zone);
+    }
+
     public BigDecimal calculateFee(DonViVanChuyen carrier, String address) {
         if (address == null || address.trim().isEmpty()) {
             log.debug("Address is null or empty. Resolving to NATIONWIDE zone and calculating fee.");
@@ -50,6 +55,7 @@ public class ShippingFeeCalculator {
         ShippingZone zone = zoneResolver.resolveZone(address);
         return calculateFee(carrier, zone);
     }
+
 
     public BigDecimal calculateFee(DonViVanChuyen carrier, ShippingZone zone) {
         if (carrier == null) {

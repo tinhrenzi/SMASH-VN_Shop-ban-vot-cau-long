@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,10 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-    name = "sepay.debug",
-    havingValue = "true"
-)
 public class SepaySimulationController {
 
     private final HoaDonRepository hoaDonRepository;
@@ -43,6 +40,11 @@ public class SepaySimulationController {
 
     @GetMapping("/payment/sepay/simulate")
     public String showSimulationPage(@RequestParam("maDonHang") String maDonHang, Model model) {
+        if (!sepayConfig.isDebug()) {
+            model.addAttribute("error", "Chức năng giả lập thanh toán SePay đang bị TẮT. Vui lòng cấu hình SEPAY_DEBUG=true trong file .env và KHỞI ĐỘNG LẠI server.");
+            return "sepay-simulate";
+        }
+
         Optional<HoaDon> orderOpt = hoaDonRepository.findByMaDonHang(maDonHang);
         if (!orderOpt.isPresent()) {
             model.addAttribute("error", "Không tìm thấy đơn hàng: " + maDonHang);
@@ -69,6 +71,13 @@ public class SepaySimulationController {
             @RequestParam("amount") BigDecimal amount) {
 
         log.info("Simulating successful SePay payment for order {}", maDonHang);
+
+        if (!sepayConfig.isDebug()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Chức năng giả lập thanh toán SePay đang bị TẮT. Vui lòng cấu hình SEPAY_DEBUG=true trong file .env và khởi động lại server.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
 
         try {
             Optional<HoaDon> orderOpt = hoaDonRepository.findByMaDonHang(maDonHang);

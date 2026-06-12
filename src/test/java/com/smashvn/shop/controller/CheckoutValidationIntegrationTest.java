@@ -68,6 +68,9 @@ public class CheckoutValidationIntegrationTest {
     private TrangThaiGioHangRepository trangThaiGioHangRepository;
 
     @Autowired
+    private SoDiaChiRepository soDiaChiRepository;
+
+    @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
     private MockMvc mockMvc;
@@ -737,5 +740,169 @@ public class CheckoutValidationIntegrationTest {
                         .sessionAttr("idNguoiDung", testUser.getId()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/gio-hang?loi=*"));
+    }
+
+    @Test
+    void testShippingFeeTampering() throws Exception {
+        // Submit ghnProvinceId=201 (Hanoi), but with district = 999999 (non-local)
+        // Verify the server ignores the frontend's province ID and calculates the correct nationwide fee.
+        MvcResult result = mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("hoTenNhan", "Nguyễn Văn A")
+                        .param("sdtNhan", "0912345678")
+                        .param("diaChiNhan", "Đà Nẵng")
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId())) // GHTK
+                        .param("phuongThucThanhToan", "COD")
+                        .param("ghnToDistrictId", "999999") // Non-local district
+                        .param("ghnProvinceId", "201")) // Pretending to be Hanoi
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andReturn();
+
+        String responseString = result.getResponse().getContentAsString();
+        Map<String, Object> respMap = objectMapper.readValue(responseString, Map.class);
+        Integer orderId = (Integer) respMap.get("orderId");
+
+        HoaDon savedOrder = hoaDonRepository.findById(orderId).orElse(null);
+        assertNotNull(savedOrder);
+        // The resolved fee should be GHTK Nationwide (30000), not Local (22000)
+        assertEquals(0, new BigDecimal("30000").compareTo(savedOrder.getPhiVanChuyen()));
+    }
+
+    @Test
+    void testSavedAddressOwnership() throws Exception {
+        // Create user B
+        TaiKhoan userB = new TaiKhoan();
+        userB.setEmail("userb_address@gmail.com");
+        userB.setMatKhau("testpass123");
+        userB.setVaiTro("KH");
+        userB.setTrangThai("hoat_dong");
+        userB.setLaKhachHang(true);
+        userB = taiKhoanRepository.save(userB);
+
+        KhachHang khachHangB = new KhachHang();
+        khachHangB.setTaiKhoan(userB);
+        khachHangB.setHoKh("Khach");
+        khachHangB.setTenKh("B");
+        khachHangB.setSoDienThoaiKh("0987654322");
+        khachHangB = khachHangRepository.save(khachHangB);
+
+        // Create saved address for user B
+        SoDiaChi soDiaChiB = new SoDiaChi();
+        soDiaChiB.setKhachHang(khachHangB);
+        soDiaChiB.setHoNguoiNhan("Khach");
+        soDiaChiB.setTenNguoiNhan("B");
+        soDiaChiB.setSdtNguoiNhan("0987654322");
+        soDiaChiB.setDiaChiCuThe("123 Street B");
+        soDiaChiB.setTinhThanh("Hà Nội");
+        soDiaChiB.setThanhPho("Quận Ba Đình");
+        soDiaChiB.setQuocGia("Việt Nam");
+        soDiaChiB.setMaBuuDien("10000");
+        soDiaChiB.setDefaultShipping(false);
+        soDiaChiB.setDefaultBilling(false);
+        soDiaChiB = soDiaChiRepository.save(soDiaChiB);
+
+        // Attempt checkout as testUser (Customer A) but using user B's saved address ID
+        mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                        .param("phuongThucThanhToan", "COD")
+                        .param("idDiaChiLuu", String.valueOf(soDiaChiB.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Địa chỉ đã lưu không tồn tại hoặc không thuộc về tài khoản của bạn. Vui lòng chọn địa chỉ khác hoặc nhập địa chỉ mới."));
+    }
+
+    @Test
+    void testSavedAddressDeleted() throws Exception {
+        // Create saved address for testUser
+        SoDiaChi soDiaChi = new SoDiaChi();
+        soDiaChi.setKhachHang(testKhachHang);
+        soDiaChi.setHoNguoiNhan("Tester");
+        soDiaChi.setTenNguoiNhan("Address");
+        soDiaChi.setSdtNguoiNhan("0987654321");
+        soDiaChi.setDiaChiCuThe("456 Street A");
+        soDiaChi.setTinhThanh("Hà Nội");
+        soDiaChi.setThanhPho("Quận Cầu Giấy");
+        soDiaChi.setQuocGia("Việt Nam");
+        soDiaChi.setMaBuuDien("10000");
+        soDiaChi.setDefaultShipping(false);
+        soDiaChi.setDefaultBilling(false);
+        soDiaChi = soDiaChiRepository.save(soDiaChi);
+
+        Integer savedAddressId = soDiaChi.getId();
+
+        // Delete the address to simulate concurrent deletion after loading page
+        soDiaChiRepository.delete(soDiaChi);
+
+        // Attempt checkout and verify it fails transaction-safely
+        mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                        .param("phuongThucThanhToan", "COD")
+                        .param("idDiaChiLuu", String.valueOf(savedAddressId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Địa chỉ đã lưu không tồn tại hoặc không thuộc về tài khoản của bạn. Vui lòng chọn địa chỉ khác hoặc nhập địa chỉ mới."));
+    }
+
+    @Test
+    void testShippingFeeRecalculation() throws Exception {
+        // Submit a valid checkout request
+        MvcResult result = mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("hoTenNhan", "Nguyễn Văn A")
+                        .param("sdtNhan", "0912345678")
+                        .param("diaChiNhan", "Hà Nội")
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                        .param("phuongThucThanhToan", "COD")
+                        .param("ghnToDistrictId", "1454")
+                        .param("ghnProvinceId", "201"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andReturn();
+
+        String responseString = result.getResponse().getContentAsString();
+        Map<String, Object> respMap = objectMapper.readValue(responseString, Map.class);
+        Integer orderId = (Integer) respMap.get("orderId");
+
+        HoaDon savedOrder = hoaDonRepository.findById(orderId).orElse(null);
+        assertNotNull(savedOrder);
+        // The server computes the fee independently and stores it.
+        assertNotNull(savedOrder.getPhiVanChuyen());
+        assertTrue(savedOrder.getPhiVanChuyen().compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    @Test
+    void testGhnMappingMissing() throws Exception {
+        // Create saved address with unmappable values
+        SoDiaChi unmappableAddress = new SoDiaChi();
+        unmappableAddress.setKhachHang(testKhachHang);
+        unmappableAddress.setHoNguoiNhan("Tester");
+        unmappableAddress.setTenNguoiNhan("Unmappable");
+        unmappableAddress.setSdtNguoiNhan("0987654321");
+        unmappableAddress.setDiaChiCuThe("Something Weird");
+        unmappableAddress.setTinhThanh("Fake Province");
+        unmappableAddress.setThanhPho("Fake City");
+        unmappableAddress.setQuocGia("Việt Nam");
+        unmappableAddress.setMaBuuDien("10000");
+        unmappableAddress.setDefaultShipping(false);
+        unmappableAddress.setDefaultBilling(false);
+        unmappableAddress = soDiaChiRepository.save(unmappableAddress);
+
+        // Attempt checkout using this saved address ID
+        mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                        .param("phuongThucThanhToan", "COD")
+                        .param("idDiaChiLuu", String.valueOf(unmappableAddress.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Địa chỉ đã lưu của bạn chưa được chuẩn hóa địa chỉ GHN. Vui lòng cập nhật sổ địa chỉ hoặc chọn \"Nhập địa chỉ mới\"."));
     }
 }

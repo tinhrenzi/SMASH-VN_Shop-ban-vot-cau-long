@@ -1668,14 +1668,21 @@ function checkAndApplyVariant(container) {
 
   // Populate UI inputs with geocoding results
   function populateAddressFields(addressObj) {
-      if (addressObj.diaChiCuThe) {
-          document.getElementById('address-street').value = addressObj.diaChiCuThe;
+      const streetInput = document.getElementById('address-street');
+      const stateInput = document.getElementById('address-state');
+      const countryInput = document.getElementById('address-country');
+
+      if (addressObj.diaChiCuThe && streetInput) {
+          streetInput.value = addressObj.diaChiCuThe;
+          streetInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (addressObj.tinhThanh) {
-          document.getElementById('address-state').value = addressObj.tinhThanh;
+      if (addressObj.tinhThanh && stateInput) {
+          stateInput.value = addressObj.tinhThanh;
+          stateInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (addressObj.quocGia) {
-          document.getElementById('address-country').value = addressObj.quocGia;
+      if (addressObj.quocGia && countryInput) {
+          countryInput.value = addressObj.quocGia;
+          countryInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
   }
 

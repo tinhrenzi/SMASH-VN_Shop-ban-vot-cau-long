@@ -45,6 +45,7 @@ public class SepaySimulationControllerTest {
         when(sepayConfig.getBankAccount()).thenReturn("123456");
         when(sepayConfig.getBankName()).thenReturn("Vietcombank");
         when(sepayConfig.getMemoPrefix()).thenReturn("SMASHVN");
+        when(sepayConfig.isDebug()).thenReturn(true);
         mockMvc = MockMvcBuilders.standaloneSetup(sepaySimulationController).build();
     }
 

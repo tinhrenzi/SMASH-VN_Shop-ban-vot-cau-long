@@ -30,6 +30,8 @@ import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
+import com.smashvn.shop.repository.SoDiaChiRepository;
+import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
@@ -59,6 +61,7 @@ public class GioHangService {
     private final ShippingFeeCalculator shippingFeeCalculator;
     private final AdminShippingService adminShippingService;
     private final GhnService ghnService;
+    private final SoDiaChiRepository soDiaChiRepository;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -274,39 +277,9 @@ public class GioHangService {
     @org.springframework.transaction.annotation.Transactional
     public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
                               Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
-                              Integer ghnToDistrictId, String ghnToWardCode) {
-        String cleanHoTenNhan = sanitizeInput(hoTenNhan);
-        String cleanSdtNhan = sanitizeInput(sdtNhan);
-        String cleanDiaChiNhan = sanitizeInput(diaChiNhan);
+                              Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+                              Integer idDiaChiLuu) {
         String cleanGhiChu = sanitizeInput(ghiChu);
-
-        if (cleanHoTenNhan == null || cleanHoTenNhan.isEmpty()) {
-            log.warn("[SECURITY_ALERT] Invalid empty receiver name for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Họ và tên người nhận không được để trống.");
-        }
-        if (cleanHoTenNhan.length() < 2 || cleanHoTenNhan.length() > 100) {
-            log.warn("[SECURITY_ALERT] Invalid name length for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Họ và tên người nhận phải từ 2 đến 100 ký tự.");
-        }
-
-        if (cleanSdtNhan == null || cleanSdtNhan.isEmpty()) {
-            log.warn("[SECURITY_ALERT] Invalid empty phone number for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Số điện thoại không được để trống.");
-        }
-        if (!cleanSdtNhan.matches("^(\\+84|0)(3|5|7|8|9)[0-9]{8}$")) {
-            log.warn("[SECURITY_ALERT] Invalid phone format for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84).");
-        }
-
-        if (cleanDiaChiNhan == null || cleanDiaChiNhan.isEmpty()) {
-            log.warn("[SECURITY_ALERT] Invalid empty shipping address for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Địa chỉ nhận hàng không được để trống.");
-        }
-        if (cleanDiaChiNhan.length() < 5 || cleanDiaChiNhan.length() > 255) {
-            log.warn("[SECURITY_ALERT] Invalid address length for user: {}", idTaiKhoan);
-            throw new IllegalArgumentException("Địa chỉ nhận hàng phải từ 5 đến 255 ký tự.");
-        }
-
         if (cleanGhiChu != null && cleanGhiChu.length() > 500) {
             log.warn("[SECURITY_ALERT] Invalid note length for user: {}", idTaiKhoan);
             throw new IllegalArgumentException("Ghi chú đơn hàng tối đa 500 ký tự.");
@@ -315,6 +288,61 @@ public class GioHangService {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
             throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
+        }
+
+        String finalHoTenNhan;
+        String finalSdtNhan;
+        String finalDiaChiNhan;
+        Integer finalDistrictId = ghnToDistrictId;
+        String finalWardCode = ghnToWardCode;
+        Integer finalProvinceId = ghnProvinceId;
+
+        if (idDiaChiLuu != null) {
+            // Reload & validate inside same transaction
+            SoDiaChi soDiaChi = soDiaChiRepository.findById(idDiaChiLuu)
+                    .orElseThrow(() -> new IllegalArgumentException("Địa chỉ đã lưu không tồn tại."));
+            if (!soDiaChi.getKhachHang().getId().equals(kh.getId())) {
+                log.warn("[SECURITY_ALERT] Customer ID {} attempted to use unauthorized address ID {}", kh.getId(), idDiaChiLuu);
+                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền sử dụng địa chỉ này.");
+            }
+
+            // Resolve GHN mapping on server
+            GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(soDiaChi);
+            if (mapping == null || mapping.getDistrictId() == null || mapping.getWardCode() == null) {
+                throw new IllegalArgumentException("Địa chỉ đã lưu của bạn chưa được chuẩn hóa địa chỉ GHN. Vui lòng cập nhật sổ địa chỉ hoặc chọn \"Nhập địa chỉ mới\".");
+            }
+
+            finalHoTenNhan = soDiaChi.getHoNguoiNhan() + " " + soDiaChi.getTenNguoiNhan();
+            finalSdtNhan = soDiaChi.getSdtNguoiNhan();
+            finalDiaChiNhan = soDiaChi.getDiaChiCuThe() + ", " + soDiaChi.getTinhThanh() + ", " + soDiaChi.getQuocGia();
+            finalDistrictId = mapping.getDistrictId();
+            finalWardCode = mapping.getWardCode();
+            finalProvinceId = mapping.getProvinceId();
+        } else {
+            finalHoTenNhan = sanitizeInput(hoTenNhan);
+            finalSdtNhan = sanitizeInput(sdtNhan);
+            finalDiaChiNhan = sanitizeInput(diaChiNhan);
+
+            if (finalHoTenNhan == null || finalHoTenNhan.isEmpty()) {
+                throw new IllegalArgumentException("Họ và tên người nhận không được để trống.");
+            }
+            if (finalHoTenNhan.length() < 2 || finalHoTenNhan.length() > 100) {
+                throw new IllegalArgumentException("Họ và tên người nhận phải từ 2 đến 100 ký tự.");
+            }
+
+            if (finalSdtNhan == null || finalSdtNhan.isEmpty()) {
+                throw new IllegalArgumentException("Số điện thoại không được để trống.");
+            }
+            if (!finalSdtNhan.matches("^(\\+84|0)(3|5|7|8|9)[0-9]{8}$")) {
+                throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84).");
+            }
+
+            if (finalDiaChiNhan == null || finalDiaChiNhan.isEmpty()) {
+                throw new IllegalArgumentException("Địa chỉ nhận hàng không được để trống.");
+            }
+            if (finalDiaChiNhan.length() < 5 || finalDiaChiNhan.length() > 255) {
+                throw new IllegalArgumentException("Địa chỉ nhận hàng phải từ 5 đến 255 ký tự.");
+            }
         }
 
         // Clean up previous unpaid/pending orders for this customer to prevent duplicate display in Order History
@@ -351,12 +379,12 @@ public class GioHangService {
         String carrierName = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toUpperCase() : "";
         boolean isGhn = carrierName.contains("GIAO HÀNG NHANH") || carrierName.contains("GHN");
         if (isGhn) {
-            if (ghnToDistrictId == null || ghnToWardCode == null || ghnToWardCode.trim().isEmpty()) {
+            if (finalDistrictId == null || finalWardCode == null || finalWardCode.trim().isEmpty()) {
                 throw new IllegalArgumentException("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.");
             }
         }
 
-        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, cleanDiaChiNhan);
+        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, finalDistrictId, finalDiaChiNhan);
         BigDecimal totalAmount = tamTinh.add(phiShip);
 
         // Find or create Payment Method
@@ -394,17 +422,17 @@ public class GioHangService {
         }
         
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
-        hd.setDiaChiNhan(cleanDiaChiNhan);
-        hd.setSdtNhan(cleanSdtNhan);
+        hd.setDiaChiNhan(finalDiaChiNhan);
+        hd.setSdtNhan(finalSdtNhan);
         hd.setGhiChu(cleanGhiChu);
         hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 
         // Lưu thông tin địa chỉ GHN để tạo đơn vận chuyển sau này
-        if (ghnToDistrictId != null) {
-            hd.setGhnToDistrictId(ghnToDistrictId);
+        if (finalDistrictId != null) {
+            hd.setGhnToDistrictId(finalDistrictId);
         }
-        if (ghnToWardCode != null && !ghnToWardCode.isBlank()) {
-            hd.setGhnToWardCode(ghnToWardCode);
+        if (finalWardCode != null && !finalWardCode.isBlank()) {
+            hd.setGhnToWardCode(finalWardCode);
         }
 
         hd = hoaDonRepository.save(hd);
@@ -438,16 +466,16 @@ public class GioHangService {
             xoaTatCa(idTaiKhoan);
 
             // Tạo đơn vận chuyển GHN (nếu có thông tin địa chỉ GHN)
-            if (ghnToDistrictId != null && ghnToWardCode != null && !ghnToWardCode.isBlank()) {
+            if (finalDistrictId != null && finalWardCode != null && !finalWardCode.isBlank()) {
                 final HoaDon finalHd = hd;
                 final List<HoaDonChiTiet> savedItems = hoaDonChiTietRepository.findByHoaDon_Id(finalHd.getId());
                 try {
-                    String ghnCode = ghnService.createShippingOrder(finalHd, savedItems, ghnToDistrictId, ghnToWardCode);
+                    String ghnCode = ghnService.createShippingOrder(finalHd, savedItems, finalDistrictId, finalWardCode);
                     if (ghnCode != null) {
                         finalHd.setGhnOrderCode(ghnCode);
                         finalHd.setGhnStatus("ready_to_pick");
-                        finalHd.setGhnToDistrictId(ghnToDistrictId);
-                        finalHd.setGhnToWardCode(ghnToWardCode);
+                        finalHd.setGhnToDistrictId(finalDistrictId);
+                        finalHd.setGhnToWardCode(finalWardCode);
                         hd = hoaDonRepository.save(finalHd);
                         log.info("[GHN] Tạo đơn vận chuyển thành công cho HoaDon #{}: {}", finalHd.getId(), ghnCode);
                     }

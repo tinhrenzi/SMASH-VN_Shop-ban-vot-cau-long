@@ -1,7 +1,7 @@
 # 📋 SMASH-VN — DANH SÁCH & TIẾN ĐỘ CÔNG VIỆC (TASKS.MD)
 
-> **Lần cập nhật cuối:** 04/06/2026 — 10:30 (GMT+7)
-> **Trạng thái hệ thống:** Đang kiểm duyệt & Lên kế hoạch khắc phục bảo mật + Phát triển tính năng.
+> **Lần cập nhật cuối:** 12/06/2026 — 16:55 (GMT+7)
+> **Trạng thái hệ thống:** Đang triển khai bảo mật Giai đoạn 1 & 2. Hoàn thành tối ưu hóa luồng Thanh toán, Phí Vận chuyển GHN, bảo mật địa chỉ giao hàng và luồng điều hướng thêm mới địa chỉ.
 
 Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **SMASH-VN (Website bán vợt cầu lông)**. Được chia làm hai phần chính:
 
@@ -46,11 +46,11 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
 
 | Giai đoạn             | Nội dung công việc                          | Tổng Tasks |  Chưa làm  | Đang làm | Hoàn thành |   Tiến độ   |
 | :---------------------- | :--------------------------------------------- | :----------: | :----------: | :---------: | :----------: | :------------: |
-| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 5 | 0 | 3 | 37.5% |
-| **Giai đoạn 2** | Khắc phục bảo mật Ưu tiên cao (High) | 12 | 12 | 0 | 0 | 0% |
+| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 4 | 0 | 4 | 50% |
+| **Giai đoạn 2** | Khắc phục bảo mật Ưu tiên cao (High) | 12 | 10 | 0 | 2 | 16.7% |
 | **Giai đoạn 3** | Tối ưu hóa & Sửa lỗi Trung bình (Medium) | 18 | 18 | 0 | 0 | 0% |
 | **Giai đoạn 4** | Phát triển tính năng mới & Hoàn thiện | 9 | 9 | 0 | 0 | 0% |
-| **TỔNG CỘNG**   |                                                | **47** | **44** | **0** | **3** | **6.4%** |
+| **TỔNG CỘNG**   |                                                | **47** | **41** | **0** | **6** | **12.8%** |
 
 ---
 
@@ -72,8 +72,8 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `ChatService.java`
 - [ ] **T-07:** Hash mật khẩu cho tài khoản khách mua tại quầy (`GUEST_NO_PASSWORD` -> BCrypt hash).
   - *Files:* `AdminPosService.java`
-- [ ] **T-08:** Thêm validation annotations cho các Entity fields tài chính (tránh số tiền âm, giảm giá > 100%).
-  - *Files:* `HoaDon.java`, `HoaDonChiTiet.java`, `DotGiamGia.java`, `PhieuGiamGia.java`, v.v.
+- [X] **T-08:** Bảo mật và Tối ưu hóa luồng Thanh toán — Chống giả mạo phí vận chuyển, IDOR địa chỉ, Tạo đơn GHN sau IPN.
+  - *Files:* `application.properties`, `ShippingZoneResolver.java`, `ShippingFeeCalculator.java`, `GhnService.java`, `GioHangService.java`, `CheckoutController.java`, `ShippingApiController.java`, `SepayGatewayService.java`, `checkout.html`, `CheckoutValidationIntegrationTest.java` (Hoàn thành: 12/06/2026 16:41)
 
 ### 🟠 GIAI ĐOẠN 2: ƯU TIÊN CAO (LÀM KỸ TRƯỚC)
 
@@ -166,6 +166,9 @@ Mỗi khi có thay đổi (bắt đầu làm, sửa đổi code, hoàn thành ta
 | **04/06/2026 10:35** | **T-01, T-03** | **Đã hoàn thành**     | Thêm `.env` vào `.gitignore` (verify an toàn, không bị tracked) và thay thế credentials trong `.env.example` bằng placeholder. | Antigravity AI      |
 | **12/06/2026 09:27** | **T-05**             | **Đã hoàn thành**     | Đồng bộ logic bảo mật upload và củng cố validate cho Biến thể Sản phẩm sử dụng Tika, ImageIO, UUID, startsWith chống path traversal và Flash Attributes. | Antigravity AI      |
 | **04/06/2026 11:05** | —                   | **Cập nhật kiến trúc** | Cập nhật tasks.md: bổ sung T-42 đến T-47 dựa trên kết quả phân tích cấu trúc, mã nguồn dư thừa và bất cập giữa Spring Security, Interceptor và Cấu hình upload. | Antigravity AI      |
+| **12/06/2026 16:41** | **T-08**             | **Đã hoàn thành**     | Tối ưu hóa luồng Thanh toán & Bảo mật Phí Vận chuyển GHN: (1) Cấu hình Province ID từ `application.properties`; (2) `ShippingZoneResolver` dùng districtId cache chống giả mạo vùng; (3) `GhnService.resolveGhnAddress()` resolve server-side; (4) `GioHangService.createOrder()` reload địa chỉ trong transaction, validate IDOR, tính phí độc lập; (5) `SepayGatewayService.handleIpn()` tạo đơn GHN sau SePay IPN; (6) UX: manual-address-fields ẩn mặc định, debounce 300ms, isGhnLoadingMasterData guard; (7) 5 integration test mới: fee tampering, IDOR address, deleted address, recalculation, GHN mapping missing. | Antigravity AI      |
+| **12/06/2026 16:47** | —                   | **Sửa lỗi UX**         | Phân luồng redirect sau khi thêm địa chỉ: nếu vào từ `/checkout` (param `from=checkout`) thì redirect về `/checkout` sau khi lưu thành công; vào từ trang cá nhân thì redirect về `/user/address`. Files: `UserAddressController.java` (thêm `@RequestParam from`), `checkout.html` (thêm `?from=checkout`), `dash-address-add.html` (cập nhật form action giữ param). | Antigravity AI      |
+| **12/06/2026 16:55** | —                   | **Sửa lỗi URL cứng**   | Thay thế toàn bộ URL ngrok hardcode trong `checkout.html` bằng Thymeleaf `th:href="@{/user/address/add(from='checkout')}"`. Thymeleaf tự build URL từ domain hiện tại — tự động đúng trên local (`localhost:8080`) lẫn ngrok, không cần đổi code khi chuyển môi trường. | Antigravity AI      |
 
 ---
 

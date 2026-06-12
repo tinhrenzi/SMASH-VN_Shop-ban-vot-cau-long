@@ -9,8 +9,12 @@ import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.entity.SoDiaChi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import java.text.Normalizer;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -482,4 +486,78 @@ public class GhnService {
         }
         return List.of();
     }
+
+    @Data
+    @AllArgsConstructor
+    public static class GhnAddressMapping {
+        private Integer provinceId;
+        private Integer districtId;
+        private String wardCode;
+    }
+
+    public String normalizeString(String input) {
+        if (input == null) return "";
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        normalized = normalized.toLowerCase();
+        normalized = normalized.replace("đ", "d");
+        normalized = normalized.replaceAll("[^a-z0-9\\s]", " ");
+        normalized = normalized.replaceAll("\\s+", " ").trim();
+        return normalized;
+    }
+
+    public GhnAddressMapping resolveGhnAddress(SoDiaChi dc) {
+        if (dc == null) return null;
+
+        // 1. Fetch provinces and match dc.getTinhThanh()
+        List<Map<String, Object>> provinces = getProvinces();
+        String targetProvince = normalizeString(dc.getTinhThanh());
+        Integer provinceId = null;
+        for (Map<String, Object> p : provinces) {
+            String name = normalizeString((String) p.get("ProvinceName"));
+            if (!name.isEmpty() && (name.contains(targetProvince) || targetProvince.contains(name))) {
+                provinceId = (Integer) p.get("ProvinceID");
+                break;
+            }
+        }
+        if (provinceId == null) {
+            log.warn("Failed to match province '{}' on GHN", dc.getTinhThanh());
+            return null;
+        }
+
+        // 2. Fetch districts and match dc.getThanhPho()
+        List<Map<String, Object>> districts = getDistricts(provinceId);
+        String targetDistrict = normalizeString(dc.getThanhPho());
+        Integer districtId = null;
+        for (Map<String, Object> d : districts) {
+            String name = normalizeString((String) d.get("DistrictName"));
+            if (!name.isEmpty() && (name.contains(targetDistrict) || targetDistrict.contains(name))) {
+                districtId = (Integer) d.get("DistrictID");
+                break;
+            }
+        }
+        if (districtId == null) {
+            log.warn("Failed to match district '{}' in province ID {} on GHN", dc.getThanhPho(), provinceId);
+            return null;
+        }
+
+        // 3. Fetch wards and match within dc.getDiaChiCuThe()
+        List<Map<String, Object>> wards = getWards(districtId);
+        String targetStreet = normalizeString(dc.getDiaChiCuThe());
+        String wardCode = null;
+        for (Map<String, Object> w : wards) {
+            String name = normalizeString((String) w.get("WardName"));
+            if (!name.isEmpty() && targetStreet.contains(name)) {
+                wardCode = (String) w.get("WardCode");
+                break;
+            }
+        }
+        if (wardCode == null) {
+            log.warn("Failed to match ward inside street address '{}' for district ID {} on GHN", dc.getDiaChiCuThe(), districtId);
+            return null;
+        }
+
+        return new GhnAddressMapping(provinceId, districtId, wardCode);
+    }
 }
+
