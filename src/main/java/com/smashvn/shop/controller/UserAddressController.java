@@ -1,31 +1,38 @@
 package com.smashvn.shop.controller;
 
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.smashvn.shop.dto.UserAddressDto;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.UserAddressService;
 import com.smashvn.shop.service.UserDashboardService;
 
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @Controller
-@RequestMapping("/user/address") // Gom chung đường dẫn gốc
+@RequestMapping("/user/address")
 @RequiredArgsConstructor
 public class UserAddressController {
 
     private final UserAddressService addressService;
     private final UserDashboardService dashboardService;
 
-    // Hàm private dùng chung hỗ trợ kiểm tra Session
     private KhachHang getLoggedInCustomer(HttpSession session) {
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
         return (idTaiKhoan != null) ? dashboardService.layThongTinKhachHang(idTaiKhoan) : null;
@@ -46,114 +53,195 @@ public class UserAddressController {
     @GetMapping
     public String hienThiSoDiaChi(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
-        
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
         model.addAttribute("kh", kh);
         model.addAttribute("danhSachDiaChi", addressService.layDanhSachDiaChi(kh.getId()));
-        return "dash-address-book"; 
+        return "dash-address-book";
     }
 
     // 2. Form thêm mới
     @GetMapping("/add")
     public String hienThiThemDiaChi(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
-        
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
         model.addAttribute("kh", kh);
+        if (!model.containsAttribute("addressDto")) {
+            model.addAttribute("addressDto", new UserAddressDto());
+        }
         return "dash-address-add";
     }
 
-    // 3. Xử lý thêm mới (Sử dụng RedirectAttributes để ẩn URL)
+    // 3. Xử lý thêm mới
     @PostMapping("/add")
-    public String xuLyThemDiaChi(HttpSession session, RedirectAttributes redirectAttributes,
-                                 @RequestParam("hoNguoiNhan") String ho,
-                                 @RequestParam("tenNguoiNhan") String ten,
-                                 @RequestParam("sdtNguoiNhan") String sdt,
-                                 @RequestParam("diaChiCuThe") String diaChiCuThe,
-                                 @RequestParam("tinhThanh") String tinhThanh,
-                                 @RequestParam("quocGia") String quocGia,
-                                 @RequestParam(value = "latitude", required = false) Double latitude,
-                                 @RequestParam(value = "longitude", required = false) Double longitude,
-                                 @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
-                                 
+    public String xuLyThemDiaChi(HttpSession session,
+            @Valid @ModelAttribute("addressDto") UserAddressDto addressDto,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            model.addAttribute("kh", kh);
+            model.addAttribute("loi", errorMessage);
+            return "dash-address-add";
+        }
 
         try {
-            addressService.themDiaChiMoi(kh, ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, latitude, longitude, isDefault);
-            // Dùng Flash Attribute truyền thông báo an toàn
+            addressService.themDiaChiMoi(kh, addressDto);
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Đã thêm địa chỉ mới thành công!");
+            return "redirect:/user/address";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("kh", kh);
+            model.addAttribute("loi", e.getMessage());
+            return "dash-address-add";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("thongBaoLoi", "Có lỗi xảy ra khi thêm địa chỉ.");
+            model.addAttribute("kh", kh);
+            model.addAttribute("loi", "Có lỗi xảy ra khi thêm địa chỉ.");
+            return "dash-address-add";
         }
-        return "redirect:/user/address";
     }
 
     // 4. Form cập nhật
     @GetMapping("/edit/{id}")
     public String hienThiSuaDiaChi(@PathVariable("id") Integer idDiaChi, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
-        
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
         try {
             SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
             model.addAttribute("kh", kh);
             model.addAttribute("dc", dc);
+
+            if (!model.containsAttribute("addressDto")) {
+                UserAddressDto addressDto = UserAddressDto.builder()
+                        .id(dc.getId())
+                        .hoNguoiNhan(dc.getHoNguoiNhan())
+                        .tenNguoiNhan(dc.getTenNguoiNhan())
+                        .sdtNguoiNhan(dc.getSdtNguoiNhan())
+                        .diaChiCuThe(dc.getDiaChiCuThe())
+                        .tinhThanh(dc.getTinhThanh())
+                        .quocGia(dc.getQuocGia())
+                        .latitude(dc.getLatitude())
+                        .longitude(dc.getLongitude())
+                        .defaultAddress(dc.isDefaultShipping())
+                        .build();
+                model.addAttribute("addressDto", addressDto);
+            }
             return "dash-address-edit";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("thongBaoLoi", "Địa chỉ không tồn tại hoặc bạn không có quyền truy cập.");
-            return "redirect:/user/address"; 
+            return "redirect:/user/address";
         }
     }
 
     // 5. Xử lý cập nhật
     @PostMapping("/edit/{id}")
-    public String xuLySuaDiaChi(@PathVariable("id") Integer idDiaChi, HttpSession session, RedirectAttributes redirectAttributes,
-                                @RequestParam("hoNguoiNhan") String ho,
-                                @RequestParam("tenNguoiNhan") String ten,
-                                @RequestParam("sdtNguoiNhan") String sdt,
-                                @RequestParam("diaChiCuThe") String diaChiCuThe,
-                                @RequestParam("tinhThanh") String tinhThanh,
-                                @RequestParam("quocGia") String quocGia,
-                                @RequestParam(value = "latitude", required = false) Double latitude,
-                                @RequestParam(value = "longitude", required = false) Double longitude,
-                                @RequestParam(value = "isDefault", defaultValue = "false") boolean isDefault) {
-                                 
+    public String xuLySuaDiaChi(@PathVariable("id") Integer idDiaChi, HttpSession session,
+            @Valid @ModelAttribute("addressDto") UserAddressDto addressDto,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        // FIRST: Validate ownership of the address before handling binding result or running validation!
+        try {
+            addressService.layDiaChiTheoId(idDiaChi, kh.getId());
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("thongBaoLoi", e.getMessage());
+            return "redirect:/user/address";
+        }
+
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            model.addAttribute("kh", kh);
+            try {
+                SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
+                model.addAttribute("dc", dc);
+            } catch (Exception ignored) {
+            }
+            model.addAttribute("loi", errorMessage);
+            return "dash-address-edit";
+        }
 
         try {
-            addressService.capNhatDiaChi(idDiaChi, kh.getId(), ho, ten, sdt, diaChiCuThe, tinhThanh, quocGia, latitude, longitude, isDefault);
+            addressService.capNhatDiaChi(idDiaChi, kh.getId(), addressDto);
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Cập nhật địa chỉ thành công!");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("thongBaoLoi", "Không thể cập nhật: " + e.getMessage());
+            return "redirect:/user/address";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("kh", kh);
+            try {
+                SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
+                model.addAttribute("dc", dc);
+            } catch (Exception ignored) {
+            }
+            model.addAttribute("loi", e.getMessage());
+            return "dash-address-edit";
+        } catch (Exception e) {
+            model.addAttribute("kh", kh);
+            try {
+                SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
+                model.addAttribute("dc", dc);
+            } catch (Exception ignored) {
+            }
+            model.addAttribute("loi", "Có lỗi xảy ra khi cập nhật địa chỉ.");
+            return "dash-address-edit";
         }
-        return "redirect:/user/address";
     }
 
     // 6. Xử lý Đặt làm mặc định
     @GetMapping("/set-default/{id}")
     public String thietLapDiaChiMacDinh(@PathVariable("id") Integer idDiaChi, HttpSession session, RedirectAttributes redirectAttributes) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) return "redirect:/user/dang-nhap";
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
 
         try {
             addressService.datLamMacDinh(idDiaChi, kh.getId());
@@ -163,13 +251,14 @@ public class UserAddressController {
         }
         return "redirect:/user/address";
     }
- // 7. API Xóa địa chỉ bằng AJAX
+
+    // 7. API Xóa địa chỉ bằng AJAX
     @GetMapping("/api/delete/{id}")
     @ResponseBody
     public ResponseEntity<Map<String, String>> xoaDiaChiAjax(@PathVariable("id") Integer idDiaChi, HttpSession session) {
         Map<String, String> response = new HashMap<>();
         KhachHang kh = getLoggedInCustomer(session);
-        
+
         if (kh == null) {
             response.put("trangThai", "chuadangnhap");
             return ResponseEntity.ok(response);

@@ -149,8 +149,85 @@ public class UserDangNhapControllerTest {
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Tài khoản không hợp lệ!", model.getAttribute("loi"));
+        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
         verify(loginRateLimiter).loginFailed(ip);
+    }
+
+    @Test
+    void testXuLyDangNhap_BlankEmail() {
+        String email = "";
+        String matKhau = "password";
+        String ip = "127.0.0.1";
+
+        when(loginRateLimiter.isBlocked(ip)).thenReturn(false);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(ip);
+        verifyNoInteractions(userDangNhapService);
+    }
+
+    @Test
+    void testXuLyDangNhap_BlankPassword() {
+        String email = "customer@gmail.com";
+        String matKhau = "";
+        String ip = "127.0.0.1";
+
+        when(loginRateLimiter.isBlocked(ip)).thenReturn(false);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(ip);
+        verifyNoInteractions(userDangNhapService);
+    }
+
+    @Test
+    void testXuLyDangNhap_InvalidEmailFormat() {
+        String email = "invalid-email";
+        String matKhau = "password";
+        String ip = "127.0.0.1";
+
+        when(loginRateLimiter.isBlocked(ip)).thenReturn(false);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(ip);
+        verifyNoInteractions(userDangNhapService);
+    }
+
+    @Test
+    void testXuLyDangNhap_TrimsEmail() {
+        String email = " customer@gmail.com ";
+        String matKhau = "password";
+        String ip = "127.0.0.1";
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        tk.setEmail("customer@gmail.com");
+        tk.setLaKhachHang(true);
+
+        KhachHang kh = new KhachHang();
+        kh.setHoKh("Nguyen");
+        kh.setTenKh("Van A");
+
+        when(loginRateLimiter.isBlocked(ip)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap("customer@gmail.com", matKhau)).thenReturn(tk);
+        when(khachHangRepository.findByTaiKhoan_Id(1)).thenReturn(kh);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("redirect:/", view);
+        verify(userDangNhapService).kiemTraDangNhap("customer@gmail.com", matKhau);
     }
 
     @Test

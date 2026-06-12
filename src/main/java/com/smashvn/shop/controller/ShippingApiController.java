@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.ShippingZone;
 import com.smashvn.shop.service.AdminShippingService;
@@ -26,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ShippingApiController {
 
-    private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final AdminShippingService adminShippingService;
     private final ShippingFeeCalculator feeCalculator;
     private final ShippingZoneResolver zoneResolver;

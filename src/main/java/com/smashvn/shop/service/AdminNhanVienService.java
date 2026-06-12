@@ -1,23 +1,22 @@
 package com.smashvn.shop.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.smashvn.shop.entity.EditLog;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
-import org.springframework.beans.factory.annotation.Value;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -153,9 +152,15 @@ public class AdminNhanVienService {
         NhanVien nv = findById(id);
         TaiKhoan tk = nv.getTaiKhoan();
 
-        if (laKhachHang == null) laKhachHang = false;
-        if (laNhanVien == null) laNhanVien = false;
-        if (laQuanLy == null) laQuanLy = false;
+        if (laKhachHang == null) {
+            laKhachHang = false;
+        }
+        if (laNhanVien == null) {
+            laNhanVien = false;
+        }
+        if (laQuanLy == null) {
+            laQuanLy = false;
+        }
 
         if (!laKhachHang && !laNhanVien && !laQuanLy) {
             throw new RuntimeException("Tài khoản phải có ít nhất một vai trò!");
@@ -201,7 +206,6 @@ public class AdminNhanVienService {
         taiKhoanRepository.save(tk);
 
         // Soft deactivation via role flags is handled, NhanVien profile remains in database.
-
         // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
@@ -229,11 +233,11 @@ public class AdminNhanVienService {
         if ("hoat_dong".equals(oldStatus)) {
             newStatus = "cho_khoa"; // Chờ phê duyệt khóa
             logMessage = "Yêu cầu khóa tài khoản nhân viên (chờ phê duyệt): " + tk.getEmail();
-            
+
             // Tạo token ngẫu nhiên khi status chuyển thành cho_khoa
             String token = java.util.UUID.randomUUID().toString();
             tk.setTokenXacThucKhoa(token);
-            
+
             // Gửi email cho các admin hệ thống kèm link phê duyệt/từ chối trực tiếp
             guiEmailXacNhanKhoa(nv, tk, token, appUrl);
         } else if ("bi_khoa".equals(oldStatus)) {
@@ -269,18 +273,18 @@ public class AdminNhanVienService {
                 message.setTo(email.trim());
                 message.setSubject("[Smash VN] Yêu cầu xác nhận khóa tài khoản nhân viên");
                 message.setText(String.format(
-                        "Chào Admin hệ thống,\n\n" +
-                        "Một yêu cầu khóa tài khoản nhân viên vừa được tạo và cần bạn xác nhận:\n" +
-                        "- Nhân viên: %s\n" +
-                        "- Email: %s\n" +
-                        "- Chức vụ: %s\n" +
-                        "- Số điện thoại: %s\n\n" +
-                        "Vui lòng nhấp vào một trong các liên kết dưới đây để thực hiện hành động:\n" +
-                        "1. PHÊ DUYỆT KHÓA TÀI KHOẢN: %s/admin/nhan-vien/approve-lock/%d?token=%s\n" +
-                        "2. TỪ CHỐI KHÓA TÀI KHOẢN: %s/admin/nhan-vien/reject-lock/%d?token=%s\n\n" +
-                        "Yêu cầu này cũng hiển thị trên bảng điều khiển quản trị (Dashboard).\n" +
-                        "Trân trọng,\n" +
-                        "Hệ thống Quản trị Smash VN",
+                        "Chào Admin hệ thống,\n\n"
+                        + "Một yêu cầu khóa tài khoản nhân viên vừa được tạo và cần bạn xác nhận:\n"
+                        + "- Nhân viên: %s\n"
+                        + "- Email: %s\n"
+                        + "- Chức vụ: %s\n"
+                        + "- Số điện thoại: %s\n\n"
+                        + "Vui lòng nhấp vào một trong các liên kết dưới đây để thực hiện hành động:\n"
+                        + "1. PHÊ DUYỆT KHÓA TÀI KHOẢN: %s/admin/nhan-vien/approve-lock/%d?token=%s\n"
+                        + "2. TỪ CHỐI KHÓA TÀI KHOẢN: %s/admin/nhan-vien/reject-lock/%d?token=%s\n\n"
+                        + "Yêu cầu này cũng hiển thị trên bảng điều khiển quản trị (Dashboard).\n"
+                        + "Trân trọng,\n"
+                        + "Hệ thống Quản trị Smash VN",
                         nv.getHoTenNv(), tk.getEmail(), nv.getChucVu(), nv.getSoDienThoaiNv(),
                         appUrl, nv.getId(), token,
                         appUrl, nv.getId(), token
@@ -310,7 +314,7 @@ public class AdminNhanVienService {
                 authorized = true;
             }
         }
-        
+
         if (!authorized) {
             if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
                 authorized = true;
@@ -351,7 +355,7 @@ public class AdminNhanVienService {
                 authorized = true;
             }
         }
-        
+
         if (!authorized) {
             if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
                 authorized = true;
@@ -388,14 +392,14 @@ public class AdminNhanVienService {
                 message.setTo(email.trim());
                 message.setSubject("[Smash VN] Yêu cầu khóa tài khoản bị từ chối");
                 message.setText(String.format(
-                        "Chào Admin hệ thống,\n\n" +
-                        "Yêu cầu khóa tài khoản nhân viên sau đây đã bị TỪ CHỐI:\n" +
-                        "- Nhân viên: %s\n" +
-                        "- Email: %s\n" +
-                        "- Chức vụ: %s\n\n" +
-                        "Tài khoản của nhân viên này vẫn tiếp tục hoạt động bình thường trên hệ thống.\n\n" +
-                        "Trân trọng,\n" +
-                        "Hệ thống Quản trị Smash VN",
+                        "Chào Admin hệ thống,\n\n"
+                        + "Yêu cầu khóa tài khoản nhân viên sau đây đã bị TỪ CHỐI:\n"
+                        + "- Nhân viên: %s\n"
+                        + "- Email: %s\n"
+                        + "- Chức vụ: %s\n\n"
+                        + "Tài khoản của nhân viên này vẫn tiếp tục hoạt động bình thường trên hệ thống.\n\n"
+                        + "Trân trọng,\n"
+                        + "Hệ thống Quản trị Smash VN",
                         nv.getHoTenNv(), tk.getEmail(), nv.getChucVu()
                 ));
                 mailSender.send(message);

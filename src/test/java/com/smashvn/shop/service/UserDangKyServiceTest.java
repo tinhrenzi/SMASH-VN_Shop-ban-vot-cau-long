@@ -87,14 +87,67 @@ public class UserDangKyServiceTest {
     }
 
     @Test
-    void testDangKy_WeakPassword() {
+    void testDangKy_EmptyEmail() {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy("", "SecurePass123");
+        });
+        assertEquals("Email không được để trống!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_ExcessiveEmailLength() {
+        String longEmail = "a".repeat(95) + "@g.com"; // > 100 chars
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy(longEmail, "SecurePass123");
+        });
+        assertEquals("Email không được vượt quá 100 ký tự!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_WeakPassword_Short() {
         String email = "valid@gmail.com";
-        String matKhau = "weak"; // less than 8 chars
+        String matKhau = "weak"; // < 8 chars
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             userDangKyService.dangKy(email, matKhau);
         });
 
-        assertEquals("Mật khẩu phải dài ít nhất 8 ký tự và chứa cả chữ và số!", exception.getMessage());
+        assertEquals("Mật khẩu phải dài từ 8 đến 30 ký tự!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_Password_Long() {
+        String email = "valid@gmail.com";
+        String matKhau = "A1" + "a".repeat(30); // > 30 chars
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy(email, matKhau);
+        });
+
+        assertEquals("Mật khẩu phải dài từ 8 đến 30 ký tự!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_Password_WithSpaces() {
+        String email = "valid@gmail.com";
+        String matKhau = "Secure Pass123";
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy(email, matKhau);
+        });
+
+        assertEquals("Mật khẩu không được chứa khoảng trắng!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_Password_LettersOnly() {
+        String email = "valid@gmail.com";
+        String matKhau = "SecureLettersOnly";
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy(email, matKhau);
+        });
+
+        assertEquals("Mật khẩu phải chứa cả chữ và số!", exception.getMessage());
     }
 }

@@ -1,43 +1,57 @@
 package com.smashvn.shop.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smashvn.shop.config.SepayConfig;
-import com.smashvn.shop.dto.SepayIpnRequest;
-import com.smashvn.shop.dto.SepayTransactionDto;
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.exception.InvalidPaymentException;
-import com.smashvn.shop.exception.OrderNotFoundException;
-import com.smashvn.shop.repository.*;
-import com.smashvn.shop.service.AuditService;
-import com.smashvn.shop.service.SepayGatewayService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smashvn.shop.config.SepayConfig;
+import com.smashvn.shop.dto.SepayIpnRequest;
+import com.smashvn.shop.dto.SepayTransactionDto;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.PaymentTransaction;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.InvalidPaymentException;
+import com.smashvn.shop.exception.OrderNotFoundException;
+import com.smashvn.shop.repository.GioHangChiTietRepository;
+import com.smashvn.shop.repository.GioHangRepository;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.service.SepayGatewayService;
 
 public class SepayIpnControllerTest {
 
@@ -58,13 +72,20 @@ public class SepayIpnControllerTest {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     // Fields for Service Testing
-    @Mock private HoaDonChiTietRepository hoaDonChiTietRepository;
-    @Mock private SanPhamChiTietRepository sanPhamChiTietRepository;
-    @Mock private GioHangRepository gioHangRepository;
-    @Mock private GioHangChiTietRepository gioHangChiTietRepository;
-    @Mock private PaymentTransactionRepository paymentTransactionRepository;
-    @Mock private AuditService auditService;
-    @Mock private com.smashvn.shop.service.GhnService ghnService;
+    @Mock
+    private HoaDonChiTietRepository hoaDonChiTietRepository;
+    @Mock
+    private SanPhamChiTietRepository sanPhamChiTietRepository;
+    @Mock
+    private GioHangRepository gioHangRepository;
+    @Mock
+    private GioHangChiTietRepository gioHangChiTietRepository;
+    @Mock
+    private PaymentTransactionRepository paymentTransactionRepository;
+    @Mock
+    private AuditService auditService;
+    @Mock
+    private com.smashvn.shop.service.GhnService ghnService;
 
     private SepayGatewayService realService;
 
@@ -102,7 +123,6 @@ public class SepayIpnControllerTest {
     // ==========================================
     // 1. HTTP LAYER & SECURITY TEST CASES
     // ==========================================
-
     @Test
     void testInvalidSignature() throws Exception {
         SepayIpnRequest requestPayload = createMockIpnRequest("TX100", new BigDecimal("100000"), "DH20260608-A1B2C3");
@@ -110,9 +130,9 @@ public class SepayIpnControllerTest {
 
         // Request with missing/invalid header should return 401
         mockMvc.perform(post("/api/payment/sepay/ipn")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payloadStr)
-                        .header("Authorization", "Apikey invalid-token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadStr)
+                .header("Authorization", "Apikey invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Invalid API credentials."));
@@ -125,13 +145,13 @@ public class SepayIpnControllerTest {
 
         // Send request from an unwhitelisted IP
         mockMvc.perform(post("/api/payment/sepay/ipn")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payloadStr)
-                        .header("Authorization", "Apikey super-secret-ipn-token")
-                        .with(request -> {
-                            request.setRemoteAddr("198.51.100.42"); // Non-whitelisted IP
-                            return request;
-                        }))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadStr)
+                .header("Authorization", "Apikey super-secret-ipn-token")
+                .with(request -> {
+                    request.setRemoteAddr("198.51.100.42"); // Non-whitelisted IP
+                    return request;
+                }))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -159,7 +179,7 @@ public class SepayIpnControllerTest {
 
         // Query with session customer id 123 (mismatch)
         mockMvc.perform(get("/api/payment/sepay/query/DH20260608-A1B2C3")
-                        .sessionAttr("idNguoiDung", 123))
+                .sessionAttr("idNguoiDung", 123))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -179,7 +199,7 @@ public class SepayIpnControllerTest {
         when(hoaDonRepository.findByMaDonHang("DH20260608-A1B2C3")).thenReturn(Optional.of(order));
 
         mockMvc.perform(get("/api/payment/sepay/query/DH20260608-A1B2C3")
-                        .sessionAttr("idNguoiDung", 123))
+                .sessionAttr("idNguoiDung", 123))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.orderCode").value("DH20260608-A1B2C3"))
@@ -191,7 +211,6 @@ public class SepayIpnControllerTest {
     // ==========================================
     // 2. SERVICE LOGIC & BUSINESS PROCESS TESTS
     // ==========================================
-
     @Test
     void testSuccessfulPaymentCallback() throws Exception {
         HoaDon order = createMockOrder("DH20260608-A1B2C3", new BigDecimal("100000"), "pending", "cho_thanh_toan");
@@ -385,9 +404,9 @@ public class SepayIpnControllerTest {
 
         // Controller catches DataIntegrityViolationException and returns "Already processed" HTTP 200
         mockMvc.perform(post("/api/payment/sepay/ipn")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payloadStr)
-                        .header("Authorization", "Apikey super-secret-ipn-token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadStr)
+                .header("Authorization", "Apikey super-secret-ipn-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Already processed"))
@@ -397,7 +416,6 @@ public class SepayIpnControllerTest {
     // ==========================================
     // HELPER METHODS FOR TEST GENERATION
     // ==========================================
-
     private SepayIpnRequest createMockIpnRequest(String txId, BigDecimal amount, String content) {
         SepayIpnRequest req = new SepayIpnRequest();
         SepayTransactionDto data = new SepayTransactionDto();
@@ -419,7 +437,7 @@ public class SepayIpnControllerTest {
         hd.setTongTien(totalAmount);
         hd.setPaymentStatus(paymentStatus);
         hd.setTrangThaiDonHang(orderStatus);
-        
+
         KhachHang kh = new KhachHang();
         kh.setId(123);
         TaiKhoan tk = new TaiKhoan();
@@ -435,16 +453,16 @@ public class SepayIpnControllerTest {
         item.setId(2001);
         item.setHoaDon(order);
         item.setSoLuong(2); // Orders 2 items
-        
+
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setId(3001);
         spct.setSoLuongTon(currentStock);
-        
+
         SanPham sp = new SanPham();
         sp.setTenSanPham("Vợt Yonex");
         sp.setTrangThai("dang_ban");
         spct.setSanPham(sp);
-        
+
         item.setSanPhamChiTiet(spct);
         items.add(item);
         return items;

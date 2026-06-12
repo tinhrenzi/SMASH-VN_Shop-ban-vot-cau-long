@@ -33,6 +33,8 @@ import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GioHangService {
+
+    public static final int MAX_CART_QUANTITY = 999;
 
     private final KhachHangRepository khachHangRepository;
     private final GioHangRepository gioHangRepository;
@@ -58,6 +62,16 @@ public class GioHangService {
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
+        if (soLuong == null || soLuong <= 0) {
+            throw new IllegalArgumentException("Số lượng sản phẩm thêm vào giỏ hàng phải lớn hơn 0.");
+        }
+        if (soLuong > MAX_CART_QUANTITY) {
+            throw new IllegalArgumentException("Số lượng sản phẩm thêm vào giỏ hàng không được vượt quá " + MAX_CART_QUANTITY + ".");
+        }
+        if (idSanPhamChiTiet == null) {
+            throw new IllegalArgumentException("Sản phẩm không hợp lệ.");
+        }
+
         KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (khachHang == null) {
             throw new RuntimeException("Tài khoản này chưa được cập nhật thông tin Khách Hàng!");
@@ -80,7 +94,11 @@ public class GioHangService {
         int soLuongHienCo = (chiTiet != null && chiTiet.getSoLuong() != null) ? chiTiet.getSoLuong() : 0;
 
         // 2. Tính tổng số lượng khách sẽ có nếu thêm thành công
-        int tongYeuCau = soLuongHienCo + soLuong;
+        long tongYeuCauLong = (long) soLuongHienCo + soLuong;
+        if (tongYeuCauLong > MAX_CART_QUANTITY) {
+            throw new IllegalArgumentException("Tổng số lượng sản phẩm này trong giỏ hàng không được vượt quá " + MAX_CART_QUANTITY + ".");
+        }
+        int tongYeuCau = (int) tongYeuCauLong;
 
         // 3. Khóa chặn: Nếu tổng yêu cầu vượt quá kho
         if (spct.getSoLuongTon() < tongYeuCau) {
@@ -143,7 +161,7 @@ public class GioHangService {
             int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
             String trangThai = sp.getTrangThai();
 
-            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban"));
+            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
 
             if (hopLe) {
                 BigDecimal gia = item.getSanPhamChiTiet().getGiaBan();
@@ -193,6 +211,16 @@ public class GioHangService {
 
     @org.springframework.transaction.annotation.Transactional
     public void capNhatSoLuong(Integer idGioHangChiTiet, Integer soLuongMoi, Integer idTaiKhoan) {
+        if (soLuongMoi == null || soLuongMoi <= 0) {
+            throw new IllegalArgumentException("Số lượng sản phẩm trong giỏ hàng phải lớn hơn 0.");
+        }
+        if (soLuongMoi > MAX_CART_QUANTITY) {
+            throw new IllegalArgumentException("Số lượng sản phẩm trong giỏ hàng không được vượt quá " + MAX_CART_QUANTITY + ".");
+        }
+        if (idGioHangChiTiet == null) {
+            throw new IllegalArgumentException("Chi tiết giỏ hàng không hợp lệ.");
+        }
+
         KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (khachHang == null) {
             throw new RuntimeException("Tài khoản không hợp lệ!");
@@ -206,16 +234,12 @@ public class GioHangService {
             throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền cập nhật giỏ hàng này!");
         }
 
-        if (soLuongMoi > 0) {
-            // Chống sửa vượt quá tồn kho (H-7)
-            if (chiTiet.getSanPhamChiTiet().getSoLuongTon() < soLuongMoi) {
-                throw new RuntimeException("Số lượng tồn kho không đủ! Chỉ còn " + chiTiet.getSanPhamChiTiet().getSoLuongTon() + " sản phẩm.");
-            }
-            chiTiet.setSoLuong(soLuongMoi);
-            gioHangChiTietRepository.save(chiTiet);
-        } else {
-            gioHangChiTietRepository.delete(chiTiet);
+        // Chống sửa vượt quá tồn kho (H-7)
+        if (chiTiet.getSanPhamChiTiet().getSoLuongTon() < soLuongMoi) {
+            throw new RuntimeException("Số lượng tồn kho không đủ! Chỉ còn " + chiTiet.getSanPhamChiTiet().getSoLuongTon() + " sản phẩm.");
         }
+        chiTiet.setSoLuong(soLuongMoi);
+        gioHangChiTietRepository.save(chiTiet);
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -251,6 +275,43 @@ public class GioHangService {
     public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
                               Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
                               Integer ghnToDistrictId, String ghnToWardCode) {
+        String cleanHoTenNhan = sanitizeInput(hoTenNhan);
+        String cleanSdtNhan = sanitizeInput(sdtNhan);
+        String cleanDiaChiNhan = sanitizeInput(diaChiNhan);
+        String cleanGhiChu = sanitizeInput(ghiChu);
+
+        if (cleanHoTenNhan == null || cleanHoTenNhan.isEmpty()) {
+            log.warn("[SECURITY_ALERT] Invalid empty receiver name for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Họ và tên người nhận không được để trống.");
+        }
+        if (cleanHoTenNhan.length() < 2 || cleanHoTenNhan.length() > 100) {
+            log.warn("[SECURITY_ALERT] Invalid name length for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Họ và tên người nhận phải từ 2 đến 100 ký tự.");
+        }
+
+        if (cleanSdtNhan == null || cleanSdtNhan.isEmpty()) {
+            log.warn("[SECURITY_ALERT] Invalid empty phone number for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Số điện thoại không được để trống.");
+        }
+        if (!cleanSdtNhan.matches("^(\\+84|0)(3|5|7|8|9)[0-9]{8}$")) {
+            log.warn("[SECURITY_ALERT] Invalid phone format for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84).");
+        }
+
+        if (cleanDiaChiNhan == null || cleanDiaChiNhan.isEmpty()) {
+            log.warn("[SECURITY_ALERT] Invalid empty shipping address for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Địa chỉ nhận hàng không được để trống.");
+        }
+        if (cleanDiaChiNhan.length() < 5 || cleanDiaChiNhan.length() > 255) {
+            log.warn("[SECURITY_ALERT] Invalid address length for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Địa chỉ nhận hàng phải từ 5 đến 255 ký tự.");
+        }
+
+        if (cleanGhiChu != null && cleanGhiChu.length() > 500) {
+            log.warn("[SECURITY_ALERT] Invalid note length for user: {}", idTaiKhoan);
+            throw new IllegalArgumentException("Ghi chú đơn hàng tối đa 500 ký tự.");
+        }
+
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
             throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
@@ -270,7 +331,7 @@ public class GioHangService {
             SanPham sp = item.getSanPhamChiTiet().getSanPham();
             int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
             String trangThai = sp.getTrangThai();
-            boolean hopLe = tonKho >= item.getSoLuong() && (trangThai == null || "dang_ban".equals(trangThai));
+            boolean hopLe = item.getSoLuong() != null && item.getSoLuong() > 0 && tonKho >= item.getSoLuong() && (trangThai == null || "dang_ban".equals(trangThai));
             if (!hopLe) {
                 throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc đã ngưng kinh doanh!");
             }
@@ -292,7 +353,7 @@ public class GioHangService {
             }
         }
 
-        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, diaChiNhan);
+        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, cleanDiaChiNhan);
         BigDecimal totalAmount = tamTinh.add(phiShip);
 
         // Find or create Payment Method
@@ -330,9 +391,9 @@ public class GioHangService {
         }
         
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
-        hd.setDiaChiNhan(diaChiNhan);
-        hd.setSdtNhan(sdtNhan);
-        hd.setGhiChu(ghiChu);
+        hd.setDiaChiNhan(cleanDiaChiNhan);
+        hd.setSdtNhan(cleanSdtNhan);
+        hd.setGhiChu(cleanGhiChu);
         hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 
         // Lưu thông tin địa chỉ GHN để tạo đơn vận chuyển sau này
@@ -395,5 +456,9 @@ public class GioHangService {
         }
 
         return hd;
+    }
+    private String sanitizeInput(String input) {
+        if (input == null) return null;
+        return Jsoup.clean(input, Safelist.none()).trim();
     }
 }

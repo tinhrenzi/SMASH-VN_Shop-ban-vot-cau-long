@@ -40,7 +40,6 @@ public class UserDangNhapController {
         }
         return "signin";
     }
-
     // Xử lý khi bấm nút "Đăng nhập"
     @PostMapping("/dang-nhap")
     public String xuLyDangNhap(@RequestParam("email") String email,
@@ -56,14 +55,34 @@ public class UserDangNhapController {
             return "signin";
         }
 
+        // Sanitize và Trim inputs
+        String sanitizedEmail = sanitizeInput(email);
+        String trimmedEmail = (sanitizedEmail != null) ? sanitizedEmail.trim() : "";
+
+        // Sơ bộ validation tại controller
+        boolean invalidInput = false;
+        if (trimmedEmail.isEmpty() || trimmedEmail.length() > 100 || !trimmedEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            invalidInput = true;
+        }
+        if (matKhau == null || matKhau.isEmpty()) {
+            invalidInput = true;
+        }
+
+        if (invalidInput) {
+            loginRateLimiter.loginFailed(ip);
+            log.warn("[SECURITY_EVENT] INVALID_LOGIN_INPUT: IP: {}, Email: {}", ip, trimmedEmail);
+            model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
+            return "signin";
+        }
+
         try {
-            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(email, matKhau);
+            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(trimmedEmail, matKhau);
 
             // Chỉ cho phép KH
             if (!Boolean.TRUE.equals(tkDangNhap.getLaKhachHang())) {
                 loginRateLimiter.loginFailed(ip);
-                log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
-                model.addAttribute("loi", "Tài khoản không hợp lệ!");
+                log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", trimmedEmail, ip);
+                model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
                 return "signin";
             }
 
@@ -96,11 +115,18 @@ public class UserDangNhapController {
         } catch (RuntimeException e) {
             // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
             loginRateLimiter.loginFailed(ip);
-            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
+            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", trimmedEmail, ip, e.getMessage());
 
-            model.addAttribute("loi", e.getMessage());
+            // Luôn trả về thông báo lỗi chung
+            model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
             return "signin";
         }
+    }
+
+    private String sanitizeInput(String input) {
+        if (input == null) return null;
+        // Loại bỏ thẻ HTML/Script cơ bản để tránh XSS/injection thô sơ
+        return input.replaceAll("<[^>]*>", "");
     }
 
     // Thêm luôn chức năng Đăng xuất cho tiện

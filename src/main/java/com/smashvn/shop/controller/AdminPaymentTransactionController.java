@@ -1,29 +1,36 @@
 package com.smashvn.shop.controller;
 
-import com.smashvn.shop.entity.PaymentTransaction;
-import com.smashvn.shop.repository.PaymentTransactionRepository;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import com.smashvn.shop.entity.PaymentTransaction;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
+
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequiredArgsConstructor
@@ -40,14 +47,14 @@ public class AdminPaymentTransactionController {
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate,
             RedirectAttributes redirectAttributes) {
-        
+
         redirectAttributes.addAttribute("orderCode", orderCode);
         redirectAttributes.addAttribute("transactionId", transactionId);
         redirectAttributes.addAttribute("status", status);
         redirectAttributes.addAttribute("startDate", startDate);
         redirectAttributes.addAttribute("endDate", endDate);
         redirectAttributes.addAttribute("activeTab", "transactions");
-        
+
         return "redirect:/admin/don-hang";
     }
 
@@ -113,7 +120,7 @@ public class AdminPaymentTransactionController {
                 row.createCell(0).setCellValue(tx.getId());
                 row.createCell(1).setCellValue(tx.getTransactionId());
                 row.createCell(2).setCellValue(tx.getOrder() != null ? tx.getOrder().getMaDonHang() : "N/A");
-                
+
                 Cell amountCell = row.createCell(3);
                 amountCell.setCellValue(tx.getAmount().doubleValue());
                 amountCell.setCellStyle(currencyStyle);
@@ -177,12 +184,12 @@ public class AdminPaymentTransactionController {
 
         for (PaymentTransaction tx : list) {
             sb.append(tx.getId()).append(",")
-              .append(escapeCsv(tx.getTransactionId())).append(",")
-              .append(escapeCsv(tx.getOrder() != null ? tx.getOrder().getMaDonHang() : "N/A")).append(",")
-              .append(tx.getAmount().setScale(0).toString()).append(",")
-              .append(escapeCsv(tx.getGateway())).append(",")
-              .append(escapeCsv(tx.getStatus())).append(",")
-              .append(tx.getCreatedAt().format(formatter)).append("\n");
+                    .append(escapeCsv(tx.getTransactionId())).append(",")
+                    .append(escapeCsv(tx.getOrder() != null ? tx.getOrder().getMaDonHang() : "N/A")).append(",")
+                    .append(tx.getAmount().setScale(0).toString()).append(",")
+                    .append(escapeCsv(tx.getGateway())).append(",")
+                    .append(escapeCsv(tx.getStatus())).append(",")
+                    .append(tx.getCreatedAt().format(formatter)).append("\n");
         }
 
         byte[] csvBytes = sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);

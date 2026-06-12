@@ -312,15 +312,18 @@
                                     </div>
                                     <div class="u-s-m-b-15">
                                         <label class="gl-label" for="hoTenNhan">HỌ VÀ TÊN NGƯỜI NHẬN *</label>
-                                        <input class="input-text input-text--primary-style" type="text" id="hoTenNhan" name="hoTenNhan" required placeholder="Nhập tên người nhận...">
+                                        <input class="input-text input-text--primary-style" type="text" id="hoTenNhan" name="hoTenNhan" required placeholder="Nhập tên người nhận..." maxlength="100">
+                                        <div class="invalid-feedback" id="hoTenNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                     </div>
                                     <div class="u-s-m-b-15">
                                         <label class="gl-label" for="sdtNhan">SỐ ĐIỆN THOẠI *</label>
-                                        <input class="input-text input-text--primary-style" type="text" id="sdtNhan" name="sdtNhan" required placeholder="Nhập số điện thoại...">
+                                        <input class="input-text input-text--primary-style" type="text" id="sdtNhan" name="sdtNhan" required placeholder="Nhập số điện thoại..." maxlength="12">
+                                        <div class="invalid-feedback" id="sdtNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                     </div>
                                     <div class="u-s-m-b-15">
                                         <label class="gl-label" for="diaChiNhan">ĐỊA CHỈ NHẬN HÀNG *</label>
-                                        <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Số nhà, tên đường, xã/phường, quận/huyện, tỉnh/thành...">
+                                        <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Số nhà, tên đường, xã/phường, quận/huyện, tỉnh/thành..." maxlength="255">
+                                        <div class="invalid-feedback" id="diaChiNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                     </div>
                                     <!-- GHN Address Dropdowns -->
                                     <div class="u-s-m-b-15">
@@ -349,8 +352,12 @@
                                         </select>
                                     </div>
                                     <div class="u-s-m-b-15">
-                                        <label class="gl-label" for="ghiChu">GHI CHÚ ĐƠN HÀNG (TÙY CHỌN)</label>
-                                        <textarea class="text-area text-area--primary-style" id="ghiChu" name="ghiChu" placeholder="Lưu ý cho người giao hàng..."></textarea>
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <label class="gl-label" for="ghiChu" style="margin-bottom: 0;">GHI CHÚ ĐƠN HÀNG (TÙY CHỌN)</label>
+                                            <span id="ghiChu-counter" style="font-size: 12px; color: #64748b;">0/500</span>
+                                        </div>
+                                        <textarea class="text-area text-area--primary-style" id="ghiChu" name="ghiChu" placeholder="Lưu ý cho người giao hàng..." maxlength="500"></textarea>
+                                        <div class="invalid-feedback" id="ghiChu-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                     </div>
                                 </div>
 
@@ -619,6 +626,13 @@
                     
                     targetAddressToMatch = details.diaChi;
                     
+                    // Validate autofilled fields
+                    setTimeout(function() {
+                        validateHoTen();
+                        validateSdt();
+                        validateDiaChi();
+                    }, 150);
+                    
                     // Try reverse-geocoding via Nominatim first if coordinates exist
                     if (details.latitude && details.longitude) {
                         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${details.latitude}&lon=${details.longitude}&zoom=18&addressdetails=1&accept-language=vi`;
@@ -669,6 +683,7 @@
                     $('#diaChiNhan').val('').trigger('change');
                     targetAddressToMatch = null;
                     $('#ghnProvinceId').val('').trigger('change');
+                    clearValidationErrors();
                 }
             });
 
@@ -751,6 +766,95 @@
                 debounceTimeout = setTimeout(calculateShippingFee, 300);
             });
 
+            // Validation functions
+            function validateHoTen() {
+                const val = $('#hoTenNhan').val().trim();
+                const $error = $('#hoTenNhan-error');
+                if (!val) {
+                    $error.text('Họ và tên người nhận không được để trống.').show();
+                    $('#hoTenNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                if (val.length < 2 || val.length > 100) {
+                    $error.text('Họ và tên người nhận phải từ 2 đến 100 ký tự.').show();
+                    $('#hoTenNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                $error.hide();
+                $('#hoTenNhan').css('border-color', '');
+                return true;
+            }
+
+            function validateSdt() {
+                const val = $('#sdtNhan').val().trim();
+                const $error = $('#sdtNhan-error');
+                const phoneRegex = /^(\+84|0)(3|5|7|8|9)[0-9]{8}$/;
+                if (!val) {
+                    $error.text('Số điện thoại không được để trống.').show();
+                    $('#sdtNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                if (!phoneRegex.test(val)) {
+                    $error.text('Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84).').show();
+                    $('#sdtNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                $error.hide();
+                $('#sdtNhan').css('border-color', '');
+                return true;
+            }
+
+            function validateDiaChi() {
+                const val = $('#diaChiNhan').val().trim();
+                const $error = $('#diaChiNhan-error');
+                if (!val) {
+                    $error.text('Địa chỉ nhận hàng không được để trống.').show();
+                    $('#diaChiNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                if (val.length < 5 || val.length > 255) {
+                    $error.text('Địa chỉ nhận hàng phải từ 5 đến 255 ký tự.').show();
+                    $('#diaChiNhan').css('border-color', '#ef4444');
+                    return false;
+                }
+                $error.hide();
+                $('#diaChiNhan').css('border-color', '');
+                return true;
+            }
+
+            function validateGhiChu() {
+                const val = $('#ghiChu').val();
+                const length = val ? val.length : 0;
+                $('#ghiChu-counter').text(`${length}/500`);
+                if (length > 500) {
+                    $('#ghiChu-counter').css('color', '#ef4444');
+                } else {
+                    $('#ghiChu-counter').css('color', '#64748b');
+                }
+
+                const $error = $('#ghiChu-error');
+                if (length > 500) {
+                    $error.text('Ghi chú đơn hàng tối đa 500 ký tự.').show();
+                    $('#ghiChu').css('border-color', '#ef4444');
+                    return false;
+                }
+                $error.hide();
+                $('#ghiChu').css('border-color', '');
+                return true;
+            }
+
+            function clearValidationErrors() {
+                $('.invalid-feedback').hide();
+                $('#hoTenNhan, #sdtNhan, #diaChiNhan, #ghiChu').css('border-color', '');
+                validateGhiChu();
+            }
+
+            // Register event listeners
+            $('#hoTenNhan').on('input blur', validateHoTen);
+            $('#sdtNhan').on('input blur', validateSdt);
+            $('#diaChiNhan').on('input blur', validateDiaChi);
+            $('#ghiChu').on('input blur', validateGhiChu);
+
             // Form Submit Interceptor
             let pollingInterval = null;
             let currentAppTransId = null;
@@ -759,7 +863,17 @@
             $('#checkout-form').on('submit', function(e) {
                 e.preventDefault();
 
-                // Validate form inputs
+                // Run all validations
+                const isHoTenValid = validateHoTen();
+                const isSdtValid = validateSdt();
+                const isDiaChiValid = validateDiaChi();
+                const isGhiChuValid = validateGhiChu();
+
+                if (!isHoTenValid || !isSdtValid || !isDiaChiValid || !isGhiChuValid) {
+                    showToast('Vui lòng sửa các lỗi nhập liệu trước khi đặt hàng.', 'error');
+                    return;
+                }
+
                 const hoTen = $('#hoTenNhan').val().trim();
                 const sdt = $('#sdtNhan').val().trim();
                 const diaChi = $('#diaChiNhan').val().trim();
@@ -767,8 +881,8 @@
                 const paymentMethod = $('#phuongThucThanhToan').val();
                 const ghiChu = $('#ghiChu').val();
 
-                if (!hoTen || !sdt || !diaChi || !dvvcId) {
-                    showToast('Vui lòng nhập đầy đủ các thông tin bắt buộc.', 'error');
+                if (!dvvcId) {
+                    showToast('Vui lòng chọn đơn vị vận chuyển.', 'error');
                     return;
                 }
 

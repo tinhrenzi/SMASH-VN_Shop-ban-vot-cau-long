@@ -46,11 +46,11 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
 
 | Giai đoạn             | Nội dung công việc                          | Tổng Tasks |  Chưa làm  | Đang làm | Hoàn thành |   Tiến độ   |
 | :---------------------- | :--------------------------------------------- | :----------: | :----------: | :---------: | :----------: | :------------: |
-| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 6 | 0 | 2 | 25% |
+| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 5 | 0 | 3 | 37.5% |
 | **Giai đoạn 2** | Khắc phục bảo mật Ưu tiên cao (High) | 12 | 12 | 0 | 0 | 0% |
 | **Giai đoạn 3** | Tối ưu hóa & Sửa lỗi Trung bình (Medium) | 18 | 18 | 0 | 0 | 0% |
 | **Giai đoạn 4** | Phát triển tính năng mới & Hoàn thiện | 9 | 9 | 0 | 0 | 0% |
-| **TỔNG CỘNG**   |                                                | **47** | **45** | **0** | **2** | **4.3%** |
+| **TỔNG CỘNG**   |                                                | **47** | **44** | **0** | **3** | **6.4%** |
 
 ---
 
@@ -66,8 +66,8 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `.env.example` (Hoàn thành: 04/06/2026 10:35)
 - [ ] **T-04:** Thêm `@JsonIgnore` cho các trường bảo mật (`matKhau`, `tokenXacThucKhoa`, `maXacNhan`).
   - *Files:* `TaiKhoan.java`, `TokenKhoiPhuc.java`
-- [ ] **T-05:** Đồng bộ logic bảo mật upload (MIME check, extension whitelist, path traversal) từ `AdminSanPhamService` sang `AdminBienTheService`.
-  - *Files:* `AdminBienTheService.java`
+- [X] **T-05:** Đồng bộ logic bảo mật upload (MIME check, extension whitelist, path traversal) từ `AdminSanPhamService` sang `AdminBienTheService`.
+  - *Files:* `AdminBienTheService.java`, `AdminBienTheController.java`, `bienthe-list.html`, `bienthe-edit.html` (Hoàn thành: 12/06/2026 09:27)
 - [ ] **T-06:** Sanitize đầu vào cho ChatService CLI chống OS Command Injection (loại bỏ `| & ^ > < ; \`).
   - *Files:* `ChatService.java`
 - [ ] **T-07:** Hash mật khẩu cho tài khoản khách mua tại quầy (`GUEST_NO_PASSWORD` -> BCrypt hash).
@@ -85,13 +85,13 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `application.properties`
 - [ ] **T-12:** Validate định dạng IP đầu vào và chặn dải IP Private/Loopback trước khi gọi external API (Chống SSRF).
   - *Files:* `LocationService.java`
-- [ ] **T-13:** Thêm kiểm tra độ mạnh mật khẩu mới khi người dùng thực hiện reset mật khẩu.
+- [X] **T-13:** Thêm kiểm tra độ mạnh mật khẩu mới khi người dùng thực hiện reset mật khẩu.
   - *Files:* `UserQuenMatKhauService.java`
 - [ ] **T-14:** Chuyển đổi các quan hệ `@ManyToOne` và `@OneToOne` mặc định sang `FetchType.LAZY` để tránh truy vấn thừa thông tin nhạy cảm.
   - *Files:* Toàn bộ các Entity files trong `entity/`
 - [ ] **T-15:** Chuẩn hóa thông báo lỗi chuyển hướng (Redirect Error handling) - Không hiển thị raw exception message ra URL.
   - *Files:* `AdminDanhMucController.java`, `AdminKhuyenMaiController.java`, v.v.
-- [ ] **T-16:** Thêm Rate Limiting cho luồng Đăng ký tài khoản và Quên mật khẩu.
+- [X] **T-16:** Thêm Rate Limiting cho luồng Đăng ký tài khoản và Quên mật khẩu.
   - *Files:* `UserQuenMatKhauService.java`, `UserDangKyController.java`
 - [ ] **T-17:** Bổ sung Validation đầu vào cho các Controllers còn thiếu (giá bán, số lượng, định dạng email, sđt).
   - *Files:* Các file controller liên quan.
@@ -107,7 +107,8 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
 - [ ] **T-21:** Chuyển đổi các trạng thái dạng Chuỗi (String status) sang Enum của Java để tránh sai sót dữ liệu.
 - [ ] **T-22:** Bổ sung Content Security Policy (CSP) và HSTS headers toàn cục.
 - [ ] **T-23:** Khắc phục lỗi Race Condition khi cập nhật giỏ hàng bằng cách sử dụng `pessimistic lock` kiểm tra tồn kho.
-- [ ] **T-24:** Xử lý rò rỉ danh tính người dùng (User enumeration) tại trang đăng ký/khôi phục mật khẩu.
+- [X] **T-24:** Xử lý rò rỉ danh tính người dùng (User enumeration) tại trang đăng ký/khôi phục mật khẩu.
+  - *Files:* Các file controller liên quan.
 - [ ] **T-25:** Khắc phục bypass rate limit bằng cách giả mạo IP qua header `X-Forwarded-For`.
 - [ ] **T-26:** Tắt chế độ hiển thị SQL (`show-sql=false`) trên môi trường Production.
 - [ ] **T-27:** Thêm `@JsonIgnore` cho các mối quan hệ hai chiều để tránh lặp vô hạn khi serialize.
@@ -163,6 +164,7 @@ Mỗi khi có thay đổi (bắt đầu làm, sửa đổi code, hoàn thành ta
 | :------------------------- | :------------------- | :------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------- | :------------------ |
 | **04/06/2026 10:30** | —                   | **Khởi tạo tài liệu** | Tạo mới file `tasks.md` tích hợp thứ tự ưu tiên chức năng và danh sách bảo mật.                                              | Antigravity AI      |
 | **04/06/2026 10:35** | **T-01, T-03** | **Đã hoàn thành**     | Thêm `.env` vào `.gitignore` (verify an toàn, không bị tracked) và thay thế credentials trong `.env.example` bằng placeholder. | Antigravity AI      |
+| **12/06/2026 09:27** | **T-05**             | **Đã hoàn thành**     | Đồng bộ logic bảo mật upload và củng cố validate cho Biến thể Sản phẩm sử dụng Tika, ImageIO, UUID, startsWith chống path traversal và Flash Attributes. | Antigravity AI      |
 | **04/06/2026 11:05** | —                   | **Cập nhật kiến trúc** | Cập nhật tasks.md: bổ sung T-42 đến T-47 dựa trên kết quả phân tích cấu trúc, mã nguồn dư thừa và bất cập giữa Spring Security, Interceptor và Cấu hình upload. | Antigravity AI      |
 
 ---

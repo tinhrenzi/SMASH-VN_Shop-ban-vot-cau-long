@@ -13,9 +13,12 @@ import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
 import com.smashvn.shop.service.OrderViewService;
 import com.smashvn.shop.service.UserDashboardService;
+import com.smashvn.shop.dto.UserProfileEditDto;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.BindingResult;
 
 @Controller
 @RequestMapping("/user")
@@ -130,15 +133,43 @@ public class UserDashboardController {
 
     @PostMapping("/profile/edit")
     public String xuLySuaHoSo(HttpSession session,
-            @RequestParam("ho") String ho,
-            @RequestParam("ten") String ten,
-            @RequestParam("sdt") String sdt) {
+            @Valid @ModelAttribute("profileDto") UserProfileEditDto profileDto,
+            BindingResult bindingResult,
+            Model model) {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) return redirect;
 
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
-        dashboardService.capNhatHoSo(idTaiKhoan, ho, ten, sdt);
-        return "redirect:/user/profile?capNhatThanhCong";
+
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            KhachHang kh = getLoggedInCustomer(session);
+            if (kh == null) {
+                return "redirect:/user/dang-nhap";
+            }
+            kh.setHoKh(profileDto.getHo());
+            kh.setTenKh(profileDto.getTen());
+            kh.setSoDienThoaiKh(profileDto.getSdt());
+            model.addAttribute("kh", kh);
+            model.addAttribute("loi", errorMessage);
+            return "dash-edit-profile";
+        }
+
+        try {
+            dashboardService.capNhatHoSo(idTaiKhoan, profileDto);
+            return "redirect:/user/profile?capNhatThanhCong";
+        } catch (IllegalArgumentException e) {
+            KhachHang kh = getLoggedInCustomer(session);
+            if (kh == null) {
+                return "redirect:/user/dang-nhap";
+            }
+            kh.setHoKh(profileDto.getHo());
+            kh.setTenKh(profileDto.getTen());
+            kh.setSoDienThoaiKh(profileDto.getSdt());
+            model.addAttribute("kh", kh);
+            model.addAttribute("loi", e.getMessage());
+            return "dash-edit-profile";
+        }
     }
 
     @GetMapping("/my-order")

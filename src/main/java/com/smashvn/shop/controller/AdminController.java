@@ -8,21 +8,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.smashvn.shop.entity.PaymentTransaction;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AdminKhuyenMaiService;
 import com.smashvn.shop.service.OrderViewService;
-import com.smashvn.shop.entity.PaymentTransaction;
-import com.smashvn.shop.entity.ReturnStatus;
-import com.smashvn.shop.entity.RefundStatus;
-import com.smashvn.shop.repository.PaymentTransactionRepository;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -72,15 +70,15 @@ public class AdminController {
             @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             Model model) {
-        
+
         String role = (String) session.getAttribute("vaiTro");
         if (role == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         java.util.List<com.smashvn.shop.entity.HoaDon> orders = hoaDonRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
         model.addAttribute("danhSachDonHang", orders);
-        
+
         java.util.Map<Integer, String> currentStatusLabels = new java.util.HashMap<>();
         java.util.Map<Integer, String> nextStatusLabels = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.HoaDon hd : orders) {
@@ -94,7 +92,7 @@ public class AdminController {
         }
         model.addAttribute("currentStatusLabels", currentStatusLabels);
         model.addAttribute("nextStatusLabels", nextStatusLabels);
-        
+
         // Parse dates
         java.time.LocalDateTime start = parseStartDate(startDate);
         java.time.LocalDateTime end = parseEndDate(endDate);
@@ -117,13 +115,13 @@ public class AdminController {
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
         model.addAttribute("isManager", isManager);
-        
+
         String resolvedTab = activeTab;
         if (resolvedTab == null) {
-            if ((orderCode != null && !orderCode.trim().isEmpty()) 
-                    || (transactionId != null && !transactionId.trim().isEmpty()) 
-                    || (status != null && !status.trim().isEmpty()) 
-                    || (startDate != null && !startDate.trim().isEmpty()) 
+            if ((orderCode != null && !orderCode.trim().isEmpty())
+                    || (transactionId != null && !transactionId.trim().isEmpty())
+                    || (status != null && !status.trim().isEmpty())
+                    || (startDate != null && !startDate.trim().isEmpty())
                     || (endDate != null && !endDate.trim().isEmpty())) {
                 resolvedTab = "transactions";
             } else {
@@ -186,12 +184,12 @@ public class AdminController {
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         try {
             orderViewService.updateOrderStatusByAdmin(idHoaDon, trangThai, expectedStatus, actingTaiKhoanId, request.getRemoteAddr(), lyDoHuy);
             redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!");
@@ -200,7 +198,7 @@ public class AdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/don-hang";
     }
 
@@ -210,18 +208,18 @@ public class AdminController {
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
             return "redirect:/admin/don-hang";
         }
-        
+
         try {
             orderViewService.moveOrderToNextStatus(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!");
@@ -230,7 +228,7 @@ public class AdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/don-hang";
     }
 
@@ -245,9 +243,9 @@ public class AdminController {
                     .filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy()))
                     .map(TaiKhoan::getId)
                     .findFirst().orElse(1);
-            
+
             orderViewService.approveRefund(id, token, managerId, request.getRemoteAddr());
-            
+
             model.addAttribute("success", true);
             model.addAttribute("title", "Phê Duyệt Hoàn Tiền Thành Công");
             model.addAttribute("message", "Đơn hàng #" + id + " đã được phê duyệt hoàn tiền. Số tiền đã được chính thức trừ khỏi thống kê doanh thu.");
@@ -270,9 +268,9 @@ public class AdminController {
                     .filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy()))
                     .map(TaiKhoan::getId)
                     .findFirst().orElse(1);
-            
+
             orderViewService.rejectRefund(id, token, managerId, request.getRemoteAddr());
-            
+
             model.addAttribute("success", true);
             model.addAttribute("title", "Từ Chối Hoàn Tiền Thành Công");
             model.addAttribute("message", "Yêu cầu hoàn tiền cho đơn hàng #" + id + " đã bị từ chối. Trạng thái thanh toán được giữ nguyên.");
@@ -290,12 +288,12 @@ public class AdminController {
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         try {
             com.smashvn.shop.entity.HoaDon hd = hoaDonRepository.findById(idHoaDon)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
@@ -304,16 +302,18 @@ public class AdminController {
             if (response != null && response.contains("REFUND_TOKEN:")) {
                 int start = response.indexOf("REFUND_TOKEN:") + 13;
                 int end = response.indexOf(";", start);
-                if (end == -1) end = response.length();
+                if (end == -1) {
+                    end = response.length();
+                }
                 token = response.substring(start, end);
             }
-            
+
             orderViewService.approveRefund(idHoaDon, token, actingTaiKhoanId, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMsg", "Đã phê duyệt hoàn tiền thành công cho đơn hàng #" + idHoaDon);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi phê duyệt hoàn tiền: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/don-hang";
     }
 
@@ -323,12 +323,12 @@ public class AdminController {
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         try {
             com.smashvn.shop.entity.HoaDon hd = hoaDonRepository.findById(idHoaDon)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
@@ -337,16 +337,18 @@ public class AdminController {
             if (response != null && response.contains("REFUND_TOKEN:")) {
                 int start = response.indexOf("REFUND_TOKEN:") + 13;
                 int end = response.indexOf(";", start);
-                if (end == -1) end = response.length();
+                if (end == -1) {
+                    end = response.length();
+                }
                 token = response.substring(start, end);
             }
-            
+
             orderViewService.rejectRefund(idHoaDon, token, actingTaiKhoanId, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối hoàn tiền cho đơn hàng #" + idHoaDon);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi từ chối hoàn tiền: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/don-hang";
     }
 
@@ -355,29 +357,29 @@ public class AdminController {
     public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> getOrderDetailJson(
             @RequestParam("id") Integer id,
             HttpSession session) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return org.springframework.http.ResponseEntity.status(401).build();
         }
-        
+
         TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
             return org.springframework.http.ResponseEntity.status(403).build();
         }
-        
+
         java.util.Optional<com.smashvn.shop.entity.HoaDon> opt = hoaDonRepository.findById(id);
         if (opt.isEmpty()) {
             return org.springframework.http.ResponseEntity.notFound().build();
         }
-        
+
         try {
             com.smashvn.shop.entity.HoaDon hd = opt.get();
             java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
             map.put("id", hd.getId());
             map.put("maDonHang", hd.getMaDonHang() != null ? hd.getMaDonHang() : "#" + hd.getId());
             map.put("ngayTao", hd.getNgayTao() != null ? hd.getNgayTao().toString() : "");
-            
+
             // Thông tin khách hàng — null-safe
             String tenKH = "";
             if (hd.getKhachHang() != null) {
@@ -392,7 +394,7 @@ public class AdminController {
             map.put("phiVanChuyen", hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : java.math.BigDecimal.ZERO);
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
-            
+
             // Phương thức thanh toán — null-safe
             String tenPhuongThuc = "N/A";
             if (hd.getPhuongThucThanhToan() != null && hd.getPhuongThucThanhToan().getTenPhuongThuc() != null) {
@@ -401,7 +403,7 @@ public class AdminController {
             map.put("paymentMethod", tenPhuongThuc);
             map.put("paymentStatus", hd.getTrangThaiThanhToan() != null ? hd.getTrangThaiThanhToan() : "N/A");
             map.put("maGiaoDich", hd.getMaGiaoDich() != null ? hd.getMaGiaoDich() : "");
-            
+
             // Additional payment transaction fields
             String formattedPaidAt = "";
             if (hd.getPaidAt() != null) {
@@ -411,7 +413,7 @@ public class AdminController {
             map.put("transactionId", hd.getTransactionId() != null ? hd.getTransactionId() : "");
             map.put("gatewayResponse", hd.getGatewayResponse() != null ? hd.getGatewayResponse() : "");
             map.put("ghiChu", hd.getGhiChu() != null ? hd.getGhiChu() : "");
-            
+
             // Return status details
             map.put("trangThaiHoanHang", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "");
             map.put("trangThaiHoanHangLabel", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().getLabel() : "");
@@ -442,10 +444,10 @@ public class AdminController {
                 txsList.add(txMap);
             }
             map.put("transactions", txsList);
-            
+
             // Danh sách sản phẩm — null-safe
-            java.util.List<com.smashvn.shop.entity.HoaDonChiTiet> items =
-                    hoaDonChiTietRepository.findByHoaDon_Id(id);
+            java.util.List<com.smashvn.shop.entity.HoaDonChiTiet> items
+                    = hoaDonChiTietRepository.findByHoaDon_Id(id);
             java.util.List<java.util.Map<String, Object>> itemsList = new java.util.ArrayList<>();
             for (com.smashvn.shop.entity.HoaDonChiTiet item : items) {
                 java.util.Map<String, Object> itemMap = new java.util.LinkedHashMap<>();
@@ -469,7 +471,7 @@ public class AdminController {
                 itemsList.add(itemMap);
             }
             map.put("items", itemsList);
-            
+
             return org.springframework.http.ResponseEntity.ok(map);
         } catch (Exception e) {
             java.util.Map<String, Object> err = new java.util.HashMap<>();
@@ -485,12 +487,12 @@ public class AdminController {
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        
+
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        
+
         try {
             orderViewService.updateReturnStatusByAdmin(idHoaDon, trangThaiHoanHang, actingTaiKhoanId, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái hoàn hàng thành công!");
@@ -499,7 +501,7 @@ public class AdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/don-hang";
     }
 }

@@ -105,11 +105,11 @@ public class CheckoutController {
     @PostMapping("/checkout/submit")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitCheckout(
-            @RequestParam("hoTenNhan") String hoTenNhan,
-            @RequestParam("sdtNhan") String sdtNhan,
-            @RequestParam("diaChiNhan") String diaChiNhan,
-            @RequestParam("idDonViVanChuyen") Integer idDonViVanChuyen,
-            @RequestParam("phuongThucThanhToan") String phuongThucThanhToan,
+            @RequestParam(value = "hoTenNhan", required = false) String hoTenNhan,
+            @RequestParam(value = "sdtNhan", required = false) String sdtNhan,
+            @RequestParam(value = "diaChiNhan", required = false) String diaChiNhan,
+            @RequestParam(value = "idDonViVanChuyen", required = false) Integer idDonViVanChuyen,
+            @RequestParam(value = "phuongThucThanhToan", required = false) String phuongThucThanhToan,
             @RequestParam(value = "ghiChu", required = false) String ghiChu,
             @RequestParam(value = "ghnToDistrictId", required = false) Integer ghnToDistrictId,
             @RequestParam(value = "ghnToWardCode", required = false) String ghnToWardCode,
@@ -120,6 +120,32 @@ public class CheckoutController {
         if (idNguoiDung == null) {
             response.put("trangThai", "chuadangnhap");
             response.put("message", "Vui lòng đăng nhập để thực hiện thanh toán.");
+            return ResponseEntity.ok(response);
+        }
+
+        if (hoTenNhan == null || hoTenNhan.trim().isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Họ và tên người nhận không được để trống.");
+            return ResponseEntity.ok(response);
+        }
+        if (sdtNhan == null || sdtNhan.trim().isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Số điện thoại không được để trống.");
+            return ResponseEntity.ok(response);
+        }
+        if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Địa chỉ nhận hàng không được để trống.");
+            return ResponseEntity.ok(response);
+        }
+        if (idDonViVanChuyen == null) {
+            response.put("trangThai", "loi");
+            response.put("message", "Vui lòng chọn đơn vị vận chuyển.");
+            return ResponseEntity.ok(response);
+        }
+        if (phuongThucThanhToan == null || phuongThucThanhToan.trim().isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Vui lòng chọn phương thức thanh toán.");
             return ResponseEntity.ok(response);
         }
 

@@ -3,20 +3,21 @@ package com.smashvn.shop.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.entity.DotGiamGia;
-import com.smashvn.shop.entity.EditLog;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.repository.EditLogRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
@@ -40,7 +41,6 @@ public class AdminKhuyenMaiService {
     // ==========================================
     // CAMPAIGN (ĐỢT GIẢM GIÁ) SERVICE METHODS
     // ==========================================
-
     @Transactional(readOnly = true)
     public List<DotGiamGia> getAllDotGiamGia() {
         return dotGiamGiaDAO.findAll();
@@ -54,8 +54,8 @@ public class AdminKhuyenMaiService {
 
     @Transactional
     public DotGiamGia createDotGiamGia(String tenChienDich, LocalDateTime start, LocalDateTime end,
-                                       Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
-                                       Integer actingTaiKhoanId, String ipAddress) {
+            Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
+            Integer actingTaiKhoanId, String ipAddress) {
         // 1. Validation
         validateCampaignDates(start, end);
         if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > 100) {
@@ -99,8 +99,8 @@ public class AdminKhuyenMaiService {
 
     @Transactional
     public DotGiamGia updateDotGiamGia(Integer id, String tenChienDich, LocalDateTime start, LocalDateTime end,
-                                       Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
-                                       Integer actingTaiKhoanId, String ipAddress) {
+            Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
+            Integer actingTaiKhoanId, String ipAddress) {
         DotGiamGia dgg = getDotGiamGiaById(id);
 
         // 1. Validation
@@ -196,11 +196,11 @@ public class AdminKhuyenMaiService {
 
                 if (!conflictedProductNames.isEmpty()) {
                     throw new RuntimeException(String.format(
-                        "Sản phẩm: %s đã được gán cho chiến dịch '%s' đang hoạt động trong khoảng %s - %s. Không được đè đợt giảm giá lên nhau!",
-                        String.join(", ", conflictedProductNames),
-                        campaign.getTenChienDich(),
-                        campaign.getNgayBatDau().format(DATE_FORMATTER),
-                        campaign.getNgayKetThuc().format(DATE_FORMATTER)
+                            "Sản phẩm: %s đã được gán cho chiến dịch '%s' đang hoạt động trong khoảng %s - %s. Không được đè đợt giảm giá lên nhau!",
+                            String.join(", ", conflictedProductNames),
+                            campaign.getTenChienDich(),
+                            campaign.getNgayBatDau().format(DATE_FORMATTER),
+                            campaign.getNgayKetThuc().format(DATE_FORMATTER)
                     ));
                 }
             }
@@ -222,7 +222,6 @@ public class AdminKhuyenMaiService {
     // ==========================================
     // VOUCHER (PHIẾU GIẢM GIÁ) SERVICE METHODS
     // ==========================================
-
     @Transactional(readOnly = true)
     public List<PhieuGiamGia> getAllPhieuGiamGia() {
         return phieuGiamGiaRepository.findAll();
@@ -236,9 +235,9 @@ public class AdminKhuyenMaiService {
 
     @Transactional
     public PhieuGiamGia createPhieuGiamGia(String maPhieu, BigDecimal giaTri, String donVi,
-                                           LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-                                           BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
-                                           Integer actingTaiKhoanId, String ipAddress) {
+            LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
+            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
+            Integer actingTaiKhoanId, String ipAddress) {
         // 1. Validation
         validateVoucherInputs(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu);
 
@@ -276,9 +275,9 @@ public class AdminKhuyenMaiService {
 
     @Transactional
     public PhieuGiamGia updatePhieuGiamGia(Integer id, String maPhieu, BigDecimal giaTri, String donVi,
-                                           LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-                                           BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
-                                           Integer actingTaiKhoanId, String ipAddress) {
+            LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
+            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
+            Integer actingTaiKhoanId, String ipAddress) {
         PhieuGiamGia pgg = getPhieuGiamGiaById(id);
 
         // 1. Validation
@@ -336,8 +335,8 @@ public class AdminKhuyenMaiService {
     }
 
     private void validateVoucherInputs(String maPhieu, BigDecimal giaTri, String donVi,
-                                       LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-                                       BigDecimal giaTriDonHangToiThieu) {
+            LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
+            BigDecimal giaTriDonHangToiThieu) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
             throw new RuntimeException("Mã phiếu không được để trống!");
         }
@@ -379,9 +378,8 @@ public class AdminKhuyenMaiService {
     // ==========================================
     // COMMON AUDIT LOG WRITER
     // ==========================================
-
     private void writeEditLog(Integer actingTaiKhoanId, String tenBang, Long idBanGhi, String hanhDong,
-                              String giaTriCu, String giaTriMoi, String ipAddress, String ghiChu) {
+            String giaTriCu, String giaTriMoi, String ipAddress, String ghiChu) {
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
             auditService.log(actingTaiKhoanId, tenBang, idBanGhi, hanhDong, giaTriCu, giaTriMoi, ipAddress, ghiChu, actingUser.getVaiTro());

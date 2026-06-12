@@ -1,6 +1,8 @@
 package com.smashvn.shop.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,46 +20,46 @@ import com.smashvn.shop.repository.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminBienTheService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+
+    @Value("${app.upload.path}")
+    private String uploadPathConfig;
 
     // 1. Lấy danh sách biến thể theo ID Sản phẩm gốc
     public List<SanPhamChiTiet> layDanhSachBienThe(Integer idSanPham) {
         return sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
     }
 
-    // 2. Thêm biến thể mới (Có xử lý upload ảnh ra ngoài thư mục uploads)
+    // 2. Thêm biến thể mới
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,
                             String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
         
         SanPham sp = sanPhamRepository.findById(idSanPham)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm gốc"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm gốc"));
         
+        // Trim and validate input values
+        String cleanMauSac = mauSac != null ? mauSac.trim() : null;
+        String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
+        String cleanMucCang = mucCang != null ? mucCang.trim() : null;
+
+        validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
+
+        // Save image securely (required on creation)
+        String secureFileName = saveImageSecurely(fileAnh, true);
+
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setSanPham(sp);
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
-        spct.setMauSac(mauSac);
-        spct.setTrongLuong(trongLuong);
-        spct.setMucCang(mucCang);
-
-        // Xử lý lưu ảnh
-        if (fileAnh != null && !fileAnh.isEmpty()) {
-            String tenFileAnh = System.currentTimeMillis() + "_" + fileAnh.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/product/"); // Lưu ra thư mục ảo an toàn
-            
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-            
-            try (InputStream inputStream = fileAnh.getInputStream()) {
-                Files.copy(inputStream, uploadPath.resolve(tenFileAnh), StandardCopyOption.REPLACE_EXISTING);
-                spct.setHinhAnhSanPham(tenFileAnh);
-            }
-        } else {
-            spct.setHinhAnhSanPham("default.jpg"); // Ảnh mặc định nếu admin quên up
-        }
+        spct.setMauSac(cleanMauSac);
+        spct.setTrongLuong(cleanTrongLuong);
+        spct.setMucCang(cleanMucCang);
+        spct.setHinhAnhSanPham(secureFileName);
         
         sanPhamChiTietRepository.save(spct);
     }
@@ -68,10 +70,10 @@ public class AdminBienTheService {
         sanPhamChiTietRepository.deleteById(idBienThe);
     }
     
- // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa
+    // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa
     public SanPhamChiTiet layBienTheTheoId(Integer idBienThe) {
         return sanPhamChiTietRepository.findById(idBienThe)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể này"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể này"));
     }
 
     // Thêm hàm Cập nhật Biến thể
@@ -80,27 +82,129 @@ public class AdminBienTheService {
                                String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
         
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể để sửa"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể để sửa"));
+
+        // Trim and validate input values
+        String cleanMauSac = mauSac != null ? mauSac.trim() : null;
+        String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
+        String cleanMucCang = mucCang != null ? mucCang.trim() : null;
+
+        validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
+
+        // Save image securely (optional on update)
+        String secureFileName = saveImageSecurely(fileAnh, false);
+        if (secureFileName != null) {
+            spct.setHinhAnhSanPham(secureFileName);
+        }
 
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
-        spct.setMauSac(mauSac);
-        spct.setTrongLuong(trongLuong);
-        spct.setMucCang(mucCang);
-
-        // Chỉ cập nhật ảnh nếu Admin có chọn file mới (nếu không thì giữ nguyên ảnh cũ)
-        if (fileAnh != null && !fileAnh.isEmpty()) {
-            String tenFileAnh = System.currentTimeMillis() + "_" + fileAnh.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/product/"); 
-            
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-            
-            try (InputStream inputStream = fileAnh.getInputStream()) {
-                Files.copy(inputStream, uploadPath.resolve(tenFileAnh), StandardCopyOption.REPLACE_EXISTING);
-                spct.setHinhAnhSanPham(tenFileAnh);
-            }
-        }
+        spct.setMauSac(cleanMauSac);
+        spct.setTrongLuong(cleanTrongLuong);
+        spct.setMucCang(cleanMucCang);
         
         sanPhamChiTietRepository.save(spct);
+    }
+
+    // --- Helper Validation ---
+    private void validateBienThe(BigDecimal giaBan, Integer soLuongTon, String mauSac, String trongLuong, String mucCang) {
+        if (giaBan == null) {
+            throw new IllegalArgumentException("Giá bán không được để trống.");
+        }
+        if (giaBan.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Giá bán phải lớn hơn 0.");
+        }
+        if (soLuongTon == null) {
+            throw new IllegalArgumentException("Số lượng tồn kho không được để trống.");
+        }
+        if (soLuongTon < 0) {
+            throw new IllegalArgumentException("Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
+        }
+        if (mauSac == null || mauSac.isEmpty()) {
+            throw new IllegalArgumentException("Màu sắc không được để trống.");
+        }
+        if (mauSac.length() > 50) {
+            throw new IllegalArgumentException("Màu sắc không được vượt quá 50 ký tự.");
+        }
+        if (trongLuong == null || trongLuong.isEmpty()) {
+            throw new IllegalArgumentException("Trọng lượng / Size không được để trống.");
+        }
+        if (trongLuong.length() > 50) {
+            throw new IllegalArgumentException("Trọng lượng / Size không được vượt quá 50 ký tự.");
+        }
+        if (mucCang != null && mucCang.length() > 50) {
+            throw new IllegalArgumentException("Mức căng không được vượt quá 50 ký tự.");
+        }
+    }
+
+    // --- Helper Image Saving with Security Measures ---
+    private String saveImageSecurely(MultipartFile file, boolean isRequired) throws Exception {
+        if (file == null || file.isEmpty()) {
+            if (isRequired) {
+                throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc.");
+            }
+            return null;
+        }
+
+        // 1. Check file extension
+        String origName = file.getOriginalFilename();
+        String ext = "";
+        if (origName != null && origName.contains(".")) {
+            ext = origName.substring(origName.lastIndexOf(".") + 1).toLowerCase();
+        }
+        if (!ext.equals("jpg") && !ext.equals("jpeg") && !ext.equals("png") && !ext.equals("webp")) {
+            throw new IllegalArgumentException("Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.");
+        }
+
+        // 2. Check file size (max 5 MB)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB.");
+        }
+
+        // 3. Verify MIME type using Apache Tika
+        org.apache.tika.Tika tika = new org.apache.tika.Tika();
+        try (InputStream is = file.getInputStream()) {
+            String mimeType = tika.detect(is);
+            if (mimeType == null || (!mimeType.equals("image/jpeg") && !mimeType.equals("image/png") && !mimeType.equals("image/webp"))) {
+                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận.");
+            }
+        }
+
+        // 4. Verify genuine image using ImageIO
+        try (InputStream is = file.getInputStream()) {
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(is);
+            if (image == null) {
+                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
+        }
+
+        // 5. Generate random filename
+        String secureFileName = java.util.UUID.randomUUID().toString() + "." + ext;
+
+        // 6. Prevent path traversal
+        Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
+        Path productUploadPath = rootUploadPath.resolve("product").normalize();
+        if (!Files.exists(productUploadPath)) {
+            Files.createDirectories(productUploadPath);
+        }
+
+        Path targetFilePath = productUploadPath.resolve(secureFileName).normalize().toAbsolutePath();
+        Path normalizedRoot = productUploadPath.normalize().toAbsolutePath();
+
+        if (!targetFilePath.startsWith(normalizedRoot)) {
+            throw new SecurityException("Invalid upload path");
+        }
+
+        // 7. Save file
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, targetFilePath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            log.error("[UPLOAD_FAILURE] Failed to save product variant image: {}", e.getMessage());
+            throw e;
+        }
+
+        return secureFileName;
     }
 }

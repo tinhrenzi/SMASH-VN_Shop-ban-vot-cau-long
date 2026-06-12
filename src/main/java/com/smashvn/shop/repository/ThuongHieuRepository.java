@@ -5,5 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.smashvn.shop.entity.ThuongHieu;
 
 public interface ThuongHieuRepository extends JpaRepository<ThuongHieu, Integer> {
-    // Không cần viết thêm gì, dùng sẵn findAll()
+
+    /** Duplicate check for add-new: case-insensitive */
+    boolean existsByTenThuongHieuIgnoreCase(String tenThuongHieu);
+
+    /** Duplicate check for edit: case-insensitive, excludes the brand being edited */
+    boolean existsByTenThuongHieuIgnoreCaseAndIdNot(String tenThuongHieu, Integer id);
 }
+

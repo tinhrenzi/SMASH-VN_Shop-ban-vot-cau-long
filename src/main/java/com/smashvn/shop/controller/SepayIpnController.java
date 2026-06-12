@@ -1,5 +1,20 @@
 package com.smashvn.shop.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smashvn.shop.config.SepayConfig;
 import com.smashvn.shop.dto.SepayIpnRequest;
@@ -13,19 +28,11 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.PaymentGatewayService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,7 +102,7 @@ public class SepayIpnController {
                         order.setMaGiaoDich(ipnRequest.getTransactionData().getTransactionId());
                         order.setGatewayResponse("SePay: " + e.getMessage());
                         hoaDonRepository.save(order);
-                        
+
                         auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
                                 order.getTrangThaiDonHang(), order.getTrangThaiDonHang(), "127.0.0.1",
                                 "[PAYMENT_AMOUNT_MISMATCH] SePay payment amount mismatch: " + e.getMessage(), "SYSTEM");
@@ -140,8 +147,8 @@ public class SepayIpnController {
         HoaDon order = orderOpt.get();
 
         // 3. Ownership: Validate order owner matches session customer
-        if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null ||
-                !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
+        if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
+                || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
             log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
         }

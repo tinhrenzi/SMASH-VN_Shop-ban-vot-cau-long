@@ -108,9 +108,11 @@
 											            <div class="input-counter" th:if="${!khongHopLe}">
 											                <span class="input-counter__minus fas fa-minus"></span>
 											                <input class="js-cart-qty-input input-counter__text input-counter--text-primary-style" 
-											                       type="text" 
+											                       type="number" 
 											                       th:value="${item.soLuong}" 
 											                       th:attr="data-item-id=${item.id}, data-max=${item.sanPhamChiTiet.soLuongTon}"
+											                       min="1"
+											                       max="999"
 											                       data-min="1">
 											                <span class="input-counter__plus fas fa-plus"></span>
 											            </div>
@@ -209,13 +211,59 @@
         $(document).ready(function() {
             let updateTimer;
 
-            // Bắt sự kiện khi số lượng thay đổi (do click +/- hoặc gõ tay)
+            // Chặn phím không hợp lệ khi gõ trực tiếp
+            $('.js-cart-qty-input').on('keydown', function(e) {
+                if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === '.') {
+                    e.preventDefault();
+                }
+            });
+
+            // Chặn dán dữ liệu không hợp lệ
+            $('.js-cart-qty-input').on('paste', function(e) {
+                var clipboardData = e.originalEvent.clipboardData || window.clipboardData;
+                var pastedData = clipboardData.getData('text');
+                if (!/^\d+$/.test(pastedData) || parseInt(pastedData) <= 0) {
+                    e.preventDefault();
+                    showToast("Vui lòng chỉ nhập số lượng nguyên dương hợp lệ!", "error");
+                }
+            });
+
+            // Lọc dữ liệu thời gian thực qua sự kiện input
+            $('.js-cart-qty-input').on('input', function() {
+                var valStr = $(this).val();
+                var sanitized = valStr.replace(/\D/g, '');
+                if (sanitized !== valStr) {
+                    $(this).val(sanitized);
+                }
+            });
+
+            // Bắt sự kiện khi số lượng thay đổi (do click +/- hoặc kết thúc gõ tay)
             $('.js-cart-qty-input').on('change', function() {
                 clearTimeout(updateTimer); // Hủy thao tác cũ nếu người dùng click liên tục
                 
                 const input = $(this);
                 const idChiTiet = input.attr('data-item-id');
-                const soLuong = input.val();
+                let soLuongStr = input.val().trim();
+                
+                let soLuong = parseInt(soLuongStr);
+                const minVal = parseInt(input.attr('data-min')) || 1;
+                const maxVal = parseInt(input.attr('data-max')) || 999;
+                const absoluteMax = 999;
+                
+                if (isNaN(soLuong) || soLuong < minVal) {
+                    soLuong = minVal;
+                    input.val(soLuong);
+                    showToast("Số lượng sản phẩm tối thiểu là " + minVal, "error");
+                } else if (soLuong > Math.min(maxVal, absoluteMax)) {
+                    const limit = Math.min(maxVal, absoluteMax);
+                    soLuong = limit;
+                    input.val(soLuong);
+                    if (maxVal < absoluteMax) {
+                        showToast("Số lượng vượt quá số lượng tồn kho (" + maxVal + ")!", "error");
+                    } else {
+                        showToast("Số lượng trong giỏ tối đa là " + absoluteMax, "error");
+                    }
+                }
 
                 // Đợi 500ms (0.5 giây) sau lần click cuối mới gửi lên Server
                 updateTimer = setTimeout(function() {
@@ -246,8 +294,9 @@
                                 }
                             });
                         },
-                        error: function() {
-                             showToast("Có lỗi xảy ra khi cập nhật số lượng!", "error");
+                        error: function(xhr) {
+                             var errorMsg = xhr.responseText || "Có lỗi xảy ra khi cập nhật số lượng!";
+                             showToast(errorMsg, "error");
                          }
                     });
                 }, 500); 

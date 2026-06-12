@@ -1,18 +1,34 @@
 package com.smashvn.shop.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
-import com.smashvn.shop.dao.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
+import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +69,8 @@ public class AdminPosService {
     }
 
     /**
-     * Tìm kiếm khách hàng — tương thích multi-role (dùng flag la_khach_hang = true).
-     * Loại trừ tài khoản Khách Lẻ nội bộ (guest@smashvn.com).
+     * Tìm kiếm khách hàng — tương thích multi-role (dùng flag la_khach_hang =
+     * true). Loại trừ tài khoản Khách Lẻ nội bộ (guest@smashvn.com).
      */
     public List<KhachHang> searchCustomers(String query) {
         List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
@@ -68,9 +84,9 @@ public class AdminPosService {
         String lowerQuery = query.toLowerCase().trim();
         return customers.stream()
                 .filter(c -> c.getHoKh().toLowerCase().contains(lowerQuery)
-                        || c.getTenKh().toLowerCase().contains(lowerQuery)
-                        || c.getSoDienThoaiKh().contains(lowerQuery)
-                        || c.getTaiKhoan().getEmail().toLowerCase().contains(lowerQuery))
+                || c.getTenKh().toLowerCase().contains(lowerQuery)
+                || c.getSoDienThoaiKh().contains(lowerQuery)
+                || c.getTaiKhoan().getEmail().toLowerCase().contains(lowerQuery))
                 .collect(Collectors.toList());
     }
 
@@ -103,6 +119,7 @@ public class AdminPosService {
 
     // DTO cho POS item
     public static class PosItem {
+
         public Integer idSanPhamChiTiet;
         public Integer soLuong;
     }
@@ -110,13 +127,13 @@ public class AdminPosService {
     /**
      * Hàm thanh toán POS trong transaction an toàn.
      *
-     * @param phuongThucPos  TIEN_MAT | CHUYEN_KHOAN (phương thức thanh toán POS)
-     * @param ghiChu         Ghi chú hóa đơn (nullable)
+     * @param phuongThucPos TIEN_MAT | CHUYEN_KHOAN (phương thức thanh toán POS)
+     * @param ghiChu Ghi chú hóa đơn (nullable)
      */
     @Transactional
     public HoaDon thanhToanPos(Integer idKhachHang, String maVoucher, List<PosItem> items,
-                                String phuongThucPos, String maGiaoDich, String ghiChu,
-                                Integer idNhanVienTaiKhoan, String clientIp) {
+            String phuongThucPos, String maGiaoDich, String ghiChu,
+            Integer idNhanVienTaiKhoan, String clientIp) {
         if (items == null || items.isEmpty()) {
             throw new RuntimeException("Đơn hàng không có sản phẩm nào!");
         }

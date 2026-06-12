@@ -25,6 +25,18 @@ public class UserQuenMatKhauService {
     // 1. Tạo và gửi Link khôi phục
     @Transactional
     public void guiYeuCauKhoiPhuc(String email, String appUrl) {
+        email = (email != null) ? email.trim() : null;
+
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Email không được để trống!");
+        }
+        if (email.length() > 100) {
+            throw new RuntimeException("Email không được vượt quá 100 ký tự!");
+        }
+        if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            throw new RuntimeException("Định dạng email không hợp lệ!");
+        }
+
         TaiKhoan tk = taiKhoanRepository.findByEmail(email);
         if (tk == null) {
             throw new RuntimeException("Email này không tồn tại trên hệ thống!");
@@ -77,6 +89,19 @@ public class UserQuenMatKhauService {
     @Transactional
     public void datLaiMatKhau(String token, String matKhauMoi) {
         TokenKhoiPhuc tkp = kiemTraToken(token); // Kiểm tra lại lần cuối cho chắc
+
+        if (matKhauMoi == null || matKhauMoi.isEmpty()) {
+            throw new RuntimeException("Mật khẩu mới không được để trống!");
+        }
+        if (matKhauMoi.length() < 8 || matKhauMoi.length() > 30) {
+            throw new RuntimeException("Mật khẩu phải dài từ 8 đến 30 ký tự!");
+        }
+        if (matKhauMoi.contains(" ") || matKhauMoi.contains("\t") || matKhauMoi.contains("\n") || matKhauMoi.contains("\r")) {
+            throw new RuntimeException("Mật khẩu không được chứa khoảng trắng!");
+        }
+        if (!matKhauMoi.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,30}$")) {
+            throw new RuntimeException("Mật khẩu phải chứa cả chữ và số!");
+        }
         
         TaiKhoan tk = tkp.getTaiKhoan();
         tk.setMatKhau(BCrypt.hashpw(matKhauMoi, BCrypt.gensalt())); // Mã hóa Pass mới

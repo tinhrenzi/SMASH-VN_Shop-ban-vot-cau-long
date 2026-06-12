@@ -3,12 +3,13 @@ package com.smashvn.shop.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.smashvn.shop.entity.DanhMuc;
-import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.service.DanhMucService;
+import com.smashvn.shop.service.ThuongHieuService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +21,12 @@ public class AdminDanhMucController {
     private final DanhMucRepository danhMucRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final SanPhamRepository sanPhamRepository;
+    private final DanhMucService danhMucService;
+    private final ThuongHieuService thuongHieuService;
+
+    // ----------------------------------------------------------------
+    // GET: list page
+    // ----------------------------------------------------------------
 
     @GetMapping
     public String hienThiTrangQuanLy(Model model) {
@@ -28,17 +35,20 @@ public class AdminDanhMucController {
         return "admin/danhmuc-list";
     }
 
+    // ----------------------------------------------------------------
+    // CATEGORY endpoints
+    // ----------------------------------------------------------------
+
     @PostMapping("/them")
-    public String themDanhMuc(@RequestParam("tenDanhMuc") String tenDanhMuc, Model model) {
+    public String themDanhMuc(
+            @RequestParam(value = "tenDanhMuc", required = false) String tenDanhMuc,
+            Model model,
+            RedirectAttributes redirectAttributes) {
         try {
-            if (tenDanhMuc == null || tenDanhMuc.trim().isEmpty()) {
-                throw new RuntimeException("Tên danh mục không được để trống!");
-            }
-            DanhMuc dm = new DanhMuc();
-            dm.setTenDanhMuc(tenDanhMuc.trim());
-            danhMucRepository.save(dm);
-            return "redirect:/admin/danh-muc?themDanhMucThanhCong";
-        } catch (Exception e) {
+            danhMucService.themDanhMuc(tenDanhMuc);
+            redirectAttributes.addFlashAttribute("successMessage", "Thêm danh mục mới thành công!");
+            return "redirect:/admin/danh-muc";
+        } catch (IllegalArgumentException e) {
             model.addAttribute("loiDanhMuc", e.getMessage());
             model.addAttribute("listDanhMuc", danhMucRepository.findAll());
             model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
@@ -46,30 +56,51 @@ public class AdminDanhMucController {
         }
     }
 
-    @PostMapping("/xoa/{id}")
-    public String xoaDanhMuc(@PathVariable("id") Integer id) {
+    @PostMapping("/sua/{id}")
+    public String suaDanhMuc(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "tenDanhMuc", required = false) String tenDanhMuc,
+            RedirectAttributes redirectAttributes) {
         try {
-            if (sanPhamRepository.existsByDanhMucId(id)) {
-                throw new RuntimeException("Không thể xóa danh mục này vì đang có sản phẩm thuộc danh mục!");
-            }
-            danhMucRepository.deleteById(id);
-            return "redirect:/admin/danh-muc?xoaDanhMucThanhCong";
-        } catch (Exception e) {
-            return "redirect:/admin/danh-muc?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            danhMucService.suaDanhMuc(id, tenDanhMuc);
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật danh mục thành công!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
+        return "redirect:/admin/danh-muc";
     }
 
-    @PostMapping("/thuong-hieu/them")
-    public String themThuongHieu(@RequestParam("tenThuongHieu") String tenThuongHieu, Model model) {
+    @PostMapping("/xoa/{id}")
+    public String xoaDanhMuc(
+            @PathVariable("id") Integer id,
+            RedirectAttributes redirectAttributes) {
         try {
-            if (tenThuongHieu == null || tenThuongHieu.trim().isEmpty()) {
-                throw new RuntimeException("Tên hãng vợt không được để trống!");
+            if (sanPhamRepository.existsByDanhMucId(id)) {
+                throw new IllegalArgumentException(
+                        "Không thể xóa danh mục này vì đang có sản phẩm thuộc danh mục!");
             }
-            ThuongHieu th = new ThuongHieu();
-            th.setTenThuongHieu(tenThuongHieu.trim());
-            thuongHieuRepository.save(th);
-            return "redirect:/admin/danh-muc?themThuongHieuThanhCong";
+            danhMucRepository.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Xóa danh mục thành công!");
         } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/danh-muc";
+    }
+
+    // ----------------------------------------------------------------
+    // BRAND (ThuongHieu) endpoints
+    // ----------------------------------------------------------------
+
+    @PostMapping("/thuong-hieu/them")
+    public String themThuongHieu(
+            @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        try {
+            thuongHieuService.themThuongHieu(tenThuongHieu);
+            redirectAttributes.addFlashAttribute("successMessage", "Thêm thương hiệu mới thành công!");
+            return "redirect:/admin/danh-muc";
+        } catch (IllegalArgumentException e) {
             model.addAttribute("loiThuongHieu", e.getMessage());
             model.addAttribute("listDanhMuc", danhMucRepository.findAll());
             model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
@@ -77,16 +108,36 @@ public class AdminDanhMucController {
         }
     }
 
+    @PostMapping("/thuong-hieu/sua/{id}")
+    public String suaThuongHieu(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
+            RedirectAttributes redirectAttributes) {
+        try {
+            thuongHieuService.suaThuongHieu(id, tenThuongHieu);
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thương hiệu thành công!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/danh-muc";
+    }
+
     @PostMapping("/thuong-hieu/xoa/{id}")
-    public String xoaThuongHieu(@PathVariable("id") Integer id) {
+    public String xoaThuongHieu(
+            @PathVariable("id") Integer id,
+            RedirectAttributes redirectAttributes) {
         try {
             if (sanPhamRepository.existsByThuongHieuId(id)) {
-                throw new RuntimeException("Không thể xóa hãng này vì đang có sản phẩm thuộc hãng!");
+                throw new IllegalArgumentException(
+                        "Không thể xóa thương hiệu này vì đang có sản phẩm thuộc thương hiệu!");
             }
             thuongHieuRepository.deleteById(id);
-            return "redirect:/admin/danh-muc?xoaThuongHieuThanhCong";
+            redirectAttributes.addFlashAttribute("successMessage", "Xóa thương hiệu thành công!");
         } catch (Exception e) {
-            return "redirect:/admin/danh-muc?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
+        return "redirect:/admin/danh-muc";
     }
 }
+
+
