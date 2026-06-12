@@ -78,6 +78,15 @@
                 align-self: flex-start;
                 z-index: 1000;
             }
+            @media (min-width: 768px) {
+                .sidebar {
+                    position: fixed !important;
+                    top: 0;
+                    left: 0;
+                    width: 16.666667% !important;
+                    height: 100vh !important;
+                }
+            }
             .sidebar::-webkit-scrollbar {
                 display: none; /* Hide scrollbar for Chrome/Safari/Opera */
             }

@@ -33,6 +33,14 @@ body {
     background-color: var(--brand-bg);
     min-height: 100vh;
 }
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 16.666667% !important;
+        width: 83.333333% !important;
+        flex: 0 0 83.333333% !important;
+        max-width: 83.333333% !important;
+    }
+}
 
 /* Premium Card Design */
 .card {

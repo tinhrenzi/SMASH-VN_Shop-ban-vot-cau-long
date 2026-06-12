@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quan Ly Danh Muc &amp; Thuong Hieu - Admin SmashVN</title>
+    <title>Quản Lý Danh Mục &amp; Thương Hiệu - Admin SmashVN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
@@ -24,54 +24,59 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="page-title"><i class="fas fa-folder-open text-brand me-2"></i>Quan Ly Danh Muc &amp; Hang Vot</h2>
+                <h2 class="page-title"><i class="fas fa-folder-open text-brand me-2"></i>Quản Lý Danh Mục &amp; Hãng Vợt</h2>
             </div>
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-dark text-white py-3">
-                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Them Danh Muc Moi</h5>
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Danh Mục Mới</h5>
                         </div>
                         <div class="card-body">
                             <form th:action="@{/admin/danh-muc/them}" method="POST" id="formThemDanhMuc" novalidate>
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <div th:if="${loiDanhMuc != null}" class="text-danger mb-2 fw-semibold" th:text="${loiDanhMuc}"></div>
                                 <div class="input-group">
-                                    <input type="text" id="tenDanhMuc" name="tenDanhMuc" class="form-control" placeholder="VD: Vot Cau Long, Phu Kien..." maxlength="100" autocomplete="off">
-                                    <button class="btn btn-brand text-white px-4" type="submit" id="btnThemDanhMuc"><i class="fas fa-plus me-1"></i>Them Moi</button>
+                                    <input type="text" id="tenDanhMuc" name="tenDanhMuc" class="form-control" placeholder="VD: Vợt Cầu Lông, Phụ Kiện..." maxlength="100" autocomplete="off">
+                                    <button class="btn btn-brand text-white px-4" type="submit" id="btnThemDanhMuc"><i class="fas fa-plus me-1"></i>Thêm Mới</button>
                                 </div>
                                 <div id="errDanhMuc" class="invalid-feedback text-danger mt-1" style="display:none;"></div>
-                                <small class="text-muted">Toi thieu 2 ky tu, toi da 100 ky tu.</small>
+                                <small class="text-muted">Tối thiểu 2 ký tự, tối đa 100 ký tự.</small>
                             </form>
                         </div>
                     </div>
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-list me-2 text-brand"></i>Danh Sach Danh Muc</h5>
-                            <span class="badge bg-primary" th:text="${listDanhMuc.size()} + ' danh muc'"></span>
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-list me-2 text-brand"></i>Danh Sách Danh Mục</h5>
+                            <span class="badge bg-primary" th:text="${listDanhMuc.size()} + ' danh mục'"></span>
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
-                                    <tr><th style="width:80px;">ID</th><th>Ten Danh Muc</th><th class="text-center" style="width:140px;">Hanh Dong</th></tr>
+                                    <tr>
+                                        <th style="width: 80px;">ID</th>
+                                        <th>Tên Danh Mục</th>
+                                        <th class="text-center" style="width: 140px;">Hành Động</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="tbodyDanhMuc">
                                     <tr th:each="dm : ${listDanhMuc}" th:attr="data-id=${dm.id}">
-                                        <td class="fw-bold text-dark" th:text="'#' + ${dm.id}">#1</td>
+                                        <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${dm.id}">#1</td>
                                         <td class="fw-semibold text-secondary dm-name" th:text="${dm.tenDanhMuc}">Vot Cau Long</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                        <td class="text-center text-nowrap">
+                                            <button type="button" class="btn btn-warning btn-action-square"
                                                     th:attr="data-id=${dm.id},data-ten=${dm.tenDanhMuc}"
-                                                    onclick="moModalSuaDanhMuc(this)">
+                                                    onclick="moModalSuaDanhMuc(this)"
+                                                    title="Sửa">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <form th:action="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" method="POST" style="display:inline;" onsubmit="return confirm('Ban co chac chan muon xoa danh muc nay?');">
+                                            <form th:action="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
                                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt"></i></button>
+                                                <button type="submit" class="btn btn-danger btn-action-square ms-1" title="Xóa"><i class="fas fa-trash-alt"></i></button>
                                             </form>
                                         </td>
                                     </tr>
-                                    <tr th:if="${listDanhMuc.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chua co danh muc nao.</td></tr>
+                                    <tr th:if="${listDanhMuc.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chưa có danh mục nào.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -80,7 +85,7 @@
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-dark text-white py-3">
-                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Them Hang Vot (Thuong Hieu) Moi</h5>
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Hãng Vợt (Thương Hiệu) Mới</h5>
                         </div>
                         <div class="card-body">
                             <form th:action="@{/admin/danh-muc/thuong-hieu/them}" method="POST" id="formThemThuongHieu" novalidate>
@@ -88,40 +93,45 @@
                                 <div th:if="${loiThuongHieu != null}" class="text-danger mb-2 fw-semibold" th:text="${loiThuongHieu}"></div>
                                 <div class="input-group">
                                     <input type="text" id="tenThuongHieu" name="tenThuongHieu" class="form-control" placeholder="VD: Yonex, Li-Ning, Victor..." maxlength="100" autocomplete="off">
-                                    <button class="btn btn-brand text-white px-4" type="submit" id="btnThemThuongHieu"><i class="fas fa-plus me-1"></i>Them Moi</button>
+                                    <button class="btn btn-brand text-white px-4" type="submit" id="btnThemThuongHieu"><i class="fas fa-plus me-1"></i>Thêm Mới</button>
                                 </div>
                                 <div id="errThuongHieu" class="invalid-feedback text-danger mt-1" style="display:none;"></div>
-                                <small class="text-muted">Toi thieu 2 ky tu, toi da 100 ky tu.</small>
+                                <small class="text-muted">Tối thiểu 2 ký tự, tối đa 100 ký tự.</small>
                             </form>
                         </div>
                     </div>
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-copyright me-2 text-brand"></i>Danh Sach Thuong Hieu</h5>
-                            <span class="badge bg-primary" th:text="${listThuongHieu.size()} + ' hang'"></span>
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-copyright me-2 text-brand"></i>Danh Sách Thương Hiệu</h5>
+                            <span class="badge bg-primary" th:text="${listThuongHieu.size()} + ' hãng'"></span>
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
-                                    <tr><th style="width:80px;">ID</th><th>Ten Hang / Thuong Hieu</th><th class="text-center" style="width:140px;">Hanh Dong</th></tr>
+                                    <tr>
+                                        <th style="width: 80px;">ID</th>
+                                        <th>Tên Hãng / Thương Hiệu</th>
+                                        <th class="text-center" style="width: 140px;">Hành Động</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="tbodyThuongHieu">
                                     <tr th:each="th : ${listThuongHieu}" th:attr="data-id=${th.id}">
-                                        <td class="fw-bold text-dark" th:text="'#' + ${th.id}">#1</td>
+                                        <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${th.id}">#1</td>
                                         <td class="fw-semibold text-secondary th-name" th:text="${th.tenThuongHieu}">Yonex</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                        <td class="text-center text-nowrap">
+                                            <button type="button" class="btn btn-warning btn-action-square"
                                                     th:attr="data-id=${th.id},data-ten=${th.tenThuongHieu}"
-                                                    onclick="moModalSuaThuongHieu(this)">
+                                                    onclick="moModalSuaThuongHieu(this)"
+                                                    title="Sửa">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <form th:action="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}" method="POST" style="display:inline;" onsubmit="return confirm('Ban co chac chan muon xoa thuong hieu nay?');">
+                                            <form th:action="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
                                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt"></i></button>
+                                                <button type="submit" class="btn btn-danger btn-action-square ms-1" title="Xóa"><i class="fas fa-trash-alt"></i></button>
                                             </form>
                                         </td>
                                     </tr>
-                                    <tr th:if="${listThuongHieu.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chua co thuong hieu nao.</td></tr>
+                                    <tr th:if="${listThuongHieu.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chưa có thương hiệu nào.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -132,50 +142,50 @@
     </div>
 </div>
 
-<!-- Modal Sua Danh Muc -->
+<!-- Modal Sửa Danh Mục -->
 <div class="modal fade" id="modalSuaDanhMuc" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i>Sua Danh Muc</h5>
+                <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i>Sửa Danh Mục</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formSuaDanhMuc" method="POST" novalidate>
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="modal-body">
-                    <label for="editTenDanhMuc" class="form-label fw-semibold">Ten Danh Muc</label>
+                    <label for="editTenDanhMuc" class="form-label fw-semibold">Tên Danh Mục</label>
                     <input type="text" id="editTenDanhMuc" name="tenDanhMuc" class="form-control" maxlength="100" autocomplete="off" required>
                     <div id="errEditDanhMuc" class="invalid-feedback text-danger mt-1" style="display:none;"></div>
-                    <small class="text-muted">Toi thieu 2 ky tu, toi da 100 ky tu.</small>
+                    <small class="text-muted">Tối thiểu 2 ký tự, tối đa 100 ký tự.</small>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
-                    <button type="submit" class="btn btn-primary" id="btnSuaDanhMuc"><i class="fas fa-save me-1"></i>Luu Thay Doi</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="btnSuaDanhMuc"><i class="fas fa-save me-1"></i>Lưu Thay Đổi</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Modal Sua Thuong Hieu -->
+<!-- Modal Sửa Thương Hiệu -->
 <div class="modal fade" id="modalSuaThuongHieu" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i>Sua Thuong Hieu</h5>
+                <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i>Sửa Thương Hiệu</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formSuaThuongHieu" method="POST" novalidate>
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="modal-body">
-                    <label for="editTenThuongHieu" class="form-label fw-semibold">Ten Thuong Hieu</label>
+                    <label for="editTenThuongHieu" class="form-label fw-semibold">Tên Thương Hiệu</label>
                     <input type="text" id="editTenThuongHieu" name="tenThuongHieu" class="form-control" maxlength="100" autocomplete="off" required>
                     <div id="errEditThuongHieu" class="invalid-feedback text-danger mt-1" style="display:none;"></div>
-                    <small class="text-muted">Toi thieu 2 ky tu, toi da 100 ky tu.</small>
+                    <small class="text-muted">Tối thiểu 2 ký tự, tối đa 100 ký tự.</small>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
-                    <button type="submit" class="btn btn-primary" id="btnSuaThuongHieu"><i class="fas fa-save me-1"></i>Luu Thay Doi</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="btnSuaThuongHieu"><i class="fas fa-save me-1"></i>Lưu Thay Đổi</button>
                 </div>
             </form>
         </div>
@@ -215,10 +225,10 @@ function clearErr(errEl, btnEl) {
     var err = document.getElementById('errDanhMuc');
     function validate() {
         var raw = input.value, val = clientNormalize(raw);
-        if (!val) return showErr(err, btn, 'Ten danh muc khong duoc de trong!');
-        if (val.length < 2) return showErr(err, btn, 'Ten danh muc phai co it nhat 2 ky tu!');
-        if (raw.length > 100) return showErr(err, btn, 'Ten danh muc khong duoc vuot qua 100 ky tu!');
-        if (existingDanhMucNames().indexOf(val) >= 0) return showErr(err, btn, 'Danh muc nay da ton tai!');
+        if (!val) return showErr(err, btn, 'Tên danh mục không được để trống!');
+        if (val.length < 2) return showErr(err, btn, 'Tên danh mục phải có ít nhất 2 ký tự!');
+        if (raw.length > 100) return showErr(err, btn, 'Tên danh mục không được vượt quá 100 ký tự!');
+        if (existingDanhMucNames().indexOf(val) >= 0) return showErr(err, btn, 'Danh mục này đã tồn tại!');
         clearErr(err, btn);
     }
     if (input) {
@@ -235,10 +245,10 @@ function clearErr(errEl, btnEl) {
     var err = document.getElementById('errThuongHieu');
     function validate() {
         var raw = input.value, val = clientNormalize(raw);
-        if (!val) return showErr(err, btn, 'Ten thuong hieu khong duoc de trong!');
-        if (val.length < 2) return showErr(err, btn, 'Ten thuong hieu phai co it nhat 2 ky tu!');
-        if (raw.length > 100) return showErr(err, btn, 'Ten thuong hieu khong duoc vuot qua 100 ky tu!');
-        if (existingThuongHieuNames().indexOf(val) >= 0) return showErr(err, btn, 'Thuong hieu nay da ton tai!');
+        if (!val) return showErr(err, btn, 'Tên thương hiệu không được để trống!');
+        if (val.length < 2) return showErr(err, btn, 'Tên thương hiệu phải có ít nhất 2 ký tự!');
+        if (raw.length > 100) return showErr(err, btn, 'Tên thương hiệu không được vượt quá 100 ký tự!');
+        if (existingThuongHieuNames().indexOf(val) >= 0) return showErr(err, btn, 'Thương hiệu này đã tồn tại!');
         clearErr(err, btn);
     }
     if (input) {
@@ -263,13 +273,13 @@ function moModalSuaDanhMuc(btn) {
     var err = document.getElementById('errEditDanhMuc');
     function validate() {
         var raw = input ? input.value : '', val = clientNormalize(raw);
-        if (!val) return showErr(err, btn, 'Ten danh muc khong duoc de trong!');
-        if (val.length < 2) return showErr(err, btn, 'Ten danh muc phai co it nhat 2 ky tu!');
-        if (raw.length > 100) return showErr(err, btn, 'Ten danh muc khong duoc vuot qua 100 ky tu!');
+        if (!val) return showErr(err, btn, 'Tên danh mục không được để trống!');
+        if (val.length < 2) return showErr(err, btn, 'Tên danh mục phải có ít nhất 2 ký tự!');
+        if (raw.length > 100) return showErr(err, btn, 'Tên danh mục không được vượt quá 100 ký tự!');
         var row = document.querySelector('#tbodyDanhMuc tr[data-id="' + editDanhMucId + '"]');
         var ownName = row ? clientNormalize(row.querySelector('.dm-name').textContent) : '';
         var others = existingDanhMucNames().filter(function(n) { return n !== ownName; });
-        if (others.indexOf(val) >= 0) return showErr(err, btn, 'Danh muc nay da ton tai!');
+        if (others.indexOf(val) >= 0) return showErr(err, btn, 'Danh mục này đã tồn tại!');
         clearErr(err, btn);
     }
     if (input) {
@@ -294,13 +304,13 @@ function moModalSuaThuongHieu(btn) {
     var err = document.getElementById('errEditThuongHieu');
     function validate() {
         var raw = input ? input.value : '', val = clientNormalize(raw);
-        if (!val) return showErr(err, btn, 'Ten thuong hieu khong duoc de trong!');
-        if (val.length < 2) return showErr(err, btn, 'Ten thuong hieu phai co it nhat 2 ky tu!');
-        if (raw.length > 100) return showErr(err, btn, 'Ten thuong hieu khong duoc vuot qua 100 ky tu!');
+        if (!val) return showErr(err, btn, 'Tên thương hiệu không được để trống!');
+        if (val.length < 2) return showErr(err, btn, 'Tên thương hiệu phải có ít nhất 2 ký tự!');
+        if (raw.length > 100) return showErr(err, btn, 'Tên thương hiệu không được vượt quá 100 ký tự!');
         var row = document.querySelector('#tbodyThuongHieu tr[data-id="' + editThuongHieuId + '"]');
         var ownName = row ? clientNormalize(row.querySelector('.th-name').textContent) : '';
         var others = existingThuongHieuNames().filter(function(n) { return n !== ownName; });
-        if (others.indexOf(val) >= 0) return showErr(err, btn, 'Thuong hieu nay da ton tai!');
+        if (others.indexOf(val) >= 0) return showErr(err, btn, 'Thương hiệu này đã tồn tại!');
         clearErr(err, btn);
     }
     if (input) {

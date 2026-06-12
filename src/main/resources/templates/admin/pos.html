@@ -9,8 +9,12 @@
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
     <style>
         html, body {
-            height: 100vh;
-            overflow: hidden;
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .pos-layout-container, .pos-layout-row {
+            height: 100vh !important;
+            overflow: hidden !important;
         }
 
         /* Fix sidebar: luôn cố định, không bị kéo theo scroll của content */
@@ -253,6 +257,10 @@
             flex-direction: column;
             gap: 15px;
         }
+        /* Hide btn-check completely to prevent browser scroll-on-focus jump */
+        .btn-check {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -262,8 +270,8 @@
     <div class="fw-bold">Đang xử lý giao dịch... Vui lòng không tải lại trang.</div>
 </div>
 
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid pos-layout-container">
+    <div class="row pos-layout-row">
         <!-- Sidebar layout dùng chung -->
         <div th:replace="~{admin/layout/sidebar :: sidebar('pos')}"></div>
 
@@ -416,11 +424,11 @@
 
 <!-- Payment Confirmation Modal -->
 <div class="modal fade" id="paymentConfirmModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title fw-bold"><i class="fas fa-wallet me-2"></i> Xác Nhận Thanh Toán</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="closePaymentConfirmModal()"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body py-4">
                 <div class="bg-light rounded-3 p-3 mb-4 border text-center">
@@ -498,7 +506,7 @@
                 </div>
             </div>
             <div class="modal-footer border-top-0 d-flex gap-2">
-                <button type="button" class="btn btn-secondary flex-fill py-2" onclick="closePaymentConfirmModal()">
+                <button type="button" class="btn btn-secondary flex-fill py-2" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i> Hủy thanh toán
                 </button>
                 <button type="button" id="btnConfirmPayment" class="btn btn-primary flex-fill py-2 fw-bold" onclick="executeCheckout()">
@@ -523,8 +531,8 @@
                 <p class="text-muted small mb-0">Bạn có muốn mở trang in hóa đơn nhiệt cho khách hàng không?</p>
             </div>
             <div class="modal-footer justify-content-center border-top-0 pt-0">
-                <a href="javascript:void(0)" id="btnPrintConfirmLink" target="_blank" class="btn btn-success px-4" onclick="closePrintModal()"><i class="fas fa-print"></i> Có, Mở Trang In</a>
-                <button type="button" class="btn btn-secondary px-4" onclick="closePrintModal()"><i class="fas fa-times"></i> Không cần</button>
+                <a href="javascript:void(0)" id="btnPrintConfirmLink" target="_blank" class="btn btn-success px-4" data-bs-dismiss="modal"><i class="fas fa-print"></i> Có, Mở Trang In</a>
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal"><i class="fas fa-times"></i> Không cần</button>
             </div>
         </div>
     </div>
@@ -570,6 +578,7 @@
 
     // Load initial list from backend Thymeleaf data
     document.addEventListener("DOMContentLoaded", function() {
+        window.scrollTo(0, 0);
         refreshProducts();
         setupCustomerAutocomplete();
         selectGuestCustomer();
@@ -940,15 +949,19 @@
         }
 
         // Show modal
-        if (!confirmModal) {
-            confirmModal = new bootstrap.Modal(document.getElementById('paymentConfirmModal'));
+        const modalEl = document.getElementById('paymentConfirmModal');
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalEl);
         }
-        confirmModal.show();
+        modal.show();
     }
 
     function closePaymentConfirmModal() {
-        if (confirmModal) {
-            confirmModal.hide();
+        const modalEl = document.getElementById('paymentConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
         }
     }
 
