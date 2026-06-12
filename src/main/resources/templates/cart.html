@@ -108,7 +108,7 @@
 											            <div class="input-counter" th:if="${!khongHopLe}">
 											                <span class="input-counter__minus fas fa-minus"></span>
 											                <input class="js-cart-qty-input input-counter__text input-counter--text-primary-style" 
-											                       type="number" 
+											                       type="text" 
 											                       th:value="${item.soLuong}" 
 											                       th:attr="data-item-id=${item.id}, data-max=${item.sanPhamChiTiet.soLuongTon}"
 											                       min="1"

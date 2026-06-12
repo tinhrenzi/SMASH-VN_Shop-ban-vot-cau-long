@@ -7,10 +7,10 @@
 
     <nav th:fragment="sidebar(activeTab)" class="col-md-2 d-none d-md-block sidebar">
         <!-- Logo khu vực quản trị thiết kế theo style trang chủ -->
-        <div class="sidebar-logo text-center py-4 mb-4 border-bottom border-secondary border-opacity-25">
-            <h3 class="fw-extrabold text-uppercase m-0 tracking-wider font-sans" style="color: #ff4500; font-family: 'Open Sans', sans-serif; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                <i class="fa-solid fa-table-tennis-paddle-ball me-2"></i>SMASH VN <!--Sửa ở đây-->>
-            </h3>
+        <div class="sidebar-logo text-center py-3 mb-4 border-bottom border-secondary border-opacity-25">
+            <a th:href="@{/admin/all}">
+                <img th:src="@{/images/logo/logo-footer.png}" alt="SMASH VN Logo" style="max-height: 75px; display: block; margin: 0 auto 10px auto;">
+            </a>
             <span class="text-xs text-uppercase tracking-widest text-muted" style="font-size: 0.75rem; letter-spacing: 0.15em; color: #adb5bd;">Khu Vực Admin</span>
         </div>
         

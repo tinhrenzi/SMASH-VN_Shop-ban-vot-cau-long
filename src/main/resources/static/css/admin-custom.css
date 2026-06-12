@@ -120,8 +120,7 @@ body {
 }
 
 .table thead th {
-    background-color: var(--brand-primary);
-    color: #ffffff;
+    background-color: var(--brand-card-bg);
     font-weight: 700;
     font-size: 0.88rem;
     text-transform: uppercase;
@@ -517,3 +516,92 @@ body {
 .toast-close:hover {
     color: var(--brand-primary);
 }
+
+/* Seamless Tables inside Cards */
+.card .card-body.p-0 .table-responsive,
+.card > .table-responsive {
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.card .card-body.p-0 .table,
+.card > .table {
+    border-radius: 0 !important;
+    border: none !important;
+}
+
+/* Subtle separator between card header and table header */
+.card-header + .card-body.p-0 .table-responsive thead th,
+.card-header + .table-responsive thead th {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Custom Tag Badges for Category and Brand */
+.tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f1f3f5;
+    border: 1.5px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-transform: none;
+    line-height: 1.2;
+}
+
+.tag-badge i {
+    font-size: 0.72rem;
+    color: #6c757d;
+}
+
+.tag-badge:hover {
+    background-color: #e9ecef;
+    color: var(--brand-primary);
+}
+
+/* Compact Square Action Buttons */
+.btn-action-square {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    border: none !important;
+    transition: all 0.2s ease;
+}
+
+.btn-action-square i {
+    margin: 0 !important;
+    font-size: 13px !important;
+}
+
+/* Compact Filter Bar */
+.product-filter-bar {
+    background-color: #fafbfc;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(21, 23, 28, 0.06);
+}
+
+.product-filter-bar .form-control-sm,
+.product-filter-bar .form-select-sm {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    border: 1.5px solid rgba(21, 23, 28, 0.08);
+}
+
+.product-filter-bar .form-control-sm:focus,
+.product-filter-bar .form-select-sm:focus {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.12);
+}
+
