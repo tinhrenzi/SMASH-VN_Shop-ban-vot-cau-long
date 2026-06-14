@@ -10,7 +10,7 @@ import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TrangThaiGioHangRepository;
-import com.smashvn.shop.service.AdminNhanVienService;
+import com.smashvn.shop.service.admin.AdminNhanVienService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;

@@ -49,11 +49,11 @@ import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
-import com.smashvn.shop.service.AdminKhuyenMaiService;
-import com.smashvn.shop.service.AdminPosService;
-import com.smashvn.shop.service.AdminSanPhamService;
-import com.smashvn.shop.service.AdminShippingService;
-import com.smashvn.shop.service.OrderViewService;
+import com.smashvn.shop.service.admin.AdminKhuyenMaiService;
+import com.smashvn.shop.service.admin.AdminPosService;
+import com.smashvn.shop.service.admin.AdminSanPhamService;
+import com.smashvn.shop.service.admin.AdminShippingService;
+import com.smashvn.shop.service.order.OrderViewService;
 
 @SpringBootTest
 @Transactional
