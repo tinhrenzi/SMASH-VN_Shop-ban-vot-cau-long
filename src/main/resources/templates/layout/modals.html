@@ -63,21 +63,17 @@
 
                                 <!-- Giá: giá gốc gạch ngang + giá sale + badge % -->
                                 <div class="u-s-m-b-12" th:if="${!listChiTiet.isEmpty()}">
-                                    <div class="pd-detail__inline" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-                                        <!-- Có giảm giá -->
-                                        <th:block th:if="${spQuickLook.activeGiamGiaPhanTram > 0}">
-                                            <span class="pd-detail__price" style="color:#ff4500; font-size:24px; font-weight:700;"
-                                                  th:text="${#numbers.formatDecimal(spQuickLook.getGiaSauGiam(listChiTiet[0].giaBan), 0, 'COMMA', 0, 'POINT') + ' đ'}">Giá sale</span>
-                                            <span style="background:#ffeee8; color:#ff4500; font-size:12px; font-weight:700; padding:3px 8px; border-radius:12px;"
-                                                  th:text="'(' + ${spQuickLook.activeGiamGiaPhanTram} + '% OFF)'">% OFF</span>
-                                            <span style="color:#aaa; font-size:14px; text-decoration:line-through;"
-                                                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT') + ' đ'}">Giá gốc</span>
-                                        </th:block>
-                                        <!-- Không giảm giá -->
-                                        <th:block th:if="${spQuickLook.activeGiamGiaPhanTram == 0}">
-                                            <span class="pd-detail__price" style="color:#ff4500; font-size:24px; font-weight:700;"
-                                                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT') + ' đ'}">Giá tiền</span>
-                                        </th:block>
+                                    <div class="pd-detail__inline" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;" th:with="percent=${spQuickLook.getActiveGiamGiaPhanTram()}">
+                                        <span class="pd-detail__price js-display-price" style="color:#ff4500; font-size:24px; font-weight:700;"
+                                              th:text="${#numbers.formatDecimal(percent > 0 ? spQuickLook.getGiaSauGiam(listChiTiet[0].giaBan) : listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT') + ' đ'}">Giá tiền</span>
+                                        
+                                        <span class="pd-detail__del js-display-original-price" 
+                                              th:style="${percent > 0 ? 'color:#aaa; font-size:14px; text-decoration:line-through; display:inline-block;' : 'display:none;'}"
+                                              th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT') + ' đ'}">Giá gốc</span>
+                                              
+                                        <span class="pd-detail__discount js-display-discount-badge" 
+                                              th:style="${percent > 0 ? 'background:#ffeee8; color:#ff4500; font-size:12px; font-weight:700; padding:3px 8px; border-radius:12px; display:inline-block;' : 'display:none;'}"
+                                              th:text="'(' + ${percent} + '% OFF)'">% OFF</span>
                                     </div>
                                 </div>
 

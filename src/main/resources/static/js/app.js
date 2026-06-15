@@ -660,8 +660,9 @@ function checkAndApplyVariant(container) {
     const inputId = container.querySelector('.js-variant-id');
     const quantityInput = container.querySelector('.js-quantity-input');
     // Tìm phần tử hiển thị giá và tồn kho bên trong container trước để tránh trùng lặp giữa trang chi tiết và quick-look modal
-    const priceDisplay = container.querySelector('.pd-detail__price') || document.getElementById('js-display-price');
-    
+    const priceDisplay = container.querySelector('.js-display-price') || container.querySelector('.pd-detail__price') || document.getElementById('js-display-price');
+    const originalPriceDisplay = container.querySelector('.js-display-original-price') || container.querySelector('.pd-detail__del');
+    const discountBadgeDisplay = container.querySelector('.js-display-discount-badge') || container.querySelector('.pd-detail__discount');
     // Panel tồn kho riêng
     const stockInfoPanel = container.querySelector('.js-variant-stock-info') || document.getElementById('js-variant-stock-info');
     const stockCountEl = container.querySelector('.js-variant-stock-count') || document.getElementById('js-variant-stock-count');
@@ -791,7 +792,31 @@ function checkAndApplyVariant(container) {
         }
 
         if (quantityInput) quantityInput.setAttribute('data-max', soLuong);
-        if (priceDisplay) priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+        if (priceDisplay) {
+            if (matchedVariant.phanTramGiam > 0) {
+                priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaSauGiam) + " đ";
+                if (originalPriceDisplay) {
+                    originalPriceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+                    originalPriceDisplay.style.display = 'inline-block';
+                }
+                if (discountBadgeDisplay) {
+                    if (container.id === 'quick-look-modal-container') {
+                        discountBadgeDisplay.innerText = '(' + matchedVariant.phanTramGiam + '% OFF)';
+                    } else {
+                        discountBadgeDisplay.innerText = '(Giảm ' + matchedVariant.phanTramGiam + '%)';
+                    }
+                    discountBadgeDisplay.style.display = 'inline-block';
+                }
+            } else {
+                priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+                if (originalPriceDisplay) {
+                    originalPriceDisplay.style.display = 'none';
+                }
+                if (discountBadgeDisplay) {
+                    discountBadgeDisplay.style.display = 'none';
+                }
+            }
+        }
 
         // --- CẬP NHẬT HÌNH ẢNH (TÍCH HỢP CẢ QUICK LOOK & DETAIL) ---
         // Tìm ngược lên thẻ bọc ngoài cùng (div class="row") để qua cột trái lấy ảnh

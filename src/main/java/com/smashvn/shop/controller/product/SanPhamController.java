@@ -50,12 +50,15 @@ public class SanPhamController {
 
         // --- CODE FIX LỖI BẮT ĐẦU TỪ ĐÂY ---
         // 3. Tạo một list "gọn nhẹ" (Map) chỉ chứa đúng các thông tin JS cần thiết để tránh lỗi đệ quy
+        int phanTram = sanPham.getActiveGiamGiaPhanTram();
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
             map.put("giaBan", ct.getGiaBan());
+            map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));
+            map.put("phanTramGiam", phanTram);
             map.put("soLuongTon", ct.getSoLuongTon());
             map.put("hinhAnhSanPham", ct.getHinhAnhSanPham());
             return map;
@@ -96,12 +99,15 @@ public class SanPhamController {
         // THÊM 3 DÒNG NÀY ĐỂ MODAL CÓ DỮ LIỆU BIẾN THỂ
         java.util.Set<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).collect(java.util.stream.Collectors.toSet());
         java.util.Set<String> listKichThuoc = danhSachChiTiet.stream().map(SanPhamChiTiet::getTrongLuong).collect(java.util.stream.Collectors.toSet());
+        int phanTram = sanPham.getActiveGiamGiaPhanTram();
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
             map.put("giaBan", ct.getGiaBan());
+            map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));
+            map.put("phanTramGiam", phanTram);
             map.put("soLuongTon", ct.getSoLuongTon());
             map.put("hinhAnhSanPham", ct.getHinhAnhSanPham());
             return map;
