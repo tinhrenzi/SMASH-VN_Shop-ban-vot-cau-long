@@ -14,12 +14,12 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar layout dùng chung -->
-        <div th:replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
+        <div data-th-replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
 
         <!-- Main Content -->
         <main class="col-md-10 main-content">
             <!-- Header layout dùng chung -->
-            <div th:replace="~{admin/layout/header :: header}"></div>
+            <div data-th-replace="~{admin/layout/header :: header}"></div>
 
             <!-- Page Title Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -94,18 +94,18 @@
                                     <!-- Ngày bắt đầu -->
                                     <div class="col-md-6">
                                         <label for="ngayBatDau" class="form-label fw-bold">Hiệu Lực Từ Ngày <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${#temporals.format(voucher.ngayBatDau, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${voucher.ngayBatDau != null ? #temporals.format(voucher.ngayBatDau, 'yyyy-MM-dd') + 'T' + #temporals.format(voucher.ngayBatDau, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <!-- Ngày kết thúc -->
                                     <div class="col-md-6">
                                         <label for="ngayKetThuc" class="form-label fw-bold">Hết Hạn Vào Ngày <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${#temporals.format(voucher.ngayKetThuc, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${voucher.ngayKetThuc != null ? #temporals.format(voucher.ngayKetThuc, 'yyyy-MM-dd') + 'T' + #temporals.format(voucher.ngayKetThuc, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">
                                         <a th:href="@{/admin/khuyen-mai}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Hủy bỏ</a>
-                                        <button type="submit" class="btn btn-brand text-white"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
+                                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
                                     </div>
                                 </div>
                             </form>
