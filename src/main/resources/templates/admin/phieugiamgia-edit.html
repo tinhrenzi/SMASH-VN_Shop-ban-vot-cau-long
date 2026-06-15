@@ -119,14 +119,97 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-document.getElementById('voucherForm').addEventListener('submit', function(e) {
-    const giaTri = parseFloat(document.getElementById('giaTri').value);
-    const donVi = document.getElementById('donVi').value;
+document.addEventListener('DOMContentLoaded', function() {
+    const loaiGiamGiaSelect = document.getElementById('loaiGiamGia');
+    const donViSelect = document.getElementById('donVi');
+    const maPhieuInput = document.getElementById('maPhieu');
+    const voucherForm = document.getElementById('voucherForm');
 
-    if (donVi === '%' && giaTri > 100) {
-        e.preventDefault();
-        showToast('Nếu áp dụng đơn vị giảm %, giá trị không được phép lớn hơn 100%!', 'warning');
-    }
+    // Auto-uppercase for voucher code and restrict characters
+    maPhieuInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+    });
+
+    // Auto-sync Voucher Type and Unit
+    loaiGiamGiaSelect.addEventListener('change', function() {
+        if (this.value === 'Giảm trực tiếp') {
+            donViSelect.value = 'VND';
+        } else if (this.value === 'Giảm phần trăm') {
+            donViSelect.value = '%';
+        }
+    });
+
+    donViSelect.addEventListener('change', function() {
+        if (this.value === 'VND') {
+            loaiGiamGiaSelect.value = 'Giảm trực tiếp';
+        } else if (this.value === '%') {
+            loaiGiamGiaSelect.value = 'Giảm phần trăm';
+        }
+    });
+
+    // Form submit validation
+    voucherForm.addEventListener('submit', function(e) {
+        const maPhieu = maPhieuInput.value.trim();
+        const giaTri = parseFloat(document.getElementById('giaTri').value);
+        const donVi = donViSelect.value;
+        const soLuongConLai = parseInt(document.getElementById('soLuongConLai').value);
+        const giaTriDonHangToiThieu = parseFloat(document.getElementById('giaTriDonHangToiThieu').value);
+        const ngayBatDauStr = document.getElementById('ngayBatDau').value;
+        const ngayKetThucStr = document.getElementById('ngayKetThuc').value;
+
+        // Code format validation
+        if (!/^[A-Z0-9_]{2,50}$/.test(maPhieu)) {
+            e.preventDefault();
+            alert('Mã phiếu chỉ được chứa chữ cái in hoa, số và dấu gạch dưới (độ dài từ 2 đến 50 ký tự)!');
+            maPhieuInput.focus();
+            return;
+        }
+
+        // Value validations
+        if (isNaN(giaTri) || giaTri <= 0) {
+            e.preventDefault();
+            alert('Giá trị giảm phải lớn hơn 0!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+
+        if (donVi === '%' && giaTri > 100) {
+            e.preventDefault();
+            alert('Nếu áp dụng đơn vị giảm %, giá trị không được lớn hơn 100%!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+
+        if (isNaN(soLuongConLai) || soLuongConLai < 0) {
+            e.preventDefault();
+            alert('Số lượng không được âm!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
+
+        if (isNaN(giaTriDonHangToiThieu) || giaTriDonHangToiThieu < 0) {
+            e.preventDefault();
+            alert('Hạn mức áp dụng (giá trị đơn hàng tối thiểu) không được âm!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+
+        // Date validation
+        if (!ngayBatDauStr || !ngayKetThucStr) {
+            e.preventDefault();
+            alert('Vui lòng chọn đầy đủ thời gian hiệu lực và ngày hết hạn!');
+            return;
+        }
+
+        const ngayBatDau = new Date(ngayBatDauStr);
+        const ngayKetThuc = new Date(ngayKetThucStr);
+        if (ngayBatDau >= ngayKetThuc) {
+            e.preventDefault();
+            alert('Ngày hiệu lực (bắt đầu) phải xảy ra trước ngày hết hạn (kết thúc)!');
+            document.getElementById('ngayBatDau').focus();
+            return;
+        }
+    });
 });
 </script>
 </body>

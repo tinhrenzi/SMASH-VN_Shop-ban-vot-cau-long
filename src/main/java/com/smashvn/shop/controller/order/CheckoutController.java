@@ -23,6 +23,10 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.user.UserAddressService;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,7 @@ public class CheckoutController {
     private final UserAddressService userAddressService;
     private final SepayConfig sepayConfig;
     private final com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping({"/checkout", "/checkout.html"})
@@ -132,6 +137,7 @@ public class CheckoutController {
             @RequestParam(value = "ghnToWardCode", required = false) String ghnToWardCode,
             @RequestParam(value = "ghnProvinceId", required = false) Integer ghnProvinceId,
             @RequestParam(value = "idDiaChiLuu", required = false) Integer idDiaChiLuu,
+            @RequestParam(value = "voucherCode", required = false) String voucherCode,
             HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
@@ -183,7 +189,7 @@ public class CheckoutController {
         }
 
         try {
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu);
+            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
             response.put("trangThai", "ok");
             response.put("orderId", hd.getId());
             response.put("paymentMethod", hd.getPaymentMethod());
@@ -197,5 +203,106 @@ public class CheckoutController {
             response.put("message", e.getMessage());
             return ResponseEntity.ok(response);
         }
+    }
+
+    @PostMapping("/api/voucher/apply")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> applyVoucher(
+            @RequestParam("voucherCode") String voucherCode,
+            HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) {
+            response.put("trangThai", "chuadangnhap");
+            response.put("message", "Vui lòng đăng nhập để sử dụng mã giảm giá.");
+            return ResponseEntity.ok(response);
+        }
+
+        if (voucherCode == null || voucherCode.trim().isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Vui lòng nhập mã giảm giá.");
+            return ResponseEntity.ok(response);
+        }
+
+        String uppercaseCode = voucherCode.trim().toUpperCase();
+
+        // Check active cart items to compute server-side tamTinh
+        List<GioHangChiTiet> cartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+        if (cartItems.isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Giỏ hàng trống, không thể áp dụng mã giảm giá.");
+            return ResponseEntity.ok(response);
+        }
+
+        BigDecimal tamTinh = BigDecimal.ZERO;
+        for (GioHangChiTiet item : cartItems) {
+            if (item.getSanPhamChiTiet() != null) {
+                tamTinh = tamTinh.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            }
+        }
+
+        Optional<PhieuGiamGia> optVoucher = phieuGiamGiaRepository.findByMaPhieu(uppercaseCode);
+        if (optVoucher.isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Mã giảm giá '" + uppercaseCode + "' không tồn tại.");
+            return ResponseEntity.ok(response);
+        }
+
+        PhieuGiamGia voucher = optVoucher.get();
+
+        if (!voucher.getActive()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Mã giảm giá này đã ngưng hoạt động.");
+            return ResponseEntity.ok(response);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(voucher.getNgayBatDau())) {
+            response.put("trangThai", "loi");
+            response.put("message", "Mã giảm giá chưa đến thời gian áp dụng.");
+            return ResponseEntity.ok(response);
+        }
+
+        if (now.isAfter(voucher.getNgayKetThuc())) {
+            response.put("trangThai", "loi");
+            response.put("message", "Mã giảm giá đã hết hạn sử dụng.");
+            return ResponseEntity.ok(response);
+        }
+
+        if (voucher.getSoLuongConLai() <= 0) {
+            response.put("trangThai", "loi");
+            response.put("message", "Mã giảm giá đã hết lượt sử dụng.");
+            return ResponseEntity.ok(response);
+        }
+
+        if (tamTinh.compareTo(voucher.getGiaTriDonHangToiThieu()) < 0) {
+            java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+            response.put("trangThai", "loi");
+            response.put("message", "Hạn mức tối thiểu để sử dụng mã này là " + df.format(voucher.getGiaTriDonHangToiThieu()) + " đ (Đơn của bạn: " + df.format(tamTinh) + " đ).");
+            return ResponseEntity.ok(response);
+        }
+
+        BigDecimal giamGia = BigDecimal.ZERO;
+        if ("%".equals(voucher.getDonVi()) || "Giảm phần trăm".equalsIgnoreCase(voucher.getLoaiGiamGia())) {
+            giamGia = tamTinh.multiply(voucher.getGiaTri()).divide(new BigDecimal("100"));
+        } else {
+            giamGia = voucher.getGiaTri();
+        }
+
+        if (giamGia.compareTo(tamTinh) > 0) {
+            giamGia = tamTinh;
+        }
+
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        response.put("trangThai", "ok");
+        response.put("maPhieu", voucher.getMaPhieu());
+        response.put("giamGia", giamGia);
+        response.put("donVi", voucher.getDonVi());
+        response.put("giaTri", voucher.getGiaTri());
+        response.put("giamGiaFormatted", df.format(giamGia) + " đ");
+        response.put("message", "Áp dụng thành công: Giảm " + df.format(voucher.getGiaTri()) + ("%".equals(voucher.getDonVi()) ? "%" : " đ"));
+
+        return ResponseEntity.ok(response);
     }
 }

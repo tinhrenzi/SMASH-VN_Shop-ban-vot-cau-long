@@ -1,4 +1,5 @@
 package com.smashvn.shop.controller.order;
+import java.time.LocalDateTime;
 import com.smashvn.shop.dto.payment.ZaloPayCallbackDTO;
 import com.smashvn.shop.dto.payment.ZaloPayCreateOrderRequestDTO;
 
@@ -73,7 +74,13 @@ public class CheckoutValidationIntegrationTest {
     private SoDiaChiRepository soDiaChiRepository;
 
     @Autowired
+    private PhieuGiamGiaRepository phieuGiamGiaRepository;
+
+    @Autowired
     private org.springframework.cache.CacheManager cacheManager;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private MockMvc mockMvc;
     private TaiKhoan testUser;
@@ -906,5 +913,152 @@ public class CheckoutValidationIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("loi"))
                 .andExpect(jsonPath("$.message").value("Địa chỉ đã lưu của bạn chưa được chuẩn hóa địa chỉ GHN. Vui lòng cập nhật sổ địa chỉ hoặc chọn \"Nhập địa chỉ mới\"."));
+    }
+
+    @Test
+    void testApplyVoucherValidAndInvalid() throws Exception {
+        NhanVien nv = nhanVienRepository.findAll().get(0);
+
+        // 1. Create a valid voucher: Giảm phần trăm, 10%
+        PhieuGiamGia validVoucher = new PhieuGiamGia();
+        validVoucher.setMaPhieu("TEST10");
+        validVoucher.setGiaTri(new BigDecimal("10"));
+        validVoucher.setDonVi("%");
+        validVoucher.setNgayBatDau(LocalDateTime.now().minusDays(1));
+        validVoucher.setNgayKetThuc(LocalDateTime.now().plusDays(1));
+        validVoucher.setSoLuongConLai(5);
+        validVoucher.setLoaiGiamGia("Giảm phần trăm");
+        validVoucher.setNhanVien(nv);
+        validVoucher.setActive(true);
+        validVoucher.setGiaTriDonHangToiThieu(new BigDecimal("50000"));
+        phieuGiamGiaRepository.save(validVoucher);
+
+        // 2. Create an expired voucher
+        PhieuGiamGia expiredVoucher = new PhieuGiamGia();
+        expiredVoucher.setMaPhieu("TESTEXPIRED");
+        expiredVoucher.setGiaTri(new BigDecimal("50000"));
+        expiredVoucher.setDonVi("VND");
+        expiredVoucher.setNgayBatDau(LocalDateTime.now().minusDays(5));
+        expiredVoucher.setNgayKetThuc(LocalDateTime.now().minusDays(1));
+        expiredVoucher.setSoLuongConLai(5);
+        expiredVoucher.setLoaiGiamGia("Giảm trực tiếp");
+        expiredVoucher.setNhanVien(nv);
+        expiredVoucher.setActive(true);
+        expiredVoucher.setGiaTriDonHangToiThieu(new BigDecimal("50000"));
+        phieuGiamGiaRepository.save(expiredVoucher);
+
+        // 3. Create an inactive voucher
+        PhieuGiamGia inactiveVoucher = new PhieuGiamGia();
+        inactiveVoucher.setMaPhieu("TESTINACTIVE");
+        inactiveVoucher.setGiaTri(new BigDecimal("15"));
+        inactiveVoucher.setDonVi("%");
+        inactiveVoucher.setNgayBatDau(LocalDateTime.now().minusDays(1));
+        inactiveVoucher.setNgayKetThuc(LocalDateTime.now().plusDays(1));
+        inactiveVoucher.setSoLuongConLai(5);
+        inactiveVoucher.setLoaiGiamGia("Giảm phần trăm");
+        inactiveVoucher.setNhanVien(nv);
+        inactiveVoucher.setActive(false);
+        inactiveVoucher.setGiaTriDonHangToiThieu(new BigDecimal("50000"));
+        phieuGiamGiaRepository.save(inactiveVoucher);
+
+        // 4. Create a voucher with minimum limit higher than cart value (cart value is 2M)
+        PhieuGiamGia highMinVoucher = new PhieuGiamGia();
+        highMinVoucher.setMaPhieu("TESTHIGH");
+        highMinVoucher.setGiaTri(new BigDecimal("100000"));
+        highMinVoucher.setDonVi("VND");
+        highMinVoucher.setNgayBatDau(LocalDateTime.now().minusDays(1));
+        highMinVoucher.setNgayKetThuc(LocalDateTime.now().plusDays(1));
+        highMinVoucher.setSoLuongConLai(5);
+        highMinVoucher.setLoaiGiamGia("Giảm trực tiếp");
+        highMinVoucher.setNhanVien(nv);
+        highMinVoucher.setActive(true);
+        highMinVoucher.setGiaTriDonHangToiThieu(new BigDecimal("3000000")); // 3M
+        phieuGiamGiaRepository.save(highMinVoucher);
+
+        // Test valid voucher apply
+        mockMvc.perform(post("/api/voucher/apply")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("voucherCode", "TEST10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andExpect(jsonPath("$.maPhieu").value("TEST10"))
+                .andExpect(jsonPath("$.giamGia").value(200000.0));
+
+        // Test expired voucher apply
+        mockMvc.perform(post("/api/voucher/apply")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("voucherCode", "TESTEXPIRED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Mã giảm giá đã hết hạn sử dụng."));
+
+        // Test inactive voucher apply
+        mockMvc.perform(post("/api/voucher/apply")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("voucherCode", "TESTINACTIVE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Mã giảm giá này đã ngưng hoạt động."));
+
+        // Test min order limit violation
+        mockMvc.perform(post("/api/voucher/apply")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("voucherCode", "TESTHIGH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Hạn mức tối thiểu để sử dụng mã này là 3,000,000 đ (Đơn của bạn: 2,000,000 đ)."));
+    }
+
+    @Test
+    void testSubmitCheckoutWithVoucher() throws Exception {
+        NhanVien nv = nhanVienRepository.findAll().get(0);
+
+        PhieuGiamGia validVoucher = new PhieuGiamGia();
+        validVoucher.setMaPhieu("TESTPROMO");
+        validVoucher.setGiaTri(new BigDecimal("50000"));
+        validVoucher.setDonVi("VND");
+        validVoucher.setNgayBatDau(LocalDateTime.now().minusDays(1));
+        validVoucher.setNgayKetThuc(LocalDateTime.now().plusDays(1));
+        validVoucher.setSoLuongConLai(10);
+        validVoucher.setLoaiGiamGia("Giảm trực tiếp");
+        validVoucher.setNhanVien(nv);
+        validVoucher.setActive(true);
+        validVoucher.setGiaTriDonHangToiThieu(new BigDecimal("100000"));
+        validVoucher = phieuGiamGiaRepository.save(validVoucher);
+
+        // Submit checkout with voucher code
+        MvcResult result = mockMvc.perform(post("/checkout/submit")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .requestAttr("_csrf", csrfToken)
+                        .param("hoTenNhan", "Nguyễn Văn A")
+                        .param("sdtNhan", "0912345678")
+                        .param("diaChiNhan", "Hà Nội")
+                        .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                        .param("phuongThucThanhToan", "COD")
+                        .param("ghnToDistrictId", "1454")
+                        .param("ghnProvinceId", "201")
+                        .param("voucherCode", "TESTPROMO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andReturn();
+
+        String responseString = result.getResponse().getContentAsString();
+        Map<String, Object> respMap = objectMapper.readValue(responseString, Map.class);
+        Integer orderId = (Integer) respMap.get("orderId");
+
+        // Verify invoice was saved with correct voucher and amounts
+        HoaDon savedOrder = hoaDonRepository.findById(orderId).orElse(null);
+        assertNotNull(savedOrder);
+        assertNotNull(savedOrder.getPhieuGiamGia());
+        assertEquals("TESTPROMO", savedOrder.getPhieuGiamGia().getMaPhieu());
+
+        // Verify remaining quantity has decreased
+        PhieuGiamGia updatedVoucher = phieuGiamGiaRepository.findById(validVoucher.getId()).orElse(null);
+        assertNotNull(updatedVoucher);
+        assertEquals(9, updatedVoucher.getSoLuongConLai());
     }
 }

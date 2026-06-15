@@ -62,7 +62,7 @@
 									            </li>
 									            
 									            <!-- Chuyển vai trò nếu có nhiều vai trò -->
-									            <th:block th:with="roleCount=${(session.laKhachHang ? 1 : 0) + (session.laNhanVien ? 1 : 0) + (session.laQuanLy ? 1 : 0)}">
+									            <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">
 									                <th:block th:if="${roleCount > 1}">
 									                    <li><hr style="margin: 5px 0; border-top: 1px solid #ddd;"></li>
 									                    <li style="padding: 3px 15px; font-weight: bold; font-size: 11px; color: #888; text-transform: uppercase;">Đăng nhập với vai trò:</li>

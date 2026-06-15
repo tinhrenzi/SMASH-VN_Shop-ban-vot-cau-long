@@ -385,8 +385,8 @@ public class AdminKhuyenMaiService {
         if (donVi == null || donVi.trim().isEmpty()) {
             throw new RuntimeException("Đơn vị giảm giá không được để trống!");
         }
-        if (!"%".equals(donVi) && !"VNĐ".equals(donVi)) {
-            throw new RuntimeException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VNĐ'.");
+        if (!"%".equals(donVi) && !"VND".equals(donVi)) {
+            throw new RuntimeException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VND'.");
         }
         if ("%".equals(donVi) && giaTri.compareTo(new BigDecimal("100")) > 0) {
             throw new RuntimeException("Nếu giảm theo phần trăm, giá trị không được vượt quá 100%!");

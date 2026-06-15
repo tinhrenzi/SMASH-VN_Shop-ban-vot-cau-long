@@ -227,10 +227,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form validation before submit
     document.getElementById('campaignForm').addEventListener('submit', function(e) {
+        const tenChienDich = document.getElementById('tenChienDich').value.trim();
+        const phanTramGiam = parseInt(document.getElementById('phanTramGiam').value);
+        const ngayBatDauStr = document.getElementById('ngayBatDau').value;
+        const ngayKetThucStr = document.getElementById('ngayKetThuc').value;
         const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
+
+        if (tenChienDich.length < 2 || tenChienDich.length > 100) {
+            e.preventDefault();
+            alert('Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!');
+            document.getElementById('tenChienDich').focus();
+            return;
+        }
+
+        if (isNaN(phanTramGiam) || phanTramGiam < 1 || phanTramGiam > 100) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+
+        if (!ngayBatDauStr || !ngayKetThucStr) {
+            e.preventDefault();
+            alert('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc!');
+            return;
+        }
+
+        const ngayBatDau = new Date(ngayBatDauStr);
+        const ngayKetThuc = new Date(ngayKetThucStr);
+        if (ngayBatDau >= ngayKetThuc) {
+            e.preventDefault();
+            alert('Ngày bắt đầu phải xảy ra trước ngày kết thúc!');
+            document.getElementById('ngayBatDau').focus();
+            return;
+        }
+
         if (checkedCount === 0) {
             e.preventDefault();
-            showToast('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!', 'warning');
+            alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!');
+            return;
         }
     });
 });

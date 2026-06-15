@@ -380,11 +380,25 @@
                                             </table>
                                         </div>
 
+                                        <!-- Voucher Code Section -->
+                                        <div class="u-s-m-b-20 pt-3 border-top">
+                                            <label class="gl-label" for="voucher-code-input">MÃ GIẢM GIÁ (VOUCHER)</label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <input class="input-text input-text--primary-style" type="text" id="voucher-code-input" placeholder="Nhập mã giảm giá..." style="text-transform: uppercase; margin-bottom: 0; flex-grow: 1;">
+                                                <button class="btn btn--e-secondary" type="button" id="btn-apply-voucher" style="padding: 12px 20px; font-weight: 700; border-radius: 6px; white-space: nowrap; font-size: 13px;">Áp dụng</button>
+                                            </div>
+                                            <div id="voucher-status-msg" style="font-size: 13px; margin-top: 5px; font-weight: 600; display: none;"></div>
+                                        </div>
+
                                         <table class="f-cart__table">
                                             <tbody>
                                                 <tr>
                                                     <td>TẠM TÍNH</td>
                                                     <td class="text-right" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                </tr>
+                                                <tr id="voucher-discount-row" style="display: none;">
+                                                    <td>GIẢM GIÁ (VOUCHER)</td>
+                                                    <td class="text-right text-danger js-voucher-discount">-0 đ</td>
                                                 </tr>
                                                 <tr>
                                                     <td>VẬN CHUYỂN</td>
@@ -724,6 +738,74 @@
                 $('#phuongThucThanhToan').val(pMethod);
             });
 
+            // Voucher logic
+            let appliedVoucherCode = null;
+            let voucherDiscount = 0;
+            let currentShippingFee = 0;
+
+            function updateUITotal() {
+                const totalAmount = Math.max(0, baseTongTien - voucherDiscount) + currentShippingFee;
+                const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
+                $('.js-checkout-total').text(formattedTotal);
+            }
+
+            $('#btn-apply-voucher').on('click', function() {
+                const $btn = $(this);
+                const $input = $('#voucher-code-input');
+                const $msg = $('#voucher-status-msg');
+
+                if (appliedVoucherCode) {
+                    // Remove voucher
+                    appliedVoucherCode = null;
+                    voucherDiscount = 0;
+                    $input.val('').prop('readonly', false);
+                    $btn.text('Áp dụng').removeClass('btn--e-brand-b-2').addClass('btn--e-secondary');
+                    $('#voucher-discount-row').hide();
+                    $msg.hide().text('');
+                    updateUITotal();
+                    return;
+                }
+
+                const code = $input.val().trim().toUpperCase();
+                if (!code) {
+                    showToast('Vui lòng nhập mã giảm giá.', 'warning');
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+                $msg.removeClass('text-danger text-success').css('color', '#64748b').text('Đang kiểm tra mã...').show();
+
+                $.ajax({
+                    url: '/api/voucher/apply',
+                    type: 'POST',
+                    data: { voucherCode: code },
+                    success: function(response) {
+                        $btn.prop('disabled', false);
+                        if (response.trangThai === 'ok') {
+                            appliedVoucherCode = response.maPhieu;
+                            voucherDiscount = response.giamGia;
+
+                            $input.prop('readonly', true);
+                            $btn.text('Hủy bỏ').removeClass('btn--e-secondary').addClass('btn--e-brand-b-2');
+                            $('.js-voucher-discount').text('-' + response.giamGiaFormatted);
+                            $('#voucher-discount-row').show();
+
+                            $msg.css('color', '#10b981').text(response.message).show();
+                            updateUITotal();
+                            showToast('Áp dụng mã giảm giá thành công!', 'success');
+                        } else {
+                            $msg.css('color', '#ef4444').text(response.message).show();
+                            showToast(response.message, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $btn.prop('disabled', false);
+                        $msg.css('color', '#ef4444').text('Không thể kiểm tra mã lúc này.').show();
+                        showToast('Lỗi hệ thống khi áp dụng mã giảm giá.', 'error');
+                    }
+                });
+            });
+
             // Recalculate Shipping Fee dynamically
             let pendingShippingRequest = null;
             let debounceTimeout = null;
@@ -734,8 +816,8 @@
 
                 if (!carrierId) {
                     $('.js-ship-fee').text('0 đ');
-                    const formattedTotal = new Intl.NumberFormat('vi-VN').format(baseTongTien) + ' đ';
-                    $('.js-checkout-total').text(formattedTotal);
+                    currentShippingFee = 0;
+                    updateUITotal();
                     return;
                 }
 
@@ -791,12 +873,10 @@
                     },
                     success: function(response) {
                         const fee = response.shippingFee;
+                        currentShippingFee = fee;
                         const formattedFee = new Intl.NumberFormat('vi-VN').format(fee) + ' đ';
                         $('.js-ship-fee').text(formattedFee);
-
-                        const totalAmount = baseTongTien + fee;
-                        const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
-                        $('.js-checkout-total').text(formattedTotal);
+                        updateUITotal();
                     },
                     error: function(xhr, status, error) {
                         if (status !== 'abort') {
@@ -1023,7 +1103,8 @@
                     ghiChu: ghiChu,
                     ghnToDistrictId: $('#ghnDistrictId').val() || '',
                     ghnToWardCode: $('#ghnWardCode').val() || '',
-                    ghnProvinceId: $('#ghnProvinceId').val() || ''
+                    ghnProvinceId: $('#ghnProvinceId').val() || '',
+                    voucherCode: appliedVoucherCode || ''
                 };
 
                 if (addressType === 'saved') {

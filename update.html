@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -61,6 +61,118 @@
 
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
+
+    <h2>76. Sửa lỗi: Khắc phục lỗi thanh toán tiền mặt tại quầy (POS) &amp; Tự động tạo mã đơn hàng duy nhất</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tự động tạo mã đơn hàng duy nhất cho POS:</strong> Khắc phục lỗi trùng lặp khóa chính / ràng buộc duy nhất trên cột <code>ma_don_hang</code> (<code>UK_HOADON_MADONHANG</code>) trong SQL Server bằng cách tự động tạo mã đơn hàng định dạng <code>HDSVN</code> + timestamp + UUID 6 ký tự cho các đơn hàng bán trực tiếp tại quầy POS.</li>
+            <li><strong>Khắc phục lỗi gán nhầm phương thức thanh toán mặc định (COD Fallback):</strong> Cập nhật logic tìm kiếm phương thức thanh toán tại POS. Nếu phương thức yêu cầu (<code>Tiền mặt</code> hoặc <code>Chuyển khoản</code>) chưa tồn tại, hệ thống tự động khởi tạo mới và lưu vào cơ sở dữ liệu thay vì tự động lấy phần tử đầu tiên trong danh sách (thường là <code>COD</code>).</li>
+            <li><strong>Kiểm thử Tích hợp:</strong> Bổ sung 2 ca kiểm thử tích hợp tự động trong <code>AdminPosIntegrationTest.java</code> để kiểm nghiệm quy trình và đảm bảo phương thức thanh toán được ánh xạ chính xác sang <code>Tiền mặt</code> mà không ném lỗi trùng khóa đơn hàng.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/admin/AdminPosService.java</code></li>
+            <li>[NEW] <code>src/test/java/com/smashvn/shop/controller/admin/AdminPosIntegrationTest.java</code></li>
+            <li>[MODIFY] <code>spec.html</code></li>
+            <li>[MODIFY] <code>update.html</code></li>
+        </ul>
+    </div>
+
+    <h2>75. Chức năng: Áp dụng mã giảm giá (Voucher) cho khách hàng khi thanh toán (Voucher Checkout)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Giao diện áp dụng Voucher động:</strong> Tích hợp ô nhập mã giảm giá trực tiếp tại trang thanh toán (<code>checkout.html</code>) với kiểm tra thời gian thực (realtime validation) qua AJAX endpoint <code>/api/voucher/apply</code>. Hiển thị thông báo trạng thái thành công hoặc lỗi chi tiết trực quan (hết hạn, chưa bắt đầu, hết lượt, hoặc chưa đạt giá trị tối thiểu).</li>
+            <li><strong>Bảo mật &amp; Chống tranh chấp nâng cao (Pessimistic Locking):</strong> Khi đặt hàng, <code>GioHangService.createOrder()</code> sử dụng cơ chế khóa ghi <strong>Pessimistic Write Lock</strong> (<code>findByMaPhieuWithLock</code>) trên bản ghi voucher để chống race conditions / double claiming khi nhiều người cùng áp dụng mã.</li>
+            <li><strong>Kiểm thử Tích hợp:</strong> Bổ sung 2 ca kiểm thử tích hợp trong <code>CheckoutValidationIntegrationTest.java</code> để tự động hóa kiểm tra cả luồng áp dụng voucher hợp lệ/không hợp lệ và luồng thanh toán chốt đơn.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/order/CheckoutController.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/order/GioHangService.java</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/checkout.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/layout/header.html</code></li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/controller/order/CheckoutValidationIntegrationTest.java</code></li>
+        </ul>
+    </div>
+
+    <h2>74. Chức năng / Sửa lỗi: Hoàn thiện xác thực và bổ sung nút Lưu cho quản lý đợt giảm giá &amp; phiếu giảm giá Admin</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Hoàn thiện xác thực phía Client (Voucher &amp; Đợt giảm giá):</strong> Bổ sung bộ xử lý kiểm tra định dạng mã phiếu (chỉ chữ in hoa, số, dấu gạch dưới, độ dài 2-50), kiểm tra khoảng ngày hiệu lực (bắt đầu trước khi kết thúc), bắt buộc chọn ít nhất một sản phẩm đối với chiến dịch đợt giảm giá.</li>
+            <li><strong>Chuẩn hóa đơn vị tiền tệ VND:</strong> Đồng bộ kiểm tra đơn vị giảm giá ở Service <code>AdminKhuyenMaiService.java</code> từ <code>VNĐ</code> sang <code>VND</code> để trùng khớp hoàn toàn với ràng buộc <code>CHECK CONSTRAINT</code> của SQL Server database, khắc phục triệt để lỗi xung đột khi lưu từ phía Admin.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/admin/AdminKhuyenMaiService.java</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/dotgiamgia-add.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/dotgiamgia-edit.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/phieugiamgia-add.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/phieugiamgia-edit.html</code></li>
+        </ul>
+    </div>
+
+    <h2>73. Chức năng / Sửa lỗi: Sửa luồng Redirect Thêm mới Địa chỉ &amp; URL động theo môi trường</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Phân luồng redirect sau khi lưu địa chỉ:</strong> Cập nhật <code>UserAddressController.java</code> để nhận thêm query param <code>from</code> tại cả GET và POST <code>/user/address/add</code>. Nếu <code>from=checkout</code> thì redirect về <code>/checkout</code>; còn lại về <code>/user/address</code>.</li>
+            <li><strong>Thymeleaf URL động thay thế hardcode ngrok:</strong> Thay link cứng ngrok trong <code>checkout.html</code> bằng <code>th:href="@{/user/address/add(from='checkout')}"</code>.</li>
+            <li><strong>Giữ param <code>from</code> qua POST:</strong> Đổi form action trong <code>dash-address-add.html</code> để tự động append <code>?from=checkout</code>.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/user/UserAddressController.java</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/checkout.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/dash-address-add.html</code></li>
+        </ul>
+    </div>
+
+    <h2>72. Chức năng: Tối ưu hóa UI Thanh toán &amp; Bảo mật Phí Vận chuyển GHN</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Cấu hình Province địa phương:</strong> Dùng <code>shipping.local-province-ids</code> và <code>shipping.local-provinces</code> trong properties.</li>
+            <li><strong>Chống giả mạo phí vận chuyển phía Server:</strong> <code>ShippingZoneResolver</code> ưu tiên xác định vùng dựa vào <code>districtId</code> thay vì <code>provinceId</code> frontend gửi.</li>
+            <li><strong>Xác thực quyền sở hữu địa chỉ:</strong> Kiểm tra địa chỉ thuộc về khách hàng trong transaction, ngăn chặn IDOR/TOCTOU.</li>
+            <li><strong>Tính phí vận chuyển độc lập phía Server:</strong> <code>GioHangService.createOrder()</code> luôn tính lại phí độc lập bằng <code>shippingFeeCalculator</code>.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/order/GioHangService.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/api/GhnService.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/api/ShippingZoneResolver.java</code></li>
+        </ul>
+    </div>
+
+    <h2>71. Chức năng: Nút con mắt ẩn/hiện mật khẩu (Hold-to-Show Password Eye)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Giữ chuột để hiện mật khẩu:</strong> Thêm biểu tượng con mắt trên 7 ô nhập mật khẩu của 5 trang chính. Giữ chuột để hiện mật khẩu và nhả ra để ẩn. Hỗ trợ cả mobile.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/resources/templates/signin.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/signup.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/reset-password.html</code></li>
+        </ul>
+    </div>
+
+    <h2>70. Chức năng: Hardening Category &amp; Brand (Danh mục &amp; Thương hiệu) Validation</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Chuẩn hóa dữ liệu và xác thực duy nhất:</strong> Centralize Normalization Pipeline (Jsoup sanitize → trim → collapse spaces). Kiểm tra trùng lặp case-insensitive và chống XSS.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/admin/AdminDanhMucService.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/admin/AdminThuongHieuService.java</code></li>
+        </ul>
+    </div>
 
     <h2>69. Chức năng: Bảo mật &amp; Xác thực Thông tin Đặt hàng Checkout (Checkout Form Security Hardening &amp; Validation)</h2>
     <div class="feature-block">

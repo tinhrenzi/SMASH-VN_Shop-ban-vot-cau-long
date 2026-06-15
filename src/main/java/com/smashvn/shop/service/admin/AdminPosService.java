@@ -203,7 +203,11 @@ public class AdminPosService {
             pttt = allPttt.stream()
                     .filter(p -> p.getTenPhuongThuc().toLowerCase().contains(tenPhuongThucCan))
                     .findFirst()
-                    .orElse(allPttt.get(0));
+                    .orElseGet(() -> {
+                        PhuongThucThanhToan newP = new PhuongThucThanhToan();
+                        newP.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
+                        return phuongThucThanhToanDAO.save(newP);
+                    });
         }
 
         // 4. Lấy đơn vị vận chuyển (Bán tại quầy)
@@ -323,6 +327,11 @@ public class AdminPosService {
         hd.setMaGiaoDich(sanitizedGiaoDich);
         hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
         hd.setThoiGianXacNhan(LocalDateTime.now());
+
+        // Generate unique maDonHang for POS orders
+        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        hd.setMaDonHang("HDSVN" + dateStr + "-" + uuidStr);
 
         hd = hoaDonRepository.save(hd);
 

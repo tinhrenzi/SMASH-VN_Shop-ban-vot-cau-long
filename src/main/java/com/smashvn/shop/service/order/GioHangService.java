@@ -34,7 +34,9 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.repository.SoDiaChiRepository;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
@@ -65,6 +67,7 @@ public class GioHangService {
     private final AdminShippingService adminShippingService;
     private final GhnService ghnService;
     private final SoDiaChiRepository soDiaChiRepository;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -281,7 +284,7 @@ public class GioHangService {
     public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
                               Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
                               Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
-                              Integer idDiaChiLuu) {
+                              Integer idDiaChiLuu, String voucherCode) {
         String cleanGhiChu = sanitizeInput(ghiChu);
         if (cleanGhiChu != null && cleanGhiChu.length() > 500) {
             log.warn("[SECURITY_ALERT] Invalid note length for user: {}", idTaiKhoan);
@@ -388,7 +391,46 @@ public class GioHangService {
         }
 
         BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, finalDistrictId, finalDiaChiNhan);
-        BigDecimal totalAmount = tamTinh.add(phiShip);
+
+        // Voucher discount calculation
+        BigDecimal giamGia = BigDecimal.ZERO;
+        PhieuGiamGia appliedVoucher = null;
+        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
+            PhieuGiamGia voucher = phieuGiamGiaRepository.findByMaPhieuWithLock(voucherCode.trim().toUpperCase())
+                    .orElseThrow(() -> new IllegalArgumentException("Mã giảm giá không tồn tại."));
+            if (!voucher.getActive()) {
+                throw new IllegalArgumentException("Mã giảm giá không còn hoạt động.");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(voucher.getNgayBatDau())) {
+                throw new IllegalArgumentException("Mã giảm giá chưa đến thời gian áp dụng.");
+            }
+            if (now.isAfter(voucher.getNgayKetThuc())) {
+                throw new IllegalArgumentException("Mã giảm giá đã hết hạn sử dụng.");
+            }
+            if (voucher.getSoLuongConLai() <= 0) {
+                throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng.");
+            }
+            if (tamTinh.compareTo(voucher.getGiaTriDonHangToiThieu()) < 0) {
+                throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá này.");
+            }
+
+            if ("%".equals(voucher.getDonVi()) || "Giảm phần trăm".equalsIgnoreCase(voucher.getLoaiGiamGia())) {
+                giamGia = tamTinh.multiply(voucher.getGiaTri()).divide(new BigDecimal("100"));
+            } else {
+                giamGia = voucher.getGiaTri();
+            }
+
+            if (giamGia.compareTo(tamTinh) > 0) {
+                giamGia = tamTinh;
+            }
+
+            voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1);
+            phieuGiamGiaRepository.save(voucher);
+            appliedVoucher = voucher;
+        }
+
+        BigDecimal totalAmount = tamTinh.subtract(giamGia).add(phiShip);
 
         // Find or create Payment Method
         String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "SePay";
@@ -410,6 +452,7 @@ public class GioHangService {
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(totalAmount);
         hd.setPhiVanChuyen(phiShip);
+        hd.setPhieuGiamGia(appliedVoucher);
         
         // Generate secure maDonHang: DHSVN + YYYYMMDDHHMMSS + - + 6 UUID characters
         String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));

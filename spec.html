@@ -64,6 +64,26 @@
     <div class="section-block">
         <ul>
              <!-- NEWEST FIRST -->
+            <li><strong>Khắc phục lỗi thanh toán tiền mặt tại quầy (POS) &amp; Tự động tạo mã đơn hàng duy nhất (Mục 76) — 15/06/2026:</strong>
+                <ul>
+                    <li><strong>Tự động tạo mã đơn hàng duy nhất cho POS:</strong> Khắc phục lỗi trùng lặp khóa chính / ràng buộc duy nhất trên cột <code>ma_don_hang</code> (<code>UK_HOADON_MADONHANG</code>) trong SQL Server bằng cách tự động tạo mã đơn hàng định dạng <code>HDSVN</code> + timestamp + UUID 6 ký tự cho các đơn hàng bán trực tiếp tại quầy POS.</li>
+                    <li><strong>Khắc phục lỗi gán nhầm phương thức thanh toán mặc định (COD Fallback):</strong> Cập nhật logic tìm kiếm phương thức thanh toán tại POS. Nếu phương thức yêu cầu (<code>Tiền mặt</code> hoặc <code>Chuyển khoản</code>) chưa tồn tại, hệ thống tự động khởi tạo mới và lưu vào cơ sở dữ liệu thay vì tự động lấy phần tử đầu tiên trong danh sách (thường là <code>COD</code>).</li>
+                    <li><strong>Kiểm thử Tích hợp:</strong> Bổ sung 2 ca kiểm thử tích hợp tự động trong <code>AdminPosIntegrationTest.java</code> để kiểm nghiệm quy trình và đảm bảo phương thức thanh toán được ánh xạ chính xác sang <code>Tiền mặt</code> mà không ném lỗi trùng khóa đơn hàng.</li>
+                </ul>
+            </li>
+            <li><strong>Áp dụng mã giảm giá (Voucher) cho khách hàng khi thanh toán (Voucher Checkout) (Mục 75) — 15/06/2026:</strong>
+                <ul>
+                    <li><strong>Giao diện áp dụng Voucher động:</strong> Tích hợp ô nhập mã giảm giá trực tiếp tại trang thanh toán (<code>checkout.html</code>) với kiểm tra thời gian thực (realtime validation) qua AJAX endpoint <code>/api/voucher/apply</code>. Hiển thị thông báo trạng thái thành công hoặc lỗi chi tiết trực quan (hết hạn, chưa bắt đầu, hết lượt, hoặc chưa đạt giá trị tối thiểu).</li>
+                    <li><strong>Bảo mật &amp; Chống tranh chấp nâng cao (Pessimistic Locking):</strong> Khi đặt hàng, <code>GioHangService.createOrder()</code> sử dụng cơ chế khóa ghi <strong>Pessimistic Write Lock</strong> (<code>findByMaPhieuWithLock</code>) trên bản ghi voucher để chống race conditions / double claiming khi nhiều người cùng áp dụng mã.</li>
+                    <li><strong>Kiểm thử Tích hợp:</strong> Bổ sung 2 ca kiểm thử tích hợp trong <code>CheckoutValidationIntegrationTest.java</code> để tự động hóa kiểm tra cả luồng áp dụng voucher hợp lệ/không hợp lệ và luồng thanh toán chốt đơn.</li>
+                </ul>
+            </li>
+            <li><strong>Xác thực và bổ sung nút Lưu cho quản lý đợt giảm giá &amp; phiếu giảm giá Admin (Mục 74) — 15/06/2026:</strong>
+                <ul>
+                    <li><strong>Hoàn thiện xác thực phía Client (Voucher &amp; Đợt giảm giá):</strong> Bổ sung bộ xử lý kiểm tra định dạng mã phiếu (chỉ chữ in hoa, số, dấu gạch dưới, độ dài 2-50), kiểm tra khoảng ngày hiệu lực (bắt đầu trước khi kết thúc), bắt buộc chọn ít nhất một sản phẩm đối với chiến dịch đợt giảm giá.</li>
+                    <li><strong>Chuẩn hóa đơn vị tiền tệ VND:</strong> Đồng bộ kiểm tra đơn vị giảm giá ở Service <code>AdminKhuyenMaiService.java</code> từ <code>VNĐ</code> sang <code>VND</code> để trùng khớp hoàn toàn với ràng buộc <code>CHECK CONSTRAINT</code> của SQL Server database, khắc phục triệt để lỗi xung đột khi lưu từ phía Admin.</li>
+                </ul>
+            </li>
             <li><strong>Sửa luồng Redirect Thêm mới Địa chỉ &amp; URL động theo môi trường (Address Add Redirect Fix &amp; Environment-aware URL) (Mục 73) — 12/06/2026 16:55:</strong>
                 <ul>
                     <li><strong>Phân luồng redirect sau khi lưu địa chỉ (Context-aware Redirect):</strong> Cập nhật <code>UserAddressController.java</code> để nhận thêm query param <code>from</code> tại cả GET <code>/user/address/add</code> và POST <code>/user/address/add</code>. Sau khi lưu địa chỉ thành công, nếu <code>from=checkout</code> thì redirect về <code>/checkout</code>; các trường hợp còn lại (vào từ trang cá nhân, trực tiếp) vẫn redirect về <code>/user/address</code>. Khi có lỗi validation, param <code>fromPage</code> được truyền lại vào model để form re-render đúng luồng.</li>
