@@ -31,4 +31,35 @@ public class DotGiamGia {
     @ManyToOne
     @JoinColumn(name = "id_nhan_vien", nullable = false)
     private NhanVien nhanVien;
+
+    @Column(name = "active")
+    private Boolean active = true;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "SanPham_DotGiamGia",
+        joinColumns = @JoinColumn(name = "id_dot_giam_gia"),
+        inverseJoinColumns = @JoinColumn(name = "id_san_pham")
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private java.util.Set<SanPham> sanPhams = new java.util.HashSet<>();
+
+    public Boolean getActive() {
+        return active == null ? true : active;
+    }
+
+    public String getDynamicStatus() {
+        if (active != null && !active) {
+            return "INACTIVE";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (ngayBatDau != null && now.isBefore(ngayBatDau)) {
+            return "UPCOMING";
+        } else if (ngayKetThuc != null && now.isAfter(ngayKetThuc)) {
+            return "EXPIRED";
+        } else {
+            return "ACTIVE";
+        }
+    }
 }

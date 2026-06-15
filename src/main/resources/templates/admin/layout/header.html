@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+    <div th:fragment="header" class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary border-opacity-10 admin-header">
+        <div id="csrf-token-holder" 
+             th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 
+             th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
+             style="display:none;"></div>
+        <h4 class="m-0 fw-bold d-flex align-items-center" style="font-family: 'Open Sans', sans-serif; color: #15171c;">
+            <span class="badge me-2" style="background-color: #ff4500;"><i class="fas fa-lock text-white"></i></span>
+            Hệ Thống Quản Trị <span class="text-brand-accent ms-2 fw-semibold opacity-75">/ Administration Panel</span>
+        </h4>
+        
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/}" class="btn btn-sm btn-outline-secondary d-none d-md-inline-block px-3 rounded-pill fw-semibold shadow-sm" style="font-size: 0.85rem;">
+                <i class="fas fa-eye me-1"></i> Xem Trang Chủ
+            </a>
+            
+            <div class="dropdown">
+                <button class="btn btn-dark px-3 py-2 dropdown-toggle rounded-pill shadow-sm" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #15171c; border: none; font-size: 0.9rem; font-weight: 600;">
+                    <i class="fas fa-user-shield me-2" style="color: #ff4500;"></i>
+                    <span th:text="${session.tenHienThi != null ? session.tenHienThi + ' (' + (session.activeRole == 'QL' ? 'Quản lý' : 'Nhân viên') + ')' : 'Quản Trị Viên'}">Quản Trị Viên</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px; min-width: 200px;">
+                    <!-- Chuyển vai trò nếu có nhiều vai trò -->
+                    <th:block th:with="roleCount=${(session.laKhachHang ? 1 : 0) + (session.laNhanVien ? 1 : 0) + (session.laQuanLy ? 1 : 0)}">
+                        <th:block th:if="${roleCount > 1}">
+                            <li class="dropdown-header text-uppercase fw-bold pb-1" style="font-size: 0.75rem; color: #888;">Đăng nhập với vai trò:</li>
+                            <li th:if="${session.laKhachHang}">
+                                <a th:href="@{/switch-role(role='KH')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Khách hàng</span>
+                                    <i th:if="${session.activeRole == 'KH'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li th:if="${session.laNhanVien}">
+                                <a th:href="@{/switch-role(role='NV')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Nhân viên</span>
+                                    <i th:if="${session.activeRole == 'NV'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li th:if="${session.laQuanLy}">
+                                <a th:href="@{/switch-role(role='QL')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                    <span>Quản trị viên</span>
+                                    <i th:if="${session.activeRole == 'QL'}" class="fas fa-check text-success"></i>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        </th:block>
+                    </th:block>
+                    <li><a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <style>
+            .admin-header h4 {
+                color: #15171c !important;
+            }
+            .text-brand-accent {
+                color: #ff4500 !important;
+            }
+            .dropdown-menu .dropdown-item:hover {
+                background-color: rgba(255, 69, 0, 0.05);
+                color: #ff4500 !important;
+            }
+        </style>
+    </div>
+
+</body>
+</html>

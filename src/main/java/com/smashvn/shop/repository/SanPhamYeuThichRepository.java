@@ -6,23 +6,21 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPhamYeuThich;
 import com.smashvn.shop.entity.SanPhamYeuThich.SanPhamYeuThichKey;
 
-@Repository
 public interface SanPhamYeuThichRepository extends JpaRepository<SanPhamYeuThich, SanPhamYeuThichKey> {
-    
+
     // Tìm danh sách sản phẩm yêu thích của khách hàng
-    @Query("SELECT spy FROM SanPhamYeuThich spy WHERE spy.khachHang.id = :idKhachHang " +
-           "ORDER BY spy.ngayThem DESC")
+    @Query("SELECT spy FROM SanPhamYeuThich spy WHERE spy.khachHang.id = :idKhachHang "
+            + "ORDER BY spy.ngayThem DESC")
     List<SanPhamYeuThich> findByKhachHang_Id(@Param("idKhachHang") Integer idKhachHang);
 
     // Tìm danh sách sản phẩm yêu thích của khách hàng với phân trang
-    @Query("SELECT spy FROM SanPhamYeuThich spy WHERE spy.khachHang.id = :idKhachHang " +
-           "ORDER BY spy.ngayThem DESC")
+    @Query("SELECT spy FROM SanPhamYeuThich spy WHERE spy.khachHang.id = :idKhachHang "
+            + "ORDER BY spy.ngayThem DESC")
     List<SanPhamYeuThich> findTop10ByKhachHang_Id(@Param("idKhachHang") Integer idKhachHang);
 
     // Kiểm tra sản phẩm đã được thêm vào wishlist của khách hàng chưa

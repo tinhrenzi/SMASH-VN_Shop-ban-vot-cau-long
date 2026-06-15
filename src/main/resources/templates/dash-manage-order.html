@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="description" content="Chi tiết đơn hàng - Smash VN">
+    <meta name="author" content="SmashVN">
     <link th:href="@{/images/favicon.png}" rel="shortcut icon">
-    <title>Smash VN - Manage Order</title>
+    <title>Smash VN - Chi Tiết Đơn Hàng</title>
+
+    <!-- CSRF Token -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
     <!--====== Phông chữ Google ======-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
@@ -20,11 +24,200 @@
 
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        /* ===== Badge Trạng thái ===== */
+        .badge--pending   { background-color: #fff3cd !important; color: #856404 !important; }
+        .badge--warning   { background-color: #ffeeb3 !important; color: #856404 !important; }
+        .badge--processing{ background-color: #cce5ff !important; color: #004085 !important; }
+        .badge--confirmed { background-color: #d0f0fd !important; color: #005f7a !important; }
+        .badge--shipping  { background-color: #d1ecf1 !important; color: #0c5460 !important; }
+        .badge--delivered { background-color: #d4edda !important; color: #155724 !important; }
+        .badge--cancelled { background-color: #f8d7da !important; color: #721c24 !important; }
+        .badge--conflict  { background-color: #ffe5b4 !important; color: #7a4500 !important; }
+
+        /* ===== Nút hủy đơn ===== */
+        #btn-huy-don {
+            background-color: #e53935;
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #btn-huy-don:hover { background-color: #c62828; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(229,57,53,.35); }
+        #btn-huy-don:active { transform: translateY(0); }
+        #btn-huy-don:disabled { background-color: #aaa; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* ===== Modal Xác nhận hủy ===== */
+        .cancel-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .cancel-modal-overlay.active { display: flex; }
+        .cancel-modal {
+            background: #fff;
+            border-radius: 14px;
+            padding: 36px 32px 28px;
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,.22);
+            animation: modalIn 0.28s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        @keyframes modalIn {
+            from { opacity:0; transform: scale(0.88) translateY(20px); }
+            to   { opacity:1; transform: scale(1) translateY(0); }
+        }
+        .cancel-modal__icon { font-size: 52px; margin-bottom: 14px; display: block; }
+        .cancel-modal__title { font-size: 20px; font-weight: 800; color: #212121; margin-bottom: 8px; }
+        .cancel-modal__desc  { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+        .cancel-modal__actions { display: flex; gap: 12px; justify-content: center; }
+        .btn-modal-confirm {
+            background: #e53935; color: #fff; border: none;
+            padding: 11px 28px; border-radius: 7px; font-weight: 700;
+            cursor: pointer; font-size: 14px; transition: background 0.2s ease;
+        }
+        .btn-modal-confirm:hover { background: #c62828; }
+        .btn-modal-cancel {
+            background: #f5f5f5; color: #555; border: 1px solid #ddd;
+            padding: 11px 28px; border-radius: 7px; font-weight: 600;
+            cursor: pointer; font-size: 14px; transition: background 0.2s ease;
+        }
+        .btn-modal-cancel:hover { background: #e8e8e8; }
+
+        /* ===== Toast Notification ===== */
+        .toast-notify {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            padding: 14px 22px;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            z-index: 999999;
+            box-shadow: 0 6px 24px rgba(0,0,0,.18);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 380px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity .3s, transform .3s;
+        }
+        .toast-notify.show { opacity: 1; transform: translateY(0); }
+        .toast-notify.success { background: #388e3c; }
+        .toast-notify.error   { background: #d32f2f; }
+
+        /* ===== Custom Green Timeline Stepper (Matches 2nd image) ===== */
+        .timeline-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            padding: 24px 0;
+            margin: 20px 0;
+        }
+        .timeline-stepper::before {
+            content: "";
+            position: absolute;
+            top: 32px;
+            left: 8%;
+            right: 8%;
+            height: 4px;
+            background-color: #e0e0e0;
+            z-index: 1;
+        }
+        .timeline-stepper-progress {
+            position: absolute;
+            top: 32px;
+            left: 8%;
+            height: 4px;
+            background-color: #2ec155;
+            z-index: 2;
+            transition: width 0.4s ease;
+        }
+        .timeline-stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            z-index: 3;
+            position: relative;
+        }
+        .timeline-stepper-icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 4px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #bdbdbd;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .timeline-stepper-step.active .timeline-stepper-icon-circle {
+            border-color: #2ec155;
+            color: #2ec155;
+        }
+        .timeline-stepper-step.finish .timeline-stepper-icon-circle {
+            border-color: #2ec155;
+            background-color: #2ec155;
+            color: #fff;
+        }
+        .timeline-stepper-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #757575;
+            margin-bottom: 4px;
+            max-width: 140px;
+            line-height: 1.3;
+        }
+        .timeline-stepper-step.active .timeline-stepper-label,
+        .timeline-stepper-step.finish .timeline-stepper-label {
+            color: #212121;
+        }
+        .timeline-stepper-time {
+            font-size: 11px;
+            color: #9e9e9e;
+        }
+        .timeline-stepper-step.active .timeline-stepper-time,
+        .timeline-stepper-step.finish .timeline-stepper-time {
+            color: #616161;
+        }
+
+        /* Section order header */
+        .order-header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .order-meta-group { display: flex; flex-direction: column; gap: 6px; }
+        .order-status-group { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    </style>
 </head>
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-
             <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
     </div>
 
@@ -37,71 +230,57 @@
         </header>
         <!--====== End - Main Header ======-->
 
-
         <!--====== App Content ======-->
         <div class="app-content">
 
-            <!--====== Section 1 ======-->
+            <!--====== Breadcrumb ======-->
             <div class="u-s-p-y-60">
-
-                <!--====== Section Content ======-->
                 <div class="section__content">
                     <div class="container">
                         <div class="breadcrumb">
                             <div class="breadcrumb__wrap">
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
-
-                                        <a th:href="@{/}">Home</a></li>
+                                        <a th:href="@{/}">Trang chủ</a></li>
+                                    <li class="has-separator">
+                                        <a th:href="@{/user/my-order}">Đơn hàng của tôi</a></li>
                                     <li class="is-marked">
-
-                                        <a th:href="@{/user/manage-order}">My Account</a></li>
+                                        <a th:href="@{/user/manage-order}">Chi tiết đơn hàng</a></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!--====== End - Section 1 ======-->
+            <!--====== End Breadcrumb ======-->
 
 
             <!--====== Section 2 ======-->
             <div class="u-s-p-b-60">
-
-                <!--====== Section Content ======-->
                 <div class="section__content">
                     <div class="dash">
                         <div class="container">
                             <div class="row">
+                                <!-- Sidebar -->
                                 <div class="col-lg-3 col-md-12">
-
-                                    <!--====== Dashboard Features ======-->
                                     <div class="dash__box dash__box--bg-white dash__box--shadow u-s-m-b-30">
                                         <div class="dash__pad-1">
-
                                             <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
                                             <ul class="dash__f-list">
                                                 <li>
-
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Manage My Account</a></li>
+                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/profile}">My Profile</a></li>
+                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/address}">Address Book</a></li>
+                                                    <a th:href="@{/user/address}">Địa chỉ</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/track-order}">Track Order</a></li>
+                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/my-order}">My Orders</a></li>
+                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/payment-option}">My Payment Options</a></li>
+                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
-
-                                                    <a th:href="@{/user/cancellation}">My Returns & Cancellations</a></li>
+                                                    <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -110,140 +289,261 @@
                                             <ul class="dash__w-list">
                                                 <li>
                                                     <div class="dash__w-wrap">
-
                                                         <span class="dash__w-icon dash__w-icon-style-1"><i class="fas fa-cart-arrow-down"></i></span>
-
                                                         <span class="dash__w-text" th:text="${orderCount}">4</span>
-
-                                                        <span class="dash__w-name">Orders Placed</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Đặt</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
-
                                                         <span class="dash__w-icon dash__w-icon-style-2"><i class="fas fa-times"></i></span>
-
                                                         <span class="dash__w-text" th:text="${cancelCount}">0</span>
-
-                                                        <span class="dash__w-name">Cancel Orders</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Hủy</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
-
                                                         <span class="dash__w-icon dash__w-icon-style-3"><i class="far fa-heart"></i></span>
-
                                                         <span class="dash__w-text" th:text="${wishlistCount}">0</span>
-
-                                                        <span class="dash__w-name">Wishlist</span></div>
+                                                        <span class="dash__w-name">Yêu Thích</span></div>
                                                 </li>
                                             </ul>
                                         </div>
                                     </div>
-                                    <!--====== End - Dashboard Features ======-->
                                 </div>
+                                <!-- End Sidebar -->
+
+                                <!-- Main Content -->
                                 <div class="col-lg-9 col-md-12">
-                                    <h1 class="dash__h1 u-s-m-b-30">Order Details</h1>
+
+                                    <!-- ===== Header Đơn hàng ===== -->
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white u-s-m-b-30">
                                         <div class="dash__pad-2">
-                                            <div class="dash-l-r">
-                                                <div>
-                                                    <div class="manage-o__text-2 u-c-secondary" th:text="'Order #' + ${order.id}">Order #305423126</div>
-                                                    <div class="manage-o__text u-c-silver" th:text="'Placed on ' + ${#temporals.format(order.ngayDat, 'dd MMM yyyy HH:mm:ss')}">Placed on 26 Oct 2016 09:08:37</div>
+                                            <div class="order-header-section">
+                                                <div class="order-meta-group">
+                                                    <div class="manage-o__text-2 u-c-secondary" th:text="'Đơn hàng #' + ${order.id}">Đơn hàng #305423126</div>
+                                                    <div class="manage-o__text u-c-silver" th:text="'Đặt ngày ' + ${#temporals.format(order.ngayDat, 'dd/MM/yyyy HH:mm:ss')}">Đặt ngày 26 Oct 2016 09:08:37</div>
                                                 </div>
-                                                <div>
-                                                    <div class="manage-o__text-2 u-c-silver">Total:
+                                                <div class="order-status-group">
+                                                    <div>
+                                                        <span class="manage-o__text-2 u-c-silver">Tổng thanh toán:&nbsp;
+                                                            <span class="manage-o__text-2 u-c-secondary" th:text="${#numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">16.000 VNĐ</span>
+                                                        </span>
+                                                    </div>
+                                                    <!-- ===== Badge trạng thái đầy đủ ===== -->
+                                                    <div>
+                                                        <span class="manage-o__badge"
+                                                              th:classappend="${order.trangThaiDonHang == 'cho_thanh_toan' ? 'badge--pending' :
+                                                                              (order.trangThaiDonHang == 'cho_xac_nhan'  ? 'badge--processing' :
+                                                                              (order.trangThaiDonHang == 'da_xac_nhan'   ? 'badge--confirmed' :
+                                                                              (order.trangThaiDonHang == 'dang_lay_hang' ? 'badge--confirmed' :
+                                                                              (order.trangThaiDonHang == 'dang_giao'     ? 'badge--shipping' :
+                                                                              (order.trangThaiDonHang == 'da_giao'       ? 'badge--delivered' :
+                                                                              (order.trangThaiDonHang == 'da_huy'        ? 'badge--cancelled' :
+                                                                              (order.trangThaiDonHang == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))}"
+                                                              th:text="${order.trangThaiDonHang == 'cho_thanh_toan' ? 'Chờ thanh toán' :
+                                                                        (order.trangThaiDonHang == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
+                                                                        (order.trangThaiDonHang == 'da_xac_nhan'   ? 'Đã xác nhận' :
+                                                                        (order.trangThaiDonHang == 'dang_lay_hang' ? 'Đang lấy hàng' :
+                                                                        (order.trangThaiDonHang == 'dang_giao'     ? 'Đang giao hàng' :
+                                                                        (order.trangThaiDonHang == 'da_giao'       ? 'Đã giao thành công' :
+                                                                        (order.trangThaiDonHang == 'da_huy'        ? 'Đã hủy' :
+                                                                        (order.trangThaiDonHang == 'stock_conflict'? 'Lỗi tồn kho' : order.trangThaiDonHang)))))))}"
+                                                        >Trạng thái</span>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                        <span class="manage-o__text-2 u-c-secondary" th:text="'$' + ${order.tongTien}">$16.00</span></div>
-                                                </div>
+                                            <!-- ===== Nút hủy đơn hàng (chỉ hiện khi được phép hủy) ===== -->
+                                            <div th:if="${order.trangThaiDonHang == 'cho_thanh_toan'
+                                                          or order.trangThaiDonHang == 'cho_xac_nhan'
+                                                          or order.trangThaiDonHang == 'da_xac_nhan'}"
+                                                 style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end;">
+                                                <button id="btn-huy-don"
+                                                        th:data-order-id="${order.id}"
+                                                        th:data-order-code="'#' + ${order.id}"
+                                                        onclick="moModalHuyDon(this)"
+                                                        title="Hủy đơn hàng này">
+                                                    <i class="fas fa-times-circle"></i>
+                                                    Hủy đơn hàng
+                                                </button>
+                                            </div>
+
+                                            <!-- Thông báo không thể hủy (khi đang giao / đã giao) -->
+                                            <div th:if="${order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao'}"
+                                                 style="margin-top: 14px; padding: 10px 14px; background: #f8f9fa; border-left: 4px solid #90a4ae; border-radius: 4px; font-size: 13px; color: #546e7a;">
+                                                <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                                                Đơn hàng đang được vận chuyển hoặc đã giao, không thể hủy.
+                                            </div>
+
+                                            <!-- Thông báo đơn đã bị hủy -->
+                                            <div th:if="${order.trangThaiDonHang == 'da_huy'}"
+                                                 style="margin-top: 14px; padding: 10px 14px; background: #fff5f5; border-left: 4px solid #e53935; border-radius: 4px; font-size: 13px; color: #c62828;">
+                                                <i class="fas fa-ban" style="margin-right: 6px;"></i>
+                                                Đơn hàng đã bị hủy. Nếu bạn đã thanh toán, vui lòng liên hệ hỗ trợ để được hoàn tiền.
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- ===== Tiến trình đơn hàng (Timeline động) ===== -->
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white u-s-m-b-30">
                                         <div class="dash__pad-2">
                                             <div class="manage-o">
                                                 <div class="manage-o__header u-s-m-b-30">
-                                                    <div class="manage-o__icon"><i class="fas fa-box u-s-m-r-5"></i>
-
-                                                        <span class="manage-o__text">Package 1</span></div>
-                                                </div>
-                                                <div class="dash-l-r">
-                                                    <div class="manage-o__text u-c-secondary" th:text="'Delivered on ' + ${#temporals.format(order.ngayGiao, 'dd MMM yyyy')}">Delivered on 26 Oct 2016</div>
-                                                    <div class="manage-o__icon"><i class="fas fa-truck u-s-m-r-5"></i>
-
-                                                        <span class="manage-o__text" th:text="${order.phuongThucVanChuyen}">Standard</span></div>
-                                                </div>
-                                                <div class="manage-o__timeline">
-                                                    <div class="timeline-row">
-                                                        <div class="col-lg-4 u-s-m-b-30">
-                                                            <div class="timeline-step">
-                                                                <div class="timeline-l-i timeline-l-i--finish">
-
-                                                                    <span class="timeline-circle"></span></div>
-
-                                                                <span class="timeline-text">Processing</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-lg-4 u-s-m-b-30">
-                                                            <div class="timeline-step">
-                                                                <div class="timeline-l-i timeline-l-i--finish">
-
-                                                                    <span class="timeline-circle"></span></div>
-
-                                                                <span class="timeline-text">Shipped</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-lg-4 u-s-m-b-30">
-                                                            <div class="timeline-step">
-                                                                <div class="timeline-l-i">
-
-                                                                    <span class="timeline-circle"></span></div>
-
-                                                                <span class="timeline-text">Delivered</span>
-                                                            </div>
-                                                        </div>
+                                                    <div class="manage-o__icon">
+                                                        <i class="fas fa-box u-s-m-r-5"></i>
+                                                        <span class="manage-o__text">Tiến trình đơn hàng</span>
                                                     </div>
                                                 </div>
+                                                <div class="dash-l-r" style="margin-bottom: 16px;">
+                                                    <div class="manage-o__text u-c-secondary" th:text="'Dự kiến giao: ' + ${#temporals.format(order.ngayGiao, 'dd/MM/yyyy')}">Dự kiến giao: 26 Oct 2016</div>
+                                                    <div class="manage-o__icon">
+                                                        <i class="fas fa-truck u-s-m-r-5"></i>
+                                                        <span class="manage-o__text" th:text="${order.phuongThucVanChuyen}">Standard</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Timeline - hiển thị theo trạng thái -->
+                                                <!-- Trường hợp: ĐÃ HỦY -->
+                                                <div th:if="${order.trangThaiDonHang == 'da_huy'}" class="timeline-stepper">
+                                                    <div class="timeline-stepper-progress" style="width: 50%; background-color: #e53935;"></div>
+                                                    
+                                                    <div class="timeline-stepper-step finish">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-file-invoice"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đơn Hàng Đã Đặt</span>
+                                                        <span class="timeline-stepper-time" th:text="${order.ngayDat != null ? #temporals.format(order.ngayDat, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <div class="timeline-stepper-step finish" style="--step-color: #e53935;">
+                                                        <div class="timeline-stepper-icon-circle" style="border-color: #e53935; background-color: #e53935; color: #fff;">
+                                                            <i class="fas fa-times-circle"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label" style="color: #e53935;">Đơn Hàng Đã Hủy</span>
+                                                        <span class="timeline-stepper-time" style="color: #e53935;" th:text="${order.ngayHuy != null ? #temporals.format(order.ngayHuy, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <div class="timeline-stepper-step">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-check-double"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Hoàn Tất</span>
+                                                        <span class="timeline-stepper-time"></span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Trường hợp: BÌNH THƯỜNG (chờ/xác nhận/giao/đã giao) -->
+                                                <div th:unless="${order.trangThaiDonHang == 'da_huy'}" class="timeline-stepper">
+                                                    <div class="timeline-stepper-progress" th:style="'width: ' + 
+                                                         (${order.trangThaiDonHang == 'da_giao'} ? '100%' : 
+                                                         ((${order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'dang_lay_hang'} ? '50%' : 
+                                                         ((${order.trangThaiDonHang == 'da_xac_nhan' or order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid'} ? '25%' : '0%')))))"></div>
+                                                    
+                                                    <!-- Bước 1: Đơn Hàng Đã Đặt -->
+                                                    <div class="timeline-stepper-step finish">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-file-invoice"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đơn Hàng Đã Đặt</span>
+                                                        <span class="timeline-stepper-time" th:text="${order.ngayDat != null ? #temporals.format(order.ngayDat, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <!-- Bước 2: Đã Xác Nhận / Thanh Toán -->
+                                                    <div th:class="'timeline-stepper-step ' + 
+                                                         (${order.trangThaiDonHang == 'da_xac_nhan' or order.trangThaiDonHang == 'dang_lay_hang' or order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao' or order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid' ? 'finish' : ''})">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-money-bill-wave"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label" th:text="${(order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid') ? 'Đơn Hàng Đã Thanh Toán (' + #numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT') + 'đ)' : 'Đã Xác Nhận'}">Đã xác nhận</span>
+                                                        <span class="timeline-stepper-time" th:text="${(order.trangThaiThanhToan == 'DA_THANH_TOAN' or order.trangThaiThanhToan == 'CHO_HOAN_TIEN' or order.status == 'paid') ? (order.ngayThanhToan != null ? #temporals.format(order.ngayThanhToan, 'HH:mm dd-MM-yyyy') : '') : (order.ngayXacNhan != null ? #temporals.format(order.ngayXacNhan, 'HH:mm dd-MM-yyyy') : '')}"></span>
+                                                    </div>
+                                                    
+                                                    <!-- Bước 3: Đang Giao (Đã Giao Cho ĐVVC) -->
+                                                    <div th:class="'timeline-stepper-step ' + 
+                                                         (${order.trangThaiDonHang == 'dang_lay_hang' or order.trangThaiDonHang == 'dang_giao' or order.trangThaiDonHang == 'da_giao' ? 'finish' : ''})">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-truck"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đang Giao</span>
+                                                        <span class="timeline-stepper-time" th:text="${order.ngayGiaoDVVC != null ? #temporals.format(order.ngayGiaoDVVC, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <!-- Bước 4: Đã giao thành công -->
+                                                    <div th:class="'timeline-stepper-step ' + 
+                                                         (${order.trangThaiDonHang == 'da_giao' ? 'finish' : ''})">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-inbox"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đã Giao Thành Công</span>
+                                                        <span class="timeline-stepper-time" th:text="${order.ngayGiaoThanhCong != null ? #temporals.format(order.ngayGiaoThanhCong, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <!-- Bước 5: Đánh Giá -->
+                                                    <div th:class="'timeline-stepper-step ' + 
+                                                         (${order.trangThaiDonHang == 'da_giao' ? 'active' : ''})">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-star"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đánh Giá</span>
+                                                        <span class="timeline-stepper-time"></span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Danh sách sản phẩm trong đơn hàng -->
                                                 <div class="manage-o__description">
-                                                    <div class="description__container" th:each="item : ${orderItems}">
-                                                        <div class="description__img-wrap">
-
-                                                            <img class="u-img-fluid" th:src="@{'/images/product/' + ${item.sanPhamChiTiet.sanPham.anh}}" alt=""></div>
-                                                        <div class="description-title" th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Yellow Wireless Headphone</div>
-                                                    </div>
-                                                    <div class="description__info-wrap">
-                                                        <div>
-
-                                                            <span class="manage-o__text-2 u-c-silver">Quantity:
-
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span></span></div>
-                                                        <div>
-
-                                                            <span class="manage-o__text-2 u-c-silver">Total:
-
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="'$' + ${item.sanPhamChiTiet.giaBan * item.soLuong}">$16.00</span></span></div>
+                                                    <div class="manage-o__description-item"
+                                                         th:each="item : ${orderItems}"
+                                                         style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 15px 0;">
+                                                        <div class="description__container" style="display: flex; align-items: center;">
+                                                            <div class="description__img-wrap" style="width: 80px; height: 80px; margin-right: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #eee;">
+                                                                <img class="u-img-fluid"
+                                                                     th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.sanPham.moTa}}"
+                                                                     alt="Product Image"
+                                                                     style="width: 100%; height: 100%; object-fit: cover;">
+                                                            </div>
+                                                            <div>
+                                                                <div class="description-title"
+                                                                     th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}"
+                                                                     style="font-weight: 700; color: #333; margin-bottom: 4px;"></div>
+                                                                <div style="font-size: 12px; color: #888;" th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="description__info-wrap" style="display: flex; gap: 30px; align-items: center;">
+                                                            <div>
+                                                                <span class="manage-o__text-2 u-c-silver">Số lượng:&nbsp;
+                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span>
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <span class="manage-o__text-2 u-c-silver">Thành tiền:&nbsp;
+                                                                    <span class="manage-o__text-2 u-c-secondary"
+                                                                          th:text="${#numbers.formatDecimal(item.sanPhamChiTiet.giaBan * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- ===== Địa chỉ & Tóm tắt ===== -->
                                     <div class="row">
                                         <div class="col-lg-6">
                                             <div class="dash__box dash__box--bg-white dash__box--shadow u-s-m-b-30">
                                                 <div class="dash__pad-3">
-                                                    <h2 class="dash__h2 u-s-m-b-8">Shipping Address</h2>
+                                                    <h2 class="dash__h2 u-s-m-b-8">Địa chỉ giao hàng</h2>
                                                     <h2 class="dash__h2 u-s-m-b-8" th:text="${order.diaChiGiao.hoTen}">John Doe</h2>
-
-                                                    <span class="dash__text-2" th:text="${order.diaChiGiao.diaChiDayDu}">4247 Ashford Drive Virginia - VA-20006 - USA</span>
-
-                                                    <span class="dash__text-2" th:text="${order.diaChiGiao.soDienThoai}"> (+0) 900901904</span>
+                                                    <span class="dash__text-2" th:text="${order.diaChiGiao.diaChiDayDu}">4247 Ashford Drive</span>
+                                                    <br>
+                                                    <span class="dash__text-2" th:text="${order.diaChiGiao.soDienThoai}">(+0) 900901904</span>
                                                 </div>
                                             </div>
                                             <div class="dash__box dash__box--bg-white dash__box--shadow dash__box--w">
                                                 <div class="dash__pad-3">
-                                                    <h2 class="dash__h2 u-s-m-b-8">Billing Address</h2>
+                                                    <h2 class="dash__h2 u-s-m-b-8">Địa chỉ thanh toán</h2>
                                                     <h2 class="dash__h2 u-s-m-b-8" th:text="${order.diaChiThanhToan.hoTen}">John Doe</h2>
-
-                                                    <span class="dash__text-2" th:text="${order.diaChiThanhToan.diaChiDayDu}">4247 Ashford Drive Virginia - VA-20006 - USA</span>
-
+                                                    <span class="dash__text-2" th:text="${order.diaChiThanhToan.diaChiDayDu}">4247 Ashford Drive</span>
+                                                    <br>
                                                     <span class="dash__text-2" th:text="${order.diaChiThanhToan.soDienThoai}">(+0) 900901904</span>
                                                 </div>
                                             </div>
@@ -251,36 +551,39 @@
                                         <div class="col-lg-6">
                                             <div class="dash__box dash__box--bg-white dash__box--shadow u-h-100">
                                                 <div class="dash__pad-3">
-                                                    <h2 class="dash__h2 u-s-m-b-8">Total Summary</h2>
+                                                    <h2 class="dash__h2 u-s-m-b-8">Tóm tắt đơn hàng</h2>
                                                     <div class="dash-l-r u-s-m-b-8">
-                                                        <div class="manage-o__text-2 u-c-secondary">Subtotal</div>
-                                                        <div class="manage-o__text-2 u-c-secondary" th:text="'$' + ${order.tongTien - order.phiVanChuyen}">$16.00</div>
+                                                        <div class="manage-o__text-2 u-c-secondary">Tạm tính</div>
+                                                        <div class="manage-o__text-2 u-c-secondary"
+                                                             th:text="${#numbers.formatDecimal(order.tongTien - order.phiVanChuyen, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</div>
                                                     </div>
                                                     <div class="dash-l-r u-s-m-b-8">
-                                                        <div class="manage-o__text-2 u-c-secondary">Shipping Fee</div>
-                                                        <div class="manage-o__text-2 u-c-secondary" th:text="'$' + ${order.phiVanChuyen}">$16.00</div>
+                                                        <div class="manage-o__text-2 u-c-secondary">Phí vận chuyển</div>
+                                                        <div class="manage-o__text-2 u-c-secondary"
+                                                             th:text="${#numbers.formatDecimal(order.phiVanChuyen, 0, 'COMMA', 0, 'POINT')} + ' đ'">30.000 đ</div>
                                                     </div>
-                                                    <div class="dash-l-r u-s-m-b-8">
-                                                        <div class="manage-o__text-2 u-c-secondary">Total</div>
-                                                        <div class="manage-o__text-2 u-c-secondary" th:text="'$' + ${order.tongTien}">$30.00</div>
+                                                    <div class="dash-l-r u-s-m-b-8" style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
+                                                        <div class="manage-o__text-2 u-c-secondary" style="font-weight: 700;">Tổng cộng</div>
+                                                        <div class="manage-o__text-2 u-c-secondary" style="font-weight: 700; color: #e53935 !important;"
+                                                             th:text="${#numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">46.000 đ</div>
                                                     </div>
-
                                                     <span class="dash__text-2" th:text="${order.phuongThucThanhToan}">Paid by Cash on Delivery</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- End Địa chỉ & Tóm tắt -->
+
                                 </div>
+                                <!-- End Main Content -->
                             </div>
                         </div>
                     </div>
                 </div>
-                <!--====== End - Section Content ======-->
             </div>
             <!--====== End - Section 2 ======-->
         </div>
         <!--====== End - App Content ======-->
-
 
         <!--====== Main Footer ======-->
         <footer>
@@ -290,13 +593,37 @@
     <!--====== End - Main App ======-->
 
 
-    <!--====== Google Analytics: change UA-XXXXX-Y to be your site's ID ======-->
+    <!-- =============================================
+         MODAL XÁC NHẬN HỦY ĐƠN
+    ============================================= -->
+    <div class="cancel-modal-overlay" id="cancelModalOverlay" onclick="dongModalHuyDon(event)">
+        <div class="cancel-modal" onclick="event.stopPropagation()">
+            <span class="cancel-modal__icon">🗑️</span>
+            <div class="cancel-modal__title">Xác nhận hủy đơn hàng</div>
+            <div class="cancel-modal__desc" id="cancelModalDesc">
+                Bạn có chắc chắn muốn hủy đơn hàng <strong id="cancelOrderCode"></strong> không?<br>
+                <span style="color: #e53935; font-size: 13px;">Thao tác này không thể khôi phục lại.</span>
+            </div>
+            <div class="cancel-modal__actions">
+                <button class="btn-modal-cancel" onclick="dongModalHuyDon(null)">
+                    Quay lại
+                </button>
+                <button class="btn-modal-confirm" id="btnConfirmHuy" onclick="xacNhanHuyDon()">
+                    <span id="btnConfirmText">Xác nhận hủy</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         TOAST NOTIFICATION
+    ============================================= -->
+    <div class="toast-notify" id="toastNotify"></div>
+
+    <!--====== Google Analytics ======-->
     <script>
-        window.ga = function() {
-            ga.q.push(arguments)
-        };
-        ga.q = [];
-        ga.l = +new Date;
+        window.ga = function() { ga.q.push(arguments) };
+        ga.q = []; ga.l = +new Date;
         ga('create', 'UA-XXXXX-Y', 'auto');
         ga('send', 'pageview')
     </script>
@@ -311,6 +638,108 @@
     <!--====== Ứng dụng ======-->
     <script th:src="@{/js/app.js}"></script>
 
+    <!-- =============================================
+         CANCEL ORDER JAVASCRIPT
+    ============================================= -->
+    <script>
+    (function () {
+        'use strict';
+
+        let _pendingOrderId = null;
+
+        // ============ Mở modal xác nhận hủy ============
+        window.moModalHuyDon = function (btn) {
+            _pendingOrderId = btn.getAttribute('data-order-id');
+            const code = btn.getAttribute('data-order-code') || ('#' + _pendingOrderId);
+            document.getElementById('cancelOrderCode').textContent = code;
+            document.getElementById('cancelModalOverlay').classList.add('active');
+        };
+
+        // ============ Đóng modal ============
+        window.dongModalHuyDon = function (event) {
+            // Nếu click vào overlay (không phải modal nội dung)
+            if (event && event.target !== document.getElementById('cancelModalOverlay')) return;
+            _closeModal();
+        };
+
+        function _closeModal() {
+            document.getElementById('cancelModalOverlay').classList.remove('active');
+            _pendingOrderId = null;
+        }
+
+        // ============ Xác nhận hủy đơn (AJAX) ============
+        window.xacNhanHuyDon = function () {
+            if (!_pendingOrderId) return;
+
+            const btnConfirm = document.getElementById('btnConfirmHuy');
+            const btnText = document.getElementById('btnConfirmText');
+
+            // Trạng thái loading
+            btnConfirm.disabled = true;
+            btnText.textContent = 'Đang xử lý...';
+
+            const orderId = _pendingOrderId;
+
+            // Lấy CSRF token (nếu Spring Security bật CSRF)
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader.content] = csrfToken.content;
+            }
+
+            fetch('/user/manage-order/cancel/' + orderId, {
+                method: 'POST',
+                headers: headers
+            })
+            .then(function (res) {
+                return res.json();
+            })
+            .then(function (data) {
+                if (data.success) {
+                    hienToast('✅ ' + (data.message || 'Hủy đơn hàng thành công!'), 'success');
+                    _closeModal();
+                    // Ẩn nút hủy và hiển thị thông báo đã hủy
+                    const btnHuy = document.getElementById('btn-huy-don');
+                    if (btnHuy) {
+                        btnHuy.closest('div').style.display = 'none';
+                    }
+                    // Reload trang sau 2.2 giây để cập nhật UI đầy đủ
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 2200);
+                } else {
+                    hienToast('❌ ' + (data.message || 'Không thể hủy đơn hàng.'), 'error');
+                    btnConfirm.disabled = false;
+                    btnText.textContent = 'Xác nhận hủy';
+                }
+            })
+            .catch(function (err) {
+                console.error('[HuyDon] Lỗi:', err);
+                hienToast('❌ Có lỗi kết nối. Vui lòng thử lại.', 'error');
+                btnConfirm.disabled = false;
+                btnText.textContent = 'Xác nhận hủy';
+            });
+        };
+
+        // ============ Toast Notification ============
+        function hienToast(msg, type) {
+            const toast = document.getElementById('toastNotify');
+            toast.textContent = msg;
+            toast.className = 'toast-notify ' + (type || 'success');
+            toast.classList.add('show');
+            setTimeout(function () {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+        // ============ Đóng modal bằng phím ESC ============
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') _closeModal();
+        });
+    })();
+    </script>
+
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>
         <div class="app-setting">
@@ -318,9 +747,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
-
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                            <h1 class="app-setting__h1">Trình duyệt của bạn đã tắt JavaScript.</h1>
+                            <span class="app-setting__text">Vui lòng bật JavaScript trong cài đặt trình duyệt hoặc nâng cấp lên trình duyệt có hỗ trợ JavaScript.</span>
                         </div>
                     </div>
                 </div>

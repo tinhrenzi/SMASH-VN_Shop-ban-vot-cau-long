@@ -5,12 +5,11 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.smashvn.shop.entity.KhachHang;
 
-@Repository
 public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
+
     // Tìm khách hàng dựa vào ID của bảng TaiKhoan
     KhachHang findByTaiKhoan_Id(Integer idTaiKhoan);
 
@@ -24,18 +23,20 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
     KhachHang findBySoDienThoaiKh(String soDienThoaiKh);
 
     // Tìm khách hàng kết hợp cả họ và tên (LIKE trên cả hai trường)
-    @Query("SELECT kh FROM KhachHang kh WHERE " +
-           "CONCAT(kh.hoKh, ' ', kh.tenKh) LIKE CONCAT('%', :fullName, '%') " +
-           "OR kh.hoKh LIKE CONCAT('%', :fullName, '%') " +
-           "OR kh.tenKh LIKE CONCAT('%', :fullName, '%')")
+    @Query("SELECT kh FROM KhachHang kh WHERE "
+            + "CONCAT(kh.hoKh, ' ', kh.tenKh) LIKE CONCAT('%', :fullName, '%') "
+            + "OR kh.hoKh LIKE CONCAT('%', :fullName, '%') "
+            + "OR kh.tenKh LIKE CONCAT('%', :fullName, '%')")
     List<KhachHang> findByFullName(@Param("fullName") String fullName);
 
     // Tìm khách hàng đã đăng ký nhận bản tin
     List<KhachHang> findByNhanBanTinIsTrue();
+
+    // Tìm khách hàng có vai trò cụ thể trong tài khoản
+    List<KhachHang> findByTaiKhoan_VaiTro(String vaiTro);
+
+    java.util.Optional<KhachHang> findByTaiKhoan_Email(String email);
+
+    @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.laKhachHang = true")
+    List<KhachHang> findByLaKhachHangTrue();
 }
-
-
-
-
-
-

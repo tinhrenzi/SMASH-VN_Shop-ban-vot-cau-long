@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link th:href="@{/images/favicon.png}" rel="shortcut icon">
-    <title>Smash VN - Address Book</title>
+    <title>Smash VN - Địa Chỉ</title>
 
     <!--====== Phông chữ Google ======-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
@@ -52,10 +52,10 @@
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
 
-                                        <a th:href="@{/}">Home</a></li>
+                                        <a th:href="@{/}">Trang chủ</a></li>
                                     <li class="is-marked">
 
-                                        <a th:href="@{/user/profile}">My Account</a></li>
+                                        <a th:href="@{/user/profile}">Tài khoản của tôi</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -83,25 +83,25 @@
                                             <ul class="dash__f-list">
                                                 <li>
 
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Manage My Account</a></li>
+                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/profile}">My Profile</a></li>
+                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/address}">Address Book</a></li>
+                                                    <a th:href="@{/user/address}">Địa chỉ</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/track-order}">Track Order</a></li>
+                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/my-order}">My Orders</a></li>
+                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/payment-option}">My Payment Options</a></li>
+                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/cancellation}">My Returns & Cancellations</a></li>
+                                                    <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -115,7 +115,7 @@
 
                                                         <span class="dash__w-text">4</span>
 
-                                                        <span class="dash__w-name">Orders Placed</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Đặt</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
@@ -124,7 +124,7 @@
 
                                                         <span class="dash__w-text">0</span>
 
-                                                        <span class="dash__w-name">Cancel Orders</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Hủy</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
@@ -133,7 +133,7 @@
 
                                                         <span class="dash__w-text">0</span>
 
-                                                        <span class="dash__w-name">Wishlist</span></div>
+                                                        <span class="dash__w-name">Yêu Thích</span></div>
                                                 </li>
                                             </ul>
                                         </div>
@@ -144,14 +144,15 @@
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white u-s-m-b-30">
                                         <div class="dash__pad-2">
                                             <div class="dash__address-header">
-                                                <h1 class="dash__h1">Address Book</h1>
+                                                <h1 class="dash__h1">Địa Chỉ</h1>
 	                                                
-	                                                <div th:if="${param.thanhcong != null}">
-				                                    	<span class="dash__link dash__link--black u-s-m-r-8">
-												                
-												                <i class="fas fa-check-circle"></i> Đã lưu địa chỉ thành công!</span>
-												    
-												    </div>
+	                                                <div th:if="${thongBaoThanhCong != null}" class="alert alert-success u-s-m-b-15">
+													    <i class="fas fa-check-circle"></i> <span th:text="${thongBaoThanhCong}"></span>
+													</div>
+													
+													<div th:if="${thongBaoLoi != null}" class="alert alert-danger u-s-m-b-15">
+													    <i class="fas fa-times-circle"></i> <span th:text="${thongBaoLoi}"></span>
+													</div>
                                             </div>
                                         </div>
                                     </div>
@@ -171,25 +172,30 @@
                                                 </thead>
                                                 <tbody>
                                                     <tr th:each="dc : ${danhSachDiaChi}">
-                                                    		<td>
-								                                <a class="address-book-edit btn--e-transparent-platinum-b-2" 
-								                                th:href="@{/user/address/edit/{id}(id=${dc.id})}">Sửa</a>
-								                            
-									                            <span th:if="${!dc.defaultShipping}">
-														            <a th:href="@{/user/address/set-default/{id}(id=${dc.id})}" 
-														            	class="address-book-edit btn--e-transparent-platinum-b-2" dir="helllo">
-														                Mặc định</a>
-														        </span>    
-								                            </td>
-								                            <td th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan}">Tên người nhận</td>
-								                            <td th:text="${dc.sdtNguoiNhan}">SĐT</td>
-								                            <td th:text="${dc.diaChiCuThe}">Địa chỉ nhà</td>
-								                            <td th:text="${dc.tinhThanh + ', ' + dc.quocGia}">Tỉnh/Thành phố</td>
-								                            <td>
-								                                <span th:if="${dc.defaultShipping}" class="badge bg-success">Mặc định</span>
-								                            </td>
-								                            
-								                    </tr>
+													    <td>
+													        <a class="address-book-edit btn--e-transparent-platinum-b-2" th:href="@{/user/address/edit/{id}(id=${dc.id})}">Sửa</a>
+													    	<a class="address-book-edit btn--e-transparent-platinum-b-2 js-delete-address" 
+													           href="javascript:void(0)" 
+													           th:attr="data-id=${dc.id}">Xóa</a>
+													    </td>
+													    <td th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan}">Tên người nhận</td>
+													    <td th:text="${dc.sdtNguoiNhan}">SĐT</td>
+													    <td th:text="${dc.diaChiCuThe}">Địa chỉ nhà</td>
+													    <td th:text="${dc.tinhThanh + ', ' + dc.quocGia}">Tỉnh/Thành phố</td>
+													    <td>
+													        <div class="radio-box">
+													            <input type="radio" name="defaultAddressRadio" 
+													                   th:id="'radio-def-' + ${dc.id}" 
+													                   th:checked="${dc.defaultShipping}"
+													                   th:onchange="${!dc.defaultShipping} ? 'window.location.href=\'/user/address/set-default/' + ${dc.id} + '\'' : ''">
+													            <div class="radio-box__state radio-box__state--primary">
+													                <label class="radio-box__label" th:for="'radio-def-' + ${dc.id}">
+													                    <span th:text="${dc.defaultShipping ? 'Đang chọn' : 'Chọn mặc định'}"></span>
+													                </label>
+													            </div>
+													        </div>
+													    </td>
+													</tr>
                                                     <tr th:if="${danhSachDiaChi.isEmpty()}">
 								                            <td colspan="6" class="text-center text-muted py-4">
 								                                Bạn chưa có địa chỉ giao hàng nào. Hãy thêm mới nhé!
@@ -251,9 +257,9 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
+                            <h1 class="app-setting__h1">Trình duyệt của bạn đã tắt JavaScript.</h1>
 
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                            <span class="app-setting__text">Vui lòng bật JavaScript trong cài đặt trình duyệt hoặc nâng cấp lên trình duyệt có hỗ trợ JavaScript.</span>
                         </div>
                     </div>
                 </div>

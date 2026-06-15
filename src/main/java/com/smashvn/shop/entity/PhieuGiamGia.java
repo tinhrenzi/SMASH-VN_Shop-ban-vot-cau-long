@@ -38,4 +38,34 @@ public class PhieuGiamGia {
     @ManyToOne
     @JoinColumn(name = "id_nhan_vien", nullable = false)
     private NhanVien nhanVien;
+
+    @Column(name = "active")
+    private Boolean active = true;
+
+    @Column(name = "gia_tri_don_hang_toi_thieu")
+    private BigDecimal giaTriDonHangToiThieu = BigDecimal.ZERO;
+
+    public Boolean getActive() {
+        return active == null ? true : active;
+    }
+
+    public BigDecimal getGiaTriDonHangToiThieu() {
+        return giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu;
+    }
+
+    public String getDynamicStatus() {
+        if (active != null && !active) {
+            return "INACTIVE";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (ngayBatDau != null && now.isBefore(ngayBatDau)) {
+            return "UPCOMING";
+        } else if (ngayKetThuc != null && now.isAfter(ngayKetThuc)) {
+            return "EXPIRED";
+        } else if (soLuongConLai != null && soLuongConLai <= 0) {
+            return "EXPIRED"; // Or OUT_OF_STOCK, but treat it as expired for Gray badge
+        } else {
+            return "ACTIVE";
+        }
+    }
 }

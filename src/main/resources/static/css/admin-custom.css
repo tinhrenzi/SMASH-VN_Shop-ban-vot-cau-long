@@ -1,0 +1,397 @@
+/* 
+ * Admin Custom Stylesheet - SmashVN
+ * Unifies the admin interface with the homepage brand theme
+ * Primary: #15171c (Deep Dark Slate)
+ * Accent: #ff4500 (Vibrant Brand Orange-Red)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --brand-primary: #15171c;
+    --brand-accent: #ff4500;
+    --brand-accent-hover: #e03d00;
+    --brand-bg: #f4f6fa;
+    --brand-card-bg: #ffffff;
+    --text-primary: #1e2229;
+    --text-muted: #6c757d;
+    --border-color: rgba(21, 23, 28, 0.08);
+}
+
+body {
+    background-color: var(--brand-bg);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Sidebar and Main Layout overrides */
+.main-content {
+    padding: 35px;
+    background-color: var(--brand-bg);
+    min-height: 100vh;
+}
+
+/* Premium Card Design */
+.card {
+    background: var(--brand-card-bg);
+    border: 1px solid rgba(21, 23, 28, 0.04);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(21, 23, 28, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    margin-bottom: 25px;
+}
+
+.card:hover {
+    box-shadow: 0 15px 35px rgba(21, 23, 28, 0.06);
+}
+
+.card-header {
+    background: var(--brand-primary) !important;
+    color: #ffffff !important;
+    border-bottom: none;
+    padding: 20px 25px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h4, .card-header h5 {
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+/* Forms and Inputs styling */
+.form-label {
+    color: var(--brand-primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1.5px solid rgba(21, 23, 28, 0.12);
+    padding: 11px 16px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background-color: #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 4px rgba(255, 69, 0, 0.15);
+    background-color: #ffffff;
+}
+
+.form-control::placeholder {
+    color: #a0a5b0;
+    font-weight: 400;
+}
+
+/* Beautiful Tables styling */
+.table-responsive {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(21, 23, 28, 0.03);
+    border: 1px solid rgba(21, 23, 28, 0.05);
+}
+
+.table {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.table thead th {
+    background-color: var(--brand-primary);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 18px 20px;
+    border: none;
+}
+
+.table tbody td {
+    padding: 16px 20px;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(21, 23, 28, 0.06);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.table tbody tr {
+    transition: all 0.25s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 69, 0, 0.02) !important;
+}
+
+.table tbody tr:hover td {
+    color: var(--brand-primary);
+}
+
+/* Buttons styling matching homepage UI */
+.btn {
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: 0.02em;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary, .btn-brand {
+    background-color: var(--brand-accent) !important;
+    border-color: var(--brand-accent) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover, .btn-brand:hover {
+    background-color: var(--brand-accent-hover) !important;
+    border-color: var(--brand-accent-hover) !important;
+    box-shadow: 0 6px 20px rgba(255, 69, 0, 0.3) !important;
+}
+
+.btn-secondary {
+    background-color: #e2e6ea !important;
+    border-color: #e2e6ea !important;
+    color: var(--brand-primary) !important;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d5db !important;
+    border-color: #d1d5db !important;
+    color: var(--brand-primary) !important;
+}
+
+.btn-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #15171c !important;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800 !important;
+    border-color: #e0a800 !important;
+    box-shadow: 0 6px 15px rgba(255, 193, 7, 0.25) !important;
+}
+
+.btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+.btn-danger:hover {
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.25) !important;
+}
+
+.btn-success {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+    color: #ffffff !important;
+}
+
+.btn-success:hover {
+    background-color: #157347 !important;
+    border-color: #157347 !important;
+    box-shadow: 0 6px 15px rgba(25, 135, 84, 0.25) !important;
+}
+
+.btn-light {
+    background-color: #ffffff !important;
+    border-color: rgba(21, 23, 28, 0.1) !important;
+    color: var(--brand-primary) !important;
+}
+
+.btn-light:hover {
+    background-color: #f8f9fa !important;
+    border-color: rgba(21, 23, 28, 0.2) !important;
+}
+
+/* Soft Badges */
+.badge {
+    padding: 6px 14px;
+    font-weight: 700;
+    font-size: 0.78rem;
+    border-radius: 30px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.bg-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+    color: #198754 !important;
+    border: 1px solid rgba(25, 135, 84, 0.2);
+}
+
+.bg-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    color: #dc3545 !important;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.bg-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    color: #b58100 !important;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.bg-info {
+    background-color: rgba(13, 202, 240, 0.1) !important;
+    color: #0dcaf0 !important;
+    border: 1px solid rgba(13, 202, 240, 0.2);
+}
+
+.bg-primary {
+    background-color: rgba(255, 69, 0, 0.08) !important;
+    color: var(--brand-accent) !important;
+    border: 1px solid rgba(255, 69, 0, 0.15);
+}
+
+.bg-dark {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff !important;
+}
+
+/* Metric Stats Cards */
+.stat-card-premium {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    border: 1px solid rgba(21, 23, 28, 0.04);
+    box-shadow: 0 10px 30px rgba(21, 23, 28, 0.03);
+    transition: all 0.3s ease;
+}
+
+.stat-card-premium:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(21, 23, 28, 0.08);
+}
+
+.stat-card-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background-color: var(--brand-accent);
+    z-index: 2;
+}
+
+.stat-card-premium.accent-slate::before {
+    background-color: var(--brand-primary);
+}
+
+.stat-icon {
+    font-size: 2.2rem;
+    color: var(--brand-accent);
+    opacity: 0.85;
+    transition: all 0.3s ease;
+}
+
+.stat-card-premium:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+}
+
+/* Checkbox Card Premium Additions */
+.checkbox-card-premium {
+    background: #ffffff;
+    border: 1.5px solid rgba(21, 23, 28, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    height: 100%;
+    transition: all 0.25s ease;
+}
+
+.checkbox-card-premium:hover {
+    border-color: var(--brand-accent);
+    box-shadow: 0 5px 15px rgba(255, 69, 0, 0.03);
+}
+
+.checkbox-card-premium h6 {
+    color: var(--brand-primary);
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid rgba(21, 23, 28, 0.05);
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+}
+
+.checkbox-card-premium .form-check-input:checked {
+    background-color: var(--brand-accent);
+    border-color: var(--brand-accent);
+}
+
+/* Dynamic Live Preview Panel */
+.preview-box-premium {
+    background-color: #ffffff;
+    border: 1.5px solid rgba(21, 23, 28, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 6px solid var(--brand-accent);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+}
+
+.preview-box-premium .list-group-item {
+    border-color: rgba(21, 23, 28, 0.04);
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+.preview-box-premium .list-group-item:hover {
+    background-color: rgba(255, 69, 0, 0.01);
+}
+
+/* Title Header Styles */
+.page-title {
+    font-weight: 800;
+    font-size: 1.75rem;
+    color: var(--brand-primary);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}

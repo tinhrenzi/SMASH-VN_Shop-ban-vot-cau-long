@@ -5,54 +5,419 @@
     <title>Thêm Sản Phẩm Mới - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { background-color: #f8f9fa; }</style>
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-5 mb-5">
-    <div class="card shadow">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Thêm Sản Phẩm Gốc</h4>
-            <a th:href="@{/admin/san-pham}" class="btn btn-sm btn-light">Quay lại danh sách</a>
-        </div>
-        <div class="card-body">
-            <div th:if="${param.loi != null}" class="alert alert-danger" th:text="${param.loi}">Đã xảy ra lỗi!</div>
-
-            <form th:action="@{/admin/san-pham/them}" method="post">
-                
-                <h5 class="text-primary border-bottom pb-2">Thông tin chung (Sản phẩm gốc)</h5>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Tên Sản Phẩm *</label>
-                        <input type="text" name="tenSanPham" class="form-control" required placeholder="VD: Vợt Yonex Astrox...">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Danh Mục *</label>
-                        <select name="idDanhMuc" class="form-select" required>
-                            <option value="">-- Chọn --</option>
-                            <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}"></option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Thương Hiệu *</label>
-                        <select name="idThuongHieu" class="form-select" required>
-                            <option value="">-- Chọn --</option>
-                            <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}"></option>
-                        </select>
-                    </div>
+<div class="container-fluid">
+    <div class="row">
+        
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('sanpham')}"></div>
+        
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+            
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <h4 class="mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Mới Sản Phẩm & Tự Động Sinh Biến Thể</h4>
+                    <a th:href="@{/admin/san-pham}" class="btn btn-sm btn-light">Quay lại danh sách</a>
                 </div>
+                <div class="card-body">
+                    <!-- Hiển thị lỗi validate hệ thống đầu vào -->
+                    <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span th:text="${loi}">Đã xảy ra lỗi!</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Mô tả sản phẩm</label>
-                    <textarea name="moTa" class="form-control" rows="4" required placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..."></textarea>
-                </div>
+                    <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm">
+                        
+                        <!-- SECTION 1: THÔNG TIN SẢN PHẨM GỐC -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-info-circle me-1"></i>1. Thông Tin Sản Phẩm Gốc</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tên Sản Phẩm *</label>
+                                <input type="text" name="tenSanPham" class="form-control" th:value="${tenSanPham}" required placeholder="VD: Vợt Yonex Astrox 88D Pro...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Danh Mục *</label>
+                                <select name="idDanhMuc" class="form-select" required>
+                                    <option value="">-- Chọn --</option>
+                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${dm.id == idDanhMuc}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Thương Hiệu *</label>
+                                <select name="idThuongHieu" class="form-select" required>
+                                    <option value="">-- Chọn --</option>
+                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}" th:selected="${th.id == idThuongHieu}"></option>
+                                </select>
+                            </div>
+                        </div>
 
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg px-5"><i class="fas fa-save me-2"></i> LƯU SẢN PHẨM GỐC</button>
-                    <p class="text-muted mt-2"><small>(Bạn sẽ thêm Giá tiền, Màu sắc, Hình ảnh ở phần Quản lý Biến thể sau khi lưu)</small></p>
+                        <div class="mb-4">
+                            <label class="form-label">Mô tả sản phẩm</label>
+                            <textarea name="moTa" class="form-control" rows="3" required placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..." th:text="${moTa}"></textarea>
+                        </div>
+
+                        <!-- SECTION 2: CẤU HÌNH ẢNH SẢN PHẨM MẶC ĐỊNH -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-image me-1"></i>2. Cấu Hình Ảnh Sản Phẩm Mặc Định</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label">Hình ảnh sản phẩm gốc *</label>
+                                <input type="file" name="fileAnh" class="form-control" accept="image/*" required>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 3: CHECKBOX THUỘC TÍNH -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-sliders-h me-1"></i>3. Chọn Các Thuộc Tính Để Tự Động Nhân Biến Thể</h5>
+                        <div class="row g-3 mb-4">
+                            <!-- Màu Sắc -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Màu Sắc</h6>
+                                    <div id="mauSacContainer">
+                                        <div class="form-check my-2" th:each="mau : ${listMauSac}">
+                                            <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}" th:checked="${selectedMauSacs != null && selectedMauSacs.contains(mau)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected colors -->
+                                        <th:block th:if="${selectedMauSacs != null}">
+                                            <div class="form-check my-2" th:each="selectedMau : ${selectedMauSacs}" th:if="${!listMauSac.contains(selectedMau)}">
+                                                <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${selectedMau}" th:id="'mau_' + ${selectedMau}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${selectedMau}" th:text="${selectedMau}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newColorInput" placeholder="Thêm màu mới..." maxlength="50">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('color')"><i class="fas fa-plus"></i> Thêm</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Trọng lượng/Size -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Size / Trọng Lượng</h6>
+                                    <div id="trongLuongContainer">
+                                        <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
+                                            <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}" th:checked="${selectedTrongLuongs != null && selectedTrongLuongs.contains(trong)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected weights -->
+                                        <th:block th:if="${selectedTrongLuongs != null}">
+                                            <div class="form-check my-2" th:each="selectedTrong : ${selectedTrongLuongs}" th:if="${!listTrongLuong.contains(selectedTrong)}">
+                                                <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${selectedTrong}" th:id="'trong_' + ${selectedTrong}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${selectedTrong}" th:text="${selectedTrong}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newWeightInput" placeholder="Thêm trọng lượng/size..." maxlength="20">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('weight')"><i class="fas fa-plus"></i> Thêm</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mức căng -->
+                            <div class="col-md-4">
+                                <div class="checkbox-card-premium shadow-sm">
+                                    <h6>Sức Căng (Vợt Cầu Lông)</h6>
+                                    <div id="mucCangContainer">
+                                        <div class="form-check my-2" th:each="cang : ${listMucCang}">
+                                            <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${cang}" th:id="'cang_' + ${cang}" th:checked="${selectedMucCangs != null && selectedMucCangs.contains(cang)}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${cang}" th:text="${cang}"></label>
+                                        </div>
+                                        <!-- Re-render any custom selected tensions -->
+                                        <th:block th:if="${selectedMucCangs != null}">
+                                            <div class="form-check my-2" th:each="selectedCang : ${selectedMucCangs}" th:if="${!listMucCang.contains(selectedCang)}">
+                                                <input class="form-check-input filter-checkbox cang-cb" type="checkbox" name="mucCangs" th:value="${selectedCang}" th:id="'cang_' + ${selectedCang}" checked>
+                                                <label class="form-check-label fw-semibold text-secondary" th:for="'cang_' + ${selectedCang}" th:text="${selectedCang}"></label>
+                                            </div>
+                                        </th:block>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <input type="text" class="form-control form-control-sm" id="newTensionInput" placeholder="Thêm sức căng..." maxlength="20">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('tension')"><i class="fas fa-plus"></i> Thêm</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 4: XEM TRƯỚC BIẾN THỂ -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Thiết Lập Giá, Số Lượng Kho & Ảnh Cho Từng Biến Thể</h5>
+                        <div class="mb-4">
+                            <div class="preview-box-premium shadow-sm p-3">
+                                <div id="preview-count" class="fw-bold mb-3 text-dark">Chưa có thuộc tính nào được chọn để xem trước.</div>
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-bordered table-hover align-middle mb-0 d-none" id="preview-table">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Màu Sắc</th>
+                                                <th>Trọng Lượng</th>
+                                                <th>Sức Căng</th>
+                                                <th style="width: 180px;">Giá Bán (VNĐ) *</th>
+                                                <th style="width: 120px;">Số Lượng Kho *</th>
+                                                <th>Ảnh Biến Thể (Tùy chọn)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="preview-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="limit-warning" class="text-danger mt-2 fw-bold d-none">
+                                <i class="fas fa-exclamation-triangle"></i> Số lượng biến thể vượt quá giới hạn tối đa cho phép (100 biến thể). Vui lòng bỏ bớt lựa chọn!
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow" id="btnSubmit"><i class="fas fa-save me-2"></i> LƯU SẢN PHẨM & SINH BIẾN THỂ</button>
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = document.querySelectorAll(".filter-checkbox");
+        const previewTable = document.getElementById("preview-table");
+        const previewTbody = document.getElementById("preview-tbody");
+        const previewCount = document.getElementById("preview-count");
+        const limitWarning = document.getElementById("limit-warning");
+        const btnSubmit = document.getElementById("btnSubmit");
+
+        // Caches to preserve user selections when checking/unchecking boxes
+        const fileInputCache = new Map();
+        const priceInputCache = new Map();
+        const qtyInputCache = new Map();
+
+        function updatePreview() {
+            // Lấy toàn bộ các thuộc tính được tick
+            const checkedMaus = Array.from(document.querySelectorAll(".mau-cb:checked")).map(cb => cb.value);
+            const checkedTrongs = Array.from(document.querySelectorAll(".trong-cb:checked")).map(cb => cb.value);
+            const checkedCangs = Array.from(document.querySelectorAll(".cang-cb:checked")).map(cb => cb.value);
+
+            // Xóa rỗng tbody cũ
+            previewTbody.innerHTML = "";
+
+            if (checkedMaus.length === 0 || checkedTrongs.length === 0 || checkedCangs.length === 0) {
+                previewCount.textContent = "Vui lòng chọn ít nhất 1 Màu sắc, 1 Trọng lượng/Size và 1 Sức căng để xem trước.";
+                previewCount.className = "fw-bold mb-2 text-warning";
+                btnSubmit.disabled = false;
+                limitWarning.classList.add("d-none");
+                previewTable.classList.add("d-none");
+                return;
+            }
+
+            // Tính tích Descartes
+            let total = checkedMaus.length * checkedTrongs.length * checkedCangs.length;
+            previewCount.textContent = `Tổng số biến thể sẽ được tự động tạo: ${total}`;
+            
+            previewTable.classList.remove("d-none");
+
+            // Kiểm tra giới hạn 100 biến thể
+            if (total > 100) {
+                limitWarning.classList.remove("d-none");
+                btnSubmit.disabled = true;
+                previewCount.className = "fw-bold mb-2 text-danger fs-5";
+            } else {
+                limitWarning.classList.add("d-none");
+                btnSubmit.disabled = false;
+                previewCount.className = "fw-bold mb-2 text-success fs-5";
+            }
+
+            // Tập hợp các keys hiện tại để dọn dẹp cache
+            const currentKeys = new Set();
+
+            // Render ra bảng xem trước
+            let fragment = document.createDocumentFragment();
+            checkedMaus.forEach(mau => {
+                checkedTrongs.forEach(trong => {
+                    checkedCangs.forEach(cang => {
+                        const variantKey = `${mau.trim()}_${trong.trim()}_${cang.trim()}`;
+                        currentKeys.add(variantKey);
+
+                        let tr = document.createElement("tr");
+
+                        let tdMau = document.createElement("td");
+                        tdMau.innerHTML = `<strong>${mau}</strong>`;
+                        tr.appendChild(tdMau);
+
+                        let tdTrong = document.createElement("td");
+                        tdTrong.innerHTML = `<span>${trong}</span>`;
+                        tr.appendChild(tdTrong);
+
+                        let tdCang = document.createElement("td");
+                        tdCang.innerHTML = `<span>${cang}</span>`;
+                        tr.appendChild(tdCang);
+
+                        // Price column
+                        let tdPrice = document.createElement("td");
+                        let priceInput;
+                        if (priceInputCache.has(variantKey)) {
+                            priceInput = priceInputCache.get(variantKey);
+                        } else {
+                            priceInput = document.createElement("input");
+                            priceInput.type = "number";
+                            priceInput.name = `variantPrices[${variantKey}]`;
+                            priceInput.className = "form-control form-control-sm variant-price-input";
+                            priceInput.min = "1000";
+                            priceInput.step = "1000";
+                            priceInput.required = true;
+                            priceInput.value = "3500000";
+                            priceInputCache.set(variantKey, priceInput);
+                        }
+                        tdPrice.appendChild(priceInput);
+                        tr.appendChild(tdPrice);
+
+                        // Quantity column
+                        let tdQty = document.createElement("td");
+                        let qtyInput;
+                        if (qtyInputCache.has(variantKey)) {
+                            qtyInput = qtyInputCache.get(variantKey);
+                        } else {
+                            qtyInput = document.createElement("input");
+                            qtyInput.type = "number";
+                            qtyInput.name = `variantQuantities[${variantKey}]`;
+                            qtyInput.className = "form-control form-control-sm variant-qty-input";
+                            qtyInput.min = "0";
+                            qtyInput.required = true;
+                            qtyInput.value = "10";
+                            qtyInputCache.set(variantKey, qtyInput);
+                        }
+                        tdQty.appendChild(qtyInput);
+                        tr.appendChild(tdQty);
+
+                        // Image column
+                        let tdImage = document.createElement("td");
+                        let fileInput;
+                        if (fileInputCache.has(variantKey)) {
+                            fileInput = fileInputCache.get(variantKey);
+                        } else {
+                            fileInput = document.createElement("input");
+                            fileInput.type = "file";
+                            fileInput.name = `variantImages[${variantKey}]`;
+                            fileInput.className = "form-control form-control-sm";
+                            fileInput.accept = "image/*";
+                            fileInputCache.set(variantKey, fileInput);
+                        }
+                        tdImage.appendChild(fileInput);
+                        tr.appendChild(tdImage);
+
+                        fragment.appendChild(tr);
+                    });
+                });
+            });
+            previewTbody.appendChild(fragment);
+
+            // Dọn dẹp cache những key không còn tồn tại
+            for (let key of fileInputCache.keys()) {
+                if (!currentKeys.has(key)) {
+                    fileInputCache.delete(key);
+                    priceInputCache.delete(key);
+                    qtyInputCache.delete(key);
+                }
+            }
+        }
+
+        // Đăng ký sự kiện change cho tất cả checkboxes
+        function registerCheckboxListeners() {
+            const currentCheckboxes = document.querySelectorAll(".filter-checkbox");
+            currentCheckboxes.forEach(cb => {
+                cb.removeEventListener("change", updatePreview);
+                cb.addEventListener("change", updatePreview);
+            });
+        }
+
+        registerCheckboxListeners();
+
+        // Chạy lần đầu khi load form
+        updatePreview();
+
+        window.updateProductPreview = function() {
+            registerCheckboxListeners();
+            updatePreview();
+        };
+    });
+
+    function addNewAttribute(type) {
+        let inputId, containerId, name, cbClass, labelPrefix;
+        if (type === 'color') {
+            inputId = 'newColorInput';
+            containerId = 'mauSacContainer';
+            name = 'mauSacs';
+            cbClass = 'mau-cb';
+            labelPrefix = 'mau_';
+        } else if (type === 'weight') {
+            inputId = 'newWeightInput';
+            containerId = 'trongLuongContainer';
+            name = 'trongLuongs';
+            cbClass = 'trong-cb';
+            labelPrefix = 'trong_';
+        } else if (type === 'tension') {
+            inputId = 'newTensionInput';
+            containerId = 'mucCangContainer';
+            name = 'mucCangs';
+            cbClass = 'cang-cb';
+            labelPrefix = 'cang_';
+        }
+
+        const input = document.getElementById(inputId);
+        const value = input.value.trim();
+        if (!value) {
+            alert('Vui lòng nhập giá trị!');
+            return;
+        }
+
+        const container = document.getElementById(containerId);
+        // Check if value already exists
+        const existingCheckboxes = container.querySelectorAll(`input[name="${name}"]`);
+        for (let cb of existingCheckboxes) {
+            if (cb.value.toLowerCase() === value.toLowerCase()) {
+                alert('Giá trị này đã tồn tại!');
+                return;
+            }
+        }
+
+        // Create new checkbox
+        const newId = labelPrefix + value.replace(/\s+/g, '_');
+        const formCheck = document.createElement('div');
+        formCheck.className = 'form-check my-2';
+        
+        const cbInput = document.createElement('input');
+        cbInput.className = `form-check-input filter-checkbox ${cbClass}`;
+        cbInput.type = 'checkbox';
+        cbInput.name = name;
+        cbInput.value = value;
+        cbInput.id = newId;
+        cbInput.checked = true; // Auto check the newly added attribute
+        
+        const cbLabel = document.createElement('label');
+        cbLabel.className = 'form-check-label fw-semibold text-secondary';
+        cbLabel.htmlFor = newId;
+        cbLabel.textContent = value;
+
+        formCheck.appendChild(cbInput);
+        formCheck.appendChild(cbLabel);
+        container.appendChild(formCheck);
+
+        // Clear input
+        input.value = '';
+
+        // Trigger preview update
+        if (window.updateProductPreview) {
+            window.updateProductPreview();
+        }
+    }
+</script>
 </body>
 </html>

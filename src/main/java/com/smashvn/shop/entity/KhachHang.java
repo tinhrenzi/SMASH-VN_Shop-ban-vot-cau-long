@@ -29,6 +29,9 @@ public class KhachHang {
     @Column(name = "nhan_ban_tin", nullable = false)
     private boolean nhanBanTin;
 
+    @Column(name = "la_tai_khoan_noi_bo", columnDefinition = "bit not null default 0")
+    private boolean laTaiKhoanNoiBo = false;
+
     @OneToMany(mappedBy = "khachHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

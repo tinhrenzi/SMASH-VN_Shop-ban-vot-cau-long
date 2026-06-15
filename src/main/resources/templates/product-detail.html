@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en" xmlns:th="http://www.thymeleaf.org">
+<html class="no-js" lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
@@ -49,23 +49,17 @@
                         <div class="col-lg-5">
 
                             <!--====== Product Breadcrumb ======-->
-                            <div class="pd-breadcrumb u-s-m-b-30">
-                                <ul class="pd-breadcrumb__list">
-                                    <li class="has-separator">
-
-                                        <a th:href="@{/index.html}">Home</a></li>
-                                    <li class="has-separator">
-
-                                        <a th:href="@{/shop-side-version-2.html}">Electronics</a></li>
-                                    <li class="has-separator">
-
-                                        <a th:href="@{/shop-side-version-2.html}">DSLR Cameras</a></li>
-                                    <li class="is-marked">
-
-                                        <a th:href="@{/shop-side-version-2.html}">Nikon Cameras</a></li>
-                                </ul>
-                            </div>
-                            <!--====== End - Product Breadcrumb ======-->
+                             <div class="pd-breadcrumb u-s-m-b-30">
+                                 <ul class="pd-breadcrumb__list">
+                                     <li class="has-separator">
+                                         <a th:href="@{/index.html}">Trang chủ</a></li>
+                                     <li class="has-separator">
+                                         <a th:href="@{/index.html}">Vợt Cầu Lông</a></li>
+                                     <li class="is-marked">
+                                         <a href="javascript:void(0)" th:text="${sp.tenSanPham}">Chi tiết sản phẩm</a></li>
+                                 </ul>
+                             </div>
+                             <!--====== End - Product Breadcrumb ======-->
 
 
                             <!--====== Product Detail Zoom ======-->
@@ -93,93 +87,111 @@
                         <div class="col-lg-7">
 
                             <!--====== Product Right Side Details ======-->
-                            <div class="pd-detail">
-							    <div>
-							        <span class="pd-detail__name" th:text="${sp.tenSanPham}">Tên Sản Phẩm</span>
-							    </div>
+                            <div id="product-detail-container" class="pd-detail">
+								    <div>
+								        <span class="pd-detail__name" th:text="${sp.tenSanPham}">Tên Sản Phẩm</span>
+								    </div>
+								    
+								    <div class="u-s-m-b-15 u-s-m-t-15">
+								        Thương hiệu: <strong th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</strong> | 
+								        Danh mục: <strong th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</strong>
+								    </div>
+								
+								    <div>
+								        <div class="pd-detail__inline">
+								            <span id="js-display-price" class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
+								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								        </div>
+								    </div>
+								    
+								    <div class="u-s-m-b-15 u-s-m-t-15">
+								        <div class="pd-detail__rating gl-rating-style">
+								            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+								            <span class="pd-detail__review u-s-m-l-4">
+								                <a data-click-scroll="#view-review">23 Đánh giá</a>
+								            </span>
+								        </div>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+								        <span class="pd-detail__preview-desc" th:text="${sp.moTa}">Mô tả ngắn...</span>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+										<div class="pd-detail__inline">
+											<span class="pd-detail__click-wrap"><i class="far fa-heart u-s-m-r-6"></i>
+												 <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ')'" >
+												 Thêm vào yêu thích
+												</a>
+											</span>
+										 </div>
+									</div>
+								    
+								    <div class="u-s-m-b-15">
+								        <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
+								
+								            <div class="u-s-m-b-15" th:if="${listMauSac != null and !listMauSac.isEmpty()}">
+								                <span class="pd-detail__label u-s-m-b-8">1. Màu sắc:</span>
+								                <div class="d-flex flex-wrap">
+								                    <div th:each="mau : ${listMauSac}" 
+								                         class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
+								                         th:attr="data-color=${mau}"
+								                         onclick="selectColor(this)">
+								                        <span th:text="${mau}"></span>
+								                    </div>
+								                </div>
+								            </div>
+								        
+								            <div class="u-s-m-b-15" th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
+								                <span class="pd-detail__label u-s-m-b-8">2. Trọng lượng / Size:</span>
+								                <div class="d-flex flex-wrap">
+								                    <div th:each="size : ${listKichThuoc}" 
+								                         class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
+								                         th:attr="data-size=${size}"
+								                         onclick="selectSize(this)">
+								                        <span th:text="${size}"></span>
+								                    </div>
+								                </div>
+								            </div>
+								        
+								            <div class="js-stock-status u-s-m-b-15 text-danger fw-bold" style="display:none;">
+								                <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
+								            </div>
+
+								            <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
+								            <div id="js-variant-stock-info" class="u-s-m-b-15" style="display:none;">
+								                <span class="pd-detail__label">Kho: </span>
+								                <span id="js-variant-stock-count" class="fw-bold"></span>
+								                <span id="js-variant-stock-badge" class="pd-detail__stock" style="margin-left:8px;"></span>
+								            </div>
+								        
+								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
+								        
+								            <div class="pd-detail-action-row u-s-m-b-15">
+								                <div class="pd-detail-action-row__counter">
+								                    <div class="input-counter">
+								                        <span class="input-counter__minus fas fa-minus"></span>
+								                        <input class="js-quantity-input input-counter__text input-counter--text-primary-style" type="text" name="soLuong" value="1" data-min="1" data-max="1000">
+								                        <span class="input-counter__plus fas fa-plus"></span>
+								                    </div>
+								                </div>
+								                <div class="pd-detail-action-row__btn">
+								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit" disabled>THÊM VÀO GIỎ</button>
+								                </div>
+								            </div>
+								        </form>
+								    </div>
+								    
+								    <div class="u-s-m-b-15">
+								        <span class="pd-detail__label u-s-m-b-8">Chính sách mua hàng:</span>
+								        <ul class="pd-detail__policy-list">
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Cam kết chính hãng 100%.</span></li>
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Bảo hành theo tiêu chuẩn nhà sản xuất.</span></li>
+								            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Đổi trả trong 7 ngày nếu lỗi do NSX.</span></li>
+								        </ul>
+								    </div>
+								</div>
 							    
-							    <div class="u-s-m-b-15 u-s-m-t-15">
-							        Thương hiệu: <strong th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</strong> | 
-							        Danh mục: <strong th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</strong>
-							    </div>
-							
-							    <div>
-							        <div class="pd-detail__inline">
-							            <span class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
-							                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
-							        </div>
-							    </div>
-							    
-							    <div class="u-s-m-b-15 u-s-m-t-15">
-							        <div class="pd-detail__rating gl-rating-style">
-							            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-							            <span class="pd-detail__review u-s-m-l-4">
-							                <a data-click-scroll="#view-review">23 Đánh giá</a>
-							            </span>
-							        </div>
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <span class="pd-detail__preview-desc" th:text="${sp.moTa}">Mô tả ngắn...</span>
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
-    
-									    <div class="u-s-m-b-15">
-									        <span class="pd-detail__label u-s-m-b-8">1. Màu sắc:</span>
-									        <div class="d-flex flex-wrap">
-									            <div th:each="mau : ${listMauSac}" 
-									                 class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
-									                 th:data-color="${mau}"
-									                 onclick="selectColor(this)">
-									                <span th:text="${mau}"></span>
-									            </div>
-									        </div>
-									    </div>
-									
-									    <div class="u-s-m-b-15">
-									        <span class="pd-detail__label u-s-m-b-8">2. Trọng lượng / Size:</span>
-									        <div class="d-flex flex-wrap">
-									            <div th:each="size : ${listKichThuoc}" 
-									                 class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
-									                 th:data-size="${size}"
-									                 onclick="selectSize(this)">
-									                <span th:text="${size}"></span>
-									            </div>
-									        </div>
-									    </div>
-									
-									    <div class="u-s-m-b-15 text-danger fw-bold" id="stock-status" style="display:none;">
-									        <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
-									    </div>
-									
-									    <input type="hidden" name="idSanPhamChiTiet" id="selectedVariantId" required>
-									
-									    <div class="pd-detail-inline-2">
-									        <div class="u-s-m-b-15">
-									            <div class="input-counter">
-									                <span class="input-counter__minus fas fa-minus"></span>
-									                <input class="input-counter__text input-counter--text-primary-style" type="text" name="soLuong" value="1" data-min="1" data-max="1000" id="quantityInput">
-									                <span class="input-counter__plus fas fa-plus"></span>
-									            </div>
-									        </div>
-									        <div class="u-s-m-b-15">
-									            <button class="btn btn--e-brand-b-2" type="submit" id="btnAddToCart" disabled>THÊM VÀO GIỎ</button>
-									        </div>
-									    </div>
-									</form>
-									
-							    </div>
-							    
-							    <div class="u-s-m-b-15">
-							        <span class="pd-detail__label u-s-m-b-8">Chính sách mua hàng:</span>
-							        <ul class="pd-detail__policy-list">
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Cam kết chính hãng 100%.</span></li>
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Bảo hành theo tiêu chuẩn nhà sản xuất.</span></li>
-							            <li><i class="fas fa-check-circle u-s-m-r-8"></i><span>Đổi trả trong 7 ngày nếu lỗi do NSX.</span></li>
-							        </ul>
-							    </div>
 							</div>
                             <!--====== End - Product Right Side Details ======-->
                         </div>
@@ -193,85 +205,62 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="pd-tab">
-                                <div class="u-s-m-b-30">
+                               <div class="u-s-m-b-30">
                                     <ul class="nav pd-tab__list">
                                         <li class="nav-item">
-
-                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-desc}">DESCRIPTION</a></li>
+                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-desc}">MÔ TẢ CHI TIẾT</a></li>
                                         <li class="nav-item">
-
-                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-tag}">TAGS</a></li>
+                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-tag}">THẺ</a></li>
                                         <li class="nav-item">
-
-                                            <a class="nav-link active" id="view-review" data-toggle="tab" th:href="@{/#pd-rev}">REVIEWS
-
-                                                <span>(23)</span></a></li>
+                                            <a class="nav-link active" id="view-review" data-toggle="tab" th:href="@{/#pd-rev}">ĐÁNH GIÁ <span>(23)</span></a></li>
                                     </ul>
                                 </div>
-                                <div class="tab-content">
-
-                                    <!--====== Tab 1 ======-->
+                                     <!--====== Tab 1 ======-->
                                     <div class="tab-pane" id="pd-desc">
                                         <div class="pd-tab__desc">
                                             <div class="u-s-m-b-15">
-                                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
+                                                <p th:text="${sp.moTa}">Đây là thông tin mô tả chi tiết của sản phẩm. Sản phẩm vợt cầu lông SmashVN chất lượng cao, độ bền tốt, hỗ trợ tối đa cho người chơi.</p>
                                             </div>
-                                            <div class="u-s-m-b-30"><iframe src="#" allowfullscreen></iframe></div>
                                             <div class="u-s-m-b-30">
                                                 <ul>
                                                     <li><i class="fas fa-check u-s-m-r-8"></i>
-
-                                                        <span>Buyer Protection.</span></li>
+                                                         <span>Bảo vệ quyền lợi người mua hàng.</span></li>
                                                     <li><i class="fas fa-check u-s-m-r-8"></i>
-
-                                                        <span>Full Refund if you don't receive your order.</span></li>
+                                                         <span>Hoàn tiền 100% nếu sản phẩm lỗi từ nhà sản xuất.</span></li>
                                                     <li><i class="fas fa-check u-s-m-r-8"></i>
-
-                                                        <span>Returns accepted if product not as described.</span></li>
+                                                         <span>Hỗ trợ đổi trả trong vòng 7 ngày.</span></li>
                                                 </ul>
                                             </div>
                                             <div class="u-s-m-b-15">
-                                                <h4>PRODUCT INFORMATION</h4>
+                                                <h4>THÔNG TIN SẢN PHẨM</h4>
                                             </div>
                                             <div class="u-s-m-b-15">
                                                 <div class="pd-table gl-scroll">
                                                     <table>
                                                         <tbody>
                                                             <tr>
-                                                                <td>Main Material</td>
-                                                                <td>Cotton</td>
+                                                                <td>Thương hiệu</td>
+                                                                <td th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Color</td>
-                                                                <td>Green, Blue, Red</td>
+                                                                <td>Danh mục sản phẩm</td>
+                                                                <td th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Sleeves</td>
-                                                                <td>Long Sleeve</td>
+                                                                <td>Màu sắc hiện có</td>
+                                                                <td>Đa dạng phiên bản màu sắc</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Top Fit</td>
-                                                                <td>Regular</td>
+                                                                <td>Độ cứng</td>
+                                                                <td>Trung bình / Dẻo / Cứng</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Print</td>
-                                                                <td>Not Printed</td>
+                                                                <td>Đối tượng sử dụng</td>
+                                                                <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Neck</td>
-                                                                <td>Round Neck</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Pieces Count</td>
-                                                                <td>1 Piece</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Occasion</td>
-                                                                <td>Casual</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Shipping Weight (kg)</td>
-                                                                <td>0.5</td>
+                                                                <td>Khối lượng vận chuyển (kg)</td>
+                                                                <td>0.5 kg</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -285,16 +274,14 @@
                                     <!--====== Tab 2 ======-->
                                     <div class="tab-pane" id="pd-tag">
                                         <div class="pd-tab__tag">
-                                            <h2 class="u-s-m-b-15">ADD YOUR TAGS</h2>
+                                            <h2 class="u-s-m-b-15">THÊM THẺ CỦA BẠN</h2>
                                             <div class="u-s-m-b-15">
                                                 <form>
-
-                                                    <input class="input-text input-text--primary-style" type="text">
-
-                                                    <button class="btn btn--e-brand-b-2" type="submit">ADD TAGS</button></form>
+                                                     <input class="input-text input-text--primary-style" type="text">
+                                                     <button class="btn btn--e-brand-b-2" type="submit">THÊM THẺ</button></form>
                                             </div>
 
-                                            <span class="gl-text">Use spaces to separate tags. Use single quotes (') for phrases.</span>
+                                            <span class="gl-text">Sử dụng dấu cách để phân tách các thẻ. Sử dụng dấu nháy đơn (') cho các cụm từ.</span>
                                         </div>
                                     </div>
                                     <!--====== End - Tab 2 ======-->
@@ -306,27 +293,26 @@
                                             <div class="u-s-m-b-30">
                                                 <div class="pd-tab__rev-score">
                                                     <div class="u-s-m-b-8">
-                                                        <h2>23 Reviews - 4.6 (Overall)</h2>
+                                                        <h2>23 Đánh giá - 4.6 (Trung bình)</h2>
                                                     </div>
                                                     <div class="gl-rating-style-2 u-s-m-b-8"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
                                                     <div class="u-s-m-b-8">
-                                                        <h4>We want to hear from you!</h4>
+                                                        <h4>Chúng tôi muốn nghe ý kiến từ bạn!</h4>
                                                     </div>
 
-                                                    <span class="gl-text">Tell us what you think about this item</span>
+                                                    <span class="gl-text">Chia sẻ cảm nhận của bạn về sản phẩm này</span>
                                                 </div>
                                             </div>
                                             <div class="u-s-m-b-30">
                                                 <form class="pd-tab__rev-f1">
                                                     <div class="rev-f1__group">
+                                                         <div class="u-s-m-b-15">
+                                                             <h2 th:text="'Có 23 đánh giá cho sản phẩm ' + ${sp.tenSanPham}">23 Đánh giá cho sản phẩm</h2>
+                                                         </div>
                                                         <div class="u-s-m-b-15">
-                                                            <h2>23 Review(s) for Man Ruched Floral Applique Tee</h2>
-                                                        </div>
-                                                        <div class="u-s-m-b-15">
-
                                                             <label for="sort-review"></label><select class="select-box select-box--primary-style" id="sort-review">
-                                                                <option selected>Sort by: Best Rating</option>
-                                                                <option>Sort by: Worst Rating</option>
+                                                                <option selected>Sắp xếp: Đánh giá cao nhất</option>
+                                                                <option>Sắp xếp: Đánh giá thấp nhất</option>
                                                             </select></div>
                                                     </div>
                                                     <div class="rev-f1__review">
@@ -368,9 +354,9 @@
                                             </div>
                                             <div class="u-s-m-b-30">
                                                 <form class="pd-tab__rev-f2">
-                                                    <h2 class="u-s-m-b-15">Add a Review</h2>
+                                                    <h2 class="u-s-m-b-15">Thêm Đánh Giá</h2>
 
-                                                    <span class="gl-text u-s-m-b-15">Your email address will not be published. Required fields are marked *</span>
+                                                    <span class="gl-text u-s-m-b-15">Địa chỉ email của bạn sẽ không bị công khai. Các trường bắt buộc được đánh dấu *</span>
                                                     <div class="u-s-m-b-30">
                                                         <div class="rev-f2__table-wrap gl-scroll">
                                                             <table class="rev-f2__table">
@@ -539,25 +525,19 @@
                                                         </div>
                                                     </div>
                                                     <div class="rev-f2__group">
-                                                        <div class="u-s-m-b-15">
-
-                                                            <label class="gl-label" for="reviewer-text">YOUR REVIEW *</label><textarea class="text-area text-area--primary-style" id="reviewer-text"></textarea></div>
-                                                        <div>
-                                                            <p class="u-s-m-b-30">
-
-                                                                <label class="gl-label" for="reviewer-name">NAME *</label>
-
-                                                                <input class="input-text input-text--primary-style" type="text" id="reviewer-name"></p>
-                                                            <p class="u-s-m-b-30">
-
-                                                                <label class="gl-label" for="reviewer-email">EMAIL *</label>
-
-                                                                <input class="input-text input-text--primary-style" type="text" id="reviewer-email"></p>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-
-                                                        <button class="btn btn--e-brand-shadow" type="submit">SUBMIT</button></div>
+                                                         <div class="u-s-m-b-15">
+                                                             <label class="gl-label" for="reviewer-text">ĐÁNH GIÁ CỦA BẠN *</label><textarea class="text-area text-area--primary-style" id="reviewer-text"></textarea></div>
+                                                         <div>
+                                                             <p class="u-s-m-b-30">
+                                                                 <label class="gl-label" for="reviewer-name">HỌ TÊN *</label>
+                                                                 <input class="input-text input-text--primary-style" type="text" id="reviewer-name"></p>
+                                                             <p class="u-s-m-b-30">
+                                                                 <label class="gl-label" for="reviewer-email">EMAIL *</label>
+                                                                 <input class="input-text input-text--primary-style" type="text" id="reviewer-email"></p>
+                                                         </div>
+                                                     </div>
+                                                     <div>
+                                                         <button class="btn btn--e-brand-shadow" type="submit">GỬI</button></div>
                                                 </form>
                                             </div>
                                         </div>
@@ -578,9 +558,9 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">CUSTOMER ALSO VIEWED</h1>
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">SẢN PHẨM KHÁCH HÀNG CŨNG XEM</h1>
 
-                                    <span class="section__span u-c-grey">PRODUCTS THAT CUSTOMER VIEWED</span>
+                                    <span class="section__span u-c-grey">CÁC SẢN PHẨM ĐƯỢC XEM NHIỀU NHẤT</span>
                                 </div>
                             </div>
                         </div>
@@ -598,246 +578,204 @@
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{images/product/electronic/product1.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Beats Bomb Wireless Headphone</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Astrox 88D Pro</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{/images/product/electronic/product2.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Red Wireless Headphone</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Tectonic 7</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{images/product/electronic/product3.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Yellow Wireless Headphone</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor Thruster K 9900</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{/images/product/electronic/product23.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Razor Gear Ultra Slim 8GB Ram</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Nanoflare 800</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{images/product/electronic/product26.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Razor Gear Ultra Slim 12GB Ram</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Windstorm 72</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/product-detail.html}">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
 
                                                 <img class="aspect__img" th:src="@{/images/product/electronic/product30.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
 
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Razor Gear Ultra Slim 16GB Ram</a></span>
+                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor AuraSpeed 90K</a></span>
                                         <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
 
                                             <span class="product-o__review">(20)</span></div>
 
-                                        <span class="product-o__price">$125.00
-
-                                            <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__price">1.250.000 đ
+                                            <span class="product-o__discount">1.600.000 đ</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -872,7 +810,15 @@
     </script>
 	<script th:inline="javascript">
 	    /*<![CDATA[*/
-	    var danhSachBienThe = /*[[${listBienTheJS}]]*/ [];
+	    (function() {
+	        var variants = /*[[${listBienTheJS}]]*/ [];
+	        var container = document.getElementById('product-detail-container');
+	        if (container) {
+	            container.danhSachBienThe = variants;
+	        } else {
+	            console.error("Lỗi: Không tìm thấy #product-detail-container!");
+	        }
+	    })();
 	    /*]]>*/
 	</script>
     <script src="https://www.google-analytics.com/analytics.js" async defer></script>

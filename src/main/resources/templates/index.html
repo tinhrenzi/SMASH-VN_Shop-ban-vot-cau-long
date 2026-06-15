@@ -30,7 +30,7 @@
     </div>
 
     <!--====== app js ======-->
-    <div id="app"></div>
+    <div id="app">
 
         <!--====== Header ======-->
         <header class="header--style-1">
@@ -61,7 +61,7 @@
 
                                             <span class="u-c-brand">Tiền</span></span>
 
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop-side-version-2.html}">SHOP NOW</a></div>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@
 
                                             <span class="u-c-brand">Tiền</span></span>
 
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop-side-version-2.html}">SHOP NOW</a></div>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
                                 </div>
                             </div>
                         </div>
@@ -103,7 +103,7 @@
 
                                             <span class="u-c-brand">Tiền</span></span>
 
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop-side-version-2.html}">SHOP NOW</a></div>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
                                 </div>
                             </div>
                         </div>
@@ -139,31 +139,31 @@
                         <div class="row">
                             <div class="col-lg-5 col-md-5 u-s-m-b-30">
 
-                                <a class="collection" th:href="@{/shop-side-version-2.html}">
+                                <a class="collection" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--square">
 
-                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-1.jpg}" alt=""></div>
+                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-9.png}" alt=""></div>
                                 </a></div>
                             <div class="col-lg-7 col-md-7 u-s-m-b-30">
 
-                                <a class="collection" th:href="@{/shop-side-version-2.html}">
+                                <a class="collection" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--1286-890">
 
-                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-2.jpg}" alt=""></div>
+                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-11.png}" alt=""></div>
                                 </a></div>
                             <div class="col-lg-7 col-md-7 u-s-m-b-30">
 
-                                <a class="collection" th:href="@{/shop-side-version-2.html}">
+                                <a class="collection" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--1286-890">
 
-                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-3.jpg}" alt=""></div>
+                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-14.png}" alt=""></div>
                                 </a></div>
                             <div class="col-lg-5 col-md-5 u-s-m-b-30">
 
-                                <a class="collection" th:href="@{/shop-side-version-2.html}">
+                                <a class="collection" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--square">
 
-                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-4.jpg}" alt=""></div>
+                                        <img class="aspect__img collection__img" th:src="@{/images/collection/coll-13.png}" alt=""></div>
                                 </a></div>
                         </div>
                     </div>
@@ -213,42 +213,71 @@
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
-									    <div class="product-o product-o--hover-on product-o--radius">
-									        <div class="product-o__wrap">
-									            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
-									                <img class="aspect__img" 
-									                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
-									                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
-									            </a>
-									            <div class="product-o__action-wrap">
-									                <ul class="product-o__action-list">
-									                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-									                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-									                </ul>
-									            </div>
-									        </div>
-									
-									        <span class="product-o__category">
-									            <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
-									        </span>
-									
-									        <span class="product-o__name">
-									            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
-									        </span>
-									        
-									        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
-									            Từ <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
-									        </span>
-									    </div>
-									</div>
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item headphone" th:each="product : ${products}">
+									    
+											<div class="product-o product-o--hover-on product-o--radius">
+											    
+											    <div class="product-o__wrap">
+											        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+											            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+											                 th:if="${!product.sanPhamChiTiets.isEmpty()}"
+											                 th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+											        </a>
+											        
+											        <div class="product-o__action-wrap">
+											            <ul class="product-o__action-list">
+											                <li>
+											                    <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+											                        <i class="fas fa-search-plus"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+											                        <i class="fas fa-plus-circle"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+											                        <i class="fas fa-plus-circle text-success"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                	<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+													                <i class="fas fa-heart"></i>
+													            </a>
+											                </li>
+											            </ul>
+											        </div>
+											    </div>
+											
+											    <span class="product-o__category">
+											        <a th:href="@{#}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+											    </span>
+											
+											    <span class="product-o__name">
+											        <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+											    </span>
+											    
+											    <div class="product-o__rating gl-rating-style">
+											        <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+											        <span class="product-o__review">(0)</span>
+											    </div>
+											
+											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
+											        <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+											    </span>
+											    
+											</div>
+										</div>
+										
 									</div>
                                 </div>
                             </div>
                             <div class="col-lg-12">
                                 <div class="load-more">
 
-                                    <button class="btn btn--e-brand" type="button">Load More</button></div>
+                                    <button class="btn btn--e-brand" type="button">Xem Thêm</button></div>
                             </div>
                         </div>
                     </div>
@@ -267,11 +296,11 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">DEAL OF THE DAY</h1>
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">ƯU ĐÃI TRONG NGÀY</h1>
 
-                                    <span class="section__span u-c-silver">BUY DEAL OF THE DAY, HURRY UP! THESE NEW PRODUCTS WILL EXPIRE SOON.</span>
+                                    <span class="section__span u-c-silver">MUA CÁC ƯU ĐÃI TỐT NHẤT TRONG NGÀY, NHANH CHÂN LÊN! CÁC SẢN PHẨM KHUYẾN MÃI NÀY SẼ SỚM HẾT HẠN.</span>
 
-                                    <span class="section__span u-c-silver">ADD THESE ON YOUR CART.</span>
+                                    <span class="section__span u-c-silver">THÊM NGAY VÀO GIỎ HÀNG CỦA BẠN.</span>
                                 </div>
                             </div>
                         </div>
@@ -297,11 +326,9 @@
                                         <div class="product-o__action-wrap">
                                             <ul class="product-o__action-list">
                                                 <li>
-
-                                                    <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                 <li>
-
-                                                    <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                 <li>
 
                                                     <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
@@ -314,7 +341,7 @@
 
                                     <span class="product-o__category">
 
-                                        <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                        <a th:href="@{/shop}">Electronics</a></span>
 
                                     <span class="product-o__name">
 
@@ -323,9 +350,9 @@
 
                                         <span class="product-o__review">(2)</span></div>
 
-                                    <span class="product-o__price">$125.00
+                                    <span class="product-o__price">125.000 đ
 
-                                        <span class="product-o__discount">$160.00</span></span>
+                                        <span class="product-o__discount">160.000 đ</span></span>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-6 u-s-m-b-30">
@@ -349,9 +376,9 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">NEW ARRIVALS</h1>
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">SẢN PHẨM MỚI</h1>
 
-                                    <span class="section__span u-c-silver">GET UP FOR NEW ARRIVALS</span>
+                                    <span class="section__span u-c-silver">CÁC SẢN PHẨM MỚI VỀ</span>
                                 </div>
                             </div>
                         </div>
@@ -375,11 +402,9 @@
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick View"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
                                                     <li>
-
-                                                        <a data-modal="modal" data-modal-id="#add-to-cart" data-tooltip="tooltip" data-placement="top" title="Add to Cart"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
                                                     <li>
 
                                                         <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
@@ -392,7 +417,7 @@
 
                                         <span class="product-o__category">
 
-                                            <a th:href="@{/shop-side-version-2.html}">Electronics</a></span>
+                                            <a th:href="@{/shop}">Electronics</a></span>
 
                                         <span class="product-o__name">
 
@@ -401,9 +426,9 @@
 
                                             <span class="product-o__review">(0)</span></div>
 
-                                        <span class="product-o__price">$125.00
+                                        <span class="product-o__price">125.000 đ
 
-                                            <span class="product-o__discount">$160.00</span></span>
+                                            <span class="product-o__discount">160.000 đ</span></span>
                                     </div>
                                 </div>
                                 <div class="u-s-m-b-30">
@@ -453,9 +478,9 @@
 
                                         <span class="u-c-white">Đừng bỏ lỡ!</span></div>
 
-                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-secondary">Enjoy Free Shipping when you buy 2 items and above!</span>
+                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-secondary">Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!</span>
 
-                                    <a class="banner-bg__shop-now btn--e-secondary" th:href="@{/shop-side-version-2.html}">Shop Now</a>
+                                    <a class="banner-bg__shop-now btn--e-secondary" th:href="@{/shop}">Mua Ngay</a>
                                 </div>
                             </div>
                         </div>
@@ -475,9 +500,9 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">FEATURED PRODUCTS</h1>
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">SẢN PHẨM NỔI BẬT</h1>
 
-                                    <span class="section__span u-c-silver">FIND NEW FEATURED PRODUCTS</span>
+                                    <span class="section__span u-c-silver">TÌM CÁC SẢN PHẨM NỔI BẬT NHẤT</span>
                                 </div>
                             </div>
                         </div>
@@ -500,10 +525,29 @@
 							            </a>
 							            
 							            <div class="product-o__action-wrap">
-							                <ul class="product-o__action-list">
-							                    <li><a data-modal="modal" data-modal-id="#quick-look"><i class="fas fa-search-plus"></i></a></li>
-							                    <li><a data-modal="modal" data-modal-id="#add-to-cart"><i class="fas fa-plus-circle"></i></a></li>
-							                </ul>
+											            <ul class="product-o__action-list">
+											                <li>
+											                    <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+											                        <i class="fas fa-search-plus"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+											                        <i class="fas fa-plus-circle"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+											                        <i class="fas fa-plus-circle text-success"></i>
+											                    </a>
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+											                    </a>
+											                </li>
+											                <li>
+											                	<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+													                <i class="fas fa-heart"></i>
+													            </a>
+											                </li>
+											            </ul>
 							            </div>
 							        </div>
 							
@@ -537,7 +581,7 @@
                         <div class="row">
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
 
-                                <a class="promotion" th:href="@{/shop-side-version-2.html}">
+                                <a class="promotion" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--vertical">
 
                                         <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-1.jpg}" alt=""></div>
@@ -580,9 +624,9 @@
                                     <div class="service__icon"><i class="fas fa-truck"></i></div>
                                     <div class="service__info-wrap">
 
-                                        <span class="service__info-text-1">Free Shipping</span>
+                                        <span class="service__info-text-1">Giao Hàng Miễn Phí</span>
 
-                                        <span class="service__info-text-2">Free shipping on all US order or order above $200</span></div>
+                                        <span class="service__info-text-2">Giao hàng miễn phí cho các đơn hàng từ 2.000.000 đ trở lên</span></div>
                                 </div>
                             </div>
                             <div class="col-lg-4 col-md-6 u-s-m-b-30">
@@ -590,9 +634,9 @@
                                     <div class="service__icon"><i class="fas fa-redo"></i></div>
                                     <div class="service__info-wrap">
 
-                                        <span class="service__info-text-1">Shop with Confidence</span>
+                                        <span class="service__info-text-1">Mua Sắm An Tâm</span>
 
-                                        <span class="service__info-text-2">Our Protection covers your purchase from click to delivery</span></div>
+                                        <span class="service__info-text-2">Chính sách bảo vệ người mua bao quát từ khi đặt hàng đến khi nhận</span></div>
                                 </div>
                             </div>
                             <div class="col-lg-4 col-md-6 u-s-m-b-30">
@@ -600,9 +644,9 @@
                                     <div class="service__icon"><i class="fas fa-headphones-alt"></i></div>
                                     <div class="service__info-wrap">
 
-                                        <span class="service__info-text-1">24/7 Help Center</span>
+                                        <span class="service__info-text-1">Hỗ Trợ 24/7</span>
 
-                                        <span class="service__info-text-2">Round-the-clock assistance for a smooth shopping experience</span></div>
+                                        <span class="service__info-text-2">Đội ngũ hỗ trợ chuyên nghiệp phục vụ khách hàng mọi lúc mọi nơi</span></div>
                                 </div>
                             </div>
                         </div>
@@ -622,9 +666,9 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="section__text-wrap">
-                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">LATEST FROM BLOG</h1>
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">TIN TỨC MỚI NHẤT</h1>
 
-                                    <span class="section__span u-c-silver">START YOU DAY WITH FRESH AND LATEST NEWS</span>
+                                    <span class="section__span u-c-silver">BẮT ĐẦU NGÀY MỚI VỚI CÁC THÔNG TIN VÀ TIN TỨC MỚI NHẤT</span>
                                 </div>
                             </div>
                         </div>
@@ -721,6 +765,7 @@
         <!--====== Modal trỏ vào sản phẩm ======-->
 	<div th:replace="~{layout/modals :: all-modals}"></div>
         
+    	</div>
     </div>
     <!--====== End - Main App ======-->
 
@@ -753,9 +798,9 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
+                            <h1 class="app-setting__h1">Trình duyệt của bạn đã tắt JavaScript.</h1>
 
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                            <span class="app-setting__text">Vui lòng bật JavaScript trong cài đặt trình duyệt hoặc nâng cấp lên trình duyệt có hỗ trợ JavaScript.</span>
                         </div>
                     </div>
                 </div>

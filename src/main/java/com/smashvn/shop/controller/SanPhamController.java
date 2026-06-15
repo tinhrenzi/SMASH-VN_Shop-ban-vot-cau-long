@@ -67,4 +67,37 @@ public class SanPhamController {
         
         return "product-detail"; 
     }
+ // Trả về một đoạn HTML (fragment) thay vì trả về toàn bộ trang web
+    @GetMapping("/modal/quick-look/{id}")
+    public String hienThiQuickLookModal(@PathVariable("id") Integer id, Model model) {
+        SanPham sanPham = sanPhamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+                
+        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
+        String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
+
+        // THÊM 3 DÒNG NÀY ĐỂ MODAL CÓ DỮ LIỆU BIẾN THỂ
+        java.util.Set<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<String> listKichThuoc = danhSachChiTiet.stream().map(SanPhamChiTiet::getTrongLuong).collect(java.util.stream.Collectors.toSet());
+        List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", ct.getId());
+            map.put("mauSac", ct.getMauSac());
+            map.put("trongLuong", ct.getTrongLuong());
+            map.put("giaBan", ct.getGiaBan());
+            map.put("soLuongTon", ct.getSoLuongTon());
+            map.put("hinhAnhSanPham", ct.getHinhAnhSanPham());
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+
+        // Đổ dữ liệu vào Model (Đổi 'sp' thành 'spQuickLook' để tránh xung đột với trang chi tiết)
+        model.addAttribute("spQuickLook", sanPham); 
+        model.addAttribute("listChiTiet", danhSachChiTiet);
+        model.addAttribute("anhDaiDien", anhDaiDien);
+        model.addAttribute("listMauSac", listMauSac);
+        model.addAttribute("listKichThuoc", listKichThuoc);
+        model.addAttribute("listBienTheJS", listBienTheJS);
+        
+        return "/layout/modals :: quick-look-fragment"; 
+    }
 }

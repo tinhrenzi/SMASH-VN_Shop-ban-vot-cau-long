@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Phiếu Giảm Giá Mới - Admin SmashVN</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
+
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+
+            <!-- Page Title Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title">
+                    <a th:href="@{/admin/khuyen-mai}" class="text-decoration-none text-brand me-1"><i class="fas fa-arrow-left"></i></a>
+                    Tạo Phiếu Giảm Giá Mới (Voucher)
+                </h2>
+            </div>
+
+            <!-- Alert Lỗi nếu có -->
+            <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-times-circle me-2"></i><span th:text="${loi}">Lỗi nhập liệu</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card border-0 shadow-sm mb-5">
+                        <div class="card-header bg-dark text-white py-3">
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-ticket-alt me-2 text-brand"></i>Thông Tin Phiếu Giảm Giá</h5>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/khuyen-mai/phieu-giam-gia/them}" method="POST" id="voucherForm">
+                                <div class="row g-4">
+                                    <!-- Mã phiếu -->
+                                    <div class="col-md-6">
+                                        <label for="maPhieu" class="form-label fw-bold">Mã Phiếu Giảm Giá <span class="text-danger">*</span></label>
+                                        <input type="text" id="maPhieu" name="maPhieu" th:value="${maPhieu}" class="form-control font-monospace text-uppercase" placeholder="Ví dụ: WINTERSALE50" required style="letter-spacing: 0.1em;">
+                                        <div class="form-text">Mã viết liền không dấu, không khoảng cách, sẽ tự động chuyển thành chữ hoa.</div>
+                                    </div>
+
+                                    <!-- Loại giảm giá -->
+                                    <div class="col-md-6">
+                                        <label for="loaiGiamGia" class="form-label fw-bold">Phân Loại Voucher <span class="text-danger">*</span></label>
+                                        <select id="loaiGiamGia" name="loaiGiamGia" class="form-select" required>
+                                            <option value="Giảm trực tiếp" th:selected="${loaiGiamGia == 'Giảm trực tiếp'}">Giảm trực tiếp</option>
+                                            <option value="Giảm phần trăm" th:selected="${loaiGiamGia == 'Giảm phần trăm'}">Giảm phần trăm</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Giá trị giảm -->
+                                    <div class="col-md-4">
+                                        <label for="giaTri" class="form-label fw-bold">Giá Trị Giảm <span class="text-danger">*</span></label>
+                                        <input type="number" id="giaTri" name="giaTri" th:value="${giaTri}" class="form-control" placeholder="Nhập số tiền hoặc %" min="1" step="any" required>
+                                    </div>
+
+                                    <!-- Đơn vị -->
+                                    <div class="col-md-4">
+                                        <label for="donVi" class="form-label fw-bold">Đơn Vị <span class="text-danger">*</span></label>
+                                        <select id="donVi" name="donVi" class="form-select" required>
+                                            <option value="VND" th:selected="${donVi == 'VNĐ' or donVi == 'VND'}">VNĐ (Số tiền cố định)</option>
+                                            <option value="%" th:selected="${donVi == '%'}">% (Tỷ lệ phần trăm)</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Số lượng -->
+                                    <div class="col-md-4">
+                                        <label for="soLuongConLai" class="form-label fw-bold">Số Lượng Phát Hành <span class="text-danger">*</span></label>
+                                        <input type="number" id="soLuongConLai" name="soLuongConLai" th:value="${soLuongConLai}" class="form-control" placeholder="Ví dụ: 100" min="1" required>
+                                    </div>
+
+                                    <!-- Giá trị đơn hàng tối thiểu (Requirement 4) -->
+                                    <div class="col-md-12">
+                                        <label for="giaTriDonHangToiThieu" class="form-label fw-bold">Giá Trị Đơn Hàng Tối Thiểu (Hạn mức áp dụng) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" id="giaTriDonHangToiThieu" name="giaTriDonHangToiThieu" th:value="${giaTriDonHangToiThieu != null ? giaTriDonHangToiThieu : 0}" class="form-control" min="0" required>
+                                            <span class="input-group-text bg-light">VNĐ</span>
+                                        </div>
+                                        <div class="form-text text-muted">Voucher chỉ được áp dụng nếu giá trị đơn hàng bằng hoặc lớn hơn hạn mức này (Nhập 0 nếu không giới hạn).</div>
+                                    </div>
+
+                                    <!-- Ngày bắt đầu -->
+                                    <div class="col-md-6">
+                                        <label for="ngayBatDau" class="form-label fw-bold">Hiệu Lực Từ Ngày <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${ngayBatDau}" class="form-control" required>
+                                    </div>
+
+                                    <!-- Ngày kết thúc -->
+                                    <div class="col-md-6">
+                                        <label for="ngayKetThuc" class="form-label fw-bold">Hết Hạn Vào Ngày <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${ngayKetThuc}" class="form-control" required>
+                                    </div>
+
+                                    <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">
+                                        <a th:href="@{/admin/khuyen-mai}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Hủy bỏ</a>
+                                        <button type="submit" class="btn btn-brand text-white"><i class="fas fa-save me-1"></i> Tạo Phiếu Giảm Giá</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('voucherForm').addEventListener('submit', function(e) {
+    const giaTri = parseFloat(document.getElementById('giaTri').value);
+    const donVi = document.getElementById('donVi').value;
+
+    if (donVi === '%' && giaTri > 100) {
+        e.preventDefault();
+        alert('Nếu áp dụng đơn vị giảm %, giá trị không được phép lớn hơn 100%!');
+    }
+});
+</script>
+</body>
+</html>

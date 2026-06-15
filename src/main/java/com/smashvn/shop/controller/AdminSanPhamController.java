@@ -4,10 +4,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
+import java.util.List;
 
 import com.smashvn.shop.entity.*;
 import com.smashvn.shop.repository.*;
 import com.smashvn.shop.service.AdminSanPhamService;
+
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.*;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/admin/san-pham")
@@ -19,6 +27,11 @@ public class AdminSanPhamController {
     private final ThuongHieuRepository thuongHieuRepository;
     private final AdminSanPhamService adminSanPhamService;
 
+    // Các thuộc tính thuộc phân loại vợt cầu lông
+    private final List<String> listMauSacConfig = List.of("Đỏ", "Xanh dương", "Đen", "Trắng", "Vàng", "Cam");
+    private final List<String> listTrongLuongConfig = List.of("3U", "4U", "5U");
+    private final List<String> listMucCangConfig = List.of("10.5 kg", "11.0 kg", "11.5 kg", "12.0 kg", "12.5 kg");
+
     @GetMapping
     public String hienThiDanhSach(Model model) {
         model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
@@ -29,19 +42,91 @@ public class AdminSanPhamController {
     public String hienThiFormThem(Model model) {
         model.addAttribute("listDanhMuc", danhMucRepository.findAll());
         model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+        
+        // Đổ động thuộc tính ra Model phục vụ checkbox
+        model.addAttribute("listMauSac", listMauSacConfig);
+        model.addAttribute("listTrongLuong", listTrongLuongConfig);
+        model.addAttribute("listMucCang", listMucCangConfig);
+        
         return "admin/sanpham-add"; 
     }
 
     @PostMapping("/them")
-    public String xuLyThemSanPham(@RequestParam("tenSanPham") String tenSanPham,
-                                  @RequestParam("idDanhMuc") Integer idDanhMuc,
-                                  @RequestParam("idThuongHieu") Integer idThuongHieu,
-                                  @RequestParam("moTa") String moTa) {
+    public String xuLyThemSanPham(
+            @RequestParam("tenSanPham") String tenSanPham,
+            @RequestParam("idDanhMuc") Integer idDanhMuc,
+            @RequestParam("idThuongHieu") Integer idThuongHieu,
+            @RequestParam("moTa") String moTa,
+            @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
+            @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
+            @RequestParam("fileAnh") MultipartFile fileAnh,
+            @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
+            @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
+            @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
+            org.springframework.web.multipart.MultipartHttpServletRequest request,
+            HttpSession session,
+            Model model) {
         try {
-            adminSanPhamService.themSanPhamMoi(tenSanPham, idDanhMuc, idThuongHieu, moTa);
+            java.util.Map<String, MultipartFile> variantImageMap = new java.util.HashMap<>();
+            request.getFileMap().forEach((key, file) -> {
+                if (key.startsWith("variantImages[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    variantImageMap.put(variantKey, file);
+                }
+            });
+
+            java.util.Map<String, java.math.BigDecimal> variantPriceMap = new java.util.HashMap<>();
+            java.util.Map<String, Integer> variantQuantityMap = new java.util.HashMap<>();
+            
+            request.getParameterMap().forEach((key, values) -> {
+                if (key.startsWith("variantPrices[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
+                        variantPriceMap.put(variantKey, new java.math.BigDecimal(values[0].trim()));
+                    }
+                } else if (key.startsWith("variantQuantities[")) {
+                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
+                        variantQuantityMap.put(variantKey, Integer.parseInt(values[0].trim()));
+                    }
+                }
+            });
+
+            BigDecimal defaultGia = (giaBan != null) ? giaBan : new BigDecimal("3500000");
+            Integer defaultKho = (soLuongTon != null) ? soLuongTon : 10;
+
+            adminSanPhamService.themSanPhamVaBienThe(
+                tenSanPham, idDanhMuc, idThuongHieu, moTa,
+                defaultGia, defaultKho, fileAnh,
+                mauSacs, trongLuongs, mucCangs,
+                variantImageMap,
+                variantPriceMap,
+                variantQuantityMap,
+                (Integer) session.getAttribute("idNguoiDung"),
+                request.getRemoteAddr()
+            );
             return "redirect:/admin/san-pham?thanhcong"; 
         } catch (Exception e) {
-            return "redirect:/admin/san-pham/them?loi=LoiHeThong";
+            // Khi lỗi, giữ lại thông tin nhập, ném lỗi ra màn hình
+            model.addAttribute("loi", e.getMessage());
+            model.addAttribute("tenSanPham", tenSanPham);
+            model.addAttribute("idDanhMuc", idDanhMuc);
+            model.addAttribute("idThuongHieu", idThuongHieu);
+            model.addAttribute("moTa", moTa);
+            model.addAttribute("giaBan", giaBan);
+            model.addAttribute("soLuongTon", soLuongTon);
+            model.addAttribute("selectedMauSacs", mauSacs);
+            model.addAttribute("selectedTrongLuongs", trongLuongs);
+            model.addAttribute("selectedMucCangs", mucCangs);
+            
+            // Re-populate lists
+            model.addAttribute("listDanhMuc", danhMucRepository.findAll());
+            model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+            model.addAttribute("listMauSac", listMauSacConfig);
+            model.addAttribute("listTrongLuong", listTrongLuongConfig);
+            model.addAttribute("listMucCang", listMucCangConfig);
+            
+            return "admin/sanpham-add";
         }
     }
     
@@ -59,22 +144,37 @@ public class AdminSanPhamController {
                                  @RequestParam("tenSanPham") String tenSanPham,
                                  @RequestParam("idDanhMuc") Integer idDanhMuc,
                                  @RequestParam("idThuongHieu") Integer idThuongHieu,
-                                 @RequestParam("moTa") String moTa) {
+                                 @RequestParam("moTa") String moTa,
+                                 HttpSession session,
+                                 HttpServletRequest request) {
         try {
-            adminSanPhamService.capNhatSanPham(idSanPham, tenSanPham, idDanhMuc, idThuongHieu, moTa);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.capNhatSanPham(idSanPham, tenSanPham, idDanhMuc, idThuongHieu, moTa, idNguoiDung, request.getRemoteAddr());
             return "redirect:/admin/san-pham?suaThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham/sua/" + idSanPham + "?loi=LoiHeThong";
         }
     }
     
-    @GetMapping("/xoa/{id}")
-    public String xuLyXoaSanPham(@PathVariable("id") Integer id) {
+    @PostMapping("/xoa/{id}")
+    public String xuLyXoaSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
-            adminSanPhamService.xoaSanPham(id);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.xoaSanPham(id, idNguoiDung, request.getRemoteAddr());
             return "redirect:/admin/san-pham?xoaThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham?loiXoa"; 
+        }
+    }
+
+    @PostMapping("/mo-ban-lai/{id}")
+    public String xuLyMoBanLaiSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
+        try {
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminSanPhamService.moBanLaiSanPham(id, idNguoiDung, request.getRemoteAddr());
+            return "redirect:/admin/san-pham?moBanLaiThanhCong";
+        } catch (Exception e) {
+            return "redirect:/admin/san-pham?loiMoBanLai"; 
         }
     }
 }

@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link th:href="@{/images/favicon.png}" rel="shortcut icon">
-    <title>Smash VN - Edit Address</title>
+    <title>Smash VN - Sửa Địa Chỉ</title>
 
     <!--====== Phông chữ Google ======-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
@@ -20,6 +20,8 @@
 
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <!--====== Leaflet Bản Đồ ======-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body class="config">
     <div class="preloader is-active">
@@ -52,10 +54,10 @@
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
 
-                                        <a th:href="@{/}">Home</a></li>
+                                        <a th:href="@{/}">Trang chủ</a></li>
                                     <li class="is-marked">
 
-                                        <a th:href="@{/user/dashboard}">My Account</a></li>
+                                        <a th:href="@{/user/dashboard}">Tài khoản của tôi</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -83,25 +85,25 @@
                                             <ul class="dash__f-list">
                                                 <li>
 
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Manage My Account</a></li>
+                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/profile}">My Profile</a></li>
+                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/address}">Address Book</a></li>
+                                                    <a th:href="@{/user/address}">Địa chỉ</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/track-order}">Track Order</a></li>
+                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/my-order}">My Orders</a></li>
+                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/payment-option}">My Payment Options</a></li>
+                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
                                                 <li>
 
-                                                    <a th:href="@{/user/cancellation}">My Returns & Cancellations</a></li>
+                                                     <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -115,7 +117,7 @@
 
                                                         <span class="dash__w-text" ></span>
 
-                                                        <span class="dash__w-name">Orders Placed</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Đặt</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
@@ -124,7 +126,7 @@
 
                                                         <span class="dash__w-text" ></span>
 
-                                                        <span class="dash__w-name">Cancel Orders</span></div>
+                                                        <span class="dash__w-name">Đơn Hàng Đã Hủy</span></div>
                                                 </li>
                                                 <li>
                                                     <div class="dash__w-wrap">
@@ -133,7 +135,7 @@
 
                                                         <span class="dash__w-text" ></span>
 
-                                                        <span class="dash__w-name">Wishlist</span></div>
+                                                        <span class="dash__w-name">Yêu Thích</span></div>
                                                 </li>
                                             </ul>
                                         </div>
@@ -143,10 +145,25 @@
                                 <div class="col-lg-9 col-md-12">
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white">
                                         <div class="dash__pad-2">
-                                            <h1 class="dash__h1 u-s-m-b-14">Edit Address</h1>
+                                            <h1 class="dash__h1 u-s-m-b-14">Sửa Địa Chỉ</h1>
 
-                                            <span class="dash__text u-s-m-b-30">We need an address where we could deliver products.</span>
+                                            <span class="dash__text u-s-m-b-30">Chúng tôi cần địa chỉ để có thể giao sản phẩm đến cho bạn.</span>
+                                            <div class="u-s-m-b-30 dash-address-manipulation">
+											    <button type="button" class="btn btn--e-transparent-brand-b-2" onclick="getCurrentLocation()" id="btn-get-location">
+											        <i class="fas fa-map-marker-alt u-s-m-r-8"></i> LẤY VỊ TRÍ HIỆN TẠI CỦA TÔI
+											    </button>
+											</div>
+											
+											<!-- Khối hiển thị Bản đồ tương tác -->
+											<div class="u-s-m-b-30" id="map-wrapper" style="width: 100%;">
+											    <label class="gl-label u-s-m-b-10">BẢN ĐỒ VỊ TRÍ (Click bản đồ hoặc kéo thả ghim đỏ để chọn vị trí chính xác) *</label>
+											    <div id="map" style="height: 320px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>
+											</div>
+
                                             <form class="dash-address-manipulation" th:action="@{/user/address/edit/{id}(id=${dc.id})}" method="post">
+                                                <!-- Tọa độ bản đồ chọn -->
+                                                <input type="hidden" id="address-lat" name="latitude" th:value="${dc.latitude}">
+                                                <input type="hidden" id="address-lon" name="longitude" th:value="${dc.longitude}">
 											    <div class="gl-inline">
 											        <div class="u-s-m-b-30">
 											            <label class="gl-label" for="address-fname">HỌ *</label>
@@ -231,6 +248,9 @@
     <!--====== Plugin jQuery Shopnav ======-->
     <script th:src="@{/js/jquery.shopnav.js}"></script>
 
+    <!--====== Leaflet Map Js ======-->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!--====== Ứng dụng ======-->
     <script th:src="@{/js/app.js}"></script>
 
@@ -241,9 +261,9 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
+                            <h1 class="app-setting__h1">Trình duyệt của bạn đã tắt JavaScript.</h1>
 
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                            <span class="app-setting__text">Vui lòng bật JavaScript trong cài đặt trình duyệt hoặc nâng cấp lên trình duyệt có hỗ trợ JavaScript.</span>
                         </div>
                     </div>
                 </div>

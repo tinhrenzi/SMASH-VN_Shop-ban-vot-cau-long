@@ -24,4 +24,17 @@ public class TaiKhoan {
 
     @Column(name = "trang_thai", nullable = false, length = 50)
     private String trangThai = "hoat_dong";
+
+    @Column(name = "token_xac_thuc_khoa", length = 100)
+    private String tokenXacThucKhoa;
+
+
+    @Column(name = "la_khach_hang")
+    private Boolean laKhachHang = false;
+
+    @Column(name = "la_nhan_vien")
+    private Boolean laNhanVien = false;
+
+    @Column(name = "la_quan_ly")
+    private Boolean laQuanLy = false;
 }
