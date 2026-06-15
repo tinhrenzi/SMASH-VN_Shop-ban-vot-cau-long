@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 
 import com.smashvn.shop.entity.HoaDonChiTiet;
-import com.smashvn.shop.dto.TopProductDTO;
+import com.smashvn.shop.dto.product.TopProductDTO;
 
 public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, Integer> {
 
@@ -19,7 +19,7 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
            "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
     Long getTotalProductsSold(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT new com.smashvn.shop.dto.TopProductDTO(" +
+    @Query("SELECT new com.smashvn.shop.dto.product.TopProductDTO(" +
            "hdct.sanPhamChiTiet.sanPham.id, " +
            "hdct.sanPhamChiTiet.sanPham.tenSanPham, " +
            "COALESCE(MIN(hdct.sanPhamChiTiet.hinhAnhSanPham), ''), " +

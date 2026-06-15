@@ -98,9 +98,17 @@
 								    </div>
 								
 								    <div>
-								        <div class="pd-detail__inline">
-								            <span id="js-display-price" class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
-								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								        <div class="pd-detail__inline" th:if="${!listChiTiet.isEmpty()}" th:with="percent=${sp.getActiveGiamGiaPhanTram()}">
+								            <span class="pd-detail__price js-display-price" 
+								                  th:text="${#numbers.formatDecimal(percent > 0 ? sp.getGiaSauGiam(listChiTiet[0].giaBan) : listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								            
+								            <span class="pd-detail__del js-display-original-price" 
+								                  th:style="${percent > 0 ? 'text-decoration: line-through; margin-left: 8px; display: inline-block;' : 'display: none;'}"
+								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá gốc</span>
+								            
+								            <span class="pd-detail__discount js-display-discount-badge" 
+								                  th:style="${percent > 0 ? 'margin-left: 8px; display: inline-block;' : 'display: none;'}"
+								                  th:text="'(Giảm ' + ${percent} + '%)'">Phần trăm giảm</span>
 								        </div>
 								    </div>
 								    
@@ -119,11 +127,9 @@
 								    
 								    <div class="u-s-m-b-15">
 										<div class="pd-detail__inline">
-											<span class="pd-detail__click-wrap"><i class="far fa-heart u-s-m-r-6"></i>
-												 <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ')'" >
-												 Thêm vào yêu thích
-												</a>
-											</span>
+											<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ', this)'" class="pd-detail__wishlist-btn" title="Yêu thích">
+												<i th:class="${inWishlist} ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
+											</a>
 										 </div>
 									</div>
 								    
@@ -159,10 +165,10 @@
 								            </div>
 
 								            <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
-								            <div id="js-variant-stock-info" class="u-s-m-b-15" style="display:none;">
+								            <div id="js-variant-stock-info" class="js-variant-stock-info u-s-m-b-15" style="display:none;">
 								                <span class="pd-detail__label">Kho: </span>
-								                <span id="js-variant-stock-count" class="fw-bold"></span>
-								                <span id="js-variant-stock-badge" class="pd-detail__stock" style="margin-left:8px;"></span>
+								                <span id="js-variant-stock-count" class="js-variant-stock-count fw-bold"></span>
+								                <span id="js-variant-stock-badge" class="js-variant-stock-badge pd-detail__stock" style="margin-left:8px;"></span>
 								            </div>
 								        
 								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
@@ -815,6 +821,10 @@
 	        var container = document.getElementById('product-detail-container');
 	        if (container) {
 	            container.danhSachBienThe = variants;
+	            // Tự động kích hoạt kiểm tra tồn kho & khởi tạo biến thể ban đầu
+	            if (typeof checkAndApplyVariant === 'function') {
+	                checkAndApplyVariant(container);
+	            }
 	        } else {
 	            console.error("Lỗi: Không tìm thấy #product-detail-container!");
 	        }

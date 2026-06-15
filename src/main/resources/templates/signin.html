@@ -130,12 +130,20 @@
 										    
 										    <div class="u-s-m-b-30">
 										        <label class="gl-label" for="login-email">E-MAIL *</label>
-										        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail" style="border: 2px solid #ccc;">
+										        <input class="input-text input-text--primary-style" type="email" id="login-email" name="email" required placeholder="Nhập E-mail" maxlength="100" style="border: 2px solid #ccc;">
 										    </div>
 										    
 										    <div class="u-s-m-b-30">
 										        <label class="gl-label" for="login-password">MẬT KHẨU *</label>
-										        <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu" style="border: 2px solid #ccc;">
+										        <div style="position:relative;display:flex;align-items:center;">
+										            <input class="input-text input-text--primary-style" type="password" id="login-password" name="matKhau" required placeholder="Nhập mật khẩu" maxlength="30" style="border: 2px solid #ccc;padding-right:40px;width:100%;">
+										            <button type="button" id="toggleLoginPassword"
+										                    title="Giữ chuột để xem mật khẩu"
+										                    style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:4px;line-height:1;"
+										                    aria-label="Xem mật khẩu">
+										                <i class="fas fa-eye" id="iconLoginPassword"></i>
+										            </button>
+										        </div>
 										    </div>
 										    
 										    <div class="gl-inline">
@@ -204,5 +212,113 @@
             </div>
         </div>
     </noscript>
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector(".l-f-o__form");
+            if (!form) return;
+            const emailInput = document.getElementById("login-email");
+            const passwordInput = document.getElementById("login-password");
+            const submitBtn = form.querySelector("button[type='submit']");
+
+            function createErrorElement(inputEl, id) {
+                let errEl = document.getElementById(id);
+                if (!errEl) {
+                    errEl = document.createElement("span");
+                    errEl.id = id;
+                    errEl.style.color = "#ff0000";
+                    errEl.style.fontSize = "13px";
+                    errEl.style.display = "none";
+                    errEl.style.marginTop = "5px";
+                    errEl.style.fontWeight = "bold";
+                    inputEl.parentNode.appendChild(errEl);
+                }
+                return errEl;
+            }
+
+            const emailError = createErrorElement(emailInput, "email-error");
+            const passwordError = createErrorElement(passwordInput, "password-error");
+
+            const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$/;
+
+            function validateEmail() {
+                let value = emailInput.value;
+                if (value.startsWith(" ") || value.endsWith(" ")) {
+                    emailInput.value = value.trim();
+                    value = emailInput.value;
+                }
+                
+                if (!value) {
+                    emailError.textContent = "Email không được để trống!";
+                    emailError.style.display = "block";
+                    return false;
+                }
+                if (value.length > 100) {
+                    emailError.textContent = "Email không được vượt quá 100 ký tự!";
+                    emailError.style.display = "block";
+                    return false;
+                }
+                if (!emailRegex.test(value)) {
+                    emailError.textContent = "Định dạng email không hợp lệ!";
+                    emailError.style.display = "block";
+                    return false;
+                }
+                emailError.style.display = "none";
+                return true;
+            }
+
+            function validatePassword() {
+                let value = passwordInput.value;
+                if (!value) {
+                    passwordError.textContent = "Mật khẩu không được để trống!";
+                    passwordError.style.display = "block";
+                    return false;
+                }
+                if (value.length < 8 || value.length > 30) {
+                    passwordError.textContent = "Mật khẩu phải dài từ 8 đến 30 ký tự!";
+                    passwordError.style.display = "block";
+                    return false;
+                }
+                if (/\s/.test(value)) {
+                    passwordError.textContent = "Mật khẩu không được chứa khoảng trắng!";
+                    passwordError.style.display = "block";
+                    return false;
+                }
+                passwordError.style.display = "none";
+                return true;
+            }
+
+            emailInput.addEventListener("input", validateEmail);
+            passwordInput.addEventListener("input", validatePassword);
+
+            form.addEventListener("submit", function (e) {
+                const isEmailValid = validateEmail();
+                const isPasswordValid = validatePassword();
+
+                if (!isEmailValid || !isPasswordValid) {
+                    e.preventDefault();
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
+            });
+        });
+    </script>
+    <script>
+        // Password eye — hold to show, release to hide
+        (function() {
+            const btn  = document.getElementById('toggleLoginPassword');
+            const inp  = document.getElementById('login-password');
+            const icon = document.getElementById('iconLoginPassword');
+            if (!btn) return;
+            function show(e) { if (e.type==='mousedown') e.preventDefault(); inp.type='text';  icon.className='fas fa-eye-slash'; }
+            function hide()  { inp.type='password'; icon.className='fas fa-eye'; }
+            btn.addEventListener('mousedown',  show);
+            btn.addEventListener('mouseup',    hide);
+            btn.addEventListener('mouseleave', hide);
+            btn.addEventListener('touchstart', show);
+            btn.addEventListener('touchend',   hide);
+        })();
+    </script>
 </body>
 </html>

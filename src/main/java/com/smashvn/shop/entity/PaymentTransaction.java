@@ -17,7 +17,7 @@ public class PaymentTransaction {
     private String transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id", nullable = true)
     private HoaDon order;
 
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)

@@ -542,28 +542,85 @@
         }
     });
 
+    // Countdown Component Initialization
+    RESHOP.initCountdown = function() {
+        var $countdownElements = $('[data-countdown]');
+        if ($countdownElements.length) {
+            $countdownElements.each(function() {
+                var $this = $(this), finalDate = $(this).data('countdown');
+                $this.countdown(finalDate, function(event) {
+                    $this.html(event.strftime('<div class="countdown__content"><span class="countdown__value">%D</span><span class="countdown__key">Ngày</span></div><div class="countdown__content"><span class="countdown__value">%H</span><span class="countdown__key">Giờ</span></div><div class="countdown__content"><span class="countdown__value">%M</span><span class="countdown__key">Phút</span></div><div class="countdown__content"><span class="countdown__value">%S</span><span class="countdown__key">Giây</span></div>'));
+                });
+            });
+        }
+    };
 
-        RESHOP.initScrollUp();
-        RESHOP.initTooltip();
-        RESHOP.initModal();
-        RESHOP.defaultAddressCheckbox();
-        RESHOP.initScrollSpy();
-        RESHOP.onClickScroll();
-        RESHOP.reshopNavigation();
-        RESHOP.primarySlider();
-        RESHOP.productSlider();
-        RESHOP.tabSlider();
-        RESHOP.onTabActiveRefreshSlider();
-        RESHOP.brandSlider();
-        RESHOP.testimonialSlider();
-        RESHOP.appConfiguration();
-        RESHOP.initInputCounter();
-        RESHOP.productDetailInit();
-        RESHOP.modalProductDetailInit();
-        RESHOP.shopCategoryToggle();
-        RESHOP.shopPerspectiveChange();
-        RESHOP.shopSideFilter();
-		window.RESHOP = RESHOP;
+    // Isotope Filter Component Initialization
+    RESHOP.initIsotopeFilter = function() {
+        console.log("[Isotope] initIsotopeFilter started");
+        var $wrapper = $('.filter__grid-wrapper');
+        var $btns = $('.filter__btn');
+        
+        console.log("[Isotope] wrapper length:", $wrapper.length, "buttons length:", $btns.length);
+        
+        if ($wrapper.length && typeof $.fn.isotope === 'function') {
+            var $row = $wrapper.find('.row');
+            console.log("[Isotope] Row container found:", $row.length);
+            
+            var $grid = $row.isotope({
+                itemSelector: '.filter__item',
+                layoutMode: 'fitRows'
+            });
+            
+            if (typeof $.fn.imagesLoaded === 'function') {
+                console.log("[Isotope] imagesLoaded is defined");
+                $grid.imagesLoaded().progress(function() {
+                    $grid.isotope('layout');
+                });
+            } else {
+                console.warn("[Isotope] imagesLoaded is NOT defined on jQuery, using fallback");
+                setTimeout(function() {
+                    $grid.isotope('layout');
+                }, 500);
+            }
+            
+            $btns.on('click', function() {
+                var filterValue = $(this).attr('data-filter');
+                console.log("[Isotope] Filter button clicked:", filterValue);
+                $grid.isotope({ filter: filterValue });
+                $btns.removeClass('js-checked');
+                $(this).addClass('js-checked');
+            });
+            console.log("[Isotope] Click handlers bound successfully");
+        } else {
+            console.warn("[Isotope] Skipping initialization. Wrapper length:", $wrapper.length, "Isotope defined:", (typeof $.fn.isotope === 'function'));
+        }
+    };
+
+
+    try { RESHOP.initScrollUp(); } catch (e) { console.error("Error in initScrollUp:", e); }
+    try { RESHOP.initTooltip(); } catch (e) { console.error("Error in initTooltip:", e); }
+    try { RESHOP.initModal(); } catch (e) { console.error("Error in initModal:", e); }
+    try { RESHOP.defaultAddressCheckbox(); } catch (e) { console.error("Error in defaultAddressCheckbox:", e); }
+    try { RESHOP.initScrollSpy(); } catch (e) { console.error("Error in initScrollSpy:", e); }
+    try { RESHOP.onClickScroll(); } catch (e) { console.error("Error in onClickScroll:", e); }
+    try { RESHOP.reshopNavigation(); } catch (e) { console.error("Error in reshopNavigation:", e); }
+    try { RESHOP.primarySlider(); } catch (e) { console.error("Error in primarySlider:", e); }
+    try { RESHOP.productSlider(); } catch (e) { console.error("Error in productSlider:", e); }
+    try { RESHOP.tabSlider(); } catch (e) { console.error("Error in tabSlider:", e); }
+    try { RESHOP.onTabActiveRefreshSlider(); } catch (e) { console.error("Error in onTabActiveRefreshSlider:", e); }
+    try { RESHOP.brandSlider(); } catch (e) { console.error("Error in brandSlider:", e); }
+    try { RESHOP.testimonialSlider(); } catch (e) { console.error("Error in testimonialSlider:", e); }
+    try { RESHOP.appConfiguration(); } catch (e) { console.error("Error in appConfiguration:", e); }
+    try { RESHOP.initInputCounter(); } catch (e) { console.error("Error in initInputCounter:", e); }
+    try { RESHOP.productDetailInit(); } catch (e) { console.error("Error in productDetailInit:", e); }
+    try { RESHOP.modalProductDetailInit(); } catch (e) { console.error("Error in modalProductDetailInit:", e); }
+    try { RESHOP.initCountdown(); } catch (e) { console.error("Error in initCountdown:", e); }
+    try { RESHOP.initIsotopeFilter(); } catch (e) { console.error("Error in initIsotopeFilter:", e); }
+    try { RESHOP.shopCategoryToggle(); } catch (e) { console.error("Error in shopCategoryToggle:", e); }
+    try { RESHOP.shopPerspectiveChange(); } catch (e) { console.error("Error in shopPerspectiveChange:", e); }
+    try { RESHOP.shopSideFilter(); } catch (e) { console.error("Error in shopSideFilter:", e); }
+    window.RESHOP = RESHOP;
 })(jQuery);
 
 /*==============================================================
@@ -602,26 +659,40 @@ function checkAndApplyVariant(container) {
     const stockStatus = container.querySelector('.js-stock-status');
     const inputId = container.querySelector('.js-variant-id');
     const quantityInput = container.querySelector('.js-quantity-input');
-    // Ưu tiên dùng id #js-display-price nếu có, fallback sang class
-    const priceDisplay = document.getElementById('js-display-price') || container.querySelector('.pd-detail__price');
-    
-    // Panel tồn kho riêng (chỉ có ở trang chi tiết)
-    const stockInfoPanel = document.getElementById('js-variant-stock-info');
-    const stockCountEl = document.getElementById('js-variant-stock-count');
-    const stockBadgeEl = document.getElementById('js-variant-stock-badge');
+    // Tìm phần tử hiển thị giá và tồn kho bên trong container trước để tránh trùng lặp giữa trang chi tiết và quick-look modal
+    const priceDisplay = container.querySelector('.js-display-price') || container.querySelector('.pd-detail__price') || document.getElementById('js-display-price');
+    const originalPriceDisplay = container.querySelector('.js-display-original-price') || container.querySelector('.pd-detail__del');
+    const discountBadgeDisplay = container.querySelector('.js-display-discount-badge') || container.querySelector('.pd-detail__discount');
+    // Panel tồn kho riêng
+    const stockInfoPanel = container.querySelector('.js-variant-stock-info') || document.getElementById('js-variant-stock-info');
+    const stockCountEl = container.querySelector('.js-variant-stock-count') || document.getElementById('js-variant-stock-count');
+    const stockBadgeEl = container.querySelector('.js-variant-stock-badge') || document.getElementById('js-variant-stock-badge');
 
     const selectedColor = container.getAttribute('data-selected-color');
     const selectedSize = container.getAttribute('data-selected-size');
 
-    // Nếu chưa chọn đủ Màu và Size
-    if (!selectedColor || !selectedSize) {
+    // Kiểm tra xem trên giao diện thực tế có hiển thị các tùy chọn để chọn không
+    const hasColorOptions = container.querySelector('.color-btn') !== null;
+    const hasSizeOptions = container.querySelector('.size-btn') !== null;
+
+    // Nếu có tùy chọn nhưng chưa chọn đủ
+    if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
         if(stockStatus) {
             stockStatus.style.display = 'block';
             stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
             stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
-        if(btnAdd) btnAdd.disabled = true;
+        if (btnAdd) {
+            btnAdd.disabled = true;
+            if (container.id === 'quick-look-modal-container') {
+                btnAdd.innerText = 'Add to Cart';
+            } else {
+                btnAdd.innerText = 'THÊM VÀO GIỎ';
+            }
+            btnAdd.style.backgroundColor = '';
+            btnAdd.style.borderColor = '';
+        }
         return;
     }
 
@@ -637,10 +708,12 @@ function checkAndApplyVariant(container) {
     }
 
     // Tìm biến thể khớp với Màu và Size đã chọn (Bọc trim() và toLowerCase() phòng trường hợp khoảng trắng thừa trong DB)
-    const matchedVariant = variants.find(v => 
-        v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
-        v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()
-    );
+    // Nếu giao diện không hiển thị tùy chọn nào, mặc định khớp với biến thể đầu tiên
+    const matchedVariant = variants.find(v => {
+        const matchColor = !hasColorOptions || (v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase());
+        const matchSize = !hasSizeOptions || (v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase());
+        return matchColor && matchSize;
+    });
 
     if (matchedVariant) {
         // --- CẬP NHẬT THÔNG TIN CƠ BẢN ---
@@ -649,7 +722,26 @@ function checkAndApplyVariant(container) {
         const soLuong = matchedVariant.soLuongTon || 0;
         const conHang = soLuong > 0;
         
-        if(btnAdd) btnAdd.disabled = !conHang;
+        if (btnAdd) {
+            btnAdd.disabled = !conHang;
+            if (conHang) {
+                if (container.id === 'quick-look-modal-container') {
+                    btnAdd.innerText = 'Add to Cart';
+                } else {
+                    btnAdd.innerText = 'THÊM VÀO GIỎ';
+                }
+                btnAdd.style.backgroundColor = '';
+                btnAdd.style.borderColor = '';
+            } else {
+                if (container.id === 'quick-look-modal-container') {
+                    btnAdd.innerText = 'Out of Stock';
+                } else {
+                    btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+                }
+                btnAdd.style.backgroundColor = '#a0a0a0';
+                btnAdd.style.borderColor = '#a0a0a0';
+            }
+        }
         
         // Ẩn thông báo cảnh báo
         if(stockStatus) {
@@ -664,18 +756,67 @@ function checkAndApplyVariant(container) {
                 stockCountEl.style.color = conHang ? '#009444' : '#ff4500';
             }
             if (stockBadgeEl) {
-                if (conHang) {
-                    stockBadgeEl.innerText = 'Còn hàng';
-                    stockBadgeEl.className = 'pd-detail__stock';
+                if (container.id === 'quick-look-modal-container') {
+                    if (conHang) {
+                        stockBadgeEl.innerText = soLuong + ' in stock';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                        stockBadgeEl.style.display = 'inline-block';
+                    } else {
+                        stockBadgeEl.innerText = 'Out of stock';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                        stockBadgeEl.style.display = 'inline-block';
+                    }
                 } else {
-                    stockBadgeEl.innerText = 'Hết hàng';
-                    stockBadgeEl.className = 'pd-detail__left';
+                    if (conHang) {
+                        stockBadgeEl.innerText = 'Còn hàng';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                        stockBadgeEl.style.display = 'inline-block';
+                    } else {
+                        stockBadgeEl.innerText = 'Hết hàng';
+                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                        stockBadgeEl.style.display = 'inline-block';
+                    }
+                }
+            }
+            
+            // Xử lý warning badge cho quick look
+            const lowStockEl = container.querySelector('.js-variant-low-stock');
+            if (lowStockEl) {
+                if (conHang && soLuong <= 5) {
+                    lowStockEl.innerText = 'Only ' + soLuong + ' left';
+                    lowStockEl.style.display = 'inline-block';
+                } else {
+                    lowStockEl.style.display = 'none';
                 }
             }
         }
 
         if (quantityInput) quantityInput.setAttribute('data-max', soLuong);
-        if (priceDisplay) priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+        if (priceDisplay) {
+            if (matchedVariant.phanTramGiam > 0) {
+                priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaSauGiam) + " đ";
+                if (originalPriceDisplay) {
+                    originalPriceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+                    originalPriceDisplay.style.display = 'inline-block';
+                }
+                if (discountBadgeDisplay) {
+                    if (container.id === 'quick-look-modal-container') {
+                        discountBadgeDisplay.innerText = '(' + matchedVariant.phanTramGiam + '% OFF)';
+                    } else {
+                        discountBadgeDisplay.innerText = '(Giảm ' + matchedVariant.phanTramGiam + '%)';
+                    }
+                    discountBadgeDisplay.style.display = 'inline-block';
+                }
+            } else {
+                priceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(matchedVariant.giaBan) + " đ";
+                if (originalPriceDisplay) {
+                    originalPriceDisplay.style.display = 'none';
+                }
+                if (discountBadgeDisplay) {
+                    discountBadgeDisplay.style.display = 'none';
+                }
+            }
+        }
 
         // --- CẬP NHẬT HÌNH ẢNH (TÍCH HỢP CẢ QUICK LOOK & DETAIL) ---
         // Tìm ngược lên thẻ bọc ngoài cùng (div class="row") để qua cột trái lấy ảnh
@@ -714,7 +855,16 @@ function checkAndApplyVariant(container) {
     } else {
         // Trường hợp hết hàng / Không có biến thể này
         if (inputId) inputId.value = "";
-        if (btnAdd) btnAdd.disabled = true;
+        if (btnAdd) {
+            btnAdd.disabled = true;
+            if (container.id === 'quick-look-modal-container') {
+                btnAdd.innerText = 'Out of Stock';
+            } else {
+                btnAdd.innerText = 'ĐÃ HẾT HÀNG';
+            }
+            btnAdd.style.backgroundColor = '#a0a0a0';
+            btnAdd.style.borderColor = '#a0a0a0';
+        }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if(stockStatus) {
             stockStatus.style.display = 'block';
@@ -747,7 +897,7 @@ function checkAndApplyVariant(container) {
           },
           error: function(error) {
               console.log("Lỗi khi tải dữ liệu Quick Look", error);
-              alert("Có lỗi xảy ra khi tải dữ liệu sản phẩm!");
+              showToast("Có lỗi xảy ra khi tải dữ liệu sản phẩm!", "error");
           }
       });
   }
@@ -784,6 +934,30 @@ function checkAndApplyVariant(container) {
                   var productUrl = '/san-pham/' + item.idSanPham;
                   var imageUrl = '/uploads/product/' + item.hinhAnh;
 
+                  var variantHtml = '';
+                  var hasMau = item.mauSac && item.mauSac.trim().length > 0;
+                  var hasTrongLuong = item.trongLuong && item.trongLuong.trim().length > 0;
+                  if (hasMau || hasTrongLuong) {
+                      variantHtml += '<div class="mini-product__variants">';
+                      if (hasMau) {
+                          variantHtml += `
+                              <span class="mini-product__badge">
+                                  <i class="fas fa-palette"></i>
+                                  <span>Màu:</span>
+                                  <strong>${item.mauSac}</strong>
+                              </span>`;
+                      }
+                      if (hasTrongLuong) {
+                          variantHtml += `
+                              <span class="mini-product__badge">
+                                  <i class="fas fa-ruler-combined"></i>
+                                  <span>Size:</span>
+                                  <strong>${item.trongLuong}</strong>
+                              </span>`;
+                      }
+                      variantHtml += '</div>';
+                  }
+
                   // TẠO HTML CHO TỪNG SẢN PHẨM TRONG GIỎ (Dùng Template Literal)
                   htmlContent += `
                       <div class="card-mini-product">
@@ -797,6 +971,7 @@ function checkAndApplyVariant(container) {
                                   <span class="mini-product__name">
                                       <a href="${productUrl}">${item.tenSanPham}</a>
                                   </span>
+                                  ${variantHtml}
                                   <span class="mini-product__quantity">${item.soLuong} x</span>
                                   <span class="mini-product__price">${formattedPrice}</span>
                               </div>
@@ -821,6 +996,12 @@ function checkAndApplyVariant(container) {
   // Lệnh này ép trình duyệt: "Ngay khi trang web vừa load xong thì chạy hàm loadMiniCart() ngay cho tao!"
   $(document).ready(function() {
       loadMiniCart();
+      
+      // Tự động chạy checkAndApplyVariant cho trang chi tiết sản phẩm khi vừa load trang
+      var detailContainer = document.getElementById('product-detail-container');
+      if (detailContainer && typeof checkAndApplyVariant === 'function') {
+          checkAndApplyVariant(detailContainer);
+      }
   });
   /*==============================================================
     # CUSTOM JS: Xử lý Thêm vào giỏ hàng bằng AJAX (Chống reload trang)
@@ -872,12 +1053,12 @@ function checkAndApplyVariant(container) {
                       loadMiniCart();
                   }
               } else {
-                  alert("Lỗi: " + response.message);
+                  showToast("Lỗi: " + response.message, "error");
               }
           },
           error: function(error) {
               submitBtn.prop('disabled', false).html(originalBtnText);
-              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
               console.log(error);
           }
       });
@@ -932,19 +1113,19 @@ function checkAndApplyVariant(container) {
                           success: function(res) {
                               if (res.trangThai === 'ok') {
                                   var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
+                                  $('.js-cart-summary-subtotal').text(formattedTotal);
                                   $('.js-cart-summary-total').text(formattedTotal);
-                                  $('.f-cart__table tr:first-child td:last-child').text(formattedTotal); // Cập nhật Tạm tính
                               }
                           }
                       });
 
                   } else {
-                      alert("Có lỗi xảy ra khi xóa!");
+                      showToast("Có lỗi xảy ra khi xóa!", "error");
                       btn.css('opacity', '1');
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast("Lỗi kết nối máy chủ!", "error");
                   btn.css('opacity', '1');
               }
           });
@@ -985,11 +1166,11 @@ function checkAndApplyVariant(container) {
                       loadMiniCart();
                   }
               } else {
-                  alert("Không thể thêm: " + response.message);
+                  showToast("Không thể thêm: " + response.message, "error");
               }
           },
           error: function(error) {
-              alert("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
               console.log(error);
           }
       });
@@ -1007,9 +1188,57 @@ function checkAndApplyVariant(container) {
       }
   });
   /*==============================================================
+    # CUSTOM JS: Toast Notification (No Browser Alerts)
+  ==============================================================*/
+  function showToast(message, type) {
+      type = type || 'success';
+      var $container = $('#custom-toast-container');
+      if ($container.length === 0) {
+          $container = $('<div id="custom-toast-container"></div>').appendTo('body');
+      }
+      
+      // Limit to 2 toasts. Hide/remove the oldest one.
+      var $activeToasts = $container.children('.custom-toast.show:not(.hiding)');
+      if ($activeToasts.length >= 2) {
+          var $oldest = $activeToasts.first();
+          $oldest.addClass('hiding').removeClass('show');
+          setTimeout(function() {
+              $oldest.remove();
+          }, 300);
+      }
+      
+      var iconClass = 'fa-check-circle';
+      if (type === 'error') {
+          iconClass = 'fa-exclamation-circle';
+      } else if (type === 'info') {
+          iconClass = 'fa-info-circle';
+      }
+      
+      var $toast = $(`
+          <div class="custom-toast custom-toast--${type}">
+              <i class="fas ${iconClass}"></i>
+              <span class="custom-toast__message">${message}</span>
+          </div>
+      `);
+      
+      $container.append($toast);
+      
+      setTimeout(function() {
+          $toast.addClass('show');
+      }, 10);
+      
+      setTimeout(function() {
+          $toast.removeClass('show');
+          setTimeout(function() {
+              $toast.remove();
+          }, 300);
+      }, 3000);
+  }
+
+  /*==============================================================
     # CUSTOM JS: Thêm vào Wishlist bằng AJAX
   ==============================================================*/
-  function addToWishlist(idSanPham) {
+  function addToWishlist(idSanPham, element) {
       $.ajax({
           url: '/wishlist/them',
           type: 'POST',
@@ -1017,15 +1246,22 @@ function checkAndApplyVariant(container) {
           success: function(res) {
               if (res === 'chuadangnhap') {
                   window.location.href = '/user/dang-nhap';
-              } else if (res === 'datontai') {
-                  alert('Sản phẩm này đã có trong danh sách yêu thích của bạn!');
+              } else if (res === 'xoa') {
+                  showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
+                  if (element) {
+                      var $icon = $(element).find('i');
+                      $icon.removeClass('fas text-danger').addClass('far');
+                  }
               } else if (res === 'ok') {
-                  alert('Đã thêm vào danh sách yêu thích!');
-                  // Có thể cập nhật số đếm trên Header ở đây nếu cần
+                  showToast('Đã thêm sản phẩm vào danh sách yêu thích thành công!', 'success');
+                  if (element) {
+                      var $icon = $(element).find('i');
+                      $icon.removeClass('far').addClass('fas text-danger');
+                  }
               }
           },
           error: function() {
-              alert('Có lỗi xảy ra, vui lòng thử lại!');
+              showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
           }
       });
   }
@@ -1050,6 +1286,7 @@ function checkAndApplyVariant(container) {
                   }
                   
                   if (response.trangThai === 'ok') {
+                      showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
                       // Tìm thẻ bọc ngoài cùng của sản phẩm (class .w-r) và làm mờ nó đi
                       var row = btn.closest('.w-r');
                       if (row.length) {
@@ -1065,12 +1302,12 @@ function checkAndApplyVariant(container) {
                           });
                       }
                   } else {
-                      alert("Có lỗi xảy ra khi xóa!");
+                      showToast('Có lỗi xảy ra khi xóa!', 'error');
                       btn.css('opacity', '1');
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast('Lỗi kết nối máy chủ!', 'error');
                   btn.css('opacity', '1');
               }
           });
@@ -1192,6 +1429,23 @@ function checkAndApplyVariant(container) {
           container = document.createElement('div');
           container.className = 'custom-toast-container';
           document.body.appendChild(container);
+      }
+      
+      // Limit to 2 toasts. Hide/remove the oldest one.
+      const activeToasts = container.querySelectorAll('.custom-toast.show:not(.hiding)');
+      if (activeToasts.length >= 2) {
+          const oldestToast = activeToasts[0];
+          oldestToast.classList.add('hiding');
+          oldestToast.classList.remove('show');
+          let removed = false;
+          const removeOldest = () => {
+              if (!removed) {
+                  removed = true;
+                  oldestToast.remove();
+              }
+          };
+          oldestToast.addEventListener('transitionend', removeOldest);
+          setTimeout(removeOldest, 400);
       }
       
       const toast = document.createElement('div');
@@ -1439,14 +1693,21 @@ function checkAndApplyVariant(container) {
 
   // Populate UI inputs with geocoding results
   function populateAddressFields(addressObj) {
-      if (addressObj.diaChiCuThe) {
-          document.getElementById('address-street').value = addressObj.diaChiCuThe;
+      const streetInput = document.getElementById('address-street');
+      const stateInput = document.getElementById('address-state');
+      const countryInput = document.getElementById('address-country');
+
+      if (addressObj.diaChiCuThe && streetInput) {
+          streetInput.value = addressObj.diaChiCuThe;
+          streetInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (addressObj.tinhThanh) {
-          document.getElementById('address-state').value = addressObj.tinhThanh;
+      if (addressObj.tinhThanh && stateInput) {
+          stateInput.value = addressObj.tinhThanh;
+          stateInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (addressObj.quocGia) {
-          document.getElementById('address-country').value = addressObj.quocGia;
+      if (addressObj.quocGia && countryInput) {
+          countryInput.value = addressObj.quocGia;
+          countryInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
   }
 
@@ -1841,12 +2102,12 @@ function checkAndApplyVariant(container) {
                       });
                   } else {
                       // Báo lỗi (Ví dụ: Lỗi cố tình xóa địa chỉ mặc định)
-                      alert(response.message);
+                      showToast(response.message, "error");
                       tr.css('opacity', '1'); // Khôi phục lại hiển thị
                   }
               },
               error: function() {
-                  alert("Lỗi kết nối máy chủ!");
+                  showToast("Lỗi kết nối máy chủ!", "error");
                   tr.css('opacity', '1');
               }
           });

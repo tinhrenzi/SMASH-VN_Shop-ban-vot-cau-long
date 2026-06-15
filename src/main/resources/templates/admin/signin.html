@@ -359,17 +359,25 @@
                 submitBtn.disabled = true;
             });
 
-            // Toggle Password Visibility
-            togglePasswordBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                if (type === 'password') {
-                    togglePasswordBtn.classList.replace('fa-eye', 'fa-eye-slash');
-                } else {
-                    togglePasswordBtn.classList.replace('fa-eye-slash', 'fa-eye');
-                }
+            // Toggle Password Visibility — hold to show, release to hide
+            togglePasswordBtn.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                passwordInput.setAttribute('type', 'text');
+                togglePasswordBtn.classList.replace('fa-eye-slash', 'fa-eye');
             });
+            const hidePassword = function() {
+                passwordInput.setAttribute('type', 'password');
+                togglePasswordBtn.classList.replace('fa-eye', 'fa-eye-slash');
+            };
+            togglePasswordBtn.addEventListener('mouseup', hidePassword);
+            togglePasswordBtn.addEventListener('mouseleave', hidePassword);
+            // Touch support
+            togglePasswordBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                passwordInput.setAttribute('type', 'text');
+                togglePasswordBtn.classList.replace('fa-eye-slash', 'fa-eye');
+            });
+            togglePasswordBtn.addEventListener('touchend', hidePassword);
         });
     </script>
 </body>

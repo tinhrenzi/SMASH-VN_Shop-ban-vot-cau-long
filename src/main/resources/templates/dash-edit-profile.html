@@ -20,6 +20,18 @@
 
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .error-msg {
+            color: #ff4500;
+            font-size: 0.78rem;
+            margin-top: 5px;
+            display: none;
+        }
+        .input-text.invalid-input {
+            border-color: #ff4500 !important;
+            box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.1) !important;
+        }
+    </style>
 </head>
 <body class="config">
     <div class="preloader is-active">
@@ -146,15 +158,25 @@
 									        <h2 class="dash__h2 u-s-m-b-8">SỬA HỒ SƠ CÁ NHÂN</h2>
 									        <span class="dash__text u-s-m-b-30">Vui lòng nhập đầy đủ thông tin bên dưới để chúng tôi phục vụ bạn tốt hơn.</span>
 									        
+									        <!-- General error display -->
+									        <div th:if="${loi != null}" class="u-s-m-b-15">
+									            <span style="color: #ff0000; font-weight: bold;" th:text="${loi}"></span>
+									        </div>
+									        
 									        <form class="dash-address-manipulation" th:action="@{/user/profile/edit}" method="post">
+									            <!-- CSRF protection token -->
+									            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+									            
 									            <div class="gl-inline">
 									                <div class="u-s-m-b-30">
 									                    <label class="gl-label" for="reg-fname">HỌ *</label>
-									                    <input class="input-text input-text--primary-style" type="text" id="reg-fname" name="ho" th:value="${kh.hoKh}" required placeholder="VD: Nguyễn">
+									                    <input class="input-text input-text--primary-style" type="text" id="reg-fname" name="ho" th:value="${kh.hoKh}" required placeholder="VD: Nguyễn" maxlength="50">
+									                    <span class="error-msg" id="error-fname" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
 									                </div>
 									                <div class="u-s-m-b-30">
 									                    <label class="gl-label" for="reg-lname">TÊN *</label>
-									                    <input class="input-text input-text--primary-style" type="text" id="reg-lname" name="ten" th:value="${kh.tenKh}" required placeholder="VD: Văn A">
+									                    <input class="input-text input-text--primary-style" type="text" id="reg-lname" name="ten" th:value="${kh.tenKh}" required placeholder="VD: Văn A" maxlength="50">
+									                    <span class="error-msg" id="error-lname" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
 									                </div>
 									            </div>
 									            <div class="gl-inline">
@@ -164,7 +186,8 @@
 									                </div>
 									                <div class="u-s-m-b-30">
 									                    <label class="gl-label" for="reg-phone">SỐ ĐIỆN THOẠI *</label>
-									                    <input class="input-text input-text--primary-style" type="text" id="reg-phone" name="sdt" th:value="${kh.soDienThoaiKh}" required placeholder="VD: 0987654321">
+									                    <input class="input-text input-text--primary-style" type="text" id="reg-phone" name="sdt" th:value="${kh.soDienThoaiKh}" required placeholder="VD: 0987654321" maxlength="12">
+									                    <span class="error-msg" id="error-phone" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
 									                </div>
 									            </div>
 									
@@ -201,24 +224,30 @@
                                 <span class="dash__text u-s-m-b-30">Vui lòng nhập đầy đủ thông tin bên dưới để chúng tôi phục vụ bạn tốt hơn.</span>
                                 
                                 <form class="d-modal__form" th:action="@{/user/profile/edit}" method="post">
+                                    <!-- CSRF protection token -->
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    
                                     <div class="gl-inline">
                                         <div class="u-s-m-b-30">
-                                            <label class="gl-label" for="reg-fname">HỌ *</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="reg-fname" name="ho" th:value="${kh.hoKh}" required placeholder="VD: Nguyễn">
+                                            <label class="gl-label" for="modal-reg-fname">HỌ *</label>
+                                            <input class="input-text input-text--primary-style" type="text" id="modal-reg-fname" name="ho" th:value="${kh.hoKh}" required placeholder="VD: Nguyễn" maxlength="50">
+                                            <span class="error-msg" id="error-modal-fname" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
                                         </div>
                                         <div class="u-s-m-b-30">
-                                            <label class="gl-label" for="reg-lname">TÊN *</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="reg-lname" name="ten" th:value="${kh.tenKh}" required placeholder="VD: Văn A">
+                                            <label class="gl-label" for="modal-reg-lname">TÊN *</label>
+                                            <input class="input-text input-text--primary-style" type="text" id="modal-reg-lname" name="ten" th:value="${kh.tenKh}" required placeholder="VD: Văn A" maxlength="50">
+                                            <span class="error-msg" id="error-modal-lname" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
                                         </div>
                                     </div>
                                     <div class="gl-inline">
                                         <div class="u-s-m-b-30">
-                                            <label class="gl-label" for="reg-email">EMAIL ĐĂNG NHẬP</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="reg-email" th:value="${kh.taiKhoan.email}" readonly style="background-color: #f1f1f1;">
+                                            <label class="gl-label" for="modal-reg-email">EMAIL ĐĂNG NHẬP</label>
+                                            <input class="input-text input-text--primary-style" type="text" id="modal-reg-email" th:value="${kh.taiKhoan.email}" readonly style="background-color: #f1f1f1;">
                                         </div>
                                         <div class="u-s-m-b-30">
-                                            <label class="gl-label" for="reg-phone">SỐ ĐIỆN THOẠI *</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="reg-phone" name="sdt" th:value="${kh.soDienThoaiKh}" required placeholder="VD: 0987654321">
+                                            <label class="gl-label" for="modal-reg-phone">SỐ ĐIỆN THOẠI *</label>
+                                            <input class="input-text input-text--primary-style" type="text" id="modal-reg-phone" name="sdt" th:value="${kh.soDienThoaiKh}" required placeholder="VD: 0987654321" maxlength="12">
+                                            <span class="error-msg" id="error-modal-phone" style="color: #ff0000; font-size: 12px; display: none; margin-top: 5px;"></span>
                                         </div>
                                     </div>
                                     <button class="btn btn--e-brand-b-2" type="submit">LƯU THAY ĐỔI</button>
@@ -256,6 +285,102 @@
 
     <!--====== Ứng dụng ======-->
     <script th:src="@{/js/app.js}"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const mainForm = document.querySelector(".dash-address-manipulation");
+        const modalForm = document.querySelector(".d-modal__form");
+
+        function setupValidation(form, isModal) {
+            if (!form) return;
+
+            const hoInput = form.querySelector(isModal ? "#modal-reg-fname" : "#reg-fname");
+            const tenInput = form.querySelector(isModal ? "#modal-reg-lname" : "#reg-lname");
+            const sdtInput = form.querySelector(isModal ? "#modal-reg-phone" : "#reg-phone");
+
+            const hoError = document.getElementById(isModal ? "error-modal-fname" : "error-fname");
+            const tenError = document.getElementById(isModal ? "error-modal-lname" : "error-lname");
+            const sdtError = document.getElementById(isModal ? "error-modal-phone" : "error-phone");
+
+            const phoneRegex = /^(\+84|0)(3|5|7|8|9)[0-9]{8}$/;
+
+            function validateHo() {
+                const val = hoInput.value.trim();
+                if (val === "") {
+                    hoError.textContent = "Họ không được để trống.";
+                    hoError.style.display = "block";
+                    return false;
+                }
+                if (val.length > 50) {
+                    hoError.textContent = "Họ không được vượt quá 50 ký tự.";
+                    hoError.style.display = "block";
+                    return false;
+                }
+                hoError.style.display = "none";
+                return true;
+            }
+
+            function validateTen() {
+                const val = tenInput.value.trim();
+                if (val === "") {
+                    tenError.textContent = "Tên không được để trống.";
+                    tenError.style.display = "block";
+                    return false;
+                }
+                if (val.length > 50) {
+                    tenError.textContent = "Tên không được vượt quá 50 ký tự.";
+                    tenError.style.display = "block";
+                    return false;
+                }
+                tenError.style.display = "none";
+                return true;
+            }
+
+            function validateSdt() {
+                const val = sdtInput.value.trim();
+                if (val === "") {
+                    sdtError.textContent = "Số điện thoại không được để trống.";
+                    sdtError.style.display = "block";
+                    return false;
+                }
+                if (!phoneRegex.test(val)) {
+                    sdtError.textContent = "Số điện thoại không đúng định dạng Việt Nam (phải bắt đầu bằng 0 hoặc +84 và gồm 10 chữ số tiếp theo).";
+                    sdtError.style.display = "block";
+                    return false;
+                }
+                sdtError.style.display = "none";
+                return true;
+            }
+
+            hoInput.addEventListener("input", validateHo);
+            hoInput.addEventListener("blur", validateHo);
+
+            tenInput.addEventListener("input", validateTen);
+            tenInput.addEventListener("blur", validateTen);
+
+            sdtInput.addEventListener("input", validateSdt);
+            sdtInput.addEventListener("blur", validateSdt);
+
+            form.addEventListener("submit", function (e) {
+                const isHoValid = validateHo();
+                const isTenValid = validateTen();
+                const isSdtValid = validateSdt();
+
+                if (!isHoValid || !isTenValid || !isSdtValid) {
+                    e.preventDefault();
+                } else {
+                    // Trim values before submit
+                    hoInput.value = hoInput.value.trim();
+                    tenInput.value = tenInput.value.trim();
+                    sdtInput.value = sdtInput.value.trim();
+                }
+            });
+        }
+
+        setupValidation(mainForm, false);
+        setupValidation(modalForm, true);
+    });
+    </script>
 
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>

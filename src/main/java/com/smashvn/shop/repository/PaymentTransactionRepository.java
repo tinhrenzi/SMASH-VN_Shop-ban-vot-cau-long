@@ -14,8 +14,8 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     List<PaymentTransaction> findByOrder_Id(Integer orderId);
 
-    @Query("SELECT pt FROM PaymentTransaction pt WHERE " +
-           "(:orderCode IS NULL OR pt.order.maDonHang LIKE %:orderCode%) AND " +
+    @Query("SELECT pt FROM PaymentTransaction pt LEFT JOIN pt.order o WHERE " +
+           "(:orderCode IS NULL OR o.maDonHang LIKE %:orderCode%) AND " +
            "(:transactionId IS NULL OR pt.transactionId LIKE %:transactionId%) AND " +
            "(:status IS NULL OR pt.status = :status) AND " +
            "(:startDate IS NULL OR pt.createdAt >= :startDate) AND " +

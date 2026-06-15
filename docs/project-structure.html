@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMASH-VN — Interactive Architecture & Call Flow Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --color-primary: #f97316;     /* Cam neon */
+            --color-secondary: #ff4500;   /* Đỏ cam */
+            --color-accent: #8b5cf6;      /* Tím */
+            --color-success: #10b981;     /* Xanh lá */
+            --color-info: #0ea5e9;        /* Xanh dương */
+            --color-warning: #f59e0b;     /* Vàng */
+            --color-danger: #ef4444;      /* Đỏ */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --layer-controller: #38bdf8;
+            --layer-service: #c084fc;
+            --layer-repository: #fb7185;
+            --layer-config: #fb923c;
+            --layer-entity: #34d399;
+            --layer-security: #f87171;
+            
+            --font-main: 'Inter', sans-serif;
+            --font-header: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar Customization */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 24px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 80%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-header);
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+        }
+
+        .brand-text h1 {
+            font-family: var(--font-header);
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 16px;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .stat-num {
+            font-family: var(--font-header);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs-wrapper {
+            background: #111827;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-tabs {
+            display: flex;
+            max-width: 1600px;
+            margin: 0 auto;
+            list-style: none;
+            padding: 0 40px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-header);
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 16px 24px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* Container Main */
+        main {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 40px;
+            min-height: calc(100vh - 180px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Split Layout for Tab 1 (Directory Tree) */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 30px;
+            height: 720px;
+        }
+
+        .tree-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: #0b0f19;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 10px 12px 10px 36px;
+            color: #fff;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            fill: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        .tree-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* Details Panel */
+        .details-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* Tree Styles */
+        .tree-node {
+            margin-left: 15px;
+            user-select: none;
+        }
+
+        .tree-node-header {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+
+        .tree-node-header:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tree-node-header.active {
+            background: rgba(249, 115, 22, 0.1);
+            border-left: 3px solid var(--color-primary);
+        }
+
+        .tree-toggle-icon {
+            width: 14px;
+            height: 14px;
+            fill: var(--text-muted);
+            transition: transform 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .tree-toggle-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .tree-node-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .tree-node-label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tree-node-label.highlight {
+            color: #fff;
+            background: rgba(249, 115, 22, 0.35);
+            font-weight: 600;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        .tree-node-children {
+            display: none;
+        }
+
+        .tree-node-children.expanded {
+            display: block;
+        }
+
+        /* Details Pane Styling */
+        .details-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .details-empty-icon {
+            width: 64px;
+            height: 64px;
+            fill: #334155;
+            margin-bottom: 16px;
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+
+        .details-title h2 {
+            font-family: var(--font-header);
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .details-path {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            background: #0b0f19;
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .badge-layer {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .layer-entry { background: rgba(249, 115, 22, 0.15); color: var(--layer-config); border: 1px solid rgba(249, 115, 22, 0.3); }
+        .layer-controller { background: rgba(56, 189, 248, 0.15); color: var(--layer-controller); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .layer-service { background: rgba(192, 132, 252, 0.15); color: var(--layer-service); border: 1px solid rgba(192, 132, 252, 0.3); }
+        .layer-repository { background: rgba(251, 113, 133, 0.15); color: var(--layer-repository); border: 1px solid rgba(251, 113, 133, 0.3); }
+        .layer-config { background: rgba(251, 146, 60, 0.15); color: var(--layer-config); border: 1px solid rgba(251, 146, 60, 0.3); }
+        .layer-entity { background: rgba(52, 211, 153, 0.15); color: var(--layer-entity); border: 1px solid rgba(52, 211, 153, 0.3); }
+        .layer-security { background: rgba(248, 113, 113, 0.15); color: var(--layer-security); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .layer-default { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .details-section {
+            margin-bottom: 24px;
+        }
+
+        .details-section h3 {
+            font-family: var(--font-header);
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .details-section h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--color-primary);
+            border-radius: 2px;
+        }
+
+        .details-desc {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dependency-badge {
+            background: #0b0f19;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #e2e8f0;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .dependency-badge:hover {
+            border-color: var(--color-primary);
+            background: rgba(249, 115, 22, 0.05);
+            color: #fff;
+        }
+
+        .none-text {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* Tab 2: Call Flows Layout */
+        .flows-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+        }
+
+        .flows-menu {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            height: fit-content;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .flows-menu h3 {
+            font-family: var(--font-header);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        .flow-menu-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            padding: 12px 16px;
+            text-align: left;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-header);
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .flow-menu-btn:hover {
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+        }
+
+        .flow-menu-btn.active {
+            background: linear-gradient(to right, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.05));
+            border-left: 3px solid var(--color-primary);
+            color: #fff;
+        }
+
+        .flow-detail-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .flow-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+            margin-bottom: 30px;
+        }
+
+        .flow-header h2 {
+            font-family: var(--font-header);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .flow-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .http-badge {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .http-badge.post { background: rgba(16, 185, 129, 0.2); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .http-badge.get { background: rgba(14, 165, 233, 0.2); color: var(--color-info); border: 1px solid rgba(14, 165, 233, 0.3); }
+
+        .endpoint-text {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            background: #0b0f19;
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Diagram Sequence CSS Style */
+        .diagram-container {
+            background: #0b0f19;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .diagram-actors {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            border-bottom: 2px dashed #1e293b;
+            padding-bottom: 15px;
+            min-width: 600px;
+        }
+
+        .actor {
+            background: var(--bg-surface);
+            border: 1.5px solid #334155;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            text-align: center;
+            width: 130px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .actor.client { border-color: var(--color-info); color: var(--color-info); }
+        .actor.controller { border-color: var(--layer-controller); color: var(--layer-controller); }
+        .actor.service { border-color: var(--layer-service); color: var(--layer-service); }
+        .actor.repository { border-color: var(--layer-repository); color: var(--layer-repository); }
+        .actor.db { border-color: var(--layer-entity); color: var(--layer-entity); }
+
+        .diagram-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 600px;
+        }
+
+        .diagram-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .diagram-step-line {
+            position: absolute;
+            height: 2px;
+            background: #475569;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .diagram-step-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .diagram-step-line.forward {
+            background: linear-gradient(to right, var(--color-primary), var(--color-accent));
+        }
+
+        .diagram-step-arrow.forward {
+            border-left: 8px solid var(--color-accent);
+            right: 0;
+        }
+
+        .diagram-step-line.backward {
+            background: #334155;
+            border-top: 2px dashed #475569;
+        }
+
+        .diagram-step-arrow.backward {
+            border-right: 8px solid #475569;
+            left: 0;
+        }
+
+        .diagram-step-label {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            z-index: 3;
+            margin: 0 auto;
+            max-width: 250px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            font-family: var(--font-main);
+        }
+
+        /* Flow Details Grid */
+        .flow-details-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .flow-section-title {
+            font-family: var(--font-header);
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Table Style */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #1e293b;
+            color: #fff;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-family: var(--font-header);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: #cbd5e1;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Alert/Callout Box */
+        .callout-box {
+            background: rgba(249, 115, 22, 0.05);
+            border-left: 4px solid var(--color-primary);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .callout-box h4 {
+            font-family: var(--font-header);
+            font-size: 1rem;
+            color: var(--color-primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .callout-box p {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .callout-box.security {
+            background: rgba(16, 185, 129, 0.05);
+            border-left-color: var(--color-success);
+        }
+
+        .callout-box.security h4 {
+            color: var(--color-success);
+        }
+
+        /* Step List */
+        .steps-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps-list li {
+            position: relative;
+            padding-left: 32px;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+
+        .steps-list li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 20px;
+            height: 20px;
+            background: var(--color-primary);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: var(--font-header);
+        }
+
+        .steps-list li strong {
+            color: #fff;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        /* Tab 3: Lifecycle Styling */
+        .lifecycle-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .lifecycle-timeline {
+            position: relative;
+            padding-left: 40px;
+            margin-top: 30px;
+        }
+
+        .lifecycle-timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: #334155;
+        }
+
+        .lifecycle-item {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .lifecycle-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .lifecycle-dot {
+            position: absolute;
+            left: -33px;
+            top: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-base);
+            border: 4px solid var(--color-primary);
+            z-index: 2;
+        }
+
+        .lifecycle-item:hover .lifecycle-dot {
+            background: var(--color-primary);
+            box-shadow: 0 0 10px var(--color-primary);
+        }
+
+        .lifecycle-content h3 {
+            font-family: var(--font-header);
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .lifecycle-content p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .lifecycle-content .code-snippet {
+            background: #0b0f19;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #38bdf8;
+            overflow-x: auto;
+        }
+
+        .lifecycle-content .files-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-logo">S</div>
+                <div class="brand-text">
+                    <h1>SMASH-VN // PORTAL</h1>
+                    <p>Interactive Architecture & Call Flow Documentation</p>
+                </div>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-num" id="stat-files">115</div>
+                    <div class="stat-label">Files</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">30</div>
+                    <div class="stat-label">Controllers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">25</div>
+                    <div class="stat-label">Services</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">23</div>
+                    <div class="stat-label">Repos & DAOs</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-tabs-wrapper">
+        <ul class="nav-tabs">
+            <li>
+                <button class="tab-btn active" onclick="switchTab('tab-tree')">
+                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 12h-2v3h-3v2h5v-5zM7 12H5v5h5v-2H7v-3zm12-5h-5v2h3v3h2V7zm-12 0h5v5H7V7zm6 3h-2v2h2v-2z"/>
+                    </svg>
+                    📂 Sơ đồ cấu trúc dự án
+                </button>
+            </li>
+            <li>
+                <button class="tab-btn" onclick="switchTab('tab-flows')">
+                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 15l-6 6-1.42-1.42L15.17 16H3v-2h12.17l-3.59-3.58L13 9l6 6zm-8-6l6-6 1.42 1.42L14.83 8H27v2H14.83l3.59 3.58L17 15l-6-6z"/>
+                    </svg>
+                    🔄 Luồng gọi file & API
+                </button>
+            </li>
+            <li>
+                <button class="tab-btn" onclick="switchTab('tab-lifecycle')">
+                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                    ☕ Vòng đời ứng dụng
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <main>
+        <!-- TAB 1: DIRECTORY TREE -->
+        <div id="tab-tree" class="tab-content active">
+            <div class="split-layout">
+                <!-- Panel trái: Cây thư mục -->
+                <div class="tree-panel">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" id="tree-search" class="search-input" placeholder="Tìm kiếm file hoặc package..." oninput="handleSearch()">
+                    </div>
+                    <div class="tree-container" id="tree-view-root"></div>
+                </div>
+
+                <!-- Panel phải: Thông tin chi tiết -->
+                <div class="details-panel" id="details-panel-content">
+                    <div class="details-empty">
+                        <svg class="details-empty-icon" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <h3>Chưa chọn file</h3>
+                        <p>Chọn một file hoặc thư mục trên cây sơ đồ để xem cấu trúc và dependencies liên quan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CALL FLOWS -->
+        <div id="tab-flows" class="tab-content">
+            <div class="flows-layout">
+                <!-- Left Menu: Các luồng nghiệp vụ -->
+                <div class="flows-menu">
+                    <h3>Chức năng chính</h3>
+                    <button class="flow-menu-btn active" onclick="showFlow('flow-register')">🔐 Đăng Ký Tài Khoản</button>
+                    <button class="flow-menu-btn" onclick="showFlow('flow-login')">🔑 Đăng Nhập Hệ Thống</button>
+                    <button class="flow-menu-btn" onclick="showFlow('flow-cart')">🛒 Giỏ Hàng &amp; Vận Chuyển</button>
+                    <button class="flow-menu-btn" onclick="showFlow('flow-checkout')">💳 Đặt Hàng &amp; Thanh Toán</button>
+                    <button class="flow-menu-btn" onclick="showFlow('flow-admin')">📦 Quản Trị &amp; Upload Ảnh</button>
+                    <button class="flow-menu-btn" onclick="showFlow('flow-chatbot')">🤖 Trò Chuyện AI Chatbot</button>
+                </div>
+
+                <!-- Right Detail: Chi tiết từng luồng -->
+                <div class="flow-detail-container" id="flow-detail-pane">
+                    <!-- Sẽ nạp động qua JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: APPLICATION LIFECYCLE -->
+        <div id="tab-lifecycle" class="tab-content">
+            <div class="lifecycle-container">
+                <h2 style="font-family: var(--font-header); font-size: 1.8rem; margin-bottom: 10px; color: #fff;">
+                    Vòng Đời Hoạt Động Của Hệ Thống SMASH-VN
+                </h2>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">
+                    Mô tả các bước hệ thống xử lý khi chạy file <code style="font-family: var(--font-mono); color: var(--color-primary); background: #0b0f19; padding: 2px 6px; border-radius: 4px;">SmashVnApplication.java</code>, từ cấu hình môi trường đến phục vụ request HTTP.
+                </p>
+
+                <div class="lifecycle-timeline">
+                    <!-- Bước 1 -->
+                    <div class="lifecycle-item">
+                        <div class="lifecycle-dot"></div>
+                        <div class="lifecycle-content">
+                            <h3>1. Khởi chạy JVM &amp; Nạp Biến Môi Trường (.env)</h3>
+                            <p>
+                                Khi chạy câu lệnh khởi động ứng dụng Spring Boot, lớp <strong style="color: #fff;">DotenvEnvironmentPostProcessor</strong> sẽ tự động được gọi đầu tiên (nhờ cơ chế SPI Spring Factories). Lớp này thực hiện đọc tệp cấu hình cục bộ <code style="color: var(--color-primary); font-family: var(--font-mono);">.env</code>, kiểm tra sự tồn tại của các key như DB_URL, API key và đẩy động các biến này vào Spring Environment Context để dùng chung trong file application.properties.
+                            </p>
+                            <div class="code-snippet">
+                                java -jar target/smashvn-shop-0.0.1.jar --spring.profiles.active=prod
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 2 -->
+                    <div class="lifecycle-item">
+                        <div class="lifecycle-dot"></div>
+                        <div class="lifecycle-content">
+                            <h3>2. Quét Annotations &amp; Khởi tạo Spring Bean</h3>
+                            <p>
+                                Hàm <code style="color: var(--color-info);">main()</code> trong <strong style="color: #fff;">SmashVnApplication.java</strong> chạy, kích hoạt annotation <code style="color: var(--layer-config);">@SpringBootApplication</code>. Spring Container tiến hành quét toàn bộ package <code style="color: #cbd5e1;">com.smashvn.shop.*</code> để khởi tạo và lưu trữ các lớp cấu hình, các RestController, các Service, và Repository thành các Singleton Beans trong ApplicationContext.
+                            </p>
+                            <div class="code-snippet">
+                                @SpringBootApplication<br>
+                                public class SmashVnApplication {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;public static void main(String[] args) {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SpringApplication.run(SmashVnApplication.class, args);<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 3 -->
+                    <div class="lifecycle-item">
+                        <div class="lifecycle-dot"></div>
+                        <div class="lifecycle-content">
+                            <h3>3. Đồng Bộ Hóa CSDL &amp; Migration Tự Động</h3>
+                            <p>
+                                Ứng dụng kết nối tới MySQL/PostgreSQL thông qua cấu hình Spring Datasource. Công cụ <strong style="color: #fff;">Flyway Migration</strong> tự động quét thư mục <code style="color: var(--color-warning);">db/migration/</code> để thực thi các file SQL nâng cấp phiên bản CSDL (V1.1 -> V1.17). Đồng thời, <strong style="color: #fff;">PlaintextPasswordMigrator</strong> kiểm tra nếu có tài khoản nào cũ trong bảng <code style="color: #cbd5e1;">tai_khoan</code> chưa băm mật khẩu thì tự động mã hóa BCrypt một lần. Lớp <strong style="color: #fff;">EmployeeMigrationRunner</strong> thực thi để migrate dữ liệu nhân viên sang định dạng chuẩn.
+                            </p>
+                            <div class="files-grid">
+                                <span class="badge-layer layer-config">Flyway</span>
+                                <span class="badge-layer layer-security">PlaintextPasswordMigrator.java</span>
+                                <span class="badge-layer layer-default">EmployeeMigrationRunner.java</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 4 -->
+                    <div class="lifecycle-item">
+                        <div class="lifecycle-dot"></div>
+                        <div class="lifecycle-content">
+                            <h3>4. Thiết Lập Bộ Lọc Bảo Mật &amp; Routing Pipeline</h3>
+                            <p>
+                                Lớp <strong style="color: #fff;">SecurityConfig.java</strong> khởi tạo Filter Chain của Spring Security. Thiết lập các filter bảo vệ như CSRF Protection, CorsFilter, và đăng ký các filter tùy biến như <strong style="color: #fff;">UploadSecurityFilter</strong>. Tiếp theo, <strong style="color: #fff;">WebMvcConfig</strong> đăng ký <strong style="color: #fff;">AdminInterceptor</strong> vào danh sách Interceptors để chặn đường dẫn /admin/** và liên kết thư mục vật lý uploads/ để hiển thị ảnh.
+                            </p>
+                            <div class="files-grid">
+                                <span class="badge-layer layer-security">SecurityConfig.java</span>
+                                <span class="badge-layer layer-config">WebMvcConfig.java</span>
+                                <span class="badge-layer layer-security">AdminInterceptor.java</span>
+                                <span class="badge-layer layer-security">UploadSecurityFilter.java</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 5 -->
+                    <div class="lifecycle-item">
+                        <div class="lifecycle-dot"></div>
+                        <div class="lifecycle-content">
+                            <h3>5. Nhận Request HTTP &amp; Phục Vụ Người Dùng</h3>
+                            <p>
+                                Khi Tomcat Server sẵn sàng trên cổng 8080, mọi request HTTP từ trình duyệt gửi tới sẽ đi qua các Security Filter -> Interceptors -> DispatcherServlet tìm đúng Controller tương ứng để gọi Service -> Repository -> Database để trả về view Thymeleaf hoặc dữ liệu JSON.
+                            </p>
+                            <div class="code-snippet" style="color: var(--color-success);">
+                                [Tomcat Started on Port 8080] System is ready to handle traffic.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Switch tab
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) activeContent.classList.add('active');
+        }
+
+        // Project Directory Tree Data
+        const projectTree = {
+            name: "SMASH-VN_Shop-ban-vot-cau-long",
+            type: "dir",
+            desc: "Thư mục gốc của toàn bộ dự án Spring Boot MVC bán vợt cầu lông SMASH-VN.",
+            children: [
+                {
+                    name: ".env.example",
+                    type: "file",
+                    desc: "Tệp mẫu chứa các khai báo biến môi trường cho Database, Gmail, Giao Hàng Nhanh API, ZaloPay API và SePay webhook secret. Khi chạy thực tế, cần copy tệp này thành .env và điền thông tin thực.",
+                    layer: "config",
+                    calledBy: "SmashVnApplication.java (qua DotenvPostProcessor)"
+                },
+                {
+                    name: "pom.xml",
+                    type: "file",
+                    desc: "Maven Build Configuration. Định nghĩa toàn bộ dependencies bao gồm Spring Boot, Thymeleaf, Spring Security, Flyway, MySQL Connector, Jsoup, Apache Tika và ZaloPay SDK.",
+                    layer: "config"
+                },
+                {
+                    name: "tasks.md",
+                    type: "file",
+                    desc: "Bảng theo dõi tiến độ các tác vụ lập trình và các lỗi an ninh bảo mật cần vá của hệ thống.",
+                    layer: "default"
+                },
+                {
+                    name: "src",
+                    type: "dir",
+                    desc: "Thư mục chứa mã nguồn của dự án.",
+                    children: [
+                        {
+                            name: "main",
+                            type: "dir",
+                            desc: "Mã nguồn chính để chạy ứng dụng.",
+                            children: [
+                                {
+                                    name: "java",
+                                    type: "dir",
+                                    desc: "Các tệp mã nguồn Java backend.",
+                                    children: [
+                                        {
+                                            name: "com.smashvn.shop",
+                                            type: "dir",
+                                            desc: "Package gốc của ứng dụng.",
+                                            children: [
+                                                {
+                                                    name: "SmashVnApplication.java",
+                                                    type: "file",
+                                                    desc: "Lớp chứa hàm main() chạy ứng dụng Spring Boot. Kích hoạt quét thành phần tự động và nạp cấu hình hệ thống.",
+                                                    layer: "entry",
+                                                    calls: ["DotenvEnvironmentPostProcessor.java", "SecurityConfig.java", "WebMvcConfig.java"],
+                                                    calledBy: "Command Line / JVM"
+                                                },
+                                                {
+                                                    name: "config",
+                                                    type: "dir",
+                                                    desc: "Các tệp cấu hình bảo mật, MVC, và kết nối bên thứ ba.",
+                                                    children: [
+                                                        { name: "SecurityConfig.java", type: "file", desc: "Cấu hình phân quyền URL, băm mật khẩu bằng BCrypt, chống giả mạo request (CSRF) và cấu hình Form Login/Logout.", layer: "config", calls: ["UserDangNhapService.java"] },
+                                                        { name: "WebMvcConfig.java", type: "file", desc: "Đăng ký AdminInterceptor chặn các endpoint quản trị và ánh xạ đường dẫn tài nguyên uploads/.", layer: "config", calls: ["AdminInterceptor.java"] },
+                                                        { name: "AdminInterceptor.java", type: "file", desc: "Interceptor kiểm tra quyền ADMIN hoặc NHANVIEN trước khi cho phép đi tiếp vào admin dashboard.", layer: "security", calledBy: ["WebMvcConfig.java"] },
+                                                        { name: "PlaintextPasswordMigrator.java", type: "file", desc: "Migration quét và tự động băm BCrypt mật khẩu của tất cả các tài khoản cũ đang ở dạng plaintext khi bắt đầu chạy ứng dụng.", layer: "config", calls: ["TaiKhoanRepository.java"] },
+                                                        { name: "UploadSecurityFilter.java", type: "file", desc: "Bộ lọc bảo mật tầng filter ngăn chặn upload các file shell (.sh, .php, .jsp) độc hại vào thư mục ảnh.", layer: "security" },
+                                                        { name: "UploadPathVerifier.java", type: "file", desc: "Kiểm tra quyền truy cập và tồn tại của thư mục lưu trữ uploads/ ngoài đĩa cứng server khi hệ thống boot.", layer: "config" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "controller",
+                                                    type: "dir",
+                                                    desc: "Tầng Controller tiếp nhận request từ Client, điều phối xử lý nghiệp vụ.",
+                                                    children: [
+                                                        { name: "HomeController.java", type: "file", desc: "Điều hướng request trang chủ (GET /), trả về trang chủ Thymeleaf.", layer: "controller", calls: ["SanPhamRepository.java", "DanhMucRepository.java"] },
+                                                        { name: "SanPhamController.java", type: "file", desc: "Hiển thị trang sản phẩm (GET /shop) và chi tiết sản phẩm (GET /product/{id}).", layer: "controller", calls: ["AdminSanPhamService.java", "DanhMucService.java"] },
+                                                        { name: "GioHangController.java", type: "file", desc: "Xử lý các request AJAX thao tác giỏ hàng như thêm, cập nhật số lượng, xóa sản phẩm khỏi giỏ.", layer: "controller", calls: ["GioHangService.java"] },
+                                                        { name: "CheckoutController.java", type: "file", desc: "Điều hướng trang checkout (GET /checkout) và xử lý tạo hóa đơn mới (POST /checkout/place-order). Thực hiện trim khoảng trắng và Jsoup clean XSS.", layer: "controller", calls: ["GioHangService.java", "OrderViewService.java", "ZaloPayService.java", "SepayGatewayService.java"] },
+                                                        { name: "UserDangKyController.java", type: "file", desc: "Đăng ký tài khoản khách hàng: hiển thị form (GET /signup), xử lý đăng ký (POST /signup) kèm theo RegisterRateLimiter.", layer: "controller", calls: ["UserDangKyService.java", "RegisterRateLimiter.java"] },
+                                                        { name: "UserDangNhapController.java", type: "file", desc: "Hiển thị trang đăng nhập và tích hợp Rate Limiter cho các lượt thử đăng nhập thất bại.", layer: "controller", calls: ["LoginRateLimiter.java"] },
+                                                        { name: "UserQuenMatKhauController.java", type: "file", desc: "Quản lý luồng gửi email khôi phục và đặt lại mật khẩu của người dùng.", layer: "controller", calls: ["UserQuenMatKhauService.java", "ForgotPasswordRateLimiter.java"] },
+                                                        { name: "UserAddressController.java", type: "file", desc: "CRUD sổ địa chỉ của khách hàng. Tích hợp chuyển hướng thông minh sau khi lưu.", layer: "controller", calls: ["UserAddressService.java"] },
+                                                        { name: "ZaloPayController.java", type: "file", desc: "Xử lý callback chuyển hướng từ cổng ZaloPay (GET) và nhận IPN Callback Webhook để cập nhật đơn hàng thành công.", layer: "controller", calls: ["ZaloPayServiceImpl.java", "OrderViewService.java"] },
+                                                        { name: "SepayIpnController.java", type: "file", desc: "Webhook nhận biến động số dư từ cổng thanh toán SePay để tự động khớp đơn và chuyển PAID.", layer: "controller", calls: ["SepayGatewayService.java", "OrderViewService.java"] },
+                                                        { name: "LocationRestController.java", type: "file", desc: "REST API cung cấp dữ liệu hành chính Tỉnh/Huyện/Xã của Việt Nam phục vụ checkout.", layer: "controller", calls: ["LocationService.java"] },
+                                                        { name: "AdminSanPhamController.java", type: "file", desc: "CRUD sản phẩm phía Admin, quản lý upload hình ảnh sử dụng Apache Tika và verify an toàn file.", layer: "controller", calls: ["AdminSanPhamService.java"] },
+                                                        { name: "AdminBienTheController.java", type: "file", desc: "Quản lý biến thể (Size/Màu/Tồn kho) và tích hợp upload ảnh biến thể.", layer: "controller", calls: ["AdminBienTheService.java"] },
+                                                        { name: "AdminController.java", type: "file", desc: "Xem danh sách và cập nhật trạng thái đơn hàng của hệ thống admin.", layer: "controller", calls: ["OrderViewService.java"] },
+                                                        { name: "AdminPosController.java", type: "file", desc: "Controller phục vụ màn hình bán hàng tại quầy (POS), tạo nhanh đơn hàng không qua giỏ hàng.", layer: "controller", calls: ["AdminPosService.java"] },
+                                                        { name: "AdminThongKeController.java", type: "file", desc: "Cung cấp số liệu doanh số bán hàng, đơn hàng để dựng biểu đồ Chart.js ở Admin Panel.", layer: "controller", calls: ["AdminThongKeService.java"] }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "service",
+                                                    type: "dir",
+                                                    desc: "Tầng Service chứa nghiệp vụ logic cốt lõi (Business Logic).",
+                                                    children: [
+                                                        { name: "OrderViewService.java", type: "file", desc: "Xử lý nghiệp vụ vòng đời đơn hàng: tạo, hủy, duyệt, hoàn trả, tích hợp tạo vận đơn GHN.", layer: "service", calls: ["HoaDonRepository.java", "HoaDonChiTietRepository.java", "GhnService.java"] },
+                                                        { name: "GioHangService.java", type: "file", desc: "Tính tổng tiền giỏ hàng, áp dụng voucher, validate dữ liệu checkout, trừ tồn kho và tạo bản ghi HoaDon.", layer: "service", calls: ["GioHangRepository.java", "GioHangChiTietRepository.java", "SanPhamChiTietRepository.java"] },
+                                                        { name: "GhnService.java", type: "file", desc: "Kết nối trực tiếp API Giao Hàng Nhanh qua RestTemplate để tính phí ship động và đẩy đơn giao nhận.", layer: "service" },
+                                                        { name: "ZaloPayServiceImpl.java", type: "file", desc: "Đóng gói yêu cầu thanh toán gửi sang ZaloPay API và verify chữ ký HMAC-SHA256 khi nhận IPN callback.", layer: "service" },
+                                                        { name: "SepayGatewayService.java", type: "file", desc: "Tạo QR thanh toán động và xác thực webhook biến động tài khoản từ hệ thống SePay.", layer: "service" },
+                                                        { name: "UserDangKyService.java", type: "file", desc: "Đăng ký khách hàng mới: băm mật khẩu, lưu đồng thời TaiKhoan và KhachHang trong 1 Transaction.", layer: "service", calls: ["TaiKhoanRepository.java", "KhachHangRepository.java"] },
+                                                        { name: "UserDangNhapService.java", type: "file", desc: "Nạp thông tin người dùng từ TaiKhoan để phục vụ xác thực bảo mật của Spring Security.", layer: "service", calls: ["TaiKhoanRepository.java"] },
+                                                        { name: "UserQuenMatKhauService.java", type: "file", desc: "Quản lý sinh token reset mật khẩu, gửi mail và xác thực độ mạnh mật khẩu mới.", layer: "service", calls: ["TokenKhoiPhucRepository.java", "TaiKhoanRepository.java"] },
+                                                        { name: "ShippingZoneResolver.java", type: "file", desc: "Xác định vùng vận chuyển (nội thành/ngoại thành/liên tỉnh) dựa vào districtId để chống tampering phí ship phía server.", layer: "service" },
+                                                        { name: "ShippingFeeCalculator.java", type: "file", desc: "Tính toán phí vận chuyển dựa trên vùng vận chuyển đã được resolver phân tích và cân nặng.", layer: "service", calls: ["ShippingZoneResolver.java"] },
+                                                        { name: "AdminSanPhamService.java", type: "file", desc: "Nghiệp vụ sản phẩm: kiểm duyệt file ảnh bằng Apache Tika và ImageIO, đổi tên file theo UUID, lưu trữ vật lý.", layer: "service", calls: ["SanPhamRepository.java"] },
+                                                        { name: "AdminBienTheService.java", type: "file", desc: "CRUD biến thể sản phẩm, tích hợp check bảo mật upload ảnh biến thể.", layer: "service", calls: ["SanPhamChiTietRepository.java"] },
+                                                        { name: "AdminPosService.java", type: "file", desc: "Nghiệp vụ bán hàng trực tiếp tại quầy, cập nhật kho hàng thực tế.", layer: "service", calls: ["HoaDonRepository.java", "SanPhamChiTietRepository.java"] },
+                                                        { name: "AdminThongKeService.java", type: "file", desc: "Thống kê doanh số nâng cao, phục vụ dữ liệu biểu đồ cho dashboard admin.", layer: "service", calls: ["HoaDonRepository.java"] },
+                                                        { name: "AuditService.java", type: "file", desc: "Lưu vết lịch sử thay đổi dữ liệu của Admin panel để làm bằng chứng kiểm toán hệ thống.", layer: "service", calls: ["EditLogRepository.java"] }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "repository",
+                                                    type: "dir",
+                                                    desc: "Tầng Repository kết nối CSDL sử dụng Spring Data JPA.",
+                                                    children: [
+                                                        { name: "HoaDonRepository.java", type: "file", desc: "Truy vấn bảng hóa đơn, lọc theo trạng thái và tính doanh số.", layer: "repository" },
+                                                        { name: "HoaDonChiTietRepository.java", type: "file", desc: "Truy vấn sản phẩm trong hóa đơn, tính lượng bán.", layer: "repository" },
+                                                        { name: "SanPhamRepository.java", type: "file", desc: "Quản lý CSDL Sản phẩm, tìm kiếm, phân trang và lọc.", layer: "repository" },
+                                                        { name: "SanPhamChiTietRepository.java", type: "file", desc: "Truy vấn các biến thể sản phẩm, số lượng tồn kho.", layer: "repository" },
+                                                        { name: "TaiKhoanRepository.java", type: "file", desc: "Truy vấn tài khoản phục vụ đăng nhập và quản lý.", layer: "repository" },
+                                                        { name: "KhachHangRepository.java", type: "file", desc: "Quản lý thông tin khách hàng.", layer: "repository" },
+                                                        { name: "GioHangRepository.java", type: "file", desc: "Truy vấn giỏ hàng của tài khoản hoặc session.", layer: "repository" },
+                                                        { name: "PaymentTransactionRepository.java", type: "file", desc: "Lưu vết giao dịch thanh toán ZaloPay/SePay phục vụ đối soát.", layer: "repository" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "security",
+                                                    type: "dir",
+                                                    desc: "Các bộ hạn chế truy cập (Rate Limiter) bảo mật.",
+                                                    children: [
+                                                        { name: "LoginRateLimiter.java", type: "file", desc: "Rate Limiter giới hạn số lần thử mật khẩu sai của 1 địa chỉ IP (Brute Force Protection).", layer: "security" },
+                                                        { name: "RegisterRateLimiter.java", type: "file", desc: "Giới hạn số tài khoản được đăng ký từ cùng 1 IP trong 1 tiếng để tránh spam.", layer: "security" },
+                                                        { name: "ForgotPasswordRateLimiter.java", type: "file", desc: "Giới hạn tần suất yêu cầu khôi phục mật khẩu từ 1 IP để tránh quá tải SMTP.", layer: "security" }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // File Details Map for dynamic lookup
+        const fileDetailsMap = {};
+        function buildDetailsMap(node) {
+            if (node.type === 'file') {
+                fileDetailsMap[node.name] = {
+                    name: node.name,
+                    path: getFullPath(projectTree, node.name) || node.name,
+                    desc: node.desc || 'Không có mô tả chi tiết.',
+                    layer: node.layer || 'default',
+                    calls: node.calls || [],
+                    calledBy: node.calledBy ? [node.calledBy] : []
+                };
+            }
+            if (node.children) {
+                node.children.forEach(buildDetailsMap);
+            }
+        }
+        
+        function getFullPath(parent, targetName) {
+            if (parent.name === targetName) return parent.name;
+            if (parent.children) {
+                for (let child of parent.children) {
+                    const res = getFullPath(child, targetName);
+                    if (res) return parent.name + '/' + res;
+                }
+            }
+            return null;
+        }
+
+        buildDetailsMap(projectTree);
+
+        // Fill "calledBy" dynamically
+        Object.keys(fileDetailsMap).forEach(key => {
+            const file = fileDetailsMap[key];
+            if (file.calls && file.calls.length > 0) {
+                file.calls.forEach(calledName => {
+                    // find match in details map (e.g. handle wildcards or specific files)
+                    Object.keys(fileDetailsMap).forEach(k => {
+                        if (k === calledName || (calledName.endsWith('/*') && fileDetailsMap[k].path.includes(calledName.replace('/*', '')))) {
+                            if (!fileDetailsMap[k].calledBy.includes(file.name)) {
+                                fileDetailsMap[k].calledBy.push(file.name);
+                            }
+                        }
+                    });
+                });
+            }
+        });
+
+        // Render Tree HTML
+        function renderTree(node, container, searchTerm = "") {
+            const nodeEl = document.createElement('div');
+            nodeEl.className = 'tree-node';
+            
+            const headerEl = document.createElement('div');
+            headerEl.className = 'tree-node-header';
+            headerEl.setAttribute('data-name', node.name);
+            
+            const isDir = node.type === 'dir';
+            let iconSvg = "";
+            let toggleSvg = "";
+
+            if (isDir) {
+                toggleSvg = `<svg class="tree-toggle-icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`;
+                iconSvg = `<svg class="tree-node-icon" style="fill: #e2e8f0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+            } else {
+                toggleSvg = `<span style="width:14px; display:inline-block; flex-shrink:0;"></span>`;
+                // Color file icons based on layer
+                let fillVal = "#94a3b8";
+                if (node.layer === 'entry') fillVal = "var(--layer-config)";
+                else if (node.layer === 'controller') fillVal = "var(--layer-controller)";
+                else if (node.layer === 'service') fillVal = "var(--layer-service)";
+                else if (node.layer === 'repository') fillVal = "var(--layer-repository)";
+                else if (node.layer === 'config') fillVal = "var(--layer-config)";
+                else if (node.layer === 'entity') fillVal = "var(--layer-entity)";
+                else if (node.layer === 'security') fillVal = "var(--layer-security)";
+
+                iconSvg = `<svg class="tree-node-icon" style="fill: ${fillVal};" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+            }
+
+            let nameHtml = node.name;
+            if (searchTerm && node.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+                const idx = node.name.toLowerCase().indexOf(searchTerm.toLowerCase());
+                nameHtml = node.name.substring(0, idx) + 
+                           `<span class="tree-node-label highlight">${node.name.substring(idx, idx + searchTerm.length)}</span>` + 
+                           node.name.substring(idx + searchTerm.length);
+            }
+
+            headerEl.innerHTML = `
+                ${toggleSvg}
+                ${iconSvg}
+                <span class="tree-node-label">${nameHtml}</span>
+            `;
+
+            nodeEl.appendChild(headerEl);
+
+            if (isDir && node.children) {
+                const childrenEl = document.createElement('div');
+                childrenEl.className = 'tree-node-children';
+                
+                // If search matches or parents match, keep open
+                let shouldExpand = false;
+                node.children.forEach(child => {
+                    const match = checkSearchMatch(child, searchTerm);
+                    if (match) shouldExpand = true;
+                    renderTree(child, childrenEl, searchTerm);
+                });
+
+                if (shouldExpand && searchTerm) {
+                    childrenEl.classList.add('expanded');
+                    headerEl.querySelector('.tree-toggle-icon').classList.add('expanded');
+                }
+
+                nodeEl.appendChild(childrenEl);
+
+                // Click Folder
+                headerEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isExpanded = childrenEl.classList.toggle('expanded');
+                    headerEl.querySelector('.tree-toggle-icon').classList.toggle('expanded', isExpanded);
+                });
+            } else {
+                // Click File
+                headerEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.tree-node-header').forEach(h => h.classList.remove('active'));
+                    headerEl.classList.add('active');
+                    showDetails(node.name);
+                });
+            }
+
+            container.appendChild(nodeEl);
+        }
+
+        function checkSearchMatch(node, term) {
+            if (!term) return false;
+            if (node.name.toLowerCase().includes(term.toLowerCase())) return true;
+            if (node.children) {
+                return node.children.some(child => checkSearchMatch(child, term));
+            }
+            return false;
+        }
+
+        // Search Handlers
+        function handleSearch() {
+            const val = document.getElementById('tree-search').value;
+            const treeRoot = document.getElementById('tree-view-root');
+            treeRoot.innerHTML = "";
+            renderTree(projectTree, treeRoot, val);
+        }
+
+        // Show File Details in Right Panel
+        function showDetails(fileName) {
+            const panel = document.getElementById('details-panel-content');
+            const data = fileDetailsMap[fileName];
+            
+            if (!data) {
+                panel.innerHTML = `
+                    <div class="details-header">
+                        <div class="details-title">
+                            <h2>${fileName}</h2>
+                            <div class="details-path">Thư mục</div>
+                        </div>
+                        <span class="badge-layer layer-default">Directory</span>
+                    </div>
+                    <div class="details-section">
+                        <h3>Mô tả</h3>
+                        <p class="details-desc">Đây là một thư mục chứa các tệp mã nguồn và các gói con của dự án.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let calledByHtml = data.calledBy.map(f => `<button class="dependency-badge" onclick="locateFile('${f}')">${f}</button>`).join('');
+            if (data.calledBy.length === 0) calledByHtml = '<span class="none-text">Không có thông tin hoặc được Spring tự động nạp</span>';
+
+            let callsHtml = data.calls.map(f => `<button class="dependency-badge" onclick="locateFile('${f}')">${f}</button>`).join('');
+            if (data.calls.length === 0) callsHtml = '<span class="none-text">Không gọi file backend nào (hoặc chỉ gọi JPA mapping)</span>';
+
+            panel.innerHTML = `
+                <div class="details-header">
+                    <div class="details-title">
+                        <h2>${data.name}</h2>
+                        <div class="details-path">${data.path}</div>
+                    </div>
+                    <span class="badge-layer layer-${data.layer}">${data.layer}</span>
+                </div>
+
+                <div class="details-section">
+                    <h3>Vai trò trong ứng dụng</h3>
+                    <p class="details-desc">${data.desc}</p>
+                </div>
+
+                <div class="details-section">
+                    <h3>Các file gọi đến (Called By)</h3>
+                    <div class="badge-list">${calledByHtml}</div>
+                </div>
+
+                <div class="details-section">
+                    <h3>Các file được gọi (Calls)</h3>
+                    <div class="badge-list">${callsHtml}</div>
+                </div>
+            `;
+        }
+
+        function locateFile(fileName) {
+            // strip wildcards if any
+            const cleanName = fileName.replace('/*', '');
+            
+            // Search and highlight in tree
+            const searchInput = document.getElementById('tree-search');
+            searchInput.value = cleanName;
+            handleSearch();
+            
+            // Highlight node
+            setTimeout(() => {
+                const header = document.querySelector(`.tree-node-header[data-name*="${cleanName}"]`);
+                if (header) {
+                    document.querySelectorAll('.tree-node-header').forEach(h => h.classList.remove('active'));
+                    header.classList.add('active');
+                    header.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    showDetails(header.getAttribute('data-name'));
+                }
+            }, 100);
+        }
+
+        // Initialize Tree
+        const treeRoot = document.getElementById('tree-view-root');
+        renderTree(projectTree, treeRoot);
+
+        // ==========================================
+        // TAB 2: CALL FLOWS LOGIC & RENDER
+        // ==========================================
+        const flowData = {
+            "flow-register": {
+                title: "🔐 Luồng Đăng Ký Tài Khoản (User Registration Flow)",
+                method: "POST",
+                endpoint: "/signup",
+                steps: [
+                    { label: "Khách hàng nhập form và click Đăng Ký", desc: "Form signup gửi request kèm Họ tên, Email, Số điện thoại, Mật khẩu." },
+                    { label: "Kiểm tra giới hạn tần suất (Rate Limiter)", desc: "RegisterRateLimiter chặn IP ở tầng lọc để ngăn spam đăng ký tài khoản hàng loạt." },
+                    { label: "Kiểm tra validate dữ liệu tại Controller", desc: "UserDangKyController.registerCustomer() chạy check logic: so khớp mật khẩu và sđt VN." },
+                    { label: "Xử lý nghiệp vụ tại UserDangKyService", desc: "Kiểm tra xem email/sđt đã tồn tại trong DB chưa. Mã hóa mật khẩu bằng BCryptPasswordEncoder." },
+                    { label: "Ghi dữ liệu xuống Database", desc: "Lưu thông tin vào bảng tai_khoan và bảng khach_hang đồng bộ trong một Transaction." },
+                    { label: "Redirect về trang Đăng Nhập", desc: "Trả về Flash Attribute báo đăng ký thành công và redirect khách đến đường dẫn /signin." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /signup (Form Data)", type: "forward" },
+                    { from: 1, to: 1, label: "RegisterRateLimiter.check()", type: "self" },
+                    { from: 1, to: 2, label: "UserDangKyService.register()", type: "forward" },
+                    { from: 2, to: 3, label: "existsByEmail() / existsBySoDienThoai()", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO tai_khoan / khach_hang", type: "forward" },
+                    { from: 4, to: 2, label: "Transaction Commit", type: "backward" },
+                    { from: 2, to: 1, label: "Đăng ký thành công", type: "backward" },
+                    { from: 1, to: 0, label: "Redirect: 302 /signin", type: "backward" }
+                ],
+                inputs: [
+                    { name: "hoTen", type: "String", rule: "2-100 ký tự, Jsoup clean", desc: "Họ và tên hiển thị của khách hàng." },
+                    { name: "email", type: "String", rule: "Email hợp lệ, duy nhất", desc: "Email dùng để đăng nhập và nhận thông tin." },
+                    { name: "soDienThoai", type: "String", rule: "Định dạng regex SĐT Việt Nam, duy nhất", desc: "Số điện thoại liên lạc nhận hàng." },
+                    { name: "matKhau", type: "String", rule: "8-30 ký tự, có chữ hoa, thường, số, ký tự đặc biệt", desc: "Mật khẩu bảo mật." },
+                    { name: "nhapLaiMatKhau", type: "String", rule: "Khớp hoàn toàn với matKhau", desc: "Nhập lại để xác nhận tránh gõ sai." }
+                ],
+                files: [
+                    { name: "UserDangKyController.java", role: "Controller", desc: "Tiếp nhận request, thực hiện binding form và kiểm tra lỗi validate cơ bản." },
+                    { name: "UserDangKyService.java", role: "Service", desc: "Chứa logic nghiệp vụ băm mật khẩu, gọi kiểm tra trùng và thực thi transaction." },
+                    { name: "RegisterRateLimiter.java", role: "Security", desc: "Hạn chế spam đăng ký tài khoản từ cùng địa chỉ IP." },
+                    { name: "ValidationUtils.java", role: "Utility", desc: "Kiểm tra độ mạnh yếu của mật khẩu và định dạng email/sđt." },
+                    { name: "TaiKhoanRepository.java", role: "Repository", desc: "Giao tiếp bảng tai_khoan trong Database." },
+                    { name: "KhachHangRepository.java", role: "Repository", desc: "Giao tiếp bảng khach_hang trong Database." }
+                ],
+                security: "Độ mạnh mật khẩu được kiểm tra ở cả frontend (realtime JS) và backend (ValidationUtils). Mật khẩu được băm (hash) bằng BCrypt thuật toán tự động thêm muối trước khi ghi đĩa. RegisterRateLimiter lưu cache tự giải phóng để tránh dò quét tài khoản."
+            },
+            "flow-login": {
+                title: "🔑 Luồng Đăng Nhập Hệ Thống (User Authentication Flow)",
+                method: "POST",
+                endpoint: "/signin",
+                steps: [
+                    { label: "Người dùng gửi form đăng nhập", desc: "Gửi request POST /signin kèm username (email) và password." },
+                    { label: "Kiểm tra Brute Force", desc: "LoginRateLimiter kiểm tra số lần đăng nhập sai từ IP. Nếu quá 5 lần/phút thì khóa IP 15 phút." },
+                    { label: "Spring Security chặn và xác thực", desc: "UsernamePasswordAuthenticationFilter bắt request và chuyển cho AuthenticationManager." },
+                    { label: "Truy vấn CSDL lấy thông tin tài khoản", desc: "UserDangNhapService.loadUserByUsername() được gọi để tìm kiếm TaiKhoan qua Repository." },
+                    { label: "So khớp mật khẩu băm", desc: "Spring Security dùng BCryptPasswordEncoder so khớp mật khẩu người dùng nhập và mật khẩu băm trong DB." },
+                    { label: "Cấp quyền & Điều hướng trang", desc: "Nếu thành công, lưu SecurityContext vào Session. Nếu thất bại, ghi nhận lỗi vào Rate Limiter và redirect về /signin?error." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /signin (username, password)", type: "forward" },
+                    { from: 1, to: 1, label: "LoginRateLimiter.check()", type: "self" },
+                    { from: 1, to: 2, label: "UserDangNhapService.loadUserByUsername()", type: "forward" },
+                    { from: 2, to: 3, label: "findByUsernameOrEmail()", type: "forward" },
+                    { from: 3, to: 4, label: "SELECT * FROM tai_khoan", type: "forward" },
+                    { from: 4, to: 2, label: "UserDetails Object", type: "backward" },
+                    { from: 2, to: 1, label: "BCrypt match?", type: "self" },
+                    { from: 1, to: 0, label: "Success: Redirect / | Fail: Redirect /signin?error", type: "backward" }
+                ],
+                inputs: [
+                    { name: "username", type: "String", rule: "Email hoặc tên đăng nhập tài khoản", desc: "Nhận diện người dùng." },
+                    { name: "password", type: "String", rule: "Chuỗi mật khẩu", desc: "Thông tin xác minh danh tính." }
+                ],
+                files: [
+                    { name: "UserDangNhapController.java", role: "Controller", desc: "Chỉ chịu trách nhiệm hiển thị view đăng nhập GET /signin." },
+                    { name: "UserDangNhapService.java", role: "Service", desc: "Nạp thông tin người dùng từ Database và chuyển đổi thành UserDetails phục vụ Security." },
+                    { name: "SecurityConfig.java", role: "Configuration", desc: "Định nghĩa quy trình xác thực, phân quyền URL và mã hóa password." },
+                    { name: "LoginRateLimiter.java", role: "Security", desc: "Bảo vệ tài khoản khách hàng khỏi các cuộc tấn công dò mật khẩu tự động." },
+                    { name: "TaiKhoanRepository.java", role: "Repository", desc: "Truy vấn thông tin tài khoản theo email hoặc username." }
+                ],
+                security: "Logic xử lý POST được bảo vệ hoàn toàn bởi Spring Security. Mật khẩu không bao giờ được log ra ngoài hoặc chuyển đi dạng plaintext trong hệ thống. Tích hợp Rate Limiter ở tầng lọc cao nhất."
+            },
+            "flow-cart": {
+                title: "🛒 Luồng Thêm Giỏ Hàng & Vận Chuyển (Cart & Shipping Flow)",
+                method: "POST",
+                endpoint: "/cart/add",
+                steps: [
+                    { label: "Khách hàng click 'Thêm vào giỏ hàng'", desc: "Gửi request AJAX chứa ID biến thể sản phẩm và số lượng mua." },
+                    { label: "Kiểm tra tràn số nguyên & Validate số lượng", desc: "GioHangService giới hạn số lượng mua từ 1 đến 999. Dùng kiểu dữ liệu long tính toán cộng dồn chống Integer Overflow." },
+                    { label: "Xác thực số lượng tồn kho", desc: "Truy vấn SanPhamChiTietRepository để lấy số lượng tồn kho thực tế, chặn đặt quá số lượng có sẵn." },
+                    { label: "Lưu dữ liệu giỏ hàng", desc: "Lưu bản ghi vào bảng gio_hang_chi_tiet, tính toán tổng tiền tạm tính." },
+                    { label: "Tính phí vận chuyển bảo mật phía Server", desc: "Khi sang checkout, ShippingZoneResolver phân vùng dựa vào districtId từ cache server, chống client sửa đổi dữ liệu tỉnh thành." },
+                    { label: "Tính phí vận chuyển", desc: "ShippingFeeCalculator tính toán phí ship và trả về thông tin hiển thị cho khách hàng." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "AJAX: POST /cart/add (variantId, soLuong)", type: "forward" },
+                    { from: 1, to: 2, label: "GioHangService.addToCart()", type: "forward" },
+                    { from: 2, to: 3, label: "findById() & check stock", type: "forward" },
+                    { from: 3, to: 4, label: "SELECT ton_kho FROM san_pham_chi_tiet", type: "forward" },
+                    { from: 4, to: 2, label: "Stock Available", type: "backward" },
+                    { from: 2, to: 3, label: "INSERT/UPDATE gio_hang_chi_tiet", type: "forward" },
+                    { from: 3, to: 1, label: "Success Response", type: "backward" },
+                    { from: 1, to: 0, label: "Hiển thị Toast & Mini Cart", type: "backward" }
+                ],
+                inputs: [
+                    { name: "variantId", type: "Long", rule: "ID biến thể phải tồn tại trong CSDL", desc: "Nhận biết chính xác màu sắc/size của vợt cầu lông." },
+                    { name: "soLuong", type: "int", rule: "Số lượng nằm trong khoảng [1, 999]", desc: "Số lượng sản phẩm muốn mua." }
+                ],
+                files: [
+                    { name: "GioHangController.java", role: "Controller", desc: "Cung cấp các Rest API tương tác AJAX cho giỏ hàng, trả về JSON hoặc fragment HTML." },
+                    { name: "GioHangService.java", role: "Service", desc: "Kiểm tra tồn kho, giới hạn số lượng giỏ hàng tối đa 999, tính toán lại giá bán sản phẩm." },
+                    { name: "ShippingZoneResolver.java", role: "Service", desc: "Xác định vùng miền (nội thành/ngoại thành/liên tỉnh) dựa vào mã quận huyện GHN để tránh giả mạo phí ship." },
+                    { name: "ShippingFeeCalculator.java", role: "Service", desc: "Tính phí vận chuyển dựa trên thông tin vùng miền và bảng đơn giá của cửa hàng." },
+                    { name: "SanPhamChiTietRepository.java", role: "Repository", desc: "Truy vấn tồn kho thực tế của sản phẩm." }
+                ],
+                security: "Số lượng sản phẩm thêm vào giỏ luôn được kiểm tra tồn kho tại CSDL trong transaction. Tránh tấn công Integer Overflow bằng kiểm duyệt kiểu dữ liệu long. Phí ship được tính hoàn toàn phía backend sử dụng districtId, không chấp nhận phí truyền từ client."
+            },
+            "flow-checkout": {
+                title: "💳 Luồng Đặt Hàng & Thanh Toán (Checkout, Webhooks ZaloPay/SePay)",
+                method: "POST",
+                endpoint: "/checkout/place-order",
+                steps: [
+                    { label: "Khách hàng click 'Đặt Hàng'", desc: "Gửi request POST chứa Họ tên, SĐT, Địa chỉ giao, PTTT, ID Voucher." },
+                    { label: "Jsoup Clean & Validate sở hữu địa chỉ", desc: "Trim khoảng trắng, làm sạch text chống XSS. Nếu dùng địa chỉ lưu sẵn, truy vấn CSDL kiểm tra quyền sở hữu (ngăn IDOR)." },
+                    { label: "Trừ tồn kho DB & Lưu Hóa Đơn", desc: "Trừ kho sản phẩm trong Transaction. Tạo bản ghi HoaDon với trạng thái PENDING." },
+                    { label: "Phân luồng Thanh toán (COD / ZaloPay / SePay)", desc: "COD: tạo đơn GHN trực tiếp; ZaloPay: gọi API zalopay lấy link thanh toán; SePay: sinh QR động chứa ID đơn." },
+                    { label: "Tiếp nhận Webhook IPN Callback", desc: "ZaloPayIPN hoặc SePayIPN nhận thông báo giao dịch thành công. Xác thực chữ ký HMAC-SHA256 bảo mật." },
+                    { label: "Xác nhận Thanh Toán & Đẩy Đơn GHN", desc: "Cập nhật hóa đơn sang trạng thái PAID. Gọi GhnService.createShippingOrder() đẩy đơn sang Giao Hàng Nhanh tự động." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /checkout/place-order (Form Data)", type: "forward" },
+                    { from: 1, to: 2, label: "GioHangService.createOrder()", type: "forward" },
+                    { from: 2, to: 3, label: "Verify Address Ownership & Recalculate Fee", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT hoa_don, UPDATE san_pham_chi_tiet (Stock)", type: "forward" },
+                    { from: 4, to: 2, label: "Invoice Created (PENDING)", type: "backward" },
+                    { from: 2, to: 1, label: "PTTT ZaloPay -> Gọi API sinh URL", type: "self" },
+                    { from: 1, to: 0, label: "Redirect sang Cổng ZaloPay", type: "backward" },
+                    { from: 0, to: 1, label: "POST /zalopay/ipn (ZaloPay Callback)", type: "forward" },
+                    { from: 1, to: 2, label: "OrderViewService.confirmPayment()", type: "forward" },
+                    { from: 2, to: 3, label: "GhnService.createShippingOrder()", type: "forward" }
+                ],
+                inputs: [
+                    { name: "hoTenNhan", type: "String", rule: "2-100 ký tự. Bắt buộc", desc: "Họ tên người nhận hàng." },
+                    { name: "sdtNhan", type: "String", rule: "Định dạng số điện thoại Việt Nam chuẩn. Bắt buộc", desc: "Số điện thoại nhận hàng." },
+                    { name: "diaChiNhan", type: "String", rule: "5-255 ký tự. Bắt buộc", desc: "Địa chỉ chi tiết nhận hàng." },
+                    { name: "paymentMethod", type: "String", rule: "COD, ZALOPAY hoặc BANK_TRANSFER. Bắt buộc", desc: "Phương thức thanh toán lựa chọn." },
+                    { name: "phieuGiamGiaId", type: "Long", rule: "ID Voucher hợp lệ (nếu có)", desc: "Mã giảm giá áp dụng cho hóa đơn." }
+                ],
+                files: [
+                    { name: "CheckoutController.java", role: "Controller", desc: "Tiếp nhận thông tin đặt hàng, thực hiện validate nghiệp vụ cơ bản, điều phối luồng thanh toán." },
+                    { name: "GioHangService.java", role: "Service", desc: "Kiểm tra giỏ hàng, trừ kho sản phẩm, áp dụng voucher, tạo đơn hàng trong transaction." },
+                    { name: "OrderViewService.java", role: "Service", desc: "Xử lý cập nhật trạng thái hóa đơn sau khi nhận webhook thanh toán thành công." },
+                    { name: "ZaloPayServiceImpl.java", role: "Service", desc: "Đóng gói request gọi ZaloPay API và verify chữ ký HMAC-SHA256 bảo mật." },
+                    { name: "SepayGatewayService.java", role: "Service", desc: "Tạo thông tin chuyển khoản động, kiểm tra chữ ký webhook của SePay." },
+                    { name: "GhnService.java", role: "Service", desc: "Gọi API sang hệ thống Giao Hàng Nhanh để đăng ký vận đơn giao nhận." }
+                ],
+                security: "Thông tin nhạy cảm của khách hàng được trim và strip HTML qua Jsoup. Ngăn chặn lỗ hổng IDOR bằng cách đối chiếu thông tin SoDiaChi với ID khách hàng trong session. Toàn bộ webhook (IPN) đều bắt buộc xác thực chữ ký HMAC-SHA256 (ZaloPay) hoặc Token Auth (SePay) trước khi cập nhật dữ liệu hóa đơn."
+            },
+            "flow-admin": {
+                title: "📦 Quản Trị & Upload Ảnh (Admin Product & Media Upload)",
+                method: "POST",
+                endpoint: "/admin/products/add",
+                steps: [
+                    { label: "Admin nhập thông tin sản phẩm và tải ảnh lên", desc: "Multipart form chứa thông tin sản phẩm, biến thể và file ảnh." },
+                    { label: "Xác thực vai trò Admin", desc: "AdminInterceptor chặn request kiểm tra xem tài khoản có vai trò ADMIN hoặc NHANVIEN." },
+                    { label: "Kiểm tra an toàn file tải lên", desc: "Kiểm tra MIME type thực tế bằng Apache Tika/ImageIO, chặn đổi đuôi giả mạo. Whitelist định dạng ảnh: png, jpg, jpeg, gif." },
+                    { label: "Đổi tên file UUID & Chống Path Traversal", desc: "Đổi tên file sang chuỗi UUID ngẫu nhiên. Dùng FilenameUtils.getName() để làm sạch tên file, chặn ký tự quay lui thư mục (../)." },
+                    { label: "Lưu file vật lý & Ghi CSDL", desc: "Lưu file vào thư mục cấu hình app.upload.path. Lưu thông tin vào các bảng san_pham, san_pham_chi_tiet, hinh_anh_san_pham." },
+                    { label: "Ghi nhật ký hệ thống (Audit Log)", desc: "AuditService.logChange() lưu thông tin lịch sử thao tác của Admin vào bảng edit_log phục vụ giám sát." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /admin/products/add (Multipart Form)", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle() (Verify Role)", type: "self" },
+                    { from: 1, to: 2, label: "AdminSanPhamService.saveProduct()", type: "forward" },
+                    { from: 2, to: 2, label: "Verify File MIME & Extension (Apache Tika)", type: "self" },
+                    { from: 2, to: 2, label: "Sanitize Path Traversal & Save physical file", type: "self" },
+                    { from: 2, to: 3, label: "save() product & variants", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO san_pham / edit_log", type: "forward" },
+                    { from: 4, to: 1, label: "Success", type: "backward" },
+                    { from: 1, to: 0, label: "Redirect: /admin/products", type: "backward" }
+                ],
+                inputs: [
+                    { name: "tenSanPham", type: "String", rule: "Không rỗng, Jsoup clean", desc: "Tên hiển thị của vợt cầu lông." },
+                    { name: "danhMucId", type: "Long", rule: "ID danh mục phải tồn tại", desc: "Phân loại sản phẩm." },
+                    { name: "files", type: "MultipartFile[]", rule: "File ảnh thực tế, kích thước < 5MB", desc: "Các file ảnh sản phẩm tải lên." },
+                    { name: "bienTheList", type: "List", rule: "Danh sách size, màu, tồn kho", desc: "Các biến thể chi tiết của sản phẩm." }
+                ],
+                files: [
+                    { name: "AdminSanPhamController.java", role: "Controller", desc: "Tiếp nhận request form-data quản trị sản phẩm." },
+                    { name: "AdminSanPhamService.java", role: "Service", desc: "Xử lý lưu trữ sản phẩm, kiểm duyệt an toàn file hình ảnh tải lên." },
+                    { name: "AdminInterceptor.java", role: "Security", desc: "Chặn truy cập trái phép của người dùng thường vào các trang admin." },
+                    { name: "UploadSecurityFilter.java", role: "Security", desc: "Chặn thực thi mã lệnh/script trong thư mục uploads." },
+                    { name: "AuditService.java", role: "Service", desc: "Ghi lại hoạt động chỉnh sửa dữ liệu của các tài khoản admin." }
+                ],
+                security: "Tệp tải lên được xác minh định dạng MIME thực tế bằng Apache Tika thay vì chỉ tin tưởng đuôi mở rộng của file. Tên file được sinh ngẫu nhiên UUID để tránh trùng lặp và loại bỏ tấn công path traversal. Mọi chỉnh sửa đều được ghi nhận vào nhật ký hệ thống."
+            },
+            "flow-chatbot": {
+                title: "🤖 Luồng Trò Chuyện AI Chatbot (AI Chatbot Client-Server)",
+                method: "POST",
+                endpoint: "/api/chat/send",
+                steps: [
+                    { label: "Khách hàng gửi tin nhắn cho Chatbot", desc: "Gửi request chứa nội dung tin nhắn và ID phiên chat." },
+                    { label: "Sanitize chống OS Command Injection", desc: "ChatService lọc sạch các ký tự CLI nguy hiểm khỏi tin nhắn (như |, &, ;, >, <) trước khi gọi CLI." },
+                    { label: "Gọi mô hình AI / Luật xử lý", desc: "ChatService xử lý tin nhắn bằng AI hoặc các luật quy định để sinh câu trả lời." },
+                    { label: "Lưu lịch sử hội thoại", desc: "Lưu tin nhắn của khách và câu trả lời của AI vào bảng chat_message qua Repository." },
+                    { label: "Trả câu trả lời về Giao Diện", desc: "Phản hồi kết quả JSON chứa câu trả lời của Chatbot hiển thị trên UI bong bóng chat." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /api/chat/send (message, conversationId)", type: "forward" },
+                    { from: 1, to: 2, label: "ChatService.sendMessage()", type: "forward" },
+                    { from: 2, to: 2, label: "Sanitize input (anti Command Injection)", type: "self" },
+                    { from: 2, to: 2, label: "Generate Response (AI / Rules)", type: "self" },
+                    { from: 2, to: 3, label: "save() chat messages", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO chat_message", type: "forward" },
+                    { from: 4, to: 1, label: "JSON Response", type: "backward" },
+                    { from: 1, to: 0, label: "Hiển thị hội thoại", type: "backward" }
+                ],
+                inputs: [
+                    { name: "message", type: "String", rule: "Nội dung chat, đã sanitize", desc: "Nội dung câu hỏi của khách hàng." },
+                    { name: "conversationId", type: "Long", rule: "ID phiên chat hợp lệ (optional)", desc: "Mã phiên để lưu trữ chuỗi hội thoại." }
+                ],
+                files: [
+                    { name: "ChatRestController.java", role: "Controller", desc: "Tiếp nhận tin nhắn chat từ client, trả về phản hồi dạng JSON." },
+                    { name: "ChatService.java", role: "Service", desc: "Xử lý lọc ký tự độc hại chống Command Injection, kết nối AI và lưu lịch sử." },
+                    { name: "ChatMessageRepository.java", role: "Repository", desc: "Lưu trữ nội dung tin nhắn chat vào Database." }
+                ],
+                security: "Đầu vào tin nhắn được lọc bỏ tuyệt đối các ký tự điều khiển CLI phòng ngừa lỗ hổng Command Injection khi hệ thống gọi các script hỗ trợ chạy ngoài. Lịch sử chat được lưu trữ có giới hạn dung lượng để tránh tấn công DoS đầy ổ cứng."
+            }
+        };
+
+        function showFlow(flowKey) {
+            document.querySelectorAll('.flow-menu-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = Array.from(document.querySelectorAll('.flow-menu-btn')).find(btn => btn.getAttribute('onclick').includes(flowKey));
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const flow = flowData[flowKey];
+            const pane = document.getElementById('flow-detail-pane');
+
+            // Build Sequence Diagram steps
+            let seqStepsHtml = "";
+            flow.sequence.forEach((s, idx) => {
+                const totalActors = flow.actors.length;
+                const minActor = Math.min(s.from, s.to);
+                const maxActor = Math.max(s.from, s.to);
+                
+                // Position calculation
+                const leftPct = (minActor / (totalActors - 1)) * 100;
+                const widthPct = ((maxActor - minActor) / (totalActors - 1)) * 100;
+                
+                const isForward = s.type === 'forward';
+                const isSelf = s.type === 'self';
+                
+                let lineClass = isForward ? 'forward' : 'backward';
+                let arrowClass = isForward ? 'forward' : 'backward';
+                
+                if (isSelf) {
+                    seqStepsHtml += `
+                        <div class="diagram-step">
+                            <div style="margin: 0 auto; background: rgba(249, 115, 22, 0.15); border: 1px solid var(--color-primary); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">${s.label}</div>
+                        </div>
+                    `;
+                } else {
+                    seqStepsHtml += `
+                        <div class="diagram-step">
+                            <div class="diagram-step-line ${lineClass}" style="left: ${leftPct}%; width: ${widthPct}%;"></div>
+                            <div class="diagram-step-arrow ${arrowClass}" style="${isForward ? 'left: ' + (leftPct + widthPct - 1) + '%' : 'left: ' + leftPct + '%'}"></div>
+                            <div class="diagram-step-label">${s.label}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Build actors HTML
+            let actorsHtml = flow.actors.map(a => {
+                let c = a.toLowerCase();
+                if (c === 'client') c = 'client';
+                else if (c === 'controller') c = 'controller';
+                else if (c === 'service') c = 'service';
+                else if (c === 'repository') c = 'repository';
+                else if (c === 'database') c = 'db';
+                return `<div class="actor ${c}">${a}</div>`;
+            }).join('');
+
+            // Build steps HTML
+            let stepsHtml = flow.steps.map((s, idx) => `
+                <li data-step="${idx + 1}">
+                    <strong>${s.label}</strong>
+                    ${s.desc}
+                </li>
+            `).join('');
+
+            // Build inputs HTML
+            let inputsHtml = flow.inputs.map(i => `
+                <tr>
+                    <td style="font-family: var(--font-mono); font-weight: 500; color: #fff;">${i.name}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-info);">${i.type}</td>
+                    <td><code style="background:#0b0f19; padding:2px 6px; border-radius:4px; font-size:0.8rem; color: var(--color-warning);">${i.rule}</code></td>
+                    <td>${i.desc}</td>
+                </tr>
+            `).join('');
+
+            // Build files HTML
+            let filesHtml = flow.files.map(f => `
+                <tr>
+                    <td style="font-family: var(--font-mono); color: #fff; font-weight: 500;">
+                        <button class="dependency-badge" onclick="switchTab('tab-tree'); locateFile('${f.name}')">${f.name}</button>
+                    </td>
+                    <td><span class="badge-layer layer-${f.role.toLowerCase()}">${f.role}</span></td>
+                    <td>${f.desc}</td>
+                </tr>
+            `).join('');
+
+            pane.innerHTML = `
+                <div class="flow-header">
+                    <h2>${flow.title}</h2>
+                    <div class="flow-meta">
+                        <span class="http-badge ${flow.method.toLowerCase()}">${flow.method}</span>
+                        <span class="endpoint-text">${flow.endpoint}</span>
+                    </div>
+                </div>
+
+                <!-- Sequence Diagram -->
+                <div class="flow-section-title">Sơ đồ Sequence Luồng Gọi File</div>
+                <div class="diagram-container">
+                    <div class="diagram-actors">
+                        ${actorsHtml}
+                    </div>
+                    <div class="diagram-steps">
+                        ${seqStepsHtml}
+                    </div>
+                </div>
+
+                <div class="flow-details-grid">
+                    <!-- Steps -->
+                    <div>
+                        <div class="flow-section-title">Các Bước Thao Tác Chi Tiết</div>
+                        <ul class="steps-list">
+                            ${stepsHtml}
+                        </ul>
+                    </div>
+
+                    <!-- Input Parameters -->
+                    <div>
+                        <div class="flow-section-title">Yêu Cầu Dữ Liệu Đầu Vào (API Payload)</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tham số</th>
+                                    <th>Kiểu dữ liệu</th>
+                                    <th>Quy tắc xác thực</th>
+                                    <th>Mô tả</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${inputsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Files Involved -->
+                    <div>
+                        <div class="flow-section-title">Danh Sách File Tham Gia Xử Lý</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên File</th>
+                                    <th>Tầng Kiến Trúc</th>
+                                    <th>Nhiệm vụ chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filesHtml}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Security Measures -->
+                    <div class="callout-box security">
+                        <h4>🛡️ Cơ Chế Bảo Mật Tích Hợp (Security Hardening)</h4>
+                        <p>${flow.security}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Auto load first flow
+        showFlow('flow-register');
+    </script>
+</body>
+</html>

@@ -125,7 +125,7 @@ document.getElementById('voucherForm').addEventListener('submit', function(e) {
 
     if (donVi === '%' && giaTri > 100) {
         e.preventDefault();
-        alert('Nếu áp dụng đơn vị giảm %, giá trị không được phép lớn hơn 100%!');
+        showToast('Nếu áp dụng đơn vị giảm %, giá trị không được phép lớn hơn 100%!', 'warning');
     }
 });
 </script>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mô Phỏng Cổng Thanh Toán SePay - SmashVN</title>
+    <title>Thanh Toán Qua Chuyển Khoản SePay - SmashVN</title>
     
     <!-- Meta tags for CSRF security -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
@@ -199,8 +199,8 @@
         <div class="spinner-border spinner-glow mb-3" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <h4 class="fw-bold text-white mb-1" id="overlayTitle">Đang xử lý mô phỏng...</h4>
-        <p class="text-muted" id="overlayMsg">Hệ thống đang đồng bộ giao dịch IPN giả lập.</p>
+        <h4 class="fw-bold text-white mb-1" id="overlayTitle">Đang kiểm tra giao dịch...</h4>
+        <p class="text-muted" id="overlayMsg">Hệ thống đang xác nhận thông tin thanh toán từ ngân hàng.</p>
     </div>
 
     <!-- Header -->
@@ -210,7 +210,6 @@
             <span class="logo-se">Se</span><span class="logo-pay">Pay</span>
             <span class="text-white opacity-50 fw-light" style="font-size: 1rem;">| Bank Transfer</span>
         </div>
-        <span class="simulator-badge">SANDBOX SIMULATOR</span>
     </div>
 
     <div class="main-content" th:if="${error == null}">
@@ -218,10 +217,14 @@
             <!-- Left Side: QR Code -->
             <div class="col-lg-5 col-md-12 text-center d-flex flex-column justify-content-center">
                 <div class="qr-section">
-                    <img th:src="@{'https://qr.sepay.vn/img?acc=1234567890&bank=Vietcombank&amount=' + ${#numbers.formatDecimal(order.tongTien, 0, 0)} + '&des=' + ${order.maDonHang}}" 
+                    <img th:src="@{'https://qr.sepay.vn/img?acc=' + ${sepayBankAccount} + '&bank=' + ${sepayBankName} + '&amount=' + ${order.tongTien.longValue()} + '&des=' + ${(sepayMemoPrefix != null and !#strings.isEmpty(sepayMemoPrefix)) ? (sepayMemoPrefix + ' ' + order.maDonHang) : order.maDonHang}}" 
                          alt="Mã QR Chuyển khoản" class="qr-img mb-3">
-                    <div style="font-size: 0.85rem; color: #94a3b8;">
+                    <div style="font-size: 0.85rem; color: #94a3b8;" class="mb-2">
                         <i class="fas fa-qrcode me-1"></i> Quét để tự động điền thông tin chuyển khoản
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-2" style="font-size: 0.88rem; color: #38bdf8; font-weight: 500;">
+                        <div class="spinner-grow spinner-grow-sm text-info" role="status" style="animation-duration: 1.2s; width: 0.8rem; height: 0.8rem;"></div>
+                        <span>Đang chờ bạn quét mã thanh toán...</span>
                     </div>
                 </div>
             </div>
@@ -245,7 +248,7 @@
 
                     <div class="credential-item">
                         <span class="credential-label">TÊN NGÂN HÀNG HƯỞNG</span>
-                        <span class="credential-value">Vietcombank (VCB)</span>
+                        <span class="credential-value" th:text="${sepayBankName}">Vietcombank</span>
                     </div>
 
                     <div class="credential-item">
@@ -255,22 +258,21 @@
 
                     <div class="credential-item">
                         <span class="credential-label">SỐ TÀI KHOẢN HƯỞNG</span>
-                        <span class="credential-value">1234567890</span>
+                        <span class="credential-value" th:text="${sepayBankAccount}">...</span>
                     </div>
 
                     <div class="credential-item" style="border-color: rgba(255, 69, 0, 0.25);">
                         <span class="credential-label">NỘI DUNG CHUYỂN KHOẢN</span>
-                        <span class="credential-value" th:text="${order.maDonHang}" style="color: var(--brand-orange); font-family: monospace; font-size: 1.05rem;">DH123</span>
+                        <span class="credential-value" 
+                              th:text="${(sepayMemoPrefix != null and !#strings.isEmpty(sepayMemoPrefix)) ? (sepayMemoPrefix + ' ' + order.maDonHang) : order.maDonHang}" 
+                              style="color: var(--brand-orange); font-family: monospace; font-size: 1.05rem;">DH123</span>
                     </div>
                 </div>
 
-                <!-- Simulator Buttons -->
+                <!-- Navigation Buttons -->
                 <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-                    <button class="btn btn-simulate-success flex-grow-1" id="btnSimulateSuccess">
-                        <i class="fas fa-check-circle me-2"></i>MÔ PHỎNG THANH TOÁN THÀNH CÔNG
-                    </button>
-                    <button class="btn btn-simulate-cancel" id="btnSimulateCancel">
-                        HỦY THANH TOÁN
+                    <button class="btn btn-simulate-cancel w-100" id="btnSimulateCancel">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại đơn hàng
                     </button>
                 </div>
             </div>
@@ -293,6 +295,13 @@
     const amountVal = /*[[${order != null ? order.tongTien : 0}]]*/ 0;
     /*]]>*/
 
+    // Force page reload when loaded from cache/history (e.g. Back button)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            window.location.reload();
+        }
+    });
+
     $(document).ready(function() {
         // CSRF Setup
         const token = $("meta[name='_csrf']").attr("content");
@@ -305,44 +314,36 @@
             }
         });
 
-        // Trigger Success Simulation
-        $('#btnSimulateSuccess').on('click', function() {
-            $('#overlayTitle').text('Đang xử lý thanh toán...');
-            $('#overlayMsg').text('Đang tạo và gửi thông báo IPN giả lập lên server...');
-            $('#statusOverlay').css('display', 'flex');
-
-            $.ajax({
-                url: '/payment/sepay/simulate/success',
-                type: 'POST',
-                data: {
-                    maDonHang: orderCode,
-                    amount: amountVal
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $('#overlayTitle').text('Thanh toán thành công!');
-                        $('#overlayMsg').text('Đơn hàng đã được xác nhận thanh toán. Đang chuyển hướng...');
-                        setTimeout(function() {
-                            window.location.href = '/user/my-order?payment=success';
-                        }, 2000);
-                    } else {
-                        $('#statusOverlay').hide();
-                        alert('Mô phỏng thất bại: ' + response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('#statusOverlay').hide();
-                    alert('Lỗi kết nối simulator: ' + error);
-                }
-            });
-        });
-
         // Trigger Cancel/Failure Simulation
         $('#btnSimulateCancel').on('click', function() {
             if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng của bạn sẽ ở trạng thái Chờ thanh toán.')) {
                 window.location.href = '/user/my-order';
             }
         });
+
+        // Start polling for payment status
+        if (orderCode) {
+            const pollInterval = setInterval(function() {
+                $.ajax({
+                    url: '/api/payment/sepay/query/' + orderCode,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success && response.paymentStatus === 'paid') {
+                            clearInterval(pollInterval);
+                            $('#overlayTitle').text('Thanh toán thành công!');
+                            $('#overlayMsg').text('Hệ thống đã nhận được thanh toán. Đang chuyển hướng...');
+                            $('#statusOverlay').css('display', 'flex');
+                            setTimeout(function() {
+                                window.location.href = '/user/my-order?payment=success';
+                            }, 2000);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error polling payment status:', error);
+                    }
+                });
+            }, 3000);
+        }
     });
 </script>
 </body>

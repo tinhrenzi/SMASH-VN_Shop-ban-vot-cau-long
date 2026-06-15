@@ -6,4 +6,10 @@ import com.smashvn.shop.entity.DanhMuc;
 
 public interface DanhMucRepository extends JpaRepository<DanhMuc, Integer> {
 
+    /** Duplicate check for add-new: case-insensitive */
+    boolean existsByTenDanhMucIgnoreCase(String tenDanhMuc);
+
+    /** Duplicate check for edit: case-insensitive, excludes the category being edited */
+    boolean existsByTenDanhMucIgnoreCaseAndIdNot(String tenDanhMuc, Integer id);
 }
+

@@ -212,8 +212,8 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr th:each="order : ${orders}">
-                                                        <td class="fw-bold" th:text="'#' + ${order.id}"></td>
+                                                    <tr th:each="order, iterStat : ${orders}">
+                                                        <td class="fw-bold" th:text="'#' + ${iterStat.count}"></td>
                                                         <td th:text="${order.date}"></td>
                                                         <td>
                                                             <div class="d-flex align-items-center gap-2 flex-wrap">
