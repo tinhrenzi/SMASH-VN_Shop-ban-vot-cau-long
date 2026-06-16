@@ -21,12 +21,11 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      * Tìm kiếm sản phẩm theo nhiều tiêu chí kết hợp, hỗ trợ phân trang.
      * Lọc theo danh mục, thương hiệu và khoảng giá (giá của biến thể đầu tiên).
      */
-    @Query("SELECT DISTINCT sp FROM SanPham sp " +
-           "JOIN sp.sanPhamChiTiets spct " +
+    @Query("SELECT sp FROM SanPham sp " +
            "WHERE (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
            "AND (:brandId IS NULL OR sp.thuongHieu.id = :brandId) " +
-           "AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)")
+           "AND (:minPrice IS NULL AND :maxPrice IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice))) " +
+           "ORDER BY CASE WHEN ((sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND (SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC")
     Page<SanPham> findByFilters(
         @Param("categoryId") Integer categoryId,
         @Param("brandId") Integer brandId,
@@ -50,7 +49,9 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     /**
      * Lấy các sản phẩm mới nhất (sắp xếp theo ID giảm dần)
      */
-    @Query("SELECT sp FROM SanPham sp WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' ORDER BY sp.id DESC")
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
+           "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, sp.id DESC")
     java.util.List<SanPham> findNewProducts(Pageable pageable);
 
     /**
@@ -58,7 +59,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
-           "ORDER BY (SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct " +
+           "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, " +
+           "         (SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct " +
            "          WHERE hdct.sanPhamChiTiet.sanPham = sp) DESC, sp.id DESC")
     java.util.List<SanPham> findBestSellers(Pageable pageable);
 
@@ -67,7 +69,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
-           "ORDER BY (SELECT COALESCE(AVG(dg.soSao), 0.0) FROM DanhGia dg " +
+           "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, " +
+           "         (SELECT COALESCE(AVG(dg.soSao), 0.0) FROM DanhGia dg " +
            "          WHERE dg.sanPham = sp) DESC, sp.id DESC")
     java.util.List<SanPham> findFeaturedProducts(Pageable pageable);
 }

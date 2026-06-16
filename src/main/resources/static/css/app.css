@@ -6801,3 +6801,45 @@ input::-ms-clear {
 .custom-toast--info i {
   color: #ff4500;
 }
+
+/* ==============================================================
+   # SHOPEE STYLE DISCOUNT BADGE
+   ============================================================== */
+.product-o__wrap,
+.product-m__thumb {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.shopee-discount-badge {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    background-color: #ffebe7 !important;
+    color: #ee4d2d !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-right-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    line-height: 1 !important;
+    z-index: 9 !important;
+    pointer-events: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* ==============================================================
+   # PRODUCT DETAIL TABS ALIGNMENT & STYLE (SHOPEE STYLE)
+   ============================================================== */
+
+/* Set brand orange color for active tabs and hovers */
+.pd-tab__list > li > a.active {
+    color: #ff4500 !important;
+    border-color: #ff4500 !important;
+}
+.pd-tab__list > li > a:hover {
+    color: #ff4500 !important;
+}

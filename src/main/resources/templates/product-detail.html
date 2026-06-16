@@ -204,7 +204,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!--====== Product Detail Tab ======-->
             <div class="u-s-p-y-90">
@@ -215,13 +214,14 @@
                                <div class="u-s-m-b-30">
                                     <ul class="nav pd-tab__list">
                                         <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-desc}">MÔ TẢ CHI TIẾT</a></li>
+                                            <a class="nav-link active" data-toggle="tab" href="#pd-desc">MÔ TẢ CHI TIẾT</a></li>
                                          <li class="nav-item">
-                                             <a class="nav-link active" id="view-review" data-toggle="tab" th:href="@{/#pd-rev}">ĐÁNH GIÁ <span th:text="'(' + ${totalDanhGia} + ')'">(0)</span></a></li>
+                                             <a class="nav-link" id="view-review" data-toggle="tab" href="#pd-rev">ĐÁNH GIÁ <span th:text="'(' + ${totalDanhGia} + ')'">(0)</span></a></li>
                                     </ul>
                                 </div>
+                                <div class="tab-content">
                                      <!--====== Tab 1 ======-->
-                                    <div class="tab-pane" id="pd-desc">
+                                    <div class="tab-pane fade show active" id="pd-desc">
                                         <div class="pd-tab__desc">
                                             <div class="u-s-m-b-15">
                                                 <p th:text="${sp.moTa}">Đây là thông tin mô tả chi tiết của sản phẩm. Sản phẩm vợt cầu lông SmashVN chất lượng cao, độ bền tốt, hỗ trợ tối đa cho người chơi.</p>
@@ -279,7 +279,7 @@
 
 
                                     <!--====== Tab 3 ======-->
-                                    <div class="tab-pane fade show active" id="pd-rev">
+                                    <div class="tab-pane fade" id="pd-rev">
                                         <div class="pd-tab__rev">
                                             <div class="u-s-m-b-30">
                                                 <div class="pd-tab__rev-score">
@@ -338,7 +338,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            <div class="u-s-m-b-30" id="pd-rev">
+                                            <div class="u-s-m-b-30">
                                                 <!-- Trường hợp 1: Sản phẩm ngừng kinh doanh -->
                                                 <div th:if="${!sanPhamKhaDung}" class="alert alert-warning text-center p-4" style="border-left: 5px solid #ffc107; background-color: #fff3cd; color: #856404; border-radius: 8px;">
                                                     <i class="fas fa-exclamation-triangle fa-2x mb-2" style="margin-bottom: 8px;"></i>
@@ -521,10 +521,11 @@
                                                 </script>
                                             </div>
                                         </div>
-                                    </div>
-                                    <!--====== End - Tab 3 ======-->
-                                </div>
-                            </div>
+                                     </div>
+                                     <!--====== End - Tab 3 ======-->
+                                 </div>
+                                 </div>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -554,208 +555,61 @@
                     <div class="container">
                         <div class="slider-fouc">
                             <div class="owl-carousel product-slider" data-item="4">
-                                <div class="u-s-m-b-30">
+                                <div class="u-s-m-b-30" th:each="related : ${relatedProducts}">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${related.id})}">
+                                                <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+                                                     th:if="${!related.sanPhamChiTiets.isEmpty()}"
+                                                     th:src="@{'/uploads/product/' + ${related.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                            </a>
+                                            <!-- Shopee Discount Badge -->
+                                            <div th:if="${related.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${related.getActiveGiamGiaPhanTram()} + '%'"></div>
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product1.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${related.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+                                                            <i class="fas fa-search-plus"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${related.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${related.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+                                                            <i class="fas fa-plus-circle text-success"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                            <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${related.id} + ', this)'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+                                                            <i class="fas fa-heart"></i>
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
+                                            <a th:href="@{/shop(danhMuc=${related.danhMuc.id})}" th:text="${related.danhMuc.tenDanhMuc}">Vợt Cầu Lông</a>
+                                        </span>
 
                                         <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Astrox 88D Pro</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product2.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
+                                            <a th:href="@{/san-pham/{id}(id=${related.id})}" th:text="${related.tenSanPham}">Tên Sản Phẩm</a>
+                                        </span>
+                                        <div class="product-o__rating gl-rating-style">
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:class="${i <= related.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= related.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                            <span class="product-o__review" th:text="'(' + ${related.soDanhGia} + ')'">(0)</span>
                                         </div>
 
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Tectonic 7</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product3.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor Thruster K 9900</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product23.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Nanoflare 800</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product26.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Windstorm 72</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product30.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor AuraSpeed 90K</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
+                                        <span class="product-o__price" th:if="${!related.sanPhamChiTiets.isEmpty()}" th:with="percent=${related.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(related.getGiaSauGiam(related.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(related.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>

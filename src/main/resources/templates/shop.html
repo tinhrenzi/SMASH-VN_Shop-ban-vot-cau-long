@@ -703,9 +703,7 @@
                                                              alt="">
                                                     </a>
                                                     <!-- Badge giảm giá -->
-                                                    <div class="product-badge" th:if="${product.activeGiamGiaPhanTram > 0}">
-                                                        <span class="badge-discount" th:text="'-' + ${product.activeGiamGiaPhanTram} + '%'">-10%</span>
-                                                    </div>
+                                                    <div th:if="${product.activeGiamGiaPhanTram > 0}" class="shopee-discount-badge" th:text="'-' + ${product.activeGiamGiaPhanTram} + '%'"></div>
                                                     <div class="product-badge" th:if="${product.activeGiamGiaPhanTram == 0}">
                                                         <span class="badge-new">MỚI</span>
                                                     </div>

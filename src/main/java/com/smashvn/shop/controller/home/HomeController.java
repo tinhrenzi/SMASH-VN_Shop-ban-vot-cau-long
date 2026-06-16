@@ -35,6 +35,13 @@ public class HomeController {
     public String hienThiTrangChu(Model model) {
         // Lấy danh sách sản phẩm gốc (SanPham) thay vì biến thể
         List<SanPham> danhSachSanPham = sanPhamRepository.findAll();
+        danhSachSanPham.sort((sp1, sp2) -> {
+            boolean activeAndInStock1 = ("dang_ban".equals(sp1.getTrangThai()) || sp1.getTrangThai() == null) && sp1.getTongSoLuongTon() > 0;
+            boolean activeAndInStock2 = ("dang_ban".equals(sp2.getTrangThai()) || sp2.getTrangThai() == null) && sp2.getTongSoLuongTon() > 0;
+            if (activeAndInStock1 && !activeAndInStock2) return -1;
+            if (!activeAndInStock1 && activeAndInStock2) return 1;
+            return 0;
+        });
 
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
 

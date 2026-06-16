@@ -107,6 +107,19 @@ public class SanPhamController {
         model.addAttribute("inWishlist", inWishlist);
         model.addAttribute("listBienTheJS", listBienTheJS); 
 
+        // Lấy danh sách sản phẩm liên quan (cùng danh mục, bỏ qua sản phẩm hiện tại)
+        List<SanPham> relatedProducts = sanPhamRepository.findByDanhMucId(sanPham.getDanhMuc().getId()).stream()
+                .filter(p -> !p.getId().equals(id) && (p.getTrangThai() == null || "dang_ban".equals(p.getTrangThai())))
+                .limit(8)
+                .collect(Collectors.toList());
+        if (relatedProducts.isEmpty()) {
+            relatedProducts = sanPhamRepository.findAll().stream()
+                    .filter(p -> !p.getId().equals(id) && (p.getTrangThai() == null || "dang_ban".equals(p.getTrangThai())))
+                    .limit(8)
+                    .collect(Collectors.toList());
+        }
+        model.addAttribute("relatedProducts", relatedProducts);
+
         // Đổ dữ liệu đánh giá ra frontend
         model.addAttribute("sanPhamKhaDung", sanPhamKhaDung);
         model.addAttribute("daMuaHang", daMuaHang);
