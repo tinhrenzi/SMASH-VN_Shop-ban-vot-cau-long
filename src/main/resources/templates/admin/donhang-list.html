@@ -460,8 +460,19 @@ function openOrderDetailModal(orderId) {
             }
 
             let itemsHtml = '';
+            let subtotal = 0;
             (data.items || []).forEach(item => {
+                subtotal += item.giaBan * item.soLuong;
                 const imgPath = item.hinhAnh ? `/uploads/product/${item.hinhAnh}` : '/images/product9.jpg';
+                const hasDiscount = item.giaNiemYet && parseFloat(item.giaNiemYet) > parseFloat(item.giaBan);
+                const unitPriceHtml = hasDiscount 
+                    ? `<span class="text-decoration-line-through text-muted small me-2">${new Intl.NumberFormat('vi-VN').format(item.giaNiemYet)} đ</span><br><span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`
+                    : `<span class="fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`;
+                
+                const lineDiscountInfo = (item.tenDotGiamGia && item.phanTramGiam > 0)
+                    ? `<br><span class="badge bg-danger text-white mt-1" style="font-size: 10px;">${item.tenDotGiamGia} (-${item.phanTramGiam}%)</span>`
+                    : '';
+
                 itemsHtml += `
                     <tr>
                         <td class="text-center" style="width: 90px;">
@@ -469,10 +480,11 @@ function openOrderDetailModal(orderId) {
                         </td>
                         <td>
                             <strong>${item.tenSanPham || 'N/A'}</strong><br>
-                            <small class="text-muted">Màu sắc: ${item.mauSac || 'N/A'}</small>
+                            <small class="text-muted">${item.thuocTinh || 'N/A'}</small>
+                            ${lineDiscountInfo}
                         </td>
                         <td class="text-center">${item.soLuong}</td>
-                        <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</td>
+                        <td class="text-end">${unitPriceHtml}</td>
                         <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
                     </tr>
                 `;
@@ -565,12 +577,22 @@ function openOrderDetailModal(orderId) {
                         <tbody>
                             ${itemsHtml || '<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>'}
                             <tr class="table-light">
+                                <td colspan="4" class="text-end fw-bold">Tạm tính (sau giảm SP):</td>
+                                <td class="text-end fw-bold">${new Intl.NumberFormat('vi-VN').format(subtotal)} đ</td>
+                            </tr>
+                            ${data.soTienGiamVoucher > 0 ? `
+                            <tr class="table-light">
+                                <td colspan="4" class="text-end fw-bold text-success">Giảm giá Voucher (${data.maVoucherApDung || 'N/A'}):</td>
+                                <td class="text-end text-success fw-bold">-${new Intl.NumberFormat('vi-VN').format(data.soTienGiamVoucher)} đ</td>
+                            </tr>
+                            ` : ''}
+                            <tr class="table-light">
                                 <td colspan="4" class="text-end fw-bold">Phí vận chuyển:</td>
                                 <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(data.phiVanChuyen)} đ</td>
                             </tr>
                             <tr class="table-light">
-                                <td colspan="4" class="text-end fw-bold" style="font-size: 15px;">Tổng cộng:</td>
-                                <td class="text-end text-danger fw-bold" style="font-size: 15px;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
+                                <td colspan="4" class="text-end fw-bold text-primary" style="font-size: 15px;">Tổng cộng:</td>
+                                <td class="text-end text-primary fw-bold" style="font-size: 15px;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
                             </tr>
                         </tbody>
                     </table>

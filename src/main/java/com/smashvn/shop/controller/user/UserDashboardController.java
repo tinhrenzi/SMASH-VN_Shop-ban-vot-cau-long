@@ -17,6 +17,8 @@ import com.smashvn.shop.dto.user.UserProfileEditDto;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import com.smashvn.shop.repository.ThongBaoRepository;
+import com.smashvn.shop.entity.ThongBao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.BindingResult;
 
@@ -28,6 +30,7 @@ public class UserDashboardController {
     private final UserDashboardService dashboardService;
     private final OrderViewService orderViewService;
     private final SanPhamYeuThichRepository wishlistRepository;
+    private final ThongBaoRepository thongBaoRepository;
 
     // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
     private KhachHang getLoggedInCustomer(HttpSession session) {
@@ -333,5 +336,47 @@ public class UserDashboardController {
             response.put("message", "Có lỗi xảy ra: " + e.getMessage());
         }
         return org.springframework.http.ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/notifications")
+    public String hienThiThongBao(HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) return redirect;
+
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        model.addAttribute("kh", kh);
+
+        List<ThongBao> listThongBao = thongBaoRepository.findByTaiKhoan_IdOrderByNgayTaoDesc(kh.getTaiKhoan().getId());
+        model.addAttribute("listThongBao", listThongBao);
+
+        List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
+        long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+
+        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
+        model.addAttribute("cancelOrders", cancelled);
+        model.addAttribute("wishlist", wishlistCount);
+
+        return "dash-notifications"; // Trỏ đến dash-notifications.html
+    }
+
+    @PostMapping("/notifications/read/{id}")
+    public String danhDauDaDoc(@PathVariable("id") Integer id, HttpSession session) {
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+        
+        thongBaoRepository.findById(id).ifPresent(tb -> {
+            if (tb.getTaiKhoan().getId().equals(kh.getTaiKhoan().getId())) {
+                tb.setDaDoc(true);
+                thongBaoRepository.save(tb);
+            }
+        });
+        return "redirect:/user/notifications";
     }
 }

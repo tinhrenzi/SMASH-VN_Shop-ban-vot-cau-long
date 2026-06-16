@@ -43,6 +43,8 @@ import java.time.LocalDateTime;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import com.smashvn.shop.util.VoucherCalculator;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.PriceSnapshot;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +71,7 @@ public class GioHangService {
     private final GhnService ghnService;
     private final SoDiaChiRepository soDiaChiRepository;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final PricingService pricingService;
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -139,7 +142,7 @@ public class GioHangService {
         Map<String, Object> result = new HashMap<>();
         result.put("tenSanPham", spct.getSanPham().getTenSanPham());
         result.put("phanLoai", spct.getMauSac() + " | " + spct.getTrongLuong());
-        result.put("giaBan", spct.getGiaBan());
+        result.put("giaBan", pricingService.calculateCurrentSellingPrice(spct));
         result.put("hinhAnh", spct.getHinhAnhSanPham());
         result.put("soLuongThem", soLuong);
 
@@ -172,9 +175,10 @@ public class GioHangService {
             String trangThai = sp.getTrangThai();
 
             boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+            PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(item.getSanPhamChiTiet());
 
             if (hopLe) {
-                BigDecimal gia = item.getSanPhamChiTiet().getGiaBan();
+                BigDecimal gia = priceSnapshot.giaBanSauGiam();
                 BigDecimal soLuong = new BigDecimal(item.getSoLuong());
                 tongTien = tongTien.add(gia.multiply(soLuong));
                 tongSoLuong += item.getSoLuong();
@@ -184,7 +188,9 @@ public class GioHangService {
             map.put("idChiTiet", item.getId());
             map.put("tenSanPham", sp.getTenSanPham());
             map.put("hinhAnh", item.getSanPhamChiTiet().getHinhAnhSanPham());
-            map.put("giaBan", item.getSanPhamChiTiet().getGiaBan());
+            map.put("giaBan", priceSnapshot.giaBanSauGiam());
+            map.put("giaGoc", priceSnapshot.giaNiemYet());
+            map.put("phanTramGiam", priceSnapshot.phanTramGiam());
             map.put("soLuong", item.getSoLuong());
             map.put("idSanPham", sp.getId());
             map.put("mauSac", item.getSanPhamChiTiet().getMauSac());
@@ -373,7 +379,8 @@ public class GioHangService {
             if (!hopLe) {
                 throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc đã ngưng kinh doanh!");
             }
-            tamTinh = tamTinh.add(lockedSpct.getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(lockedSpct);
+            tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
         }
 
         // Load carrier using cached list
@@ -447,6 +454,16 @@ public class GioHangService {
         hd.setPhiVanChuyen(phiShip);
         hd.setPhieuGiamGia(appliedVoucher);
         
+        hd.setSoTienGiamVoucher(giamGia);
+        if (appliedVoucher != null) {
+            hd.setMaVoucherApDung(appliedVoucher.getMaPhieu());
+            hd.setTenVoucherApDung("Voucher " + appliedVoucher.getMaPhieu());
+            String limitDesc = appliedVoucher.getGiaTriGiamToiDa() != null ? " (Giảm tối đa " + appliedVoucher.getGiaTriGiamToiDa() + "đ)" : "";
+            hd.setMoTaVoucherSnapshot("Giảm " + appliedVoucher.getGiaTri() + ("%".equals(appliedVoucher.getDonVi()) ? "%" : "đ") + limitDesc + " cho đơn hàng từ " + appliedVoucher.getGiaTriDonHangToiThieu() + "đ");
+        } else {
+            hd.setSoTienGiamVoucher(BigDecimal.ZERO);
+        }
+        
         // Generate secure maDonHang: DHSVN + YYYYMMDDHHMMSS + - + 6 UUID characters
         String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
@@ -479,12 +496,11 @@ public class GioHangService {
         // Create HoaDonChiTiet
         for (GioHangChiTiet item : cartItems) {
             SanPhamChiTiet spct = item.getSanPhamChiTiet();
+            SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
             // For COD orders: deduct stock immediately
             if ("COD".equalsIgnoreCase(ptttName)) {
-                // Acquire pessimistic write lock & deduct stock
-                SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                        .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
                 if (lockedSpct.getSoLuongTon() < item.getSoLuong()) {
                     throw new RuntimeException("Sản phẩm '" + lockedSpct.getSanPham().getTenSanPham() + "' không đủ hàng tồn kho!");
                 }
@@ -492,11 +508,50 @@ public class GioHangService {
                 sanPhamChiTietRepository.save(lockedSpct);
             }
 
+            PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
+
             HoaDonChiTiet hdct = new HoaDonChiTiet();
             hdct.setHoaDon(hd);
-            hdct.setSanPhamChiTiet(spct);
+            hdct.setSanPhamChiTiet(lockedSpct);
             hdct.setSoLuong(item.getSoLuong());
-            hdct.setDonGia(spct.getGiaBan());
+            hdct.setDonGia(priceSnapshot.giaBanSauGiam());
+            hdct.setGiaNiemYet(priceSnapshot.giaNiemYet());
+            hdct.setPhanTramGiam(priceSnapshot.phanTramGiam());
+            hdct.setSoTienGiamSanPham(priceSnapshot.soTienGiamSanPham());
+            hdct.setTenDotGiamGia(priceSnapshot.tenDotGiamGia());
+            hdct.setIdDotGiamGia(priceSnapshot.idDotGiamGia());
+            
+            hdct.setTenSanPhamSnapshot(lockedSpct.getSanPham().getTenSanPham());
+            
+            String sku = null;
+            try {
+                java.lang.reflect.Method getSkuMethod = lockedSpct.getClass().getMethod("getSku");
+                sku = (String) getSkuMethod.invoke(lockedSpct);
+            } catch (Exception e) {
+                // ignore
+            }
+            if (sku == null || sku.isBlank()) {
+                sku = "SKU-" + lockedSpct.getSanPham().getId() + "-" + lockedSpct.getId();
+            }
+            hdct.setSkuSnapshot(sku);
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("Màu sắc: ").append(lockedSpct.getMauSac() != null ? lockedSpct.getMauSac() : "N/A");
+            if (lockedSpct.getTrongLuong() != null && !lockedSpct.getTrongLuong().trim().isEmpty()) {
+                sb.append(" | Trọng lượng: ").append(lockedSpct.getTrongLuong());
+            }
+            if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().trim().isEmpty()) {
+                sb.append(" | Mức căng: ").append(lockedSpct.getMucCang());
+            }
+            hdct.setThuocTinhSnapshot(sb.toString());
+            
+            if (lockedSpct.getSanPham().getThuongHieu() != null) {
+                hdct.setThuongHieuSnapshot(lockedSpct.getSanPham().getThuongHieu().getTenThuongHieu());
+            }
+            if (lockedSpct.getSanPham().getDanhMuc() != null) {
+                hdct.setDanhMucSnapshot(lockedSpct.getSanPham().getDanhMuc().getTenDanhMuc());
+            }
+
             hoaDonChiTietRepository.save(hdct);
         }
 

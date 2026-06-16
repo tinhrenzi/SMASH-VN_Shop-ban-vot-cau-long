@@ -15,14 +15,19 @@ import com.smashvn.shop.entity.DanhGiaAnh;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.ThongBao;
+import com.smashvn.shop.entity.CommentViolationLog;
 import com.smashvn.shop.dao.DanhGiaDAO;
 import com.smashvn.shop.repository.DanhGiaAnhRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.ThongBaoRepository;
+import com.smashvn.shop.repository.CommentViolationLogRepository;
 import com.smashvn.shop.service.common.FileStorageService;
 import com.smashvn.shop.util.ProfanityFilter;
+import com.smashvn.shop.util.SeverityLevel;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +43,14 @@ public class DanhGiaService {
     private final KhachHangRepository khachHangRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final ThongBaoRepository thongBaoRepository;
+    private final CommentViolationLogRepository commentViolationLogRepository;
     private final FileStorageService fileStorageService;
     private final ProfanityFilter profanityFilter;
+    private final org.springframework.mail.javamail.JavaMailSender mailSender;
+
+    @org.springframework.beans.factory.annotation.Value("${app.admin.emails}")
+    private String adminEmailsConfig;
 
     /**
      * Lấy danh sách đánh giá chưa xóa của một sản phẩm
@@ -79,6 +90,37 @@ public class DanhGiaService {
         return danhGiaDAO.findByKhachHang_IdAndSanPham_IdAndDaXoaFalse(kh.getId(), idSanPham);
     }
 
+    private void guiEmailCanhBaoAdmin(String nameKh, String emailKh, String productName, String rawComment, String filteredComment, String severity, int violationCount, String banDuration, String banExpiration) {
+        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
+            log.warn("[EMAIL] Khong co email quan tri nao duoc cau hinh trong app.admin.emails!");
+            return;
+        }
+        String[] admins = adminEmailsConfig.split(",");
+        for (String email : admins) {
+            try {
+                org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+                message.setTo(email.trim());
+                message.setSubject("[Cảnh báo] Bình luận vi phạm nghiêm trọng - Smash VN");
+                message.setText(String.format(
+                        "Chào Admin,\n\n" +
+                        "Hệ thống phát hiện bình luận có mức độ vi phạm %s từ khách hàng:\n" +
+                        "- Người bình luận: %s\n" +
+                        "- Email: %s\n" +
+                        "- Sản phẩm: %s\n" +
+                        "- Nội dung gốc: %s\n" +
+                        "- Nội dung đã lọc: %s\n" +
+                        "- Số lần vi phạm của tài khoản: %d/5\n" +
+                        "- Hình phạt áp dụng: Khóa bình luận %s (Đến: %s)\n\n" +
+                        "Vui lòng truy cập trang quản trị để xử lý nếu cần: http://localhost:8080/admin/danh-gia\n",
+                        severity, nameKh, emailKh, productName, rawComment, filteredComment, violationCount, banDuration, banExpiration
+                ));
+                mailSender.send(message);
+            } catch (Exception e) {
+                log.error("[EMAIL_ERROR] Failed to send admin email alert to {}: {}", email, e.getMessage());
+            }
+        }
+    }
+
     /**
      * Thêm mới hoặc Cập nhật đánh giá của khách hàng
      */
@@ -103,6 +145,29 @@ public class DanhGiaService {
             throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công.");
         }
 
+        // Concurrency lock: Load TaiKhoan with Pessimistic Write Lock
+        TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(idTaiKhoan)
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại!"));
+
+        // Check if currently comment-banned
+        if (tk.getNgayKhoaBinhLuanDen() != null && tk.getNgayKhoaBinhLuanDen().isAfter(LocalDateTime.now())) {
+            if (tk.getNgayKhoaBinhLuanDen().getYear() >= 9999) {
+                throw new IllegalArgumentException("Tài khoản của bạn đã bị khóa tính năng bình luận vĩnh viễn do vi phạm tiêu chuẩn cộng đồng.");
+            } else {
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                throw new IllegalArgumentException("Tài khoản của bạn đang bị khóa tính năng bình luận/đánh giá đến " + tk.getNgayKhoaBinhLuanDen().format(formatter) + " do vi phạm tiêu chuẩn cộng đồng.");
+            }
+        }
+
+        // Reset violation count if it's been 180 days since the last violation
+        LocalDateTime lastViPham = tk.getNgayViPhamGanNhat();
+        if (lastViPham != null && java.time.Duration.between(lastViPham, LocalDateTime.now()).toDays() >= 180) {
+            tk.setSoLanNhacNhoViPham(0);
+            if (tk.getNgayKhoaBinhLuanDen() != null && tk.getNgayKhoaBinhLuanDen().isBefore(LocalDateTime.now())) {
+                tk.setNgayKhoaBinhLuanDen(null);
+            }
+        }
+
         // 4. Kiểm tra Spam Rate Limit (Cấm spam liên tục)
         // Check 30s giữa 2 lần đánh giá liên tiếp
         Optional<DanhGia> latestOpt = danhGiaDAO.findTopByKhachHang_TaiKhoan_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(idTaiKhoan);
@@ -121,12 +186,74 @@ public class DanhGiaService {
             throw new IllegalArgumentException("Bạn đã vượt quá số lượng đánh giá cho phép (tối đa 5 đánh giá mỗi giờ).");
         }
 
-        // 5. Lọc từ tục tĩu
+        // 5. Phân tích tục tĩu
+        SeverityLevel severity = profanityFilter.getSeverity(binhLuan);
+        boolean isViolation = (severity != SeverityLevel.NONE);
         String filteredComment = profanityFilter.filter(binhLuan);
+
+        boolean autoHide = false;
+        String textThoiHan = "";
+        String expirationStr = "";
+
+        if (isViolation) {
+            tk.setSoLanNhacNhoViPham(tk.getSoLanNhacNhoViPham() + 1);
+            tk.setNgayViPhamGanNhat(LocalDateTime.now());
+
+            LocalDateTime khoaDen;
+            int violations = tk.getSoLanNhacNhoViPham();
+            if (violations == 1) {
+                khoaDen = LocalDateTime.now().plusHours(3);
+                textThoiHan = "3 giờ";
+            } else if (violations == 2) {
+                khoaDen = LocalDateTime.now().plusDays(1);
+                textThoiHan = "1 ngày";
+            } else if (violations == 3) {
+                khoaDen = LocalDateTime.now().plusDays(7);
+                textThoiHan = "7 ngày";
+            } else if (violations == 4) {
+                khoaDen = LocalDateTime.now().plusDays(30);
+                textThoiHan = "30 ngày";
+            } else {
+                khoaDen = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+                textThoiHan = "Vĩnh viễn";
+            }
+            tk.setNgayKhoaBinhLuanDen(khoaDen);
+            taiKhoanRepository.save(tk);
+
+            expirationStr = khoaDen.getYear() >= 9999 ? "Vĩnh viễn" : khoaDen.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+            // Create notification for customer
+            String thongBaoNoiDung = String.format(
+                    "Đánh giá của bạn tại sản phẩm '%s' chứa từ ngữ không phù hợp và vi phạm tiêu chuẩn cộng đồng của SMASH-VN (Mức độ: %s). " +
+                    "Số lần vi phạm hiện tại: %d/5. " +
+                    "Quyền bình luận của bạn đã bị khóa tạm thời %s đến %s. Vui lòng tuân thủ hướng dẫn cộng đồng.",
+                    sanPham.getTenSanPham(), severity.name(), violations, textThoiHan, expirationStr
+            );
+            ThongBao tb = ThongBao.builder()
+                    .taiKhoan(tk)
+                    .tieuDe("Cảnh báo vi phạm tiêu chuẩn cộng đồng")
+                    .noiDung(thongBaoNoiDung)
+                    .daDoc(false)
+                    .ngayTao(LocalDateTime.now())
+                    .build();
+            thongBaoRepository.save(tb);
+
+            // Send admin email for HIGH and CRITICAL severity
+            if (severity == SeverityLevel.HIGH || severity == SeverityLevel.CRITICAL) {
+                String nameKh = kh.getHoKh() + " " + kh.getTenKh();
+                guiEmailCanhBaoAdmin(nameKh, tk.getEmail(), sanPham.getTenSanPham(), binhLuan, filteredComment, severity.name(), violations, textThoiHan, expirationStr);
+            }
+
+            // CRITICAL severity automatically hides the review
+            if (severity == SeverityLevel.CRITICAL) {
+                autoHide = true;
+            }
+        }
 
         // Tìm đánh giá cũ của khách hàng cho sản phẩm này
         Optional<DanhGia> existingOpt = danhGiaDAO.findByKhachHang_IdAndSanPham_IdAndDaXoaFalse(kh.getId(), idSanPham);
         List<String> uploadedFileNames = new ArrayList<>();
+        DanhGia dgSaved;
 
         try {
             if (existingOpt.isPresent()) {
@@ -137,6 +264,9 @@ public class DanhGiaService {
                 dg.setSoSao(soSao);
                 dg.setBinhLuan(filteredComment);
                 dg.setNgayCapNhat(LocalDateTime.now());
+                if (autoHide) {
+                    dg.setAnBinhLuan(true);
+                }
 
                 // Xử lý ảnh đính kèm cũ
                 boolean hasNewUpload = false;
@@ -170,6 +300,7 @@ public class DanhGiaService {
                 }
 
                 danhGiaDAO.save(dg);
+                dgSaved = dg;
 
                 // Cập nhật Cache Rating của sản phẩm nếu số sao thay đổi
                 if (starChanged) {
@@ -184,7 +315,7 @@ public class DanhGiaService {
                         .binhLuan(filteredComment)
                         .ngayDanhGia(LocalDateTime.now())
                         .daXoa(false)
-                        .anBinhLuan(false)
+                        .anBinhLuan(autoHide)
                         .anHinhAnh(false)
                         .build();
 
@@ -212,17 +343,36 @@ public class DanhGiaService {
                 }
 
                 danhGiaDAO.save(dg);
+                dgSaved = dg;
 
                 // Cập nhật Cache Rating của sản phẩm khi có review mới
                 updateProductRatingStats(idSanPham);
             }
+
+            // Save violation log if it's a violation
+            if (isViolation) {
+                CommentViolationLog logEntry = CommentViolationLog.builder()
+                        .taiKhoan(tk)
+                        .danhGia(dgSaved)
+                        .sanPham(sanPham)
+                        .noiDungGoc(binhLuan)
+                        .noiDungDaLoc(filteredComment)
+                        .mucDoViPham(severity.name())
+                        .soLanViPham(tk.getSoLanNhacNhoViPham())
+                        .thoiHanKhoa(textThoiHan)
+                        .ngayViPham(LocalDateTime.now())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                commentViolationLogRepository.save(logEntry);
+            }
+
         } catch (Exception e) {
             // Rollback an toàn: Dọn dẹp tệp tin mồ côi vừa lưu trên đĩa nếu ghi DB thất bại
             log.error("[ROLLBACK_CLEANUP] Database transaction failed. Cleaning up uploaded review files.");
             for (String name : uploadedFileNames) {
                 fileStorageService.deleteImage(name, "reviews");
             }
-            throw e; // ném lại ngoại lệ để Spring Security / Controller xử lý và rollback
+            throw e;
         }
     }
 

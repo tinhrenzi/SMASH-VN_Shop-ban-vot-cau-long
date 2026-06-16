@@ -407,6 +407,10 @@ public class AdminController {
             map.put("diaChi", hd.getDiaChiNhan() != null ? hd.getDiaChiNhan() : "");
             map.put("tongTien", hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO);
             map.put("phiVanChuyen", hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : java.math.BigDecimal.ZERO);
+            map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : java.math.BigDecimal.ZERO);
+            map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");
+            map.put("tenVoucherApDung", hd.getTenVoucherApDung() != null ? hd.getTenVoucherApDung() : "");
+            map.put("moTaVoucherSnapshot", hd.getMoTaVoucherSnapshot() != null ? hd.getMoTaVoucherSnapshot() : "");
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
 
@@ -466,26 +470,53 @@ public class AdminController {
             java.util.List<java.util.Map<String, Object>> itemsList = new java.util.ArrayList<>();
             for (com.smashvn.shop.entity.HoaDonChiTiet item : items) {
                 java.util.Map<String, Object> itemMap = new java.util.LinkedHashMap<>();
-                String tenSP = "";
-                String mauSac = "";
-                java.math.BigDecimal giaBan = java.math.BigDecimal.ZERO;
-                if (item.getSanPhamChiTiet() != null) {
-                    if (item.getSanPhamChiTiet().getSanPham() != null) {
-                        tenSP = item.getSanPhamChiTiet().getSanPham().getTenSanPham() != null
-                                ? item.getSanPhamChiTiet().getSanPham().getTenSanPham() : "";
+                String tenSP = item.getTenSanPhamSnapshot();
+                if (tenSP == null || tenSP.isBlank()) {
+                    if (item.getSanPhamChiTiet() != null && item.getSanPhamChiTiet().getSanPham() != null) {
+                        tenSP = item.getSanPhamChiTiet().getSanPham().getTenSanPham();
                     }
-                    mauSac = item.getSanPhamChiTiet().getMauSac() != null
-                            ? item.getSanPhamChiTiet().getMauSac() : "";
-                    giaBan = item.getSanPhamChiTiet().getGiaBan() != null
-                            ? item.getSanPhamChiTiet().getGiaBan() : java.math.BigDecimal.ZERO;
-                    String hinhAnh = item.getSanPhamChiTiet().getHinhAnhSanPham() != null
-                            ? item.getSanPhamChiTiet().getHinhAnhSanPham() : "";
-                    itemMap.put("hinhAnh", hinhAnh);
                 }
+                if (tenSP == null) tenSP = "";
+
+                String thuocTinh = item.getThuocTinhSnapshot();
+                if (thuocTinh == null || thuocTinh.isBlank()) {
+                    if (item.getSanPhamChiTiet() != null) {
+                        thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
+                    }
+                }
+                if (thuocTinh == null) thuocTinh = "";
+
+                java.math.BigDecimal giaNiemYet = item.getGiaNiemYet();
+                if (giaNiemYet == null) {
+                    if (item.getSanPhamChiTiet() != null) {
+                        giaNiemYet = item.getSanPhamChiTiet().getGiaBan();
+                    }
+                }
+                if (giaNiemYet == null) giaNiemYet = java.math.BigDecimal.ZERO;
+
+                java.math.BigDecimal donGia = item.getDonGia() != null ? item.getDonGia() : java.math.BigDecimal.ZERO;
+                java.math.BigDecimal phanTramGiam = item.getPhanTramGiam() != null ? item.getPhanTramGiam() : java.math.BigDecimal.ZERO;
+                java.math.BigDecimal soTienGiamSanPham = item.getSoTienGiamSanPham() != null ? item.getSoTienGiamSanPham() : java.math.BigDecimal.ZERO;
+                String tenDotGiamGia = item.getTenDotGiamGia() != null ? item.getTenDotGiamGia() : "";
+                String skuSnapshot = item.getSkuSnapshot() != null ? item.getSkuSnapshot() : "";
+
+                String hinhAnh = "";
+                if (item.getSanPhamChiTiet() != null) {
+                    hinhAnh = item.getSanPhamChiTiet().getHinhAnhSanPham() != null
+                            ? item.getSanPhamChiTiet().getHinhAnhSanPham() : "";
+                }
+
                 itemMap.put("tenSanPham", tenSP);
-                itemMap.put("mauSac", mauSac);
+                itemMap.put("thuocTinh", thuocTinh);
+                itemMap.put("sku", skuSnapshot);
                 itemMap.put("soLuong", item.getSoLuong());
-                itemMap.put("giaBan", giaBan);
+                itemMap.put("giaNiemYet", giaNiemYet);
+                itemMap.put("giaBan", donGia); // Keep 'giaBan' representing purchase price (donGia) for backward compatibility
+                itemMap.put("phanTramGiam", phanTramGiam);
+                itemMap.put("soTienGiamSanPham", soTienGiamSanPham);
+                itemMap.put("tenDotGiamGia", tenDotGiamGia);
+                itemMap.put("hinhAnh", hinhAnh);
+
                 itemsList.add(itemMap);
             }
             map.put("items", itemsList);

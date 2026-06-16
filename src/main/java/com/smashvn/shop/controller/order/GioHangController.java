@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import com.smashvn.shop.entity.GioHangChiTiet;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.service.order.GioHangService;
+import com.smashvn.shop.service.product.PricingService;
 
 @Controller
 @RequestMapping("/gio-hang")
@@ -21,6 +22,7 @@ import com.smashvn.shop.service.order.GioHangService;
 public class GioHangController {
 
     private final GioHangService gioHangService;
+    private final PricingService pricingService;
 
     // HÀM 1: THÊM VÀO GIỎ (Dùng cho AJAX)
     @PostMapping("/them")
@@ -90,7 +92,8 @@ public class GioHangController {
 
             boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
             if (hopLe) {
-                tongTien = tongTien.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+                BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
+                tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
             }
         }
 

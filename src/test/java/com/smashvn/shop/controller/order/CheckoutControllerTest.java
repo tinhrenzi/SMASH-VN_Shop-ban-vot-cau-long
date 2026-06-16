@@ -48,6 +48,9 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.repository.PhieuGiamGiaRepository phieuGiamGiaRepository;
 
+    @Mock
+    private com.smashvn.shop.service.product.PricingService pricingService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -58,7 +61,12 @@ public class CheckoutControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig, khachHangRepository, phieuGiamGiaRepository);
+        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig, khachHangRepository, phieuGiamGiaRepository, pricingService);
+
+        when(pricingService.calculateCurrentSellingPrice(any())).thenAnswer(invocation -> {
+            SanPhamChiTiet arg = invocation.getArgument(0);
+            return arg != null && arg.getGiaBan() != null ? arg.getGiaBan() : BigDecimal.ZERO;
+        });
 
         com.smashvn.shop.entity.KhachHang kh = new com.smashvn.shop.entity.KhachHang();
         kh.setId(123);

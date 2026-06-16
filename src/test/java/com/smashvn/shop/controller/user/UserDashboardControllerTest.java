@@ -4,6 +4,7 @@ import com.smashvn.shop.dto.user.UserProfileEditDto;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import com.smashvn.shop.repository.ThongBaoRepository;
 import com.smashvn.shop.service.order.OrderViewService;
 import com.smashvn.shop.service.user.UserDashboardService;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ public class UserDashboardControllerTest {
     private SanPhamYeuThichRepository wishlistRepository;
 
     @Mock
+    private ThongBaoRepository thongBaoRepository;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -44,7 +48,7 @@ public class UserDashboardControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new UserDashboardController(dashboardService, orderViewService, wishlistRepository);
+        controller = new UserDashboardController(dashboardService, orderViewService, wishlistRepository, thongBaoRepository);
     }
 
     @Test

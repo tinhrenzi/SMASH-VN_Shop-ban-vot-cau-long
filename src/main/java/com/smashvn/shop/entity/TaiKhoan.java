@@ -28,6 +28,14 @@ public class TaiKhoan {
     @Column(name = "token_xac_thuc_khoa", length = 100)
     private String tokenXacThucKhoa;
 
+    @Column(name = "so_lan_nhac_nho_vi_pham", nullable = false)
+    private Integer soLanNhacNhoViPham = 0;
+
+    @Column(name = "ngay_khoa_binh_luan_den")
+    private java.time.LocalDateTime ngayKhoaBinhLuanDen;
+
+    @Column(name = "ngay_vi_pham_gan_nhat")
+    private java.time.LocalDateTime ngayViPhamGanNhat;
 
     @Column(name = "la_khach_hang")
     private Boolean laKhachHang = false;

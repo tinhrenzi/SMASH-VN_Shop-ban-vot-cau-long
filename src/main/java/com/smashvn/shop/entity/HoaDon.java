@@ -132,5 +132,17 @@ public class HoaDon {
     @ManyToOne
     @JoinColumn(name = "id_nhan_vien_xac_nhan_hoan_tien")
     private NhanVien refundConfirmedBy;
+
+    @Column(name = "so_tien_giam_voucher", nullable = false)
+    private BigDecimal soTienGiamVoucher = BigDecimal.ZERO;
+
+    @Column(name = "ma_voucher_ap_dung", length = 50)
+    private String maVoucherApDung;
+
+    @Column(name = "ten_voucher_ap_dung", length = 255)
+    private String tenVoucherApDung;
+
+    @Column(name = "mo_ta_voucher_snapshot", length = 500)
+    private String moTaVoucherSnapshot;
 }
 
