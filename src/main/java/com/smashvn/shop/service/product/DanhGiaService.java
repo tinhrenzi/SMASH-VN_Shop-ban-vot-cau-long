@@ -83,7 +83,7 @@ public class DanhGiaService {
      * Thêm mới hoặc Cập nhật đánh giá của khách hàng
      */
     @Transactional(rollbackFor = Exception.class)
-    public void themHoacCapNhatDanhGia(Integer idTaiKhoan, Integer idSanPham, Integer soSao, String binhLuan, List<MultipartFile> files) throws Exception {
+    public void themHoacCapNhatDanhGia(Integer idTaiKhoan, Integer idSanPham, Double soSao, String binhLuan, List<MultipartFile> files) throws Exception {
         // 1. Kiểm tra sự tồn tại và trạng thái sản phẩm (Chặn sản phẩm không hoạt động)
         SanPham sanPham = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
@@ -233,7 +233,7 @@ public class DanhGiaService {
         List<DanhGia> activeReviews = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(idSanPham);
         int soDanhGia = activeReviews.size();
         double diemTrungBinh = activeReviews.stream()
-                .mapToInt(DanhGia::getSoSao)
+                .mapToDouble(DanhGia::getSoSao)
                 .average()
                 .orElse(0.0);
 

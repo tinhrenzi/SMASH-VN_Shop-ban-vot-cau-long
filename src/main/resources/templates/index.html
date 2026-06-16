@@ -262,8 +262,9 @@
 											    </span>
 											    
 											    <div class="product-o__rating gl-rating-style">
-											        <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
-											        <span class="product-o__review">(0)</span>
+											        <i th:each="i : ${#numbers.sequence(1, 5)}"
+											           th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+											        <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
 											    </div>
 											
 											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
@@ -363,8 +364,9 @@
                                         <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
                                     </span>
                                     <div class="product-o__rating gl-rating-style">
-                                        <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
-                                        <span class="product-o__review">(0)</span>
+                                        <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                           th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                        <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
                                     </div>
 
                                     <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
@@ -449,8 +451,9 @@
                                             <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
                                         </span>
                                         <div class="product-o__rating gl-rating-style">
-                                            <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
-                                            <span class="product-o__review">(0)</span>
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                            <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
                                         </div>
                                         <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
                                             <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>

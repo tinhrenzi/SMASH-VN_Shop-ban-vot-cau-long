@@ -106,6 +106,7 @@ public class SanPhamController {
         model.addAttribute("anhDaiDien", anhDaiDien);
         model.addAttribute("inWishlist", inWishlist);
         model.addAttribute("listBienTheJS", listBienTheJS); 
+        model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));
 
         // Lấy danh sách sản phẩm liên quan (cùng danh mục, bỏ qua sản phẩm hiện tại)
         List<SanPham> relatedProducts = sanPhamRepository.findByDanhMucId(sanPham.getDanhMuc().getId()).stream()
@@ -135,7 +136,7 @@ public class SanPhamController {
     // Gửi đánh giá / Chỉnh sửa đánh giá sản phẩm
     @PostMapping("/san-pham/{id}/danh-gia")
     public String guiDanhGia(@PathVariable("id") Integer idSanPham,
-                             @RequestParam("rating") Integer soSao,
+                             @RequestParam("rating") Double soSao,
                              @RequestParam("comment") String binhLuan,
                              @RequestParam(value = "fileAnh", required = false) List<MultipartFile> files,
                              HttpSession session,
@@ -197,7 +198,8 @@ public class SanPhamController {
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("listBienTheJS", listBienTheJS);
         model.addAttribute("inWishlist", inWishlist);
+        model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));
         
-        return "/layout/modals :: quick-look-fragment"; 
+        return "layout/modals :: quick-look-fragment"; 
     }
 }

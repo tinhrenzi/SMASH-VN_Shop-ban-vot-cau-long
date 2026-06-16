@@ -6450,6 +6450,7 @@ input::-ms-clear {
   # CUSTOM CSS: Nút Chọn Biến Thể Sản Phẩm (Màu sắc / Size)
   ==============================================================*/
 .variant-btn {
+    display: inline-block;
     padding: 8px 20px; 
     border: 1px solid #ccc; 
     border-radius: 4px;
@@ -6737,6 +6738,30 @@ input::-ms-clear {
 
 .pd-detail__wishlist-btn i.text-danger {
   color: #e11d48 !important;
+}
+
+/* New Wishlist Link Style */
+.pd-detail__wishlist-lnk {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  color: #555 !important;
+  text-decoration: none !important;
+  transition: none !important;
+}
+
+.pd-detail__wishlist-lnk:hover {
+  color: #555 !important;
+  text-decoration: none !important;
+}
+
+.pd-detail__wishlist-lnk:hover .js-wishlist-lnk-text {
+  text-decoration: underline !important;
+}
+
+.pd-detail__wishlist-lnk .js-wishlist-lnk-text {
+  text-decoration: none !important;
 }
 
 /* Custom Toast Notifications */

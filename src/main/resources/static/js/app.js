@@ -678,18 +678,14 @@ function checkAndApplyVariant(container) {
     // Nếu có tùy chọn nhưng chưa chọn đủ
     if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
         if(stockStatus) {
-            stockStatus.style.display = 'block';
+            stockStatus.style.display = 'none';
             stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
             stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if (btnAdd) {
-            btnAdd.disabled = true;
-            if (container.id === 'quick-look-modal-container') {
-                btnAdd.innerText = 'Add to Cart';
-            } else {
-                btnAdd.innerText = 'THÊM VÀO GIỎ';
-            }
+            btnAdd.disabled = false;
+            btnAdd.innerText = 'Thêm vào giỏ';
             btnAdd.style.backgroundColor = '';
             btnAdd.style.borderColor = '';
         }
@@ -725,19 +721,11 @@ function checkAndApplyVariant(container) {
         if (btnAdd) {
             btnAdd.disabled = !conHang;
             if (conHang) {
-                if (container.id === 'quick-look-modal-container') {
-                    btnAdd.innerText = 'Add to Cart';
-                } else {
-                    btnAdd.innerText = 'THÊM VÀO GIỎ';
-                }
+                btnAdd.innerText = 'Thêm vào giỏ';
                 btnAdd.style.backgroundColor = '';
                 btnAdd.style.borderColor = '';
             } else {
-                if (container.id === 'quick-look-modal-container') {
-                    btnAdd.innerText = 'Out of Stock';
-                } else {
-                    btnAdd.innerText = 'ĐÃ HẾT HÀNG';
-                }
+                btnAdd.innerText = 'Hết hàng';
                 btnAdd.style.backgroundColor = '#a0a0a0';
                 btnAdd.style.borderColor = '#a0a0a0';
             }
@@ -756,26 +744,14 @@ function checkAndApplyVariant(container) {
                 stockCountEl.style.color = conHang ? '#009444' : '#ff4500';
             }
             if (stockBadgeEl) {
-                if (container.id === 'quick-look-modal-container') {
-                    if (conHang) {
-                        stockBadgeEl.innerText = soLuong + ' in stock';
-                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
-                        stockBadgeEl.style.display = 'inline-block';
-                    } else {
-                        stockBadgeEl.innerText = 'Out of stock';
-                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
-                        stockBadgeEl.style.display = 'inline-block';
-                    }
+                if (conHang) {
+                    stockBadgeEl.innerText = 'Còn hàng';
+                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
+                    stockBadgeEl.style.display = 'inline-block';
                 } else {
-                    if (conHang) {
-                        stockBadgeEl.innerText = 'Còn hàng';
-                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__stock';
-                        stockBadgeEl.style.display = 'inline-block';
-                    } else {
-                        stockBadgeEl.innerText = 'Hết hàng';
-                        stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
-                        stockBadgeEl.style.display = 'inline-block';
-                    }
+                    stockBadgeEl.innerText = 'Hết hàng';
+                    stockBadgeEl.className = 'js-variant-stock-badge pd-detail__left';
+                    stockBadgeEl.style.display = 'inline-block';
                 }
             }
             
@@ -783,7 +759,7 @@ function checkAndApplyVariant(container) {
             const lowStockEl = container.querySelector('.js-variant-low-stock');
             if (lowStockEl) {
                 if (conHang && soLuong <= 5) {
-                    lowStockEl.innerText = 'Only ' + soLuong + ' left';
+                    lowStockEl.innerText = 'Chỉ còn ' + soLuong + ' sản phẩm';
                     lowStockEl.style.display = 'inline-block';
                 } else {
                     lowStockEl.style.display = 'none';
@@ -800,11 +776,7 @@ function checkAndApplyVariant(container) {
                     originalPriceDisplay.style.display = 'inline-block';
                 }
                 if (discountBadgeDisplay) {
-                    if (container.id === 'quick-look-modal-container') {
-                        discountBadgeDisplay.innerText = '(' + matchedVariant.phanTramGiam + '% OFF)';
-                    } else {
-                        discountBadgeDisplay.innerText = '(Giảm ' + matchedVariant.phanTramGiam + '%)';
-                    }
+                    discountBadgeDisplay.innerText = '(Giảm ' + matchedVariant.phanTramGiam + '%)';
                     discountBadgeDisplay.style.display = 'inline-block';
                 }
             } else {
@@ -857,11 +829,7 @@ function checkAndApplyVariant(container) {
         if (inputId) inputId.value = "";
         if (btnAdd) {
             btnAdd.disabled = true;
-            if (container.id === 'quick-look-modal-container') {
-                btnAdd.innerText = 'Out of Stock';
-            } else {
-                btnAdd.innerText = 'ĐÃ HẾT HÀNG';
-            }
+            btnAdd.innerText = 'Hết hàng';
             btnAdd.style.backgroundColor = '#a0a0a0';
             btnAdd.style.borderColor = '#a0a0a0';
         }
@@ -1007,9 +975,30 @@ function checkAndApplyVariant(container) {
     # CUSTOM JS: Xử lý Thêm vào giỏ hàng bằng AJAX (Chống reload trang)
     ==============================================================*/
   $(document).on('submit', '.pd-detail__form', function(e) {
+      var form = $(this);
+      
+      // 1. Kiểm tra xem đã chọn thuộc tính chưa
+      var container = form.closest('.pd-detail');
+      if (container.length) {
+          var selectedColor = container.attr('data-selected-color');
+          var selectedSize = container.attr('data-selected-size');
+          var hasColorOptions = container.find('.color-btn').length > 0;
+          var hasSizeOptions = container.find('.size-btn').length > 0;
+          
+          if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
+              e.preventDefault();
+              var stockStatus = container.find('.js-stock-status');
+              if (stockStatus.length) {
+                  stockStatus.html('<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.');
+                  stockStatus.attr('class', 'js-stock-status u-s-m-b-15 text-danger fw-bold');
+                  stockStatus.css('display', 'block');
+              }
+              return false;
+          }
+      }
+
       e.preventDefault(); // Ngăn chặn hành vi reload trang mặc định của form
       
-      var form = $(this);
       var url = form.attr('action');
       var data = form.serialize(); // Lấy tự động idSanPhamChiTiet và soLuong
 
@@ -1244,19 +1233,49 @@ function checkAndApplyVariant(container) {
           type: 'POST',
           data: { idSanPham: idSanPham },
           success: function(res) {
-              if (res === 'chuadangnhap') {
+              var status = res.status;
+              var count = res.count;
+              if (status === 'chuadangnhap') {
                   window.location.href = '/user/dang-nhap';
-              } else if (res === 'xoa') {
+              } else if (status === 'xoa') {
                   showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
                   if (element) {
                       var $icon = $(element).find('i');
-                      $icon.removeClass('fas text-danger').addClass('far');
+                      if ($icon.hasClass('text-danger') || $icon.closest('.pd-detail__wishlist-btn').length) {
+                          $icon.removeClass('fas text-danger').addClass('far');
+                      } else {
+                          $icon.removeClass('fas').addClass('far');
+                          $icon.css('color', '#888');
+                      }
+                      
+                      // Cập nhật số lượng
+                      var $countSpan = $(element).find('.js-wishlist-count');
+                      if ($countSpan.length) {
+                          $countSpan.text('(' + count + ')');
+                      }
+                      
+                      // Cập nhật title của button
+                      element.setAttribute('title', 'Yêu thích (' + count + ')');
                   }
-              } else if (res === 'ok') {
+              } else if (status === 'ok') {
                   showToast('Đã thêm sản phẩm vào danh sách yêu thích thành công!', 'success');
                   if (element) {
                       var $icon = $(element).find('i');
-                      $icon.removeClass('far').addClass('fas text-danger');
+                      if ($icon.hasClass('text-danger') || $icon.closest('.pd-detail__wishlist-btn').length) {
+                          $icon.removeClass('far').addClass('fas text-danger');
+                      } else {
+                          $icon.removeClass('far').addClass('fas');
+                          $icon.css('color', '#ff4500');
+                      }
+                      
+                      // Cập nhật số lượng
+                      var $countSpan = $(element).find('.js-wishlist-count');
+                      if ($countSpan.length) {
+                          $countSpan.text('(' + count + ')');
+                      }
+                      
+                      // Cập nhật title của button
+                      element.setAttribute('title', 'Yêu thích (' + count + ')');
                   }
               }
           },

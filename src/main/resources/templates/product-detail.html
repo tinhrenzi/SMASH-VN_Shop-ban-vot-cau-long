@@ -128,8 +128,14 @@
 								    
 								    <div class="u-s-m-b-15">
 										<div class="pd-detail__inline">
-											<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ', this)'" class="pd-detail__wishlist-btn" title="Yêu thích">
-												<i th:class="${inWishlist} ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
+											<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ', this)'"
+											   class="pd-detail__wishlist-lnk">
+												<i th:class="${inWishlist} ? 'fas fa-heart' : 'far fa-heart'"
+												   th:style="${inWishlist} ? 'color:#ff4500;' : 'color:#888;'"></i>
+												<span style="display:inline-flex; align-items:center;">
+													<span class="js-wishlist-lnk-text">Thêm vào danh sách yêu thích</span>
+													<span class="js-wishlist-count" style="color:#aaa; margin-left:4px;" th:text="'(' + ${soLuongYeuThich} + ')'">(0)</span>
+												</span>
 											</a>
 										 </div>
 									</div>
@@ -183,7 +189,7 @@
 								                    </div>
 								                </div>
 								                <div class="pd-detail-action-row__btn">
-								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit" disabled>THÊM VÀO GIỎ</button>
+								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit">THÊM VÀO GIỎ</button>
 								                </div>
 								            </div>
 								        </form>
@@ -392,13 +398,25 @@
                                                                             <div class="gl-rating-style-2"><i class="fas fa-star"></i><span>(1)</span></div>
                                                                         </th>
                                                                         <th>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(1.5)</span></div>
+                                                                        </th>
+                                                                        <th>
                                                                             <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(2)</span></div>
+                                                                        </th>
+                                                                        <th>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(2.5)</span></div>
                                                                         </th>
                                                                         <th>
                                                                             <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(3)</span></div>
                                                                         </th>
                                                                         <th>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(3.5)</span></div>
+                                                                        </th>
+                                                                        <th>
                                                                             <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(4)</span></div>
+                                                                        </th>
+                                                                        <th>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(4.5)</span></div>
                                                                         </th>
                                                                         <th>
                                                                             <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(5)</span></div>
@@ -409,7 +427,7 @@
                                                                     <tr>
                                                                         <td>
                                                                             <div class="radio-box">
-                                                                                <input type="radio" id="star-1" name="rating" value="1" th:checked="${daDanhGia and oldDanhGia.soSao == 1}">
+                                                                                <input type="radio" id="star-1" name="rating" value="1.0" th:checked="${daDanhGia and oldDanhGia.soSao == 1.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
                                                                                     <label class="radio-box__label" for="star-1"></label>
                                                                                 </div>
@@ -417,7 +435,15 @@
                                                                         </td>
                                                                         <td>
                                                                             <div class="radio-box">
-                                                                                <input type="radio" id="star-2" name="rating" value="2" th:checked="${daDanhGia and oldDanhGia.soSao == 2}">
+                                                                                <input type="radio" id="star-1-5" name="rating" value="1.5" th:checked="${daDanhGia and oldDanhGia.soSao == 1.5}">
+                                                                                <div class="radio-box__state radio-box__state--primary">
+                                                                                    <label class="radio-box__label" for="star-1-5"></label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="radio-box">
+                                                                                <input type="radio" id="star-2" name="rating" value="2.0" th:checked="${daDanhGia and oldDanhGia.soSao == 2.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
                                                                                     <label class="radio-box__label" for="star-2"></label>
                                                                                 </div>
@@ -425,7 +451,15 @@
                                                                         </td>
                                                                         <td>
                                                                             <div class="radio-box">
-                                                                                <input type="radio" id="star-3" name="rating" value="3" th:checked="${daDanhGia and oldDanhGia.soSao == 3}">
+                                                                                <input type="radio" id="star-2-5" name="rating" value="2.5" th:checked="${daDanhGia and oldDanhGia.soSao == 2.5}">
+                                                                                <div class="radio-box__state radio-box__state--primary">
+                                                                                    <label class="radio-box__label" for="star-2-5"></label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="radio-box">
+                                                                                <input type="radio" id="star-3" name="rating" value="3.0" th:checked="${daDanhGia and oldDanhGia.soSao == 3.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
                                                                                     <label class="radio-box__label" for="star-3"></label>
                                                                                 </div>
@@ -433,7 +467,15 @@
                                                                         </td>
                                                                         <td>
                                                                             <div class="radio-box">
-                                                                                <input type="radio" id="star-4" name="rating" value="4" th:checked="${daDanhGia and oldDanhGia.soSao == 4}">
+                                                                                <input type="radio" id="star-3-5" name="rating" value="3.5" th:checked="${daDanhGia and oldDanhGia.soSao == 3.5}">
+                                                                                <div class="radio-box__state radio-box__state--primary">
+                                                                                    <label class="radio-box__label" for="star-3-5"></label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="radio-box">
+                                                                                <input type="radio" id="star-4" name="rating" value="4.0" th:checked="${daDanhGia and oldDanhGia.soSao == 4.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
                                                                                     <label class="radio-box__label" for="star-4"></label>
                                                                                 </div>
@@ -441,7 +483,15 @@
                                                                         </td>
                                                                         <td>
                                                                             <div class="radio-box">
-                                                                                <input type="radio" id="star-5" name="rating" value="5" th:checked="${!daDanhGia or oldDanhGia.soSao == 5}">
+                                                                                <input type="radio" id="star-4-5" name="rating" value="4.5" th:checked="${daDanhGia and oldDanhGia.soSao == 4.5}">
+                                                                                <div class="radio-box__state radio-box__state--primary">
+                                                                                    <label class="radio-box__label" for="star-4-5"></label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="radio-box">
+                                                                                <input type="radio" id="star-5" name="rating" value="5.0" th:checked="${!daDanhGia or oldDanhGia.soSao == 5.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
                                                                                     <label class="radio-box__label" for="star-5"></label>
                                                                                 </div>

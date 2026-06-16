@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import com.smashvn.shop.repository.SanPhamYeuThichRepository;
 import com.smashvn.shop.service.product.SanPhamYeuThichService;
 
 @Controller
@@ -19,6 +20,7 @@ import com.smashvn.shop.service.product.SanPhamYeuThichService;
 public class SanPhamYeuThichController {
 
     private final SanPhamYeuThichService yeuThichService;
+    private final SanPhamYeuThichRepository yeuThichRepository;
 
     // 1. Hiển thị trang Wishlist
     @GetMapping
@@ -33,12 +35,19 @@ public class SanPhamYeuThichController {
     // 2. API Thêm vào Wishlist (Dùng cho AJAX ở các nút trái tim)
     @PostMapping("/them")
     @ResponseBody
-    public ResponseEntity<String> themVaoWishlist(@RequestParam("idSanPham") Integer idSanPham, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> themVaoWishlist(@RequestParam("idSanPham") Integer idSanPham, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) return ResponseEntity.ok("chuadangnhap");
+        Map<String, Object> result = new HashMap<>();
+        if (idNguoiDung == null) {
+            result.put("status", "chuadangnhap");
+            return ResponseEntity.ok(result);
+        }
 
         String kq = yeuThichService.themVaoWishlist(idNguoiDung, idSanPham);
-        return ResponseEntity.ok(kq);
+        long count = yeuThichRepository.countById_SanPhamId(idSanPham);
+        result.put("status", kq);
+        result.put("count", count);
+        return ResponseEntity.ok(result);
     }
 
     // 3. Xóa 1 sản phẩm

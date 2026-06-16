@@ -25,12 +25,18 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "WHERE (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
            "AND (:brandId IS NULL OR sp.thuongHieu.id = :brandId) " +
            "AND (:minPrice IS NULL AND :maxPrice IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice))) " +
-           "ORDER BY CASE WHEN ((sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND (SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC")
+           "AND (:rating IS NULL OR :rating = 0.0 OR sp.diemTrungBinh >= :rating) " +
+           "ORDER BY CASE WHEN ((sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND (SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, " +
+           "CASE WHEN :sort = 'price_asc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp) END ASC, " +
+           "CASE WHEN :sort = 'price_desc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp) END DESC, " +
+           "sp.id DESC")
     Page<SanPham> findByFilters(
         @Param("categoryId") Integer categoryId,
         @Param("brandId") Integer brandId,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
+        @Param("rating") Double rating,
+        @Param("sort") String sort,
         Pageable pageable
     );
 

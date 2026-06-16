@@ -77,37 +77,25 @@ public class HomeController {
             @RequestParam(value = "brandId", required = false) Integer brandId,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            @RequestParam(value = "rating", required = false) Double rating,
             @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "12") int size,
             Model model) {
 
-        // Xây dựng Sort dựa trên tham số sort
-        Sort sortOrder;
-        switch (sort) {
-            case "price_asc":
-                sortOrder = Sort.by(Sort.Direction.ASC, "id"); // sẽ sort bởi giá ở phía client hoặc dùng subquery
-                break;
-            case "price_desc":
-                sortOrder = Sort.by(Sort.Direction.DESC, "id");
-                break;
-            default: // newest
-                sortOrder = Sort.by(Sort.Direction.DESC, "id");
-                break;
-        }
-
-        Pageable pageable = PageRequest.of(page, size, sortOrder);
+        // Do ORDER BY đã được định nghĩa trực tiếp và đầy đủ trong @Query của SanPhamRepository.findByFilters,
+        // chúng ta sử dụng PageRequest.of không truyền Sort (tương đương Sort.unsorted()) để tránh Spring Data JPA
+        // tự động append thêm "order by sp.id desc/asc" gây ra lỗi trùng cột trong ORDER BY ở SQL Server.
+        Pageable pageable = PageRequest.of(page, size);
 
         // Sử dụng query kết hợp nhiều điều kiện
         Page<SanPham> productPage = sanPhamRepository.findByFilters(
-            categoryId, brandId, minPrice, maxPrice, pageable
+            categoryId, brandId, minPrice, maxPrice, rating, sort, pageable
         );
 
         // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
-        BigDecimal globalMinPrice = sanPhamRepository.findMinPrice();
-        BigDecimal globalMaxPrice = sanPhamRepository.findMaxPrice();
-        if (globalMinPrice == null) globalMinPrice = BigDecimal.ZERO;
-        if (globalMaxPrice == null) globalMaxPrice = new BigDecimal("10000000");
+        BigDecimal globalMinPrice = BigDecimal.ZERO;
+        BigDecimal globalMaxPrice = new BigDecimal("100000000");
 
         List<DanhMuc> danhSachDanhMuc = danhMucRepository.findAll();
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
@@ -133,10 +121,11 @@ public class HomeController {
         model.addAttribute("brandCounts", brandCounts);
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("selectedBrandId", brandId);
-        model.addAttribute("selectedMinPrice", minPrice != null ? minPrice : globalMinPrice);
-        model.addAttribute("selectedMaxPrice", maxPrice != null ? maxPrice : globalMaxPrice);
+        model.addAttribute("selectedMinPrice", minPrice);
+        model.addAttribute("selectedMaxPrice", maxPrice);
         model.addAttribute("globalMinPrice", globalMinPrice);
         model.addAttribute("globalMaxPrice", globalMaxPrice);
+        model.addAttribute("selectedRating", rating != null ? rating : 0.0);
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", productPage.getTotalPages());
