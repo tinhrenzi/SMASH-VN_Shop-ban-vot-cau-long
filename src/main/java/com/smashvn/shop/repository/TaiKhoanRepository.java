@@ -19,6 +19,10 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Integer> {
     @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.matKhau IS NOT NULL AND t.matKhau NOT LIKE '$2a$%' AND t.matKhau NOT LIKE '$2b$%' AND t.matKhau NOT LIKE '$2y$%'")
     java.util.List<TaiKhoan> findPlaintextAccounts();
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.id = :id")
+    java.util.Optional<TaiKhoan> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Integer id);
+
     java.util.List<TaiKhoan> findByLaKhachHangTrue();
 
     @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.laNhanVien = true OR t.laQuanLy = true")

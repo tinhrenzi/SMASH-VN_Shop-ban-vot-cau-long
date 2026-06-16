@@ -26,6 +26,7 @@ import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.util.VoucherCalculator;
+import com.smashvn.shop.service.product.PricingService;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -42,6 +43,7 @@ public class CheckoutController {
     private final SepayConfig sepayConfig;
     private final com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final PricingService pricingService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping({"/checkout", "/checkout.html"})
@@ -80,7 +82,8 @@ public class CheckoutController {
             if (item.getSoLuong() > tonKho) {
                 return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
             }
-            tongTien = tongTien.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+            BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
+            tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
         }
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll();
@@ -239,7 +242,8 @@ public class CheckoutController {
         BigDecimal tamTinh = BigDecimal.ZERO;
         for (GioHangChiTiet item : cartItems) {
             if (item.getSanPhamChiTiet() != null) {
-                tamTinh = tamTinh.add(item.getSanPhamChiTiet().getGiaBan().multiply(new BigDecimal(item.getSoLuong())));
+                BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
+                tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
             }
         }
 

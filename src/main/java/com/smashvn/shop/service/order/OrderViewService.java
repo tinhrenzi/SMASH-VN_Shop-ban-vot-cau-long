@@ -95,14 +95,23 @@ public class OrderViewService {
 
                     // Lấy ảnh hiển thị
                     String imgName = "product9.jpg"; // fallback
-                    if (spct.getHinhAnhSanPham() != null && !spct.getHinhAnhSanPham().isEmpty()) {
+                    if (spct != null && spct.getHinhAnhSanPham() != null && !spct.getHinhAnhSanPham().isEmpty()) {
                         imgName = spct.getHinhAnhSanPham();
                     }
 
+                    String title = ct.getTenSanPhamSnapshot();
+                    if (title == null || title.isBlank()) {
+                        title = (spct != null && spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "N/A";
+                    }
+                    String attr = ct.getThuocTinhSnapshot();
+                    if (attr == null || attr.isBlank()) {
+                        attr = (spct != null) ? spct.getMauSac() : "N/A";
+                    }
+
                     itemMap.put("image", "../uploads/product/" + imgName); // do path ở uploads
-                    itemMap.put("title", spct.getSanPham().getTenSanPham() + " [" + spct.getMauSac() + "]");
+                    itemMap.put("title", title + " [" + attr + "]");
                     itemMap.put("quantity", ct.getSoLuong());
-                    itemMap.put("total", ct.getDonGia().multiply(new BigDecimal(ct.getSoLuong())));
+                    itemMap.put("total", (ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO).multiply(new BigDecimal(ct.getSoLuong())));
                     itemMaps.add(itemMap);
                 }
                 orderMap.put("items", itemMaps);
@@ -191,6 +200,11 @@ public class OrderViewService {
         map.put("trangThaiDonHang", hd.getTrangThaiDonHang());
         map.put("status", getFrontendStatusLabel(hd.getTrangThaiDonHang()));
         map.put("ghiChu", hd.getGhiChu());
+
+        map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO);
+        map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");
+        map.put("tenVoucherApDung", hd.getTenVoucherApDung() != null ? hd.getTenVoucherApDung() : "");
+        map.put("moTaVoucherSnapshot", hd.getMoTaVoucherSnapshot() != null ? hd.getMoTaVoucherSnapshot() : "");
 
         Map<String, Object> adr = new HashMap<>();
         adr.put("hoTen", hd.getKhachHang().getHoKh() + " " + hd.getKhachHang().getTenKh());

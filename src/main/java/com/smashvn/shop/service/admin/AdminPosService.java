@@ -29,6 +29,8 @@ import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.PriceSnapshot;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +49,7 @@ public class AdminPosService {
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final AuditService auditService;
     private final SanPhamRepository sanPhamRepository;
+    private final PricingService pricingService;
 
     // Tìm kiếm biến thể sản phẩm đang bán kèm lọc danh mục & thương hiệu
     public List<SanPhamChiTiet> searchActiveVariants(String query, Integer idDanhMuc, Integer idThuongHieu) {
@@ -249,15 +252,56 @@ public class AdminPosService {
             spct.setSoLuongTon(spct.getSoLuongTon() - item.soLuong);
             sanPhamChiTietRepository.save(spct);
 
-            // Tính tiền
-            BigDecimal itemTotal = spct.getGiaBan().multiply(new BigDecimal(item.soLuong));
+            // Tính tiền thông qua PricingService (giá đã chiết khấu theo DotGiamGia)
+            PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(spct);
+            BigDecimal sellingPrice = priceSnapshot.giaBanSauGiam();
+            BigDecimal itemTotal = sellingPrice.multiply(new BigDecimal(item.soLuong));
             tongTienHang = tongTienHang.add(itemTotal);
 
-            // Lưu tạm chi tiết
+            // Lưu tạm chi tiết kèm Snapshot dữ liệu
             HoaDonChiTiet hdct = new HoaDonChiTiet();
             hdct.setSanPhamChiTiet(spct);
             hdct.setSoLuong(item.soLuong);
-            hdct.setDonGia(spct.getGiaBan());
+            hdct.setDonGia(sellingPrice);
+            hdct.setGiaNiemYet(priceSnapshot.giaNiemYet());
+            hdct.setPhanTramGiam(priceSnapshot.phanTramGiam());
+            hdct.setSoTienGiamSanPham(priceSnapshot.soTienGiamSanPham());
+            hdct.setTenDotGiamGia(priceSnapshot.tenDotGiamGia());
+            hdct.setIdDotGiamGia(priceSnapshot.idDotGiamGia());
+            hdct.setTenSanPhamSnapshot(spct.getSanPham().getTenSanPham());
+
+            // SKU Snapshot
+            String sku = null;
+            try {
+                java.lang.reflect.Method getSkuMethod = spct.getClass().getMethod("getSku");
+                sku = (String) getSkuMethod.invoke(spct);
+            } catch (Exception e) {
+                // ignore
+            }
+            if (sku == null || sku.isBlank()) {
+                sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
+            }
+            hdct.setSkuSnapshot(sku);
+
+            // Variant attribute snapshot
+            StringBuilder sb = new StringBuilder();
+            sb.append("Màu sắc: ").append(spct.getMauSac() != null ? spct.getMauSac() : "N/A");
+            if (spct.getTrongLuong() != null && !spct.getTrongLuong().trim().isEmpty()) {
+                sb.append(" | Trọng lượng: ").append(spct.getTrongLuong());
+            }
+            if (spct.getMucCang() != null && !spct.getMucCang().trim().isEmpty()) {
+                sb.append(" | Mức căng: ").append(spct.getMucCang());
+            }
+            hdct.setThuocTinhSnapshot(sb.toString());
+
+            // Brand & Category
+            if (spct.getSanPham().getThuongHieu() != null) {
+                hdct.setThuongHieuSnapshot(spct.getSanPham().getThuongHieu().getTenThuongHieu());
+            }
+            if (spct.getSanPham().getDanhMuc() != null) {
+                hdct.setDanhMucSnapshot(spct.getSanPham().getDanhMuc().getTenDanhMuc());
+            }
+
             listCt.add(hdct);
         }
 
@@ -319,6 +363,16 @@ public class AdminPosService {
         hd.setMaGiaoDich(sanitizedGiaoDich);
         hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
         hd.setThoiGianXacNhan(LocalDateTime.now());
+
+        hd.setSoTienGiamVoucher(giamGia);
+        if (phieu != null) {
+            hd.setMaVoucherApDung(phieu.getMaPhieu());
+            hd.setTenVoucherApDung("Voucher " + phieu.getMaPhieu());
+            String limitDesc = phieu.getGiaTriGiamToiDa() != null ? " (Giảm tối đa " + phieu.getGiaTriGiamToiDa() + "đ)" : "";
+            hd.setMoTaVoucherSnapshot("Giảm " + phieu.getGiaTri() + ("%".equals(phieu.getDonVi()) ? "%" : "đ") + limitDesc + " cho đơn hàng từ " + phieu.getGiaTriDonHangToiThieu() + "đ");
+        } else {
+            hd.setSoTienGiamVoucher(BigDecimal.ZERO);
+        }
 
         // Generate unique maDonHang for POS orders
         String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));

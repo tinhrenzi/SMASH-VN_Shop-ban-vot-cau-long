@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Vi Phạm Bình Luận - Admin SmashVN</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+    <style>
+        .violation-details {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        .severity-badge {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .severity-LOW { background-color: #e2e3e5; color: #383d41; }
+        .severity-MEDIUM { background-color: #fff3cd; color: #856404; }
+        .severity-HIGH { background-color: #f8d7da; color: #721c24; }
+        .severity-CRITICAL { background-color: #f5c2c7; color: #842029; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar layout dùng chung -->
+        <div th:replace="~{admin/layout/sidebar :: sidebar('viphambinhluan')}"></div>
+
+        <!-- Main Content -->
+        <main class="col-md-10 main-content">
+            <!-- Header layout dùng chung -->
+            <div th:replace="~{admin/layout/header :: header}"></div>
+
+            <!-- Cảnh báo / Thông báo -->
+            <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Quản Lý Vi Phạm Bình Luận</h2>
+                <span class="badge bg-danger px-3 py-2" th:text="${listViPham.size()} + ' Lượt vi phạm ghi nhận'"></span>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list me-2"></i>Lịch Sử Vi Phạm Bình Luận Tục Tĩu & Độc Hại</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive border-0 shadow-none">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã VP</th>
+                                    <th>Khách Hàng (Email)</th>
+                                    <th>Sản Phẩm</th>
+                                    <th>Nội Dung Gốc</th>
+                                    <th>Nội Dung Đã Lọc</th>
+                                    <th>Mức Độ</th>
+                                    <th>Số Lần Vi Phạm</th>
+                                    <th>Hình Phạt</th>
+                                    <th>Thời Gian</th>
+                                    <th>Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="vp : ${listViPham}">
+                                    <td class="fw-bold" th:text="'VP' + ${vp.id}">VP1</td>
+                                    <td>
+                                        <div class="fw-semibold" th:text="${vp.taiKhoan.email}">user@example.com</div>
+                                        <!-- Hiển thị tình trạng khóa hiện tại của tài khoản -->
+                                        <div th:if="${vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}">
+                                            <span class="badge bg-danger mt-1">Đang bị khóa bình luận</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{'/san-pham/' + ${vp.sanPham.id}}" target="_blank" th:text="${vp.sanPham.tenSanPham}" class="text-primary fw-semibold">Sản phẩm</a>
+                                    </td>
+                                    <td class="text-muted" th:text="${vp.noiDungGoc}">Nội dung gốc</td>
+                                    <td class="fw-semibold" th:text="${vp.noiDungDaLoc}">Nội dung đã lọc</td>
+                                    <td>
+                                        <span th:class="'severity-badge severity-' + ${vp.mucDoViPham}" th:text="${vp.mucDoViPham}">LOW</span>
+                                    </td>
+                                    <td class="text-center" th:text="${vp.soLanViPham}">1</td>
+                                    <td>
+                                        <span class="fw-bold text-danger" th:text="${vp.thoiHanKhoa}">3 giờ</span>
+                                    </td>
+                                    <td th:text="${#temporals.format(vp.ngayViPham, 'dd/MM/yyyy HH:mm')}">16/06/2026 14:00</td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            <!-- Nút gỡ khóa bình luận thủ công -->
+                                            <form th:if="${vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}" 
+                                                  th:action="@{'/admin/danh-gia/vi-pham/go-khoa/' + ${vp.taiKhoan.id}}" method="post"
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn mở khóa tính năng bình luận cho tài khoản này sớm hơn thời hạn?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                                                    <i class="fas fa-unlock me-1"></i>Mở Khóa
+                                                </button>
+                                            </form>
+                                            <!-- Nút reset số lần vi phạm -->
+                                            <form th:if="${vp.taiKhoan.soLanNhacNhoViPham > 0}" 
+                                                  th:action="@{'/admin/danh-gia/vi-pham/reset-vi-pham/' + ${vp.taiKhoan.id}}" method="post"
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn reset bộ đếm vi phạm về 0 cho tài khoản này?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning w-100">
+                                                    <i class="fas fa-redo me-1"></i>Reset Vi Phạm
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${listViPham.isEmpty()}">
+                                    <td colspan="10" class="text-center text-muted py-4">Chưa ghi nhận lượt vi phạm bình luận nào.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

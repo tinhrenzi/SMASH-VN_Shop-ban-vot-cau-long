@@ -15,10 +15,12 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.DanhGia;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.product.DanhGiaService;
 import jakarta.servlet.http.HttpSession;
 
@@ -37,6 +39,7 @@ public class SanPhamController {
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final KhachHangRepository khachHangRepository;
     private final SanPhamYeuThichRepository wishlistRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
     private final DanhGiaService danhGiaService;
 
     @GetMapping("/san-pham/{id}")
@@ -87,6 +90,8 @@ public class SanPhamController {
         boolean daMuaHang = false;
         boolean daDanhGia = false;
         DanhGia oldDanhGia = null;
+        boolean biKhoaBinhLuan = false;
+        java.time.LocalDateTime ngayKhoaDen = null;
 
         if (idTaiKhoan != null) {
             daMuaHang = danhGiaService.daMuaSanPham(idTaiKhoan, id);
@@ -94,6 +99,12 @@ public class SanPhamController {
             if (dgOpt.isPresent()) {
                 daDanhGia = true;
                 oldDanhGia = dgOpt.get();
+            }
+
+            TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan).orElse(null);
+            if (tk != null && tk.getNgayKhoaBinhLuanDen() != null && tk.getNgayKhoaBinhLuanDen().isAfter(java.time.LocalDateTime.now())) {
+                biKhoaBinhLuan = true;
+                ngayKhoaDen = tk.getNgayKhoaBinhLuanDen();
             }
         }
 
@@ -128,6 +139,8 @@ public class SanPhamController {
         model.addAttribute("listDanhGia", listDanhGia);
         model.addAttribute("totalDanhGia", sanPham.getSoDanhGia());
         model.addAttribute("avgRating", sanPham.getDiemTrungBinh());
+        model.addAttribute("biKhoaBinhLuan", biKhoaBinhLuan);
+        model.addAttribute("ngayKhoaDen", ngayKhoaDen);
         
         return "product-detail"; 
     }

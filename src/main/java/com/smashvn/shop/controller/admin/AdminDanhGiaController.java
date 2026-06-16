@@ -10,7 +10,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.DanhGia;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.CommentViolationLog;
 import com.smashvn.shop.service.product.DanhGiaService;
+import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.CommentViolationLogRepository;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminDanhGiaController {
 
     private final DanhGiaService danhGiaService;
+    private final CommentViolationLogRepository commentViolationLogRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final AuditService auditService;
 
     // Xem danh sách đánh giá của hệ thống
     @GetMapping("/admin/danh-gia")
@@ -119,5 +127,78 @@ public class AdminDanhGiaController {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
         }
         return "redirect:/admin/danh-gia";
+    }
+
+    // Xem danh sách vi phạm bình luận
+    @GetMapping("/admin/danh-gia/vi-pham")
+    public String hienThiDanhSachViPham(Model model, HttpSession session) {
+        Integer adminId = (Integer) session.getAttribute("idNguoiDung");
+        if (adminId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        List<CommentViolationLog> listViPham = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        model.addAttribute("listViPham", listViPham);
+        return "admin/vipham-list"; // Trỏ đến vipham-list.html
+    }
+
+    // Gỡ khóa bình luận thủ công
+    @PostMapping("/admin/danh-gia/vi-pham/go-khoa/{taiKhoanId}")
+    public String goKhoaBinhLuan(@PathVariable("taiKhoanId") Integer taiKhoanId, 
+                                 jakarta.servlet.http.HttpServletRequest request,
+                                 HttpSession session, 
+                                 RedirectAttributes redirectAttributes) {
+        Integer adminId = (Integer) session.getAttribute("idNguoiDung");
+        String vaiTro = (String) session.getAttribute("vaiTro");
+        if (adminId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+            String oldVal = tk.getNgayKhoaBinhLuanDen() != null ? tk.getNgayKhoaBinhLuanDen().toString() : "null";
+            tk.setNgayKhoaBinhLuanDen(null);
+            taiKhoanRepository.save(tk);
+
+            // Ghi log audit
+            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "UNBAN_COMMENT", 
+                    oldVal, "null", request.getRemoteAddr(), "Gỡ khóa bình luận thủ công bởi admin.", vaiTro);
+
+            redirectAttributes.addFlashAttribute("successMsg", "Đã gỡ khóa bình luận thành công cho tài khoản " + tk.getEmail());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/danh-gia/vi-pham";
+    }
+
+    // Reset bộ đếm vi phạm thủ công
+    @PostMapping("/admin/danh-gia/vi-pham/reset-vi-pham/{taiKhoanId}")
+    public String resetViPhamBinhLuan(@PathVariable("taiKhoanId") Integer taiKhoanId, 
+                                      jakarta.servlet.http.HttpServletRequest request,
+                                      HttpSession session, 
+                                      RedirectAttributes redirectAttributes) {
+        Integer adminId = (Integer) session.getAttribute("idNguoiDung");
+        String vaiTro = (String) session.getAttribute("vaiTro");
+        if (adminId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
+            String oldVal = tk.getSoLanNhacNhoViPham().toString();
+            tk.setSoLanNhacNhoViPham(0);
+            taiKhoanRepository.save(tk);
+
+            // Ghi log audit
+            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "RESET_VIOLATION", 
+                    oldVal, "0", request.getRemoteAddr(), "Reset bộ đếm vi phạm thủ công bởi admin.", vaiTro);
+
+            redirectAttributes.addFlashAttribute("successMsg", "Đã reset bộ đếm vi phạm thành công cho tài khoản " + tk.getEmail());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/danh-gia/vi-pham";
     }
 }

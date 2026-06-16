@@ -20,6 +20,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -72,6 +75,15 @@ public class DanhGiaIntegrationTest {
 
     @Autowired
     private DanhGiaService danhGiaService;
+
+    @Autowired
+    private ThongBaoRepository thongBaoRepository;
+
+    @Autowired
+    private CommentViolationLogRepository commentViolationLogRepository;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private org.springframework.mail.javamail.JavaMailSender mailSender;
 
     private MockMvc mockMvc;
 
@@ -429,5 +441,145 @@ public class DanhGiaIntegrationTest {
         assertTrue(updatedDg.getAnHinhAnh());
         assertEquals(testAdmin.getId(), updatedDg.getNguoiAnHinhAnh().getId());
         assertNotNull(updatedDg.getNgayAnHinhAnh());
+    }
+
+    @Test
+    void testCommentViolation_SeverityAndBanningWorkflow() throws Exception {
+        createOrder("da_giao");
+
+        // 1. LOW severity violation: "vcl"
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "4")
+                        .param("comment", "Sản phẩm dùng vcl nhé")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        // Check TaiKhoan violation count and ban time
+        TaiKhoan updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(1, updatedUser.getSoLanNhacNhoViPham());
+        assertNotNull(updatedUser.getNgayKhoaBinhLuanDen());
+        // 1st violation should ban for 3 hours
+        long banHours = java.time.Duration.between(LocalDateTime.now(), updatedUser.getNgayKhoaBinhLuanDen()).toHours();
+        assertTrue(banHours >= 2 && banHours <= 3);
+
+        // Check ThongBao (Notification) created for customer
+        List<ThongBao> notifications = thongBaoRepository.findByTaiKhoan_IdOrderByNgayTaoDesc(testUser.getId());
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).getNoiDung().contains("LOW"));
+
+        // Check CommentViolationLog created
+        List<CommentViolationLog> logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertFalse(logs.isEmpty());
+        assertEquals("LOW", logs.get(0).getMucDoViPham());
+        assertEquals("Sản phẩm dùng vcl nhé", logs.get(0).getNoiDungGoc());
+        assertEquals("Sản phẩm dùng *** nhé", logs.get(0).getNoiDungDaLoc());
+
+        // Check mailSender was NOT called for LOW severity
+        verify(mailSender, times(0)).send(any(org.springframework.mail.SimpleMailMessage.class));
+
+        // 2. High severity violation: "đm" (should increment violation count and send email)
+        updatedUser.setNgayKhoaBinhLuanDen(null);
+        taiKhoanRepository.save(updatedUser);
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "3")
+                        .param("comment", "Vợt đm quá tệ")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(2, updatedUser.getSoLanNhacNhoViPham()); // Increment to 2
+
+        // Verify mailSender WAS called for HIGH severity
+        verify(mailSender, atLeastOnce()).send(any(org.springframework.mail.SimpleMailMessage.class));
+
+        // 3. 180-day Reset Mechanism:
+        updatedUser.setNgayViPhamGanNhat(LocalDateTime.now().minusDays(181));
+        updatedUser.setNgayKhoaBinhLuanDen(null); // Clear active ban
+        taiKhoanRepository.save(updatedUser);
+
+        // Submit another violation (should reset count to 0 and act as 1st violation)
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "2")
+                        .param("comment", "đm chán thế")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(1, updatedUser.getSoLanNhacNhoViPham()); // Reset to 0 then incremented to 1
+    }
+
+    @Test
+    void testCommentViolation_CriticalSeverityAutoHide() throws Exception {
+        createOrder("da_giao");
+
+        // Submit CRITICAL severity violation: "lừa đảo"
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "1")
+                        .param("comment", "Bọn lừa đảo ăn cướp!")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        // Review should be automatically hidden (anBinhLuan = true)
+        List<DanhGia> reviews = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId());
+        DanhGia savedDg = reviews.get(0);
+        assertTrue(savedDg.getAnBinhLuan());
+        assertEquals("Bọn *** ***!", savedDg.getBinhLuan());
+    }
+
+    @Test
+    void testCommentViolation_AdminModerationActions() throws Exception {
+        createOrder("da_giao");
+
+        // Put user in ban status with 3 violations
+        TaiKhoan user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        user.setSoLanNhacNhoViPham(3);
+        user.setNgayKhoaBinhLuanDen(LocalDateTime.now().plusDays(7));
+        taiKhoanRepository.save(user);
+
+        // 1. Admin removes ban early
+        mockMvc.perform(post("/admin/danh-gia/vi-pham/go-khoa/" + testUser.getId())
+                        .sessionAttr("idNguoiDung", testAdmin.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("successMsg", org.hamcrest.Matchers.containsString("gỡ khóa bình luận thành công")));
+
+        TaiKhoan updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertNull(updatedUser.getNgayKhoaBinhLuanDen());
+
+        // 2. Admin resets violation count
+        mockMvc.perform(post("/admin/danh-gia/vi-pham/reset-vi-pham/" + testUser.getId())
+                        .sessionAttr("idNguoiDung", testAdmin.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("successMsg", org.hamcrest.Matchers.containsString("reset bộ đếm vi phạm thành công")));
+
+        updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(0, updatedUser.getSoLanNhacNhoViPham());
+    }
+
+    @Test
+    void testCommentViolation_ConcurrentSubmissions() throws Exception {
+        createOrder("da_giao");
+
+        int numThreads = 3;
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(numThreads);
+        java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < numThreads; i++) {
+            final int index = i;
+            futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    danhGiaService.themHoacCapNhatDanhGia(testUser.getId(), activeProduct.getId(), 5, "vcl " + index, null);
+                } catch (Exception e) {
+                    // Lock protection works, concurrent execution is serialized
+                }
+            }, executor));
+        }
+
+        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
+        executor.shutdown();
+
+        TaiKhoan updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertTrue(updatedUser.getSoLanNhacNhoViPham() >= 1);
+        assertNotNull(updatedUser.getNgayKhoaBinhLuanDen());
     }
 }

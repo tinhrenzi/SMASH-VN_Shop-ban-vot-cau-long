@@ -358,8 +358,20 @@
                                                     <p class="mb-0" style="margin-bottom: 0;">Bạn chỉ có thể đánh giá sản phẩm này sau khi mua hàng thành công và đơn hàng ở trạng thái đã giao hoặc hoàn thành.</p>
                                                 </div>
 
+                                                <!-- Trường hợp 5: Tài khoản bị khóa bình luận do vi phạm -->
+                                                <div th:if="${sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and biKhoaBinhLuan}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
+                                                    <i class="fas fa-ban fa-2x mb-2" style="margin-bottom: 8px;"></i>
+                                                    <p class="font-weight-bold mb-1" style="font-weight: bold; margin-bottom: 4px;">Tài khoản của bạn đang bị khóa tính năng bình luận/đánh giá do vi phạm tiêu chuẩn cộng đồng (spam từ tục tĩu).</p>
+                                                    <p class="mb-0" style="margin-bottom: 0;" th:if="${ngayKhoaDen != null && ngayKhoaDen.year < 9999}">
+                                                        Thời hạn khóa đến: <span th:text="${#temporals.format(ngayKhoaDen, 'dd/MM/yyyy HH:mm')}"></span>
+                                                    </p>
+                                                    <p class="mb-0" style="margin-bottom: 0;" th:if="${ngayKhoaDen != null && ngayKhoaDen.year >= 9999}">
+                                                        Thời hạn khóa: <strong>Vĩnh viễn</strong>.
+                                                    </p>
+                                                </div>
+
                                                 <!-- Trường hợp 4: Đủ điều kiện đánh giá -->
-                                                <form th:if="${sanPhamKhaDung and session.idNguoiDung != null and daMuaHang}" 
+                                                <form th:if="${sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and !biKhoaBinhLuan}" 
                                                       class="pd-tab__rev-f2" 
                                                       th:action="@{'/san-pham/' + ${sp.id} + '/danh-gia'}" 
                                                       method="POST" 

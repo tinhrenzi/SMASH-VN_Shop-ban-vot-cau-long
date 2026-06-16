@@ -60,6 +60,10 @@
 									                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
 									                    <span>Tài khoản</span></a>
 									            </li>
+									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV'}">
+									                <a th:href="@{/user/notifications}"><i class="fas fa-bell u-s-m-r-6"></i>
+									                    <span>Thông báo</span></a>
+									            </li>
 									            
 									            <!-- Chuyển vai trò nếu có nhiều vai trò -->
 									            <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">

@@ -520,38 +520,48 @@
                                                     <div class="manage-o__description-item"
                                                          th:each="item : ${orderItems}"
                                                          style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 15px 0;">
-                                                        <div class="description__container" style="display: flex; align-items: center;">
-                                                            <div class="description__img-wrap" style="width: 80px; height: 80px; margin-right: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #eee;">
-                                                                <img class="u-img-fluid"
-                                                                     th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.sanPham.moTa}}"
-                                                                     alt="Product Image"
-                                                                     style="width: 100%; height: 100%; object-fit: cover;">
-                                                            </div>
-                                                            <div>
-                                                                <div class="description-title"
-                                                                     th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}"
-                                                                     style="font-weight: 700; color: #333; margin-bottom: 4px;"></div>
+                                                         <div class="description__container" style="display: flex; align-items: center;">
+                                                             <div class="description__img-wrap" style="width: 80px; height: 80px; margin-right: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #eee;">
+                                                                 <img class="u-img-fluid"
+                                                                      th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.sanPham.moTa}}"
+                                                                      alt="Product Image"
+                                                                      style="width: 100%; height: 100%; object-fit: cover;">
+                                                             </div>
+                                                             <div>
+                                                                 <div class="description-title"
+                                                                      th:text="${item.tenSanPhamSnapshot != null ? item.tenSanPhamSnapshot : item.sanPhamChiTiet.sanPham.tenSanPham}"
+                                                                      style="font-weight: 700; color: #333; margin-bottom: 4px;"></div>
                                                                  <div style="font-size: 12px; color: #888;">
-                                                                     <span th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}"></span>
-                                                                     <span th:if="${item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty()}" 
-                                                                           th:text="' | Trọng lượng: ' + ${item.sanPhamChiTiet.trongLuong}"></span>
-                                                                     <span th:if="${item.sanPhamChiTiet.mucCang != null and !item.sanPhamChiTiet.mucCang.trim().isEmpty()}" 
-                                                                           th:text="' | Mức căng: ' + ${item.sanPhamChiTiet.mucCang}"></span>
+                                                                     <span th:text="${item.thuocTinhSnapshot != null ? item.thuocTinhSnapshot : ('Màu sắc: ' + item.sanPhamChiTiet.mauSac)}"></span>
                                                                  </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="description__info-wrap" style="display: flex; gap: 30px; align-items: center;">
-                                                            <div>
-                                                                <span class="manage-o__text-2 u-c-silver">Số lượng:&nbsp;
-                                                                    <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span>
-                                                                </span>
-                                                            </div>
-                                                            <div>
-                                                                <span class="manage-o__text-2 u-c-silver">Thành tiền:&nbsp;
-                                                                    <span class="manage-o__text-2 u-c-secondary"
-                                                                          th:text="${#numbers.formatDecimal(item.donGia * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
-                                                                </span>
-                                                            </div>
+                                                                 <div th:if="${item.tenDotGiamGia != null and item.phanTramGiam > 0}" style="margin-top: 4px;">
+                                                                     <span class="badge" style="font-size: 10px; background-color: #e53935; color: white; padding: 2px 6px; border-radius: 4px;"
+                                                                           th:text="${item.tenDotGiamGia} + ' (-' + item.phanTramGiam + '%)'">Khuyến mãi</span>
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                         <div class="description__info-wrap" style="display: flex; gap: 30px; align-items: center;">
+                                                             <div>
+                                                                 <span class="manage-o__text-2 u-c-silver">Đơn giá:&nbsp;
+                                                                     <span class="manage-o__text-2" style="display: inline-flex; flex-direction: column; align-items: flex-end; vertical-align: middle;">
+                                                                         <span th:if="${item.giaNiemYet != null and item.giaNiemYet > item.donGia}" 
+                                                                               th:text="${#numbers.formatDecimal(item.giaNiemYet, 0, 'COMMA', 0, 'POINT')} + ' đ'"
+                                                                               style="text-decoration: line-through; font-size: 11px; color: #999; margin-bottom: 2px;"></span>
+                                                                         <span th:text="${#numbers.formatDecimal(item.donGia, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="color: #333; font-weight: 700;">16.000 đ</span>
+                                                                     </span>
+                                                                 </span>
+                                                             </div>
+                                                             <div>
+                                                                 <span class="manage-o__text-2 u-c-silver">Số lượng:&nbsp;
+                                                                     <span class="manage-o__text-2 u-c-secondary" th:text="${item.soLuong}">1</span>
+                                                                 </span>
+                                                             </div>
+                                                             <div>
+                                                                 <span class="manage-o__text-2 u-c-silver">Thành tiền:&nbsp;
+                                                                     <span class="manage-o__text-2 u-c-secondary"
+                                                                           th:text="${#numbers.formatDecimal(item.donGia * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
+                                                                 </span>
+                                                             </div>
                                                             <div th:if="${order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh'}">
                                                                 <a th:href="@{'/san-pham/' + ${item.sanPhamChiTiet.sanPham.id} + '#pd-rev'}" 
                                                                    class="btn btn--e-brand-shadow" 
@@ -595,7 +605,12 @@
                                                     <div class="dash-l-r u-s-m-b-8">
                                                         <div class="manage-o__text-2 u-c-secondary">Tạm tính</div>
                                                         <div class="manage-o__text-2 u-c-secondary"
-                                                             th:text="${#numbers.formatDecimal(order.tongTien - order.phiVanChuyen, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</div>
+                                                             th:text="${#numbers.formatDecimal(order.tongTien - order.phiVanChuyen + order.soTienGiamVoucher, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</div>
+                                                    </div>
+                                                    <div class="dash-l-r u-s-m-b-8" th:if="${order.soTienGiamVoucher > 0}">
+                                                        <div class="manage-o__text-2 text-success" th:text="'Voucher giảm (' + ${order.maVoucherApDung} + ')'">Voucher giảm</div>
+                                                        <div class="manage-o__text-2 text-success"
+                                                             th:text="'-' + ${#numbers.formatDecimal(order.soTienGiamVoucher, 0, 'COMMA', 0, 'POINT')} + ' đ'">-0 đ</div>
                                                     </div>
                                                     <div class="dash-l-r u-s-m-b-8">
                                                         <div class="manage-o__text-2 u-c-secondary">Phí vận chuyển</div>
@@ -604,7 +619,7 @@
                                                     </div>
                                                     <div class="dash-l-r u-s-m-b-8" style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
                                                         <div class="manage-o__text-2 u-c-secondary" style="font-weight: 700;">Tổng cộng</div>
-                                                        <div class="manage-o__text-2 u-c-secondary" style="font-weight: 700; color: #e53935 !important;"
+                                                        <div class="manage-o__text-2" style="font-weight: 700; color: #e53935 !important;"
                                                              th:text="${#numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">46.000 đ</div>
                                                     </div>
                                                     <span class="dash__text-2" th:text="${order.phuongThucThanhToan}">Paid by Cash on Delivery</span>
