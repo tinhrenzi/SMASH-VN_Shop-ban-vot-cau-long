@@ -1061,4 +1061,86 @@ public class CheckoutValidationIntegrationTest {
         assertNotNull(updatedVoucher);
         assertEquals(9, updatedVoucher.getSoLuongConLai());
     }
+
+    @Test
+    void testGhnAddressResolution_ThaiNguyen() throws Exception {
+        // Create a saved address in Kha Son, Phu Binh, Thai Nguyen
+        SoDiaChi thaiNguyenAddress = new SoDiaChi();
+        thaiNguyenAddress.setKhachHang(testKhachHang);
+        thaiNguyenAddress.setHoNguoiNhan("Tester");
+        thaiNguyenAddress.setTenNguoiNhan("ThaiNguyen");
+        thaiNguyenAddress.setSdtNguoiNhan("0987654321");
+        thaiNguyenAddress.setDiaChiCuThe("Xã Kha Sơn, Huyện Phú Bình, Tỉnh Thái Nguyên");
+        thaiNguyenAddress.setTinhThanh("Thái Nguyên");
+        thaiNguyenAddress.setThanhPho("Thái Nguyên"); // assigned as province name by UserAddressService
+        thaiNguyenAddress.setQuocGia("Việt Nam");
+        thaiNguyenAddress.setMaBuuDien("700000");
+        thaiNguyenAddress.setDefaultShipping(false);
+        thaiNguyenAddress.setDefaultBilling(false);
+        thaiNguyenAddress = soDiaChiRepository.save(thaiNguyenAddress);
+
+        com.smashvn.shop.service.api.GhnService ghnService = webApplicationContext.getBean(com.smashvn.shop.service.api.GhnService.class);
+        com.smashvn.shop.service.api.GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(thaiNguyenAddress);
+
+        assertNotNull(mapping);
+        assertEquals(244, mapping.getProvinceId()); // Thai Nguyen province ID
+        assertNotNull(mapping.getDistrictId());
+        assertNotNull(mapping.getWardCode());
+
+        // Verify that the resolved district name is indeed "Huyện Phú Bình" and not "Thành phố Thái Nguyên"
+        List<Map<String, Object>> districts = ghnService.getDistricts(244);
+        Map<String, Object> resolvedDistrict = districts.stream()
+                .filter(d -> mapping.getDistrictId().equals(d.get("DistrictID")))
+                .findFirst().orElse(null);
+        
+        assertNotNull(resolvedDistrict);
+        String resolvedDistrictName = (String) resolvedDistrict.get("DistrictName");
+        assertTrue(resolvedDistrictName.contains("Phú Bình"));
+        assertFalse(resolvedDistrictName.contains("Thành phố Thái Nguyên"));
+
+        // Verify ShippingZoneResolver classifies it as LOCAL
+        com.smashvn.shop.service.api.ShippingZoneResolver zoneResolver = webApplicationContext.getBean(com.smashvn.shop.service.api.ShippingZoneResolver.class);
+        com.smashvn.shop.entity.ShippingZone zone = zoneResolver.resolveZone(mapping.getDistrictId(), thaiNguyenAddress.getDiaChiCuThe());
+        assertEquals(com.smashvn.shop.entity.ShippingZone.LOCAL, zone);
+    }
+
+    @Test
+    void testGhnAddressResolution_ConfusedFields() throws Exception {
+        // Create a saved address with confused fields (like ID 62/63 in DB)
+        SoDiaChi confusedAddress = new SoDiaChi();
+        confusedAddress.setKhachHang(testKhachHang);
+        confusedAddress.setHoNguoiNhan("Tester");
+        confusedAddress.setTenNguoiNhan("Confused");
+        confusedAddress.setSdtNguoiNhan("0987654321");
+        confusedAddress.setDiaChiCuThe("Trường Đại học Nông Lâm Thái Nguyên, Đường Mỹ Bạch, Phường Quyết Thắng");
+        confusedAddress.setTinhThanh("Phường Phan Đình Phùng");
+        confusedAddress.setThanhPho("Phường Phan Đình Phùng");
+        confusedAddress.setQuocGia("Việt Nam");
+        confusedAddress.setMaBuuDien("700000");
+        confusedAddress.setDefaultShipping(false);
+        confusedAddress.setDefaultBilling(false);
+        confusedAddress = soDiaChiRepository.save(confusedAddress);
+
+        com.smashvn.shop.service.api.GhnService ghnService = webApplicationContext.getBean(com.smashvn.shop.service.api.GhnService.class);
+        com.smashvn.shop.service.api.GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(confusedAddress);
+
+        assertNotNull(mapping);
+        assertEquals(244, mapping.getProvinceId()); // resolved to Thai Nguyen (244) from diaChiCuThe
+        assertNotNull(mapping.getDistrictId());
+        assertNotNull(mapping.getWardCode());
+
+        // Verify that it matched "Thành phố Thái Nguyên" as district and "Phường Quyết Thắng" as ward
+        List<Map<String, Object>> districts = ghnService.getDistricts(244);
+        Map<String, Object> resolvedDistrict = districts.stream()
+                .filter(d -> mapping.getDistrictId().equals(d.get("DistrictID")))
+                .findFirst().orElse(null);
+        assertNotNull(resolvedDistrict);
+        String resolvedDistrictName = (String) resolvedDistrict.get("DistrictName");
+        assertTrue(resolvedDistrictName.contains("Thành phố Thái Nguyên"));
+
+        // Verify ShippingZoneResolver classifies it as LOCAL
+        com.smashvn.shop.service.api.ShippingZoneResolver zoneResolver = webApplicationContext.getBean(com.smashvn.shop.service.api.ShippingZoneResolver.class);
+        com.smashvn.shop.entity.ShippingZone zone = zoneResolver.resolveZone(mapping.getDistrictId(), confusedAddress.getDiaChiCuThe());
+        assertEquals(com.smashvn.shop.entity.ShippingZone.LOCAL, zone);
+    }
 }

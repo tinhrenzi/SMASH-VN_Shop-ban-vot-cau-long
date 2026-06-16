@@ -502,6 +502,7 @@
         /*]]>*/
 
         // Global variables and helper functions for matching GHN address dropdowns
+        let targetProvinceToMatch = null;
         let targetAddressToMatch = null;
         let isGhnLoadingMasterData = false;
 
@@ -518,31 +519,58 @@
                 .trim();
         }
 
-        function matchAndSelectProvince(addressStr) {
-            if (!addressStr) {
+        function matchAndSelectProvince(tinhThanhStr, fullAddressStr) {
+            if (!tinhThanhStr && !fullAddressStr) {
                 isGhnLoadingMasterData = false;
                 return;
             }
-            const cleanedAddr = cleanString(addressStr);
+            if ($('#ghnProvinceId option').length <= 1) {
+                console.log("[GHN] Provinces dropdown is not loaded yet, matching deferred.");
+                return;
+            }
+            
             let matchedProvinceVal = null;
             
-            $('#ghnProvinceId option').each(function() {
-                const text = $(this).text();
-                const val = $(this).val();
-                if (!val) return;
-                
-                const cleanText = cleanString(text);
-                const cleanProvinceName = cleanText.replace(/^(tinh|thanh pho|tp)\s+/, '');
-                
-                if (cleanedAddr.includes(cleanProvinceName)) {
-                    matchedProvinceVal = val;
-                    return false; // break
-                }
-            });
+            // Pass 1: Try to match using tinhThanhStr
+            if (tinhThanhStr) {
+                const cleanedTinhThanh = cleanString(tinhThanhStr);
+                $('#ghnProvinceId option').each(function() {
+                    const text = $(this).text();
+                    const val = $(this).val();
+                    if (!val) return;
+                    
+                    const cleanText = cleanString(text);
+                    const cleanProvinceName = cleanText.replace(/^(tinh|thanh pho|tp)\s+/, '');
+                    
+                    if (cleanedTinhThanh.includes(cleanProvinceName) || cleanProvinceName.includes(cleanedTinhThanh)) {
+                        matchedProvinceVal = val;
+                        return false; // break
+                    }
+                });
+            }
+            
+            // Pass 2: Fallback to try to match using fullAddressStr
+            if (!matchedProvinceVal && fullAddressStr) {
+                const cleanedFullAddr = cleanString(fullAddressStr);
+                $('#ghnProvinceId option').each(function() {
+                    const text = $(this).text();
+                    const val = $(this).val();
+                    if (!val) return;
+                    
+                    const cleanText = cleanString(text);
+                    const cleanProvinceName = cleanText.replace(/^(tinh|thanh pho|tp)\s+/, '');
+                    
+                    if (cleanedFullAddr.includes(cleanProvinceName)) {
+                        matchedProvinceVal = val;
+                        return false; // break
+                    }
+                });
+            }
             
             if (matchedProvinceVal) {
                 $('#ghnProvinceId').val(matchedProvinceVal).trigger('change');
             } else {
+                targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
             }
@@ -580,6 +608,7 @@
             if (matchedDistrictVal) {
                 $('#ghnDistrictId').val(matchedDistrictVal).trigger('change');
             } else {
+                targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
             }
@@ -617,11 +646,13 @@
             if (matchedWardVal) {
                 $('#ghnWardCode').val(matchedWardVal).trigger('change');
             } else {
+                targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
             }
             
             // Clear match target after fully matching ward
+            targetProvinceToMatch = null;
             targetAddressToMatch = null;
             isGhnLoadingMasterData = false;
         }
@@ -641,6 +672,7 @@
             // Autofill registered address or toggle new address
             $('#selectDiaChiLuu').on('change', function() {
                 // Clear target and reset GHN dropdowns first
+                targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
                 $('#ghnProvinceId').val('').trigger('change');
@@ -652,6 +684,7 @@
                     $('#hoTenNhan').val('');
                     $('#sdtNhan').val('');
                     $('#diaChiNhan').val('').trigger('change');
+                    targetProvinceToMatch = null;
                     targetAddressToMatch = null;
                     $('#ghnProvinceId').val('').trigger('change');
                     clearValidationErrors();
@@ -666,6 +699,7 @@
                     $('#sdtNhan').val(details.sdt);
                     $('#diaChiNhan').val(details.diaChi).trigger('change');
                     
+                    targetProvinceToMatch = details.tinhThanh;
                     targetAddressToMatch = details.diaChi;
                     
                     // Validate autofilled fields
@@ -675,37 +709,15 @@
                         validateDiaChi();
                     }, 150);
                     
-                    // Try reverse-geocoding via Nominatim first if coordinates exist
-                    if (details.latitude && details.longitude) {
-                        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${details.latitude}&lon=${details.longitude}&zoom=18&addressdetails=1&accept-language=vi`;
-                        $.ajax({
-                            url: url,
-                            type: 'GET',
-                            success: function(osmData) {
-                                const addr = osmData.address || {};
-                                const province = addr.city || addr.province || addr.state || addr.county || "";
-                                const district = addr.city_district || addr.county || addr.district || "";
-                                const ward = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || "";
-                                
-                                targetAddressToMatch = `${ward}, ${district}, ${province}`;
-                                console.log("Resolved address from coordinates:", targetAddressToMatch);
-                                matchAndSelectProvince(targetAddressToMatch);
-                            },
-                            error: function() {
-                                console.warn("Nominatim coordinates geocoding failed, falling back to text matching");
-                                targetAddressToMatch = details.diaChi;
-                                matchAndSelectProvince(details.diaChi);
-                            }
-                        });
-                    } else {
-                        targetAddressToMatch = details.diaChi;
-                        matchAndSelectProvince(details.diaChi);
-                    }
+                    // Always use text matching on Vietnamese address directly
+                    console.log("Matching GHN dropdowns with text address:", targetProvinceToMatch, targetAddressToMatch);
+                    matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
                 } else {
                     $('#manual-address-fields').slideUp(200);
                     $('#hoTenNhan').val('');
                     $('#sdtNhan').val('');
                     $('#diaChiNhan').val('').trigger('change');
+                    targetProvinceToMatch = null;
                     targetAddressToMatch = null;
                     $('#ghnProvinceId').val('').trigger('change');
                     clearValidationErrors();
@@ -715,6 +727,7 @@
 
             // Clear matching targets if user manually interacts with GHN dropdowns
             $('#ghnProvinceId, #ghnDistrictId, #ghnWardCode').on('mousedown keydown', function() {
+                targetProvinceToMatch = null;
                 targetAddressToMatch = null;
             });
 
@@ -1240,7 +1253,7 @@
                         });
 
                         if (targetAddressToMatch) {
-                            matchAndSelectProvince(targetAddressToMatch);
+                            matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
                         }
                     }
                 },

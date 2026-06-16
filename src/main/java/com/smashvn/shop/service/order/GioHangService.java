@@ -42,6 +42,7 @@ import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import com.smashvn.shop.util.VoucherCalculator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -415,15 +416,7 @@ public class GioHangService {
                 throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá này.");
             }
 
-            if ("%".equals(voucher.getDonVi()) || "Giảm phần trăm".equalsIgnoreCase(voucher.getLoaiGiamGia())) {
-                giamGia = tamTinh.multiply(voucher.getGiaTri()).divide(new BigDecimal("100"));
-            } else {
-                giamGia = voucher.getGiaTri();
-            }
-
-            if (giamGia.compareTo(tamTinh) > 0) {
-                giamGia = tamTinh;
-            }
+            giamGia = VoucherCalculator.calculateVoucherDiscount(tamTinh, voucher);
 
             voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1);
             phieuGiamGiaRepository.save(voucher);

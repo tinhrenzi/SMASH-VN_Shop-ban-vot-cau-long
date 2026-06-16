@@ -64,6 +64,13 @@
     <div class="section-block">
         <ul>
              <!-- NEWEST FIRST -->
+            <li><strong>Tính năng Giá Trị Giảm Tối Đa cho Phiếu Giảm Giá (giaTriGiamToiDa) (Mục 77) — 15/06/2026:</strong>
+                <ul>
+                    <li><strong>Giới hạn số tiền giảm tối đa:</strong> Bổ sung trường <code>gia_tri_giam_toi_da</code> vào bảng <code>PhieuGiamGia</code> qua Flyway migration <code>V1.18</code> để cho phép cấu hình mức giảm trần đối với phiếu giảm giá dạng phần trăm (%).</li>
+                    <li><strong>Centralized Discount Calculation (VoucherCalculator):</strong> Tạo lớp tiện ích <code>VoucherCalculator.java</code> tập trung toàn bộ logic tính toán tiền giảm giá cho voucher. Lớp này hỗ trợ kiểm tra giá trị đơn hàng tối thiểu, áp dụng tỷ lệ phần trăm hoặc tiền mặt, kiểm tra mức giảm tối đa, và đảm bảo số tiền giảm không âm và không vượt quá tổng giá trị đơn hàng. Được tái sử dụng đồng bộ tại Giỏ hàng, Checkout và POS.</li>
+                    <li><strong>Cải tiến Giao diện Admin:</strong> Tích hợp ô nhập "Giảm Tối Đa" vào giao diện thêm mới (<code>phieugiamgia-add.html</code>) và chỉnh sửa (<code>phieugiamgia-edit.html</code>). Trường này tự động ẩn/hiện động bằng JavaScript (chỉ hiển thị khi đơn vị giảm giá chọn là phần trăm <code>%</code>).</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi thanh toán tiền mặt tại quầy (POS) &amp; Tự động tạo mã đơn hàng duy nhất (Mục 76) — 15/06/2026:</strong>
                 <ul>
                     <li><strong>Tự động tạo mã đơn hàng duy nhất cho POS:</strong> Khắc phục lỗi trùng lặp khóa chính / ràng buộc duy nhất trên cột <code>ma_don_hang</code> (<code>UK_HOADON_MADONHANG</code>) trong SQL Server bằng cách tự động tạo mã đơn hàng định dạng <code>HDSVN</code> + timestamp + UUID 6 ký tự cho các đơn hàng bán trực tiếp tại quầy POS.</li>

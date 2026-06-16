@@ -264,6 +264,7 @@ public class AdminKhuyenMaiService {
     public PhieuGiamGia createPhieuGiamGia(String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
             BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
+            BigDecimal giaTriGiamToiDa,
             Integer actingTaiKhoanId, String ipAddress) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
             throw new RuntimeException("Mã phiếu không được để trống!");
@@ -271,7 +272,7 @@ public class AdminKhuyenMaiService {
         String uppercaseCode = maPhieu.trim().toUpperCase();
 
         // 1. Validation
-        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa);
 
         // Check duplicate code
         if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCase(uppercaseCode)) {
@@ -283,6 +284,9 @@ public class AdminKhuyenMaiService {
             throw new RuntimeException("Tài khoản đang thực hiện không có thông tin nhân viên!");
         }
 
+        // Cap only applies to percentage vouchers; force null for fixed-amount
+        BigDecimal resolvedCap = "%".equals(donVi) ? giaTriGiamToiDa : null;
+
         // 2. Save
         PhieuGiamGia pgg = new PhieuGiamGia();
         pgg.setMaPhieu(uppercaseCode);
@@ -293,6 +297,7 @@ public class AdminKhuyenMaiService {
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
         pgg.setLoaiGiamGia(loaiGiamGia);
+        pgg.setGiaTriGiamToiDa(resolvedCap);
         pgg.setNhanVien(nv);
         pgg.setActive(true);
 
@@ -309,6 +314,7 @@ public class AdminKhuyenMaiService {
     public PhieuGiamGia updatePhieuGiamGia(Integer id, String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
             BigDecimal giaTriDonHangToiThieu, String loaiGiamGia,
+            BigDecimal giaTriGiamToiDa,
             Integer actingTaiKhoanId, String ipAddress) {
         PhieuGiamGia pgg = getPhieuGiamGiaById(id);
 
@@ -318,7 +324,7 @@ public class AdminKhuyenMaiService {
         String uppercaseCode = maPhieu.trim().toUpperCase();
 
         // 1. Validation
-        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa);
 
         // Check duplicate code excluding current
         if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCaseAndIdNot(uppercaseCode, id)) {
@@ -326,6 +332,9 @@ public class AdminKhuyenMaiService {
         }
 
         String oldState = formatVoucherState(pgg);
+
+        // Cap only applies to percentage vouchers; force null for fixed-amount
+        BigDecimal resolvedCap = "%".equals(donVi) ? giaTriGiamToiDa : null;
 
         // 2. Update properties
         pgg.setMaPhieu(uppercaseCode);
@@ -336,6 +345,7 @@ public class AdminKhuyenMaiService {
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
         pgg.setLoaiGiamGia(loaiGiamGia);
+        pgg.setGiaTriGiamToiDa(resolvedCap);
 
         PhieuGiamGia updated = phieuGiamGiaRepository.save(pgg);
 
@@ -370,9 +380,11 @@ public class AdminKhuyenMaiService {
                 oldState, formatVoucherState(saved), ipAddress, "Xóa logic voucher: " + pgg.getMaPhieu());
     }
 
+    private static final BigDecimal MAX_CAP_LIMIT = new BigDecimal("100000000"); // 100,000,000 VNĐ
+
     private void validateVoucherInputs(String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia) {
+            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia, BigDecimal giaTriGiamToiDa) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
             throw new RuntimeException("Mã phiếu không được để trống!");
         }
@@ -406,16 +418,27 @@ public class AdminKhuyenMaiService {
         if (giaTriDonHangToiThieu == null || giaTriDonHangToiThieu.compareTo(BigDecimal.ZERO) < 0) {
             throw new RuntimeException("Giá trị đơn hàng tối thiểu không được âm!");
         }
+        // giaTriGiamToiDa only applies to percentage vouchers
+        if ("%".equals(donVi) && giaTriGiamToiDa != null) {
+            if (giaTriGiamToiDa.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("Giá trị giảm tối đa phải lớn hơn 0!");
+            }
+            if (giaTriGiamToiDa.compareTo(MAX_CAP_LIMIT) > 0) {
+                throw new RuntimeException("Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!");
+            }
+        }
     }
 
     private String formatVoucherState(PhieuGiamGia pgg) {
-        return String.format("Mã: %s, Giá trị: %s %s, Hạn dùng: %s - %s, Tối thiểu: %s, Số lượng: %d, Active: %b",
+        String capStr = (pgg.getGiaTriGiamToiDa() == null) ? "Không giới hạn" : pgg.getGiaTriGiamToiDa().toPlainString();
+        return String.format("Mã: %s, Giá trị: %s %s, Hạn dùng: %s - %s, Tối thiểu: %s, Tối đa: %s, Số lượng: %d, Active: %b",
                 pgg.getMaPhieu(),
                 pgg.getGiaTri().toString(),
                 pgg.getDonVi(),
                 pgg.getNgayBatDau().format(DATE_FORMATTER),
                 pgg.getNgayKetThuc().format(DATE_FORMATTER),
                 pgg.getGiaTriDonHangToiThieu().toString(),
+                capStr,
                 pgg.getSoLuongConLai(),
                 pgg.getActive());
     }

@@ -20,7 +20,7 @@ public class ShippingZoneResolver {
 
     private final GhnService ghnService;
 
-    @Value("${shipping.local-province-ids:201,241}")
+    @Value("${shipping.local-province-ids:201,244}")
     private List<Integer> localProvinceIds;
 
     @Value("${shipping.local-provinces:ha noi,thai nguyen}")

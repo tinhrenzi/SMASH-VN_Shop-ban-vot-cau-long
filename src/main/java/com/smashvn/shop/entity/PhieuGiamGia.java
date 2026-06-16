@@ -45,6 +45,13 @@ public class PhieuGiamGia {
     @Column(name = "gia_tri_don_hang_toi_thieu")
     private BigDecimal giaTriDonHangToiThieu = BigDecimal.ZERO;
 
+    /**
+     * Maximum discount amount that can be deducted for percentage-based vouchers.
+     * NULL means unlimited. Ignored completely for fixed-amount vouchers.
+     */
+    @Column(name = "gia_tri_giam_toi_da")
+    private BigDecimal giaTriGiamToiDa;
+
     public Boolean getActive() {
         return active == null ? true : active;
     }

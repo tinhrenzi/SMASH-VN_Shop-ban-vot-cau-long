@@ -12,6 +12,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* Force table layout fixed to prevent layout overflow */
         #orderTable {
@@ -54,6 +56,25 @@
             border-radius: 6px !important;
             height: 32px;
             white-space: nowrap;
+        }
+
+        /* Style for order detail modal product images */
+        .detail-product-img {
+            width: 70px !important;
+            height: 70px !important;
+            object-fit: cover !important;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .detail-product-img:hover {
+            opacity: 0.85;
+        }
+
+        /* Fix modal table header background and text visibility */
+        .modal-body .table thead th {
+            background-color: #212529 !important;
+            color: #ffffff !important;
         }
     </style>
 </head>
@@ -186,7 +207,7 @@
                                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                         <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
                                                         <button type="submit" class="btn btn-sm btn-success btn-sm-action" 
-                                                                onclick="return confirm('Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
+                                                                onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
                                                             <i class="fas fa-arrow-right"></i> Tiếp theo
                                                         </button>
                                                     </form>
@@ -207,7 +228,7 @@
                                                          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                          <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
                                                          <button type="submit" class="btn btn-sm btn-success btn-sm-action" 
-                                                                 onclick="return confirm('Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
+                                                                 onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
                                                              <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                          </button>
                                                      </form>
@@ -218,7 +239,7 @@
                                                          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                          <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
                                                          <button type="submit" class="btn btn-sm btn-secondary btn-sm-action" 
-                                                                 onclick="return confirm('Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
+                                                                 onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
                                                              <i class="fas fa-ban"></i> Từ chối
                                                          </button>
                                                      </form>
@@ -322,6 +343,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="none">
+function confirmSubmit(button, message) {
+    Swal.fire({
+        title: 'Xác nhận hành động',
+        text: message,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            button.form.submit();
+        }
+    });
+    return false;
+}
+
+window.showLargeImage = function(imgPath) {
+    Swal.fire({
+        imageUrl: imgPath,
+        showConfirmButton: false,
+        showCloseButton: true,
+        background: 'rgba(255,255,255,0.95)',
+        backdrop: 'rgba(0,0,0,0.65)',
+        width: 'auto',
+        imageAlt: 'Ảnh sản phẩm'
+    });
+};
+
 function filterOrders() {
     const query = document.getElementById('orderSearchInput').value.toLowerCase().trim();
     const rows = document.querySelectorAll('#orderTable tbody tr');
@@ -410,8 +461,12 @@ function openOrderDetailModal(orderId) {
 
             let itemsHtml = '';
             (data.items || []).forEach(item => {
+                const imgPath = item.hinhAnh ? `/uploads/product/${item.hinhAnh}` : '/images/product9.jpg';
                 itemsHtml += `
                     <tr>
+                        <td class="text-center" style="width: 90px;">
+                            <img src="${imgPath}" alt="Ảnh sản phẩm" class="img-thumbnail detail-product-img" onclick="showLargeImage('${imgPath}')">
+                        </td>
                         <td>
                             <strong>${item.tenSanPham || 'N/A'}</strong><br>
                             <small class="text-muted">Màu sắc: ${item.mauSac || 'N/A'}</small>
@@ -500,6 +555,7 @@ function openOrderDetailModal(orderId) {
                     <table class="table table-bordered table-striped align-middle mb-0" style="font-size: 13px;">
                         <thead class="table-dark">
                             <tr>
+                                <th class="text-center" style="width: 90px;">Ảnh</th>
                                 <th>Sản phẩm</th>
                                 <th class="text-center" style="width: 80px;">SL</th>
                                 <th class="text-end" style="width: 120px;">Đơn giá</th>
@@ -507,13 +563,13 @@ function openOrderDetailModal(orderId) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${itemsHtml || '<tr><td colspan="4" class="text-center text-muted">Không có sản phẩm</td></tr>'}
+                            ${itemsHtml || '<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>'}
                             <tr class="table-light">
-                                <td colspan="3" class="text-end fw-bold">Phí vận chuyển:</td>
+                                <td colspan="4" class="text-end fw-bold">Phí vận chuyển:</td>
                                 <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(data.phiVanChuyen)} đ</td>
                             </tr>
                             <tr class="table-light">
-                                <td colspan="3" class="text-end fw-bold" style="font-size: 15px;">Tổng cộng:</td>
+                                <td colspan="4" class="text-end fw-bold" style="font-size: 15px;">Tổng cộng:</td>
                                 <td class="text-end text-danger fw-bold" style="font-size: 15px;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
                             </tr>
                         </tbody>
@@ -539,7 +595,7 @@ function openOrderDetailModal(orderId) {
                         <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="btn btn-success" onclick="return confirm('Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
+                             <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
                                 <i class="fas fa-arrow-right me-1"></i> Tiếp theo
                             </button>
                         </form>
@@ -553,7 +609,7 @@ function openOrderDetailModal(orderId) {
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
                             <input type="hidden" name="trangThai" value="da_giao" />
-                            <button type="submit" class="btn btn-primary" onclick="return confirm('Xác nhận HOÀN THÀNH đơn hàng này?')">
+                             <button type="submit" class="btn btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
                                 <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
                             </button>
                         </form>
@@ -576,14 +632,14 @@ function openOrderDetailModal(orderId) {
                     <form action="/admin/don-hang/approve-refund-ui" method="post" class="d-inline-block m-0">
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
-                        <button type="submit" class="btn btn-success" onclick="return confirm('Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
+                         <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
                             <i class="fas fa-hand-holding-usd me-1"></i> Hoàn tiền
                         </button>
                     </form>
                     <form action="/admin/don-hang/reject-refund-ui" method="post" class="d-inline-block m-0">
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
-                        <button type="submit" class="btn btn-secondary" onclick="return confirm('Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
+                         <button type="submit" class="btn btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
                             <i class="fas fa-ban me-1"></i> Từ chối
                         </button>
                     </form>
@@ -596,7 +652,7 @@ function openOrderDetailModal(orderId) {
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
                         <input type="hidden" name="trangThaiHoanHang" value="RETURNED" />
-                        <button type="submit" class="btn btn-success" onclick="return confirm('Xác nhận nhập kho sản phẩm và khôi phục tồn kho cho đơn hàng này?')">
+                         <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận nhập kho sản phẩm và khôi phục tồn kho cho đơn hàng này?')">
                             <i class="fas fa-warehouse me-1"></i> Xác nhận nhập kho
                         </button>
                     </form>
@@ -604,7 +660,7 @@ function openOrderDetailModal(orderId) {
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
                         <input type="hidden" name="trangThaiHoanHang" value="LOST" />
-                        <button type="submit" class="btn btn-warning text-dark" onclick="return confirm('Xác nhận đánh dấu mất hàng? (Không khôi phục tồn kho)')">
+                         <button type="submit" class="btn btn-warning text-dark" onclick="return confirmSubmit(this, 'Xác nhận đánh dấu mất hàng? (Không khôi phục tồn kho)')">
                             <i class="fas fa-exclamation-triangle me-1"></i> Đánh dấu mất hàng
                         </button>
                     </form>
@@ -612,7 +668,7 @@ function openOrderDetailModal(orderId) {
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
                         <input type="hidden" name="trangThaiHoanHang" value="DAMAGED" />
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Xác nhận đánh dấu hỏng hàng? (Không khôi phục tồn kho)')">
+                         <button type="submit" class="btn btn-danger" onclick="return confirmSubmit(this, 'Xác nhận đánh dấu hỏng hàng? (Không khôi phục tồn kho)')">
                             <i class="fas fa-heart-broken me-1"></i> Đánh dấu hỏng hàng
                         </button>
                     </form>

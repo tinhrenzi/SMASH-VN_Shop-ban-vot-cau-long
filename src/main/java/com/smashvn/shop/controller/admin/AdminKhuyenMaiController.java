@@ -154,6 +154,7 @@ public class AdminKhuyenMaiController {
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("soLuongConLai") Integer soLuongConLai,
             @RequestParam(value = "giaTriDonHangToiThieu", required = false) BigDecimal giaTriDonHangToiThieu,
+            @RequestParam(value = "giaTriGiamToiDa", required = false) BigDecimal giaTriGiamToiDa,
             @RequestParam("loaiGiamGia") String loaiGiamGia,
             HttpSession session,
             HttpServletRequest request,
@@ -165,7 +166,7 @@ public class AdminKhuyenMaiController {
             LocalDateTime start = (ngayBatDauStr == null || ngayBatDauStr.isEmpty()) ? null : LocalDateTime.parse(ngayBatDauStr);
             LocalDateTime end = (ngayKetThucStr == null || ngayKetThucStr.isEmpty()) ? null : LocalDateTime.parse(ngayKetThucStr);
 
-            adminKhuyenMaiService.createPhieuGiamGia(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, actingTaiKhoanId, ipAddress);
+            adminKhuyenMaiService.createPhieuGiamGia(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?themPhieuThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());
@@ -176,6 +177,7 @@ public class AdminKhuyenMaiController {
             model.addAttribute("ngayKetThuc", ngayKetThucStr);
             model.addAttribute("soLuongConLai", soLuongConLai);
             model.addAttribute("giaTriDonHangToiThieu", giaTriDonHangToiThieu);
+            model.addAttribute("giaTriGiamToiDa", giaTriGiamToiDa);
             model.addAttribute("loaiGiamGia", loaiGiamGia);
             return "admin/phieugiamgia-add";
         }
@@ -202,6 +204,7 @@ public class AdminKhuyenMaiController {
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("soLuongConLai") Integer soLuongConLai,
             @RequestParam(value = "giaTriDonHangToiThieu", required = false) BigDecimal giaTriDonHangToiThieu,
+            @RequestParam(value = "giaTriGiamToiDa", required = false) BigDecimal giaTriGiamToiDa,
             @RequestParam("loaiGiamGia") String loaiGiamGia,
             HttpSession session,
             HttpServletRequest request,
@@ -213,7 +216,7 @@ public class AdminKhuyenMaiController {
             LocalDateTime start = (ngayBatDauStr == null || ngayBatDauStr.isEmpty()) ? null : LocalDateTime.parse(ngayBatDauStr);
             LocalDateTime end = (ngayKetThucStr == null || ngayKetThucStr.isEmpty()) ? null : LocalDateTime.parse(ngayKetThucStr);
 
-            adminKhuyenMaiService.updatePhieuGiamGia(id, maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, actingTaiKhoanId, ipAddress);
+            adminKhuyenMaiService.updatePhieuGiamGia(id, maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?suaPhieuThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());

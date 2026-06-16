@@ -495,67 +495,250 @@ public class GhnService {
         private String wardCode;
     }
 
-    public String normalizeString(String input) {
-        if (input == null) return "";
-        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        normalized = normalized.toLowerCase();
-        normalized = normalized.replace("đ", "d");
-        normalized = normalized.replaceAll("[^a-z0-9\\s]", " ");
-        normalized = normalized.replaceAll("\\s+", " ").trim();
-        return normalized;
+    public String normalizeString(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(java.util.Locale.ROOT);
+
+        normalized = normalized.replace("đ", "d"); // compatibility for input without accents
+
+        normalized = normalized
+                .replaceAll("\\btp\\.?\\b", " thanh pho ")
+                .replaceAll("\\bq\\.?\\b", " quan ")
+                .replaceAll("\\bp\\.?\\b", " phuong ")
+                .replaceAll("\\bh\\.?\\b", " huyen ")
+                .replaceAll("\\btx\\.?\\b", " thi xa ");
+
+        return normalized.replaceAll("\\s+", " ").trim();
     }
 
     public GhnAddressMapping resolveGhnAddress(SoDiaChi dc) {
         if (dc == null) return null;
 
-        // 1. Fetch provinces and match dc.getTinhThanh()
+        String userProvince = dc.getTinhThanh();
+        String userDistrict = dc.getDiaChiCuThe();
+        String userWard = dc.getDiaChiCuThe();
+
+        // 1. Fetch provinces and match dc.getTinhThanh() or dc.getDiaChiCuThe()
         List<Map<String, Object>> provinces = getProvinces();
-        String targetProvince = normalizeString(dc.getTinhThanh());
+        String targetProvince = normalizeString(userProvince);
         Integer provinceId = null;
+        Map<String, Object> matchedProvince = null;
+
+        // Pass 1: Try to match province using dc.getTinhThanh()
         for (Map<String, Object> p : provinces) {
             String name = normalizeString((String) p.get("ProvinceName"));
             if (!name.isEmpty() && (name.contains(targetProvince) || targetProvince.contains(name))) {
                 provinceId = (Integer) p.get("ProvinceID");
+                matchedProvince = p;
                 break;
             }
         }
+
+        // Pass 2: Fallback to match province using dc.getDiaChiCuThe()
         if (provinceId == null) {
-            log.warn("Failed to match province '{}' on GHN", dc.getTinhThanh());
+            String streetAddr = normalizeString(dc.getDiaChiCuThe());
+            for (Map<String, Object> p : provinces) {
+                String name = normalizeString((String) p.get("ProvinceName"));
+                String cleanProvName = name.replaceAll("^(tinh|thanh pho|tp)\\s+", "").trim();
+                if (!cleanProvName.isEmpty() && streetAddr.contains(cleanProvName)) {
+                    provinceId = (Integer) p.get("ProvinceID");
+                    matchedProvince = p;
+                    break;
+                }
+            }
+        }
+
+        if (provinceId == null) {
+            log.warn("Unable to resolve GHN province from address: {}", dc.getDiaChiCuThe());
             return null;
         }
 
-        // 2. Fetch districts and match dc.getThanhPho()
+        log.debug("GHN Province matched: {} -> {}",
+                userProvince,
+                (String) matchedProvince.get("ProvinceName"));
+
+        String cleanProvinceName = normalizeString((String) matchedProvince.get("ProvinceName"))
+                .replaceAll("^(tinh|thanh pho|tp)\\s+", "").trim();
+
+        // 2. Fetch districts and match dc.getDiaChiCuThe() first, then fallback to dc.getThanhPho()
         List<Map<String, Object>> districts = getDistricts(provinceId);
-        String targetDistrict = normalizeString(dc.getThanhPho());
+        String streetAddress = normalizeString(dc.getDiaChiCuThe());
+        String fallbackDistrict = normalizeString(dc.getThanhPho());
         Integer districtId = null;
+        Map<String, Object> matchedDistrict = null;
+
+        Map<Map<String, Object>, String> districtCleanNames = new java.util.HashMap<>();
+        Map<Map<String, Object>, String> districtNormNames = new java.util.HashMap<>();
         for (Map<String, Object> d : districts) {
-            String name = normalizeString((String) d.get("DistrictName"));
-            if (!name.isEmpty() && (name.contains(targetDistrict) || targetDistrict.contains(name))) {
-                districtId = (Integer) d.get("DistrictID");
-                break;
+            String rawDistrictName = (String) d.get("DistrictName");
+            if (rawDistrictName != null) {
+                String normDistrictName = normalizeString(rawDistrictName);
+                String cleanDistrictName = normDistrictName.replaceAll("^(quan|huyen|thi xa|thanh pho|tp)\\s+", "").trim();
+                districtCleanNames.put(d, cleanDistrictName);
+                districtNormNames.put(d, normDistrictName);
             }
         }
+
+        List<Map<String, Object>> sortedDistricts = new java.util.ArrayList<>(districts);
+        sortedDistricts.sort((d1, d2) -> {
+            String name1 = districtCleanNames.getOrDefault(d1, "");
+            String name2 = districtCleanNames.getOrDefault(d2, "");
+            return Integer.compare(name2.length(), name1.length()); // Descending
+        });
+
+        // Pass 1: Match districts whose clean name is NOT equal to the clean province name
+        for (Map<String, Object> d : sortedDistricts) {
+            String cleanDistName = districtCleanNames.get(d);
+            if (cleanDistName == null || cleanDistName.isEmpty() || cleanDistName.equals(cleanProvinceName)) {
+                continue;
+            }
+            String normDistName = districtNormNames.get(d);
+            if (cleanDistName.matches("^\\d+$")) {
+                if (streetAddress.contains(normDistName)) {
+                    districtId = (Integer) d.get("DistrictID");
+                    matchedDistrict = d;
+                    break;
+                }
+            } else {
+                if (streetAddress.contains(cleanDistName)) {
+                    districtId = (Integer) d.get("DistrictID");
+                    matchedDistrict = d;
+                    break;
+                }
+            }
+        }
+
+        // Pass 2: Match district whose clean name is equal to the clean province name (e.g. Thành phố Thái Nguyên in Thái Nguyên)
         if (districtId == null) {
-            log.warn("Failed to match district '{}' in province ID {} on GHN", dc.getThanhPho(), provinceId);
+            for (Map<String, Object> d : sortedDistricts) {
+                String cleanDistName = districtCleanNames.get(d);
+                if (cleanDistName != null && !cleanDistName.isEmpty() && cleanDistName.equals(cleanProvinceName)) {
+                    String normDistName = districtNormNames.get(d);
+                    if (cleanDistName.matches("^\\d+$")) {
+                        if (streetAddress.contains(normDistName)) {
+                            districtId = (Integer) d.get("DistrictID");
+                            matchedDistrict = d;
+                            break;
+                        }
+                    } else {
+                        if (streetAddress.contains(cleanDistName)) {
+                            districtId = (Integer) d.get("DistrictID");
+                            matchedDistrict = d;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pass 3: Fallback to old method (match against dc.getThanhPho())
+        if (districtId == null) {
+            String cleanFallback = fallbackDistrict.replaceAll("^(tinh|thanh pho|tp)\\s+", "").trim();
+            for (Map<String, Object> d : sortedDistricts) {
+                String cleanDistName = districtCleanNames.get(d);
+                if (cleanDistName != null && !cleanDistName.isEmpty() && 
+                    (cleanDistName.contains(cleanFallback) || cleanFallback.contains(cleanDistName))) {
+                    districtId = (Integer) d.get("DistrictID");
+                    matchedDistrict = d;
+                    break;
+                }
+            }
+        }
+
+        if (districtId == null) {
+            log.warn("Unable to resolve GHN district from address: {}",
+                    dc.getDiaChiCuThe());
             return null;
         }
 
-        // 3. Fetch wards and match within dc.getDiaChiCuThe()
+        log.debug("GHN District matched: {} -> {}",
+                userDistrict,
+                (String) matchedDistrict.get("DistrictName"));
+
+        // 3. Fetch wards and match within dc.getDiaChiCuThe() first, then other fields
         List<Map<String, Object>> wards = getWards(districtId);
-        String targetStreet = normalizeString(dc.getDiaChiCuThe());
+        String targetStreet = streetAddress; // dc.getDiaChiCuThe() normalized
+        String targetOtherFields = normalizeString(dc.getTinhThanh() + " " + dc.getThanhPho());
         String wardCode = null;
+        Map<String, Object> matchedWard = null;
+
+        Map<Map<String, Object>, String> wardCleanNames = new java.util.HashMap<>();
+        Map<Map<String, Object>, String> wardNormNames = new java.util.HashMap<>();
         for (Map<String, Object> w : wards) {
-            String name = normalizeString((String) w.get("WardName"));
-            if (!name.isEmpty() && targetStreet.contains(name)) {
-                wardCode = (String) w.get("WardCode");
-                break;
+            String rawWardName = (String) w.get("WardName");
+            if (rawWardName != null) {
+                String normWardName = normalizeString(rawWardName);
+                String cleanWardName = normWardName.replaceAll("^(phuong|xa|thi tran)\\s+", "").trim();
+                wardCleanNames.put(w, cleanWardName);
+                wardNormNames.put(w, normWardName);
             }
         }
+
+        List<Map<String, Object>> sortedWards = new java.util.ArrayList<>(wards);
+        sortedWards.sort((w1, w2) -> {
+            String name1 = wardCleanNames.getOrDefault(w1, "");
+            String name2 = wardCleanNames.getOrDefault(w2, "");
+            return Integer.compare(name2.length(), name1.length()); // Descending
+        });
+
+        // Pass 1: Match ward inside dc.getDiaChiCuThe()
+        for (Map<String, Object> w : sortedWards) {
+            String cleanWardName = wardCleanNames.get(w);
+            if (cleanWardName == null || cleanWardName.isEmpty()) continue;
+            
+            String normWardName = wardNormNames.get(w);
+            if (cleanWardName.matches("^\\d+$")) {
+                if (targetStreet.contains(normWardName)) {
+                    wardCode = (String) w.get("WardCode");
+                    matchedWard = w;
+                    break;
+                }
+            } else {
+                if (targetStreet.contains(cleanWardName)) {
+                    wardCode = (String) w.get("WardCode");
+                    matchedWard = w;
+                    break;
+                }
+            }
+        }
+
+        // Pass 2: Fallback to match ward inside TinhThanh / ThanhPho
         if (wardCode == null) {
-            log.warn("Failed to match ward inside street address '{}' for district ID {} on GHN", dc.getDiaChiCuThe(), districtId);
+            for (Map<String, Object> w : sortedWards) {
+                String cleanWardName = wardCleanNames.get(w);
+                if (cleanWardName == null || cleanWardName.isEmpty()) continue;
+                
+                String normWardName = wardNormNames.get(w);
+                if (cleanWardName.matches("^\\d+$")) {
+                    if (targetOtherFields.contains(normWardName)) {
+                        wardCode = (String) w.get("WardCode");
+                        matchedWard = w;
+                        break;
+                    }
+                } else {
+                    if (targetOtherFields.contains(cleanWardName)) {
+                        wardCode = (String) w.get("WardCode");
+                        matchedWard = w;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (wardCode == null) {
+            log.warn("Unable to resolve GHN ward from address: {}",
+                    dc.getDiaChiCuThe());
             return null;
         }
+
+        log.debug("GHN Ward matched: {} -> {}",
+                userWard,
+                (String) matchedWard.get("WardName"));
 
         return new GhnAddressMapping(provinceId, districtId, wardCode);
     }

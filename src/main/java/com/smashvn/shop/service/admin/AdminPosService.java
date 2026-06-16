@@ -18,6 +18,7 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.util.VoucherCalculator;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
@@ -285,17 +286,8 @@ public class AdminPosService {
                 throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu của voucher (" + phieu.getGiaTriDonHangToiThieu() + " đ)");
             }
 
-            // Tính tiền giảm
-            if ("%".equals(phieu.getDonVi())) {
-                BigDecimal percent = phieu.getGiaTri().divide(new BigDecimal("100"));
-                giamGia = tongTienHang.multiply(percent);
-            } else {
-                giamGia = phieu.getGiaTri();
-            }
-
-            if (giamGia.compareTo(tongTienHang) > 0) {
-                giamGia = tongTienHang;
-            }
+            // Tính tiền giảm qua VoucherCalculator (bao gồm cả giới hạn giảm tối đa)
+            giamGia = VoucherCalculator.calculateVoucherDiscount(tongTienHang, phieu);
 
             // Trừ lượt sử dụng voucher
             phieu.setSoLuongConLai(phieu.getSoLuongConLai() - 1);

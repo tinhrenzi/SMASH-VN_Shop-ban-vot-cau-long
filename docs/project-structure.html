@@ -1077,7 +1077,7 @@
                         <div class="lifecycle-content">
                             <h3>3. Đồng Bộ Hóa CSDL &amp; Migration Tự Động</h3>
                             <p>
-                                Ứng dụng kết nối tới MySQL/PostgreSQL thông qua cấu hình Spring Datasource. Công cụ <strong style="color: #fff;">Flyway Migration</strong> tự động quét thư mục <code style="color: var(--color-warning);">db/migration/</code> để thực thi các file SQL nâng cấp phiên bản CSDL (V1.1 -> V1.17). Đồng thời, <strong style="color: #fff;">PlaintextPasswordMigrator</strong> kiểm tra nếu có tài khoản nào cũ trong bảng <code style="color: #cbd5e1;">tai_khoan</code> chưa băm mật khẩu thì tự động mã hóa BCrypt một lần. Lớp <strong style="color: #fff;">EmployeeMigrationRunner</strong> thực thi để migrate dữ liệu nhân viên sang định dạng chuẩn.
+                                Ứng dụng kết nối tới MySQL/PostgreSQL thông qua cấu hình Spring Datasource. Công cụ <strong style="color: #fff;">Flyway Migration</strong> tự động quét thư mục <code style="color: var(--color-warning);">db/migration/</code> để thực thi các file SQL nâng cấp phiên bản CSDL (V1.1 -> V1.18). Đồng thời, <strong style="color: #fff;">PlaintextPasswordMigrator</strong> kiểm tra nếu có tài khoản nào cũ trong bảng <code style="color: #cbd5e1;">tai_khoan</code> chưa băm mật khẩu thì tự động mã hóa BCrypt một lần. Lớp <strong style="color: #fff;">EmployeeMigrationRunner</strong> thực thi để migrate dữ liệu nhân viên sang định dạng chuẩn.
                             </p>
                             <div class="files-grid">
                                 <span class="badge-layer layer-config">Flyway</span>
@@ -1269,6 +1269,15 @@
                                                         { name: "LoginRateLimiter.java", type: "file", desc: "Rate Limiter giới hạn số lần thử mật khẩu sai của 1 địa chỉ IP (Brute Force Protection).", layer: "security" },
                                                         { name: "RegisterRateLimiter.java", type: "file", desc: "Giới hạn số tài khoản được đăng ký từ cùng 1 IP trong 1 tiếng để tránh spam.", layer: "security" },
                                                         { name: "ForgotPasswordRateLimiter.java", type: "file", desc: "Giới hạn tần suất yêu cầu khôi phục mật khẩu từ 1 IP để tránh quá tải SMTP.", layer: "security" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "util",
+                                                    type: "dir",
+                                                    desc: "Các tệp tin tiện ích phụ trợ cho toàn bộ hệ thống.",
+                                                    children: [
+                                                        { name: "ValidationUtils.java", type: "file", desc: "Kiểm tra độ mạnh yếu của mật khẩu và định dạng email/sđt.", layer: "config" },
+                                                        { name: "VoucherCalculator.java", type: "file", desc: "Công cụ tính toán giá trị giảm giá thực tế của voucher/phiếu giảm giá, hỗ trợ giới hạn giá trị giảm tối đa cho voucher dạng phần trăm.", layer: "config", calls: ["PhieuGiamGia.java"], calledBy: ["GioHangService.java", "CheckoutController.java", "AdminPosService.java"] }
                                                     ]
                                                 }
                                             ]
@@ -1662,6 +1671,7 @@
                 files: [
                     { name: "CheckoutController.java", role: "Controller", desc: "Tiếp nhận thông tin đặt hàng, thực hiện validate nghiệp vụ cơ bản, điều phối luồng thanh toán." },
                     { name: "GioHangService.java", role: "Service", desc: "Kiểm tra giỏ hàng, trừ kho sản phẩm, áp dụng voucher, tạo đơn hàng trong transaction." },
+                    { name: "VoucherCalculator.java", role: "Utility", desc: "Công cụ trung tâm tính toán số tiền giảm giá của voucher có hỗ trợ giá trị giảm tối đa." },
                     { name: "OrderViewService.java", role: "Service", desc: "Xử lý cập nhật trạng thái hóa đơn sau khi nhận webhook thanh toán thành công." },
                     { name: "ZaloPayServiceImpl.java", role: "Service", desc: "Đóng gói request gọi ZaloPay API và verify chữ ký HMAC-SHA256 bảo mật." },
                     { name: "SepayGatewayService.java", role: "Service", desc: "Tạo thông tin chuyển khoản động, kiểm tra chữ ký webhook của SePay." },

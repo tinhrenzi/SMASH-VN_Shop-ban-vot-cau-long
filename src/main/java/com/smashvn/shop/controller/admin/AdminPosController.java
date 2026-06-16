@@ -101,6 +101,7 @@ public class AdminPosController {
                 response.put("giaTri", voucher.getGiaTri());
                 response.put("donVi", voucher.getDonVi());
                 response.put("giaTriDonHangToiThieu", voucher.getGiaTriDonHangToiThieu());
+                response.put("giaTriGiamToiDa", voucher.getGiaTriGiamToiDa());
             } else {
                 response.put("success", false);
                 response.put("message", "Voucher không hợp lệ hoặc đã hết hạn.");

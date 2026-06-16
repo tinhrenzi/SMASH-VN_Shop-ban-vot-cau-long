@@ -25,6 +25,7 @@ import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.util.VoucherCalculator;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -283,16 +284,7 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
         }
 
-        BigDecimal giamGia = BigDecimal.ZERO;
-        if ("%".equals(voucher.getDonVi()) || "Giảm phần trăm".equalsIgnoreCase(voucher.getLoaiGiamGia())) {
-            giamGia = tamTinh.multiply(voucher.getGiaTri()).divide(new BigDecimal("100"));
-        } else {
-            giamGia = voucher.getGiaTri();
-        }
-
-        if (giamGia.compareTo(tamTinh) > 0) {
-            giamGia = tamTinh;
-        }
+        BigDecimal giamGia = VoucherCalculator.calculateVoucherDiscount(tamTinh, voucher);
 
         java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
         response.put("trangThai", "ok");
@@ -300,8 +292,12 @@ public class CheckoutController {
         response.put("giamGia", giamGia);
         response.put("donVi", voucher.getDonVi());
         response.put("giaTri", voucher.getGiaTri());
+        response.put("giaTriGiamToiDa", voucher.getGiaTriGiamToiDa());
         response.put("giamGiaFormatted", df.format(giamGia) + " đ");
         response.put("message", "Áp dụng thành công: Giảm " + df.format(voucher.getGiaTri()) + ("%".equals(voucher.getDonVi()) ? "%" : " đ"));
+        if (voucher.getGiaTriGiamToiDa() != null) {
+            response.put("message", "Áp dụng thành công: Giảm " + df.format(voucher.getGiaTri()) + "%" + " (Tối đa " + df.format(voucher.getGiaTriGiamToiDa()) + " đ)");
+        }
 
         return ResponseEntity.ok(response);
     }

@@ -478,6 +478,9 @@ public class AdminController {
                             ? item.getSanPhamChiTiet().getMauSac() : "";
                     giaBan = item.getSanPhamChiTiet().getGiaBan() != null
                             ? item.getSanPhamChiTiet().getGiaBan() : java.math.BigDecimal.ZERO;
+                    String hinhAnh = item.getSanPhamChiTiet().getHinhAnhSanPham() != null
+                            ? item.getSanPhamChiTiet().getHinhAnhSanPham() : "";
+                    itemMap.put("hinhAnh", hinhAnh);
                 }
                 itemMap.put("tenSanPham", tenSP);
                 itemMap.put("mauSac", mauSac);
