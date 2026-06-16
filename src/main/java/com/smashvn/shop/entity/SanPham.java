@@ -86,4 +86,10 @@ public class SanPham {
                 .map(ldt -> ldt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")))
                 .orElse("2027/01/01 00:00:00");
     }
+
+    @Column(name = "so_danh_gia", nullable = false)
+    private Integer soDanhGia = 0;
+
+    @Column(name = "diem_trung_binh", nullable = false)
+    private Double diemTrungBinh = 0.0;
 }

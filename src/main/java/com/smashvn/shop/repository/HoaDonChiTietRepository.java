@@ -37,4 +37,10 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
+    @Query("SELECT COUNT(hdct) > 0 FROM HoaDonChiTiet hdct " +
+           "WHERE hdct.hoaDon.khachHang.taiKhoan.id = :taiKhoanId " +
+           "AND hdct.sanPhamChiTiet.sanPham.id = :sanPhamId " +
+           "AND LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh')")
+    boolean hasPurchasedProduct(@Param("taiKhoanId") Integer taiKhoanId, @Param("sanPhamId") Integer sanPhamId);
 }

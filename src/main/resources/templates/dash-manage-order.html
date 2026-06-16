@@ -499,6 +499,22 @@
                                                     </div>
                                                 </div>
 
+                                                <!-- Thông báo nhận hàng và nút đánh giá -->
+                                                <div th:if="${order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh'}" 
+                                                     style="margin-top: 15px; margin-bottom: 15px; padding: 15px 20px; background-color: #f4fbf7; border: 1px solid #c2ebd6; border-left: 4px solid #198754; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                                    <div style="display: flex; align-items: center; color: #198754; font-size: 14px; font-weight: 500;">
+                                                        <i class="fas fa-check-circle" style="color: #198754; font-size: 20px; margin-right: 10px;"></i>
+                                                        <span>Bạn đã nhận được hàng, vui lòng để lại đánh giá cho shop nhé</span>
+                                                    </div>
+                                                    <div>
+                                                        <a th:href="@{'/san-pham/' + ${orderItems[0].sanPhamChiTiet.sanPham.id} + '#pd-rev'}" 
+                                                           class="btn btn--e-brand-shadow" 
+                                                           style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 4px; display: inline-block; color: white;">
+                                                            Đánh giá ngay
+                                                        </a>
+                                                    </div>
+                                                </div>
+
                                                 <!-- Danh sách sản phẩm trong đơn hàng -->
                                                 <div class="manage-o__description">
                                                     <div class="manage-o__description-item"
@@ -535,6 +551,13 @@
                                                                     <span class="manage-o__text-2 u-c-secondary"
                                                                           th:text="${#numbers.formatDecimal(item.donGia * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
                                                                 </span>
+                                                            </div>
+                                                            <div th:if="${order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh'}">
+                                                                <a th:href="@{'/san-pham/' + ${item.sanPhamChiTiet.sanPham.id} + '#pd-rev'}" 
+                                                                   class="btn btn--e-brand-shadow" 
+                                                                   style="padding: 6px 12px; font-size: 12px; text-decoration: none; border-radius: 4px; display: inline-block; color: white;">
+                                                                    Đánh giá
+                                                                </a>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -619,7 +619,7 @@ public class SecurityHardeningIntegrationTest {
 
         final String duplicateCode = "happy_new_year";
         Exception e1 = assertThrows(RuntimeException.class, () -> {
-            adminKhuyenMaiService.createPhieuGiamGia(duplicateCode, BigDecimal.TEN, "%", LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(5), 10, BigDecimal.ZERO, "Giảm phần trăm", managerTk.getId(), "127.0.0.1");
+            adminKhuyenMaiService.createPhieuGiamGia(duplicateCode, BigDecimal.TEN, "%", LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(5), 10, BigDecimal.ZERO, "Giảm phần trăm", new BigDecimal("10000"), managerTk.getId(), "127.0.0.1");
         });
         assertTrue(e1.getMessage().contains("đã tồn tại"), "Should fail on duplicate: " + e1.getMessage());
     }

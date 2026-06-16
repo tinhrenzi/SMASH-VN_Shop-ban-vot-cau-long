@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/pos", "/admin/pos/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/khach-hang", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/transactions", "/admin/transactions/**").hasAnyRole("QL", "NV")
+                .requestMatchers("/admin/danh-gia", "/admin/danh-gia/**").hasAnyRole("QL", "NV")
                 // Các trang quản trị còn lại chỉ dành cho QL
                 .requestMatchers("/admin", "/admin/**").hasRole("QL")
                 // Tất cả các request khác đều được permit

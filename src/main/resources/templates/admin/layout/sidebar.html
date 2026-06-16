@@ -38,6 +38,10 @@
                 <i class="fas fa-shopping-cart"></i> Đơn Hàng
             </a>
             
+            <a th:href="@{/admin/danh-gia}" th:class="${activeTab == 'danhgia' ? 'active' : ''}">
+                <i class="fas fa-star"></i> Đánh Giá
+            </a>
+            
             <a th:href="@{/admin/khach-hang}" th:class="${activeTab == 'khachhang' ? 'active' : ''}">
                 <i class="fas fa-users"></i> Khách Hàng
             </a>
