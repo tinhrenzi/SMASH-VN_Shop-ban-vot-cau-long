@@ -48,5 +48,29 @@ public interface BlogRepository extends JpaRepository<Blog, Integer> {
             
     // For scheduled purge job
     List<Blog> findByDeletedTrueAndDeletedAtBefore(LocalDateTime threshold);
+
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT b FROM Blog b WHERE b.deleted = false AND b.status = :status " +
+        "AND (b.publishDate < :currentPublishDate OR (b.publishDate = :currentPublishDate AND b.id < :currentId)) " +
+        "ORDER BY b.publishDate DESC, b.id DESC"
+    )
+    List<Blog> findPreviousBlog(
+        @org.springframework.data.repository.query.Param("status") BlogStatus status,
+        @org.springframework.data.repository.query.Param("currentPublishDate") java.time.LocalDate currentPublishDate,
+        @org.springframework.data.repository.query.Param("currentId") Integer currentId,
+        Pageable pageable
+    );
+
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT b FROM Blog b WHERE b.deleted = false AND b.status = :status " +
+        "AND (b.publishDate > :currentPublishDate OR (b.publishDate = :currentPublishDate AND b.id > :currentId)) " +
+        "ORDER BY b.publishDate ASC, b.id ASC"
+    )
+    List<Blog> findNextBlog(
+        @org.springframework.data.repository.query.Param("status") BlogStatus status,
+        @org.springframework.data.repository.query.Param("currentPublishDate") java.time.LocalDate currentPublishDate,
+        @org.springframework.data.repository.query.Param("currentId") Integer currentId,
+        Pageable pageable
+    );
 }
 

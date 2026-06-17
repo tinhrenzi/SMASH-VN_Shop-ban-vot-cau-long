@@ -29,6 +29,17 @@ public class FileStorageService {
      * Tải lên danh sách hình ảnh một cách an toàn và trả về danh sách tên tệp ngẫu nhiên
      */
     public List<String> saveReviewImages(List<MultipartFile> files) throws Exception {
+        return saveImages(files, "reviews");
+    }
+
+    public List<String> saveBlogImages(List<MultipartFile> files) throws Exception {
+        return saveImages(files, "blog");
+    }
+
+    /**
+     * Tải lên danh sách hình ảnh một cách an toàn và lưu vào thư mục được chỉ định
+     */
+    public List<String> saveImages(List<MultipartFile> files, String folderName) throws Exception {
         List<String> savedFileNames = new ArrayList<>();
         
         if (files == null || files.isEmpty()) {
@@ -49,7 +60,7 @@ public class FileStorageService {
 
         // 1. Kiểm tra tối đa 5 hình ảnh
         if (activeFiles.size() > 5) {
-            throw new IllegalArgumentException("Bạn chỉ được tải lên tối đa 5 hình ảnh cho mỗi đánh giá.");
+            throw new IllegalArgumentException("Bạn chỉ được tải lên tối đa 5 hình ảnh.");
         }
 
         // 2. Kiểm tra tổng dung lượng tải lên (tối đa 20 MB)
@@ -101,13 +112,13 @@ public class FileStorageService {
 
             // Xác định thư mục lưu trữ và chống Path Traversal
             Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
-            Path reviewsUploadPath = rootUploadPath.resolve("reviews").normalize();
-            if (!Files.exists(reviewsUploadPath)) {
-                Files.createDirectories(reviewsUploadPath);
+            Path targetFolder = rootUploadPath.resolve(folderName).normalize();
+            if (!Files.exists(targetFolder)) {
+                Files.createDirectories(targetFolder);
             }
 
-            Path targetFilePath = reviewsUploadPath.resolve(secureFileName).normalize().toAbsolutePath();
-            if (!targetFilePath.startsWith(reviewsUploadPath.toAbsolutePath().normalize())) {
+            Path targetFilePath = targetFolder.resolve(secureFileName).normalize().toAbsolutePath();
+            if (!targetFilePath.startsWith(targetFolder.toAbsolutePath().normalize())) {
                 throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ (ngăn chặn Path Traversal).");
             }
 
@@ -115,10 +126,10 @@ public class FileStorageService {
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, targetFilePath, StandardCopyOption.REPLACE_EXISTING);
             } catch (Exception e) {
-                log.error("[UPLOAD_FAILURE] Failed to save review image: {}", e.getMessage());
+                log.error("[UPLOAD_FAILURE] Failed to save image to {}: {}", folderName, e.getMessage());
                 // Xóa các file đã upload trước đó trong lượt này nếu bị lỗi giữa chừng
                 for (String name : savedFileNames) {
-                    deleteImage(name, "reviews");
+                    deleteImage(name, folderName);
                 }
                 throw e;
             }

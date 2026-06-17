@@ -52,8 +52,18 @@ public class BlogController {
             BlogDTO blog = blogService.getBlogBySlug(slug);
             List<BlogDTO> recentBlogs = blogService.getRecentBlogs(3);
 
+            String prevSlug = null;
+            String nextSlug = null;
+            if (blog.getPublishDate() != null && !blog.getPublishDate().isEmpty()) {
+                java.time.LocalDate publishDate = java.time.LocalDate.parse(blog.getPublishDate());
+                prevSlug = blogService.getPreviousBlogSlug(publishDate, blog.getId());
+                nextSlug = blogService.getNextBlogSlug(publishDate, blog.getId());
+            }
+
             model.addAttribute("blog", blog);
             model.addAttribute("recentBlogs", recentBlogs);
+            model.addAttribute("prevBlogSlug", prevSlug);
+            model.addAttribute("nextBlogSlug", nextSlug);
             return "blog-detail";
         } catch (Exception e) {
             // Nếu không tìm thấy slug bài viết, trả về trang lỗi 404

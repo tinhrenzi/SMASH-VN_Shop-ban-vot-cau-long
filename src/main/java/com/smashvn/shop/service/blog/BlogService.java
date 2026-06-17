@@ -215,6 +215,20 @@ public class BlogService {
         return convertToDTO(blog);
     }
 
+    // Get previous blog slug
+    public String getPreviousBlogSlug(LocalDate publishDate, Integer id) {
+        Pageable pageable = PageRequest.of(0, 1);
+        List<Blog> list = blogRepository.findPreviousBlog(BlogStatus.PUBLISHED, publishDate, id, pageable);
+        return list.isEmpty() ? null : list.get(0).getSlug();
+    }
+
+    // Get next blog slug
+    public String getNextBlogSlug(LocalDate publishDate, Integer id) {
+        Pageable pageable = PageRequest.of(0, 1);
+        List<Blog> list = blogRepository.findNextBlog(BlogStatus.PUBLISHED, publishDate, id, pageable);
+        return list.isEmpty() ? null : list.get(0).getSlug();
+    }
+
     // Customer recent blogs
     public List<BlogDTO> getRecentBlogs(int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishDate"));
@@ -256,7 +270,7 @@ public class BlogService {
         
         String savedFileName = null;
         if (imageFile != null && !imageFile.isEmpty()) {
-            List<String> uploaded = fileStorageService.saveReviewImages(Collections.singletonList(imageFile));
+            List<String> uploaded = fileStorageService.saveBlogImages(Collections.singletonList(imageFile));
             if (!uploaded.isEmpty()) {
                 savedFileName = "/uploads/blog/" + uploaded.get(0);
             }
@@ -307,7 +321,7 @@ public class BlogService {
                 String oldFile = savedFileName.substring("/uploads/blog/".length());
                 fileStorageService.deleteImage(oldFile, "blog");
             }
-            List<String> uploaded = fileStorageService.saveReviewImages(Collections.singletonList(imageFile));
+            List<String> uploaded = fileStorageService.saveBlogImages(Collections.singletonList(imageFile));
             if (!uploaded.isEmpty()) {
                 savedFileName = "/uploads/blog/" + uploaded.get(0);
             }

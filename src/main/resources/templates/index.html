@@ -789,7 +789,7 @@
                                     <div class="bp-mini bp-mini--img u-h-100">
                                         <div class="bp-mini__thumbnail">
                                             <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog/{slug}(slug=${blog.slug})}">
-                                                <img class="aspect__img" th:src="@{'/images/blog/' + ${blog.image}}" alt="Ảnh bài viết">
+                                                <img class="aspect__img" th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" alt="Ảnh bài viết">
                                             </a>
                                         </div>
                                         <div class="bp-mini__content">

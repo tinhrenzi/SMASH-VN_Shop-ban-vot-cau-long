@@ -397,29 +397,7 @@
             font-weight: 700 !important;
         }
 
-        /* ===== Quick Look Tooltip ===== */
-        .product-m__quick-look {
-            position: relative;
-        }
-        .quick-look-tooltip {
-            position: absolute;
-            top: -30px;
-            right: 0;
-            background: #fff;
-            color: #333;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 3px;
-            white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .product-m__quick-look:hover .quick-look-tooltip {
-            opacity: 1;
-        }
+
 
         /* ===== Wishlist Icon trong product content ===== */
         .product-m__wishlist {
@@ -783,8 +761,9 @@
                                                         <a href="javascript:void(0)"
                                                            th:onclick="'openQuickLookModal(' + ${product.id} + ')'"
                                                            class="fas fa-search"
-                                                           title="Quick Look"></a>
-                                                        <span class="quick-look-tooltip">Quick Look</span>
+                                                           data-tooltip="tooltip"
+                                                           data-placement="top"
+                                                           title="Xem nhanh"></a>
                                                     </div>
 
                                                     <!-- Nút Thêm vào giỏ -->
