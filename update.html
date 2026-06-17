@@ -62,6 +62,45 @@
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
+    <h2>81. Tính năng: Hệ thống Quản lý Bài viết &amp; Blogs (Admin Blog CMS) &amp; Tự động Cập nhật Trạng thái Khuyến mãi</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Flyway Migration V1.23:</strong> Thêm cột trạng thái <code>status</code> (DRAFT/PUBLISHED), xóa mềm (<code>deleted</code>, <code>deleted_at</code>) và các trường audit cho bảng <code>Blog</code>. Thêm check constraint <code>CK_BLOG_STATUS</code> và các chỉ mục hiệu năng. Sử dụng <code>GO</code> batch separators tương thích hoàn toàn SQL Server.</li>
+            <li><strong>CKEditor 5 Tự đăng cai (Self-hosted):</strong> Tải và tích hợp local assets của CKEditor 5 dưới <code>static/vendor/ckeditor/ckeditor.js</code> để loại bỏ CDN ngoài, hoạt động tốt offline và môi trường staging/production độc lập.</li>
+            <li><strong>Lọc XSS và Bảo toàn relative link bằng Jsoup:</strong> Xây dựng bộ lọc custom <code>BLOG_SAFE_LIST</code> trên nền <code>Safelist.relaxed()</code> cho phép các thẻ cấu trúc bảng, block code, media (<code>table</code>, <code>thead</code>, <code>tbody</code>, <code>tr</code>, <code>td</code>, <code>th</code>, <code>pre</code>, <code>code</code>, <code>figure</code>) kết hợp cấu hình <code>preserveRelativeLinks(true)</code> để lưu giữ link ảnh nội bộ dạng relative path (<code>/uploads/blog/**</code>).</li>
+            <li><strong>Sinh Slug SEO Độc Bản:</strong> Thuật toán chuyển đổi ký tự tiếng Việt có dấu sang ASCII, loại bỏ ký tự đặc biệt, tự động kiểm tra CSDL và thêm hậu tố số tăng dần (ví dụ: <code>-2</code>, <code>-3</code>) nếu bị trùng tiêu đề bài viết.</li>
+            <li><strong>Phân quyền tác vụ (RBAC):</strong> Nhân viên (<code>NV</code>) chỉ được phép lưu bản nháp (<code>DRAFT</code>) hoặc chỉnh sửa bài viết của mình, trong khi quản lý (<code>QL</code>) mới có quyền duyệt xuất bản (<code>PUBLISHED</code>) và thực hiện xóa mềm (<code>deleted = true</code>).</li>
+            <li><strong>Lập lịch dọn dẹp (Scheduled Daily Purge):</strong> Sử dụng <code>@Scheduled(cron = "0 0 3 * * *")</code> dọn dẹp định kỳ vào lúc 3:00 AM hàng ngày để tìm bài viết bị xóa mềm quá 90 ngày, xóa vĩnh viễn trong CSDL và xóa tệp ảnh cover vật lý trên máy chủ.</li>
+            <li><strong>Khắc phục lỗi Cập nhật Khuyến mãi &amp; Đồng bộ Hibernate:</strong> Sửa lỗi lưu Đợt giảm giá/Voucher không cập nhật lại trạng thái bằng cách đặt lại cờ <code>active = true</code> để re-evaluate trạng thái theo thời gian thực. Đồng thời cập nhật đồng bộ hai chiều collection <code>cacDotGiamGia</code> trên thực thể <code>SanPham</code> để tránh cache Hibernate bị cũ (stale cache).</li>
+            <li><strong>Bộ kiểm thử toàn diện:</strong> Xây dựng <code>AdminBlogServiceTest</code> phủ toàn bộ logic CMS, phân quyền, dọn dẹp định kỳ, slug độc bản, lọc XSS; bổ sung kiểm thử cho luồng đồng bộ khuyến mãi mới.</li>
+            <li><strong>Giao diện Tác vụ Inline qua Cửa Sổ Nhỏ (Iframe Modals):</strong> Tối ưu hóa trải nghiệm quản trị bằng cách tích hợp Bootstrap Iframe Modals cho các hành động Tạo bài viết mới, Chỉnh sửa, và Xem trước (Preview). Thay vì mở tab mới hay chuyển hướng toàn trang, giao diện hiển thị inline trong một modal chuyên nghiệp. Cấu hình bảo mật trong <code>SecurityConfig.java</code> được chuyển đổi từ <code>frameOptions(frame -> frame.deny())</code> sang <code>sameOrigin()</code> để cho phép hiển thị các trang nội bộ của cùng tên miền trong iframe. Khi lưu thành công, iframe tự động thông báo và tải lại trang danh sách cha đồng thời hiển thị thông báo thành công (flash message) bằng cách lưu tạm qua <code>sessionStorage</code>.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[NEW] <code>src/main/resources/db/migration/V1.23__add_blog_cms_and_audit_fields.sql</code></li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/entity/BlogStatus.java</code></li>
+            <li>[NEW] <code>src/main/java/com/smashvn/shop/dto/blog/BlogDTO.java</code></li>
+            <li>[NEW] <code>src/main/resources/static/vendor/ckeditor/ckeditor.js</code></li>
+            <li>[NEW] <code>src/test/java/com/smashvn/shop/service/admin/AdminBlogServiceTest.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/entity/Blog.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/blog/BlogService.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/admin/AdminBlogController.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/config/SecurityConfig.java</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/layout/sidebar.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/blog-list.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/blog-add.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/blog-edit.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/admin/confirm-result.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/blog.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/blog-detail.html</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/admin/AdminKhuyenMaiService.java</code></li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/service/admin/AdminKhuyenMaiServiceTest.java</code></li>
+            <li>[MODIFY] <code>spec.html</code></li>
+            <li>[MODIFY] <code>update.html</code></li>
+        </ul>
+    </div>
+
     <h2>80. Tính năng: Kiểm soát Hợp lệ hóa &amp; Ràng buộc Khuyến mãi (Promotion Validation &amp; Hardening)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

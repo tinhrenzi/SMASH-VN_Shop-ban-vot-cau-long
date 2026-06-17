@@ -21,7 +21,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat", "/admin/dang-xuat", "/api/payment/zalopay/callback", "/api/payment/sepay/ipn", "/api/ghn/webhook"))
                 // Cấu hình các Header bảo mật nâng cao
                 .headers(headers -> {
-                    headers.frameOptions(frame -> frame.deny());
+                    headers.frameOptions(frame -> frame.sameOrigin());
                     headers.referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN));
                     headers.xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK));
                 })

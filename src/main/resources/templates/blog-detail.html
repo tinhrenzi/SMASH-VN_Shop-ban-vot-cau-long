@@ -64,9 +64,27 @@
       "description": /*[[${blog.summary}]]*/ "Summary"
     }
     </script>
+    <style th:if="${isPreview != null}">
+        body.iframe-mode {
+            background-color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        body.iframe-mode .app-content {
+            padding: 0 !important;
+        }
+        body.iframe-mode .blog-d-t {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 20px !important;
+        }
+        body.iframe-mode .preloader {
+            display: none !important;
+        }
+    </style>
 </head>
-<body class="config">
-    <div class="preloader is-active">
+<body class="config" th:classappend="${isPreview != null} ? 'iframe-mode' : ''">
+    <div class="preloader is-active" th:style="${isPreview != null} ? 'display:none!important;' : ''">
         <div class="preloader__wrap">
             <img class="preloader__img" th:src="@{/images/preloader.png}" alt="Loading...">
         </div>
@@ -75,14 +93,14 @@
     <!--====== Main App ======-->
     <div id="app">
         <!--====== Main Header ======-->
-        <header class="header--style-1">
+        <header class="header--style-1" th:if="${isPreview == null}">
             <div th:replace="~{layout/header :: header}"></div>
         </header>
 
         <!--====== App Content ======-->
         <div class="app-content">
             <!--====== Section 1: Breadcrumb ======-->
-            <div class="u-s-p-y-60">
+            <div class="u-s-p-y-60" th:if="${isPreview == null}">
                 <div class="section__content">
                     <div class="container">
                         <div class="breadcrumb">
@@ -109,7 +127,7 @@
                 <div class="container">
                     <div class="row">
                         <!-- Sidebar widget -->
-                        <div class="col-lg-3 col-md-4 col-sm-12">
+                        <div class="col-lg-3 col-md-4 col-sm-12" th:if="${isPreview == null}">
                             <div class="blog-w-master">
                                 <!-- Search widget -->
                                 <div class="u-s-m-b-60">
@@ -161,7 +179,7 @@
                         </div>
 
                         <!-- Main Content Detail -->
-                        <div class="col-lg-9 col-md-8 col-sm-12">
+                        <div th:class="${isPreview != null} ? 'col-12' : 'col-lg-9 col-md-8 col-sm-12'">
                             <div class="blog-d-t" style="background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f0f0f0;">
                                 <!-- Header Article -->
                                 <div class="blog-d-t__info-wrap">
@@ -223,10 +241,10 @@
         <!--====== End - App Content ======-->
 
         <!--====== Main Footer ======-->
-        <footer th:replace="~{layout/footer :: footer}"></footer>
+        <footer th:replace="~{layout/footer :: footer}" th:if="${isPreview == null}"></footer>
 
         <!--====== Modal Section ======-->
-        <div th:replace="~{layout/modals :: all-modals}"></div>
+        <div th:replace="~{layout/modals :: all-modals}" th:if="${isPreview == null}"></div>
     </div>
 
     <!--====== Vendor Js ======-->

@@ -72,6 +72,7 @@ public class AdminBlogController {
     public String processAdd(
             @ModelAttribute("blog") BlogDTO blogDTO,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "iframe", required = false, defaultValue = "false") boolean isIframe,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -86,12 +87,20 @@ public class AdminBlogController {
             }
             
             blogService.createBlog(blogDTO, imageFile, username);
+            if (isIframe) {
+                model.addAttribute("success", true);
+                model.addAttribute("title", "Thao Tác Thành Công");
+                model.addAttribute("message", "Thêm bài viết mới thành công (trạng thái Nháp)!");
+                model.addAttribute("isIframe", true);
+                return "admin/confirm-result";
+            }
             redirectAttributes.addFlashAttribute("successMsg", "Thêm bài viết mới thành công (trạng thái Nháp)!");
             return "redirect:/admin/blog";
         } catch (Exception e) {
             model.addAttribute("blog", blogDTO);
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("activeTab", "blog");
+            model.addAttribute("isIframe", isIframe);
             return "admin/blog-add";
         }
     }
@@ -113,6 +122,7 @@ public class AdminBlogController {
             @PathVariable("id") Integer id,
             @ModelAttribute("blog") BlogDTO blogDTO,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "iframe", required = false, defaultValue = "false") boolean isIframe,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -128,12 +138,20 @@ public class AdminBlogController {
             }
 
             blogService.updateBlog(id, blogDTO, imageFile, username, isManager);
+            if (isIframe) {
+                model.addAttribute("success", true);
+                model.addAttribute("title", "Cập Nhật Thành Công");
+                model.addAttribute("message", "Cập nhật bài viết thành công!");
+                model.addAttribute("isIframe", true);
+                return "admin/confirm-result";
+            }
             redirectAttributes.addFlashAttribute("successMsg", "Cập nhật bài viết thành công!");
             return "redirect:/admin/blog";
         } catch (Exception e) {
             model.addAttribute("blog", blogDTO);
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("activeTab", "blog");
+            model.addAttribute("isIframe", isIframe);
             return "admin/blog-edit";
         }
     }

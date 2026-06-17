@@ -37,7 +37,7 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="page-title"><i class="fas fa-newspaper text-brand me-2"></i>Quản Lý Bài Viết & Blogs</h2>
-                <a th:href="@{/admin/blog/add}" class="btn btn-brand text-white shadow-sm px-4">
+                <a th:href="@{/admin/blog/add}" class="btn btn-brand text-white shadow-sm px-4 btn-add-blog">
                     <i class="fas fa-plus-circle me-2"></i>Tạo Bài Viết Mới
                 </a>
             </div>
@@ -139,11 +139,11 @@
                                     </td>
                                     <td class="text-center">
                                         <!-- Preview -->
-                                        <a th:href="@{/admin/blog/preview/{id}(id=${blog.id})}" target="_blank" class="btn btn-sm btn-outline-info px-2" title="Xem trước">
+                                        <a th:href="@{/admin/blog/preview/{id}(id=${blog.id})}" target="_blank" class="btn btn-sm btn-outline-info px-2 btn-preview-blog" title="Xem trước">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <!-- Edit -->
-                                        <a th:href="@{/admin/blog/edit/{id}(id=${blog.id})}" class="btn btn-sm btn-outline-primary px-2 ms-1" title="Chỉnh sửa">
+                                        <a th:href="@{/admin/blog/edit/{id}(id=${blog.id})}" class="btn btn-sm btn-outline-primary px-2 ms-1 btn-edit-blog" title="Chỉnh sửa">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <!-- Publish/Unpublish Toggle (QL only) -->
@@ -192,6 +192,122 @@
     </div>
 </div>
 
+<!-- Modal Blog Form (Add/Edit) -->
+<div class="modal fade" id="blogFormModal" tabindex="-1" aria-labelledby="blogFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold" id="blogFormModalLabel">
+                    <i class="fas fa-edit text-brand me-2"></i>Tạo Bài Viết Mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh;">
+                <iframe id="blogFormIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Blog Preview -->
+<div class="modal fade" id="blogPreviewModal" tabindex="-1" aria-labelledby="blogPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold" id="blogPreviewModalLabel">
+                    <i class="fas fa-eye text-brand me-2"></i>Xem Trước Bài Viết
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh; background-color: #ffffff;">
+                <iframe id="blogPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const blogFormModalEl = document.getElementById('blogFormModal');
+        const blogFormModal = new bootstrap.Modal(blogFormModalEl);
+        const blogFormIframe = document.getElementById('blogFormIframe');
+        const blogFormModalLabel = document.getElementById('blogFormModalLabel');
+
+        const blogPreviewModalEl = document.getElementById('blogPreviewModal');
+        const blogPreviewModal = new bootstrap.Modal(blogPreviewModalEl);
+        const blogPreviewIframe = document.getElementById('blogPreviewIframe');
+
+        window.openBlogFormModal = function(url, title) {
+            blogFormModalLabel.innerHTML = `<i class="fas fa-edit text-brand me-2"></i>${title}`;
+            blogFormIframe.src = url;
+            blogFormModal.show();
+        };
+
+        window.closeBlogFormModal = function() {
+            blogFormModal.hide();
+            blogFormIframe.src = '';
+        };
+
+        window.openBlogPreviewModal = function(url) {
+            blogPreviewIframe.src = url;
+            blogPreviewModal.show();
+        };
+
+        window.closeBlogPreviewModal = function() {
+            blogPreviewModal.hide();
+            blogPreviewIframe.src = '';
+        };
+
+        window.handleIframeSuccess = function(msg) {
+            blogFormModal.hide();
+            sessionStorage.setItem('blogSuccessMsg', msg);
+            window.location.reload();
+        };
+
+        // Handle Add link click
+        document.querySelectorAll('.btn-add-blog').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
+                openBlogFormModal(url, 'Tạo Bài Viết Mới');
+            });
+        });
+
+        // Handle Edit link click
+        document.querySelectorAll('.btn-edit-blog').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
+                openBlogFormModal(url, 'Chỉnh Sửa Bài Viết');
+            });
+        });
+
+        // Handle Preview link click
+        document.querySelectorAll('.btn-preview-blog').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+                openBlogPreviewModal(url);
+            });
+        });
+
+        // Show session storage success message if any
+        const msg = sessionStorage.getItem('blogSuccessMsg');
+        if (msg) {
+            sessionStorage.removeItem('blogSuccessMsg');
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i><span>${msg}</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            const pageTitleContainer = document.querySelector('.main-content > .d-flex');
+            if (pageTitleContainer) {
+                pageTitleContainer.insertAdjacentHTML('beforebegin', alertHtml);
+            }
+        }
+    });
+</script>
 </body>
 </html>
