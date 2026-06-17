@@ -50,6 +50,10 @@
                 <i class="fas fa-users"></i> Khách Hàng
             </a>
             
+            <a th:href="@{/admin/blog}" th:class="${activeTab == 'blog' ? 'active' : ''}">
+                <i class="fas fa-newspaper"></i> Bài Viết & Blogs
+            </a>
+            
             <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/khuyen-mai}" th:class="${activeTab == 'khuyenmai' ? 'active' : ''}">
                 <i class="fas fa-percent"></i> Khuyến Mãi
             </a>

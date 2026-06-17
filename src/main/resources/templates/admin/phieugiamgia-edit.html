@@ -200,30 +200,91 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (isNaN(giaTri) || giaTri <= 0) {
+        const giaTriRaw = document.getElementById('giaTri').value.trim();
+        if (giaTriRaw.includes('.') || giaTriRaw.includes(',')) {
+            e.preventDefault();
+            if (donVi === '%') {
+                alert('Giá trị giảm % phải là số nguyên, không được là số thập phân!');
+            } else {
+                alert('Giá trị giảm tiền (VND) phải là số nguyên, không được là số thập phân!');
+            }
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        const giaTri = parseFloat(giaTriRaw);
+        if (isNaN(giaTri)) {
+            e.preventDefault();
+            alert('Vui lòng nhập giá trị giảm!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (giaTri < 0) {
+            e.preventDefault();
+            if (donVi === '%') {
+                alert('Giá trị giảm % không được là số âm!');
+            } else {
+                alert('Giá trị giảm tiền (VND) không được là số âm!');
+            }
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (giaTri === 0) {
             e.preventDefault();
             alert('Giá trị giảm phải lớn hơn 0!');
             document.getElementById('giaTri').focus();
             return;
         }
-
         if (donVi === '%' && giaTri > 100) {
             e.preventDefault();
-            alert('Nếu áp dụng đơn vị giảm %, giá trị không được lớn hơn 100%!');
+            alert('Giá trị giảm % không được vượt quá 100%!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (donVi === 'VND' && giaTri > 100000000) {
+            e.preventDefault();
+            alert('Giá trị giảm tiền không được vượt quá 100,000,000 VNĐ!');
             document.getElementById('giaTri').focus();
             return;
         }
 
+        const soLuongConLaiRaw = document.getElementById('soLuongConLai').value.trim();
+        if (soLuongConLaiRaw.includes('.') || soLuongConLaiRaw.includes(',')) {
+            e.preventDefault();
+            alert('Số lượng voucher phải là số nguyên, không được là số thập phân!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
+        const soLuongConLai = parseFloat(soLuongConLaiRaw);
         if (isNaN(soLuongConLai) || soLuongConLai < 0) {
             e.preventDefault();
             alert('Số lượng không được âm!');
             document.getElementById('soLuongConLai').focus();
             return;
         }
+        if (soLuongConLai > 1000000) {
+            e.preventDefault();
+            alert('Số lượng voucher không được vượt quá 1,000,000!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
 
+        const giaTriDonHangToiThieuRaw = document.getElementById('giaTriDonHangToiThieu').value.trim();
+        if (giaTriDonHangToiThieuRaw.includes('.') || giaTriDonHangToiThieuRaw.includes(',')) {
+            e.preventDefault();
+            alert('Giá trị đơn hàng tối thiểu phải là số nguyên, không được là số thập phân!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+        const giaTriDonHangToiThieu = parseFloat(giaTriDonHangToiThieuRaw);
         if (isNaN(giaTriDonHangToiThieu) || giaTriDonHangToiThieu < 0) {
             e.preventDefault();
-            alert('Hạn mức áp dụng (giá trị đơn hàng tối thiểu) không được âm!');
+            alert('Giá trị đơn hàng tối thiểu không được là số âm!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+        if (giaTriDonHangToiThieu > 100000000) {
+            e.preventDefault();
+            alert('Giá trị đơn hàng tối thiểu không được vượt quá 100,000,000 VNĐ!');
             document.getElementById('giaTriDonHangToiThieu').focus();
             return;
         }
@@ -231,20 +292,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cap validation (only for percentage vouchers)
         if (donVi === '%') {
             const capVal = capInput.value.trim();
+            if (capVal === '') {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa là bắt buộc đối với voucher giảm theo phần trăm!');
+                capInput.focus();
+                return;
+            }
+            if (capVal.includes('.') || capVal.includes(',')) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa phải là số nguyên, không được là số thập phân!');
+                capInput.focus();
+                return;
+            }
+            const cap = parseFloat(capVal);
+            if (isNaN(cap) || cap <= 0) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa phải lớn hơn 0!');
+                capInput.focus();
+                return;
+            }
+            if (cap > 100000000) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!');
+                capInput.focus();
+                return;
+            }
+        } else {
+            const capVal = capInput.value.trim();
             if (capVal !== '') {
-                const cap = parseFloat(capVal);
-                if (isNaN(cap) || cap <= 0) {
-                    e.preventDefault();
-                    alert('Giá trị giảm tối đa phải lớn hơn 0!');
-                    capInput.focus();
-                    return;
-                }
-                if (cap > 100000000) {
-                    e.preventDefault();
-                    alert('Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!');
-                    capInput.focus();
-                    return;
-                }
+                e.preventDefault();
+                alert('Voucher giảm trực tiếp (VND) không được có giá trị giảm tối đa!');
+                capInput.focus();
+                return;
             }
         }
 

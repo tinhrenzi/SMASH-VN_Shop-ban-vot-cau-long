@@ -1,33 +1,51 @@
 package com.smashvn.shop.service.blog;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.dto.blog.BlogDTO;
 import com.smashvn.shop.entity.Blog;
+import com.smashvn.shop.entity.BlogStatus;
 import com.smashvn.shop.repository.BlogRepository;
+import com.smashvn.shop.service.common.FileStorageService;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BlogService {
 
     private final BlogRepository blogRepository;
+    private final FileStorageService fileStorageService;
+
+    private static final Safelist BLOG_SAFE_LIST =
+        Safelist.relaxed()
+            .addTags("table", "thead", "tbody", "tfoot", "tr", "td", "th", "pre", "code", "figure")
+            .preserveRelativeLinks(true);
 
     @PostConstruct
     public void initData() {
         if (blogRepository.count() == 0) {
             // Khởi tạo 5 bài viết chuyên sâu về cầu lông
-
             Blog post1 = Blog.builder()
                     .title("Hướng dẫn chọn vợt cầu lông phù hợp cho người mới bắt đầu")
                     .slug("huong-dan-chon-vot-cau-long-cho-nguoi-moi-bat-dau")
@@ -55,6 +73,9 @@ public class BlogService {
                     .category("Hướng Dẫn")
                     .tags("Chọn Vợt,Người Mới,Kỹ Thuật Cầu Lông")
                     .commentsCount(12)
+                    .status(BlogStatus.PUBLISHED)
+                    .deleted(false)
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             Blog post2 = Blog.builder()
@@ -78,6 +99,9 @@ public class BlogService {
                     .category("Review")
                     .tags("Yonex,Astrox,Nanoflare,Arcsaber")
                     .commentsCount(8)
+                    .status(BlogStatus.PUBLISHED)
+                    .deleted(false)
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             Blog post3 = Blog.builder()
@@ -108,6 +132,9 @@ public class BlogService {
                     .category("Kỹ Thuật")
                     .tags("Giao Cầu,Kỹ Thuật Đơn,Kỹ Thuật Đôi")
                     .commentsCount(15)
+                    .status(BlogStatus.PUBLISHED)
+                    .deleted(false)
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             Blog post4 = Blog.builder()
@@ -120,7 +147,6 @@ public class BlogService {
                             + "<ul>"
                             + "<li><strong>Căng thấp (18 - 21 lbs / 8kg - 9.5kg):</strong> Dây chùng, độ đàn hồi cao giúp trợ lực cực tốt, quả cầu đi xa mà không cần tốn nhiều sức. Tuy nhiên, khả năng kiểm soát hướng đi của cầu kém.</li>"
                             + "<li><strong>Căng trung bình (22 - 24 lbs / 10kg - 11kg):</strong> Mức cân hoàn hảo nhất cho người chơi phong trào có trình độ trung bình. Cân bằng tốt giữa trợ lực và kiểm soát.</li>"
-                            + "<li><strong>Căng cao (25 - 28+ lbs / 11.5kg - 13kg):</strong> Dây rất căng, mặt vợt cứng. Hỗ trợ cảm giác cầu chân thật, kiểm soát đường bóng cực tốt và những cú đập cầu đi nhanh, cắm hơn. Nhưng hầu như không trợ lực, đòi hỏi người chơi có lực cổ tay cực khỏe.</li>"
                             + "</ul>"
                             + "<h3>2. Lựa chọn mức căng phù hợp theo trình độ</h3>"
                             + "<ul>"
@@ -136,6 +162,9 @@ public class BlogService {
                     .category("Kỹ Thuật")
                     .tags("Căng Vợt,Lbs,Dây Cầu Lông")
                     .commentsCount(19)
+                    .status(BlogStatus.PUBLISHED)
+                    .deleted(false)
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             Blog post5 = Blog.builder()
@@ -151,7 +180,6 @@ public class BlogService {
                             + "</ul>"
                             + "<h3>2. Trải nghiệm thực tế khi thi đấu</h3>"
                             + "<p><strong>Khả năng tấn công:</strong> Tectonic 7 mang đến những cú smash vô cùng uy lực. Đầu vợt hơi đầm giúp giữ nhịp đập liên tục mà không gây mỏi tay nhờ khung phục hồi trạng thái cực nhanh.</p>"
-                            + "<p><strong>Khả năng phòng thủ phản tạt:</strong> Nhờ thiết kế khí động học cải tiến, mặc dù là vợt tấn công nhưng Tectonic 7 vẫn mang lại tốc độ xoay trở trên lưới tương đối linh hoạt, không bị chậm nhịp trong các pha thủ cầu sâu.</p>"
                             + "<h3>3. Đối tượng phù hợp</h3>"
                             + "<p>Tectonic 7 bản 4U phù hợp cho người chơi phong trào trình độ trung bình - khá trở lên, ưa thích lối đánh tấn công uy lực từ cuối sân. Phiên bản 3U sẽ đòi hỏi người chơi có thể lực dồi dào và cổ tay tốt để làm chủ hoàn toàn.</p>")
                     .image("post-5.jpg")
@@ -160,32 +188,252 @@ public class BlogService {
                     .category("Review")
                     .tags("Lining,Tectonic 7,Review Vợt")
                     .commentsCount(6)
+                    .status(BlogStatus.PUBLISHED)
+                    .deleted(false)
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             blogRepository.saveAll(Arrays.asList(post1, post2, post3, post4, post5));
         }
     }
 
+    // Customer public list query (filtered by non-deleted and published)
     public Page<BlogDTO> getBlogs(String query, Pageable pageable) {
         Page<Blog> blogs;
         if (query != null && !query.trim().isEmpty()) {
-            blogs = blogRepository.findByTitleContainingIgnoreCaseOrSummaryContainingIgnoreCaseOrContentContainingIgnoreCase(
-                    query, query, query, pageable);
+            blogs = blogRepository.searchPublicBlogs(BlogStatus.PUBLISHED, query.trim(), pageable);
         } else {
-            blogs = blogRepository.findAll(pageable);
+            blogs = blogRepository.findByDeletedFalseAndStatus(BlogStatus.PUBLISHED, pageable);
         }
         return blogs.map(this::convertToDTO);
     }
 
+    // Customer public detail query
     public BlogDTO getBlogBySlug(String slug) {
-        Blog blog = blogRepository.findBySlug(slug)
+        Blog blog = blogRepository.findBySlugAndDeletedFalseAndStatus(slug, BlogStatus.PUBLISHED)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết nào với đường dẫn: " + slug));
         return convertToDTO(blog);
     }
 
-    public java.util.List<BlogDTO> getRecentBlogs(int limit) {
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "publishDate"));
-        return blogRepository.findAll(pageable).stream().map(this::convertToDTO).collect(Collectors.toList());
+    // Customer recent blogs
+    public List<BlogDTO> getRecentBlogs(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishDate"));
+        return blogRepository.findByDeletedFalseAndStatus(BlogStatus.PUBLISHED, pageable).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Admin specification search, filter & pagination
+    public Page<BlogDTO> getAdminBlogs(boolean showDeleted, String statusStr, String category, String author, String query, Pageable pageable) {
+        BlogStatus status = null;
+        if (statusStr != null && !statusStr.trim().isEmpty()) {
+            try {
+                status = BlogStatus.valueOf(statusStr.toUpperCase());
+            } catch (Exception e) {
+                // Ignore invalid status
+            }
+        }
+        Page<Blog> blogs = blogRepository.searchAdminBlogs(
+                showDeleted,
+                status,
+                (category != null ? category.trim() : null),
+                (author != null ? author.trim() : null),
+                (query != null ? query.trim() : null),
+                pageable
+        );
+        return blogs.map(this::convertToDTO);
+    }
+
+    public BlogDTO getAdminBlogById(Integer id) {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết ID: " + id));
+        return convertToDTO(blog);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void createBlog(BlogDTO blogDTO, MultipartFile imageFile, String actingUser) throws Exception {
+        BlogDTO cleaned = sanitizeFields(blogDTO);
+        
+        String savedFileName = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            List<String> uploaded = fileStorageService.saveReviewImages(Collections.singletonList(imageFile));
+            if (!uploaded.isEmpty()) {
+                savedFileName = "/uploads/blog/" + uploaded.get(0);
+            }
+        }
+
+        String slug = generateUniqueSlug(cleaned.getTitle(), null);
+
+        Blog blog = Blog.builder()
+                .title(cleaned.getTitle())
+                .slug(slug)
+                .summary(cleaned.getSummary())
+                .content(cleaned.getContent())
+                .image(savedFileName)
+                .publishDate(LocalDate.now())
+                .author(cleaned.getAuthor())
+                .category(cleaned.getCategory())
+                .tags(cleaned.getTags() != null ? String.join(",", cleaned.getTags()) : "")
+                .commentsCount(0)
+                .status(BlogStatus.DRAFT) // Default to DRAFT
+                .deleted(false)
+                .createdBy(actingUser)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        blogRepository.save(blog);
+        log.info("[BLOG_CMS] Created new blog post: {} (ID: {}) by {}", blog.getTitle(), blog.getId(), actingUser);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateBlog(Integer id, BlogDTO blogDTO, MultipartFile imageFile, String actingUser, boolean isManager) throws Exception {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết ID: " + id));
+
+        BlogDTO cleaned = sanitizeFields(blogDTO);
+
+        // RBAC: Staff (non-manager) cannot change status to PUBLISHED from DRAFT
+        if (!isManager && blogDTO.getStatus() != null) {
+            BlogStatus newStatus = BlogStatus.valueOf(blogDTO.getStatus().toUpperCase());
+            if (newStatus == BlogStatus.PUBLISHED && blog.getStatus() == BlogStatus.DRAFT) {
+                throw new org.springframework.security.access.AccessDeniedException("Nhân viên không có quyền xuất bản bài viết!");
+            }
+        }
+
+        String savedFileName = blog.getImage();
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // Delete old physical file if it was custom uploaded
+            if (savedFileName != null && savedFileName.startsWith("/uploads/blog/")) {
+                String oldFile = savedFileName.substring("/uploads/blog/".length());
+                fileStorageService.deleteImage(oldFile, "blog");
+            }
+            List<String> uploaded = fileStorageService.saveReviewImages(Collections.singletonList(imageFile));
+            if (!uploaded.isEmpty()) {
+                savedFileName = "/uploads/blog/" + uploaded.get(0);
+            }
+        }
+
+        String slug = blog.getSlug();
+        if (!blog.getTitle().equals(cleaned.getTitle())) {
+            slug = generateUniqueSlug(cleaned.getTitle(), id);
+        }
+
+        blog.setTitle(cleaned.getTitle());
+        blog.setSlug(slug);
+        blog.setSummary(cleaned.getSummary());
+        blog.setContent(cleaned.getContent());
+        blog.setImage(savedFileName);
+        blog.setAuthor(cleaned.getAuthor());
+        blog.setCategory(cleaned.getCategory());
+        blog.setTags(cleaned.getTags() != null ? String.join(",", cleaned.getTags()) : "");
+        
+        if (blogDTO.getStatus() != null) {
+            blog.setStatus(BlogStatus.valueOf(blogDTO.getStatus().toUpperCase()));
+        }
+        
+        blog.setUpdatedBy(actingUser);
+        blog.setUpdatedAt(LocalDateTime.now());
+
+        blogRepository.save(blog);
+        log.info("[BLOG_CMS] Updated blog post ID: {} by {}", id, actingUser);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBlog(Integer id, String actingUser) {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết ID: " + id));
+
+        blog.setDeleted(true);
+        blog.setDeletedAt(LocalDateTime.now());
+        blog.setUpdatedBy(actingUser);
+        blog.setUpdatedAt(LocalDateTime.now());
+
+        blogRepository.save(blog);
+        log.info("[BLOG_CMS] Soft-deleted blog post ID: {} by QL {}", id, actingUser);
+    }
+
+    // Daily purge of soft deleted blogs older than 90 days
+    @Scheduled(cron = "0 0 3 * * *")
+    @Transactional(rollbackFor = Exception.class)
+    public void purgeDeletedBlogs() {
+        LocalDateTime limitDate = LocalDateTime.now().minusDays(90);
+        List<Blog> blogsToPurge = blogRepository.findByDeletedTrueAndDeletedAtBefore(limitDate);
+        
+        for (Blog blog : blogsToPurge) {
+            try {
+                if (blog.getImage() != null && blog.getImage().startsWith("/uploads/blog/")) {
+                    String imgFile = blog.getImage().substring("/uploads/blog/".length());
+                    fileStorageService.deleteImage(imgFile, "blog");
+                }
+                blogRepository.delete(blog);
+                log.info("[BLOG_PURGE] Permanently deleted blog: {} (ID: {})", blog.getTitle(), blog.getId());
+            } catch (Exception e) {
+                log.error("[BLOG_PURGE_ERROR] Failed to delete blog ID {}: {}", blog.getId(), e.getMessage());
+            }
+        }
+    }
+
+    // Slug generation
+    public String generateUniqueSlug(String title, Integer currentBlogId) {
+        if (title == null || title.trim().isEmpty()) {
+            title = "bai-viet";
+        }
+        String baseSlug = toSlug(title);
+        String slug = baseSlug;
+        int counter = 2;
+        while (true) {
+            boolean exists;
+            if (currentBlogId == null) {
+                exists = blogRepository.existsBySlug(slug);
+            } else {
+                exists = blogRepository.existsBySlugAndIdNot(slug, currentBlogId);
+            }
+            if (!exists) {
+                return slug;
+            }
+            slug = baseSlug + "-" + counter;
+            counter++;
+        }
+    }
+
+    private String toSlug(String input) {
+        if (input == null) return "";
+        String temp = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD);
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        String out = pattern.matcher(temp).replaceAll("");
+        out = out.replace("đ", "d").replace("Đ", "D");
+        out = out.toLowerCase()
+                 .replaceAll("[^a-z0-9\\s-]", "")
+                 .replaceAll("\\s+", "-")
+                 .replaceAll("-+", "-")
+                 .replaceAll("^-|-$", "");
+        if (out.isEmpty()) {
+            out = "post";
+        }
+        return out;
+    }
+
+    // HTML sanitization using Jsoup
+    public BlogDTO sanitizeFields(BlogDTO dto) {
+        if (dto == null) return null;
+        dto.setTitle(Jsoup.clean(dto.getTitle() != null ? dto.getTitle() : "", Safelist.none()));
+        dto.setSummary(Jsoup.clean(dto.getSummary() != null ? dto.getSummary() : "", Safelist.none()));
+        dto.setAuthor(Jsoup.clean(dto.getAuthor() != null ? dto.getAuthor() : "", Safelist.none()));
+        
+        List<String> cleanedTags = new ArrayList<>();
+        if (dto.getTags() != null) {
+            for (String tag : dto.getTags()) {
+                if (tag != null) {
+                    cleanedTags.add(Jsoup.clean(tag, Safelist.none()));
+                }
+            }
+        }
+        dto.setTags(cleanedTags);
+        
+        if (dto.getContent() != null) {
+            dto.setContent(Jsoup.clean(dto.getContent(), "http://localhost", BLOG_SAFE_LIST));
+        }
+        return dto;
     }
 
     private BlogDTO convertToDTO(Blog blog) {
@@ -208,6 +456,12 @@ public class BlogService {
                 .category(blog.getCategory())
                 .tags(tagList)
                 .commentsCount(blog.getCommentsCount())
+                .status(blog.getStatus() != null ? blog.getStatus().name() : "DRAFT")
+                .deleted(blog.getDeleted())
+                .createdBy(blog.getCreatedBy())
+                .createdAt(blog.getCreatedAt() != null ? blog.getCreatedAt().toString() : "")
+                .updatedBy(blog.getUpdatedBy())
+                .updatedAt(blog.getUpdatedAt() != null ? blog.getUpdatedAt().toString() : "")
                 .build();
     }
 }

@@ -551,19 +551,9 @@
                                       "path": "src/main/java/com/smashvn/shop/controller/admin/AdminDangNhapController.java"
                                     },
                                     {
-                                      "name": "AdminDanhMucController.java",
+                                      "name": "AdminDanhGiaController.java",
                                       "type": "file",
-                                      "path": "src/main/java/com/smashvn/shop/controller/admin/AdminDanhMucController.java"
-                                    },
-                                    {
-                                      "name": "AdminKhuyenMaiController.java",
-                                      "type": "file",
-                                      "path": "src/main/java/com/smashvn/shop/controller/admin/AdminKhuyenMaiController.java"
-                                    },
-                                    {
-                                      "name": "AdminNhanVienController.java",
-                                      "type": "file",
-                                      "path": "src/main/java/com/smashvn/shop/controller/admin/AdminNhanVienController.java"
+                                      "path": "src/main/java/com/smashvn/shop/controller/admin/AdminDanhGiaController.java"
                                     },
                                     {
                                       "name": "AdminPaymentTransactionController.java",
@@ -3377,8 +3367,8 @@
   "src/main/java/com/smashvn/shop/service": "Business Logic Layer orchestrating core workflows, computations, external API communications, and transactional boundaries.",
   "src/main/java/com/smashvn/shop/service/admin": "Services managing inventory operations, sales statistics, voucher distributions, and POS logic.",
   "src/main/java/com/smashvn/shop/service/user": "Services handling user registrations, login audits, dashboard retrieval, and profile changes.",
-  "src/main/java/com/smashvn/shop/service/product": "Services managing racket parameters, category lookups, and brand specifications.",
-  "src/main/java/com/smashvn/shop/service/order": "Services processing checkout calculations (OrderViewService) and cart changes (GioHangService).",
+  "src/main/java/com/smashvn/shop/service/product": "Services managing racket parameters, category lookups, brand specifications, and the centralized Pricing Engine (PricingService / PricingServiceImpl / PriceSnapshot).",
+  "src/main/java/com/smashvn/shop/service/order": "Services processing checkout calculations (OrderViewService), cart changes (GioHangService), and product review moderation with progressive ban enforcement (DanhGiaService).",
   "src/main/java/com/smashvn/shop/service/payment": "Services managing transaction logs, signature math, and payment verify schedulers.",
   "src/main/java/com/smashvn/shop/service/api": "Services integrating third-party APIs (GHN, map location services) and chatbot interactions.",
   "src/main/java/com/smashvn/shop/service/blog": "Services managing blog articles retrieval.",
@@ -3389,7 +3379,7 @@
   "src/main/java/com/smashvn/shop/security": "Rate Limiter classes safeguarding authentication endpoints against dictionary and brute-force attacks.",
   "src/main/java/com/smashvn/shop/migration": "Database migration runners synchronizing legacy schemas or external profiles.",
   "src/main/java/com/smashvn/shop/dao": "JPA Data Access Objects (Legacy interfaces).",
-  "src/main/java/com/smashvn/shop/util": "Helper utilities including validation helpers and the voucher/discount calculator.",
+  "src/main/java/com/smashvn/shop/util": "Helper utilities: validation helpers, voucher/discount calculator, profanity filter (ProfanityFilter) and severity level enum (SeverityLevel) for comment moderation.",
   "src/main/resources/templates": "Thymeleaf HTML layouts. Renders admin panels and public client-side flows.",
   "src/main/resources/templates/admin": "Admin dashboard, sales registers, statistics grids, and CRUD listings.",
   "src/main/resources/templates/layout": "Shared header, footer, and modal fragment layouts for the public site.",

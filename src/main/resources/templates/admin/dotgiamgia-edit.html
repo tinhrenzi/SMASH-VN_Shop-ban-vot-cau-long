@@ -74,7 +74,7 @@
                                     <!-- Phần trăm giảm -->
                                     <div class="col-md-3">
                                         <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
-                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${campaign.phanTramGiam}" class="form-control" min="1" max="100" required>
+                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${campaign.phanTramGiam}" class="form-control" min="1" max="40" step="1" required>
                                     </div>
 
                                     <!-- Loại giảm giá -->
@@ -240,9 +240,35 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (isNaN(phanTramGiam) || phanTramGiam < 1 || phanTramGiam > 100) {
+        const phanTramGiamRaw = document.getElementById('phanTramGiam').value.trim();
+        if (phanTramGiamRaw.includes('.') || phanTramGiamRaw.includes(',')) {
             e.preventDefault();
-            alert('Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!');
+            alert('Phần trăm giảm giá phải là số nguyên, không được là số thập phân!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        const phanTramGiamVal = parseFloat(phanTramGiamRaw);
+        if (isNaN(phanTramGiamVal)) {
+            e.preventDefault();
+            alert('Vui lòng nhập phần trăm giảm giá!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal < 0) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá không được là số âm!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal === 0) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá phải lớn hơn 0!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal > 40) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá tối đa cho đợt giảm giá là 40%!');
             document.getElementById('phanTramGiam').focus();
             return;
         }

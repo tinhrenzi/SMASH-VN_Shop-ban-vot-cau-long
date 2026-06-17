@@ -18,7 +18,7 @@
     <meta property="og:type" content="article">
     <meta property="og:title" th:content="${blog.title + ' - Smash VN'}">
     <meta property="og:description" th:content="${blog.summary}">
-    <meta property="og:image" th:content="@{'/images/blog/' + ${blog.image}}">
+    <meta property="og:image" th:content="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}">
     <meta property="og:url" th:content="'https://smashvn.com/blog/' + ${blog.slug}">
     <meta property="og:site_name" content="Smash VN">
     <meta property="article:published_time" th:content="${blog.publishDate}">
@@ -44,7 +44,7 @@
       "@context": "https://schema.org",
       "@type": "BlogPosting",
       "headline": /*[[${blog.title}]]*/ "Tiêu đề bài viết",
-      "image": /*[['https://smashvn.com/images/blog/' + ${blog.image}]]*/ "",
+      "image": /*[[${#strings.startsWith(blog.image, '/uploads/') ? 'https://smashvn.com' + blog.image : 'https://smashvn.com/images/blog/' + blog.image}]]*/ "",
       "genre": /*[[${blog.category}]]*/ "Category",
       "keywords": /*[[${#strings.listJoin(blog.tags, ',')}]]*/ "Tags",
       "publisher": {
@@ -187,7 +187,9 @@
 
                                 <!-- Thumbnail Image -->
                                 <div class="blog-d-t__thumbnail u-s-m-b-30">
-                                    <img class="u-img-fluid" th:src="@{'/images/blog/' + ${blog.image}}" th:alt="${blog.title}" style="border-radius: 6px; width: 100%;">
+                                     <img class="u-img-fluid" 
+                                          th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" 
+                                          th:alt="${blog.title}" style="border-radius: 6px; width: 100%;">
                                 </div>
 
                                 <!-- Body Text -->

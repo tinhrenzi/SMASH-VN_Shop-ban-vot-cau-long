@@ -33,6 +33,8 @@ public class SecurityConfig {
                 // Phân quyền chi tiết cho Admin/Staff theo Backend Enforcement (cả endpoint gốc và sub-paths)
                 .requestMatchers("/admin/nguoi-dung", "/admin/nguoi-dung/**").hasRole("QL")
                 .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")
+                .requestMatchers("/admin/blog/publish/**", "/admin/blog/delete/**").hasRole("QL")
+                .requestMatchers("/admin/blog", "/admin/blog/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/thong-ke", "/admin/thong-ke/**").hasRole("QL")
                 .requestMatchers("/admin/shipping-config", "/admin/shipping-config/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/don-hang", "/admin/don-hang/**").hasAnyRole("QL", "NV")

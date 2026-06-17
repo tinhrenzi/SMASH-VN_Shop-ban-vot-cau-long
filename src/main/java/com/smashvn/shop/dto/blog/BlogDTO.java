@@ -22,4 +22,10 @@ public class BlogDTO {
     private String category;
     private List<String> tags;
     private Integer commentsCount;
+    private String status;
+    private Boolean deleted;
+    private String createdBy;
+    private String createdAt;
+    private String updatedBy;
+    private String updatedAt;
 }

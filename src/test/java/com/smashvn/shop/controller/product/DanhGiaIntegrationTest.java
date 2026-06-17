@@ -568,7 +568,7 @@ public class DanhGiaIntegrationTest {
             final int index = i;
             futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    danhGiaService.themHoacCapNhatDanhGia(testUser.getId(), activeProduct.getId(), 5, "vcl " + index, null);
+                    danhGiaService.themHoacCapNhatDanhGia(testUser.getId(), activeProduct.getId(), 5.0, "vcl " + index, null);
                 } catch (Exception e) {
                     // Lock protection works, concurrent execution is serialized
                 }

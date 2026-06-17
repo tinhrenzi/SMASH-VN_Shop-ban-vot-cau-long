@@ -172,7 +172,9 @@
                                 <div class="bp__wrap">
                                     <div class="bp__thumbnail">
                                         <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog/{slug}(slug=${blog.slug})}">
-                                            <img class="aspect__img" th:src="@{'/images/blog/' + ${blog.image}}" th:alt="${blog.title}">
+                                            <img class="aspect__img" 
+                                                 th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" 
+                                                 th:alt="${blog.title}">
                                         </a>
                                     </div>
                                     <div class="bp__info-wrap" style="padding: 25px;">

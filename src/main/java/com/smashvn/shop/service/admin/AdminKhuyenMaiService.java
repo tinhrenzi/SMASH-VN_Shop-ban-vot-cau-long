@@ -1,5 +1,7 @@
 package com.smashvn.shop.service.admin;
 import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.exception.PromotionValidationException;
+import com.smashvn.shop.util.PromotionValidationConstants;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -59,24 +61,24 @@ public class AdminKhuyenMaiService {
             Integer actingTaiKhoanId, String ipAddress) {
         // 1. Validation
         if (tenChienDich == null || tenChienDich.trim().isEmpty()) {
-            throw new RuntimeException("Tên chiến dịch không được để trống!");
+            throw new PromotionValidationException("Tên chiến dịch không được để trống!");
         }
         String cleanTen = tenChienDich.trim();
         String sanitizedTen = org.jsoup.Jsoup.clean(cleanTen, org.jsoup.safety.Safelist.none());
         if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
-            throw new RuntimeException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
+            throw new PromotionValidationException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
         }
 
         if (!"Theo Phần Trăm".equals(loaiGiamGia) && !"Theo Khoảng".equals(loaiGiamGia)) {
-            throw new RuntimeException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
+            throw new PromotionValidationException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
         }
 
         validateCampaignDates(start, end);
-        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > 100) {
-            throw new RuntimeException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!");
+        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
+            throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
         if (productIds == null || productIds.isEmpty()) {
-            throw new RuntimeException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
+            throw new PromotionValidationException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
         }
 
         // 2. Conflict overlap check
@@ -85,7 +87,7 @@ public class AdminKhuyenMaiService {
         // 3. Resolve acting employee
         NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
         if (nv == null) {
-            throw new RuntimeException("Tài khoản đang thực hiện không có thông tin nhân viên!");
+            throw new PromotionValidationException("Tài khoản đang thực hiện không có thông tin nhân viên!");
         }
 
         // 4. Save campaign entity first
@@ -119,24 +121,24 @@ public class AdminKhuyenMaiService {
 
         // 1. Validation
         if (tenChienDich == null || tenChienDich.trim().isEmpty()) {
-            throw new RuntimeException("Tên chiến dịch không được để trống!");
+            throw new PromotionValidationException("Tên chiến dịch không được để trống!");
         }
         String cleanTen = tenChienDich.trim();
         String sanitizedTen = org.jsoup.Jsoup.clean(cleanTen, org.jsoup.safety.Safelist.none());
         if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
-            throw new RuntimeException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
+            throw new PromotionValidationException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
         }
 
         if (!"Theo Phần Trăm".equals(loaiGiamGia) && !"Theo Khoảng".equals(loaiGiamGia)) {
-            throw new RuntimeException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
+            throw new PromotionValidationException("Loại giảm giá không hợp lệ! Chỉ cho phép 'Theo Phần Trăm' hoặc 'Theo Khoảng'.");
         }
 
         validateCampaignDates(start, end);
-        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > 100) {
-            throw new RuntimeException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến 100%!");
+        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
+            throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
         if (productIds == null || productIds.isEmpty()) {
-            throw new RuntimeException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
+            throw new PromotionValidationException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
         }
 
         // 2. Conflict overlap check
@@ -144,15 +146,36 @@ public class AdminKhuyenMaiService {
 
         String oldState = formatCampaignState(dgg);
 
+        // Sync both sides of the ManyToMany relationship
+        Set<SanPham> selectedProducts = new HashSet<>(sanPhamRepository.findAllById(productIds));
+        
+        // Remove this campaign from products that are no longer selected
+        for (SanPham sp : dgg.getSanPhams()) {
+            if (!selectedProducts.contains(sp)) {
+                if (sp.getCacDotGiamGia() != null) {
+                    sp.getCacDotGiamGia().remove(dgg);
+                }
+            }
+        }
+        
+        // Add this campaign to products that are newly selected
+        for (SanPham sp : selectedProducts) {
+            if (!dgg.getSanPhams().contains(sp)) {
+                if (sp.getCacDotGiamGia() == null) {
+                    sp.setCacDotGiamGia(new HashSet<>());
+                }
+                sp.getCacDotGiamGia().add(dgg);
+            }
+        }
+
         // 3. Update properties
         dgg.setTenChienDich(sanitizedTen);
         dgg.setNgayBatDau(start);
         dgg.setNgayKetThuc(end);
         dgg.setPhanTramGiam(phanTramGiam);
         dgg.setLoaiGiamGia(loaiGiamGia);
+        dgg.setActive(true); // Automatically reactivate campaign on edit/save
 
-        // Load and assign products directly to campaign (Managed from DotGiamGia side)
-        Set<SanPham> selectedProducts = new HashSet<>(sanPhamRepository.findAllById(productIds));
         dgg.getSanPhams().clear();
         dgg.getSanPhams().addAll(selectedProducts);
 
@@ -191,10 +214,10 @@ public class AdminKhuyenMaiService {
 
     private void validateCampaignDates(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null) {
-            throw new RuntimeException("Thời gian bắt đầu và kết thúc không được để trống!");
+            throw new PromotionValidationException("Thời gian bắt đầu và kết thúc không được để trống!");
         }
         if (start.isAfter(end) || start.isEqual(end)) {
-            throw new RuntimeException("Ngày bắt đầu phải trước ngày kết thúc!");
+            throw new PromotionValidationException("Ngày bắt đầu phải trước ngày kết thúc!");
         }
     }
 
@@ -222,7 +245,7 @@ public class AdminKhuyenMaiService {
                 }
 
                 if (!conflictedProductNames.isEmpty()) {
-                    throw new RuntimeException(String.format(
+                    throw new PromotionValidationException(String.format(
                             "Sản phẩm: %s đã được gán cho chiến dịch '%s' đang hoạt động trong khoảng %s - %s. Không được đè đợt giảm giá lên nhau!",
                             String.join(", ", conflictedProductNames),
                             campaign.getTenChienDich(),
@@ -267,21 +290,21 @@ public class AdminKhuyenMaiService {
             BigDecimal giaTriGiamToiDa,
             Integer actingTaiKhoanId, String ipAddress) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
-            throw new RuntimeException("Mã phiếu không được để trống!");
+            throw new PromotionValidationException("Mã phiếu không được để trống!");
         }
         String uppercaseCode = maPhieu.trim().toUpperCase();
 
         // 1. Validation
-        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, false);
 
         // Check duplicate code
         if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCase(uppercaseCode)) {
-            throw new RuntimeException("Mã phiếu giảm giá '" + uppercaseCode + "' đã tồn tại trên hệ thống!");
+            throw new PromotionValidationException("Mã phiếu giảm giá '" + uppercaseCode + "' đã tồn tại trên hệ thống!");
         }
 
         NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
         if (nv == null) {
-            throw new RuntimeException("Tài khoản đang thực hiện không có thông tin nhân viên!");
+            throw new PromotionValidationException("Tài khoản đang thực hiện không có thông tin nhân viên!");
         }
 
         // Cap only applies to percentage vouchers; force null for fixed-amount
@@ -319,16 +342,16 @@ public class AdminKhuyenMaiService {
         PhieuGiamGia pgg = getPhieuGiamGiaById(id);
 
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
-            throw new RuntimeException("Mã phiếu không được để trống!");
+            throw new PromotionValidationException("Mã phiếu không được để trống!");
         }
         String uppercaseCode = maPhieu.trim().toUpperCase();
 
         // 1. Validation
-        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa);
+        validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, true);
 
         // Check duplicate code excluding current
         if (phieuGiamGiaRepository.existsByMaPhieuIgnoreCaseAndIdNot(uppercaseCode, id)) {
-            throw new RuntimeException("Mã phiếu giảm giá '" + uppercaseCode + "' đã được sử dụng bởi voucher khác!");
+            throw new PromotionValidationException("Mã phiếu giảm giá '" + uppercaseCode + "' đã được sử dụng bởi voucher khác!");
         }
 
         String oldState = formatVoucherState(pgg);
@@ -346,6 +369,7 @@ public class AdminKhuyenMaiService {
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
         pgg.setLoaiGiamGia(loaiGiamGia);
         pgg.setGiaTriGiamToiDa(resolvedCap);
+        pgg.setActive(true); // Automatically reactivate voucher on edit/save
 
         PhieuGiamGia updated = phieuGiamGiaRepository.save(pgg);
 
@@ -380,51 +404,121 @@ public class AdminKhuyenMaiService {
                 oldState, formatVoucherState(saved), ipAddress, "Xóa logic voucher: " + pgg.getMaPhieu());
     }
 
-    private static final BigDecimal MAX_CAP_LIMIT = new BigDecimal("100000000"); // 100,000,000 VNĐ
+    private void checkNotDecimal(BigDecimal bd, String errorMessage) {
+        if (bd != null && bd.stripTrailingZeros().scale() > 0) {
+            throw new PromotionValidationException(errorMessage);
+        }
+    }
 
     private void validateVoucherInputs(String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
-            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia, BigDecimal giaTriGiamToiDa) {
+            BigDecimal giaTriDonHangToiThieu, String loaiGiamGia, BigDecimal giaTriGiamToiDa, boolean isUpdate) {
         if (maPhieu == null || maPhieu.trim().isEmpty()) {
-            throw new RuntimeException("Mã phiếu không được để trống!");
+            throw new PromotionValidationException("Mã phiếu không được để trống!");
         }
         if (!maPhieu.matches("^[A-Z0-9_]{2,50}$")) {
-            throw new RuntimeException("Mã phiếu giảm giá không hợp lệ! Chỉ cho phép ký tự chữ in hoa, số và dấu gạch dưới từ 2 đến 50 ký tự.");
-        }
-        if (giaTri == null || giaTri.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Giá trị giảm giá phải lớn hơn 0!");
+            throw new PromotionValidationException("Mã phiếu giảm giá không hợp lệ! Chỉ cho phép ký tự chữ in hoa, số và dấu gạch dưới từ 2 đến 50 ký tự.");
         }
         if (donVi == null || donVi.trim().isEmpty()) {
-            throw new RuntimeException("Đơn vị giảm giá không được để trống!");
+            throw new PromotionValidationException("Đơn vị giảm giá không được để trống!");
         }
         if (!"%".equals(donVi) && !"VND".equals(donVi)) {
-            throw new RuntimeException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VND'.");
-        }
-        if ("%".equals(donVi) && giaTri.compareTo(new BigDecimal("100")) > 0) {
-            throw new RuntimeException("Nếu giảm theo phần trăm, giá trị không được vượt quá 100%!");
+            throw new PromotionValidationException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VND'.");
         }
         if (!"Giảm trực tiếp".equals(loaiGiamGia) && !"Giảm phần trăm".equals(loaiGiamGia)) {
-            throw new RuntimeException("Phân loại voucher không hợp lệ! Chỉ cho phép 'Giảm trực tiếp' hoặc 'Giảm phần trăm'.");
+            throw new PromotionValidationException("Phân loại voucher không hợp lệ! Chỉ cho phép 'Giảm trực tiếp' hoặc 'Giảm phần trăm'.");
         }
+
+        // Cross-field consistency validations
+        if ("%".equals(donVi) && !"Giảm phần trăm".equals(loaiGiamGia)) {
+            throw new PromotionValidationException("Đơn vị '%' và loại giảm giá phải là 'Giảm phần trăm'!");
+        }
+        if ("VND".equals(donVi) && !"Giảm trực tiếp".equals(loaiGiamGia)) {
+            throw new PromotionValidationException("Đơn vị 'VND' và loại giảm giá phải là 'Giảm trực tiếp'!");
+        }
+
+        // Value check
+        if (giaTri == null) {
+            throw new PromotionValidationException("Giá trị giảm giá không được để trống!");
+        }
+        if ("%".equals(donVi)) {
+            checkNotDecimal(giaTri, "Giá trị giảm % phải là số nguyên, không được là số thập phân!");
+            if (giaTri.compareTo(BigDecimal.ZERO) < 0) {
+                throw new PromotionValidationException("Giá trị giảm % không được là số âm!");
+            }
+            if (giaTri.compareTo(BigDecimal.ZERO) == 0) {
+                throw new PromotionValidationException("Giá trị giảm giá phải lớn hơn 0!");
+            }
+            if (giaTri.compareTo(new BigDecimal(PromotionValidationConstants.MAX_VOUCHER_PERCENT)) > 0) {
+                throw new PromotionValidationException("Giá trị giảm % không được vượt quá " + PromotionValidationConstants.MAX_VOUCHER_PERCENT + "%!");
+            }
+        } else {
+            checkNotDecimal(giaTri, "Giá trị giảm tiền (VND) phải là số nguyên, không được là số thập phân!");
+            if (giaTri.compareTo(BigDecimal.ZERO) < 0) {
+                throw new PromotionValidationException("Giá trị giảm tiền (VND) không được là số âm!");
+            }
+            if (giaTri.compareTo(BigDecimal.ZERO) == 0) {
+                throw new PromotionValidationException("Giá trị giảm giá phải lớn hơn 0!");
+            }
+            if (giaTri.compareTo(PromotionValidationConstants.MAX_VND_VALUE) > 0) {
+                throw new PromotionValidationException("Giá trị giảm tiền không được vượt quá 100,000,000 VNĐ!");
+            }
+        }
+
         if (start == null || end == null) {
-            throw new RuntimeException("Hạn sử dụng (ngày bắt đầu và kết thúc) không được để trống!");
+            throw new PromotionValidationException("Hạn sử dụng (ngày bắt đầu và kết thúc) không được để trống!");
         }
         if (start.isAfter(end) || start.isEqual(end)) {
-            throw new RuntimeException("Ngày bắt đầu phải trước ngày kết thúc!");
+            throw new PromotionValidationException("Ngày bắt đầu phải trước ngày kết thúc!");
         }
-        if (soLuongConLai == null || soLuongConLai < 0) {
-            throw new RuntimeException("Số lượng phiếu không được âm!");
+
+        // Quantity check
+        if (soLuongConLai == null) {
+            throw new PromotionValidationException("Số lượng voucher không được để trống!");
         }
-        if (giaTriDonHangToiThieu == null || giaTriDonHangToiThieu.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Giá trị đơn hàng tối thiểu không được âm!");
-        }
-        // giaTriGiamToiDa only applies to percentage vouchers
-        if ("%".equals(donVi) && giaTriGiamToiDa != null) {
-            if (giaTriGiamToiDa.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new RuntimeException("Giá trị giảm tối đa phải lớn hơn 0!");
+        if (isUpdate) {
+            if (soLuongConLai < 0) {
+                throw new PromotionValidationException("Số lượng voucher không được là số âm!");
             }
-            if (giaTriGiamToiDa.compareTo(MAX_CAP_LIMIT) > 0) {
-                throw new RuntimeException("Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!");
+        } else {
+            if (soLuongConLai <= 0) {
+                throw new PromotionValidationException("Số lượng voucher phải lớn hơn 0!");
+            }
+        }
+        if (soLuongConLai > PromotionValidationConstants.MAX_QUANTITY) {
+            throw new PromotionValidationException("Số lượng voucher không được vượt quá " + PromotionValidationConstants.MAX_QUANTITY + "!");
+        }
+
+        // Minimum order value check
+        if (giaTriDonHangToiThieu == null) {
+            throw new PromotionValidationException("Giá trị đơn hàng tối thiểu không được để trống!");
+        }
+        checkNotDecimal(giaTriDonHangToiThieu, "Giá trị đơn hàng tối thiểu phải là số nguyên, không được là số thập phân!");
+        if (giaTriDonHangToiThieu.compareTo(BigDecimal.ZERO) < 0) {
+            throw new PromotionValidationException("Giá trị đơn hàng tối thiểu không được là số âm!");
+        }
+        if (giaTriDonHangToiThieu.compareTo(PromotionValidationConstants.MAX_VND_VALUE) > 0) {
+            throw new PromotionValidationException("Giá trị đơn hàng tối thiểu không được vượt quá 100,000,000 VNĐ!");
+        }
+
+        // Cap validation
+        if ("%".equals(donVi)) {
+            if (giaTriGiamToiDa == null) {
+                throw new PromotionValidationException("Giá trị giảm tối đa là bắt buộc đối với voucher giảm theo phần trăm!");
+            }
+            checkNotDecimal(giaTriGiamToiDa, "Giá trị giảm tối đa phải là số nguyên, không được là số thập phân!");
+            if (giaTriGiamToiDa.compareTo(BigDecimal.ZERO) < 0) {
+                throw new PromotionValidationException("Giá trị giảm tối đa không được là số âm!");
+            }
+            if (giaTriGiamToiDa.compareTo(BigDecimal.ZERO) == 0) {
+                throw new PromotionValidationException("Giá trị giảm tối đa phải lớn hơn 0!");
+            }
+            if (giaTriGiamToiDa.compareTo(PromotionValidationConstants.MAX_VND_VALUE) > 0) {
+                throw new PromotionValidationException("Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!");
+            }
+        } else {
+            if (giaTriGiamToiDa != null) {
+                throw new PromotionValidationException("Voucher giảm trực tiếp (VND) không được có giá trị giảm tối đa!");
             }
         }
     }

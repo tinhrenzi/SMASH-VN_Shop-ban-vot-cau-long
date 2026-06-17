@@ -44,4 +44,30 @@ public class Blog {
 
     @Column(name = "comments_count")
     private Integer commentsCount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private BlogStatus status = BlogStatus.DRAFT;
+
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_at", nullable = false)
+    @Builder.Default
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    private java.time.LocalDateTime updatedAt;
 }
+
