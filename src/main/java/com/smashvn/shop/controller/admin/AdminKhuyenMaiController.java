@@ -112,7 +112,19 @@ public class AdminKhuyenMaiController {
             return "redirect:/admin/khuyen-mai?suaChienDichThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());
-            model.addAttribute("campaign", adminKhuyenMaiService.getDotGiamGiaById(id));
+            DotGiamGia dgg = adminKhuyenMaiService.getDotGiamGiaById(id);
+            dgg.setTenChienDich(tenChienDich);
+            try {
+                dgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
+            } catch (Exception ignored) {}
+            try {
+                dgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
+            } catch (Exception ignored) {}
+            try {
+                dgg.setPhanTramGiam(phanTramGiamStr == null || phanTramGiamStr.isEmpty() ? null : Integer.parseInt(phanTramGiamStr));
+            } catch (Exception ignored) {}
+            dgg.setLoaiGiamGia(loaiGiamGia);
+            model.addAttribute("campaign", dgg);
             model.addAttribute("sanPhams", sanPhamRepository.findAll());
             model.addAttribute("selectedProductIds", productIds);
             return "admin/dotgiamgia-edit";
@@ -239,7 +251,29 @@ public class AdminKhuyenMaiController {
             return "redirect:/admin/khuyen-mai?suaPhieuThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());
-            model.addAttribute("voucher", adminKhuyenMaiService.getPhieuGiamGiaById(id));
+            PhieuGiamGia pgg = adminKhuyenMaiService.getPhieuGiamGiaById(id);
+            pgg.setMaPhieu(maPhieu);
+            try {
+                pgg.setGiaTri(giaTriStr == null || giaTriStr.isEmpty() ? null : new BigDecimal(giaTriStr));
+            } catch (Exception ignored) {}
+            pgg.setDonVi(donVi);
+            try {
+                pgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
+            } catch (Exception ignored) {}
+            try {
+                pgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
+            } catch (Exception ignored) {}
+            try {
+                pgg.setSoLuongConLai(soLuongConLaiStr == null || soLuongConLaiStr.isEmpty() ? null : Integer.parseInt(soLuongConLaiStr));
+            } catch (Exception ignored) {}
+            try {
+                pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieuStr == null || giaTriDonHangToiThieuStr.isEmpty() ? null : new BigDecimal(giaTriDonHangToiThieuStr));
+            } catch (Exception ignored) {}
+            try {
+                pgg.setGiaTriGiamToiDa(giaTriGiamToiDaStr == null || giaTriGiamToiDaStr.isEmpty() ? null : new BigDecimal(giaTriGiamToiDaStr));
+            } catch (Exception ignored) {}
+            pgg.setLoaiGiamGia(loaiGiamGia);
+            model.addAttribute("voucher", pgg);
             return "admin/phieugiamgia-edit";
         }
     }

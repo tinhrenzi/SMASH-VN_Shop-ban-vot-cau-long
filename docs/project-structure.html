@@ -7,21 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #0f172a;
-            --bg-surface: #1e293b;
-            --bg-card: rgba(30, 41, 59, 0.7);
-            --border-color: rgba(255, 255, 255, 0.08);
+            --bg-base: #09090b;
+            --bg-surface: #0e0e11;
+            --bg-card: #18181b;
+            --border-color: rgba(255, 255, 255, 0.06);
             
-            --color-primary: #f97316;     /* Cam neon */
-            --color-secondary: #ff4500;   /* Đỏ cam */
-            --color-accent: #8b5cf6;      /* Tím */
-            --color-success: #10b981;     /* Xanh lá */
-            --color-info: #0ea5e9;        /* Xanh dương */
-            --color-warning: #f59e0b;     /* Vàng */
-            --color-danger: #ef4444;      /* Đỏ */
+            --color-primary: #6366f1;     /* Indigo */
+            --color-secondary: #4f46e5;   /* Deep Indigo */
+            --color-accent: #a855f7;      /* Violet */
+            --color-success: #10b981;     /* Emerald */
+            --color-info: #0ea5e9;        /* Sky */
+            --color-warning: #f59e0b;     /* Amber */
+            --color-danger: #ef4444;      /* Red */
             
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
             
             --layer-controller: #38bdf8;
             --layer-service: #c084fc;
@@ -29,6 +29,7 @@
             --layer-config: #fb923c;
             --layer-entity: #34d399;
             --layer-security: #f87171;
+            --layer-default: #a1a1aa;
             
             --font-main: 'Inter', sans-serif;
             --font-header: 'Outfit', sans-serif;
@@ -36,7 +37,7 @@
         }
 
         * {
-            box-sizing: border-box;
+            box-spacing: border-box;
             margin: 0;
             padding: 0;
         }
@@ -47,6 +48,7 @@
             font-family: var(--font-main);
             line-height: 1.6;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* Scrollbar Customization */
@@ -58,17 +60,17 @@
             background: var(--bg-base);
         }
         ::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #27272a;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #3f3f46;
         }
 
         header {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            background: #09090b;
             border-bottom: 1px solid var(--border-color);
-            padding: 24px 40px;
+            padding: 20px 40px;
             position: relative;
             overflow: hidden;
         }
@@ -77,10 +79,11 @@
             content: '';
             position: absolute;
             top: -50%;
-            left: -20%;
-            width: 80%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
             height: 200%;
-            background: radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 60%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
             pointer-events: none;
         }
 
@@ -97,11 +100,11 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .brand-logo {
-            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
             width: 40px;
             height: 40px;
             border-radius: 8px;
@@ -110,58 +113,61 @@
             justify-content: center;
             font-family: var(--font-header);
             font-weight: 700;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             color: #fff;
-            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
 
         .brand-text h1 {
             font-family: var(--font-header);
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 700;
             letter-spacing: 0.5px;
-            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            background: linear-gradient(to right, #ffffff, #e4e4e7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .brand-text p {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
+            margin-top: 1px;
         }
 
         /* Stats Bar */
         .stats-bar {
             display: flex;
-            gap: 20px;
+            gap: 16px;
         }
 
         .stat-item {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 8px 16px;
+            background: rgba(24, 24, 27, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 6px 14px;
             text-align: center;
-            min-width: 100px;
+            min-width: 90px;
         }
 
         .stat-num {
             font-family: var(--font-header);
-            font-weight: 700;
-            font-size: 1.2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
             color: var(--color-primary);
         }
 
         .stat-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
         }
 
         /* Navigation Tabs */
         .nav-tabs-wrapper {
-            background: #111827;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
@@ -182,11 +188,11 @@
             color: var(--text-muted);
             font-family: var(--font-header);
             font-weight: 500;
-            font-size: 0.95rem;
-            padding: 16px 24px;
+            font-size: 0.9rem;
+            padding: 16px 20px;
             cursor: pointer;
             position: relative;
-            transition: all 0.2s ease;
+            transition: all 0.2s ease-in-out;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -206,9 +212,16 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
-            border-radius: 3px 3px 0 0;
+            height: 2px;
+            background: var(--color-primary);
+        }
+
+        .tab-icon {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            flex-shrink: 0;
         }
 
         /* Container Main */
@@ -225,20 +238,21 @@
 
         .tab-content.active {
             display: block;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         /* Split Layout for Tab 1 (Directory Tree) */
         .split-layout {
             display: grid;
-            grid-template-columns: 380px 1fr;
-            gap: 30px;
-            height: 720px;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            height: calc(100vh - 240px);
+            min-height: 600px;
         }
 
         .tree-panel {
@@ -259,20 +273,21 @@
 
         .search-input {
             width: 100%;
-            background: #0b0f19;
-            border: 1px solid #334155;
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 6px;
-            padding: 10px 12px 10px 36px;
+            padding: 8px 12px 8px 36px;
             color: #fff;
             font-family: var(--font-main);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             outline: none;
-            transition: all 0.2s ease;
+            transition: all 0.2s ease-in-out;
         }
 
         .search-input:focus {
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            background: #09090b;
         }
 
         .search-icon {
@@ -294,11 +309,9 @@
         /* Details Panel */
         .details-panel {
             background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 30px;
+            padding: 24px;
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             position: relative;
@@ -306,7 +319,7 @@
 
         /* Tree Styles */
         .tree-node {
-            margin-left: 15px;
+            margin-left: 12px;
             user-select: none;
         }
 
@@ -314,28 +327,32 @@
             display: flex;
             align-items: center;
             padding: 6px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.15s ease;
+            transition: all 0.15s ease-in-out;
             gap: 8px;
             margin-bottom: 2px;
+            border: 1px solid transparent;
         }
 
         .tree-node-header:hover {
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
         }
 
         .tree-node-header.active {
-            background: rgba(249, 115, 22, 0.1);
-            border-left: 3px solid var(--color-primary);
+            background: rgba(99, 102, 241, 0.08);
+            border-color: rgba(99, 102, 241, 0.25);
+            color: #fff;
         }
 
         .tree-toggle-icon {
-            width: 14px;
-            height: 14px;
-            fill: var(--text-muted);
+            width: 12px;
+            height: 12px;
+            stroke: #71717a;
             transition: transform 0.15s ease;
             flex-shrink: 0;
+            fill: none;
         }
 
         .tree-toggle-icon.expanded {
@@ -348,17 +365,32 @@
             flex-shrink: 0;
         }
 
+        .tree-node-icon.folder-icon {
+            stroke: #e4e4e7;
+            fill: rgba(228, 228, 231, 0.05);
+        }
+
         .tree-node-label {
-            font-size: 0.9rem;
-            color: #cbd5e1;
+            font-size: 0.875rem;
+            color: #d4d4d8;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: color 0.15s ease;
+        }
+
+        .tree-node-header:hover .tree-node-label {
+            color: #fff;
+        }
+
+        .tree-node-header.active .tree-node-label {
+            color: #fff;
+            font-weight: 500;
         }
 
         .tree-node-label.highlight {
             color: #fff;
-            background: rgba(249, 115, 22, 0.35);
+            background: rgba(99, 102, 241, 0.35);
             font-weight: 600;
             border-radius: 2px;
             padding: 0 2px;
@@ -381,88 +413,111 @@
             height: 100%;
             color: var(--text-muted);
             text-align: center;
+            padding: 40px 20px;
         }
 
         .details-empty-icon {
-            width: 64px;
-            height: 64px;
-            fill: #334155;
+            width: 48px;
+            height: 48px;
+            stroke: #3f3f46;
             margin-bottom: 16px;
+            fill: none;
+        }
+
+        .details-empty h3 {
+            font-family: var(--font-header);
+            color: #fafafa;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .details-empty p {
+            font-size: 0.875rem;
+            max-width: 280px;
         }
 
         .details-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
-            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .details-title h2 {
             font-family: var(--font-header);
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            color: #fff;
+            color: #fafafa;
         }
 
         .details-path {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.75rem;
+            color: #a1a1aa;
             margin-top: 4px;
-            background: #0b0f19;
-            padding: 4px 10px;
+            background: #09090b;
+            padding: 4px 8px;
             border-radius: 4px;
             display: inline-block;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .badge-layer {
             font-size: 0.75rem;
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-block;
         }
 
-        .layer-entry { background: rgba(249, 115, 22, 0.15); color: var(--layer-config); border: 1px solid rgba(249, 115, 22, 0.3); }
-        .layer-controller { background: rgba(56, 189, 248, 0.15); color: var(--layer-controller); border: 1px solid rgba(56, 189, 248, 0.3); }
-        .layer-service { background: rgba(192, 132, 252, 0.15); color: var(--layer-service); border: 1px solid rgba(192, 132, 252, 0.3); }
-        .layer-repository { background: rgba(251, 113, 133, 0.15); color: var(--layer-repository); border: 1px solid rgba(251, 113, 133, 0.3); }
-        .layer-config { background: rgba(251, 146, 60, 0.15); color: var(--layer-config); border: 1px solid rgba(251, 146, 60, 0.3); }
-        .layer-entity { background: rgba(52, 211, 153, 0.15); color: var(--layer-entity); border: 1px solid rgba(52, 211, 153, 0.3); }
-        .layer-security { background: rgba(248, 113, 113, 0.15); color: var(--layer-security); border: 1px solid rgba(248, 113, 113, 0.3); }
-        .layer-default { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+        .layer-entry { background: rgba(251, 146, 60, 0.1); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.25); }
+        .layer-controller { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
+        .layer-service { background: rgba(192, 132, 252, 0.1); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.25); }
+        .layer-repository { background: rgba(251, 113, 133, 0.1); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.25); }
+        .layer-config { background: rgba(251, 146, 60, 0.1); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.25); }
+        .layer-entity { background: rgba(52, 211, 153, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.25); }
+        .layer-security { background: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.25); }
+        .layer-default { background: rgba(161, 161, 170, 0.1); color: #a1a1aa; border: 1px solid rgba(161, 161, 170, 0.25); }
 
-        .details-section {
-            margin-bottom: 24px;
+        .detail-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .details-section h3 {
+        .detail-card-title {
             font-family: var(--font-header);
-            font-size: 1.1rem;
-            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fafafa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .details-section h3::before {
+        .detail-card-title::before {
             content: '';
             display: inline-block;
-            width: 4px;
-            height: 16px;
+            width: 3px;
+            height: 12px;
             background: var(--color-primary);
-            border-radius: 2px;
+            border-radius: 1px;
         }
 
         .details-desc {
-            color: #cbd5e1;
-            font-size: 0.95rem;
-            line-height: 1.7;
+            color: #d4d4d8;
+            font-size: 0.9rem;
+            line-height: 1.6;
         }
 
         .badge-list {
@@ -472,54 +527,78 @@
         }
 
         .dependency-badge {
-            background: #0b0f19;
-            border: 1px solid #334155;
+            background: #27272a;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 6px;
-            padding: 6px 12px;
-            color: #e2e8f0;
+            padding: 4px 10px;
+            color: #fafafa;
             font-family: var(--font-mono);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.15s ease-in-out;
+            display: inline-block;
         }
 
         .dependency-badge:hover {
             border-color: var(--color-primary);
-            background: rgba(249, 115, 22, 0.05);
+            background: rgba(99, 102, 241, 0.1);
             color: #fff;
+            transform: translateY(-1px);
         }
 
         .none-text {
             color: var(--text-muted);
             font-style: italic;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
 
         /* Tab 2: Call Flows Layout */
         .flows-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 30px;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
         }
 
         .flows-menu {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 15px;
+            padding: 16px;
             height: fit-content;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .flows-menu h3 {
             font-family: var(--font-header);
-            font-size: 1rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
             color: var(--text-muted);
-            padding: 10px 12px;
+            padding-bottom: 10px;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .menu-group {
+            margin-bottom: 20px;
+        }
+
+        .menu-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .menu-group-title {
+            font-family: var(--font-header);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .flow-menu-btn {
@@ -527,18 +606,18 @@
             background: none;
             border: none;
             color: #cbd5e1;
-            padding: 12px 16px;
+            padding: 10px 14px;
             text-align: left;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s ease-in-out;
             font-family: var(--font-header);
             font-weight: 500;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .flow-menu-btn:hover {
@@ -547,17 +626,19 @@
         }
 
         .flow-menu-btn.active {
-            background: linear-gradient(to right, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.05));
-            border-left: 3px solid var(--color-primary);
+            background: rgba(99, 102, 241, 0.1);
             color: #fff;
+            border-left: 3px solid var(--color-primary);
+            font-weight: 600;
         }
 
         .flow-detail-container {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 40px;
+            padding: 30px 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: fadeIn 0.4s ease-in-out;
         }
 
         .flow-header {
@@ -565,13 +646,13 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 24px;
-            margin-bottom: 30px;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .flow-header h2 {
             font-family: var(--font-header);
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: #fff;
         }
@@ -585,19 +666,19 @@
         .http-badge {
             font-family: var(--font-mono);
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             padding: 4px 8px;
             border-radius: 4px;
             text-transform: uppercase;
         }
 
-        .http-badge.post { background: rgba(16, 185, 129, 0.2); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.3); }
-        .http-badge.get { background: rgba(14, 165, 233, 0.2); color: var(--color-info); border: 1px solid rgba(14, 165, 233, 0.3); }
+        .http-badge.post { background: rgba(16, 185, 129, 0.15); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.25); }
+        .http-badge.get { background: rgba(14, 165, 233, 0.15); color: var(--color-info); border: 1px solid rgba(14, 165, 233, 0.25); }
 
         .endpoint-text {
             font-family: var(--font-mono);
-            font-size: 0.85rem;
-            background: #0b0f19;
+            font-size: 0.8rem;
+            background: #09090b;
             padding: 4px 12px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -605,109 +686,217 @@
 
         /* Diagram Sequence CSS Style */
         .diagram-container {
-            background: #0b0f19;
-            border: 1px solid #1e293b;
+            background-color: #0e0e11;
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0),
+                radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 30px;
+            padding: 30px 10px 40px 10px;
             margin-bottom: 30px;
             overflow-x: auto;
             position: relative;
         }
 
+        .diagram-inner {
+            position: relative;
+            min-width: 850px;
+            padding-left: 80px;
+            padding-right: 80px;
+            box-sizing: border-box;
+        }
+
         .diagram-actors {
             display: flex;
             justify-content: space-between;
+            position: relative;
             margin-bottom: 40px;
-            border-bottom: 2px dashed #1e293b;
-            padding-bottom: 15px;
-            min-width: 600px;
+            height: 40px;
+            z-index: 10;
+        }
+
+        .actor-wrapper {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
         }
 
         .actor {
-            background: var(--bg-surface);
-            border: 1.5px solid #334155;
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 6px;
             padding: 8px 16px;
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-weight: 500;
+            font-size: 0.8rem;
             font-family: var(--font-mono);
             text-align: center;
-            width: 130px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            min-width: 110px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
         }
 
-        .actor.client { border-color: var(--color-info); color: var(--color-info); }
-        .actor.controller { border-color: var(--layer-controller); color: var(--layer-controller); }
-        .actor.service { border-color: var(--layer-service); color: var(--layer-service); }
-        .actor.repository { border-color: var(--layer-repository); color: var(--layer-repository); }
-        .actor.db { border-color: var(--layer-entity); color: var(--layer-entity); }
+        .actor.client { border-color: rgba(14, 165, 233, 0.3); color: #38bdf8; background: rgba(14, 165, 233, 0.05); }
+        .actor.controller { border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+        .actor.service { border-color: rgba(192, 132, 252, 0.3); color: #c084fc; background: rgba(192, 132, 252, 0.05); }
+        .actor.repository { border-color: rgba(251, 113, 133, 0.3); color: #fb7185; background: rgba(251, 113, 133, 0.05); }
+        .actor.db { border-color: rgba(52, 211, 153, 0.3); color: #34d399; background: rgba(52, 211, 153, 0.05); }
+
+        .lifelines-bg {
+            position: absolute;
+            top: 20px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .lifeline-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-left: 1px dashed rgba(255, 255, 255, 0.1);
+            transform: translateX(-50%);
+        }
 
         .diagram-steps {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            min-width: 600px;
+            gap: 28px;
+            position: relative;
+            z-index: 5;
+            margin-top: 10px;
         }
 
         .diagram-step {
+            position: relative;
+            height: 48px;
             display: flex;
             align-items: center;
-            position: relative;
-            padding: 5px 0;
         }
 
         .diagram-step-line {
             position: absolute;
             height: 2px;
-            background: #475569;
             top: 50%;
             transform: translateY(-50%);
-            z-index: 1;
-        }
-
-        .diagram-step-arrow {
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-bottom: 6px solid transparent;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 2;
+            z-index: 10;
         }
 
         .diagram-step-line.forward {
             background: linear-gradient(to right, var(--color-primary), var(--color-accent));
         }
 
-        .diagram-step-arrow.forward {
-            border-left: 8px solid var(--color-accent);
-            right: 0;
+        .diagram-step-line.backward {
+            border-top: 1.5px dashed var(--text-muted);
+            height: 0;
+            background: transparent;
         }
 
-        .diagram-step-line.backward {
-            background: #334155;
-            border-top: 2px dashed #475569;
+        .diagram-step-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            z-index: 11;
+        }
+
+        .diagram-step-arrow.forward {
+            right: 0;
+            transform: translate(50%, -50%);
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 7px solid var(--color-accent);
         }
 
         .diagram-step-arrow.backward {
-            border-right: 8px solid #475569;
             left: 0;
+            transform: translate(-50%, -50%);
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-right: 7px solid var(--text-muted);
         }
 
         .diagram-step-label {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            color: #cbd5e1;
-            z-index: 3;
-            margin: 0 auto;
-            max-width: 250px;
+            position: absolute;
+            left: 0;
+            width: 100%;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            font-family: var(--font-main);
+            bottom: calc(50% + 6px);
+            z-index: 12;
+            pointer-events: auto;
+        }
+
+        .label-pill {
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e4e4e7;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+        }
+
+        /* Self call loops */
+        .diagram-step.self-call {
+            position: relative;
+            height: 48px;
+        }
+
+        .diagram-step-self-loop {
+            position: absolute;
+            width: 36px;
+            height: 28px;
+            border: 1.5px solid var(--color-accent);
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .diagram-step-self-loop.left-loop {
+            border: 1.5px solid var(--color-accent);
+            border-right: none;
+            border-radius: 6px 0 0 6px;
+        }
+
+        .diagram-step-self-arrow {
+            position: absolute;
+            bottom: -1px;
+            left: -6px;
+            width: 0;
+            height: 0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-right: 6px solid var(--color-accent);
+            z-index: 11;
+        }
+
+        .diagram-step-self-arrow.left-arrow {
+            left: auto;
+            right: -6px;
+            border-right: none;
+            border-left: 6px solid var(--color-accent);
+        }
+
+        .diagram-step-label.self-label {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 12;
+            pointer-events: auto;
         }
 
         /* Flow Details Grid */
@@ -719,38 +908,41 @@
 
         .flow-section-title {
             font-family: var(--font-header);
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: #fff;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 6px;
             border-bottom: 1px solid var(--border-color);
         }
 
         /* Table Style */
         table {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            background: rgba(15, 23, 42, 0.4);
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 24px;
+            font-size: 0.875rem;
+            background: var(--bg-surface);
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--border-color);
         }
 
         th {
-            background: #1e293b;
-            color: #fff;
+            background: #27272a;
+            color: #fafafa;
             text-align: left;
             padding: 12px 16px;
-            font-weight: 600;
+            font-weight: 500;
             font-family: var(--font-header);
+            border-bottom: 1px solid var(--border-color);
         }
 
         td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            color: #cbd5e1;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #d4d4d8;
+            vertical-align: middle;
         }
 
         tr:last-child td {
@@ -763,8 +955,8 @@
 
         /* Alert/Callout Box */
         .callout-box {
-            background: rgba(249, 115, 22, 0.05);
-            border-left: 4px solid var(--color-primary);
+            background: rgba(239, 68, 68, 0.04);
+            border-left: 4px solid var(--color-danger);
             border-radius: 0 8px 8px 0;
             padding: 16px 20px;
             margin-bottom: 24px;
@@ -772,8 +964,8 @@
 
         .callout-box h4 {
             font-family: var(--font-header);
-            font-size: 1rem;
-            color: var(--color-primary);
+            font-size: 0.95rem;
+            color: var(--color-danger);
             margin-bottom: 6px;
             display: flex;
             align-items: center;
@@ -781,12 +973,12 @@
         }
 
         .callout-box p {
-            font-size: 0.9rem;
-            color: #cbd5e1;
+            font-size: 0.875rem;
+            color: #d4d4d8;
         }
 
         .callout-box.security {
-            background: rgba(16, 185, 129, 0.05);
+            background: rgba(16, 185, 129, 0.04);
             border-left-color: var(--color-success);
         }
 
@@ -802,10 +994,11 @@
 
         .steps-list li {
             position: relative;
-            padding-left: 32px;
-            margin-bottom: 16px;
-            color: #cbd5e1;
-            font-size: 0.95rem;
+            padding-left: 36px;
+            margin-bottom: 20px;
+            color: #d4d4d8;
+            font-size: 0.9rem;
+            line-height: 1.6;
         }
 
         .steps-list li::before {
@@ -813,23 +1006,25 @@
             position: absolute;
             left: 0;
             top: 2px;
-            width: 20px;
-            height: 20px;
-            background: var(--color-primary);
-            color: #fff;
+            width: 22px;
+            height: 22px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--color-primary);
+            color: var(--color-primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.75rem;
-            font-weight: 700;
+            font-weight: 600;
             font-family: var(--font-header);
         }
 
         .steps-list li strong {
-            color: #fff;
+            color: #fafafa;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
         }
 
         /* Tab 3: Lifecycle Styling */
@@ -854,7 +1049,7 @@
             top: 0;
             height: 100%;
             width: 2px;
-            background: #334155;
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .lifecycle-item {
@@ -870,36 +1065,37 @@
             position: absolute;
             left: -33px;
             top: 4px;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: var(--bg-base);
-            border: 4px solid var(--color-primary);
+            background: #09090b;
+            border: 3px solid var(--color-primary);
             z-index: 2;
+            transition: all 0.2s ease;
         }
 
         .lifecycle-item:hover .lifecycle-dot {
             background: var(--color-primary);
-            box-shadow: 0 0 10px var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
         }
 
         .lifecycle-content h3 {
             font-family: var(--font-header);
-            font-size: 1.2rem;
-            color: #fff;
+            font-size: 1.15rem;
+            color: #fafafa;
             margin-bottom: 8px;
         }
 
         .lifecycle-content p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
+            color: #a1a1aa;
+            font-size: 0.9rem;
             margin-bottom: 12px;
             line-height: 1.6;
         }
 
         .lifecycle-content .code-snippet {
-            background: #0b0f19;
-            border: 1px solid #1e293b;
+            background: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 6px;
             padding: 12px 16px;
             font-family: var(--font-mono);
@@ -913,6 +1109,59 @@
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 10px;
+        }
+
+        /* Pulse Highlight effect */
+        @keyframes pulse-highlight-anim {
+            0% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+                background-color: rgba(99, 102, 241, 0.15);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+                background-color: rgba(99, 102, 241, 0.3);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+                background-color: rgba(99, 102, 241, 0.05);
+            }
+        }
+        .pulse-highlight {
+            animation: pulse-highlight-anim 1.5s ease-in-out 3;
+            border: 1px solid var(--color-primary) !important;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 1024px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: auto;
+            }
+            .tree-panel {
+                height: 450px;
+            }
+            .details-panel {
+                height: 450px;
+            }
+            main {
+                padding: 20px;
+            }
+            header {
+                padding: 20px;
+            }
+            .header-container {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            .stats-bar {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .flows-layout {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -953,24 +1202,30 @@
         <ul class="nav-tabs">
             <li>
                 <button class="tab-btn active" onclick="switchTab('tab-tree')">
-                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 12h-2v3h-3v2h5v-5zM7 12H5v5h5v-2H7v-3zm12-5h-5v2h3v3h2V7zm-12 0h5v5H7V7zm6 3h-2v2h2v-2z"/>
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
                     </svg>
                     📂 Sơ đồ cấu trúc dự án
                 </button>
             </li>
             <li>
                 <button class="tab-btn" onclick="switchTab('tab-flows')">
-                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 15l-6 6-1.42-1.42L15.17 16H3v-2h12.17l-3.59-3.58L13 9l6 6zm-8-6l6-6 1.42 1.42L14.83 8H27v2H14.83l3.59 3.58L17 15l-6-6z"/>
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                     </svg>
                     🔄 Luồng gọi file & API
                 </button>
             </li>
             <li>
                 <button class="tab-btn" onclick="switchTab('tab-lifecycle')">
-                    <svg class="tree-node-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                     ☕ Vòng đời ứng dụng
                 </button>
@@ -996,8 +1251,10 @@
                 <!-- Panel phải: Thông tin chi tiết -->
                 <div class="details-panel" id="details-panel-content">
                     <div class="details-empty">
-                        <svg class="details-empty-icon" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        <svg class="details-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
                         </svg>
                         <h3>Chưa chọn file</h3>
                         <p>Chọn một file hoặc thư mục trên cây sơ đồ để xem cấu trúc và dependencies liên quan.</p>
@@ -1011,13 +1268,26 @@
             <div class="flows-layout">
                 <!-- Left Menu: Các luồng nghiệp vụ -->
                 <div class="flows-menu">
-                    <h3>Chức năng chính</h3>
-                    <button class="flow-menu-btn active" onclick="showFlow('flow-register')">🔐 Đăng Ký Tài Khoản</button>
-                    <button class="flow-menu-btn" onclick="showFlow('flow-login')">🔑 Đăng Nhập Hệ Thống</button>
-                    <button class="flow-menu-btn" onclick="showFlow('flow-cart')">🛒 Giỏ Hàng &amp; Vận Chuyển</button>
-                    <button class="flow-menu-btn" onclick="showFlow('flow-checkout')">💳 Đặt Hàng &amp; Thanh Toán</button>
-                    <button class="flow-menu-btn" onclick="showFlow('flow-admin')">📦 Quản Trị &amp; Upload Ảnh</button>
-                    <button class="flow-menu-btn" onclick="showFlow('flow-chatbot')">🤖 Trò Chuyện AI Chatbot</button>
+                    <div class="menu-group">
+                        <div class="menu-group-title">👤 Khách Hàng</div>
+                        <button class="flow-menu-btn active" onclick="showFlow('flow-register')">🔐 Đăng Ký Tài Khoản</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-login')">🔑 Đăng Nhập Hệ Thống</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-cart')">🛒 Giỏ Hàng &amp; Vận Chuyển</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-checkout')">💳 Đặt Hàng &amp; Thanh Toán</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-chatbot')">🤖 Trò Chuyện AI Chatbot</button>
+                    </div>
+                    <div class="menu-group">
+                        <div class="menu-group-title">💼 Nhân Viên</div>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-pos')">🏪 Bán Hàng Tại Quầy POS</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-admin')">📦 Quản Lý &amp; Upload Ảnh</button>
+                    </div>
+                    <div class="menu-group">
+                        <div class="menu-group-title">⚙️ Quản Lý</div>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-dashboard')">📈 Thống Kê &amp; Kiểm Toán</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-voucher')">🏷️ Quản Lý Khuyến Mãi</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-employee')">👥 Quản Lý Nhân Sự</button>
+                        <button class="flow-menu-btn" onclick="showFlow('flow-moderation')">💬 Kiểm Duyệt Đánh Giá</button>
+                    </div>
                 </div>
 
                 <!-- Right Detail: Chi tiết từng luồng -->
@@ -1034,7 +1304,7 @@
                     Vòng Đời Hoạt Động Của Hệ Thống SMASH-VN
                 </h2>
                 <p style="color: var(--text-muted); margin-bottom: 30px;">
-                    Mô tả các bước hệ thống xử lý khi chạy file <code style="font-family: var(--font-mono); color: var(--color-primary); background: #0b0f19; padding: 2px 6px; border-radius: 4px;">SmashVnApplication.java</code>, từ cấu hình môi trường đến phục vụ request HTTP.
+                    Mô tả các bước hệ thống xử lý khi chạy file <code style="font-family: var(--font-mono); color: var(--color-primary); background: #09090b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04);">SmashVnApplication.java</code>, từ cấu hình môi trường đến phục vụ request HTTP.
                 </p>
 
                 <div class="lifecycle-timeline">
@@ -1135,7 +1405,7 @@
             if (activeContent) activeContent.classList.add('active');
         }
 
-        // Project Directory Tree Data
+        // Project Directory Tree Data (Dynamically synchronized with the codebase)
         const projectTree = {
             name: "SMASH-VN_Shop-ban-vot-cau-long",
             type: "dir",
@@ -1191,14 +1461,19 @@
                                                 {
                                                     name: "config",
                                                     type: "dir",
-                                                    desc: "Các tệp cấu hình bảo mật, MVC, và kết nối bên thứ ba.",
+                                                    desc: "Các tệp cấu hình bảo mật, MVC, kết nối bên thứ ba và database schema.",
                                                     children: [
-                                                        { name: "SecurityConfig.java", type: "file", desc: "Cấu hình phân quyền URL, băm mật khẩu bằng BCrypt, chống giả mạo request (CSRF) và cấu hình Form Login/Logout.", layer: "config", calls: ["UserDangNhapService.java"] },
+                                                        { name: "SecurityConfig.java", type: "file", desc: "Cấu hình phân quyền URL, cấu hình BCrypt, chống giả mạo request (CSRF) và cấu hình Form Login/Logout.", layer: "config", calls: ["UserDangNhapService.java"] },
                                                         { name: "WebMvcConfig.java", type: "file", desc: "Đăng ký AdminInterceptor chặn các endpoint quản trị và ánh xạ đường dẫn tài nguyên uploads/.", layer: "config", calls: ["AdminInterceptor.java"] },
                                                         { name: "AdminInterceptor.java", type: "file", desc: "Interceptor kiểm tra quyền ADMIN hoặc NHANVIEN trước khi cho phép đi tiếp vào admin dashboard.", layer: "security", calledBy: ["WebMvcConfig.java"] },
                                                         { name: "PlaintextPasswordMigrator.java", type: "file", desc: "Migration quét và tự động băm BCrypt mật khẩu của tất cả các tài khoản cũ đang ở dạng plaintext khi bắt đầu chạy ứng dụng.", layer: "config", calls: ["TaiKhoanRepository.java"] },
                                                         { name: "UploadSecurityFilter.java", type: "file", desc: "Bộ lọc bảo mật tầng filter ngăn chặn upload các file shell (.sh, .php, .jsp) độc hại vào thư mục ảnh.", layer: "security" },
-                                                        { name: "UploadPathVerifier.java", type: "file", desc: "Kiểm tra quyền truy cập và tồn tại của thư mục lưu trữ uploads/ ngoài đĩa cứng server khi hệ thống boot.", layer: "config" }
+                                                        { name: "UploadPathVerifier.java", type: "file", desc: "Kiểm tra quyền truy cập và tồn tại của thư mục lưu trữ uploads/ ngoài đĩa cứng server khi hệ thống boot.", layer: "config" },
+                                                        { name: "DotenvEnvironmentPostProcessor.java", type: "file", desc: "Đọc tệp cấu hình cục bộ .env và đẩy động các biến môi trường vào Spring Environment Context khi khởi chạy.", layer: "config" },
+                                                        { name: "GhnConfig.java", type: "file", desc: "Cấu hình tích hợp API Giao Hàng Nhanh.", layer: "config" },
+                                                        { name: "SepayConfig.java", type: "file", desc: "Cấu hình tích hợp cổng thanh toán SePay.", layer: "config" },
+                                                        { name: "ZaloPayConfig.java", type: "file", desc: "Cấu hình tích hợp cổng thanh toán ZaloPay.", layer: "config" },
+                                                        { name: "DatabaseSchemaRepairConfig.java", type: "file", desc: "Cấu hình tự động sửa lỗi và dọn dẹp cấu trúc CSDL.", layer: "config" }
                                                     ]
                                                 },
                                                 {
@@ -1206,49 +1481,251 @@
                                                     type: "dir",
                                                     desc: "Tầng Controller tiếp nhận request từ Client, điều phối xử lý nghiệp vụ.",
                                                     children: [
-                                                        { name: "HomeController.java", type: "file", desc: "Điều hướng request trang chủ (GET /), trả về trang chủ Thymeleaf.", layer: "controller", calls: ["SanPhamRepository.java", "DanhMucRepository.java"] },
-                                                        { name: "SanPhamController.java", type: "file", desc: "Hiển thị trang sản phẩm (GET /shop) và chi tiết sản phẩm (GET /product/{id}).", layer: "controller", calls: ["AdminSanPhamService.java", "DanhMucService.java"] },
-                                                        { name: "GioHangController.java", type: "file", desc: "Xử lý các request AJAX thao tác giỏ hàng như thêm, cập nhật số lượng, xóa sản phẩm khỏi giỏ.", layer: "controller", calls: ["GioHangService.java"] },
-                                                        { name: "CheckoutController.java", type: "file", desc: "Điều hướng trang checkout (GET /checkout) và xử lý tạo hóa đơn mới (POST /checkout/place-order). Thực hiện trim khoảng trắng và Jsoup clean XSS.", layer: "controller", calls: ["GioHangService.java", "OrderViewService.java", "ZaloPayService.java", "SepayGatewayService.java"] },
-                                                        { name: "UserDangKyController.java", type: "file", desc: "Đăng ký tài khoản khách hàng: hiển thị form (GET /signup), xử lý đăng ký (POST /signup) kèm theo RegisterRateLimiter.", layer: "controller", calls: ["UserDangKyService.java", "RegisterRateLimiter.java"] },
-                                                        { name: "UserDangNhapController.java", type: "file", desc: "Hiển thị trang đăng nhập và tích hợp Rate Limiter cho các lượt thử đăng nhập thất bại.", layer: "controller", calls: ["LoginRateLimiter.java"] },
-                                                        { name: "UserQuenMatKhauController.java", type: "file", desc: "Quản lý luồng gửi email khôi phục và đặt lại mật khẩu của người dùng.", layer: "controller", calls: ["UserQuenMatKhauService.java", "ForgotPasswordRateLimiter.java"] },
-                                                        { name: "UserAddressController.java", type: "file", desc: "CRUD sổ địa chỉ của khách hàng. Tích hợp chuyển hướng thông minh sau khi lưu.", layer: "controller", calls: ["UserAddressService.java"] },
-                                                        { name: "ZaloPayController.java", type: "file", desc: "Xử lý callback chuyển hướng từ cổng ZaloPay (GET) và nhận IPN Callback Webhook để cập nhật đơn hàng thành công.", layer: "controller", calls: ["ZaloPayServiceImpl.java", "OrderViewService.java"] },
-                                                        { name: "SepayIpnController.java", type: "file", desc: "Webhook nhận biến động số dư từ cổng thanh toán SePay để tự động khớp đơn và chuyển PAID.", layer: "controller", calls: ["SepayGatewayService.java", "OrderViewService.java"] },
-                                                        { name: "LocationRestController.java", type: "file", desc: "REST API cung cấp dữ liệu hành chính Tỉnh/Huyện/Xã của Việt Nam phục vụ checkout.", layer: "controller", calls: ["LocationService.java"] },
-                                                        { name: "AdminSanPhamController.java", type: "file", desc: "CRUD sản phẩm phía Admin, quản lý upload hình ảnh sử dụng Apache Tika và verify an toàn file.", layer: "controller", calls: ["AdminSanPhamService.java"] },
-                                                        { name: "AdminBienTheController.java", type: "file", desc: "Quản lý biến thể (Size/Màu/Tồn kho) và tích hợp upload ảnh biến thể.", layer: "controller", calls: ["AdminBienTheService.java"] },
-                                                        { name: "AdminController.java", type: "file", desc: "Xem danh sách và cập nhật trạng thái đơn hàng của hệ thống admin. Endpoint /don-hang/detail-json trả về dữ liệu snapshot giá/sản phẩm bất biến.", layer: "controller", calls: ["OrderViewService.java"] },
-                                                        { name: "AdminPosController.java", type: "file", desc: "Controller phục vụ màn hình bán hàng tại quầy (POS), tạo nhanh đơn hàng không qua giỏ hàng.", layer: "controller", calls: ["AdminPosService.java"] },
-                                                        { name: "AdminDanhGiaController.java", type: "file", desc: "Quản lý kiểm duyệt đánh giá và vi phạm bình luận. Admin có thể gỡ khóa bình luận sớm và reset bộ đếm vi phạm.", layer: "controller", calls: ["DanhGiaService.java"] },
-                                                        { name: "AdminThongKeController.java", type: "file", desc: "Cung cấp số liệu doanh số bán hàng, đơn hàng để dựng biểu đồ Chart.js ở Admin Panel.", layer: "controller", calls: ["AdminThongKeService.java"] }
+                                                        {
+                                                            name: "admin",
+                                                            type: "dir",
+                                                            desc: "Các bộ điều khiển dành riêng cho quản trị viên và nhân viên.",
+                                                            children: [
+                                                                { name: "AdminBienTheController.java", type: "file", desc: "Quản lý biến thể sản phẩm (Size/Màu/Tồn kho) và hình ảnh biến thể.", layer: "controller", calls: ["AdminBienTheService.java"] },
+                                                                { name: "AdminBlogController.java", type: "file", desc: "Quản lý bài viết (Blog) truyền thông của shop.", layer: "controller", calls: ["BlogService.java"] },
+                                                                { name: "AdminController.java", type: "file", desc: "Xem danh sách và cập nhật trạng thái đơn hàng của hệ thống admin. Trả về chi tiết đơn hàng JSON.", layer: "controller", calls: ["OrderViewService.java"] },
+                                                                { name: "AdminDangNhapController.java", type: "file", desc: "Bộ điều khiển hiển thị trang đăng nhập admin.", layer: "controller" },
+                                                                { name: "AdminDanhGiaController.java", type: "file", desc: "Quản lý kiểm duyệt bình luận/đánh giá sản phẩm và các vi phạm bình luận.", layer: "controller", calls: ["DanhGiaService.java"] },
+                                                                { name: "AdminDanhMucController.java", type: "file", desc: "CRUD danh mục sản phẩm.", layer: "controller", calls: ["DanhMucService.java"] },
+                                                                { name: "AdminKhuyenMaiController.java", type: "file", desc: "Quản lý đợt giảm giá (DotGiamGia) và phiếu giảm giá (PhieuGiamGia) của cửa hàng.", layer: "controller", calls: ["AdminKhuyenMaiService.java"] },
+                                                                { name: "AdminNhanVienController.java", type: "file", desc: "CRUD nhân viên và tài khoản nhân sự.", layer: "controller", calls: ["AdminNhanVienService.java"] },
+                                                                { name: "AdminPaymentTransactionController.java", type: "file", desc: "Quản lý các giao dịch thanh toán trực tuyến đối soát.", layer: "controller" },
+                                                                { name: "AdminPosController.java", type: "file", desc: "Bộ điều khiển màn hình bán hàng tại quầy (POS) nhanh chóng.", layer: "controller", calls: ["AdminPosService.java"] },
+                                                                { name: "AdminSanPhamController.java", type: "file", desc: "CRUD sản phẩm, kiểm duyệt an toàn file ảnh tải lên bằng Apache Tika.", layer: "controller", calls: ["AdminSanPhamService.java"] },
+                                                                { name: "AdminShippingController.java", type: "file", desc: "Quản lý đơn vị vận chuyển và phí ship.", layer: "controller", calls: ["AdminShippingService.java"] },
+                                                                { name: "AdminThongKeController.java", type: "file", desc: "Cung cấp số liệu thống kê doanh số bán hàng, doanh thu để dựng biểu đồ Chart.js.", layer: "controller", calls: ["AdminThongKeService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "api",
+                                                            type: "dir",
+                                                            desc: "REST APIs cho các dịch vụ chung và bên thứ ba.",
+                                                            children: [
+                                                                { name: "ChatRestController.java", type: "file", desc: "REST API tiếp nhận tin nhắn chat từ client gửi sang chatbot AI.", layer: "controller", calls: ["ChatService.java"] },
+                                                                { name: "GhnRestController.java", type: "file", desc: "Tích hợp và đồng bộ trạng thái giao hàng từ Giao Hàng Nhanh API.", layer: "controller", calls: ["GhnService.java"] },
+                                                                { name: "LocationRestController.java", type: "file", desc: "Cung cấp danh sách Tỉnh/Huyện/Xã chuẩn Việt Nam.", layer: "controller", calls: ["LocationService.java"] },
+                                                                { name: "ShippingApiController.java", type: "file", desc: "REST API tính toán phí vận chuyển động.", layer: "controller", calls: ["ShippingFeeCalculator.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "blog",
+                                                            type: "dir",
+                                                            desc: "Hiển thị tin tức và bài viết cho khách hàng.",
+                                                            children: [
+                                                                { name: "BlogController.java", type: "file", desc: "Hiển thị trang danh sách bài viết blog và chi tiết bài viết.", layer: "controller", calls: ["BlogService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "home",
+                                                            type: "dir",
+                                                            desc: "Trang chủ.",
+                                                            children: [
+                                                                { name: "HomeController.java", type: "file", desc: "Điều phối request trang chủ (GET /), trả về view Thymeleaf.", layer: "controller", calls: ["SanPhamRepository.java", "DanhMucRepository.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "order",
+                                                            type: "dir",
+                                                            desc: "Thao tác đơn hàng và giỏ hàng của khách hàng.",
+                                                            children: [
+                                                                { name: "CheckoutController.java", type: "file", desc: "Xử lý đặt hàng (POST /checkout/place-order) kèm Jsoup XSS filter.", layer: "controller", calls: ["GioHangService.java", "OrderViewService.java", "ZaloPayService.java", "SepayGatewayService.java"] },
+                                                                { name: "GioHangController.java", type: "file", desc: "Request AJAX thêm/cập nhật/xóa sản phẩm khỏi giỏ hàng.", layer: "controller", calls: ["GioHangService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "payment",
+                                                            type: "dir",
+                                                            desc: "Tích hợp các cổng thanh toán online.",
+                                                            children: [
+                                                                { name: "SepayIpnController.java", type: "file", desc: "Webhook nhận thông tin biến động số dư từ cổng thanh toán SePay.", layer: "controller", calls: ["SepayGatewayService.java", "OrderViewService.java"] },
+                                                                { name: "SepaySimulationController.java", type: "file", desc: "Trang mô phỏng giao dịch chuyển khoản SePay phục vụ kiểm thử.", layer: "controller" },
+                                                                { name: "ZaloPayController.java", type: "file", desc: "Xử lý Callback/IPN từ cổng ZaloPay để xác nhận đơn hàng thành công.", layer: "controller", calls: ["ZaloPayService.java", "OrderViewService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "product",
+                                                            type: "dir",
+                                                            desc: "Xem thông tin sản phẩm.",
+                                                            children: [
+                                                                { name: "SanPhamController.java", type: "file", desc: "Hiển thị trang sản phẩm (GET /shop) và chi tiết sản phẩm.", layer: "controller", calls: ["AdminSanPhamService.java", "DanhMucService.java"] },
+                                                                { name: "SanPhamYeuThichController.java", type: "file", desc: "Bộ điều khiển quản lý danh sách sản phẩm yêu thích của khách hàng.", layer: "controller", calls: ["SanPhamYeuThichService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "user",
+                                                            type: "dir",
+                                                            desc: "Đăng ký, đăng nhập và thông tin khách hàng.",
+                                                            children: [
+                                                                { name: "UserDangKyController.java", type: "file", desc: "Đăng ký tài khoản khách hàng, tích hợp RegisterRateLimiter.", layer: "controller", calls: ["UserDangKyService.java", "RegisterRateLimiter.java"] },
+                                                                { name: "UserDangNhapController.java", type: "file", desc: "Hiển thị trang đăng nhập và Rate Limiter khóa Brute Force.", layer: "controller", calls: ["LoginRateLimiter.java"] },
+                                                                { name: "UserQuenMatKhauController.java", type: "file", desc: "Xử lý khôi phục mật khẩu gửi mã SMTP.", layer: "controller", calls: ["UserQuenMatKhauService.java", "ForgotPasswordRateLimiter.java"] },
+                                                                { name: "UserAddressController.java", type: "file", desc: "CRUD sổ địa chỉ khách hàng.", layer: "controller", calls: ["UserAddressService.java"] },
+                                                                { name: "UserDashboardController.java", type: "file", desc: "Hiển thị trang quản lý tài khoản cá nhân khách hàng.", layer: "controller", calls: ["UserDashboardService.java"] },
+                                                                { name: "RoleSwitchController.java", type: "file", desc: "Chuyển đổi vai trò nhanh phục vụ kiểm thử phân quyền.", layer: "controller" }
+                                                            ]
+                                                        }
                                                     ]
                                                 },
                                                 {
-                                                    name: "service",
+                                                    name: "dao",
                                                     type: "dir",
-                                                    desc: "Tầng Service chứa nghiệp vụ logic cốt lõi (Business Logic).",
+                                                    desc: "Các đối tượng truy xuất dữ liệu (Data Access Objects) trực tiếp.",
                                                     children: [
-                                                        { name: "OrderViewService.java", type: "file", desc: "Xử lý nghiệp vụ vòng đời đơn hàng: tạo, hủy, duyệt, hoàn trả, tích hợp tạo vận đơn GHN. Đọc dữ liệu từ snapshot lịch sử đơn hàng.", layer: "service", calls: ["HoaDonRepository.java", "HoaDonChiTietRepository.java", "GhnService.java"] },
-                                                        { name: "GioHangService.java", type: "file", desc: "Tính tổng tiền giỏ hàng, áp dụng voucher, validate dữ liệu checkout, trừ tồn kho và tạo bản ghi HoaDon. Ghi snapshot giá & catalog vào HoaDonChiTiet thông qua PricingService.", layer: "service", calls: ["GioHangRepository.java", "GioHangChiTietRepository.java", "SanPhamChiTietRepository.java", "PricingServiceImpl.java"] },
-                                                        { name: "PricingService.java", type: "file", desc: "Interface tính giá tập trung (Centralized Pricing Engine). Nhận SanPhamChiTiet, xác định chiến dịch khuyến mãi đang hoạt động theo đúng quy tắc nghiệp vụ và trả về PriceSnapshot.", layer: "service", calledBy: ["GioHangService.java", "AdminPosService.java"] },
-                                                        { name: "PricingServiceImpl.java", type: "file", desc: "Triển khai PricingService: áp dụng đúng DotGiamGia đang active, tính giá sau giảm, ghi metadata snapshot sản phẩm (tên, SKU, thuộc tính, thương hiệu, danh mục).", layer: "service", calls: ["DotGiamGiaDAO.java"] },
-                                                        { name: "PriceSnapshot.java", type: "file", desc: "Record bất biến chứa thông tin giá tại thời điểm đặt hàng: giaNiemYet, donGia, phanTramGiam, soTienGiamSanPham, tenDotGiamGia, và metadata sản phẩm.", layer: "service" },
-                                                        { name: "DanhGiaService.java", type: "file", desc: "Nghiệp vụ đánh giá sản phẩm: kiểm duyệt bình luận qua ProfanityFilter, áp dụng chính sách khóa bình luận lũy tiến, ghi CommentViolationLog và tạo ThongBao.", layer: "service", calls: ["ProfanityFilter.java", "CommentViolationLogRepository.java", "ThongBaoRepository.java", "TaiKhoanRepository.java"] },
-                                                        { name: "GhnService.java", type: "file", desc: "Kết nối trực tiếp API Giao Hàng Nhanh qua RestTemplate để tính phí ship động và đẩy đơn giao nhận.", layer: "service" },
-                                                        { name: "ZaloPayServiceImpl.java", type: "file", desc: "Đóng gói yêu cầu thanh toán gửi sang ZaloPay API và verify chữ ký HMAC-SHA256 khi nhận IPN callback.", layer: "service" },
-                                                        { name: "SepayGatewayService.java", type: "file", desc: "Tạo QR thanh toán động và xác thực webhook biến động tài khoản từ hệ thống SePay.", layer: "service" },
-                                                        { name: "UserDangKyService.java", type: "file", desc: "Đăng ký khách hàng mới: băm mật khẩu, lưu đồng thời TaiKhoan và KhachHang trong 1 Transaction.", layer: "service", calls: ["TaiKhoanRepository.java", "KhachHangRepository.java"] },
-                                                        { name: "UserDangNhapService.java", type: "file", desc: "Nạp thông tin người dùng từ TaiKhoan để phục vụ xác thực bảo mật của Spring Security.", layer: "service", calls: ["TaiKhoanRepository.java"] },
-                                                        { name: "UserQuenMatKhauService.java", type: "file", desc: "Quản lý sinh token reset mật khẩu, gửi mail và xác thực độ mạnh mật khẩu mới.", layer: "service", calls: ["TokenKhoiPhucRepository.java", "TaiKhoanRepository.java"] },
-                                                        { name: "ShippingZoneResolver.java", type: "file", desc: "Xác định vùng vận chuyển (nội thành/ngoại thành/liên tỉnh) dựa vào districtId để chống tampering phí ship phía server.", layer: "service" },
-                                                        { name: "ShippingFeeCalculator.java", type: "file", desc: "Tính toán phí vận chuyển dựa trên vùng vận chuyển đã được resolver phân tích và cân nặng.", layer: "service", calls: ["ShippingZoneResolver.java"] },
-                                                        { name: "AdminSanPhamService.java", type: "file", desc: "Nghiệp vụ sản phẩm: kiểm duyệt file ảnh bằng Apache Tika và ImageIO, đổi tên file theo UUID, lưu trữ vật lý.", layer: "service", calls: ["SanPhamRepository.java"] },
-                                                        { name: "AdminBienTheService.java", type: "file", desc: "CRUD biến thể sản phẩm, tích hợp check bảo mật upload ảnh biến thể.", layer: "service", calls: ["SanPhamChiTietRepository.java"] },
-                                                        { name: "AdminPosService.java", type: "file", desc: "Nghiệp vụ bán hàng trực tiếp tại quầy, cập nhật kho hàng thực tế. Tích hợp PricingService ghi snapshot vào HoaDonChiTiet.", layer: "service", calls: ["HoaDonRepository.java", "SanPhamChiTietRepository.java", "PricingServiceImpl.java"] },
-                                                        { name: "AdminThongKeService.java", type: "file", desc: "Thống kê doanh số nâng cao, phục vụ dữ liệu biểu đồ cho dashboard admin.", layer: "service", calls: ["HoaDonRepository.java"] },
-                                                        { name: "AuditService.java", type: "file", desc: "Lưu vết lịch sử thay đổi dữ liệu của Admin panel để làm bằng chứng kiểm toán hệ thống.", layer: "service", calls: ["EditLogRepository.java"] }
+                                                        { name: "DanhGiaDAO.java", type: "file", layer: "repository" },
+                                                        { name: "DanhMucDAO.java", type: "file", layer: "repository" },
+                                                        { name: "DonViVanChuyenDAO.java", type: "file", layer: "repository" },
+                                                        { name: "DotGiamGiaDAO.java", type: "file", layer: "repository" },
+                                                        { name: "GioHangChiTietDAO.java", type: "file", layer: "repository" },
+                                                        { name: "GioHangDAO.java", type: "file", layer: "repository" },
+                                                        { name: "HinhAnhSanPhamDAO.java", type: "file", layer: "repository" },
+                                                        { name: "HoaDonDAO.java", type: "file", layer: "repository" },
+                                                        { name: "KhachHangDAO.java", type: "file", layer: "repository" },
+                                                        { name: "NhanVienDAO.java", type: "file", layer: "repository" },
+                                                        { name: "PhieuGiamGiaDAO.java", type: "file", layer: "repository" },
+                                                        { name: "PhuongThucThanhToanDAO.java", type: "file", layer: "repository" },
+                                                        { name: "SanPhamDAO.java", type: "file", layer: "repository" },
+                                                        { name: "TaiKhoanDAO.java", type: "file", layer: "repository" },
+                                                        { name: "ThuongHieuDAO.java", type: "file", layer: "repository" },
+                                                        { name: "TrangThaiGioHangDAO.java", type: "file", layer: "repository" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "dto",
+                                                    type: "dir",
+                                                    desc: "Các đối tượng chuyển đổi dữ liệu (Data Transfer Objects) giữa các tầng.",
+                                                    children: [
+                                                        {
+                                                            name: "blog",
+                                                            type: "dir",
+                                                            desc: "DTO cho phần bài viết tin tức.",
+                                                            children: [
+                                                                { name: "BlogDTO.java", type: "file", desc: "DTO chứa thông tin chi tiết bài viết blog.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "common",
+                                                            type: "dir",
+                                                            desc: "Các DTO dùng chung cho nhiều tác vụ.",
+                                                            children: [
+                                                                { name: "ChartPointDTO.java", type: "file", desc: "DTO chứa dữ liệu điểm vẽ biểu đồ thống kê.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "order",
+                                                            type: "dir",
+                                                            desc: "DTO liên quan tới đơn hàng và doanh thu.",
+                                                            children: [
+                                                                { name: "GeneralMetricsDTO.java", type: "file", desc: "DTO chứa các chỉ số tổng hợp về doanh số.", layer: "default" },
+                                                                { name: "OrderStatusCountDTO.java", type: "file", desc: "DTO đếm số lượng đơn hàng theo từng trạng thái.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "payment",
+                                                            type: "dir",
+                                                            desc: "DTO cho cổng thanh toán ZaloPay và SePay.",
+                                                            children: [
+                                                                { name: "SepayIpnRequest.java", type: "file", desc: "DTO nhận request IPN từ SePay.", layer: "default" },
+                                                                { name: "SepayTransactionDto.java", type: "file", desc: "DTO chứa thông tin chi tiết giao dịch SePay.", layer: "default" },
+                                                                { name: "TransactionHistoryDTO.java", type: "file", desc: "DTO lưu vết lịch sử giao dịch thanh toán.", layer: "default" },
+                                                                { name: "ZaloPayCallbackDTO.java", type: "file", desc: "DTO nhận callback từ ZaloPay.", layer: "default" },
+                                                                { name: "ZaloPayCreateOrderRequestDTO.java", type: "file", desc: "DTO gửi yêu cầu tạo đơn thanh toán sang ZaloPay.", layer: "default" },
+                                                                { name: "ZaloPayResponseDTO.java", type: "file", desc: "DTO chứa phản hồi kết quả từ ZaloPay API.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "product",
+                                                            type: "dir",
+                                                            desc: "DTO liên quan tới thông tin sản phẩm.",
+                                                            children: [
+                                                                { name: "TopProductDTO.java", type: "file", desc: "DTO chứa thông tin sản phẩm bán chạy nhất.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "shipping",
+                                                            type: "dir",
+                                                            desc: "DTO tích hợp cổng vận chuyển Giao Hàng Nhanh.",
+                                                            children: [
+                                                                { name: "GhnOrderCreateRequestDTO.java", type: "file", desc: "DTO tạo vận đơn gửi sang GHN.", layer: "default" },
+                                                                { name: "GhnShipFeeRequestDTO.java", type: "file", desc: "DTO tính phí vận chuyển động.", layer: "default" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "user",
+                                                            type: "dir",
+                                                            desc: "DTO liên quan tới thông tin người dùng và sổ địa chỉ.",
+                                                            children: [
+                                                                { name: "UserAddressDto.java", type: "file", desc: "DTO chi tiết địa chỉ của khách hàng.", layer: "default" },
+                                                                { name: "UserProfileEditDto.java", type: "file", desc: "DTO chứa thông tin cập nhật tài khoản khách hàng.", layer: "default" }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "entity",
+                                                    type: "dir",
+                                                    desc: "Các thực thể JPA kết nối tương ứng với bảng Database.",
+                                                    children: [
+                                                        { name: "Blog.java", type: "file", desc: "Thực thể lưu trữ thông tin các bài viết, tin tức trên website.", layer: "entity" },
+                                                        { name: "BlogStatus.java", type: "file", desc: "Enum định nghĩa trạng thái của bài viết (Draft, Published).", layer: "entity" },
+                                                        { name: "ChatConversation.java", type: "file", desc: "Thực thể lưu thông tin các phiên chat của người dùng với hệ thống chatbot AI.", layer: "entity" },
+                                                        { name: "ChatFeedback.java", type: "file", desc: "Thực thể lưu nhận xét, phản hồi từ khách hàng về chất lượng trả lời của chatbot.", layer: "entity" },
+                                                        { name: "ChatMessage.java", type: "file", desc: "Thực thể lưu chi tiết từng tin nhắn gửi và nhận trong các phiên hội thoại chatbot.", layer: "entity" },
+                                                        { name: "CommentViolationLog.java", type: "file", desc: "Nhật ký lưu trữ các vi phạm bình luận của người dùng bị hệ thống lọc thô tục phát hiện.", layer: "entity" },
+                                                        { name: "DanhGia.java", type: "file", desc: "Thực thể chứa thông tin đánh giá số sao, bình luận sản phẩm từ khách hàng.", layer: "entity" },
+                                                        { name: "DanhGiaAnh.java", type: "file", desc: "Thực thể lưu trữ đường dẫn hình ảnh đính kèm trong các bình luận đánh giá.", layer: "entity" },
+                                                        { name: "DanhMuc.java", type: "file", desc: "Thực thể định nghĩa danh mục sản phẩm (như Vợt Cầu Lông, Giày Cầu Lông).", layer: "entity" },
+                                                        { name: "DonViVanChuyen.java", type: "file", desc: "Thực thể lưu thông tin đối tác giao nhận và đơn vị vận chuyển hỗ trợ.", layer: "entity" },
+                                                        { name: "DotGiamGia.java", type: "file", desc: "Thực thể quản lý các chương trình đợt giảm giá trực tiếp trên sản phẩm.", layer: "entity" },
+                                                        { name: "EditLog.java", type: "file", desc: "Thực thể lưu dấu vết lịch sử thay đổi dữ liệu nhạy cảm phục vụ kiểm toán hệ thống.", layer: "entity" },
+                                                        { name: "GioHang.java", type: "file", desc: "Thực thể đại diện cho giỏ hàng của từng tài khoản người dùng.", layer: "entity" },
+                                                        { name: "GioHangChiTiet.java", type: "file", desc: "Thực thể lưu chi tiết từng sản phẩm và số lượng tương ứng trong giỏ hàng.", layer: "entity" },
+                                                        { name: "HinhAnhSanPham.java", type: "file", desc: "Thực thể lưu các đường dẫn ảnh sản phẩm tải lên hệ thống.", layer: "entity" },
+                                                        { name: "HoaDon.java", type: "file", desc: "Thực thể hóa đơn bán hàng lưu thông tin đặt hàng, tổng tiền, phương thức thanh toán.", layer: "entity" },
+                                                        { name: "HoaDonChiTiet.java", type: "file", desc: "Thực thể lưu chi tiết danh sách sản phẩm cùng giá bán tại thời điểm lập hóa đơn.", layer: "entity" },
+                                                        { name: "KhachHang.java", type: "file", desc: "Thực thể lưu thông tin cá nhân khách hàng như họ tên, số điện thoại, điểm tích lũy.", layer: "entity" },
+                                                        { name: "NhanVien.java", type: "file", desc: "Thực thể lưu thông tin hồ sơ nhân viên, mã nhân sự và chức vụ.", layer: "entity" },
+                                                        { name: "OrderStatus.java", type: "file", desc: "Enum định nghĩa các trạng thái của đơn hàng (PENDING, PAID, SHIPPING, DELIVERED, CANCELLED).", layer: "entity" },
+                                                        { name: "PaymentMethod.java", type: "file", desc: "Enum định nghĩa phương thức thanh toán (COD, ZALOPAY, BANK_TRANSFER).", layer: "entity" },
+                                                        { name: "PaymentStatus.java", type: "file", desc: "Enum định nghĩa trạng thái thanh toán đơn hàng (PENDING, PAID, REFUNDED, FAILED).", layer: "entity" },
+                                                        { name: "PaymentTransaction.java", type: "file", desc: "Thực thể lưu chi tiết lịch sử giao dịch và đối soát từ SePay và ZaloPay.", layer: "entity" },
+                                                        { name: "PhieuGiamGia.java", type: "file", desc: "Thực thể quản lý các mã giảm giá (voucher) áp dụng cho đơn hàng.", layer: "entity" },
+                                                        { name: "RefundStatus.java", type: "file", desc: "Enum định nghĩa trạng thái hoàn tiền cho đơn hàng bị hủy hoặc trả hàng.", layer: "entity" },
+                                                        { name: "ReturnStatus.java", type: "file", desc: "Enum định nghĩa trạng thái đổi trả sản phẩm của khách hàng.", layer: "entity" },
+                                                        { name: "SanPham.java", type: "file", desc: "Thực thể thông tin chung của sản phẩm (tên sản phẩm, mô tả, thương hiệu).", layer: "entity" },
+                                                        { name: "SanPhamChiTiet.java", type: "file", desc: "Thực thể chi tiết biến thể sản phẩm (size, màu sắc, giá bán, số lượng tồn kho).", layer: "entity" },
+                                                        { name: "SanPhamYeuThich.java", type: "file", desc: "Thực thể lưu danh sách các sản phẩm yêu thích được đánh dấu bởi khách hàng.", layer: "entity" },
+                                                        { name: "ShippingZone.java", type: "file", desc: "Thực thể lưu trữ vùng miền vận chuyển hỗ trợ tính toán phí ship động.", layer: "entity" },
+                                                        { name: "SoDiaChi.java", type: "file", desc: "Thực thể quản lý danh sách sổ địa chỉ nhận hàng của khách hàng.", layer: "entity" },
+                                                        { name: "TaiKhoan.java", type: "file", desc: "Thực thể lưu thông tin tài khoản đăng nhập hệ thống, mật khẩu băm BCrypt và vai trò phân quyền.", layer: "entity" },
+                                                        { name: "ThongBao.java", type: "file", desc: "Thực thể chứa các thông báo gửi đến tài khoản người dùng hoặc quản trị viên.", layer: "entity" },
+                                                        { name: "ThuongHieu.java", type: "file", desc: "Thực thể lưu thông tin thương hiệu sản phẩm (như Yonex, Lining, Victor).", layer: "entity" },
+                                                        { name: "TokenKhoiPhuc.java", type: "file", desc: "Thực thể lưu trữ mã OTP/Token phục vụ tính năng quên mật khẩu qua Email.", layer: "entity" },
+                                                        { name: "TrangThaiGioHang.java", type: "file", desc: "Thực thể định nghĩa trạng thái hoạt động của giỏ hàng.", layer: "entity" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "exception",
+                                                    type: "dir",
+                                                    desc: "Các lớp ngoại lệ tùy chỉnh và bộ xử lý ngoại lệ toàn cục.",
+                                                    children: [
+                                                        { name: "DuplicateTransactionException.java", type: "file", desc: "Ngoại lệ xảy ra khi giao dịch thanh toán bị trùng lặp.", layer: "config" },
+                                                        { name: "GlobalExceptionHandler.java", type: "file", desc: "Bộ xử lý ngoại lệ tập trung cho toàn bộ ứng dụng, trả về JSON hoặc HTML.", layer: "config" },
+                                                        { name: "InvalidPaymentException.java", type: "file", desc: "Ngoại lệ xảy ra khi dữ liệu thanh toán từ bên thứ ba không hợp lệ.", layer: "config" },
+                                                        { name: "OrderNotFoundException.java", type: "file", desc: "Ngoại lệ xảy ra khi không tìm thấy đơn hàng.", layer: "config" },
+                                                        { name: "PromotionValidationException.java", type: "file", desc: "Ngoại lệ xảy ra khi mã giảm giá hoặc khuyến mãi không hợp lệ.", layer: "config" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "migration",
+                                                    type: "dir",
+                                                    desc: "Chứa các tiến trình runner thực hiện đồng bộ dữ liệu lúc chạy ứng dụng.",
+                                                    children: [
+                                                        { name: "EmployeeMigrationRunner.java", type: "file", desc: "Đồng bộ và khởi tạo tài khoản nhân viên mặc định ban đầu.", layer: "config" }
                                                     ]
                                                 },
                                                 {
@@ -1256,14 +1733,31 @@
                                                     type: "dir",
                                                     desc: "Tầng Repository kết nối CSDL sử dụng Spring Data JPA.",
                                                     children: [
-                                                        { name: "HoaDonRepository.java", type: "file", desc: "Truy vấn bảng hóa đơn, lọc theo trạng thái và tính doanh số.", layer: "repository" },
-                                                        { name: "HoaDonChiTietRepository.java", type: "file", desc: "Truy vấn sản phẩm trong hóa đơn, tính lượng bán.", layer: "repository" },
-                                                        { name: "SanPhamRepository.java", type: "file", desc: "Quản lý CSDL Sản phẩm, tìm kiếm, phân trang và lọc.", layer: "repository" },
-                                                        { name: "SanPhamChiTietRepository.java", type: "file", desc: "Truy vấn các biến thể sản phẩm, số lượng tồn kho.", layer: "repository" },
-                                                        { name: "TaiKhoanRepository.java", type: "file", desc: "Truy vấn tài khoản phục vụ đăng nhập và quản lý.", layer: "repository" },
-                                                        { name: "KhachHangRepository.java", type: "file", desc: "Quản lý thông tin khách hàng.", layer: "repository" },
-                                                        { name: "GioHangRepository.java", type: "file", desc: "Truy vấn giỏ hàng của tài khoản hoặc session.", layer: "repository" },
-                                                        { name: "PaymentTransactionRepository.java", type: "file", desc: "Lưu vết giao dịch thanh toán ZaloPay/SePay phục vụ đối soát.", layer: "repository" }
+                                                        { name: "BlogRepository.java", type: "file", desc: "Truy vấn CSDL bảng bài viết tin tức.", layer: "repository" },
+                                                        { name: "ChatConversationRepository.java", type: "file", desc: "Truy vấn CSDL bảng phiên hội thoại chatbot.", layer: "repository" },
+                                                        { name: "ChatFeedbackRepository.java", type: "file", desc: "Truy vấn CSDL bảng phản hồi chatbot AI.", layer: "repository" },
+                                                        { name: "ChatMessageRepository.java", type: "file", desc: "Truy vấn CSDL bảng tin nhắn chat.", layer: "repository" },
+                                                        { name: "CommentViolationLogRepository.java", type: "file", desc: "Truy vấn CSDL nhật ký vi phạm bình luận.", layer: "repository" },
+                                                        { name: "DanhGiaAnhRepository.java", type: "file", desc: "Truy vấn CSDL ảnh đính kèm của bình luận.", layer: "repository" },
+                                                        { name: "DanhMucRepository.java", type: "file", desc: "Truy vấn CSDL bảng danh mục sản phẩm.", layer: "repository" },
+                                                        { name: "EditLogRepository.java", type: "file", desc: "Truy vấn CSDL bảng nhật ký chỉnh sửa.", layer: "repository" },
+                                                        { name: "GioHangChiTietRepository.java", type: "file", desc: "Truy vấn CSDL chi tiết giỏ hàng.", layer: "repository" },
+                                                        { name: "GioHangRepository.java", type: "file", desc: "Truy vấn CSDL bảng giỏ hàng người dùng.", layer: "repository" },
+                                                        { name: "HoaDonChiTietRepository.java", type: "file", desc: "Truy vấn CSDL chi tiết hóa đơn.", layer: "repository" },
+                                                        { name: "HoaDonRepository.java", type: "file", desc: "Truy vấn CSDL bảng hóa đơn bán hàng.", layer: "repository" },
+                                                        { name: "KhachHangRepository.java", type: "file", desc: "Truy vấn CSDL bảng thông tin khách hàng.", layer: "repository" },
+                                                        { name: "NhanVienRepository.java", type: "file", desc: "Truy vấn CSDL bảng hồ sơ nhân viên.", layer: "repository" },
+                                                        { name: "PaymentTransactionRepository.java", type: "file", desc: "Truy vấn CSDL bảng lịch sử giao dịch thanh toán.", layer: "repository" },
+                                                        { name: "PhieuGiamGiaRepository.java", type: "file", desc: "Truy vấn CSDL bảng phiếu giảm giá.", layer: "repository" },
+                                                        { name: "SanPhamChiTietRepository.java", type: "file", desc: "Truy vấn CSDL bảng chi tiết biến thể sản phẩm.", layer: "repository" },
+                                                        { name: "SanPhamRepository.java", type: "file", desc: "Truy vấn CSDL bảng sản phẩm chung.", layer: "repository" },
+                                                        { name: "SanPhamYeuThichRepository.java", type: "file", desc: "Truy vấn CSDL bảng sản phẩm yêu thích.", layer: "repository" },
+                                                        { name: "SoDiaChiRepository.java", type: "file", desc: "Truy vấn CSDL bảng địa chỉ nhận hàng của khách.", layer: "repository" },
+                                                        { name: "TaiKhoanRepository.java", type: "file", desc: "Truy vấn CSDL bảng tài khoản đăng nhập.", layer: "repository" },
+                                                        { name: "ThongBaoRepository.java", type: "file", desc: "Truy vấn CSDL bảng thông báo hệ thống.", layer: "repository" },
+                                                        { name: "ThuongHieuRepository.java", type: "file", desc: "Truy vấn CSDL bảng thương hiệu sản phẩm.", layer: "repository" },
+                                                        { name: "TokenKhoiPhucRepository.java", type: "file", desc: "Truy vấn CSDL bảng mã token khôi phục mật khẩu.", layer: "repository" },
+                                                        { name: "TrangThaiGioHangRepository.java", type: "file", desc: "Truy vấn CSDL bảng trạng thái giỏ hàng.", layer: "repository" }
                                                     ]
                                                 },
                                                 {
@@ -1271,20 +1765,118 @@
                                                     type: "dir",
                                                     desc: "Các bộ hạn chế truy cập (Rate Limiter) bảo mật.",
                                                     children: [
-                                                        { name: "LoginRateLimiter.java", type: "file", desc: "Rate Limiter giới hạn số lần thử mật khẩu sai của 1 địa chỉ IP (Brute Force Protection).", layer: "security" },
-                                                        { name: "RegisterRateLimiter.java", type: "file", desc: "Giới hạn số tài khoản được đăng ký từ cùng 1 IP trong 1 tiếng để tránh spam.", layer: "security" },
-                                                        { name: "ForgotPasswordRateLimiter.java", type: "file", desc: "Giới hạn tần suất yêu cầu khôi phục mật khẩu từ 1 IP để tránh quá tải SMTP.", layer: "security" }
+                                                        { name: "LoginRateLimiter.java", type: "file", desc: "Limiter bảo vệ tài khoản khỏi dò quét Brute Force đăng nhập.", layer: "security" },
+                                                        { name: "RegisterRateLimiter.java", type: "file", desc: "Giới hạn spam đăng ký tài khoản từ cùng IP.", layer: "security" },
+                                                        { name: "ForgotPasswordRateLimiter.java", type: "file", desc: "Giới hạn tần suất yêu cầu khôi phục mật khẩu.", layer: "security" }
+                                                    ]
+                                                },
+                                                {
+                                                    name: "service",
+                                                    type: "dir",
+                                                    desc: "Tầng Service chứa nghiệp vụ logic cốt lõi (Business Logic).",
+                                                    children: [
+                                                        { name: "AuditService.java", type: "file", desc: "Ghi vết các thay đổi nhạy cảm của Admin panel phục vụ kiểm toán.", layer: "service", calls: ["EditLogRepository.java"] },
+                                                        {
+                                                            name: "admin",
+                                                            type: "dir",
+                                                            desc: "Dịch vụ nghiệp vụ quản trị.",
+                                                            children: [
+                                                                { name: "AdminBienTheService.java", type: "file", desc: "Nghiệp vụ quản lý thuộc tính và biến thể sản phẩm.", layer: "service", calls: ["SanPhamChiTietRepository.java"] },
+                                                                { name: "AdminKhuyenMaiService.java", type: "file", desc: "Xử lý đợt giảm giá và phiếu giảm giá.", layer: "service", calls: ["PhieuGiamGiaRepository.java"] },
+                                                                { name: "AdminNhanVienService.java", type: "file", desc: "Quản lý nhân viên bán hàng và nhân sự.", layer: "service", calls: ["NhanVienRepository.java"] },
+                                                                { name: "AdminPosService.java", type: "file", desc: "Bán hàng tại quầy nhanh chóng, gọi PricingService tính giá.", layer: "service", calls: ["HoaDonRepository.java", "SanPhamChiTietRepository.java", "PricingServiceImpl.java"] },
+                                                                { name: "AdminSanPhamService.java", type: "file", desc: "CRUD sản phẩm, lọc ảnh an toàn bằng Apache Tika và lưu vật lý.", layer: "service", calls: ["SanPhamRepository.java"] },
+                                                                { name: "AdminShippingService.java", type: "file", desc: "Quản lý dịch vụ ship hàng và phí vận chuyển.", layer: "service" },
+                                                                { name: "AdminThongKeService.java", type: "file", desc: "Thống kê doanh số, doanh thu và dữ liệu biểu đồ.", layer: "service", calls: ["HoaDonRepository.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "api",
+                                                            type: "dir",
+                                                            desc: "Tích hợp các REST APIs bên thứ ba.",
+                                                            children: [
+                                                                { name: "ChatService.java", type: "file", desc: "Xử lý gửi tin nhắn, lọc command injection và lưu hội thoại chatbot.", layer: "service", calls: ["ChatMessageRepository.java"] },
+                                                                { name: "GhnService.java", type: "file", desc: "Kết nối Giao Hàng Nhanh API tính phí ship và đẩy đơn.", layer: "service" },
+                                                                { name: "LocationService.java", type: "file", desc: "Cung cấp danh sách hành chính Việt Nam.", layer: "service" },
+                                                                { name: "ShippingFeeCalculator.java", type: "file", desc: "Tính phí ship dựa trên cân nặng và khoảng cách.", layer: "service" },
+                                                                { name: "ShippingZoneResolver.java", type: "file", desc: "Phân vùng ship chống client sửa đổi phí ship.", layer: "service" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "blog",
+                                                            type: "dir",
+                                                            desc: "Tin tức và bài viết truyền thông.",
+                                                            children: [
+                                                                { name: "BlogService.java", type: "file", desc: "Nghiệp vụ bài viết và đăng tải blog.", layer: "service", calls: ["BlogRepository.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "common",
+                                                            type: "dir",
+                                                            desc: "Dịch vụ dùng chung.",
+                                                            children: [
+                                                                { name: "FileStorageService.java", type: "file", desc: "Quản lý lưu trữ tệp tin tải lên hệ thống.", layer: "service" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "order",
+                                                            type: "dir",
+                                                            desc: "Dịch vụ đơn hàng và giỏ hàng.",
+                                                            children: [
+                                                                { name: "GioHangService.java", type: "file", desc: "Thêm sản phẩm, áp voucher và tạo đơn hàng checkout.", layer: "service", calls: ["GioHangRepository.java", "GioHangChiTietRepository.java", "SanPhamChiTietRepository.java", "PricingServiceImpl.java"] },
+                                                                { name: "OrderViewService.java", type: "file", desc: "Nghiệp vụ cập nhật vòng đời đơn hàng và kết nối đẩy đơn GHN.", layer: "service", calls: ["HoaDonRepository.java", "HoaDonChiTietRepository.java", "GhnService.java"] }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "payment",
+                                                            type: "dir",
+                                                            desc: "Xử lý cổng thanh toán trực tuyến.",
+                                                            children: [
+                                                                { name: "PaymentGatewayService.java", type: "file", desc: "Cung cấp các cổng thanh toán hỗ trợ.", layer: "service" },
+                                                                { name: "SepayGatewayService.java", type: "file", desc: "Tạo QR thanh toán động và xác nhận giao dịch chuyển khoản SePay.", layer: "service" },
+                                                                { name: "ZaloPayScheduler.java", type: "file", desc: "Tự động kiểm tra trạng thái đơn ZaloPay quá thời gian chưa thanh toán.", layer: "service" },
+                                                                { name: "ZaloPayService.java", type: "file", desc: "Interface định nghĩa thanh toán ZaloPay.", layer: "service" },
+                                                                { name: "ZaloPayServiceImpl.java", type: "file", desc: "Triển khai ZaloPay API sinh url thanh toán và verify HMAC chữ ký.", layer: "service" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "product",
+                                                            type: "dir",
+                                                            desc: "Nghiệp vụ liên quan tới sản phẩm và giá cả.",
+                                                            children: [
+                                                                { name: "DanhGiaService.java", type: "file", desc: "Lưu nhận xét và bình luận sản phẩm, lọc profanity.", layer: "service", calls: ["ProfanityFilter.java", "CommentViolationLogRepository.java"] },
+                                                                { name: "DanhMucService.java", type: "file", desc: "CRUD danh mục sản phẩm.", layer: "service" },
+                                                                { name: "PriceSnapshot.java", type: "file", desc: "Record lưu trữ snapshot giá lúc mua.", layer: "service" },
+                                                                { name: "PricingService.java", type: "file", desc: "Giao diện tính giá bán sản phẩm.", layer: "service" },
+                                                                { name: "PricingServiceImpl.java", type: "file", desc: "Áp dụng khuyến mãi active và trích xuất snapshot sản phẩm.", layer: "service", calls: ["DotGiamGiaDAO.java"] },
+                                                                { name: "SanPhamYeuThichService.java", type: "file", desc: "Nghiệp vụ lưu sản phẩm yêu thích.", layer: "service" },
+                                                                { name: "ThuongHieuService.java", type: "file", desc: "CRUD thương hiệu.", layer: "service" }
+                                                            ]
+                                                        },
+                                                        {
+                                                            name: "user",
+                                                            type: "dir",
+                                                            desc: "Dịch vụ người dùng và bảo mật.",
+                                                            children: [
+                                                                { name: "UserAddressService.java", type: "file", desc: "CRUD sổ địa chỉ khách hàng.", layer: "service" },
+                                                                { name: "UserDangKyService.java", type: "file", desc: "Đăng ký người dùng mới, băm mật khẩu BCrypt.", layer: "service", calls: ["TaiKhoanRepository.java", "KhachHangRepository.java"] },
+                                                                { name: "UserDangNhapService.java", type: "file", desc: "Nạp thông tin đăng nhập phục vụ Spring Security.", layer: "service", calls: ["TaiKhoanRepository.java"] },
+                                                                { name: "UserDashboardService.java", type: "file", desc: "Tổng hợp thông tin cá nhân khách hàng.", layer: "service" },
+                                                                { name: "UserQuenMatKhauService.java", type: "file", desc: "Sinh token reset mật khẩu và gửi mail.", layer: "service", calls: ["TokenKhoiPhucRepository.java", "TaiKhoanRepository.java"] }
+                                                            ]
+                                                        }
                                                     ]
                                                 },
                                                 {
                                                     name: "util",
                                                     type: "dir",
-                                                    desc: "Các tệp tin tiện ích phụ trợ cho toàn bộ hệ thống.",
+                                                    desc: "Các tiện ích hỗ trợ trong hệ thống.",
                                                     children: [
-                                                        { name: "ValidationUtils.java", type: "file", desc: "Kiểm tra độ mạnh yếu của mật khẩu và định dạng email/sđt.", layer: "config" },
-                                                        { name: "VoucherCalculator.java", type: "file", desc: "Công cụ tính toán giá trị giảm giá thực tế của voucher/phiếu giảm giá, hỗ trợ giới hạn giá trị giảm tối đa cho voucher dạng phần trăm.", layer: "config", calls: ["PhieuGiamGia.java"], calledBy: ["GioHangService.java", "CheckoutController.java", "AdminPosService.java"] },
-                                                        { name: "ProfanityFilter.java", type: "file", desc: "Lọc và phân loại từ tục tĩu trong bình luận theo 3 mức độ nghiêm trọng (LOW/HIGH/CRITICAL). Thay thế từ vi phạm bằng *** và trả về mức độ vi phạm để DanhGiaService xử lý hành động tương ứng.", layer: "config", calledBy: ["DanhGiaService.java"] },
-                                                        { name: "SeverityLevel.java", type: "file", desc: "Enum định nghĩa mức độ vi phạm bình luận: LOW (ghi log), HIGH (gửi email), CRITICAL (ẩn + gửi email). Mỗi mức có hành vi xử lý riêng trong DanhGiaService.", layer: "config" }
+                                                        { name: "ProfanityFilter.java", type: "file", desc: "Lọc bình luận thô tục, phân loại vi phạm và thay bằng dấu *.", layer: "config", calledBy: ["DanhGiaService.java"] },
+                                                        { name: "SeverityLevel.java", type: "file", desc: "Enum định nghĩa mức độ vi phạm bình luận.", layer: "config" },
+                                                        { name: "ValidationUtils.java", type: "file", desc: "Kiểm tra độ mạnh mật khẩu và định dạng email/sđt.", layer: "config" },
+                                                        { name: "VoucherCalculator.java", type: "file", desc: "Tính toán số tiền giảm giá của voucher.", layer: "config", calls: ["PhieuGiamGia.java"] },
+                                                        { name: "PromotionValidationConstants.java", type: "file", desc: "Khai báo các hằng số quy tắc xác thực khuyến mãi.", layer: "config" }
                                                     ]
                                                 }
                                             ]
@@ -1360,21 +1952,21 @@
             let toggleSvg = "";
 
             if (isDir) {
-                toggleSvg = `<svg class="tree-toggle-icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`;
-                iconSvg = `<svg class="tree-node-icon" style="fill: #e2e8f0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+                toggleSvg = `<svg class="tree-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+                iconSvg = `<svg class="tree-node-icon folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
             } else {
                 toggleSvg = `<span style="width:14px; display:inline-block; flex-shrink:0;"></span>`;
                 // Color file icons based on layer
-                let fillVal = "#94a3b8";
-                if (node.layer === 'entry') fillVal = "var(--layer-config)";
-                else if (node.layer === 'controller') fillVal = "var(--layer-controller)";
-                else if (node.layer === 'service') fillVal = "var(--layer-service)";
-                else if (node.layer === 'repository') fillVal = "var(--layer-repository)";
-                else if (node.layer === 'config') fillVal = "var(--layer-config)";
-                else if (node.layer === 'entity') fillVal = "var(--layer-entity)";
-                else if (node.layer === 'security') fillVal = "var(--layer-security)";
+                let strokeVal = "var(--layer-default)";
+                if (node.layer === 'entry') strokeVal = "var(--layer-config)";
+                else if (node.layer === 'controller') strokeVal = "var(--layer-controller)";
+                else if (node.layer === 'service') strokeVal = "var(--layer-service)";
+                else if (node.layer === 'repository') strokeVal = "var(--layer-repository)";
+                else if (node.layer === 'config') strokeVal = "var(--layer-config)";
+                else if (node.layer === 'entity') strokeVal = "var(--layer-entity)";
+                else if (node.layer === 'security') strokeVal = "var(--layer-security)";
 
-                iconSvg = `<svg class="tree-node-icon" style="fill: ${fillVal};" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+                iconSvg = `<svg class="tree-node-icon file-icon" style="stroke: ${strokeVal};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>`;
             }
 
             let nameHtml = node.name;
@@ -1462,8 +2054,8 @@
                         </div>
                         <span class="badge-layer layer-default">Directory</span>
                     </div>
-                    <div class="details-section">
-                        <h3>Mô tả</h3>
+                    <div class="detail-card">
+                        <div class="detail-card-title">Mô tả</div>
                         <p class="details-desc">Đây là một thư mục chứa các tệp mã nguồn và các gói con của dự án.</p>
                     </div>
                 `;
@@ -1485,18 +2077,18 @@
                     <span class="badge-layer layer-${data.layer}">${data.layer}</span>
                 </div>
 
-                <div class="details-section">
-                    <h3>Vai trò trong ứng dụng</h3>
+                <div class="detail-card">
+                    <div class="detail-card-title">Vai trò trong ứng dụng</div>
                     <p class="details-desc">${data.desc}</p>
                 </div>
 
-                <div class="details-section">
-                    <h3>Các file gọi đến (Called By)</h3>
+                <div class="detail-card">
+                    <div class="detail-card-title">Các file gọi đến (Called By)</div>
                     <div class="badge-list">${calledByHtml}</div>
                 </div>
 
-                <div class="details-section">
-                    <h3>Các file được gọi (Calls)</h3>
+                <div class="detail-card">
+                    <div class="detail-card-title">Các file được gọi (Calls)</div>
                     <div class="badge-list">${callsHtml}</div>
                 </div>
             `;
@@ -1515,12 +2107,21 @@
             setTimeout(() => {
                 const header = document.querySelector(`.tree-node-header[data-name*="${cleanName}"]`);
                 if (header) {
-                    document.querySelectorAll('.tree-node-header').forEach(h => h.classList.remove('active'));
+                    document.querySelectorAll('.tree-node-header').forEach(h => {
+                        h.classList.remove('active');
+                        h.classList.remove('pulse-highlight');
+                    });
                     header.classList.add('active');
+                    header.classList.add('pulse-highlight');
                     header.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     showDetails(header.getAttribute('data-name'));
+                    
+                    // Remove pulse-highlight after 4.5s
+                    setTimeout(() => {
+                        header.classList.remove('pulse-highlight');
+                    }, 4500);
                 }
-            }, 100);
+            }, 150);
         }
 
         // Initialize Tree
@@ -1686,6 +2287,76 @@
                 ],
                 security: "Thông tin nhạy cảm của khách hàng được trim và strip HTML qua Jsoup. Ngăn chặn lỗ hổng IDOR bằng cách đối chiếu thông tin SoDiaChi với ID khách hàng trong session. Toàn bộ webhook (IPN) đều bắt buộc xác thực chữ ký HMAC-SHA256 (ZaloPay) hoặc Token Auth (SePay) trước khi cập nhật dữ liệu hóa đơn."
             },
+            "flow-chatbot": {
+                title: "🤖 Luồng Trò Chuyện AI Chatbot (AI Chatbot Client-Server)",
+                method: "POST",
+                endpoint: "/api/chat/send",
+                steps: [
+                    { label: "Khách hàng gửi tin nhắn cho Chatbot", desc: "Gửi request chứa nội dung tin nhắn và ID phiên chat." },
+                    { label: "Sanitize chống OS Command Injection", desc: "ChatService lọc sạch các ký tự CLI nguy hiểm khỏi tin nhắn (như |, &, ;, >, <) trước khi gọi CLI." },
+                    { label: "Gọi mô hình AI / Luật xử lý", desc: "ChatService xử lý tin nhắn bằng AI hoặc các luật quy định để sinh câu trả lời." },
+                    { label: "Lưu lịch sử hội thoại", desc: "Lưu tin nhắn của khách và câu trả lời của AI vào bảng chat_message qua Repository." },
+                    { label: "Trả câu trả lời về Giao Diện", desc: "Phản hồi kết quả JSON chứa câu trả lời của Chatbot hiển thị trên UI bong bóng chat." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /api/chat/send (message, conversationId)", type: "forward" },
+                    { from: 1, to: 2, label: "ChatService.sendMessage()", type: "forward" },
+                    { from: 2, to: 2, label: "Sanitize input (anti Command Injection)", type: "self" },
+                    { from: 2, to: 2, label: "Generate Response (AI / Rules)", type: "self" },
+                    { from: 2, to: 3, label: "save() chat messages", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO chat_message", type: "forward" },
+                    { from: 4, to: 1, label: "JSON Response", type: "backward" },
+                    { from: 1, to: 0, label: "Hiển thị hội thoại", type: "backward" }
+                ],
+                inputs: [
+                    { name: "message", type: "String", rule: "Nội dung chat, đã sanitize", desc: "Nội dung câu hỏi của khách hàng." },
+                    { name: "conversationId", type: "Long", rule: "ID phiên chat hợp lệ (optional)", desc: "Mã phiên để lưu trữ chuỗi hội thoại." }
+                ],
+                files: [
+                    { name: "ChatRestController.java", role: "Controller", desc: "Tiếp nhận tin nhắn chat từ client, trả về phản hồi dạng JSON." },
+                    { name: "ChatService.java", role: "Service", desc: "Xử lý lọc ký tự độc hại chống Command Injection, kết nối AI và lưu lịch sử." },
+                    { name: "ChatMessageRepository.java", role: "Repository", desc: "Lưu trữ nội dung tin nhắn chat vào Database." }
+                ],
+                security: "Đầu vào tin nhắn được lọc bỏ tuyệt đối các ký tự điều khiển CLI phòng ngừa lỗ hổng Command Injection khi hệ thống gọi các script hỗ trợ chạy ngoài. Lịch sử chat được lưu trữ có giới hạn dung lượng để tránh tấn công DoS đầy ổ cứng."
+            },
+            "flow-pos": {
+                title: "🏪 Luồng Bán Hàng Tại Quầy POS (Staff POS Flow)",
+                method: "POST",
+                endpoint: "/admin/pos/create-order",
+                steps: [
+                    { label: "Nhân viên chọn sản phẩm và tạo đơn hàng", desc: "Chọn các sản phẩm/biến thể trực tiếp trên giao diện POS và nhấn thanh toán." },
+                    { label: "Xác thực vai trò Nhân Viên", desc: "AdminInterceptor xác thực quyền NHANVIEN hoặc ADMIN trước khi xử lý." },
+                    { label: "Gọi PricingService tính toán giá bán thực tế", desc: "Xác định các chương trình khuyến mãi active của sản phẩm để áp dụng chiết khấu." },
+                    { label: "Trừ tồn kho và Lưu hóa đơn trong transaction", desc: "Cập nhật giảm số lượng tồn kho (ton_kho) của biến thể sản phẩm và lưu Hóa đơn." },
+                    { label: "Phản hồi kết quả thanh toán", desc: "Trả về thông tin hóa đơn thành công và in hóa đơn (Receipt) cho khách." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /admin/pos/create-order (Items, CustInfo)", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle() (Verify Role)", type: "self" },
+                    { from: 1, to: 2, label: "AdminPosService.createPosOrder()", type: "forward" },
+                    { from: 2, to: 2, label: "PricingService.calculatePrice()", type: "self" },
+                    { from: 2, to: 3, label: "decreaseInventory() & saveInvoice()", type: "forward" },
+                    { from: 3, to: 4, label: "UPDATE san_pham_chi_tiet, INSERT hoa_don", type: "forward" },
+                    { from: 4, to: 1, label: "Success (Invoice details)", type: "backward" },
+                    { from: 1, to: 0, label: "Print Receipt & Clear POS Screen", type: "backward" }
+                ],
+                inputs: [
+                    { name: "sdtKhachHang", type: "String", rule: "Số điện thoại hợp lệ (optional)", desc: "Dùng để tra cứu/tạo nhanh khách hàng tích điểm." },
+                    { name: "bienTheList", type: "List", rule: "Danh sách ID biến thể và số lượng bán", desc: "Các biến thể chi tiết sản phẩm mua tại quầy." },
+                    { name: "paymentMethod", type: "String", rule: "CASH hoặc BANK_TRANSFER", desc: "Phương thức thanh toán trực tiếp." },
+                    { name: "discountAmount", type: "BigDecimal", rule: ">= 0. Mặc định 0", desc: "Số tiền giảm giá thủ công do nhân viên áp dụng." }
+                ],
+                files: [
+                    { name: "AdminPosController.java", role: "Controller", desc: "Tiếp nhận request từ màn hình POS và điều phối nghiệp vụ." },
+                    { name: "AdminPosService.java", role: "Service", desc: "Xử lý nghiệp vụ bán hàng trực tiếp, gọi PricingService, lưu hóa đơn." },
+                    { name: "PricingService.java", role: "Service", desc: "Tính giá bán thực tế của sản phẩm tại thời điểm giao dịch." },
+                    { name: "HoaDonRepository.java", role: "Repository", desc: "Ghi nhận hóa đơn bán hàng trực tiếp." },
+                    { name: "SanPhamChiTietRepository.java", role: "Repository", desc: "Cập nhật trừ tồn kho các biến thể." }
+                ],
+                security: "Yêu cầu tài khoản có quyền NHANVIEN hoặc ADMIN. Hệ thống kiểm duyệt số lượng tồn kho trước khi thực hiện giao dịch để tránh xảy ra hiện tượng bán quá số lượng có sẵn."
+            },
             "flow-admin": {
                 title: "📦 Quản Trị & Upload Ảnh (Admin Product & Media Upload)",
                 method: "POST",
@@ -1725,40 +2396,182 @@
                 ],
                 security: "Tệp tải lên được xác minh định dạng MIME thực tế bằng Apache Tika thay vì chỉ tin tưởng đuôi mở rộng của file. Tên file được sinh ngẫu nhiên UUID để tránh trùng lặp và loại bỏ tấn công path traversal. Mọi chỉnh sửa đều được ghi nhận vào nhật ký hệ thống."
             },
-            "flow-chatbot": {
-                title: "🤖 Luồng Trò Chuyện AI Chatbot (AI Chatbot Client-Server)",
-                method: "POST",
-                endpoint: "/api/chat/send",
+            "flow-dashboard": {
+                title: "📈 Luồng Thống Kê Doanh Thu & Kiểm Toán (Dashboard Stats & Audit Flow)",
+                method: "GET",
+                endpoint: "/admin/thong-ke/doanh-thu",
                 steps: [
-                    { label: "Khách hàng gửi tin nhắn cho Chatbot", desc: "Gửi request chứa nội dung tin nhắn và ID phiên chat." },
-                    { label: "Sanitize chống OS Command Injection", desc: "ChatService lọc sạch các ký tự CLI nguy hiểm khỏi tin nhắn (như |, &, ;, >, <) trước khi gọi CLI." },
-                    { label: "Gọi mô hình AI / Luật xử lý", desc: "ChatService xử lý tin nhắn bằng AI hoặc các luật quy định để sinh câu trả lời." },
-                    { label: "Lưu lịch sử hội thoại", desc: "Lưu tin nhắn của khách và câu trả lời của AI vào bảng chat_message qua Repository." },
-                    { label: "Trả câu trả lời về Giao Diện", desc: "Phản hồi kết quả JSON chứa câu trả lời của Chatbot hiển thị trên UI bong bóng chat." }
+                    { label: "Quản trị viên truy cập bảng điều khiển", desc: "Truy cập admin dashboard để theo dõi biểu đồ doanh thu và lịch sử thao tác." },
+                    { label: "Xác thực vai trò Quản Trị Viên", desc: "AdminInterceptor chặn và kiểm tra tài khoản, chỉ cho phép vai trò ADMIN đi tiếp." },
+                    { label: "Gọi AdminThongKeService lấy số liệu doanh số", desc: "Query dữ liệu từ HoaDonRepository, tính toán tỷ lệ tăng trưởng và dữ liệu vẽ biểu đồ Chart.js." },
+                    { label: "Gọi AuditService truy vấn lịch sử chỉnh sửa", desc: "Truy vấn các bản ghi từ EditLogRepository để hiển thị nhật ký kiểm toán hệ thống (Audit Logs)." },
+                    { label: "Trả về dữ liệu JSON cho Client", desc: "Phản hồi dữ liệu thống kê tổng hợp để client dựng giao diện dashboard." }
                 ],
                 actors: ["Client", "Controller", "Service", "Repository", "Database"],
                 sequence: [
-                    { from: 0, to: 1, label: "POST /api/chat/send (message, conversationId)", type: "forward" },
-                    { from: 1, to: 2, label: "ChatService.sendMessage()", type: "forward" },
-                    { from: 2, to: 2, label: "Sanitize input (anti Command Injection)", type: "self" },
-                    { from: 2, to: 2, label: "Generate Response (AI / Rules)", type: "self" },
-                    { from: 2, to: 3, label: "save() chat messages", type: "forward" },
-                    { from: 3, to: 4, label: "INSERT INTO chat_message", type: "forward" },
-                    { from: 4, to: 1, label: "JSON Response", type: "backward" },
-                    { from: 1, to: 0, label: "Hiển thị hội thoại", type: "backward" }
+                    { from: 0, to: 1, label: "GET /admin/thong-ke/doanh-thu (Date range)", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle() (ADMIN only)", type: "self" },
+                    { from: 1, to: 2, label: "AdminThongKeService.getRevenueReport()", type: "forward" },
+                    { from: 2, to: 3, label: "query revenue analytics & edit logs", type: "forward" },
+                    { from: 3, to: 4, label: "SELECT SUM(tong_tien) FROM hoa_don / SELECT * FROM edit_log", type: "forward" },
+                    { from: 4, to: 2, label: "Raw Metrics & Logs Data", type: "backward" },
+                    { from: 2, to: 1, label: "Aggregated Report JSON", type: "backward" },
+                    { from: 1, to: 0, label: "Render Charts & Audit Table", type: "backward" }
                 ],
                 inputs: [
-                    { name: "message", type: "String", rule: "Nội dung chat, đã sanitize", desc: "Nội dung câu hỏi của khách hàng." },
-                    { name: "conversationId", type: "Long", rule: "ID phiên chat hợp lệ (optional)", desc: "Mã phiên để lưu trữ chuỗi hội thoại." }
+                    { name: "startDate", type: "String", rule: "Định dạng YYYY-MM-DD. Bắt buộc", desc: "Thời gian bắt đầu kỳ báo cáo." },
+                    { name: "endDate", type: "String", rule: "Định dạng YYYY-MM-DD. Bắt buộc", desc: "Thời gian kết thúc kỳ báo cáo." }
                 ],
                 files: [
-                    { name: "ChatRestController.java", role: "Controller", desc: "Tiếp nhận tin nhắn chat từ client, trả về phản hồi dạng JSON." },
-                    { name: "ChatService.java", role: "Service", desc: "Xử lý lọc ký tự độc hại chống Command Injection, kết nối AI và lưu lịch sử." },
-                    { name: "ChatMessageRepository.java", role: "Repository", desc: "Lưu trữ nội dung tin nhắn chat vào Database." }
+                    { name: "AdminThongKeController.java", role: "Controller", desc: "Rest API cung cấp dữ liệu phân tích thống kê." },
+                    { name: "AdminThongKeService.java", role: "Service", desc: "Thống kê doanh số nâng cao, tính toán tỷ lệ chuyển đổi." },
+                    { name: "AuditService.java", role: "Service", desc: "Truy vấn nhật ký thay đổi của hệ thống để quản lý kiểm toán." },
+                    { name: "HoaDonRepository.java", role: "Repository", desc: "Truy vấn dữ liệu hóa đơn của hệ thống." },
+                    { name: "EditLogRepository.java", role: "Repository", desc: "Truy vấn nhật ký ghi vết thao tác admin." }
                 ],
-                security: "Đầu vào tin nhắn được lọc bỏ tuyệt đối các ký tự điều khiển CLI phòng ngừa lỗ hổng Command Injection khi hệ thống gọi các script hỗ trợ chạy ngoài. Lịch sử chat được lưu trữ có giới hạn dung lượng để tránh tấn công DoS đầy ổ cứng."
+                security: "Chức năng đặc quyền chỉ dành cho tài khoản có vai trò ADMIN. Toàn bộ hành vi thao tác sửa đổi dữ liệu nhạy cảm của nhân viên/quản lý được AuditService ghi nhật ký vĩnh viễn không thể sửa xóa để phục vụ việc hậu kiểm bảo mật."
+            },
+            "flow-voucher": {
+                title: "🏷️ Quản Lý Khuyến Mãi & Voucher (Voucher & Promotion Management)",
+                method: "POST",
+                endpoint: "/admin/khuyen-mai/create",
+                steps: [
+                    { label: "Quản lý nhập thông tin chương trình và click Tạo mới", desc: "Nhập Tên đợt giảm giá, Loại giảm giá, Giá trị giảm, Giá trị giảm tối đa, Ngày bắt đầu, Ngày kết thúc." },
+                    { label: "Xác thực vai trò Quản Trị", desc: "AdminInterceptor kiểm duyệt xem tài khoản có quyền ADMIN hoặc NHANVIEN." },
+                    { label: "Xác thực quy tắc khuyến mãi nâng cao", desc: "AdminKhuyenMaiService kiểm tra tính hợp lệ của thời gian (ngày bắt đầu < ngày kết thúc) và quy tắc giảm giá bằng PromotionValidationConstants." },
+                    { label: "Lưu dữ liệu xuống Database", desc: "Lưu thông tin vào bảng dot_giam_gia hoặc phieu_giam_gia thông qua các JpaRepository tương ứng trong một transaction." },
+                    { label: "Ghi nhật ký kiểm toán hệ thống", desc: "Gọi AuditService ghi nhận hành động tạo khuyến mãi của Admin vào bảng edit_log để quản lý đối soát." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /admin/khuyen-mai/create", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle() (Verify Role)", type: "self" },
+                    { from: 1, to: 2, label: "AdminKhuyenMaiService.createVoucher()", type: "forward" },
+                    { from: 2, to: 2, label: "Validate rules & dates", type: "self" },
+                    { from: 2, to: 3, label: "save() voucher", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO phieu_giam_gia / dot_giam_gia", type: "forward" },
+                    { from: 4, to: 3, label: "Transaction Commit", type: "backward" },
+                    { from: 3, to: 2, label: "Saved entity object", type: "backward" },
+                    { from: 2, to: 3, label: "AuditService.logChange()", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO edit_log", type: "forward" },
+                    { from: 4, to: 3, label: "Saved log", type: "backward" },
+                    { from: 3, to: 2, label: "Audit Done", type: "backward" },
+                    { from: 2, to: 1, label: "Success message", type: "backward" },
+                    { from: 1, to: 0, label: "Redirect: 302 /admin/khuyen-mai", type: "backward" }
+                ],
+                inputs: [
+                    { name: "tenKhuyenMai", type: "String", rule: "Không rỗng, Jsoup clean", desc: "Tên đợt/mã giảm giá hiển thị." },
+                    { name: "loaiGiamGia", type: "String", rule: "Bắt buộc. PERCENT hoặc CASH", desc: "Loại chiết khấu." },
+                    { name: "giaTriGiam", type: "BigDecimal", rule: "Giá trị chiết khấu > 0", desc: "Tỷ lệ hoặc số tiền giảm giá." },
+                    { name: "giaTriGiamToiDa", type: "BigDecimal", rule: "Bắt buộc nếu loaiGiamGia là PERCENT", desc: "Giới hạn số tiền giảm tối đa của voucher." },
+                    { name: "ngayBatDau", type: "LocalDateTime", rule: "Bắt buộc. Ngày bắt đầu", desc: "Thời gian bắt đầu có hiệu lực." },
+                    { name: "ngayKetThuc", type: "LocalDateTime", rule: "Bắt buộc. Phải sau ngayBatDau", desc: "Thời gian hết hạn." }
+                ],
+                files: [
+                    { name: "AdminKhuyenMaiController.java", role: "Controller", desc: "Tiếp nhận request form-data tạo đợt giảm giá hoặc voucher." },
+                    { name: "AdminKhuyenMaiService.java", role: "Service", desc: "Chứa các logic nghiệp vụ kiểm tra ngày bắt đầu/kết thúc và lưu CSDL." },
+                    { name: "PhieuGiamGiaRepository.java", role: "Repository", desc: "Giao tiếp bảng phieu_giam_gia." },
+                    { name: "DotGiamGiaDAO.java", role: "Repository", desc: "Giao tiếp bảng dot_giam_gia trực tiếp." },
+                    { name: "AuditService.java", role: "Service", desc: "Ghi nhật ký lịch sử tạo/sửa đổi voucher." }
+                ],
+                security: "Chỉ cho phép tài khoản có vai trò quản trị truy cập. Toàn bộ thông tin thay đổi được ghi dấu vết kiểm toán thông qua AuditService ghi vào bảng edit_log để tránh gian lận khuyến mãi từ nhân viên nội bộ."
+            },
+            "flow-employee": {
+                title: "👥 Quản Lý Nhân Sự & Tài Khoản (Employee & Account Management)",
+                method: "POST",
+                endpoint: "/admin/nhan-vien/save",
+                steps: [
+                    { label: "Quản lý điền thông tin nhân sự và chọn vai trò", desc: "Nhập Họ tên, Email, SĐT, Mật khẩu, Chức vụ và click Lưu." },
+                    { label: "Kiểm tra phân quyền đặc quyền", desc: "AdminInterceptor bắt và kiểm duyệt, chỉ cho phép tài khoản có vai trò ADMIN thực hiện (NHANVIEN không được truy cập)." },
+                    { label: "Mã hóa mật khẩu và liên kết tài khoản", desc: "AdminNhanVienService thực hiện băm mật khẩu mới bằng BCrypt, liên kết thực thể NhanVien với TaiKhoan trong một Transaction." },
+                    { label: "Lưu dữ liệu xuống Database", desc: "Lưu đồng bộ vào bảng nhan_vien và bảng tai_khoan." },
+                    { label: "Ghi nhật ký kiểm toán", desc: "Gọi AuditService ghi nhật ký lịch sử tạo hoặc thay đổi thông tin nhân sự." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /admin/nhan-vien/save", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle() (ADMIN only)", type: "self" },
+                    { from: 1, to: 2, label: "AdminNhanVienService.saveEmployee()", type: "forward" },
+                    { from: 2, to: 2, label: "BCrypt password hash", type: "self" },
+                    { from: 2, to: 3, label: "save() employee & account", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO nhan_vien / tai_khoan", type: "forward" },
+                    { from: 4, to: 3, label: "Transaction Commit", type: "backward" },
+                    { from: 3, to: 2, label: "Saved entities", type: "backward" },
+                    { from: 2, to: 3, label: "AuditService.logChange()", type: "forward" },
+                    { from: 3, to: 4, label: "INSERT INTO edit_log", type: "forward" },
+                    { from: 4, to: 3, label: "Saved log", type: "backward" },
+                    { from: 3, to: 2, label: "Audit Done", type: "backward" },
+                    { from: 2, to: 1, label: "Success message", type: "backward" },
+                    { from: 1, to: 0, label: "Redirect: 302 /admin/nhan-vien", type: "backward" }
+                ],
+                inputs: [
+                    { name: "hoTen", type: "String", rule: "2-100 ký tự, Jsoup clean", desc: "Họ và tên nhân sự." },
+                    { name: "email", type: "String", rule: "Email hợp lệ, duy nhất", desc: "Tài khoản đăng nhập và liên hệ." },
+                    { name: "soDienThoai", type: "String", rule: "Định dạng regex SĐT Việt Nam, duy nhất", desc: "Số điện thoại của nhân viên." },
+                    { name: "matKhau", type: "String", rule: "Mật khẩu ban đầu từ 8 ký tự", desc: "Mật khẩu tài khoản." },
+                    { name: "role", type: "String", rule: "Bắt buộc. ADMIN hoặc NHANVIEN", desc: "Vai trò phân quyền hệ thống." }
+                ],
+                files: [
+                    { name: "AdminNhanVienController.java", role: "Controller", desc: "Tiếp nhận thông tin hồ sơ nhân viên và điều phối nghiệp vụ lưu trữ." },
+                    { name: "AdminNhanVienService.java", role: "Service", desc: "Băm mật khẩu người dùng bằng BCryptPasswordEncoder, quản lý transaction đồng bộ." },
+                    { name: "NhanVienRepository.java", role: "Repository", desc: "Giao tiếp bảng nhan_vien." },
+                    { name: "TaiKhoanRepository.java", role: "Repository", desc: "Giao tiếp bảng tai_khoan." },
+                    { name: "AuditService.java", role: "Service", desc: "Ghi nhật ký lịch sử chỉnh sửa nhân sự." }
+                ],
+                security: "Chức năng quản trị đặc quyền cao chỉ dành riêng cho ADMIN. Mật khẩu của nhân sự được băm BCrypt trước khi ghi CSDL. Toàn bộ hành vi được ghi nhật ký Audit Log phục vụ giám sát nội bộ."
+            },
+            "flow-moderation": {
+                title: "💬 Kiểm Duyệt Bình Luận & Đánh Giá (Review & Comment Moderation)",
+                method: "POST",
+                endpoint: "/admin/danh-gia/moderate",
+                steps: [
+                    { label: "Quản lý click Phê duyệt hoặc Báo cáo vi phạm bình luận", desc: "Thao tác phê duyệt hiển thị hoặc đánh dấu vi phạm trên bình luận của sản phẩm." },
+                    { label: "Xác thực vai trò", desc: "AdminInterceptor xác thực quyền quản trị." },
+                    { label: "Kiểm duyệt nội dung thô tục tự động", desc: "DanhGiaService gọi ProfanityFilter để kiểm tra từ cấm, gán mức độ vi phạm SeverityLevel." },
+                    { label: "Lưu kết quả kiểm duyệt", desc: "Nếu vi phạm, lưu lịch sử vào CommentViolationLog và ẩn bình luận. Nếu hợp lệ, chuyển trạng thái hiển thị công khai." },
+                    { label: "Cập nhật lại giao diện người dùng", desc: "Trả về trạng thái xử lý thành công để client cập nhật UI (AJAX)." }
+                ],
+                actors: ["Client", "Controller", "Service", "Repository", "Database"],
+                sequence: [
+                    { from: 0, to: 1, label: "POST /admin/danh-gia/moderate", type: "forward" },
+                    { from: 1, to: 1, label: "AdminInterceptor.preHandle()", type: "self" },
+                    { from: 1, to: 2, label: "DanhGiaService.moderateComment()", type: "forward" },
+                    { from: 2, to: 2, label: "ProfanityFilter.check(content)", type: "self" },
+                    { from: 2, to: 3, label: "save() comment / violation logs", type: "forward" },
+                    { from: 3, to: 4, label: "UPDATE danh_gia / INSERT comment_violation_log", type: "forward" },
+                    { from: 4, to: 3, label: "Saved status", type: "backward" },
+                    { from: 3, to: 2, label: "Moderated entity", type: "backward" },
+                    { from: 2, to: 1, label: "Success Response", type: "backward" },
+                    { from: 1, to: 0, label: "Render updated reviews list (AJAX)", type: "backward" }
+                ],
+                inputs: [
+                    { name: "danhGiaId", type: "Long", rule: "ID của bình luận/đánh giá cần xử lý", desc: "Mã định danh bình luận." },
+                    { name: "action", type: "String", rule: "Bắt buộc. APPROVE, BAN hoặc REPORT", desc: "Hành động xử lý của admin." },
+                    { name: "reason", type: "String", rule: "Optional", desc: "Lý do báo cáo vi phạm hoặc ẩn bình luận." }
+                ],
+                files: [
+                    { name: "AdminDanhGiaController.java", role: "Controller", desc: "Tiếp nhận các action kiểm duyệt đánh giá của admin." },
+                    { name: "DanhGiaService.java", role: "Service", desc: "Thực thi nghiệp vụ lọc từ thô tục, phân loại SeverityLevel và cập nhật trạng thái hiển thị." },
+                    { name: "ProfanityFilter.java", role: "Utility", desc: "Bộ lọc ngôn từ thô tục tiếng Việt, tự động thay thế bằng dấu *." },
+                    { name: "CommentViolationLogRepository.java", role: "Repository", desc: "Lưu lịch sử vi phạm ngôn từ thô tục của tài khoản khách hàng." },
+                    { name: "SeverityLevel.java", role: "Utility", desc: "Enum định nghĩa các mức độ vi phạm (LOW, MEDIUM, HIGH)." }
+                ],
+                security: "Ngăn chặn spam và bôi nhọ sản phẩm thông qua bộ lọc ngôn từ thô tục tự động phía Backend. Mọi vi phạm được lưu nhật ký CommentViolationLog để kiểm soát hành vi khách hàng."
             }
         };
+
+        function getTypeBadge(type) {
+            const cleanType = type.replace('[]', '').toLowerCase();
+            let classMap = {
+                'string': 'type-string',
+                'long': 'type-long',
+                'int': 'type-int',
+                'multipartfile': 'type-multipartfile',
+                'list': 'type-list'
+            };
+            const cssClass = classMap[cleanType] || 'type-badge-default';
+            return `<span class="type-badge ${cssClass}">${type}</span>`;
+        }
 
         function showFlow(flowKey) {
             document.querySelectorAll('.flow-menu-btn').forEach(btn => btn.classList.remove('active'));
@@ -1786,31 +2599,67 @@
                 let arrowClass = isForward ? 'forward' : 'backward';
                 
                 if (isSelf) {
-                    seqStepsHtml += `
-                        <div class="diagram-step">
-                            <div style="margin: 0 auto; background: rgba(249, 115, 22, 0.15); border: 1px solid var(--color-primary); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">${s.label}</div>
-                        </div>
-                    `;
+                    const fromPct = (s.from / (totalActors - 1)) * 100;
+                    const isLast = s.from === totalActors - 1;
+                    if (isLast) {
+                        seqStepsHtml += `
+                            <div class="diagram-step self-call last-actor">
+                                <div class="diagram-step-self-loop left-loop" style="right: calc(100% - ${fromPct}%); left: auto;">
+                                    <div class="diagram-step-self-arrow left-arrow"></div>
+                                </div>
+                                <div class="diagram-step-label self-label left-label" style="right: calc(100% - ${fromPct}% + 42px); left: auto; text-align: right; width: auto;">
+                                    <span class="label-pill" title="${s.label}">${s.label}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        seqStepsHtml += `
+                            <div class="diagram-step self-call">
+                                <div class="diagram-step-self-loop" style="left: ${fromPct}%;">
+                                    <div class="diagram-step-self-arrow"></div>
+                                </div>
+                                <div class="diagram-step-label self-label" style="left: calc(${fromPct}% + 42px); width: auto; text-align: left;">
+                                    <span class="label-pill" title="${s.label}">${s.label}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
                 } else {
                     seqStepsHtml += `
                         <div class="diagram-step">
-                            <div class="diagram-step-line ${lineClass}" style="left: ${leftPct}%; width: ${widthPct}%;"></div>
-                            <div class="diagram-step-arrow ${arrowClass}" style="${isForward ? 'left: ' + (leftPct + widthPct - 1) + '%' : 'left: ' + leftPct + '%'}"></div>
-                            <div class="diagram-step-label">${s.label}</div>
+                            <div class="diagram-step-line ${lineClass}" style="left: ${leftPct}%; width: ${widthPct}%;">
+                                <div class="diagram-step-arrow ${arrowClass}"></div>
+                            </div>
+                            <div class="diagram-step-label" style="left: ${leftPct}%; width: ${widthPct}%;">
+                                <span class="label-pill" title="${s.label}">${s.label}</span>
+                            </div>
                         </div>
                     `;
                 }
             });
 
             // Build actors HTML
-            let actorsHtml = flow.actors.map(a => {
+            let actorsHtml = flow.actors.map((a, idx) => {
+                const totalActors = flow.actors.length;
+                const pct = (idx / (totalActors - 1)) * 100;
                 let c = a.toLowerCase();
                 if (c === 'client') c = 'client';
                 else if (c === 'controller') c = 'controller';
                 else if (c === 'service') c = 'service';
                 else if (c === 'repository') c = 'repository';
                 else if (c === 'database') c = 'db';
-                return `<div class="actor ${c}">${a}</div>`;
+                return `
+                    <div class="actor-wrapper" style="left: ${pct}%;">
+                        <div class="actor ${c}">${a}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Build lifelines HTML
+            let lifelinesHtml = flow.actors.map((a, idx) => {
+                const totalActors = flow.actors.length;
+                const pct = (idx / (totalActors - 1)) * 100;
+                return `<div class="lifeline-line" style="left: ${pct}%;"></div>`;
             }).join('');
 
             // Build steps HTML
@@ -1825,8 +2674,8 @@
             let inputsHtml = flow.inputs.map(i => `
                 <tr>
                     <td style="font-family: var(--font-mono); font-weight: 500; color: #fff;">${i.name}</td>
-                    <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-info);">${i.type}</td>
-                    <td><code style="background:#0b0f19; padding:2px 6px; border-radius:4px; font-size:0.8rem; color: var(--color-warning);">${i.rule}</code></td>
+                    <td>${getTypeBadge(i.type)}</td>
+                    <td><code style="background:#09090b; border: 1px solid rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:0.8rem; color: var(--color-warning);">${i.rule}</code></td>
                     <td>${i.desc}</td>
                 </tr>
             `).join('');
@@ -1854,11 +2703,16 @@
                 <!-- Sequence Diagram -->
                 <div class="flow-section-title">Sơ đồ Sequence Luồng Gọi File</div>
                 <div class="diagram-container">
-                    <div class="diagram-actors">
-                        ${actorsHtml}
-                    </div>
-                    <div class="diagram-steps">
-                        ${seqStepsHtml}
+                    <div class="diagram-inner">
+                        <div class="lifelines-bg">
+                            ${lifelinesHtml}
+                        </div>
+                        <div class="diagram-actors">
+                            ${actorsHtml}
+                        </div>
+                        <div class="diagram-steps">
+                            ${seqStepsHtml}
+                        </div>
                     </div>
                 </div>
 

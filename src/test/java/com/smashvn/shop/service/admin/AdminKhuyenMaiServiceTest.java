@@ -371,4 +371,29 @@ public class AdminKhuyenMaiServiceTest {
         assertEquals("%", updatedToPct.getDonVi());
         assertEquals(new BigDecimal("60000"), updatedToPct.getGiaTriGiamToiDa());
     }
+
+    @Test
+    void testUpdateDotGiamGia_Dates() {
+        // 1. Create a campaign
+        DotGiamGia dgg = adminKhuyenMaiService.createDotGiamGia(
+                "Test Campaign Dates", startTime, endTime, 15, "Theo Phần Trăm",
+                List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
+        );
+        assertNotNull(dgg);
+        assertEquals(startTime, dgg.getNgayBatDau());
+        assertEquals(endTime, dgg.getNgayKetThuc());
+
+        // 2. Update with new dates
+        LocalDateTime newStart = startTime.plusHours(1);
+        LocalDateTime newEnd = endTime.plusHours(2);
+
+        DotGiamGia updated = adminKhuyenMaiService.updateDotGiamGia(
+                dgg.getId(), "Test Campaign Dates", newStart, newEnd, 15, "Theo Phần Trăm",
+                List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
+        );
+
+        assertNotNull(updated);
+        assertEquals(newStart, updated.getNgayBatDau());
+        assertEquals(newEnd, updated.getNgayKetThuc());
+    }
 }
