@@ -28,4 +28,7 @@ public class BlogDTO {
     private String createdAt;
     private String updatedBy;
     private String updatedAt;
+    private Integer idNguoiDang;
+    private String emailNguoiDang;
 }
+

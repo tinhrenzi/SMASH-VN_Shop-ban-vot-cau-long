@@ -162,7 +162,7 @@ public class AdminDanhGiaController {
             taiKhoanRepository.save(tk);
 
             // Ghi log audit
-            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "UNBAN_COMMENT", 
+            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "UPDATE", 
                     oldVal, "null", request.getRemoteAddr(), "Gỡ khóa bình luận thủ công bởi admin.", vaiTro);
 
             redirectAttributes.addFlashAttribute("successMsg", "Đã gỡ khóa bình luận thành công cho tài khoản " + tk.getEmail());
@@ -192,7 +192,7 @@ public class AdminDanhGiaController {
             taiKhoanRepository.save(tk);
 
             // Ghi log audit
-            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "RESET_VIOLATION", 
+            auditService.log(adminId, "TaiKhoan", tk.getId().longValue(), "UPDATE", 
                     oldVal, "0", request.getRemoteAddr(), "Reset bộ đếm vi phạm thủ công bởi admin.", vaiTro);
 
             redirectAttributes.addFlashAttribute("successMsg", "Đã reset bộ đếm vi phạm thành công cho tài khoản " + tk.getEmail());

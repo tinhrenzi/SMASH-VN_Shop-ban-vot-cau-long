@@ -131,7 +131,11 @@
                                         <span th:if="${blog.deleted}" class="badge bg-danger">ĐÃ XÓA TẠM THỜI (Chờ xóa vĩnh viễn)</span>
                                     </td>
                                     <td th:text="${blog.category}">Hướng dẫn</td>
-                                    <td th:text="${blog.author}">Nguyễn Thế Vinh</td>
+                                    <td>
+                                        <span th:text="${blog.author}">Nguyễn Thế Vinh</span>
+                                        <small class="text-muted d-block" th:if="${blog.emailNguoiDang != null}" th:text="'(đăng bởi: ' + ${blog.emailNguoiDang} + ')'"></small>
+                                    </td>
+
                                     <td th:text="${blog.publishDate}">17/06/2026</td>
                                     <td>
                                         <span th:if="${blog.status == 'DRAFT'}" class="badge bg-warning text-dark px-2.5 py-1.5"><i class="fas fa-edit me-1"></i>Bản Nháp</span>

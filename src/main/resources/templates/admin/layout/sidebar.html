@@ -45,6 +45,10 @@
             <a th:href="@{/admin/danh-gia/vi-pham}" th:class="${activeTab == 'viphambinhluan' ? 'active' : ''}">
                 <i class="fas fa-exclamation-triangle"></i> Vi Phạm Bình Luận
             </a>
+
+            <a th:if="${session.vaiTro == 'QL'}" th:href="@{/admin/moderation/keywords}" th:class="${activeTab == 'moderationKeywords' ? 'active' : ''}">
+                <i class="fas fa-filter"></i> Từ Khóa Cấm Blog
+            </a>
             
             <a th:href="@{/admin/khach-hang}" th:class="${activeTab == 'khachhang' ? 'active' : ''}">
                 <i class="fas fa-users"></i> Khách Hàng

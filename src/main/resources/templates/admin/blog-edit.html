@@ -11,6 +11,7 @@
     
     <!-- Load local CKEditor -->
     <script th:src="@{/vendor/ckeditor/ckeditor.js}"></script>
+    <script th:src="@{/vendor/ckeditor/translations/vi.js}"></script>
     
     <style>
         .ck-editor__editable_inline {
@@ -224,16 +225,28 @@
             console.error('Error initializing CKEditor:', error);
         });
 
-    // Summary character counter
+    // Summary character counter with IME composition guards
     const summaryInput = document.getElementById('summary');
     const summaryCounter = document.getElementById('summaryCounter');
+    let isComposing = false;
     
     function updateCounter() {
         const count = summaryInput.value.length;
         summaryCounter.textContent = `${count}/900 ký tự`;
     }
     
-    summaryInput.addEventListener('input', updateCounter);
+    summaryInput.addEventListener('compositionstart', () => {
+        isComposing = true;
+    });
+    summaryInput.addEventListener('compositionend', () => {
+        isComposing = false;
+        updateCounter();
+    });
+    summaryInput.addEventListener('input', () => {
+        if (!isComposing) {
+            updateCounter();
+        }
+    });
     // Initial call
     updateCounter();
 

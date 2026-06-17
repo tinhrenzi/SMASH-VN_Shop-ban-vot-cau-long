@@ -10,32 +10,32 @@ import org.springframework.stereotype.Component;
 public class ProfanityFilter {
     
     private static final Pattern[] LOW_PATTERNS = {
-        Pattern.compile("\\bv[ck]l+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bvl+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bwtf\\b", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("(?U)\\bv[ck]l+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bvl+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bwtf\\b", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] MEDIUM_PATTERNS = {
-        Pattern.compile("\\b[dđ][eé]o+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bc[uư]t+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bc[aăâ]c+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bb[uư]ô?[iì]+\\b", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("(?U)\\b[d\u0111][e\u00e9]o+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bc[u\u01b0]t+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bc[a\u0103\u00e2]c+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bb[u\u01b0]\u00f4?[i\u00ec]+\\b", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] HIGH_PATTERNS = {
-        Pattern.compile("\\b[dđ][\\s\\.\\-_]*m+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\b[dđ][\\s\\.\\-_]*c[\\s\\.\\-_]*m+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bl[oòô]n+\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bđồ\\s+chó\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bchó\\s+đẻ\\b", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("(?U)\\b[d\u0111][\\s\\.\\-_]*m+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\b[d\u0111][\\s\\.\\-_]*c[\\s\\.\\-_]*m+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bl[o\u00f2\u00f4]n+\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\b\u0111\u1ed3\\s+ch\u00f3\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bch\u00f3\\s+\u0111\u1ebb\\b", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] CRITICAL_PATTERNS = {
-        Pattern.compile("\\bgiết\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bhiếp\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\bđe\\s+dọa\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\blừa\\s+đảo\\b", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\băn\\s+cướp\\b", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("(?U)\\bgi\u1ebft\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bhi\u1ebfp\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\b\u0111e\\s+d\u1ecd\u0061\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\bl\u1eeba\\s+\u0111\u1ea3o\\b", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?U)\\b\u0103n\\s+c\u01b0\u1edbp\\b", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] BAD_WORDS_PATTERNS;

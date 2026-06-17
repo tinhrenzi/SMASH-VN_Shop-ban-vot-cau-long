@@ -57,8 +57,13 @@ public class Blog {
     @Column(name = "deleted_at")
     private java.time.LocalDateTime deletedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tai_khoan_nguoi_dang")
+    private TaiKhoan nguoiDang;
+
     @Column(name = "created_by")
     private String createdBy;
+
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default

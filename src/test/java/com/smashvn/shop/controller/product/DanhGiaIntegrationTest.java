@@ -110,7 +110,9 @@ public class DanhGiaIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilters(new org.springframework.web.filter.CharacterEncodingFilter("UTF-8", true))
+                .build();
 
         // Seed customer user
         testUser = new TaiKhoan();
@@ -450,7 +452,7 @@ public class DanhGiaIntegrationTest {
         // 1. LOW severity violation: "vcl"
         mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
                         .param("rating", "4")
-                        .param("comment", "Sản phẩm dùng vcl nhé")
+                        .param("comment", "S\u1ea3n ph\u1ea9m d\u00f9ng vcl nh\u00e9")
                         .sessionAttr("idNguoiDung", testUser.getId()))
                 .andExpect(status().is3xxRedirection());
 
@@ -471,11 +473,17 @@ public class DanhGiaIntegrationTest {
         List<CommentViolationLog> logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertFalse(logs.isEmpty());
         assertEquals("LOW", logs.get(0).getMucDoViPham());
-        assertEquals("Sản phẩm dùng vcl nhé", logs.get(0).getNoiDungGoc());
-        assertEquals("Sản phẩm dùng *** nhé", logs.get(0).getNoiDungDaLoc());
+        assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng vcl nh\u00e9", logs.get(0).getNoiDungGoc());
+        assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng *** nh\u00e9", logs.get(0).getNoiDungDaLoc());
 
         // Check mailSender was NOT called for LOW severity
         verify(mailSender, times(0)).send(any(org.springframework.mail.SimpleMailMessage.class));
+
+        // Backdate the first review to bypass the 30-second spam check
+        DanhGia dg1 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg1.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg1.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg1);
 
         // 2. High severity violation: "đm" (should increment violation count and send email)
         updatedUser.setNgayKhoaBinhLuanDen(null);
@@ -483,7 +491,7 @@ public class DanhGiaIntegrationTest {
 
         mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
                         .param("rating", "3")
-                        .param("comment", "Vợt đm quá tệ")
+                        .param("comment", "V\u1ee3t \u0111m qu\u00e1 t\u1ec7")
                         .sessionAttr("idNguoiDung", testUser.getId()))
                 .andExpect(status().is3xxRedirection());
 
@@ -493,6 +501,12 @@ public class DanhGiaIntegrationTest {
         // Verify mailSender WAS called for HIGH severity
         verify(mailSender, atLeastOnce()).send(any(org.springframework.mail.SimpleMailMessage.class));
 
+        // Backdate the second review to bypass the 30-second spam check
+        DanhGia dg2 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg2.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg2.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg2);
+
         // 3. 180-day Reset Mechanism:
         updatedUser.setNgayViPhamGanNhat(LocalDateTime.now().minusDays(181));
         updatedUser.setNgayKhoaBinhLuanDen(null); // Clear active ban
@@ -501,7 +515,7 @@ public class DanhGiaIntegrationTest {
         // Submit another violation (should reset count to 0 and act as 1st violation)
         mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
                         .param("rating", "2")
-                        .param("comment", "đm chán thế")
+                        .param("comment", "\u0111m ch\u00e1n th\u1ebf")
                         .sessionAttr("idNguoiDung", testUser.getId()))
                 .andExpect(status().is3xxRedirection());
 
@@ -516,7 +530,7 @@ public class DanhGiaIntegrationTest {
         // Submit CRITICAL severity violation: "lừa đảo"
         mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
                         .param("rating", "1")
-                        .param("comment", "Bọn lừa đảo ăn cướp!")
+                        .param("comment", "B\u1ecdn l\u1eeba \u0111\u1ea3o \u0103n c\u01b0\u1edbp!")
                         .sessionAttr("idNguoiDung", testUser.getId()))
                 .andExpect(status().is3xxRedirection());
 
@@ -524,7 +538,7 @@ public class DanhGiaIntegrationTest {
         List<DanhGia> reviews = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId());
         DanhGia savedDg = reviews.get(0);
         assertTrue(savedDg.getAnBinhLuan());
-        assertEquals("Bọn *** ***!", savedDg.getBinhLuan());
+        assertEquals("B\u1ecdn *** ***!", savedDg.getBinhLuan());
     }
 
     @Test
@@ -557,6 +571,7 @@ public class DanhGiaIntegrationTest {
     }
 
     @Test
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     void testCommentViolation_ConcurrentSubmissions() throws Exception {
         createOrder("da_giao");
 
