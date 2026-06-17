@@ -319,13 +319,14 @@
         }
         
         /* Hover state for inactive buttons */
-        .view-btn:not(.active):hover {
-            background: #fff0eb;
-            color: #ff4500;
-            border-color: #ffb399;
+        #btn-grid-view:not(.active):hover,
+        #btn-list-view:not(.active):hover {
+            background: #fff0eb !important;
+            color: #ff4500 !important;
+            border-color: #ffb399 !important;
         }
         #btn-grid-view:not(.active):hover {
-            border-right: 1px solid #ffb399;
+            border-right: 1px solid #ffb399 !important;
         }
         
         /* Active state */
@@ -752,9 +753,9 @@
                                                     </a>
                                                     <!-- Badge giảm giá -->
                                                     <div th:if="${product.activeGiamGiaPhanTram > 0}" class="shopee-discount-badge" th:text="'-' + ${product.activeGiamGiaPhanTram} + '%'"></div>
-                                                    <div class="product-badge" th:if="${product.activeGiamGiaPhanTram == 0}">
-                                                        <span class="badge-new">MỚI</span>
-                                                    </div>
+                                                     <div class="product-badge" th:if="${product.activeGiamGiaPhanTram == 0 and newProductIds != null and newProductIds.contains(product.id)}">
+                                                         <span class="badge-new">MỚI</span>
+                                                     </div>
 
                                                     <!-- Quick Look (kính lúp) - gọi AJAX modal -->
                                                     <div class="product-m__quick-look">

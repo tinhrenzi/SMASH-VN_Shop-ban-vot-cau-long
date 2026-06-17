@@ -314,11 +314,11 @@
                             <div class="gl-l-r bp-detail__postnp" style="border-top: 1px solid #eeeeee; border-bottom: 1px solid #eeeeee; padding: 20px 0; margin-top: 40px; margin-bottom: 50px;">
                                 <div>
                                     <a th:href="${prevBlogSlug != null} ? @{'/blog/' + ${prevBlogSlug}} : '/blog'" 
-                                       th:style="${prevBlogSlug == null} ? 'pointer-events: none; opacity: 0.5; border-bottom: none;' : ''">Previous Post</a>
+                                       th:style="${prevBlogSlug == null} ? 'pointer-events: none; opacity: 0.5; border-bottom: none;' : ''">Bài viết trước</a>
                                 </div>
                                 <div>
                                     <a th:href="${nextBlogSlug != null} ? @{'/blog/' + ${nextBlogSlug}} : '/blog'" 
-                                       th:style="${nextBlogSlug == null} ? 'pointer-events: none; opacity: 0.5; border-bottom: none;' : ''">Next Post</a>
+                                       th:style="${nextBlogSlug == null} ? 'pointer-events: none; opacity: 0.5; border-bottom: none;' : ''">Bài viết tiếp theo</a>
                                 </div>
                             </div>
                         </div>

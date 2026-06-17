@@ -2,8 +2,8 @@
 -- Verify target Gmail accounts do not already exist for OTHER accounts (Email Uniqueness Validation)
 IF EXISTS (
     SELECT 1 FROM TaiKhoan 
-    WHERE email IN ('tinhluc02@gmail.com', 'luonghiep334@gmail.com')
-      AND email NOT IN ('tinhadmin@smash.vn.com', 'hiepadmin@smash.vn.com')
+    WHERE (email = 'tinhluc02@gmail.com' AND id <> 1)
+       OR (email = 'luonghiep334@gmail.com' AND id <> 2)
 )
 BEGIN
     THROW 50000, 'Migration failed: Target Gmail accounts already exist in TaiKhoan table. Manual resolution required.', 1;

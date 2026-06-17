@@ -2,6 +2,8 @@ package com.smashvn.shop.controller.home;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +45,21 @@ public class HomeController {
             return 0;
         });
 
+        // Lọc ra danh sách các sản phẩm đang được giảm giá để hiển thị trên banner countdown đặc biệt
+        List<SanPham> discountedProducts = danhSachSanPham.stream()
+                .filter(p -> p.getActiveGiamGiaPhanTram() > 0 && ("dang_ban".equals(p.getTrangThai()) || p.getTrangThai() == null))
+                .limit(2)
+                .collect(Collectors.toList());
+
+        // Nếu không đủ 2 sản phẩm giảm giá, bổ sung sản phẩm thông thường
+        if (discountedProducts.size() < 2) {
+            List<SanPham> fallback = danhSachSanPham.stream()
+                    .filter(p -> !discountedProducts.contains(p) && ("dang_ban".equals(p.getTrangThai()) || p.getTrangThai() == null))
+                    .limit(2 - discountedProducts.size())
+                    .collect(Collectors.toList());
+            discountedProducts.addAll(fallback);
+        }
+
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
 
         // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm)
@@ -51,7 +68,7 @@ public class HomeController {
         List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimit14);
         List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit14);
 
-        model.addAttribute("products", danhSachSanPham); // để đảm bảo tương thích ngược
+        model.addAttribute("products", discountedProducts); // để đảm bảo tương thích ngược
         model.addAttribute("newProducts", newProductsList);
         model.addAttribute("bestSellers", bestSellersList);
         model.addAttribute("featuredProducts", featuredProductsList);
@@ -111,6 +128,11 @@ public class HomeController {
         }
 
         long totalProductsCount = sanPhamRepository.count();
+
+        // Lấy danh sách 8 sản phẩm mới nhất để gắn tag "MỚI"
+        List<SanPham> newProductsList = sanPhamRepository.findNewProducts(PageRequest.of(0, 8));
+        Set<Integer> newProductIds = newProductsList.stream().map(SanPham::getId).collect(Collectors.toSet());
+        model.addAttribute("newProductIds", newProductIds);
 
         model.addAttribute("productPage", productPage);
         model.addAttribute("products", productPage.getContent());
