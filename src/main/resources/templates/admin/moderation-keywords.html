@@ -96,7 +96,10 @@
                                                     </form>
                                                     
                                                     <!-- Edit Button triggering Modal -->
-                                                    <button type="button" class="btn btn-sm btn-outline-info" th:onclick="'showEditModal(' + ${kw.id} + ', \'' + ${kw.keyword} + '\')'" title="Sửa từ khóa">
+                                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                                            th:data-id="${kw.id}"
+                                                            th:data-keyword="${kw.keyword}"
+                                                            onclick="showEditModal(this)" title="Sửa từ khóa">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
 
@@ -156,7 +159,9 @@
         editModal = new bootstrap.Modal(document.getElementById('editModal'));
     });
 
-    function showEditModal(id, keyword) {
+    function showEditModal(btn) {
+        var id = btn.getAttribute('data-id');
+        var keyword = btn.getAttribute('data-keyword');
         document.getElementById('editKeywordInput').value = keyword;
         document.getElementById('editForm').action = '/admin/moderation/keywords/edit/' + id;
         editModal.show();

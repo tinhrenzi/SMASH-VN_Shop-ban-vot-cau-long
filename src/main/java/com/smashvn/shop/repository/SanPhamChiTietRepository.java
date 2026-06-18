@@ -18,4 +18,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
     Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
+
+    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != ''")
+    List<String> findDistinctTrongLuong();
 }
+
