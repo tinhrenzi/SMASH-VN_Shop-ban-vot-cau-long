@@ -1,12 +1,5 @@
 package com.smashvn.shop.service.admin;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -15,8 +8,18 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -37,11 +40,11 @@ public class AdminBienTheService {
     // 2. Thêm biến thể mới
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,
-                            String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
-        
+            String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
+
         SanPham sp = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm gốc"));
-        
+
         // Trim and validate input values
         String cleanMauSac = mauSac != null ? mauSac.trim() : null;
         String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
@@ -60,7 +63,7 @@ public class AdminBienTheService {
         spct.setTrongLuong(cleanTrongLuong);
         spct.setMucCang(cleanMucCang);
         spct.setHinhAnhSanPham(secureFileName);
-        
+
         sanPhamChiTietRepository.save(spct);
     }
 
@@ -69,7 +72,7 @@ public class AdminBienTheService {
     public void xoaBienThe(Integer idBienThe) {
         sanPhamChiTietRepository.deleteById(idBienThe);
     }
-    
+
     // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa
     public SanPhamChiTiet layBienTheTheoId(Integer idBienThe) {
         return sanPhamChiTietRepository.findById(idBienThe)
@@ -79,8 +82,8 @@ public class AdminBienTheService {
     // Thêm hàm Cập nhật Biến thể
     @Transactional
     public void capNhatBienThe(Integer idBienThe, BigDecimal giaBan, Integer soLuongTon,
-                               String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
-        
+            String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
+
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể để sửa"));
 
@@ -102,7 +105,7 @@ public class AdminBienTheService {
         spct.setMauSac(cleanMauSac);
         spct.setTrongLuong(cleanTrongLuong);
         spct.setMucCang(cleanMucCang);
-        
+
         sanPhamChiTietRepository.save(spct);
     }
 

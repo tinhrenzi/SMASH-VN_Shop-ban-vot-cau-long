@@ -56,7 +56,6 @@ public class BlogService {
                     .addTags("table", "thead", "tbody", "tfoot", "tr", "td", "th", "pre", "code", "figure")
                     .preserveRelativeLinks(true);
 
-    @PostConstruct
     // Customer public list query (filtered by non-deleted and published)
     public Page<BlogDTO> getBlogs(String query, Pageable pageable) {
         Page<Blog> blogs;

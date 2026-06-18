@@ -375,12 +375,14 @@ public class AdminThongKeService {
                 if (pm.contains("zalopay") || pm.contains("sepay")) {
                     onlineTotal++;
 
+                    // Online Success KPI: strictly requires gateway-confirmed payment_status='paid'.
+                    // trang_thai_thanh_toan='DA_THANH_TOAN' alone is NOT sufficient because it can be set
+                    // manually by admins via the override endpoint and would otherwise inflate this metric.
                     String pStatus = paymentStatus != null ? paymentStatus.toUpperCase() : "";
                     String tStatus = trangThaiThanhToan != null ? trangThaiThanhToan.toUpperCase() : "";
-
-                    if ("PAID".equals(pStatus) || "DA_THANH_TOAN".equals(tStatus)) {
+                    if ("PAID".equals(pStatus)) {
                         onlineSuccess++;
-                        // Revenue: only count if delivered
+                        // Revenue: only count if delivered AND gateway-confirmed
                         if ("da_giao".equalsIgnoreCase(trangThaiDonHang) || "hoan_thanh".equalsIgnoreCase(trangThaiDonHang)) {
                             if ("REFUNDED".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
                                 onlineRevenue = onlineRevenue.subtract(tongTien);
@@ -388,7 +390,7 @@ public class AdminThongKeService {
                                 onlineRevenue = onlineRevenue.add(tongTien);
                             }
                         }
-                    } else if ("FAILED".equals(pStatus) || "FAILED".equals(tStatus)) {
+                    } else if ("FAILED".equals(pStatus) || "THAT_BAI".equalsIgnoreCase(pStatus) || "FAILED".equals(tStatus)) {
                         onlineFailed++;
                     } else if ("PENDING".equals(pStatus) || "PENDING".equals(tStatus) || "CHO_THANH_TOAN".equals(tStatus)) {
                         onlinePending++;

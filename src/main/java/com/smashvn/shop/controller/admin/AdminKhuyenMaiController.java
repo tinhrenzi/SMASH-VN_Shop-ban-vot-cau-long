@@ -4,18 +4,21 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.smashvn.shop.exception.PromotionValidationException;
-import com.smashvn.shop.util.PromotionValidationConstants;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smashvn.shop.entity.DotGiamGia;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.exception.PromotionValidationException;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.service.admin.AdminKhuyenMaiService;
+import com.smashvn.shop.util.PromotionValidationConstants;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -26,13 +29,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdminKhuyenMaiController {
 
+    /*
+     * Các phương thức xử lý logic chính:
+     *  - viewThemDotGiamGia, viewSuaDotGiamGia, viewThemPhieuGiamGia, viewSuaPhieuGiamGia:
+     *      hiển thị trang form tương ứng để thêm/sửa khuyến mãi.
+     *  - processThemDotGiamGia, processSuaDotGiamGia, processThemPhieuGiamGia, processSuaPhieuGiamGia:
+     *      nhận dữ liệu từ form, validate, chuyển đổi kiểu, rồi gọi service xử lý.
+     *  - processDeactivateDotGiamGia, processDeleteDotGiamGia,
+     *    processDeactivatePhieuGiamGia, processDeletePhieuGiamGia:
+     *      gọi service để vô hiệu hóa hoặc xóa khuyến mãi.
+     *  - parseAndValidateInteger, parseAndValidateBigDecimal:
+     *      kiểm tra dữ liệu số từ chuỗi, đảm bảo không âm, không quá giới hạn, rồi trả về kiểu số tương ứng.
+     */
     private final AdminKhuyenMaiService adminKhuyenMaiService;
     private final SanPhamRepository sanPhamRepository;
 
     // ==========================================
     // CAMPAIGN (ĐỢT GIẢM GIÁ) MAPPINGS
     // ==========================================
-
     @GetMapping("/dot-giam-gia/them")
     public String viewThemDotGiamGia(Model model) {
         model.addAttribute("sanPhams", sanPhamRepository.findAll());
@@ -116,13 +130,16 @@ public class AdminKhuyenMaiController {
             dgg.setTenChienDich(tenChienDich);
             try {
                 dgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 dgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 dgg.setPhanTramGiam(phanTramGiamStr == null || phanTramGiamStr.isEmpty() ? null : Integer.parseInt(phanTramGiamStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             dgg.setLoaiGiamGia(loaiGiamGia);
             model.addAttribute("campaign", dgg);
             model.addAttribute("sanPhams", sanPhamRepository.findAll());
@@ -158,7 +175,6 @@ public class AdminKhuyenMaiController {
     // ==========================================
     // VOUCHER (PHIẾU GIẢM GIÁ) MAPPINGS
     // ==========================================
-
     @GetMapping("/phieu-giam-gia/them")
     public String viewThemPhieuGiamGia(Model model) {
         return "admin/phieugiamgia-add";
@@ -255,23 +271,29 @@ public class AdminKhuyenMaiController {
             pgg.setMaPhieu(maPhieu);
             try {
                 pgg.setGiaTri(giaTriStr == null || giaTriStr.isEmpty() ? null : new BigDecimal(giaTriStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             pgg.setDonVi(donVi);
             try {
                 pgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 pgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 pgg.setSoLuongConLai(soLuongConLaiStr == null || soLuongConLaiStr.isEmpty() ? null : Integer.parseInt(soLuongConLaiStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieuStr == null || giaTriDonHangToiThieuStr.isEmpty() ? null : new BigDecimal(giaTriDonHangToiThieuStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             try {
                 pgg.setGiaTriGiamToiDa(giaTriGiamToiDaStr == null || giaTriGiamToiDaStr.isEmpty() ? null : new BigDecimal(giaTriGiamToiDaStr));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             pgg.setLoaiGiamGia(loaiGiamGia);
             model.addAttribute("voucher", pgg);
             return "admin/phieugiamgia-edit";
@@ -310,14 +332,14 @@ public class AdminKhuyenMaiController {
         if (trimmed.contains(".") || trimmed.contains(",")) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
         }
-        
+
         Integer val;
         try {
             val = Integer.parseInt(trimmed);
         } catch (NumberFormatException e) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên hợp lệ!");
         }
-        
+
         if (val < 0) {
             throw new PromotionValidationException(fieldName + " không được là số âm!");
         }
@@ -341,14 +363,14 @@ public class AdminKhuyenMaiController {
         if (trimmed.contains(".") || trimmed.contains(",")) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
         }
-        
+
         BigDecimal val;
         try {
             val = new BigDecimal(trimmed);
         } catch (NumberFormatException e) {
             throw new PromotionValidationException(fieldName + " phải là số hợp lệ!");
         }
-        
+
         if (val.compareTo(BigDecimal.ZERO) < 0) {
             throw new PromotionValidationException(fieldName + " không được là số âm!");
         }

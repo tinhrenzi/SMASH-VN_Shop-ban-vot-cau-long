@@ -86,13 +86,19 @@ public class AdminSanPhamController {
             request.getParameterMap().forEach((key, values) -> {
                 if (key.startsWith("variantPrices[")) {
                     String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
-                        variantPriceMap.put(variantKey, new java.math.BigDecimal(values[0].trim()));
+                    if (values != null && values.length > 0) {
+                        String trimmed = values[0].trim();
+                        if (!trimmed.isEmpty()) {
+                            variantPriceMap.put(variantKey, new java.math.BigDecimal(trimmed));
+                        }
                     }
                 } else if (key.startsWith("variantQuantities[")) {
                     String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    if (values != null && values.length > 0 && !values[0].trim().isEmpty()) {
-                        variantQuantityMap.put(variantKey, Integer.parseInt(values[0].trim()));
+                    if (values != null && values.length > 0) {
+                        String trimmed = values[0].trim();
+                        if (!trimmed.isEmpty()) {
+                            variantQuantityMap.put(variantKey, Integer.parseInt(trimmed));
+                        }
                     }
                 }
             });

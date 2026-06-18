@@ -1,22 +1,35 @@
 package com.smashvn.shop.service.admin;
-import com.smashvn.shop.service.AuditService;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
-
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.service.AuditService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -41,11 +54,11 @@ public class AdminSanPhamService {
         if (origName != null && origName.contains(".")) {
             ext = origName.substring(origName.lastIndexOf(".")).toLowerCase();
         }
-        
+
         if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
             throw new RuntimeException("Định dạng tệp " + fileLabel + " không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.");
         }
-        
+
         if (file.getSize() > 5 * 1024 * 1024) {
             throw new RuntimeException("Kích thước hình ảnh " + fileLabel + " quá lớn! Kích thước tối đa cho phép là 5MB.");
         }
@@ -71,7 +84,7 @@ public class AdminSanPhamService {
 
     private String saveImageSecurely(MultipartFile file, String label, List<Path> uploadedFiles) throws Exception {
         validateImageFile(file, label);
-        
+
         String origName = file.getOriginalFilename();
         String cleanOrigName = (origName != null) ? origName.replaceAll("[^a-zA-Z0-9.-]", "_") : "image.jpg";
         String secureFileName = UUID.randomUUID().toString() + "_" + cleanOrigName;
@@ -102,11 +115,13 @@ public class AdminSanPhamService {
         sp.setMoTa(moTa);
         sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());
         sp.setThuongHieu(thuongHieuRepository.findById(idThuongHieu).orElseThrow());
-        sp.setTrangThai("dang_ban"); 
+        sp.setTrangThai("dang_ban");
 
         List<NhanVien> listNV = nhanVienRepository.findAll();
-        if (!listNV.isEmpty()) sp.setNhanVien(listNV.get(0));
-        
+        if (!listNV.isEmpty()) {
+            sp.setNhanVien(listNV.get(0));
+        }
+
         sanPhamRepository.save(sp);
     }
 
@@ -120,9 +135,9 @@ public class AdminSanPhamService {
             Map<String, BigDecimal> variantPriceMap,
             Map<String, Integer> variantQuantityMap,
             Integer idNguoiDung, String remoteAddr) throws Exception {
-        
+
         List<Path> uploadedFiles = new ArrayList<>();
-        
+
         try {
             // 1. Validate dữ liệu đầu vào cơ bản
             String trimmedTen = (tenSanPham == null) ? "" : tenSanPham.trim();
@@ -158,9 +173,9 @@ public class AdminSanPhamService {
             }
 
             // 2. Validate và lọc các thuộc tính checkbox
-            if (mauSacs == null || mauSacs.isEmpty() || 
-                trongLuongs == null || trongLuongs.isEmpty() || 
-                mucCangs == null || mucCangs.isEmpty()) {
+            if (mauSacs == null || mauSacs.isEmpty()
+                    || trongLuongs == null || trongLuongs.isEmpty()
+                    || mucCangs == null || mucCangs.isEmpty()) {
                 throw new RuntimeException("Vui lòng chọn ít nhất một màu sắc, một trọng lượng và một mức căng!");
             }
 
@@ -202,11 +217,11 @@ public class AdminSanPhamService {
 
             // 6. Tạo Cartesian Product và phòng chống trùng lặp
             Set<String> checkDuplicates = new HashSet<>();
-            
+
             for (String mau : uniqueMauSacs) {
                 for (String trong : uniqueTrongLuongs) {
                     for (String cang : uniqueMucCangs) {
-                        
+
                         String combKey = mau.toLowerCase().trim() + "_" + trong.toLowerCase().trim() + "_" + cang.toLowerCase().trim();
                         if (checkDuplicates.contains(combKey)) {
                             continue;
@@ -289,7 +304,7 @@ public class AdminSanPhamService {
 
         SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
         String oldVal = "Ten: " + sp.getTenSanPham() + ", DanhMuc: " + sp.getDanhMuc().getId() + ", ThuongHieu: " + sp.getThuongHieu().getId();
-        
+
         sp.setTenSanPham(sanitizedTen);
         sp.setMoTa(sanitizedMoTa);
         sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());

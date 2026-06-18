@@ -45,6 +45,9 @@ public class RevenueStatisticsIntegrationTest {
     @Autowired
     private SanPhamChiTietRepository sanPhamChiTietRepository;
 
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
+
     private KhachHang testKhachHang;
     private PhuongThucThanhToan ptttCOD;
     private PhuongThucThanhToan ptttOnline;
@@ -102,6 +105,11 @@ public class RevenueStatisticsIntegrationTest {
         List<SanPhamChiTiet> spcts = sanPhamChiTietRepository.findAll();
         assertFalse(spcts.isEmpty(), "SanPhamChiTiet table must not be empty for integration tests");
         testSpct = spcts.get(0);
+
+        // Clear statistics cache to ensure clean test environment
+        if (cacheManager != null && cacheManager.getCache("thongke") != null) {
+            cacheManager.getCache("thongke").clear();
+        }
     }
 
     private HoaDon createTestOrder(String status, String paymentMethod, String paymentStatus, PhuongThucThanhToan pttt, BigDecimal amount) {
@@ -144,6 +152,12 @@ public class RevenueStatisticsIntegrationTest {
         LocalDateTime start = LocalDateTime.now().minusMinutes(2);
         LocalDateTime end = LocalDateTime.now().plusMinutes(2);
 
+        // Fetch initial statistics to isolate from database pollution
+        Map<String, Object> initialStats = adminThongKeService.getStatisticsData(start, end);
+        BigDecimal initialActualRevenue = (BigDecimal) initialStats.get("actualRevenue");
+        BigDecimal initialExpectedRevenue = (BigDecimal) initialStats.get("expectedRevenue");
+        BigDecimal initialRefundedRevenue = (BigDecimal) initialStats.get("refundedRevenue");
+
         // 1. Projected Revenue Inclusions
         // PAID + cho_xac_nhan => Projected Revenue
         createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, BigDecimal.valueOf(100000));
@@ -170,6 +184,11 @@ public class RevenueStatisticsIntegrationTest {
         refundedOrder.setRefundStatus(RefundStatus.COMPLETED);
         hoaDonRepository.save(refundedOrder);
 
+        // Clear statistics cache before second fetch to bypass @Cacheable
+        if (cacheManager != null && cacheManager.getCache("thongke") != null) {
+            cacheManager.getCache("thongke").clear();
+        }
+
         // Calculate statistics
         Map<String, Object> stats = adminThongKeService.getStatisticsData(start, end);
 
@@ -177,14 +196,18 @@ public class RevenueStatisticsIntegrationTest {
         BigDecimal expectedRevenue = (BigDecimal) stats.get("expectedRevenue");
         BigDecimal refundedRevenue = (BigDecimal) stats.get("refundedRevenue");
 
+        BigDecimal diffActual = actualRevenue.subtract(initialActualRevenue != null ? initialActualRevenue : BigDecimal.ZERO);
+        BigDecimal diffExpected = expectedRevenue.subtract(initialExpectedRevenue != null ? initialExpectedRevenue : BigDecimal.ZERO);
+        BigDecimal diffRefunded = refundedRevenue.subtract(initialRefundedRevenue != null ? initialRefundedRevenue : BigDecimal.ZERO);
+
         // Projected Revenue should sum the four PAID undelivered orders (100k + 110k + 120k + 130k = 460k)
-        assertEquals(0, BigDecimal.valueOf(460000).compareTo(expectedRevenue), "Projected revenue does not match expected");
+        assertEquals(0, BigDecimal.valueOf(460000).compareTo(diffExpected), "Projected revenue does not match expected");
 
         // Actual Revenue should sum delivered orders (200k + 250k = 450k) minus refunded delivered order (400k) = 50k
-        assertEquals(0, BigDecimal.valueOf(50000).compareTo(actualRevenue), "Actual revenue does not match expected");
+        assertEquals(0, BigDecimal.valueOf(50000).compareTo(diffActual), "Actual revenue does not match expected");
 
         // Refunded Revenue should be 400k
-        assertEquals(0, BigDecimal.valueOf(400000).compareTo(refundedRevenue), "Refunded revenue does not match expected");
+        assertEquals(0, BigDecimal.valueOf(400000).compareTo(diffRefunded), "Refunded revenue does not match expected");
 
         // Verify chart values sum matches Actual Revenue
         List<BigDecimal> chartValues = (List<BigDecimal>) stats.get("chartValues");

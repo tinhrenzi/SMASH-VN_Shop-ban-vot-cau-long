@@ -558,4 +558,54 @@ public class AdminController {
 
         return "redirect:/admin/don-hang";
     }
+
+    /**
+     * Endpoint thủ công để admin sửa trạng thái thanh toán khi gặp lỗi hệ thống.
+     * Chỉ cập nhật trang_thai_thanh_toan, không đụng vào payment_status hay paid_at.
+     */
+    @PostMapping("/don-hang/update-payment-status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> updatePaymentStatus(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam("trangThaiThanhToan") String trangThaiThanhToan,
+            HttpSession session) {
+
+        java.util.Map<String, Object> resp = new java.util.LinkedHashMap<>();
+
+        Integer actingId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingId == null) {
+            resp.put("success", false);
+            resp.put("message", "Phiên đăng nhập đã hết hạn.");
+            return org.springframework.http.ResponseEntity.status(401).body(resp);
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(actingId).orElse(null);
+        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
+            resp.put("success", false);
+            resp.put("message", "Chỉ quản lý mới có quyền thực hiện thao tác này.");
+            return org.springframework.http.ResponseEntity.status(403).body(resp);
+        }
+
+        java.util.Set<String> allowedStatuses = java.util.Set.of(
+                "CHO_THANH_TOAN", "DA_THANH_TOAN", "CHO_HOAN_TIEN", "REFUNDED", "THAT_BAI");
+        if (!allowedStatuses.contains(trangThaiThanhToan)) {
+            resp.put("success", false);
+            resp.put("message", "Trạng thái không hợp lệ: " + trangThaiThanhToan);
+            return org.springframework.http.ResponseEntity.badRequest().body(resp);
+        }
+
+        com.smashvn.shop.entity.HoaDon hd = hoaDonRepository.findById(idHoaDon).orElse(null);
+        if (hd == null) {
+            resp.put("success", false);
+            resp.put("message", "Không tìm thấy đơn hàng #" + idHoaDon);
+            return org.springframework.http.ResponseEntity.status(404).body(resp);
+        }
+
+        String oldStatus = hd.getTrangThaiThanhToan();
+        hd.setTrangThaiThanhToan(trangThaiThanhToan);
+        hoaDonRepository.save(hd);
+
+        resp.put("success", true);
+        resp.put("message", "Đã cập nhật trạng thái thanh toán từ [" + oldStatus + "] → [" + trangThaiThanhToan + "] cho đơn #" + idHoaDon);
+        return org.springframework.http.ResponseEntity.ok(resp);
+    }
 }
