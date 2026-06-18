@@ -19,13 +19,14 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
     /**
      * Tìm kiếm sản phẩm theo nhiều tiêu chí kết hợp, hỗ trợ phân trang.
-     * Lọc theo danh mục, thương hiệu và khoảng giá (giá của biến thể đầu tiên).
+     * Lọc theo danh mục, thương hiệu, khoảng giá và trọng lượng (size).
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
            "AND (:brandId IS NULL OR sp.thuongHieu.id = :brandId) " +
            "AND (:minPrice IS NULL AND :maxPrice IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice))) " +
            "AND (:rating IS NULL OR :rating = 0.0 OR sp.diemTrungBinh >= :rating) " +
+           "AND (:trongLuong IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct3 WHERE spct3.sanPham = sp AND spct3.trongLuong IN :trongLuong)) " +
            "ORDER BY CASE WHEN ((sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND (SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, " +
            "CASE WHEN :sort = 'price_asc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp) END ASC, " +
            "CASE WHEN :sort = 'price_desc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp) END DESC, " +
@@ -36,9 +37,14 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         @Param("rating") Double rating,
+        @Param("trongLuong") java.util.List<String> trongLuong,
         @Param("sort") String sort,
         Pageable pageable
     );
+
+    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN SanPhamChiTiet spct ON spct.sanPham = sp WHERE spct.trongLuong = :trongLuong")
+    long countByTrongLuong(@Param("trongLuong") String trongLuong);
+
 
     /**
      * Lấy giá thấp nhất trong toàn bộ sản phẩm (để khởi tạo slider)

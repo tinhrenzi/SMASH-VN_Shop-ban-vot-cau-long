@@ -13,11 +13,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.service.blog.BlogService;
@@ -29,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class HomeController {
 
     private final SanPhamRepository sanPhamRepository;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final DanhMucRepository danhMucRepository;
     private final BlogService blogService;
@@ -95,10 +98,22 @@ public class HomeController {
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
             @RequestParam(value = "rating", required = false) Double rating,
+            @RequestParam(value = "trongLuong", required = false) List<String> trongLuong,
             @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "12") int size,
+            @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
             Model model) {
+
+        List<String> normalizedTrongLuong = trongLuong;
+        if (normalizedTrongLuong != null) {
+            normalizedTrongLuong = normalizedTrongLuong.stream()
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .collect(Collectors.toList());
+            if (normalizedTrongLuong.isEmpty()) {
+                normalizedTrongLuong = null;
+            }
+        }
 
         // Do ORDER BY đã được định nghĩa trực tiếp và đầy đủ trong @Query của SanPhamRepository.findByFilters,
         // chúng ta sử dụng PageRequest.of không truyền Sort (tương đương Sort.unsorted()) để tránh Spring Data JPA
@@ -107,12 +122,12 @@ public class HomeController {
 
         // Sử dụng query kết hợp nhiều điều kiện
         Page<SanPham> productPage = sanPhamRepository.findByFilters(
-            categoryId, brandId, minPrice, maxPrice, rating, sort, pageable
+            categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
         );
 
         // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
         BigDecimal globalMinPrice = BigDecimal.ZERO;
-        BigDecimal globalMaxPrice = new BigDecimal("100000000");
+        BigDecimal globalMaxPrice = new BigDecimal("30000000");
 
         List<DanhMuc> danhSachDanhMuc = danhMucRepository.findAll();
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
@@ -134,6 +149,23 @@ public class HomeController {
         Set<Integer> newProductIds = newProductsList.stream().map(SanPham::getId).collect(Collectors.toSet());
         model.addAttribute("newProductIds", newProductIds);
 
+        // Initialize common racket weights (sizes)
+        List<String> listTrongLuong = new java.util.ArrayList<>(java.util.Arrays.asList("2U", "3U", "4U", "5U", "6U"));
+        List<String> dbTrongLuongs = sanPhamChiTietRepository.findDistinctTrongLuong();
+        for (String dbTl : dbTrongLuongs) {
+            if (dbTl != null && !dbTl.trim().isEmpty() && !listTrongLuong.contains(dbTl)) {
+                listTrongLuong.add(dbTl);
+            }
+        }
+        java.util.Map<String, Long> sizeCounts = new java.util.HashMap<>();
+        for (String tl : listTrongLuong) {
+            sizeCounts.put(tl, sanPhamRepository.countByTrongLuong(tl));
+        }
+
+        model.addAttribute("danhSachTrongLuong", listTrongLuong);
+        model.addAttribute("sizeCounts", sizeCounts);
+        model.addAttribute("selectedTrongLuong", normalizedTrongLuong);
+
         model.addAttribute("productPage", productPage);
         model.addAttribute("products", productPage.getContent());
         model.addAttribute("categories", danhSachDanhMuc);
@@ -153,6 +185,9 @@ public class HomeController {
         model.addAttribute("totalPages", productPage.getTotalPages());
         model.addAttribute("totalElements", productPage.getTotalElements());
 
+        if ("XMLHttpRequest".equals(requestedWith)) {
+            return "shop :: #shop-content-area";
+        }
         return "shop";
     }
 

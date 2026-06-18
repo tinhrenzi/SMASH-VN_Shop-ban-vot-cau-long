@@ -490,7 +490,7 @@
             <!--====== Shop Section ======-->
             <div class="u-s-p-y-90">
                 <div class="container">
-                    <div class="row">
+                    <div class="row" id="shop-content-area">
 
                         <!-- ===== SIDEBAR TRÁI ===== -->
                         <div class="col-lg-3 col-md-12">
@@ -511,7 +511,7 @@
                                             <div class="shop-w__wrap collapse show" id="s-category">
                                                 <ul class="filter-list gl-scroll">
                                                     <li>
-                                                        <a th:href="@{/shop(sort=${currentSort})}"
+                                                        <a th:href="@{/shop(sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedCategoryId == null} ? 'active-filter' : ''">
                                                             <span>Tất cả danh mục</span>
@@ -519,7 +519,7 @@
                                                         </a>
                                                     </li>
                                                     <li th:each="category : ${categories}">
-                                                        <a th:href="@{/shop(categoryId=${category.id}, sort=${currentSort})}"
+                                                        <a th:href="@{/shop(categoryId=${category.id}, sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedCategoryId == category.id} ? 'active-filter' : ''">
                                                             <span th:text="${category.tenDanhMuc}">Danh mục</span>
@@ -541,7 +541,7 @@
                                             <div class="shop-w__wrap collapse show" id="s-manufacturer">
                                                 <ul class="filter-list gl-scroll">
                                                     <li>
-                                                        <a th:href="@{/shop(sort=${currentSort})}"
+                                                        <a th:href="@{/shop(sort=${currentSort}, categoryId=${selectedCategoryId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedBrandId == null} ? 'active-filter' : ''">
                                                             <span>Tất cả thương hiệu</span>
@@ -549,7 +549,7 @@
                                                         </a>
                                                     </li>
                                                     <li th:each="brand : ${brands}">
-                                                        <a th:href="@{/shop(brandId=${brand.id}, categoryId=${selectedCategoryId}, sort=${currentSort})}"
+                                                        <a th:href="@{/shop(brandId=${brand.id}, categoryId=${selectedCategoryId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedBrandId == brand.id} ? 'active-filter' : ''">
                                                             <span th:text="${brand.tenThuongHieu}">Thương hiệu</span>
@@ -576,6 +576,7 @@
                                                         <input type="hidden" name="brandId" th:value="${selectedBrandId}" th:if="${selectedBrandId != null}">
                                                         <input type="hidden" name="sort" th:value="${currentSort}">
                                                         <input type="hidden" name="rating" th:value="${selectedRating}" th:if="${selectedRating != null and selectedRating > 0.0}">
+                                                        <input type="hidden" name="trongLuong" th:each="tl : ${selectedTrongLuong}" th:value="${tl}" th:if="${selectedTrongLuong != null}">
 
                                                         <div class="price-range-slider" id="priceRangeSlider">
                                                             <div class="range-fill" id="rangeFill"></div>
@@ -622,12 +623,12 @@
                                             </div>
                                             <div class="shop-w__wrap collapse show" id="s-rating">
                                                 <div id="star-filter-list">
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == null or selectedRating == 0.0} ? 'active' : ''">
                                                          <span>Tất cả đánh giá</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=5.0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=5.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 5.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -635,7 +636,7 @@
                                                          </span>
                                                          <span>5 sao</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=4.0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=4.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 4.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -643,7 +644,7 @@
                                                          </span>
                                                          <span>4 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=3.0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=3.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 3.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -651,7 +652,7 @@
                                                          </span>
                                                          <span>3 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=2.0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=2.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 2.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -659,7 +660,7 @@
                                                          </span>
                                                          <span>2 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=1.0)}"
+                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=1.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 1.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -668,6 +669,33 @@
                                                          <span>1 sao trở lên</span>
                                                      </a>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bộ lọc Size / Trọng lượng -->
+                                    <div class="u-s-m-b-30">
+                                        <div class="shop-w shop-w--style">
+                                            <div class="shop-w__intro-wrap">
+                                                <h1 class="shop-w__h">SIZE / TRỌNG LƯỢNG</h1>
+                                                <span class="fas fa-minus shop-w__toggle" data-target="#s-size" data-toggle="collapse"></span>
+                                            </div>
+                                            <div class="shop-w__wrap collapse show" id="s-size">
+                                                <ul class="shop-w__list gl-scroll">
+                                                    <li th:each="tl : ${danhSachTrongLuong}">
+                                                        <!-- ====== Check Box ====== -->
+                                                        <div class="check-box">
+                                                            <input type="checkbox" class="size-filter-checkbox" th:id="'size-' + ${tl}" th:value="${tl}"
+                                                                   th:checked="${selectedTrongLuong != null and selectedTrongLuong.contains(tl)}"
+                                                                   onclick="filterBySizes()">
+                                                            <div class="check-box__state check-box__state--primary">
+                                                                <label class="check-box__label" th:for="'size-' + ${tl}" th:text="${tl}">3U</label>
+                                                            </div>
+                                                        </div>
+                                                        <!-- ====== End Check Box ====== -->
+                                                        <span class="shop-w__total-text" th:text="'(' + ${(sizeCounts.get(tl) != null ? sizeCounts.get(tl) : 0)} + ')'">(0)</span>
+                                                    </li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -703,11 +731,12 @@
                                              <input type="hidden" name="minPrice" th:value="${selectedMinPrice}" th:if="${selectedMinPrice != null}">
                                              <input type="hidden" name="maxPrice" th:value="${selectedMaxPrice}" th:if="${selectedMaxPrice != null}">
                                              <input type="hidden" name="rating" th:value="${selectedRating}" th:if="${selectedRating != null and selectedRating > 0.0}">
+                                             <input type="hidden" name="trongLuong" th:each="tl : ${selectedTrongLuong}" th:value="${tl}" th:if="${selectedTrongLuong != null}">
 
                                              <!-- Show count select -->
                                              <div style="display:flex; align-items:center; gap:6px;">
                                                  <span style="font-size:13px; color:#555; white-space:nowrap; font-weight: 500;">Hiển thị:</span>
-                                                 <select class="toolbar-select" name="size" onchange="document.getElementById('toolbar-filter-form').submit()">
+                                                 <select class="toolbar-select" name="size" onchange="submitFormAjax(this.form)">
                                                      <option value="12" th:selected="${productPage.size == 12}">12</option>
                                                      <option value="24" th:selected="${productPage.size == 24}">24</option>
                                                      <option value="36" th:selected="${productPage.size == 36}">36</option>
@@ -718,7 +747,7 @@
                                              <!-- Sort select -->
                                              <div style="display:flex; align-items:center; gap:6px;">
                                                  <span style="font-size:13px; color:#555; white-space:nowrap; font-weight: 500;">Sắp xếp:</span>
-                                                 <select class="toolbar-select" name="sort" onchange="document.getElementById('toolbar-filter-form').submit()">
+                                                 <select class="toolbar-select" name="sort" onchange="submitFormAjax(this.form)">
                                                      <option value="newest" th:selected="${currentSort == 'newest'}">Mới nhất</option>
                                                      <option value="price_asc" th:selected="${currentSort == 'price_asc'}">Giá: Thấp đến Cao</option>
                                                      <option value="price_desc" th:selected="${currentSort == 'price_desc'}">Giá: Cao đến Thấp</option>
@@ -829,7 +858,7 @@
                                     <ul class="shop-p__pagination">
                                         <!-- Prev -->
                                         <li th:style="${currentPage == 0} ? 'display: none;' : ''">
-                                            <a th:href="@{/shop(page=${currentPage - 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating})}">
+                                            <a th:href="@{/shop(page=${currentPage - 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
                                                 <i class="fas fa-angle-left"></i>
                                             </a>
                                         </li>
@@ -837,13 +866,13 @@
                                         <!-- Page numbers -->
                                         <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                                             th:classappend="${i == currentPage} ? 'is-active' : ''">
-                                            <a th:href="@{/shop(page=${i}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating})}"
+                                            <a th:href="@{/shop(page=${i}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}"
                                                th:text="${i + 1}">1</a>
                                         </li>
 
                                         <!-- Next -->
                                         <li th:style="${currentPage >= totalPages - 1} ? 'display: none;' : ''">
-                                            <a th:href="@{/shop(page=${currentPage + 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating})}">
+                                            <a th:href="@{/shop(page=${currentPage + 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
                                                 <i class="fas fa-angle-right"></i>
                                             </a>
                                         </li>
@@ -896,7 +925,7 @@
 
     <script>
         // ===== Price Range Slider =====
-        (function() {
+        function initPriceSlider() {
             var rangeMin = document.getElementById('rangeMin');
             var rangeMax = document.getElementById('rangeMax');
             var inputMin = document.getElementById('inputMin');
@@ -906,7 +935,7 @@
             if (!rangeMin || !rangeMax || !inputMin || !inputMax) return;
 
             var minVal = parseInt(rangeMin.min) || 0;
-            var maxVal = parseInt(rangeMax.max) || 100000000;
+            var maxVal = parseInt(rangeMax.max) || 30000000;
 
             function updateSliderFromRange(isInit) {
                 var low = parseInt(rangeMin.value);
@@ -955,6 +984,22 @@
                 rangeFill.style.width = (rightPct - leftPct) + '%';
             }
 
+            // Remove existing listeners if any by cloning (simple way to avoid duplicates)
+            var newRangeMin = rangeMin.cloneNode(true);
+            var newRangeMax = rangeMax.cloneNode(true);
+            var newInputMin = inputMin.cloneNode(true);
+            var newInputMax = inputMax.cloneNode(true);
+
+            rangeMin.parentNode.replaceChild(newRangeMin, rangeMin);
+            rangeMax.parentNode.replaceChild(newRangeMax, rangeMax);
+            inputMin.parentNode.replaceChild(newInputMin, inputMin);
+            inputMax.parentNode.replaceChild(newInputMax, inputMax);
+
+            rangeMin = newRangeMin;
+            rangeMax = newRangeMax;
+            inputMin = newInputMin;
+            inputMax = newInputMax;
+
             rangeMin.addEventListener('input', function() { updateSliderFromRange(false); });
             rangeMax.addEventListener('input', function() { updateSliderFromRange(false); });
             
@@ -992,7 +1037,36 @@
 
             // Khởi tạo trạng thái ban đầu
             updateSliderFromRange(true);
-        })();
+        }
+
+        initPriceSlider();
+
+        // ===== Multiple Size / Weight Filter (Checkbox) =====
+        function filterBySizes() {
+            var checkedSizes = [];
+            var checkboxes = document.querySelectorAll('.size-filter-checkbox');
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    checkedSizes.push(checkboxes[i].value);
+                }
+            }
+            
+            var url = new URL(window.location.href);
+            
+            // Remove existing trongLuong parameters
+            url.searchParams.delete('trongLuong');
+            
+            // Add new selected sizes
+            for (var j = 0; j < checkedSizes.length; j++) {
+                url.searchParams.append('trongLuong', checkedSizes[j]);
+            }
+            
+            // Reset page to 0 if filter changes
+            url.searchParams.set('page', '0');
+            
+            // Redirect via AJAX
+            loadShopProducts(url.toString());
+        }
 
         // ===== View Toggle (Grid / List) - dùng class Reshop =====
         function setView(view) {
@@ -1027,6 +1101,143 @@
 
         // ===== Star Filter (Server-side) =====
         // Bộ lọc đánh giá sao hiện tại được thực hiện trực tiếp thông qua đường dẫn liên kết (Thymeleaf URL) để đồng bộ phân trang.
+
+        // ===== AJAX Filtering and Pagination =====
+        function submitFormAjax(form) {
+            form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+        }
+
+        function loadShopProducts(url) {
+            var productSection = document.getElementById('shop-content-area');
+            if (!productSection) {
+                window.location.href = url;
+                return;
+            }
+
+            // Fade out effect
+            productSection.style.opacity = '0.5';
+            productSection.style.pointerEvents = 'none';
+            productSection.style.transition = 'opacity 0.2s ease';
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('HTTP status ' + response.status);
+                }
+                return response.text();
+            })
+            .then(function(html) {
+                // Parse the returned HTML fragment
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                var newContent = tempDiv.querySelector('#shop-content-area');
+                
+                if (!newContent) {
+                    // Fallback: if no #shop-content-area found, the response might BE the content
+                    // Try using the full response
+                    newContent = tempDiv.firstElementChild;
+                }
+                
+                if (newContent && productSection.parentNode) {
+                    // Replace content
+                    productSection.parentNode.replaceChild(newContent, productSection);
+                    
+                    // Fade in the new content
+                    newContent.style.opacity = '0';
+                    newContent.style.transition = 'opacity 0.3s ease';
+                    // Force reflow before transition
+                    newContent.offsetHeight;
+                    newContent.style.opacity = '1';
+                    newContent.style.pointerEvents = '';
+                    
+                    // Re-initialize price range slider on the new DOM
+                    initPriceSlider();
+                    
+                    // Restore active view (grid/list)
+                    var savedView = localStorage.getItem('shopView') || 'grid';
+                    setView(savedView);
+                    
+                    // Re-initialize Bootstrap collapse toggles in the new sidebar
+                    var collapseToggles = newContent.querySelectorAll('[data-toggle="collapse"]');
+                    for (var i = 0; i < collapseToggles.length; i++) {
+                        var target = collapseToggles[i].getAttribute('data-target');
+                        if (target) {
+                            var collapseEl = newContent.querySelector(target);
+                            if (collapseEl && typeof jQuery !== 'undefined') {
+                                jQuery(collapseEl).collapse('show');
+                            }
+                        }
+                    }
+                    
+                    // Smooth scroll to top of the shop toolbar (not the very top of the page)
+                    var toolbar = newContent.querySelector('.shop-p__toolbar');
+                    if (toolbar) {
+                        toolbar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    // Fallback: reload page
+                    window.location.href = url;
+                    return;
+                }
+                
+                // Update address bar URL
+                history.pushState({}, '', url);
+            })
+            .catch(function(error) {
+                console.error('AJAX filtering error, falling back to page reload:', error);
+                if (productSection) {
+                    productSection.style.opacity = '1';
+                    productSection.style.pointerEvents = '';
+                }
+                window.location.href = url;
+            });
+        }
+
+        // Intercept all clicks on shop links
+        document.addEventListener('click', function(e) {
+            var anchor = e.target.closest('a');
+            if (anchor && anchor.getAttribute('href')) {
+                var href = anchor.getAttribute('href');
+                if (href === '/shop' || href.startsWith('/shop?') || href.startsWith('shop?')) {
+                    e.preventDefault();
+                    loadShopProducts(anchor.href);
+                }
+            }
+        });
+
+        // Intercept form submissions
+        document.addEventListener('submit', function(e) {
+            var form = e.target;
+            if (form && form.getAttribute('action')) {
+                var action = form.getAttribute('action');
+                if (action.startsWith('/shop') || action.startsWith('shop') || action === '/shop') {
+                    e.preventDefault();
+                    
+                    var formData = new FormData(form);
+                    var params = new URLSearchParams();
+                    
+                    for (var pair of formData.entries()) {
+                        if (pair[1] !== "") {
+                            params.append(pair[0], pair[1]);
+                        }
+                    }
+                    
+                    var actionUrl = form.getAttribute('action');
+                    var url = actionUrl.split('?')[0] + '?' + params.toString();
+                    
+                    loadShopProducts(url);
+                }
+            }
+        });
+
+        // Handle browser Back/Forward navigation
+        window.addEventListener('popstate', function() {
+            loadShopProducts(window.location.href);
+        });
 
     </script>
 
