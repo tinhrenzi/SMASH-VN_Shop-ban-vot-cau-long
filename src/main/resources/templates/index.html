@@ -86,7 +86,7 @@
                                 <div class="col-12">
                                     <div class="slider-content slider-content--animation">
                                         <span class="content-span-1 u-c-white">Sức mạnh bứt phá - Lựa chọn của nhà vô địch</span>
-                                        <span class="content-span-2 u-c-white">YONEX ASTROX 99</span>
+                                        <span class="content-span-2 u-c-white">YONEX ASTROX 99 2025</span>
                                         <span class="content-span-3 u-c-white">Sẵn sàng thống trị mọi trận đấu căng thẳng nhất</span>
                                         <span class="content-span-4 u-c-white">Top Bán Chạy
                                             <span class="u-c-brand"></span></span>
@@ -458,8 +458,7 @@
             <!--====== End - Hàng 4 ======-->
 
 
-            <!--====== Hàng 5 ======-->
-            <div class="banner-bg">
+            <div class="banner-bg" th:with="hasCamp=${highestDiscountCampaign != null}">
 
                 <!--====== Hàng Content ngày giờ sales ======-->
                 <div class="section__content">
@@ -467,21 +466,21 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="banner-bg__countdown">
-                                    <div class="countdown countdown--style-banner" data-countdown="2020/05/01"></div>
+                                    <div class="countdown countdown--style-banner" th:attr="data-countdown=${hasCamp ? campaignEndDate : '2027/01/01 00:00:00'}"></div>
                                 </div>
                                 <div class="banner-bg__wrap">
                                     <div class="banner-bg__text-1">
 
-                                        <span class="">Việt Nam</span>
+                                        <span class="" th:text="${hasCamp ? highestDiscountCampaign.tenChienDich : 'Việt Nam'}">Việt Nam</span>
 
-                                        <span class="u-c-secondary">Offers</span></div>
+                                        <span class="u-c-secondary" th:text="${hasCamp ? ' -' + highestDiscountCampaign.phanTramGiam + '%' : ' Offers'}">Offers</span></div>
                                     <div class="banner-bg__text-2">
 
-                                        <span class="u-c-secondary">Official Launch</span>
+                                        <span class="u-c-secondary" th:text="${hasCamp ? 'SIÊU ƯU ĐÃI' : 'Official Launch'}">Official Launch</span>
 
                                         <span class="">Đừng bỏ lỡ!</span></div>
 
-                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-secondary">Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!</span>
+                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-secondary" th:text="${hasCamp ? 'Giảm giá trực tiếp áp dụng cho toàn bộ sản phẩm trong chương trình!' : 'Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!'}">Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!</span>
 
                                     <a class="banner-bg__shop-now btn--e-secondary" th:href="@{/shop}">Mua Ngay</a>
                                 </div>
@@ -563,6 +562,12 @@
 							        <span class="product-o__name">
 							            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
 							        </span>
+							        
+							        <div class="product-o__rating gl-rating-style">
+							            <i th:each="i : ${#numbers.sequence(1, 5)}"
+							               th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+							            <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
+							        </div>
 							        
 							        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
 							            Từ <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')}"></span> đ

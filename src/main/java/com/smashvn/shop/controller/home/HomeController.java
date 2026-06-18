@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.DanhMuc;
+import com.smashvn.shop.entity.DotGiamGia;
+import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
@@ -35,6 +37,7 @@ public class HomeController {
     private final ThuongHieuRepository thuongHieuRepository;
     private final DanhMucRepository danhMucRepository;
     private final BlogService blogService;
+    private final DotGiamGiaDAO dotGiamGiaDAO;
 
     @GetMapping("/")
     public String hienThiTrangChu(Model model) {
@@ -65,11 +68,29 @@ public class HomeController {
 
         List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
 
-        // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm)
+        // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm, riêng nổi bật lấy 4)
         Pageable pageLimit14 = PageRequest.of(0, 14);
+        Pageable pageLimit4 = PageRequest.of(0, 4);
         List<SanPham> newProductsList = sanPhamRepository.findNewProducts(pageLimit14);
         List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimit14);
-        List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit14);
+        List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit4);
+
+        // Tìm chiến dịch giảm giá có phần trăm giảm cao nhất đang hoạt động
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        List<DotGiamGia> activeCampaigns = dotGiamGiaDAO.findAll().stream()
+                .filter(dgg -> dgg.getActive() && "ACTIVE".equals(dgg.getDynamicStatus()))
+                .sorted((d1, d2) -> d2.getPhanTramGiam().compareTo(d1.getPhanTramGiam()))
+                .collect(Collectors.toList());
+
+        DotGiamGia highestDiscountCampaign = activeCampaigns.isEmpty() ? null : activeCampaigns.get(0);
+        if (highestDiscountCampaign != null) {
+            String formattedEndDate = highestDiscountCampaign.getNgayKetThuc()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+            model.addAttribute("highestDiscountCampaign", highestDiscountCampaign);
+            model.addAttribute("campaignEndDate", formattedEndDate);
+        } else {
+            model.addAttribute("highestDiscountCampaign", null);
+        }
 
         model.addAttribute("products", discountedProducts); // để đảm bảo tương thích ngược
         model.addAttribute("newProducts", newProductsList);

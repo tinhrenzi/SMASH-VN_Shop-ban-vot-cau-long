@@ -77,12 +77,12 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     java.util.List<SanPham> findBestSellers(Pageable pageable);
 
     /**
-     * Lấy các sản phẩm nổi bật nhất (sắp xếp theo điểm đánh giá trung bình)
+     * Lấy các sản phẩm nổi bật nhất (sắp xếp theo tổng lượt mua + lượt yêu thích)
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban' " +
            "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp) > 0) THEN 1 ELSE 0 END DESC, " +
-           "         (SELECT COALESCE(AVG(dg.soSao), 0.0) FROM DanhGia dg " +
-           "          WHERE dg.sanPham = sp) DESC, sp.id DESC")
+           "         ((SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct WHERE hdct.sanPhamChiTiet.sanPham = sp) + " +
+           "          (SELECT COUNT(spy) FROM SanPhamYeuThich spy WHERE spy.sanPham = sp)) DESC, sp.id DESC")
     java.util.List<SanPham> findFeaturedProducts(Pageable pageable);
 }

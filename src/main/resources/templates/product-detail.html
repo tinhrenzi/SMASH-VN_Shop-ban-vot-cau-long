@@ -259,19 +259,25 @@
                                                             </tr>
                                                             <tr>
                                                                 <td>Màu sắc hiện có</td>
-                                                                <td>Đa dạng phiên bản màu sắc</td>
+                                                                <td>
+                                                                    <th:block th:if="${listMauSac != null and !listMauSac.isEmpty()}">
+                                                                        <span th:each="mau, iterStat : ${listMauSac}"><span th:text="${mau}"></span><span th:if="${!iterStat.last}">, </span></span>
+                                                                    </th:block>
+                                                                    <span th:if="${listMauSac == null or listMauSac.isEmpty()}">Chưa có thông tin</span>
+                                                                </td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Độ cứng</td>
-                                                                <td>Trung bình / Dẻo / Cứng</td>
+                                                                <td>Size / Trọng lượng</td>
+                                                                <td>
+                                                                    <th:block th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
+                                                                        <span th:each="size, iterStat : ${listKichThuoc}"><span th:text="${size}"></span><span th:if="${!iterStat.last}">, </span></span>
+                                                                    </th:block>
+                                                                    <span th:if="${listKichThuoc == null or listKichThuoc.isEmpty()}">Chưa có thông tin</span>
+                                                                </td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Đối tượng sử dụng</td>
                                                                 <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Khối lượng vận chuyển (kg)</td>
-                                                                <td>0.5 kg</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
