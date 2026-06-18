@@ -105,15 +105,16 @@
                                 <div class="about">
                                     <div class="about__container">
                                         <div class="about__info">
-                                            <h2 class="about__h2" style="color: #ff4500;">Hành Trình Kiến Tạo Đam Mê Cầu Lông!</h2>
+                                            <h2 class="about__h2" style="font-weight: 700;">Hành Trình Kiến Tạo Đam Mê Cầu Lông!</h2>
                                             <div class="about__p-wrap">
-                                                <p class="about__p" style="font-size: 1.05rem; line-height: 1.8; text-align: justify; margin-bottom: 20px;">
+                                                <p class="about__p" style="font-size: 1.05rem; line-height: 1.8; text-align: center; margin-bottom: 20px;">
                                                     Thành lập vào năm 2018 tại thành phố Thái Nguyên, <strong>Smash VN</strong> bắt đầu từ một cửa hàng nhỏ chuyên căng vợt và cung cấp dụng cụ cầu lông phong trào cho học sinh, sinh viên và những người yêu thích bộ môn này. Với phương châm đặt chất lượng và chữ tín lên hàng đầu, Smash VN đã không ngừng nỗ lực phát triển để trở thành hệ thống cung cấp trang thiết bị cầu lông uy tín hàng đầu khu vực miền Bắc.
                                                 </p>
-                                                <p class="about__p" style="font-size: 1.05rem; line-height: 1.8; text-align: justify; margin-bottom: 20px;">
+                                                <p class="about__p" style="font-size: 1.05rem; line-height: 1.8; text-align: center; margin-bottom: 20px;">
                                                     Chúng tôi tự hào là đối tác phân phối chính thức của các thương hiệu hàng đầu thế giới như <strong>Yonex, Lining, Victor, Mizuno, và Kawasaki</strong>. Mỗi sản phẩm được bán ra tại hệ thống đều trải qua quy trình kiểm tra nghiêm ngặt, đảm bảo chính hãng 100% cùng chế độ bảo hành tiêu chuẩn từ hãng.
                                                 </p>
                                             </div>
+                                            <a class="about__link btn--e-secondary" th:href="@{/shop}">Mua ngay</a>
                                         </div>
                                     </div>
                                 </div>
@@ -237,42 +238,153 @@
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
-                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
+                            <!-- Lương Văn Hiệp -->
+                            <div class="col-lg col-md-4 col-sm-6 u-s-m-b-30">
                                 <div class="team-member u-h-100">
                                     <div class="team-member__wrap">
-                                        <div class="aspect aspect--bg-grey-fb aspect--square">
-                                            <img class="aspect__img team-member__img" th:src="@{/images/about/member-1.jpg}" alt="Founder & CEO">
+                                        <div class="aspect aspect--bg-grey-fb aspect--square" style="overflow: hidden;">
+                                            <img class="aspect__img team-member__img" th:src="@{/images/about/Hiep.jpg}" alt="Lương Văn Hiệp" style="object-fit: cover; object-position: center; width: 100%; height: 100%;">
+                                        </div>
+                                        <div class="team-member__social-wrap">
+                                            <ul class="team-member__social-list">
+                                                <li>
+                                                    <a class="s-tw--bgcolor-hover" href="#"><i class="fab fa-twitter"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-fb--bgcolor-hover" href="#"><i class="fab fa-facebook-f"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-insta--bgcolor-hover" href="#"><i class="fab fa-instagram"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-linked--bgcolor-hover" href="#"><i class="fab fa-linkedin"></i></a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
                                     <div class="team-member__info">
-                                        <span class="team-member__name" style="font-weight: 700;">Nguyễn Thế Vinh</span>
-                                        <span class="team-member__job-title">Founder & CEO</span>
+                                        <span class="team-member__name" style="font-weight: 700;">Lương Văn Hiệp</span>
+                                        <span class="team-member__job-title">CEO & Co-Founder</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
+                            <!-- Lục Xuân Tĩnh -->
+                            <div class="col-lg col-md-4 col-sm-6 u-s-m-b-30">
                                 <div class="team-member u-h-100">
                                     <div class="team-member__wrap">
-                                        <div class="aspect aspect--bg-grey-fb aspect--square">
-                                            <img class="aspect__img team-member__img" th:src="@{/images/about/member-2.jpg}" alt="Kỹ thuật viên Trưởng">
+                                        <div class="aspect aspect--bg-grey-fb aspect--square" style="overflow: hidden;">
+                                            <img class="aspect__img team-member__img" th:src="@{/images/about/Tinh.jpg}" alt="Lục Xuân Tĩnh" style="object-fit: cover; object-position: center; width: 100%; height: 100%;">
+                                        </div>
+                                        <div class="team-member__social-wrap">
+                                            <ul class="team-member__social-list">
+                                                <li>
+                                                    <a class="s-tw--bgcolor-hover" href="#"><i class="fab fa-twitter"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-fb--bgcolor-hover" href="#"><i class="fab fa-facebook-f"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-insta--bgcolor-hover" href="#"><i class="fab fa-instagram"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-linked--bgcolor-hover" href="#"><i class="fab fa-linkedin"></i></a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
                                     <div class="team-member__info">
-                                        <span class="team-member__name" style="font-weight: 700;">Trần Minh Quân</span>
-                                        <span class="team-member__job-title">Kỹ thuật viên Trưởng (Căng vợt Pro)</span>
+                                        <span class="team-member__name" style="font-weight: 700;">Lục Xuân Tĩnh</span>
+                                        <span class="team-member__job-title">Co-Founder & Product Director</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
+                            <!-- Trần Văn Chung -->
+                            <div class="col-lg col-md-4 col-sm-6 u-s-m-b-30">
                                 <div class="team-member u-h-100">
                                     <div class="team-member__wrap">
-                                        <div class="aspect aspect--bg-grey-fb aspect--square">
-                                            <img class="aspect__img team-member__img" th:src="@{/images/about/member-3.jpg}" alt="Quản lý Chăm sóc Khách hàng">
+                                        <div class="aspect aspect--bg-grey-fb aspect--square" style="overflow: hidden;">
+                                            <img class="aspect__img team-member__img" th:src="@{/images/about/ChungU.jpg}" alt="Trần Văn Chung" style="object-fit: cover; object-position: center; width: 100%; height: 100%;">
+                                        </div>
+                                        <div class="team-member__social-wrap">
+                                            <ul class="team-member__social-list">
+                                                <li>
+                                                    <a class="s-tw--bgcolor-hover" href="#"><i class="fab fa-twitter"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-fb--bgcolor-hover" href="#"><i class="fab fa-facebook-f"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-insta--bgcolor-hover" href="#"><i class="fab fa-instagram"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-linked--bgcolor-hover" href="#"><i class="fab fa-linkedin"></i></a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
                                     <div class="team-member__info">
-                                        <span class="team-member__name" style="font-weight: 700;">Lê Huy Hoàng</span>
-                                        <span class="team-member__job-title">Quản lý Chăm sóc Khách hàng</span>
+                                        <span class="team-member__name" style="font-weight: 700;">Trần Văn Chung</span>
+                                        <span class="team-member__job-title">Co-Founder & Operations Director</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Âu Đình Ngọc Bảo -->
+                            <div class="col-lg col-md-4 col-sm-6 u-s-m-b-30">
+                                <div class="team-member u-h-100">
+                                    <div class="team-member__wrap">
+                                        <div class="aspect aspect--bg-grey-fb aspect--square" style="overflow: hidden;">
+                                            <img class="aspect__img team-member__img" th:src="@{/images/about/ABao.jpg}" alt="Âu Đình Ngọc Bảo" style="object-fit: cover; object-position: center; width: 100%; height: 100%;">
+                                        </div>
+                                        <div class="team-member__social-wrap">
+                                            <ul class="team-member__social-list">
+                                                <li>
+                                                    <a class="s-tw--bgcolor-hover" href="#"><i class="fab fa-twitter"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-fb--bgcolor-hover" href="#"><i class="fab fa-facebook-f"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-insta--bgcolor-hover" href="#"><i class="fab fa-instagram"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-linked--bgcolor-hover" href="#"><i class="fab fa-linkedin"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="team-member__info">
+                                        <span class="team-member__name" style="font-weight: 700;">Âu Đình Ngọc Bảo</span>
+                                        <span class="team-member__job-title">Co-Founder & Tech Director</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Nguyễn Anh Tuấn -->
+                            <div class="col-lg col-md-4 col-sm-6 u-s-m-b-30">
+                                <div class="team-member u-h-100">
+                                    <div class="team-member__wrap">
+                                        <div class="aspect aspect--bg-grey-fb aspect--square" style="overflow: hidden;">
+                                            <img class="aspect__img team-member__img" th:src="@{/images/about/Tuan.jpg}" alt="Nguyễn Anh Tuấn" style="object-fit: cover; object-position: center; width: 100%; height: 100%;">
+                                        </div>
+                                        <div class="team-member__social-wrap">
+                                            <ul class="team-member__social-list">
+                                                <li>
+                                                    <a class="s-tw--bgcolor-hover" href="#"><i class="fab fa-twitter"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-fb--bgcolor-hover" href="#"><i class="fab fa-facebook-f"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-insta--bgcolor-hover" href="#"><i class="fab fa-instagram"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a class="s-linked--bgcolor-hover" href="#"><i class="fab fa-linkedin"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="team-member__info">
+                                        <span class="team-member__name" style="font-weight: 700;">Nguyễn Anh Tuấn</span>
+                                        <span class="team-member__job-title">Co-Founder & Marketing Director</span>
                                     </div>
                                 </div>
                             </div>

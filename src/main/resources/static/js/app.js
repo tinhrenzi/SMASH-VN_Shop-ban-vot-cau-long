@@ -1045,10 +1045,14 @@ function checkAndApplyVariant(container) {
                   showToast("Lỗi: " + response.message, "error");
               }
           },
-          error: function(error) {
+          error: function(xhr) {
               submitBtn.prop('disabled', false).html(originalBtnText);
-              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
-              console.log(error);
+              var message = "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
+              if (xhr && xhr.responseText) {
+                  message = xhr.responseText;
+              }
+              showToast(message, "error");
+              console.log(xhr);
           }
       });
   });
@@ -1158,9 +1162,13 @@ function checkAndApplyVariant(container) {
                   showToast("Không thể thêm: " + response.message, "error");
               }
           },
-          error: function(error) {
-              showToast("Có lỗi kết nối đến máy chủ. Vui lòng thử lại!", "error");
-              console.log(error);
+          error: function(xhr) {
+              var message = "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
+              if (xhr && xhr.responseText) {
+                  message = xhr.responseText;
+              }
+              showToast(message, "error");
+              console.log(xhr);
           }
       });
   }
