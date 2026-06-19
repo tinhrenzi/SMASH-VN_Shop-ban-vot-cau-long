@@ -359,105 +359,42 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
 
-        // 1. Revalidate stock inside transaction using PESSIMISTIC_WRITE lock
-        boolean stockSufficient = true;
-        for (HoaDonChiTiet orderItem : orderItems) {
-            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(orderItem.getSanPhamChiTiet().getId())
-                    .orElseThrow(() -> new RuntimeException("Sản phẩm chi tiết không tồn tại"));
+        // Update status to PAID
+        hd.setPaymentStatus("PAID");
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        hd.setTransactionId(zpTransId);
+        hd.setMaGiaoDich(zpTransId);
+        hd.setPaidAt(LocalDateTime.now());
+        hd.setThoiGianXacNhan(LocalDateTime.now());
+        hd.setNguoiXacNhanThanhToan("ZaloPay Gateway");
+        hd.setGatewayResponse(rawResponse);
+        hd.setTrangThaiDonHang("cho_xac_nhan");
+        hoaDonRepository.save(hd);
 
-            if (spct.getSoLuongTon() < orderItem.getSoLuong()) {
-                stockSufficient = false;
-                log.warn("ZaloPay Payment Success: Stock insufficient for variation ID: {} (Ordered: {}, Stock: {})",
-                        spct.getId(), orderItem.getSoLuong(), spct.getSoLuongTon());
-                break;
-            }
-        }
-
-        if (stockSufficient) {
-            // Deduct stock safely (never goes negative because we validated, locked, and re-read)
+        // 2. Remove ONLY items belonging to this order from the customer's cart
+        GioHang gioHang = gioHangRepository.findByKhachHang_Id(hd.getKhachHang().getId());
+        if (gioHang != null) {
             for (HoaDonChiTiet orderItem : orderItems) {
-                SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(orderItem.getSanPhamChiTiet().getId()).get();
-                spct.setSoLuongTon(spct.getSoLuongTon() - orderItem.getSoLuong());
-                sanPhamChiTietRepository.save(spct);
-            }
-
-            // Update status to PAID
-            hd.setPaymentStatus("PAID");
-            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
-            hd.setTransactionId(zpTransId);
-            hd.setMaGiaoDich(zpTransId);
-            hd.setPaidAt(LocalDateTime.now());
-            hd.setThoiGianXacNhan(LocalDateTime.now());
-            hd.setNguoiXacNhanThanhToan("ZaloPay Gateway");
-            hd.setGatewayResponse(rawResponse);
-            hd.setTrangThaiDonHang("cho_xac_nhan");
-            hoaDonRepository.save(hd);
-
-            // 2. Remove ONLY items belonging to this order from the customer's cart
-            GioHang gioHang = gioHangRepository.findByKhachHang_Id(hd.getKhachHang().getId());
-            if (gioHang != null) {
-                for (HoaDonChiTiet orderItem : orderItems) {
-                    GioHangChiTiet cartItem = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(
-                            gioHang.getId(), orderItem.getSanPhamChiTiet().getId());
-                    if (cartItem != null) {
-                        gioHangChiTietRepository.delete(cartItem);
-                    }
+                GioHangChiTiet cartItem = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(
+                        gioHang.getId(), orderItem.getSanPhamChiTiet().getId());
+                if (cartItem != null) {
+                    gioHangChiTietRepository.delete(cartItem);
                 }
             }
-
-            auditService.log(
-                    null,
-                    "HoaDon",
-                    Long.valueOf(hd.getId()),
-                    "UPDATE",
-                    "PENDING",
-                    "PAID",
-                    "127.0.0.1",
-                    "[ZALOPAY_CALLBACK_PAID] Payment success callback handled. Order stock deducted. Cart items removed.",
-                    "SYSTEM"
-            );
-            log.info("ZaloPay: Payment successfully applied to order #{}", hd.getId());
-        } else {
-            // 3. STOCK_CONFLICT: payment success but stock depleted
-            log.error("[SYSTEM_ALERT] ZaloPay payment succeeded for order #{} but inventory is insufficient! Setting status to STOCK_CONFLICT.", hd.getId());
-            
-            hd.setPaymentStatus("PAID"); // keep payment_status = PAID
-            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
-            hd.setTransactionId(zpTransId);
-            hd.setMaGiaoDich(zpTransId);
-            hd.setPaidAt(LocalDateTime.now());
-            hd.setThoiGianXacNhan(LocalDateTime.now());
-            hd.setNguoiXacNhanThanhToan("ZaloPay Gateway");
-            hd.setGatewayResponse(rawResponse);
-            
-            hd.setTrangThaiDonHang("STOCK_CONFLICT"); // set order_status = STOCK_CONFLICT
-            hoaDonRepository.save(hd);
-
-            // Remove items from cart as they paid successfully, resolving transaction checkout
-            GioHang gioHang = gioHangRepository.findByKhachHang_Id(hd.getKhachHang().getId());
-            if (gioHang != null) {
-                for (HoaDonChiTiet orderItem : orderItems) {
-                    GioHangChiTiet cartItem = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(
-                            gioHang.getId(), orderItem.getSanPhamChiTiet().getId());
-                    if (cartItem != null) {
-                        gioHangChiTietRepository.delete(cartItem);
-                    }
-                }
-            }
-
-            // Notify administrators via system log
-            auditService.log(
-                    null,
-                    "HoaDon",
-                    Long.valueOf(hd.getId()),
-                    "UPDATE",
-                    "PENDING",
-                    "PAID",
-                    "127.0.0.1",
-                    "[STOCK_CONFLICT] CRITICAL: ZaloPay paid successfully for order #" + hd.getId() + " but inventory was insufficient. Admin review needed.",
-                    "SYSTEM"
-            );
         }
+
+        auditService.log(
+                null,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                "PENDING",
+                "PAID",
+                "127.0.0.1",
+                "[ZALOPAY_CALLBACK_PAID] Payment success callback handled. Cart items removed.",
+                "SYSTEM"
+        );
+        log.info("ZaloPay: Payment successfully applied to order #{}", hd.getId());
     }
 
     private boolean canTransition(String currentStatus, String targetStatus) {

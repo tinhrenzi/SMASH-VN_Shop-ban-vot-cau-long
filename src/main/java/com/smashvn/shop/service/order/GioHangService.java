@@ -499,14 +499,7 @@ public class GioHangService {
             SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
-            // For COD orders: deduct stock immediately
-            if ("COD".equalsIgnoreCase(ptttName)) {
-                if (lockedSpct.getSoLuongTon() < item.getSoLuong()) {
-                    throw new RuntimeException("Sản phẩm '" + lockedSpct.getSanPham().getTenSanPham() + "' không đủ hàng tồn kho!");
-                }
-                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
-                sanPhamChiTietRepository.save(lockedSpct);
-            }
+
 
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
 

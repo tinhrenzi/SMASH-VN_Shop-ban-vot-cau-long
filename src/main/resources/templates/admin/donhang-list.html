@@ -499,7 +499,8 @@ function openOrderDetailModal(orderId) {
                 `;
             });
             
-            const isPosOrder = data.maDonHang && data.maDonHang.startsWith('HDSVN');
+            const isPosOrder = (data.maDonHang && (data.maDonHang.startsWith('HDSVN') || data.maDonHang.startsWith('HD-'))) || 
+                               (data.diaChi === 'Bán tại quầy');
 
             let detailsContentHtml = `
                 <div class="row g-3 mb-4" style="font-size: 13px;">

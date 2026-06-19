@@ -200,8 +200,8 @@ public class RevenueStatisticsIntegrationTest {
         BigDecimal diffExpected = expectedRevenue.subtract(initialExpectedRevenue != null ? initialExpectedRevenue : BigDecimal.ZERO);
         BigDecimal diffRefunded = refundedRevenue.subtract(initialRefundedRevenue != null ? initialRefundedRevenue : BigDecimal.ZERO);
 
-        // Projected Revenue should sum the four PAID undelivered orders (100k + 110k + 120k + 130k = 460k)
-        assertEquals(0, BigDecimal.valueOf(460000).compareTo(diffExpected), "Projected revenue does not match expected");
+        // Projected Revenue should sum the dang_giao PAID undelivered order (130k)
+        assertEquals(0, BigDecimal.valueOf(130000).compareTo(diffExpected), "Projected revenue does not match expected");
 
         // Actual Revenue should sum delivered orders (200k + 250k = 450k) minus refunded delivered order (400k) = 50k
         assertEquals(0, BigDecimal.valueOf(50000).compareTo(diffActual), "Actual revenue does not match expected");

@@ -228,7 +228,7 @@ public class SepayIpnControllerTest {
         assertTrue((Boolean) result.get("success"));
         assertEquals("paid", order.getPaymentStatus());
         assertEquals("cho_xac_nhan", order.getTrangThaiDonHang());
-        assertEquals(3, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock properly deducted (5 - 2 = 3)
+        assertEquals(5, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock NOT deducted
         verify(paymentTransactionRepository, times(1)).saveAndFlush(any(PaymentTransaction.class));
     }
 
@@ -371,7 +371,7 @@ public class SepayIpnControllerTest {
     }
 
     @Test
-    void testCallbackWithStockConflict() throws Exception {
+    void testCallbackWithInsufficientStockSucceedsWithoutDeduction() throws Exception {
         HoaDon order = createMockOrder("DH20260608-A1B2C3", new BigDecimal("100000"), "pending", "cho_thanh_toan");
         when(hoaDonRepository.findByMaDonHang("DH20260608-A1B2C3")).thenReturn(Optional.of(order));
 
@@ -386,7 +386,7 @@ public class SepayIpnControllerTest {
 
         assertTrue((Boolean) result.get("success"));
         assertEquals("paid", order.getPaymentStatus());
-        assertEquals("stock_conflict", order.getTrangThaiDonHang()); // Transitions to stock_conflict
+        assertEquals("cho_xac_nhan", order.getTrangThaiDonHang()); // Transitions to cho_xac_nhan, not stock_conflict
         assertEquals(1, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock NOT deducted
         verify(auditService, times(1)).log(
                 eq(null), eq("HoaDon"), eq(Long.valueOf(order.getId())),

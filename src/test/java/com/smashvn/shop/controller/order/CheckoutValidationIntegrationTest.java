@@ -596,10 +596,10 @@ public class CheckoutValidationIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.return_code").value(1));
 
-        // Verify stock reduced by 1
+        // Verify stock is not reduced (remains originalStock) because stock deduction is deferred to shipping
         SanPhamChiTiet spctAfterFirst = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(spctAfterFirst);
-        assertEquals(originalStock - 1, spctAfterFirst.getSoLuongTon());
+        assertEquals(originalStock, spctAfterFirst.getSoLuongTon());
 
         // Callback 2 (Replay)
         mockMvc.perform(post("/api/payment/zalopay/callback")
@@ -610,10 +610,10 @@ public class CheckoutValidationIntegrationTest {
                 .andExpect(jsonPath("$.return_code").value(1))
                 .andExpect(jsonPath("$.return_message").value("success (already processed)"));
 
-        // Verify stock is still the same (not reduced again)
+        // Verify stock is still the same (not reduced)
         SanPhamChiTiet spctAfterSecond = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(spctAfterSecond);
-        assertEquals(originalStock - 1, spctAfterSecond.getSoLuongTon());
+        assertEquals(originalStock, spctAfterSecond.getSoLuongTon());
     }
 
     @Test

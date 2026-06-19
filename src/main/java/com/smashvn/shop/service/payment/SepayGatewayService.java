@@ -139,106 +139,55 @@ public class SepayGatewayService implements PaymentGatewayService {
             return createSuccessResponse("Processed");
         }
 
-        // 5. Normal Payment Processing & Stock Validation
+        // 5. Normal Payment Processing
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(order.getId());
-        boolean stockSufficient = true;
 
-        // Acquire pessimistic write lock & validate stock
-        for (HoaDonChiTiet orderItem : orderItems) {
-            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(orderItem.getSanPhamChiTiet().getId())
-                    .orElseThrow(() -> new RuntimeException("Product variant not found"));
-
-            if (spct.getSoLuongTon() < orderItem.getSoLuong()) {
-                stockSufficient = false;
-                log.warn("SePay IPN: Stock insufficient for variant ID: {} (Ordered: {}, Stock: {})", 
-                        spct.getId(), orderItem.getSoLuong(), spct.getSoLuongTon());
-                break;
-            }
+        // Update statuses to PAID and CHO_XAC_NHAN
+        order.setPaymentStatus(PaymentStatus.PAID.getValue());
+        order.setTrangThaiThanhToan("DA_THANH_TOAN");
+        order.setTransactionId(transactionId);
+        order.setMaGiaoDich(transactionId);
+        order.setPaidAt(LocalDateTime.now());
+        order.setThoiGianXacNhan(LocalDateTime.now());
+        order.setNguoiXacNhanThanhToan("SePay Gateway");
+        order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue());
+        
+        if (sepayConfig.isDebug()) {
+            order.setGatewayResponse("SePay: Successful payment processed. Ref: " + transactionId);
         }
+        hoaDonRepository.save(order);
 
-        if (stockSufficient) {
-            // Deduct stock safely
-            for (HoaDonChiTiet orderItem : orderItems) {
-                SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(orderItem.getSanPhamChiTiet().getId()).get();
-                spct.setSoLuongTon(spct.getSoLuongTon() - orderItem.getSoLuong());
-                sanPhamChiTietRepository.save(spct);
-            }
+        // Clear items from customer's cart
+        clearCustomerCart(order, orderItems);
 
-            // Update statuses to PAID and CHO_XAC_NHAN
-            order.setPaymentStatus(PaymentStatus.PAID.getValue());
-            order.setTrangThaiThanhToan("DA_THANH_TOAN");
-            order.setTransactionId(transactionId);
-            order.setMaGiaoDich(transactionId);
-            order.setPaidAt(LocalDateTime.now());
-            order.setThoiGianXacNhan(LocalDateTime.now());
-            order.setNguoiXacNhanThanhToan("SePay Gateway");
-            order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue());
-            
-            if (sepayConfig.isDebug()) {
-                order.setGatewayResponse("SePay: Successful payment processed. Ref: " + transactionId);
-            }
-            hoaDonRepository.save(order);
+        // Save transaction record in db (Catch race condition database exceptions)
+        saveTransactionRecord(transaction, order, "success", rawPayload);
 
-            // Clear items from customer's cart
-            clearCustomerCart(order, orderItems);
+        // Log PAYMENT_CONFIRMED
+        auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.CHO_XAC_NHAN.getValue(), "127.0.0.1",
+                "[PAYMENT_CONFIRMED] Payment success callback handled. Cart items removed.", "SYSTEM");
 
-            // Save transaction record in db (Catch race condition database exceptions)
-            saveTransactionRecord(transaction, order, "success", rawPayload);
+        log.info("SePay IPN: Payment successfully applied to order {}", orderCode);
 
-            // Log PAYMENT_CONFIRMED
-            auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
-                    OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.CHO_XAC_NHAN.getValue(), "127.0.0.1",
-                    "[PAYMENT_CONFIRMED] Payment success callback handled. Order stock deducted. Cart items removed.", "SYSTEM");
-
-            log.info("SePay IPN: Payment successfully applied to order {}", orderCode);
-
-            // Tạo đơn GHN nếu đơn hàng đã có thông tin địa chỉ GHN
-            if (order.getGhnToDistrictId() != null && order.getGhnToWardCode() != null
-                    && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
-                try {
-                    String ghnCode = ghnService.createShippingOrder(
-                            order, orderItems, order.getGhnToDistrictId(), order.getGhnToWardCode());
-                    if (ghnCode != null) {
-                        order.setGhnOrderCode(ghnCode);
-                        order.setGhnStatus("ready_to_pick");
-                        hoaDonRepository.save(order);
-                        log.info("[GHN] Tạo đơn vận chuyển GHN sau SePay thành công: orderId={}, ghnCode={}",
-                                order.getId(), ghnCode);
-                    }
-                } catch (Exception ghnEx) {
-                    log.error("[GHN] Lỗi tạo đơn GHN sau SePay: orderId={}, error={}",
-                            order.getId(), ghnEx.getMessage());
-                    // Không throw – lỗi GHN không làm hỏng thanh toán
+        // Tạo đơn GHN nếu đơn hàng đã có thông tin địa chỉ GHN
+        if (order.getGhnToDistrictId() != null && order.getGhnToWardCode() != null
+                && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
+            try {
+                String ghnCode = ghnService.createShippingOrder(
+                        order, orderItems, order.getGhnToDistrictId(), order.getGhnToWardCode());
+                if (ghnCode != null) {
+                    order.setGhnOrderCode(ghnCode);
+                    order.setGhnStatus("ready_to_pick");
+                    hoaDonRepository.save(order);
+                    log.info("[GHN] Tạo đơn vận chuyển GHN sau SePay thành công: orderId={}, ghnCode={}",
+                            order.getId(), ghnCode);
                 }
+            } catch (Exception ghnEx) {
+                log.error("[GHN] Lỗi tạo đơn GHN sau SePay: orderId={}, error={}",
+                        order.getId(), ghnEx.getMessage());
+                // Không throw – lỗi GHN không làm hỏng thanh toán
             }
-        } else {
-            // STOCK_CONFLICT: Payment succeeded but stock is depleted
-            log.error("[SYSTEM_ALERT] SePay payment succeeded for order {} but inventory is insufficient! Setting status to stock_conflict.", orderCode);
-
-            order.setPaymentStatus(PaymentStatus.PAID.getValue());
-            order.setTrangThaiThanhToan("DA_THANH_TOAN");
-            order.setTransactionId(transactionId);
-            order.setMaGiaoDich(transactionId);
-            order.setPaidAt(LocalDateTime.now());
-            order.setThoiGianXacNhan(LocalDateTime.now());
-            order.setNguoiXacNhanThanhToan("SePay Gateway");
-            order.setTrangThaiDonHang(OrderStatus.STOCK_CONFLICT.getValue());
-            
-            if (sepayConfig.isDebug()) {
-                order.setGatewayResponse("SePay: Payment succeeded with stock conflict. Ref: " + transactionId);
-            }
-            hoaDonRepository.save(order);
-
-            // Clear items from customer's cart
-            clearCustomerCart(order, orderItems);
-
-            // Save transaction record in db
-            saveTransactionRecord(transaction, order, "stock_conflict", rawPayload);
-
-            // Log PAYMENT_STOCK_CONFLICT
-            auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
-                    OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.STOCK_CONFLICT.getValue(), "127.0.0.1",
-                    "[PAYMENT_STOCK_CONFLICT] CRITICAL: SePay paid successfully but inventory was insufficient. Admin review needed.", "SYSTEM");
         }
 
         // Mask account number in logs

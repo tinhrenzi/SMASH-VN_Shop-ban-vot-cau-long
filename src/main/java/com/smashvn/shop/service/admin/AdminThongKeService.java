@@ -78,15 +78,11 @@ public class AdminThongKeService {
                 return RevenueClassification.ACTUAL_REVENUE;
             }
 
-            // 2. Projected Revenue: successfully paid but not delivered or cancelled
-            boolean isPaid = "paid".equals(pStatus) || "DA_THANH_TOAN".equals(tStatus);
-            boolean isProjectedStatus = "cho_xac_nhan".equals(status)
-                    || "da_xac_nhan".equals(status)
-                    || "dang_lay_hang".equals(status)
-                    || "dang_giao".equals(status);
+            // 2. Projected Revenue: only orders currently in shipping/delivery status (dang_giao)
+            boolean isProjectedStatus = "dang_giao".equals(status);
             boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
 
-            if (isPaid && isProjectedStatus && !isRefunded) {
+            if (isProjectedStatus && !isRefunded) {
                 return RevenueClassification.PROJECTED_REVENUE;
             }
 
