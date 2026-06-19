@@ -89,6 +89,35 @@ public class SepayGatewayService implements PaymentGatewayService {
             return createSuccessResponse("Already processed");
         }
 
+        // 3.4 Handle POS Order (Custom flow)
+        boolean isPosOrder = order.getMaDonHang() != null && order.getMaDonHang().startsWith("HDSVN");
+        if (isPosOrder) {
+            order.setPaymentStatus(PaymentStatus.PAID.getValue());
+            order.setTrangThaiThanhToan("DA_THANH_TOAN");
+            order.setTransactionId(transactionId);
+            order.setMaGiaoDich(transactionId);
+            order.setPaidAt(LocalDateTime.now());
+            order.setThoiGianXacNhan(LocalDateTime.now());
+            order.setNguoiXacNhanThanhToan("SePay Gateway (POS)");
+            order.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue()); // POS -> hoan thanh luon
+            
+            if (sepayConfig.isDebug()) {
+                order.setGatewayResponse("SePay: Successful POS payment processed. Ref: " + transactionId);
+            }
+            hoaDonRepository.save(order);
+
+            // Save transaction record in db
+            saveTransactionRecord(transaction, order, "success", rawPayload);
+
+            // Log PAYMENT_CONFIRMED
+            auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
+                    OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1",
+                    "[PAYMENT_CONFIRMED_POS] POS payment success callback handled.", "SYSTEM");
+
+            log.info("SePay IPN POS Success: Applied to order {}", orderCode);
+            return createSuccessResponse("Processed");
+        }
+
         // 4. Handle Cancelled Order
         if (OrderStatus.DA_HUY.getValue().equals(order.getTrangThaiDonHang())) {
             log.warn("SePay IPN: Payment received for already cancelled order: {}", orderCode);
@@ -276,15 +305,15 @@ public class SepayGatewayService implements PaymentGatewayService {
         if (text == null || text.trim().isEmpty()) {
             return null;
         }
-        // Match DHSVN or DH followed by YYYYMMDDHHMMSS date and 6 hex chars
-        Pattern pattern = Pattern.compile("(DHSVN|DH)[-_\\s]*\\d+[-_\\s]*[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+        // Match HDSVN (POS orders), DHSVN or DH followed by YYYYMMDDHHMMSS date and 6 hex chars
+        Pattern pattern = Pattern.compile("(HDSVN|DHSVN|DH)[-_\\s]*\\d+[-_\\s]*[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher.group(0).replaceAll("\\s+", "").toUpperCase();
         }
         
-        // General fallback to matches beginning with DHSVN or DH and digits/letters (at least 8 chars to avoid collision)
-        Pattern generalPattern = Pattern.compile("(DHSVN|DH)[-_\\s]*[A-Z0-9]{8,}", Pattern.CASE_INSENSITIVE);
+        // General fallback to matches beginning with HDSVN, DHSVN or DH and digits/letters (at least 8 chars to avoid collision)
+        Pattern generalPattern = Pattern.compile("(HDSVN|DHSVN|DH)[-_\\s]*[A-Z0-9]{8,}", Pattern.CASE_INSENSITIVE);
         Matcher generalMatcher = generalPattern.matcher(text);
         if (generalMatcher.find()) {
             return generalMatcher.group(0).replaceAll("\\s+", "").toUpperCase();

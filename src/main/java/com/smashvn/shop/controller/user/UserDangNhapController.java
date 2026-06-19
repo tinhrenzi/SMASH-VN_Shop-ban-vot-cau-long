@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
@@ -112,6 +113,13 @@ public class UserDangNhapController {
             // Đăng nhập thành công, chuyển hướng về trang chủ
             return "redirect:/";
 
+        } catch (AccountNotFoundException e) {
+            // Đăng nhập thất bại do email chưa đăng ký -> Đưa ra luồng riêng
+            loginRateLimiter.loginFailed(ip);
+            log.warn("[SECURITY_EVENT] UNREGISTERED_EMAIL_LOGIN: Email: {}, IP: {}", trimmedEmail, ip);
+            model.addAttribute("emailChuaDangKy", true);
+            model.addAttribute("emailNhap", trimmedEmail);
+            return "signin";
         } catch (RuntimeException e) {
             // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
             loginRateLimiter.loginFailed(ip);

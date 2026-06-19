@@ -24,35 +24,85 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Controller xử lý các yêu cầu HTTP liên quan đến QUẢN LÝ KHUYẾN MÃI của admin.
+ *
+ * <p>Base URL: {@code /admin/khuyen-mai}</p>
+ *
+ * <p>Bao gồm hai nhóm endpoint:</p>
+ * <ul>
+ *   <li><b>Đợt giảm giá (Campaign)</b> – CRUD tại {@code /dot-giam-gia/**}</li>
+ *   <li><b>Phiếu giảm giá (Voucher)</b> – CRUD tại {@code /phieu-giam-gia/**}</li>
+ * </ul>
+ *
+ * <p>Controller này KHÔNG tự validate logic nghiệp vụ – mọi validation được
+ * ủy quyền cho {@link AdminKhuyenMaiService}. Controller chỉ:
+ * <ol>
+ *   <li>Chuyển đổi chuỗi từ form sang kiểu dữ liệu phù hợp (parse).</li>
+ *   <li>Gọi service xử lý.</li>
+ *   <li>Điều hướng tới trang thành công hoặc hiển thị lại form với thông báo lỗi.</li>
+ * </ol>
+ * </p>
+ */
 @Controller
 @RequestMapping("/admin/khuyen-mai")
 @RequiredArgsConstructor
 public class AdminKhuyenMaiController {
 
     /*
-     * Các phương thức xử lý logic chính:
-     *  - viewThemDotGiamGia, viewSuaDotGiamGia, viewThemPhieuGiamGia, viewSuaPhieuGiamGia:
-     *      hiển thị trang form tương ứng để thêm/sửa khuyến mãi.
-     *  - processThemDotGiamGia, processSuaDotGiamGia, processThemPhieuGiamGia, processSuaPhieuGiamGia:
-     *      nhận dữ liệu từ form, validate, chuyển đổi kiểu, rồi gọi service xử lý.
-     *  - processDeactivateDotGiamGia, processDeleteDotGiamGia,
-     *    processDeactivatePhieuGiamGia, processDeletePhieuGiamGia:
-     *      gọi service để vô hiệu hóa hoặc xóa khuyến mãi.
-     *  - parseAndValidateInteger, parseAndValidateBigDecimal:
-     *      kiểm tra dữ liệu số từ chuỗi, đảm bảo không âm, không quá giới hạn, rồi trả về kiểu số tương ứng.
+     * Tóm tắt các nhóm phương thức:
+     *  - viewThem*, viewSua*      : GET – hiển thị form thêm/sửa (đẩy dữ liệu vào model).
+     *  - processThem*, processSua*: POST – nhận form, parse, gọi service, redirect hoặc hiển thị lỗi.
+     *  - processDeactivate*       : POST – vô hiệu hóa thủ công (active = false).
+     *  - processDelete*           : POST – xóa logic (soft delete, cũng set active = false).
+     *  - parseAndValidateInteger  : helper parse chuỗi → Integer, kiểm tra giới hạn min/max.
+     *  - parseAndValidateBigDecimal: helper parse chuỗi → BigDecimal, kiểm tra giới hạn.
      */
+
     private final AdminKhuyenMaiService adminKhuyenMaiService;
     private final SanPhamRepository sanPhamRepository;
 
     // ==========================================
-    // CAMPAIGN (ĐỢT GIẢM GIÁ) MAPPINGS
+    // ĐỢT GIẢM GIÁ (CAMPAIGN) – ENDPOINTS
     // ==========================================
+
+    /**
+     * [GET] Hiển thị form TẠO MỚI đợt giảm giá.
+     * Đẩy danh sách tất cả sản phẩm vào model để hiển thị checkbox chọn sản phẩm.
+     *
+     * @param model Spring MVC model.
+     * @return tên template {@code admin/dotgiamgia-add}.
+     */
     @GetMapping("/dot-giam-gia/them")
     public String viewThemDotGiamGia(Model model) {
         model.addAttribute("sanPhams", sanPhamRepository.findAll());
         return "admin/dotgiamgia-add";
     }
 
+    /**
+     * [POST] Xử lý form TẠO MỚI đợt giảm giá.
+     *
+     * <p>Luồng:</p>
+     * <ol>
+     *   <li>Lấy ID tài khoản admin từ session và IP từ request.</li>
+     *   <li>Parse chuỗi ngày → {@link LocalDateTime}.</li>
+     *   <li>Parse và validate % giảm qua {@link #parseAndValidateInteger}.</li>
+     *   <li>Gọi {@code adminKhuyenMaiService.createDotGiamGia()} để lưu.</li>
+     *   <li>Thành công → redirect kèm param {@code ?themChienDichThanhCong}.</li>
+     *   <li>Thất bại → hiển thị lại form với thông báo lỗi và dữ liệu người dùng đã nhập.</li>
+     * </ol>
+     *
+     * @param tenChienDich   tên chiến dịch từ form.
+     * @param ngayBatDauStr  ngày bắt đầu dạng chuỗi ISO (yyyy-MM-ddTHH:mm).
+     * @param ngayKetThucStr ngày kết thúc dạng chuỗi ISO.
+     * @param phanTramGiamStr % giảm dạng chuỗi.
+     * @param loaiGiamGia    loại giảm giá.
+     * @param productIds     danh sách ID sản phẩm được chọn.
+     * @param session        HTTP session (lấy idNguoiDung).
+     * @param request        HTTP request (lấy remote IP).
+     * @param model          Spring MVC model.
+     * @return redirect hoặc tên template form.
+     */
     @PostMapping("/dot-giam-gia/them")
     public String processThemDotGiamGia(
             @RequestParam("tenChienDich") String tenChienDich,
@@ -68,14 +118,17 @@ public class AdminKhuyenMaiController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
+            // Parse chuỗi ngày ISO thành LocalDateTime (null nếu rỗng)
             LocalDateTime start = (ngayBatDauStr == null || ngayBatDauStr.isEmpty()) ? null : LocalDateTime.parse(ngayBatDauStr);
             LocalDateTime end = (ngayKetThucStr == null || ngayKetThucStr.isEmpty()) ? null : LocalDateTime.parse(ngayKetThucStr);
 
+            // Parse và validate % giảm: phải là số nguyên, không âm, trong phạm vi cho phép
             Integer phanTramGiam = parseAndValidateInteger(phanTramGiamStr, "Phần trăm giảm giá", 1, PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT, false);
 
             adminKhuyenMaiService.createDotGiamGia(tenChienDich, start, end, phanTramGiam, loaiGiamGia, productIds, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?themChienDichThanhCong";
         } catch (Exception e) {
+            // Lỗi xảy ra → hiển thị lại form với thông báo lỗi và giữ lại dữ liệu đã nhập
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("sanPhams", sanPhamRepository.findAll());
             model.addAttribute("tenChienDich", tenChienDich);
@@ -88,12 +141,21 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [GET] Hiển thị form CHỈNH SỬA đợt giảm giá theo ID.
+     * Load thông tin đợt giảm giá và danh sách sản phẩm đang được chọn vào model.
+     *
+     * @param id    ID đợt giảm giá cần sửa (lấy từ URL path).
+     * @param model Spring MVC model.
+     * @return tên template {@code admin/dotgiamgia-edit}, hoặc redirect về danh sách nếu lỗi.
+     */
     @GetMapping("/dot-giam-gia/sua/{id}")
     public String viewSuaDotGiamGia(@PathVariable("id") Integer id, Model model) {
         try {
             DotGiamGia dgg = adminKhuyenMaiService.getDotGiamGiaById(id);
             model.addAttribute("campaign", dgg);
             model.addAttribute("sanPhams", sanPhamRepository.findAll());
+            // Danh sách ID sản phẩm đang được gán cho đợt này (để pre-check checkbox)
             model.addAttribute("selectedProductIds", dgg.getSanPhams().stream().map(SanPham::getId).toList());
             return "admin/dotgiamgia-edit";
         } catch (Exception e) {
@@ -101,6 +163,24 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [POST] Xử lý form CHỈNH SỬA đợt giảm giá.
+     * Tương tự {@link #processThemDotGiamGia} nhưng gọi {@code updateDotGiamGia}.
+     * Khi có lỗi, nạp lại thông tin hiện tại từ DB rồi ghi đè bằng dữ liệu người dùng vừa nhập
+     * để hiển thị lại form với dữ liệu cũ cùng thông báo lỗi.
+     *
+     * @param id             ID đợt giảm giá cần sửa.
+     * @param tenChienDich   tên chiến dịch mới.
+     * @param ngayBatDauStr  ngày bắt đầu mới (ISO string).
+     * @param ngayKetThucStr ngày kết thúc mới (ISO string).
+     * @param phanTramGiamStr % giảm mới (string).
+     * @param loaiGiamGia    loại giảm giá mới.
+     * @param productIds     danh sách sản phẩm mới.
+     * @param session        HTTP session.
+     * @param request        HTTP request.
+     * @param model          Spring MVC model.
+     * @return redirect hoặc tên template form.
+     */
     @PostMapping("/dot-giam-gia/sua/{id}")
     public String processSuaDotGiamGia(
             @PathVariable("id") Integer id,
@@ -126,20 +206,12 @@ public class AdminKhuyenMaiController {
             return "redirect:/admin/khuyen-mai?suaChienDichThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());
+            // Nạp lại từ DB để có dữ liệu gốc, rồi ghi đè bằng dữ liệu người dùng vừa nhập
             DotGiamGia dgg = adminKhuyenMaiService.getDotGiamGiaById(id);
             dgg.setTenChienDich(tenChienDich);
-            try {
-                dgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                dgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                dgg.setPhanTramGiam(phanTramGiamStr == null || phanTramGiamStr.isEmpty() ? null : Integer.parseInt(phanTramGiamStr));
-            } catch (Exception ignored) {
-            }
+            try { dgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr)); } catch (Exception ignored) { }
+            try { dgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr)); } catch (Exception ignored) { }
+            try { dgg.setPhanTramGiam(phanTramGiamStr == null || phanTramGiamStr.isEmpty() ? null : Integer.parseInt(phanTramGiamStr)); } catch (Exception ignored) { }
             dgg.setLoaiGiamGia(loaiGiamGia);
             model.addAttribute("campaign", dgg);
             model.addAttribute("sanPhams", sanPhamRepository.findAll());
@@ -148,6 +220,16 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [POST] Vô hiệu hóa một đợt giảm giá (đặt active = false).
+     * Đợt giảm giá vẫn còn trong DB, có thể kích hoạt lại khi sửa và lưu.
+     * Redirect về danh sách kèm param thành công hoặc lỗi.
+     *
+     * @param id      ID đợt giảm giá cần vô hiệu hóa.
+     * @param session HTTP session.
+     * @param request HTTP request.
+     * @return redirect URL.
+     */
     @PostMapping("/dot-giam-gia/deactivate/{id}")
     public String processDeactivateDotGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
@@ -160,6 +242,15 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [POST] Xóa logic (soft delete) một đợt giảm giá.
+     * Kỹ thuật giống deactivate (đặt active = false), nhưng audit log ghi là "DELETE".
+     *
+     * @param id      ID đợt giảm giá cần xóa.
+     * @param session HTTP session.
+     * @param request HTTP request.
+     * @return redirect URL.
+     */
     @PostMapping("/dot-giam-gia/delete/{id}")
     public String processDeleteDotGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
@@ -173,13 +264,46 @@ public class AdminKhuyenMaiController {
     }
 
     // ==========================================
-    // VOUCHER (PHIẾU GIẢM GIÁ) MAPPINGS
+    // PHIẾU GIẢM GIÁ (VOUCHER) – ENDPOINTS
     // ==========================================
+
+    /**
+     * [GET] Hiển thị form TẠO MỚI phiếu giảm giá.
+     *
+     * @param model Spring MVC model.
+     * @return tên template {@code admin/phieugiamgia-add}.
+     */
     @GetMapping("/phieu-giam-gia/them")
     public String viewThemPhieuGiamGia(Model model) {
         return "admin/phieugiamgia-add";
     }
 
+    /**
+     * [POST] Xử lý form TẠO MỚI phiếu giảm giá.
+     *
+     * <p>Luồng:</p>
+     * <ol>
+     *   <li>Parse chuỗi ngày → {@link LocalDateTime}.</li>
+     *   <li>Parse và validate các trường số (giaTri, soLuongConLai, giaTriDonHangToiThieu, giaTriGiamToiDa).</li>
+     *   <li>Gọi {@code adminKhuyenMaiService.createPhieuGiamGia()} để lưu.</li>
+     *   <li>Thành công → redirect {@code ?themPhieuThanhCong}.</li>
+     *   <li>Thất bại → hiển thị lại form với lỗi và dữ liệu đã nhập.</li>
+     * </ol>
+     *
+     * @param maPhieu                 mã phiếu từ form.
+     * @param giaTriStr               giá trị giảm (string).
+     * @param donVi                   đơn vị: "%" hoặc "VND".
+     * @param ngayBatDauStr           ngày bắt đầu (ISO string).
+     * @param ngayKetThucStr          ngày hết hạn (ISO string).
+     * @param soLuongConLaiStr        số lượng phiếu (string).
+     * @param giaTriDonHangToiThieuStr giá trị đơn tối thiểu (string, optional).
+     * @param giaTriGiamToiDaStr      trần giảm tối đa (string, optional – bắt buộc khi donVi=%).
+     * @param loaiGiamGia             loại giảm giá.
+     * @param session                 HTTP session.
+     * @param request                 HTTP request.
+     * @param model                   Spring MVC model.
+     * @return redirect hoặc tên template form.
+     */
     @PostMapping("/phieu-giam-gia/them")
     public String processThemPhieuGiamGia(
             @RequestParam("maPhieu") String maPhieu,
@@ -201,15 +325,20 @@ public class AdminKhuyenMaiController {
             LocalDateTime start = (ngayBatDauStr == null || ngayBatDauStr.isEmpty()) ? null : LocalDateTime.parse(ngayBatDauStr);
             LocalDateTime end = (ngayKetThucStr == null || ngayKetThucStr.isEmpty()) ? null : LocalDateTime.parse(ngayKetThucStr);
 
-            // Validation and parsing
+            // Parse và validate từng trường số:
+            // giaTri: phải ≥ 1, trong giới hạn MAX_VND_VALUE (hoặc MAX_VOUCHER_PERCENT nếu %)
             BigDecimal giaTri = parseAndValidateBigDecimal(giaTriStr, "Giá trị giảm giá", BigDecimal.ONE, PromotionValidationConstants.MAX_VND_VALUE, false);
+            // soLuongConLai: phải ≥ 1 khi tạo mới
             Integer soLuongConLai = parseAndValidateInteger(soLuongConLaiStr, "Số lượng voucher", 1, PromotionValidationConstants.MAX_QUANTITY, false);
+            // giaTriDonHangToiThieu: có thể = 0 (không yêu cầu tối thiểu), allowZero = true
             BigDecimal giaTriDonHangToiThieu = parseAndValidateBigDecimal(giaTriDonHangToiThieuStr, "Giá trị đơn hàng tối thiểu", BigDecimal.ZERO, PromotionValidationConstants.MAX_VND_VALUE, true);
+            // giaTriGiamToiDa: bắt buộc > 0 với voucher %, không bắt buộc với VND
             BigDecimal giaTriGiamToiDa = parseAndValidateBigDecimal(giaTriGiamToiDaStr, "Giá trị giảm tối đa", BigDecimal.ONE, PromotionValidationConstants.MAX_VND_VALUE, false);
 
             adminKhuyenMaiService.createPhieuGiamGia(maPhieu, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?themPhieuThanhCong";
         } catch (Exception e) {
+            // Giữ lại dữ liệu đã nhập để hiển thị lại form, tránh user phải nhập lại từ đầu
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("maPhieu", maPhieu);
             model.addAttribute("giaTri", giaTriStr);
@@ -224,6 +353,14 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [GET] Hiển thị form CHỈNH SỬA phiếu giảm giá theo ID.
+     * Load thông tin phiếu vào model để pre-fill form.
+     *
+     * @param id    ID phiếu cần sửa.
+     * @param model Spring MVC model.
+     * @return tên template {@code admin/phieugiamgia-edit}, hoặc redirect nếu lỗi.
+     */
     @GetMapping("/phieu-giam-gia/sua/{id}")
     public String viewSuaPhieuGiamGia(@PathVariable("id") Integer id, Model model) {
         try {
@@ -235,6 +372,27 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [POST] Xử lý form CHỈNH SỬA phiếu giảm giá.
+     * Tương tự {@link #processThemPhieuGiamGia} nhưng gọi {@code updatePhieuGiamGia}.
+     * Khác biệt: số lượng cho phép = 0 khi sửa ({@code allowZero = true}).
+     * Khi lỗi, nạp lại entity từ DB rồi ghi đè để giữ lại dữ liệu người dùng vừa nhập.
+     *
+     * @param id                     ID phiếu cần sửa.
+     * @param maPhieu                mã phiếu mới.
+     * @param giaTriStr              giá trị giảm mới (string).
+     * @param donVi                  đơn vị mới.
+     * @param ngayBatDauStr          ngày bắt đầu mới (ISO string).
+     * @param ngayKetThucStr         ngày hết hạn mới (ISO string).
+     * @param soLuongConLaiStr       số lượng mới (string, có thể = 0).
+     * @param giaTriDonHangToiThieuStr giá trị đơn tối thiểu mới (optional).
+     * @param giaTriGiamToiDaStr     trần giảm mới (optional).
+     * @param loaiGiamGia            loại mới.
+     * @param session                HTTP session.
+     * @param request                HTTP request.
+     * @param model                  Spring MVC model.
+     * @return redirect hoặc tên template form.
+     */
     @PostMapping("/phieu-giam-gia/sua/{id}")
     public String processSuaPhieuGiamGia(
             @PathVariable("id") Integer id,
@@ -257,8 +415,8 @@ public class AdminKhuyenMaiController {
             LocalDateTime start = (ngayBatDauStr == null || ngayBatDauStr.isEmpty()) ? null : LocalDateTime.parse(ngayBatDauStr);
             LocalDateTime end = (ngayKetThucStr == null || ngayKetThucStr.isEmpty()) ? null : LocalDateTime.parse(ngayKetThucStr);
 
-            // Validation and parsing - allow zero for quantity in edit
             BigDecimal giaTri = parseAndValidateBigDecimal(giaTriStr, "Giá trị giảm giá", BigDecimal.ONE, PromotionValidationConstants.MAX_VND_VALUE, false);
+            // Khi sửa: allowZero = true vì admin có thể muốn set số lượng về 0 để ngừng nhận
             Integer soLuongConLai = parseAndValidateInteger(soLuongConLaiStr, "Số lượng voucher", 0, PromotionValidationConstants.MAX_QUANTITY, true);
             BigDecimal giaTriDonHangToiThieu = parseAndValidateBigDecimal(giaTriDonHangToiThieuStr, "Giá trị đơn hàng tối thiểu", BigDecimal.ZERO, PromotionValidationConstants.MAX_VND_VALUE, true);
             BigDecimal giaTriGiamToiDa = parseAndValidateBigDecimal(giaTriGiamToiDaStr, "Giá trị giảm tối đa", BigDecimal.ONE, PromotionValidationConstants.MAX_VND_VALUE, false);
@@ -267,39 +425,30 @@ public class AdminKhuyenMaiController {
             return "redirect:/admin/khuyen-mai?suaPhieuThanhCong";
         } catch (Exception e) {
             model.addAttribute("loi", e.getMessage());
+            // Nạp lại entity từ DB rồi ghi đè bằng dữ liệu người dùng vừa nhập để hiển thị form
             PhieuGiamGia pgg = adminKhuyenMaiService.getPhieuGiamGiaById(id);
             pgg.setMaPhieu(maPhieu);
-            try {
-                pgg.setGiaTri(giaTriStr == null || giaTriStr.isEmpty() ? null : new BigDecimal(giaTriStr));
-            } catch (Exception ignored) {
-            }
+            try { pgg.setGiaTri(giaTriStr == null || giaTriStr.isEmpty() ? null : new BigDecimal(giaTriStr)); } catch (Exception ignored) { }
             pgg.setDonVi(donVi);
-            try {
-                pgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                pgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                pgg.setSoLuongConLai(soLuongConLaiStr == null || soLuongConLaiStr.isEmpty() ? null : Integer.parseInt(soLuongConLaiStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieuStr == null || giaTriDonHangToiThieuStr.isEmpty() ? null : new BigDecimal(giaTriDonHangToiThieuStr));
-            } catch (Exception ignored) {
-            }
-            try {
-                pgg.setGiaTriGiamToiDa(giaTriGiamToiDaStr == null || giaTriGiamToiDaStr.isEmpty() ? null : new BigDecimal(giaTriGiamToiDaStr));
-            } catch (Exception ignored) {
-            }
+            try { pgg.setNgayBatDau(ngayBatDauStr == null || ngayBatDauStr.isEmpty() ? null : LocalDateTime.parse(ngayBatDauStr)); } catch (Exception ignored) { }
+            try { pgg.setNgayKetThuc(ngayKetThucStr == null || ngayKetThucStr.isEmpty() ? null : LocalDateTime.parse(ngayKetThucStr)); } catch (Exception ignored) { }
+            try { pgg.setSoLuongConLai(soLuongConLaiStr == null || soLuongConLaiStr.isEmpty() ? null : Integer.parseInt(soLuongConLaiStr)); } catch (Exception ignored) { }
+            try { pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieuStr == null || giaTriDonHangToiThieuStr.isEmpty() ? null : new BigDecimal(giaTriDonHangToiThieuStr)); } catch (Exception ignored) { }
+            try { pgg.setGiaTriGiamToiDa(giaTriGiamToiDaStr == null || giaTriGiamToiDaStr.isEmpty() ? null : new BigDecimal(giaTriGiamToiDaStr)); } catch (Exception ignored) { }
             pgg.setLoaiGiamGia(loaiGiamGia);
             model.addAttribute("voucher", pgg);
             return "admin/phieugiamgia-edit";
         }
     }
 
+    /**
+     * [POST] Vô hiệu hóa một phiếu giảm giá (đặt active = false).
+     *
+     * @param id      ID phiếu cần vô hiệu hóa.
+     * @param session HTTP session.
+     * @param request HTTP request.
+     * @return redirect URL.
+     */
     @PostMapping("/phieu-giam-gia/deactivate/{id}")
     public String processDeactivatePhieuGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
@@ -312,6 +461,14 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    /**
+     * [POST] Xóa logic (soft delete) một phiếu giảm giá.
+     *
+     * @param id      ID phiếu cần xóa.
+     * @param session HTTP session.
+     * @param request HTTP request.
+     * @return redirect URL.
+     */
     @PostMapping("/phieu-giam-gia/delete/{id}")
     public String processDeletePhieuGiamGia(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
         try {
@@ -324,11 +481,38 @@ public class AdminKhuyenMaiController {
         }
     }
 
+    // ==========================================
+    // HELPER – PARSE VÀ VALIDATE SỐ LIỆU
+    // ==========================================
+
+    /**
+     * Parse chuỗi đầu vào từ form thành {@link Integer} và kiểm tra các ràng buộc.
+     *
+     * <p>Kiểm tra theo thứ tự:</p>
+     * <ol>
+     *   <li>Không được rỗng.</li>
+     *   <li>Không được chứa dấu chấm hoặc phẩy (phải là số nguyên).</li>
+     *   <li>Phải parse được thành Integer hợp lệ.</li>
+     *   <li>Không được âm.</li>
+     *   <li>Nếu {@code !allowZero}: không được bằng 0.</li>
+     *   <li>Phải ≥ {@code min} (nếu min != null).</li>
+     *   <li>Phải ≤ {@code max} (nếu max != null).</li>
+     * </ol>
+     *
+     * @param valueStr  chuỗi cần parse.
+     * @param fieldName tên trường hiển thị trong thông báo lỗi.
+     * @param min       giá trị tối thiểu (null = không giới hạn dưới).
+     * @param max       giá trị tối đa (null = không giới hạn trên).
+     * @param allowZero {@code true} nếu giá trị 0 được chấp nhận.
+     * @return giá trị Integer đã parse và validate.
+     * @throws PromotionValidationException nếu vi phạm bất kỳ ràng buộc nào.
+     */
     private Integer parseAndValidateInteger(String valueStr, String fieldName, Integer min, Integer max, boolean allowZero) {
         if (valueStr == null || valueStr.trim().isEmpty()) {
             throw new PromotionValidationException(fieldName + " không được để trống!");
         }
         String trimmed = valueStr.trim();
+        // Từ chối số thập phân (ví dụ: "20.5", "10,0")
         if (trimmed.contains(".") || trimmed.contains(",")) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
         }
@@ -355,11 +539,36 @@ public class AdminKhuyenMaiController {
         return val;
     }
 
+    /**
+     * Parse chuỗi đầu vào từ form thành {@link BigDecimal} và kiểm tra các ràng buộc.
+     *
+     * <p>Trả về {@code null} nếu chuỗi rỗng hoặc null (dùng cho trường optional).</p>
+     *
+     * <p>Kiểm tra theo thứ tự (nếu không rỗng):</p>
+     * <ol>
+     *   <li>Không được chứa dấu chấm hoặc phẩy (phải là số nguyên VNĐ).</li>
+     *   <li>Phải parse được thành BigDecimal hợp lệ.</li>
+     *   <li>Không được âm.</li>
+     *   <li>Nếu {@code !allowZero}: không được bằng 0.</li>
+     *   <li>Phải ≥ {@code min} (nếu min != null).</li>
+     *   <li>Phải ≤ {@code max} (nếu max != null).</li>
+     * </ol>
+     *
+     * @param valueStr  chuỗi cần parse (rỗng/null → trả về null).
+     * @param fieldName tên trường hiển thị trong thông báo lỗi.
+     * @param min       giá trị tối thiểu (null = không giới hạn dưới).
+     * @param max       giá trị tối đa (null = không giới hạn trên).
+     * @param allowZero {@code true} nếu giá trị 0 được chấp nhận.
+     * @return giá trị BigDecimal đã parse và validate, hoặc {@code null} nếu chuỗi rỗng.
+     * @throws PromotionValidationException nếu vi phạm bất kỳ ràng buộc nào.
+     */
     private BigDecimal parseAndValidateBigDecimal(String valueStr, String fieldName, BigDecimal min, BigDecimal max, boolean allowZero) {
+        // Trường optional: chuỗi rỗng → null (service sẽ xử lý null tùy nghiệp vụ)
         if (valueStr == null || valueStr.trim().isEmpty()) {
             return null;
         }
         String trimmed = valueStr.trim();
+        // Từ chối số thập phân (VNĐ không dùng số lẻ)
         if (trimmed.contains(".") || trimmed.contains(",")) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
         }

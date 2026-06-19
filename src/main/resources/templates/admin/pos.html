@@ -261,6 +261,86 @@
         .btn-check {
             display: none !important;
         }
+        /* Discount badge on product card */
+        .discount-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #e03a00;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            border-radius: 6px;
+            padding: 2px 6px;
+            letter-spacing: 0.03em;
+            z-index: 2;
+        }
+        .sale-name-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #e03a00;
+            background: #fff3ef;
+            border: 1px solid #f5cfc4;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-bottom: 3px;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .original-price {
+            font-size: 0.72rem;
+            color: #aaa;
+            text-decoration: line-through;
+            margin-bottom: 1px;
+        }
+        /* Cart item discount info */
+        .cart-discount-info {
+            font-size: 0.73rem;
+            color: #e03a00;
+            font-weight: 600;
+        }
+        .cart-original-price {
+            font-size: 0.72rem;
+            color: #aaa;
+            text-decoration: line-through;
+        }
+        /* Toast notification */
+        #pos-toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .pos-toast {
+            min-width: 260px;
+            max-width: 380px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #fff;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.25s ease;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .pos-toast.error   { background: #c0392b; }
+        .pos-toast.success { background: #27ae60; }
+        .pos-toast.warning { background: #e67e22; }
+        .pos-toast.info    { background: #2980b9; }
+        @keyframes toastIn {
+            from { transform: translateX(60px); opacity: 0; }
+            to   { transform: translateX(0);   opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -269,6 +349,9 @@
     <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
     <div class="fw-bold">Đang xử lý giao dịch... Vui lòng không tải lại trang.</div>
 </div>
+
+<!-- Toast Container -->
+<div id="pos-toast-container"></div>
 
 <div class="container-fluid pos-layout-container">
     <div class="row pos-layout-row">
@@ -454,18 +537,18 @@
                     </div>
                 </div>
 
-                <!-- Bank Transfer Section -->
+                <!-- Bank Transfer Section - SePay QR thực tế -->
                 <div id="modalBankSection" class="d-none">
                     <div class="p-3 border rounded-3 bg-light mb-3">
                         <h6 class="fw-bold text-primary mb-3"><i class="fas fa-university me-1"></i> Thông tin chuyển khoản:</h6>
                         <div class="d-flex flex-column gap-2 small">
                             <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Ngân hàng:</span>
-                                <strong class="text-dark text-end">BIDV (Ngân hàng Đầu tư và Phát triển VN)</strong>
+                                <strong class="text-dark text-end" th:text="${sepayBankName}">Vietcombank</strong>
                             </div>
                             <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Số tài khoản:</span>
-                                <strong class="text-dark">1234567890</strong>
+                                <strong class="text-dark" th:text="${sepayBankAccount}">0000000000</strong>
                             </div>
                             <div class="d-flex justify-content-between flex-wrap gap-2 border-bottom pb-1">
                                 <span class="text-muted">Chủ tài khoản:</span>
@@ -473,24 +556,34 @@
                             </div>
                             <div class="d-flex justify-content-between flex-wrap gap-2 pb-1">
                                 <span class="text-muted">Nội dung chuyển khoản:</span>
-                                <strong class="text-danger fw-bold" id="txtTransferCode">SMASHVNPOS...</strong>
+                                <strong class="text-danger fw-bold" id="txtTransferCode">Khởi tạo...</strong>
+                            </div>
+                            <div class="d-flex justify-content-between flex-wrap gap-2 pb-1">
+                                <span class="text-muted">Số tiền:</span>
+                                <strong class="text-dark fw-bold" id="txtTransferAmount">--</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- QR Code thực tế từ VietQR (chuẩn Napas 247 liên ngân hàng) -->
+                    <!-- QR SePay thực tế (cùng chuẩn với thanh toán online) -->
                     <div class="text-center my-3 p-2 border rounded-3 bg-white">
                         <div class="fw-bold text-muted mb-2 small"><i class="fas fa-qrcode me-1"></i> QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+                        <div id="posQrLoading" style="width:220px;height:220px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:#f0f2f5;border-radius:8px;color:#888;flex-direction:column;gap:6px;">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                            <span style="font-size:12px;">Khởi tạo QR...</span>
+                        </div>
                         <img id="posQrImage"
                              src=""
-                             alt="QR chuyển khoản"
-                             style="width:200px; height:200px; border-radius:8px; object-fit:contain; display:none;"
-                             onerror="this.style.display='none'; document.getElementById('posQrFallback').style.display='flex';">
-                        <div id="posQrFallback" style="display:none; width:200px; height:200px; margin:0 auto; background:#f0f2f5; border-radius:8px; align-items:center; justify-content:center; color:#888; font-size:13px; flex-direction:column; gap:6px;">
+                             alt="QR chuyển khoản SePay"
+                             style="width:220px; height:220px; border-radius:8px; object-fit:contain; display:none; margin: 0 auto;"
+                             onload="this.style.display='block'; document.getElementById('posQrLoading').style.display='none'; document.getElementById('posQrFallback').style.display='none';"
+                             onerror="this.style.display='none'; document.getElementById('posQrLoading').style.display='none'; document.getElementById('posQrFallback').style.display='flex';">
+                        <div id="posQrFallback" style="display:none; width:220px; height:220px; margin:0 auto; background:#f0f2f5; border-radius:8px; align-items:center; justify-content:center; color:#888; font-size:13px; flex-direction:column; gap:6px;">
                             <i class="fas fa-qrcode fa-3x"></i>
                             <span>Không tải được QR</span>
                         </div>
                         <div class="text-muted small mt-2">Mở app ngân hàng → Quét mã → Kiểm tra nội dung và số tiền → Xác nhận</div>
+                        <div class="text-muted small mt-1" style="font-size:0.7rem;color:#aaa;">Hỗ trợ tất cả ngân hàng qua VietQR Napas 247</div>
                     </div>
 
                     <!-- Transfer transaction reference -->
@@ -531,7 +624,9 @@
                 <p class="text-muted small mb-0">Bạn có muốn mở trang in hóa đơn nhiệt cho khách hàng không?</p>
             </div>
             <div class="modal-footer justify-content-center border-top-0 pt-0">
-                <a href="javascript:void(0)" id="btnPrintConfirmLink" target="_blank" class="btn btn-success px-4" data-bs-dismiss="modal"><i class="fas fa-print"></i> Có, Mở Trang In</a>
+                <button type="button" id="btnPrintConfirmLink" class="btn btn-success px-4" onclick="openPrintPage()">
+                    <i class="fas fa-print"></i> Có, Mở Trang In
+                </button>
                 <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal"><i class="fas fa-times"></i> Không cần</button>
             </div>
         </div>
@@ -539,13 +634,17 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:inline="javascript">
     // Global POS state variables
     let allVariants = [];
     let cart = [];
     let selectedCustomer = null; // null represents Default Guest
     let appliedVoucher = null;
     let confirmModal = null;
+    let pendingPrintUrl = null; // URL trang in sau khi checkout thành công
+    let paymentPollInterval = null;
+    let currentCheckoutHoaDonId = null;
+    let currentCheckoutMaHoaDon = null;
 
     // Robust function to resolve product image URLs
     function getProductImageUrl(hinhAnh) {
@@ -582,6 +681,13 @@
         refreshProducts();
         setupCustomerAutocomplete();
         selectGuestCustomer();
+
+        const confirmModalEl = document.getElementById('paymentConfirmModal');
+        if (confirmModalEl) {
+            confirmModalEl.addEventListener('hidden.bs.modal', function () {
+                stopPaymentPolling();
+            });
+        }
 
         // Listen for input search on products
         document.getElementById("productSearchInput").addEventListener("input", function(e) {
@@ -629,6 +735,7 @@
         allVariants.forEach((v, idx) => {
             const card = document.createElement("div");
             card.className = "product-card";
+            card.style.position = "relative";
 
             let stockBadge = "";
             let isOutOfStock = v.soLuongTon <= 0;
@@ -643,13 +750,36 @@
             const imgUrl = getProductImageUrl(v.hinhAnh);
             const addBtnText = isOutOfStock ? '🚫 Hết hàng' : '+ Thêm vào đơn';
 
+            // Kiểm tra có đang trong đợt giảm giá không
+            const hasDiscount = v.phanTramGiam && parseFloat(v.phanTramGiam) > 0;
+            const pct = hasDiscount ? Math.round(parseFloat(v.phanTramGiam)) : 0;
+
+            // Badge % giảm
+            const discountBadgeHtml = hasDiscount
+                ? `<div class="discount-badge">-${pct}%</div>`
+                : '';
+
+            // Tên chiến dịch
+            const saleNameHtml = (hasDiscount && v.tenDotGiamGia)
+                ? `<div class="sale-name-badge" title="${v.tenDotGiamGia}">${v.tenDotGiamGia}</div>`
+                : '';
+
+            // Giá gốc gạch ngang (chỉ hiện khi có giảm và giaNiemYet > giaBan)
+            const showOriginal = hasDiscount && v.giaNiemYet && parseFloat(v.giaNiemYet) > parseFloat(v.giaBan);
+            const originalPriceHtml = showOriginal
+                ? `<div class="original-price">${formatVND(v.giaNiemYet)}</div>`
+                : '';
+
             card.innerHTML = `
+                ${discountBadgeHtml}
                 <div>
                     <div class="product-card-img-wrap">
                         <img src="${imgUrl}" alt="${v.tenSanPham}" onerror="this.src='/images/preloader.png'" loading="lazy">
                     </div>
                     <div class="product-name" title="${v.tenSanPham}">${v.tenSanPham}</div>
                     <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · ${v.mucCang}</div>
+                    ${saleNameHtml}
+                    ${originalPriceHtml}
                     <div class="product-price mb-1">${formatVND(v.giaBan)}</div>
                     <div class="mb-2">${stockBadge}</div>
                 </div>
@@ -688,7 +818,10 @@
                 mauSac: variant.mauSac,
                 trongLuong: variant.trongLuong,
                 mucCang: variant.mucCang,
-                giaBan: variant.giaBan,
+                giaBan: variant.giaBan,           // Giá thực sau DotGiamGia
+                giaNiemYet: variant.giaNiemYet,   // Giá gốc để gạch ngang
+                phanTramGiam: variant.phanTramGiam, // % giảm
+                tenDotGiamGia: variant.tenDotGiamGia, // Tên chiến dịch
                 soLuongTon: variant.soLuongTon,
                 hinhAnh: variant.hinhAnh,
                 soLuong: 1
@@ -719,11 +852,24 @@
             cartItem.className = "cart-item";
             const imgUrl = getProductImageUrl(item.hinhAnh);
 
+            // Hiển thị thông tin giảm giá trong cart
+            const hasDiscount = item.phanTramGiam && parseFloat(item.phanTramGiam) > 0;
+            const pct = hasDiscount ? Math.round(parseFloat(item.phanTramGiam)) : 0;
+            const showOriginal = hasDiscount && item.giaNiemYet && parseFloat(item.giaNiemYet) > parseFloat(item.giaBan);
+
+            const cartDiscountHtml = hasDiscount ? `
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    ${showOriginal ? `<span class="cart-original-price">${formatVND(item.giaNiemYet)}</span>` : ''}
+                    <span class="cart-discount-info">-${pct}%</span>
+                    ${item.tenDotGiamGia ? `<span style="font-size:0.65rem;color:#888;">(${item.tenDotGiamGia})</span>` : ''}
+                </div>` : '';
+
             cartItem.innerHTML = `
                 <img src="${imgUrl}" alt="${item.tenSanPham}" onerror="this.src='/images/preloader.png'">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.tenSanPham}</div>
                     <div class="product-attr">${item.mauSac} | ${item.trongLuong} | ${item.mucCang}</div>
+                    ${cartDiscountHtml}
                     <div class="cart-item-price">${formatVND(item.giaBan)}</div>
                 </div>
                 <div class="d-flex align-items-center gap-1">
@@ -924,37 +1070,234 @@
         // Set total on modal
         document.getElementById("confirmGrandTotal").innerText = formatVND(grandTotal);
 
-        // Configure modal view based on payment method
         const btnConfirm = document.getElementById("btnConfirmPayment");
+        const modalEl = document.getElementById('paymentConfirmModal');
+        
         if (paymentMethod === "TIEN_MAT") {
+            // TIỀN MẶT: Hiện modal nhập tiền trước rồi mới checkout
             document.getElementById("modalCashSection").classList.remove("d-none");
             document.getElementById("modalBankSection").classList.add("d-none");
             document.getElementById("inputCashReceived").value = "";
             document.getElementById("confirmCashChange").innerText = formatVND(0);
             btnConfirm.innerText = "Xác nhận đã nhận tiền (Tiền mặt)";
             btnConfirm.disabled = true;
+            btnConfirm.onclick = () => executeCheckout(); // Click thì gọi executeCheckout
+            
+            // Đổi nút hủy modal về mặc định
+            const btnCancel = modalEl.querySelector(".modal-footer button[data-bs-dismiss='modal']");
+            btnCancel.removeAttribute("onclick");
+            btnCancel.innerHTML = `<i class="fas fa-times me-1"></i> Hủy thanh toán`;
 
             // Build quick cash buttons
             setupQuickCashButtons(grandTotal);
+
+            // Show modal
+            let modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) modal = new bootstrap.Modal(modalEl);
+            modal.show();
         } else {
-            document.getElementById("modalCashSection").classList.add("d-none");
-            document.getElementById("modalBankSection").classList.remove("d-none");
-            document.getElementById("inputTransferRef").value = "";
-            btnConfirm.innerText = "Xác nhận đã nhận chuyển khoản";
-            btnConfirm.disabled = false;
+            // CHUYỂN KHOẢN: Gọi checkout tạo hóa đơn nháp ngay lập tức!
+            const overlay = document.getElementById("posLoadingOverlay");
+            overlay.style.display = "flex";
 
-            // Setup a mock transfer code
-            const randomCode = "SMASHVN" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById("txtTransferCode").innerText = randomCode;
+            const note = document.getElementById("orderNote").value;
+            const bodyData = {
+                idKhachHang: selectedCustomer ? selectedCustomer.id : -1,
+                maVoucher: appliedVoucher ? appliedVoucher.maPhieu : "",
+                items: cart.map(i => ({ idSanPhamChiTiet: i.id, soLuong: i.soLuong })),
+                phuongThucPos: "CHUYEN_KHOAN",
+                maGiaoDich: "",
+                ghiChu: note
+            };
+
+            // CSRF
+            const tokenHolder = document.getElementById('csrf-token-holder');
+            const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+            const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+            const headers = { "Content-Type": "application/json" };
+            if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+            fetch("/admin/pos/checkout", {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(bodyData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                overlay.style.display = "none";
+                if (data.success) {
+                    currentCheckoutHoaDonId = data.hoaDonId;
+                    currentCheckoutMaHoaDon = data.maHoaDon;
+                    
+                    // Show bank section in modal
+                    document.getElementById("modalCashSection").classList.add("d-none");
+                    document.getElementById("modalBankSection").classList.remove("d-none");
+                    document.getElementById("inputTransferRef").value = "";
+                    
+                    btnConfirm.innerText = "Xác nhận đã nhận tiền (Thủ công)";
+                    btnConfirm.disabled = false;
+                    // Bấm nút này sẽ gọi API confirm thủ công
+                    btnConfirm.onclick = () => confirmPaymentManually(data.hoaDonId);
+
+                    // Nút hủy trong modal sẽ thành hủy hóa đơn chờ thanh toán
+                    const btnCancel = modalEl.querySelector(".modal-footer button[data-bs-dismiss='modal']");
+                    btnCancel.onclick = () => cancelPendingOrder(data.hoaDonId);
+                    btnCancel.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Hủy hóa đơn`;
+
+                    // Cập nhật thông tin chuyển khoản thật
+                    const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
+                    const sepayBank   = /*[[${sepayBankName}]]*/ '';
+                    const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
+                    const amount      = data.tongTien || grandTotal;
+                    const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + data.maHoaDon) : String(data.maHoaDon);
+
+                    document.getElementById("txtTransferCode").innerText = finalMemo;
+                    document.getElementById("txtTransferAmount").innerText = formatVND(amount);
+
+                    // Build QR SePay thật
+                    buildPosSePayQr(sepayAcc, sepayBank, amount, finalMemo);
+
+                    // Show modal
+                    let modal = bootstrap.Modal.getInstance(modalEl);
+                    if (!modal) modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+
+                    // Bắt đầu Polling kiểm tra trạng thái thanh toán
+                    startPaymentPolling(data.maHoaDon, data.hoaDonId);
+                } else {
+                    showToast(`Tạo đơn hàng thất bại: ${data.message}`, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                overlay.style.display = "none";
+                showToast("Đã xảy ra lỗi kết nối mạng. Vui lòng thử lại!", "error");
+            });
+        }
+    }
+
+    function confirmPaymentManually(hoaDonId) {
+        stopPaymentPolling();
+        
+        const overlay = document.getElementById("posLoadingOverlay");
+        overlay.style.display = "flex";
+        closePaymentConfirmModal();
+
+        const tokenHolder = document.getElementById('csrf-token-holder');
+        const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+        const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+        const headers = { "Content-Type": "application/json" };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+        fetch(`/admin/pos/confirm-payment/${hoaDonId}`, {
+            method: "POST",
+            headers: headers
+        })
+        .then(res => res.json())
+        .then(data => {
+            overlay.style.display = "none";
+            if (data.success) {
+                pendingPrintUrl = `/admin/pos/print/${hoaDonId}`;
+                document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${currentCheckoutMaHoaDon}`;
+                
+                // Hiện modal xác nhận in
+                const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
+                myModal.show();
+
+                clearPOSState();
+                showToast("Xác nhận thanh toán thủ công thành công!", "success");
+            } else {
+                showToast(`Lỗi xác nhận: ${data.message}`, "error");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            overlay.style.display = "none";
+            showToast("Đã xảy ra lỗi kết nối khi xác nhận thanh toán.", "error");
+        });
+    }
+
+    function cancelPendingOrder(hoaDonId) {
+        stopPaymentPolling();
+        
+        if (!confirm("Bạn có chắc chắn muốn HỦY hóa đơn này? Hành động này sẽ khôi phục lại tồn kho và voucher.")) {
+            // Nếu người dùng click cancel thì tiếp tục polling
+            startPaymentPolling(currentCheckoutMaHoaDon, hoaDonId);
+            return;
         }
 
-        // Show modal
-        const modalEl = document.getElementById('paymentConfirmModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) {
-            modal = new bootstrap.Modal(modalEl);
+        const overlay = document.getElementById("posLoadingOverlay");
+        overlay.style.display = "flex";
+        closePaymentConfirmModal();
+
+        const tokenHolder = document.getElementById('csrf-token-holder');
+        const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+        const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+        const headers = { "Content-Type": "application/json" };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+        fetch(`/admin/pos/cancel-order/${hoaDonId}`, {
+            method: "POST",
+            headers: headers
+        })
+        .then(res => res.json())
+        .then(data => {
+            overlay.style.display = "none";
+            if (data.success) {
+                clearPOSState();
+                showToast("Hủy hóa đơn chờ thanh toán thành công. Tồn kho và voucher đã được khôi phục.", "info");
+            } else {
+                showToast(`Lỗi hủy hóa đơn: ${data.message}`, "error");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            overlay.style.display = "none";
+            showToast("Đã xảy ra lỗi kết nối khi hủy hóa đơn.", "error");
+        });
+    }
+
+    function startPaymentPolling(maHoaDon, hoaDonId) {
+        stopPaymentPolling(); // Đảm bảo không trùng lặp timer
+        
+        paymentPollInterval = setInterval(() => {
+            fetch(`/api/payment/sepay/query/${encodeURIComponent(maHoaDon)}`)
+            .then(res => {
+                if (res.status === 403 || res.status === 401) {
+                    console.warn("Lỗi phân quyền khi query SePay status");
+                    return null;
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.paymentStatus === 'paid' || data.trangThaiThanhToan === 'DA_THANH_TOAN' || data.orderStatus === 'da_giao') {
+                        stopPaymentPolling();
+                        closePaymentConfirmModal();
+                        
+                        showToast("Khách hàng đã chuyển khoản thành công!", "success");
+
+                        // Lưu URL trang in
+                        pendingPrintUrl = `/admin/pos/print/${hoaDonId}`;
+                        document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${maHoaDon}`;
+                        
+                        // Hiện modal in hóa đơn
+                        const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
+                        myModal.show();
+
+                        clearPOSState();
+                    }
+                }
+            })
+            .catch(err => console.error("Error polling payment status:", err));
+        }, 3000); // 3 giây poll một lần
+    }
+
+    function stopPaymentPolling() {
+        if (paymentPollInterval) {
+            clearInterval(paymentPollInterval);
+            paymentPollInterval = null;
         }
-        modal.show();
     }
 
     function closePaymentConfirmModal() {
@@ -1075,11 +1418,27 @@
             overlay.style.display = "none";
 
             if (data.success) {
-                // Setup printing link in modal
+                // Lưu URL trang in vào biến toàn cục
+                pendingPrintUrl = `/admin/pos/print/${data.hoaDonId}`;
+
+                // Cập nhật thông tin trên modal
                 document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${data.maHoaDon}`;
-                document.getElementById("btnPrintConfirmLink").setAttribute("href", `/admin/pos/print/${data.hoaDonId}`);
-                
-                // Show modal
+
+                // Nếu là chuyển khoản: cập nhật QR + memo với mã đơn hàng THẬT
+                if (data.paymentMethod === 'CHUYEN_KHOAN' || data.paymentMethod === 'BANK_TRANSFER') {
+                    const maHD = data.maHoaDon || data.hoaDonId;
+                    const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
+                    const sepayBank   = /*[[${sepayBankName}]]*/ '';
+                    const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
+                    const amount      = data.tongTien || 0;
+                    const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + maHD) : String(maHD);
+
+                    document.getElementById('txtTransferCode').innerText = finalMemo;
+                    document.getElementById('txtTransferAmount').innerText = formatVND(amount);
+                    buildPosSePayQr(sepayAcc, sepayBank, amount, finalMemo);
+                }
+
+                // Hiện modal xác nhận in
                 const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
                 myModal.show();
 
@@ -1118,6 +1477,23 @@
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', 'đ');
     }
 
+    // Mở trang in trong tab mới sau khi đóng modal
+    function openPrintPage() {
+        // Đóng modal trước
+        const modalEl = document.getElementById('printConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        // Mở tab in sau khi modal đã ẩn (delay nhỏ tránh popup blocker)
+        if (pendingPrintUrl) {
+            const url = pendingPrintUrl;
+            pendingPrintUrl = null;
+            setTimeout(() => {
+                window.open(url, '_blank');
+            }, 200);
+        }
+    }
+
     // Close print confirmation modal
     function closePrintModal() {
         const modalEl = document.getElementById('printConfirmModal');
@@ -1125,6 +1501,60 @@
         if (modal) {
             modal.hide();
         }
+    }
+
+    // ─── buildPosSePayQr: tạo QR SePay giống checkout online ───────────────────
+    function buildPosSePayQr(acc, bank, amount, memo) {
+        if (!acc || !bank) {
+            // Không có config SePay → hiện fallback
+            document.getElementById('posQrLoading').style.display = 'none';
+            document.getElementById('posQrImage').style.display = 'none';
+            document.getElementById('posQrFallback').style.display = 'flex';
+            return;
+        }
+        // Format giống checkout.html: https://qr.sepay.vn/img?acc=...&bank=...&amount=...&des=...
+        const qrUrl = 'https://qr.sepay.vn/img?acc=' + encodeURIComponent(acc)
+                    + '&bank=' + encodeURIComponent(bank)
+                    + '&amount=' + Math.round(amount)
+                    + '&des=' + encodeURIComponent(memo);
+
+        const img = document.getElementById('posQrImage');
+        const loading = document.getElementById('posQrLoading');
+
+        // Reset về trạng thái loading trước khi load QR mới
+        img.style.display = 'none';
+        loading.style.display = 'flex';
+        document.getElementById('posQrFallback').style.display = 'none';
+
+        img.src = qrUrl;
+    }
+
+    // ─── showToast: hiển thị thông báo nổi góc phải dưới ──────────────────────
+    function showToast(message, type) {
+        type = type || 'info';
+        const container = document.getElementById('pos-toast-container');
+        if (!container) return;
+
+        const icons = {
+            error:   'fa-times-circle',
+            success: 'fa-check-circle',
+            warning: 'fa-exclamation-triangle',
+            info:    'fa-info-circle'
+        };
+        const icon = icons[type] || icons.info;
+
+        const toast = document.createElement('div');
+        toast.className = `pos-toast ${type}`;
+        toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+
+        // Tự ẩn sau 3.5 giây
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 300);
+        }, 3500);
     }
 </script>
 </body>

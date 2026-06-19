@@ -19,6 +19,8 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.PaymentStatus;
 import com.smashvn.shop.util.VoucherCalculator;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.TaiKhoan;
@@ -344,7 +346,7 @@ public class AdminPosService {
             tongTienCuoi = BigDecimal.ZERO;
         }
 
-        // 7. Tạo hóa đơn — trạng thái DA_THANH_TOAN vì nhân viên đã xác nhận nhận tiền
+        // 7. Tạo hóa đơn
         HoaDon hd = new HoaDon();
         hd.setKhachHang(khachHang);
         hd.setNhanVien(nhanVien);
@@ -354,16 +356,27 @@ public class AdminPosService {
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(tongTienCuoi);
         hd.setPhiVanChuyen(BigDecimal.ZERO);
-        hd.setTrangThaiDonHang("da_giao");           // Bán tại quầy → hoàn thành ngay
-        hd.setTrangThaiThanhToan("DA_THANH_TOAN");   // Nhân viên đã xác nhận
         hd.setDiaChiNhan("Bán tại quầy");
         hd.setSdtNhan(khachHang.getSoDienThoaiKh() != null && !khachHang.getSoDienThoaiKh().trim().isEmpty()
                 ? khachHang.getSoDienThoaiKh()
                 : "0000000000");
         hd.setGhiChu(sanitizedGhiChu);
         hd.setMaGiaoDich(sanitizedGiaoDich);
-        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
-        hd.setThoiGianXacNhan(LocalDateTime.now());
+
+        boolean isChuyenKhoan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos);
+        if (isChuyenKhoan) {
+            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
+            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+            hd.setPaymentStatus(PaymentStatus.PENDING.getValue());         // "pending"
+            hd.setNguoiXacNhanThanhToan(null);
+            hd.setThoiGianXacNhan(null);
+        } else {
+            hd.setTrangThaiDonHang("da_giao");                             // Bán tại quầy → hoàn thành ngay
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");                     // Nhân viên đã xác nhận
+            hd.setPaymentStatus(PaymentStatus.PAID.getValue());            // "paid"
+            hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+            hd.setThoiGianXacNhan(LocalDateTime.now());
+        }
 
         hd.setSoTienGiamVoucher(giamGia);
         if (phieu != null) {
@@ -394,5 +407,70 @@ public class AdminPosService {
                 "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
 
         return hd;
+    }
+
+    @Transactional
+    public void confirmPaymentPos(Integer hoaDonId, Integer idNhanVienTaiKhoan) {
+        HoaDon hd = hoaDonRepository.findById(hoaDonId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
+        
+        if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
+            throw new RuntimeException("Hóa đơn này không ở trạng thái chờ thanh toán!");
+        }
+
+        TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện giao dịch không hợp lệ!"));
+        NhanVien nhanVien = nhanVienRepository.findByTaiKhoanId(nvTk.getId());
+
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+        hd.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue());
+        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+        hd.setThoiGianXacNhan(LocalDateTime.now());
+        hoaDonRepository.save(hd);
+
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE", 
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1", 
+                "Nhân viên xác nhận thanh toán chuyển khoản thủ công cho đơn POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
+    }
+
+    @Transactional
+    public void cancelOrderPos(Integer hoaDonId, Integer idNhanVienTaiKhoan) {
+        HoaDon hd = hoaDonRepository.findById(hoaDonId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
+
+        if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
+            throw new RuntimeException("Chỉ có thể hủy hóa đơn ở trạng thái chờ thanh toán!");
+        }
+
+        TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện không hợp lệ!"));
+
+        // 1. Hoàn lại tồn kho sản phẩm chi tiết
+        List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(hoaDonId);
+        for (HoaDonChiTiet ct : details) {
+            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(ct.getSanPhamChiTiet().getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết ID: " + ct.getSanPhamChiTiet().getId()));
+            spct.setSoLuongTon(spct.getSoLuongTon() + ct.getSoLuong());
+            sanPhamChiTietRepository.save(spct);
+        }
+
+        // 2. Hoàn lại lượt sử dụng Voucher (nếu có)
+        if (hd.getPhieuGiamGia() != null) {
+            PhieuGiamGia phieu = phieuGiamGiaRepository.findByMaPhieuWithLock(hd.getPhieuGiamGia().getMaPhieu())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher: " + hd.getPhieuGiamGia().getMaPhieu()));
+            phieu.setSoLuongConLai(phieu.getSoLuongConLai() + 1);
+            phieuGiamGiaRepository.save(phieu);
+        }
+
+        // 3. Cập nhật trạng thái hóa đơn sang đã hủy
+        hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue());
+        hd.setTrangThaiThanhToan("HUY");
+        hd.setPaymentStatus(PaymentStatus.FAILED.getValue());
+        hoaDonRepository.save(hd);
+
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE", 
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_HUY.getValue(), "127.0.0.1", 
+                "Nhân viên hủy đơn hàng chờ thanh toán POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
     }
 }

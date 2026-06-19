@@ -23,6 +23,9 @@ import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.admin.AdminPosService;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.PriceSnapshot;
+import com.smashvn.shop.config.SepayConfig;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -39,6 +42,8 @@ public class AdminPosController {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final com.smashvn.shop.repository.DanhMucRepository danhMucRepository;
     private final com.smashvn.shop.repository.ThuongHieuRepository thuongHieuRepository;
+    private final PricingService pricingService;
+    private final SepayConfig sepayConfig;
 
     // ─── Trang chính POS ────────────────────────────────────────────────────────
     @GetMapping
@@ -47,6 +52,10 @@ public class AdminPosController {
         model.addAttribute("variants", adminPosService.searchActiveVariants("", -1, -1));
         model.addAttribute("categories", danhMucRepository.findAll());
         model.addAttribute("brands", thuongHieuRepository.findAll());
+        // Thông tin ngân hàng SePay để hiển thị trong modal chuyển khoản POS
+        model.addAttribute("sepayBankAccount", sepayConfig.getBankAccount());
+        model.addAttribute("sepayBankName", sepayConfig.getBankName());
+        model.addAttribute("sepayMemoPrefix", sepayConfig.getMemoPrefix());
         return "admin/pos";
     }
 
@@ -60,12 +69,21 @@ public class AdminPosController {
 
         List<Map<String, Object>> results = adminPosService.searchActiveVariants(query, danhMucId, thuongHieuId).stream().map(v -> {
             Map<String, Object> map = new HashMap<>();
+            // Dùng PriceSnapshot duy nhất để lấy giá thực sau DotGiamGia
+            PriceSnapshot snap = pricingService.buildPriceSnapshot(v);
             map.put("id", v.getId());
             map.put("tenSanPham", v.getSanPham().getTenSanPham());
             map.put("mauSac", v.getMauSac());
             map.put("trongLuong", v.getTrongLuong());
             map.put("mucCang", v.getMucCang());
-            map.put("giaBan", v.getGiaBan());
+            // Giá bán thực sau khi áp dụng đợt giảm giá (nếu có)
+            map.put("giaBan", snap.giaBanSauGiam());
+            // Giá niêm yết gốc để gạch ngang trên UI
+            map.put("giaNiemYet", snap.giaNiemYet());
+            // % giảm (0 nếu không có đợt giảm)
+            map.put("phanTramGiam", snap.phanTramGiam());
+            // Tên chiến dịch (null nếu không có)
+            map.put("tenDotGiamGia", snap.tenDotGiamGia());
             map.put("soLuongTon", v.getSoLuongTon());
             map.put("hinhAnh", v.getHinhAnhSanPham() != null ? v.getHinhAnhSanPham() : "product9.jpg");
             return map;
@@ -168,6 +186,30 @@ public class AdminPosController {
 
         String ipAddress = request.getRemoteAddr();
 
+        // Validate request payload
+        if (req.items == null || req.items.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Đơn hàng không có sản phẩm nào!");
+            return ResponseEntity.badRequest().body(response);
+        }
+        for (com.smashvn.shop.service.admin.AdminPosService.PosItem item : req.items) {
+            if (item.idSanPhamChiTiet == null) {
+                response.put("success", false);
+                response.put("message", "ID sản phẩm chi tiết không được để trống!");
+                return ResponseEntity.badRequest().body(response);
+            }
+            if (item.soLuong == null || item.soLuong <= 0) {
+                response.put("success", false);
+                response.put("message", "Số lượng sản phẩm không hợp lệ!");
+                return ResponseEntity.badRequest().body(response);
+            }
+        }
+        if (req.phuongThucPos == null || (!"TIEN_MAT".equalsIgnoreCase(req.phuongThucPos) && !"CHUYEN_KHOAN".equalsIgnoreCase(req.phuongThucPos))) {
+            response.put("success", false);
+            response.put("message", "Phương thức thanh toán POS không hợp lệ!");
+            return ResponseEntity.badRequest().body(response);
+        }
+
         try {
             HoaDon hd = adminPosService.thanhToanPos(
                     req.idKhachHang,
@@ -183,7 +225,9 @@ public class AdminPosController {
             response.put("success", true);
             response.put("message", "Thanh toán thành công!");
             response.put("hoaDonId", hd.getId());
-            response.put("maHoaDon", "HD-" + hd.getId());
+            response.put("maHoaDon", hd.getMaDonHang() != null ? hd.getMaDonHang() : "HD-" + hd.getId());
+            response.put("paymentMethod", req.phuongThucPos);
+            response.put("tongTien", hd.getTongTien());
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -229,5 +273,49 @@ public class AdminPosController {
         model.addAttribute("phuongThucLabel", phuongThucLabel);
         model.addAttribute("trangThaiLabel", trangThaiLabel);
         return "admin/pos-print";
+    }
+
+    @PostMapping("/confirm-payment/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> confirmPayment(@PathVariable("id") Integer id, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) {
+            response.put("success", false);
+            response.put("message", "Phiên làm việc hết hạn.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            adminPosService.confirmPaymentPos(id, idNguoiDung);
+            response.put("success", true);
+            response.put("message", "Xác nhận thanh toán thủ công thành công.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/cancel-order/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable("id") Integer id, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) {
+            response.put("success", false);
+            response.put("message", "Phiên làm việc hết hạn.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            adminPosService.cancelOrderPos(id, idNguoiDung);
+            response.put("success", true);
+            response.put("message", "Hủy hóa đơn thành công.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

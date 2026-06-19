@@ -146,11 +146,16 @@ public class SepayIpnController {
 
         HoaDon order = orderOpt.get();
 
-        // 3. Ownership: Validate order owner matches session customer
-        if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
-                || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
-            log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
+        // 3. Ownership: Validate order owner matches session customer OR user is staff/admin
+        boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
+                || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
+
+        if (!isStaff) {
+            if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
+                    || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
+                log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
+            }
         }
 
         // 4. Return standardized query API response
@@ -159,6 +164,7 @@ public class SepayIpnController {
         resp.put("orderCode", order.getMaDonHang());
         resp.put("paymentStatus", order.getPaymentStatus());
         resp.put("orderStatus", order.getTrangThaiDonHang());
+        resp.put("trangThaiThanhToan", order.getTrangThaiThanhToan());
         return ResponseEntity.ok(resp);
     }
 

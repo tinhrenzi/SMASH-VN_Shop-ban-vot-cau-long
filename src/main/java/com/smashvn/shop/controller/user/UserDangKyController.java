@@ -22,7 +22,10 @@ public class UserDangKyController {
 
     // Hiển thị form đăng ký (Giao diện)
     @GetMapping("/dang-ky")
-    public String hienThiTrangDangKy() {
+    public String hienThiTrangDangKy(@RequestParam(value = "email", required = false) String email, Model model) {
+        if (email != null) {
+            model.addAttribute("email", email);
+        }
         return "signup"; // Sẽ tìm file dang-ky.html trong thư mục templates
     }
 

@@ -422,6 +422,12 @@ public class AdminController {
             map.put("paymentMethod", tenPhuongThuc);
             map.put("paymentStatus", hd.getTrangThaiThanhToan() != null ? hd.getTrangThaiThanhToan() : "N/A");
             map.put("maGiaoDich", hd.getMaGiaoDich() != null ? hd.getMaGiaoDich() : "");
+            map.put("nguoiXacNhan", hd.getNguoiXacNhanThanhToan() != null ? hd.getNguoiXacNhanThanhToan() : "Nhân viên hệ thống");
+            String formattedXacNhanAt = "";
+            if (hd.getThoiGianXacNhan() != null) {
+                formattedXacNhanAt = hd.getThoiGianXacNhan().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+            }
+            map.put("thoiGianXacNhan", formattedXacNhanAt);
 
             // Additional payment transaction fields
             String formattedPaidAt = "";

@@ -499,7 +499,9 @@ function openOrderDetailModal(orderId) {
                 `;
             });
             
-            body.innerHTML = `
+            const isPosOrder = data.maDonHang && data.maDonHang.startsWith('HDSVN');
+
+            let detailsContentHtml = `
                 <div class="row g-3 mb-4" style="font-size: 13px;">
                      <div class="col-md-6">
                         <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin khách hàng &amp; Vận chuyển</h6>
@@ -622,6 +624,106 @@ function openOrderDetailModal(orderId) {
                     </table>
                 </div>
             `;
+
+            if (isPosOrder) {
+                let posItemsHtml = '';
+                (data.items || []).forEach(item => {
+                    posItemsHtml += `
+                        <tr>
+                            <td style="padding: 4px 0; vertical-align: top;">
+                                <span>${item.tenSanPham || 'N/A'}</span><br>
+                                <span class="item-details" style="font-size: 10px; color: #555;">${item.thuocTinh || 'N/A'}</span>
+                            </td>
+                            <td style="padding: 4px 0; text-align: center; vertical-align: top;">${item.soLuong}</td>
+                            <td style="padding: 4px 0; text-align: right; vertical-align: top;">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
+                        </tr>
+                    `;
+                });
+
+                let receiptHtml = `
+                    <div class="p-3 border rounded shadow-sm bg-white" style="font-family: Arial, sans-serif; font-size: 11px; max-width: 100%; color: #000; border-color: #ddd !important;">
+                        <div class="text-center mb-3">
+                            <h5 style="font-weight: 800; font-size: 14px; margin-bottom: 2px;">SMASH VN SHOP</h5>
+                            <div style="font-size: 10px;">Số 12 Chùa Bộc, Đống Đa, Hà Nội</div>
+                            <div style="font-size: 10px;">Hotline: 0987.654.321</div>
+                            <div style="font-weight: bold; font-size: 12px; margin-top: 10px; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; letter-spacing: 1px;">HÓA ĐƠN BÁN HÀNG</div>
+                        </div>
+                        <div class="mb-2" style="line-height: 1.4;">
+                            <div><strong>Mã HĐ:</strong> ${data.maDonHang}</div>
+                            <div><strong>Thời gian tạo:</strong> ${data.ngayTao}</div>
+                            <div><strong>Khách hàng:</strong> ${data.khachHang || 'Khách lẻ'}</div>
+                            <div><strong>Số ĐT khách:</strong> ${data.sdt || 'N/A'}</div>
+                            <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                            <div><strong>Thanh toán:</strong> ${data.paymentMethod}</div>
+                            <div><strong>Trạng thái:</strong> <span style="font-weight: bold; color: ${data.paymentStatus === 'DA_THANH_TOAN' ? '#198754' : '#dc3545'}">${data.paymentStatus}</span></div>
+                            ${data.maGiaoDich ? `<div><strong>Mã giao dịch:</strong> ${data.maGiaoDich}</div>` : ''}
+                            <div><strong>NV xác nhận:</strong> ${data.nguoiXacNhan || 'Nhân viên hệ thống'}</div>
+                            ${data.thoiGianXacNhan ? `<div><strong>Thời gian XN:</strong> ${data.thoiGianXacNhan}</div>` : ''}
+                        </div>
+                        <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 5px;">
+                            <thead>
+                                <tr style="border-bottom: 1px dashed #000;">
+                                    <th style="text-align: left; padding: 4px 0;">Sản phẩm</th>
+                                    <th style="text-align: center; padding: 4px 0; width: 30px;">SL</th>
+                                    <th style="text-align: right; padding: 4px 0; width: 75px;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${posItemsHtml}
+                            </tbody>
+                        </table>
+                        <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                        <table style="width: 100%; font-size: 11px;">
+                            <tr>
+                                <td style="padding: 2px 0;">Cộng tiền hàng:</td>
+                                <td style="text-align: right; padding: 2px 0;">${new Intl.NumberFormat('vi-VN').format(subtotal)} đ</td>
+                            </tr>
+                            ${data.soTienGiamVoucher > 0 ? `
+                            <tr>
+                                <td style="padding: 2px 0; color: #198754; font-weight: bold;">Voucher giảm:</td>
+                                <td style="text-align: right; padding: 2px 0; color: #198754; font-weight: bold;">-${new Intl.NumberFormat('vi-VN').format(data.soTienGiamVoucher)} đ</td>
+                            </tr>
+                            ` : ''}
+                            <tr style="font-weight: bold; border-top: 1px dashed #000;">
+                                <td style="padding: 4px 0; font-size: 12px;">TỔNG THANH TOÁN:</td>
+                                <td style="text-align: right; padding: 4px 0; font-size: 12px; color: #dc3545;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
+                            </tr>
+                        </table>
+                        <div style="border-top: 1px dashed #000; margin: 8px 0 5px 0;"></div>
+                        <div class="text-center" style="font-size: 9px; line-height: 1.3;">
+                            <div>CẢM ƠN QUÝ KHÁCH HÀNG!</div>
+                            <div>HẸN GẶP LẠI QUÝ KHÁCH!</div>
+                            <div style="margin-top: 3px; font-style: italic; color: #777;">Powered by SmashVN</div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-sm btn-dark py-1 px-3 fw-bold" style="font-size: 10px;" onclick="window.open('/admin/pos/print/${data.id}', '_blank')">
+                                <i class="fas fa-print me-1"></i> Mở Trang In K80
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            ${detailsContentHtml}
+                        </div>
+                        <div class="col-md-5 border-start">
+                            <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px;"><i class="fas fa-receipt me-1"></i>Hóa đơn in nhiệt (K80)</h6>
+                            ${receiptHtml}
+                        </div>
+                    </div>
+                `;
+            } else {
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            ${detailsContentHtml}
+                        </div>
+                    </div>
+                `;
+            }
             
             let actionsHtml = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
             
