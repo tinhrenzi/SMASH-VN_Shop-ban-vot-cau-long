@@ -95,6 +95,13 @@ public class HomeController {
             model.addAttribute("highestDiscountCampaign", null);
         }
 
+        // Tìm sản phẩm có phần trăm giảm giá cao nhất đang hoạt động
+        SanPham highestDiscountProduct = danhSachSanPham.stream()
+                .filter(p -> p.getActiveGiamGiaPhanTram() > 0 && ("dang_ban".equals(p.getTrangThai()) || p.getTrangThai() == null))
+                .max((p1, p2) -> Integer.compare(p1.getActiveGiamGiaPhanTram(), p2.getActiveGiamGiaPhanTram()))
+                .orElse(null);
+        model.addAttribute("highestDiscountProduct", highestDiscountProduct);
+
         model.addAttribute("products", discountedProducts); // để đảm bảo tương thích ngược
         model.addAttribute("newProducts", newProductsList);
         model.addAttribute("bestSellers", bestSellersList);

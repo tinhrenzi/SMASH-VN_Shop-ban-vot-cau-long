@@ -42,16 +42,6 @@
             text-align: center;
             width: 85px !important;
             height: 38px !important;
-            border: 1px solid #d2d2d2 !important;
-            border-radius: 2px !important;
-            background-color: #ffffff !important;
-            color: #333333 !important;
-            outline: none;
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        .shop-w__form-p-wrap input[type="number"]:focus {
-            border-color: #ff4500 !important;
-            box-shadow: 0 0 4px rgba(255, 69, 0, 0.15) !important;
         }
         .shop-w__form-p-wrap .btn {
             width: 38px !important;
@@ -59,7 +49,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 2px !important;
+            border-radius: 25px !important;
             font-size: 14px;
             padding: 0 !important;
         }
@@ -546,13 +536,13 @@
 
                                                      <div class="shop-w__form-p-wrap">
                                                          <div>
-                                                             <input class="input-text input-text--style-1" type="number" name="minPrice" th:value="${selectedMinPrice}" placeholder="Min" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
+                                                             <input class="input-text input-text--border-radius input-text--style-1" type="number" name="minPrice" th:value="${selectedMinPrice}" placeholder="Min" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
                                                          </div>
                                                          <div>
-                                                             <input class="input-text input-text--style-1" type="number" name="maxPrice" th:value="${selectedMaxPrice}" placeholder="Max" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
+                                                             <input class="input-text input-text--border-radius input-text--style-1" type="number" name="maxPrice" th:value="${selectedMaxPrice}" placeholder="Max" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
                                                          </div>
                                                          <div>
-                                                             <button class="btn btn--e-brand" type="submit"><i class="fas fa-angle-right"></i></button>
+                                                             <button class="btn btn--e-brand fas fa-angle-right" type="submit"></button>
                                                          </div>
                                                      </div>
                                                  </form>
@@ -876,7 +866,8 @@
     <!--====== App Js ======-->
     <script th:src="@{/js/app.js}"></script>
 
-    <script>
+
+
         // ===== Multiple Size / Weight Filter (Checkbox) =====
         function filterBySizes() {
             var checkedSizes = [];
