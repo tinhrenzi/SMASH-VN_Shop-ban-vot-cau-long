@@ -19,10 +19,14 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
     /**
      * Tìm kiếm sản phẩm theo nhiều tiêu chí kết hợp, hỗ trợ phân trang.
-     * Lọc theo danh mục, thương hiệu, khoảng giá và trọng lượng (size).
+     * Lọc theo từ khóa, danh mục, thương hiệu, khoảng giá và trọng lượng (size).
      */
     @Query("SELECT sp FROM SanPham sp " +
-           "WHERE (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
+           "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+           "       LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
            "AND (:brandId IS NULL OR sp.thuongHieu.id = :brandId) " +
            "AND (:minPrice IS NULL AND :maxPrice IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice))) " +
            "AND (:rating IS NULL OR :rating = 0.0 OR sp.diemTrungBinh >= :rating) " +
@@ -32,6 +36,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "CASE WHEN :sort = 'price_desc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp) END DESC, " +
            "sp.id DESC")
     Page<SanPham> findByFilters(
+        @Param("keyword") String keyword,
         @Param("categoryId") Integer categoryId,
         @Param("brandId") Integer brandId,
         @Param("minPrice") BigDecimal minPrice,
@@ -41,6 +46,16 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
         @Param("sort") String sort,
         Pageable pageable
     );
+
+    /**
+     * Tìm kiếm nhanh (autocomplete) - trả về tối đa 8 sản phẩm đang bán phù hợp từ khóa.
+     */
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE (sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND " +
+           "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY sp.id DESC")
+    java.util.List<SanPham> searchAutocomplete(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN SanPhamChiTiet spct ON spct.sanPham = sp WHERE spct.trongLuong = :trongLuong")
     long countByTrongLuong(@Param("trongLuong") String trongLuong);

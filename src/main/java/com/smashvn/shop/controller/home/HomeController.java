@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.DanhMuc;
@@ -114,6 +117,7 @@ public class HomeController {
 
     @GetMapping("/shop")
     public String hienThiCuaHang(
+            @RequestParam(value = "q", required = false) String keyword,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "brandId", required = false) Integer brandId,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
@@ -141,9 +145,18 @@ public class HomeController {
         // tự động append thêm "order by sp.id desc/asc" gây ra lỗi trùng cột trong ORDER BY ở SQL Server.
         Pageable pageable = PageRequest.of(page, size);
 
+        // Sanitize keyword (XSS prevention)
+        String sanitizedKeyword = null;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sanitizedKeyword = Jsoup.clean(keyword.trim(), Safelist.none());
+            if (sanitizedKeyword.length() > 100) {
+                sanitizedKeyword = sanitizedKeyword.substring(0, 100);
+            }
+        }
+
         // Sử dụng query kết hợp nhiều điều kiện
         Page<SanPham> productPage = sanPhamRepository.findByFilters(
-            categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
+            sanitizedKeyword, categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
         );
 
         // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
@@ -205,6 +218,7 @@ public class HomeController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", productPage.getTotalPages());
         model.addAttribute("totalElements", productPage.getTotalElements());
+        model.addAttribute("keyword", sanitizedKeyword);
 
         if ("XMLHttpRequest".equals(requestedWith)) {
             return "shop :: #shop-content-area";

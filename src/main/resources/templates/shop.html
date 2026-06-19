@@ -511,7 +511,7 @@
                                             <div class="shop-w__wrap collapse show" id="s-category">
                                                 <ul class="filter-list gl-scroll">
                                                     <li>
-                                                        <a th:href="@{/shop(sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
+                                                        <a th:href="@{/shop(q=${keyword}, sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedCategoryId == null} ? 'active-filter' : ''">
                                                             <span>Tất cả danh mục</span>
@@ -519,7 +519,7 @@
                                                         </a>
                                                     </li>
                                                     <li th:each="category : ${categories}">
-                                                        <a th:href="@{/shop(categoryId=${category.id}, sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
+                                                        <a th:href="@{/shop(q=${keyword}, categoryId=${category.id}, sort=${currentSort}, brandId=${selectedBrandId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedCategoryId == category.id} ? 'active-filter' : ''">
                                                             <span th:text="${category.tenDanhMuc}">Danh mục</span>
@@ -541,7 +541,7 @@
                                             <div class="shop-w__wrap collapse show" id="s-manufacturer">
                                                 <ul class="filter-list gl-scroll">
                                                     <li>
-                                                        <a th:href="@{/shop(sort=${currentSort}, categoryId=${selectedCategoryId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
+                                                        <a th:href="@{/shop(q=${keyword}, sort=${currentSort}, categoryId=${selectedCategoryId}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedBrandId == null} ? 'active-filter' : ''">
                                                             <span>Tất cả thương hiệu</span>
@@ -549,7 +549,7 @@
                                                         </a>
                                                     </li>
                                                     <li th:each="brand : ${brands}">
-                                                        <a th:href="@{/shop(brandId=${brand.id}, categoryId=${selectedCategoryId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
+                                                        <a th:href="@{/shop(q=${keyword}, brandId=${brand.id}, categoryId=${selectedCategoryId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating != null and selectedRating > 0.0 ? selectedRating : null}, trongLuong=${selectedTrongLuong})}"
                                                            class="filter-item-link"
                                                            th:classappend="${selectedBrandId == brand.id} ? 'active-filter' : ''">
                                                             <span th:text="${brand.tenThuongHieu}">Thương hiệu</span>
@@ -623,12 +623,12 @@
                                             </div>
                                             <div class="shop-w__wrap collapse show" id="s-rating">
                                                 <div id="star-filter-list">
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == null or selectedRating == 0.0} ? 'active' : ''">
                                                          <span>Tất cả đánh giá</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=5.0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=5.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 5.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -636,7 +636,7 @@
                                                          </span>
                                                          <span>5 sao</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=4.0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=4.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 4.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -644,7 +644,7 @@
                                                          </span>
                                                          <span>4 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=3.0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=3.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 3.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -652,7 +652,7 @@
                                                          </span>
                                                          <span>3 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=2.0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=2.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 2.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -660,7 +660,7 @@
                                                          </span>
                                                          <span>2 sao trở lên</span>
                                                      </a>
-                                                     <a th:href="@{/shop(categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=1.0, trongLuong=${selectedTrongLuong})}"
+                                                     <a th:href="@{/shop(q=${keyword}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice != globalMinPrice ? selectedMinPrice : null}, maxPrice=${selectedMaxPrice != globalMaxPrice ? selectedMaxPrice : null}, rating=1.0, trongLuong=${selectedTrongLuong})}"
                                                         class="star-filter-item"
                                                         th:classappend="${selectedRating == 1.0} ? 'active' : ''">
                                                          <span class="stars">
@@ -709,6 +709,12 @@
                         <div class="col-lg-9 col-md-12">
                             <div class="shop-p">
 
+                                <!-- ===== SEARCH RESULTS BANNER ===== -->
+                                <div th:if="${keyword != null}" class="search-results-banner u-s-m-b-20">
+                                    <span>Kết quả tìm kiếm cho: <strong th:text="${keyword}"></strong></span>
+                                    <span class="search-result-count" th:text="'(' + ${totalElements} + ' sản phẩm)'"></span>
+                                    <a th:href="@{/shop}" class="clear-search-btn">✕ Xóa bộ lọc</a>
+                                </div>
                                 <!-- ===== TOOLBAR ===== -->
                                 <div class="shop-p__toolbar u-s-m-b-30"
                                      style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid #eee; padding-bottom: 14px; margin-bottom: 20px;">
@@ -858,7 +864,7 @@
                                     <ul class="shop-p__pagination">
                                         <!-- Prev -->
                                         <li th:style="${currentPage == 0} ? 'display: none;' : ''">
-                                            <a th:href="@{/shop(page=${currentPage - 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
+                                            <a th:href="@{/shop(q=${keyword}, page=${currentPage - 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
                                                 <i class="fas fa-angle-left"></i>
                                             </a>
                                         </li>
@@ -866,13 +872,13 @@
                                         <!-- Page numbers -->
                                         <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                                             th:classappend="${i == currentPage} ? 'is-active' : ''">
-                                            <a th:href="@{/shop(page=${i}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}"
+                                            <a th:href="@{/shop(q=${keyword}, page=${i}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}"
                                                th:text="${i + 1}">1</a>
                                         </li>
 
                                         <!-- Next -->
                                         <li th:style="${currentPage >= totalPages - 1} ? 'display: none;' : ''">
-                                            <a th:href="@{/shop(page=${currentPage + 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
+                                            <a th:href="@{/shop(q=${keyword}, page=${currentPage + 1}, categoryId=${selectedCategoryId}, brandId=${selectedBrandId}, sort=${currentSort}, minPrice=${selectedMinPrice}, maxPrice=${selectedMaxPrice}, rating=${selectedRating}, trongLuong=${selectedTrongLuong})}">
                                                 <i class="fas fa-angle-right"></i>
                                             </a>
                                         </li>

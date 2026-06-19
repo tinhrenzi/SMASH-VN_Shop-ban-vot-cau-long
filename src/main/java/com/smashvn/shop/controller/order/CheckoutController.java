@@ -86,7 +86,14 @@ public class CheckoutController {
             tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
         }
 
-        List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll();
+        List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll().stream()
+                .filter(dv -> dv.getTenDonVi() != null 
+                        && !dv.getTenDonVi().toLowerCase().contains("quầy")
+                        && !dv.getTenDonVi().toLowerCase().contains("quay")
+                        && !dv.getTenDonVi().toLowerCase().contains("chỗ")
+                        && !dv.getTenDonVi().toLowerCase().contains("cho"))
+                .collect(java.util.stream.Collectors.toList());
+
 
         com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
         Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
@@ -186,6 +193,19 @@ public class CheckoutController {
             response.put("message", "Vui lòng chọn đơn vị vận chuyển.");
             return ResponseEntity.ok(response);
         }
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen).orElse(null);
+        if (dvvc == null) {
+            response.put("trangThai", "loi");
+            response.put("message", "Đơn vị vận chuyển không tồn tại.");
+            return ResponseEntity.ok(response);
+        }
+        String tenDv = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toLowerCase() : "";
+        if (tenDv.contains("quầy") || tenDv.contains("quay") || tenDv.contains("chỗ") || tenDv.contains("cho")) {
+            response.put("trangThai", "loi");
+            response.put("message", "Phương thức vận chuyển này không áp dụng cho mua hàng online.");
+            return ResponseEntity.ok(response);
+        }
+
         if (phuongThucThanhToan == null || phuongThucThanhToan.trim().isEmpty()) {
             response.put("trangThai", "loi");
             response.put("message", "Vui lòng chọn phương thức thanh toán.");

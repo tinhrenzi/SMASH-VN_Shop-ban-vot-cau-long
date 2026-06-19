@@ -20,11 +20,13 @@
 
 
                         <!--====== Mẫu tìm kiếm ======-->
-                        <form class="main-form">
+                        <form class="main-form" th:action="@{/shop}" method="get" autocomplete="off">
 
                             <label for="main-search"></label>
 
-                            <input class="input-text input-text--border-radius input-text--style-1" type="text" id="main-search" placeholder="Search">
+                            <input class="input-text input-text--border-radius input-text--style-1" type="text" id="main-search" name="q" placeholder="Tìm vợt, giày, phụ kiện..." autocomplete="off" th:value="${keyword}">
+                            <!-- Autocomplete Dropdown -->
+                            <div id="search-autocomplete" class="search-autocomplete-dropdown"></div>
 
                             <button class="btn btn--icon fas fa-search main-search-button" type="submit"></button></form>
                         <!--====== Kết thúc - Mẫu tìm kiếm ======-->
@@ -394,6 +396,149 @@
 			    </div>
 			
 			</div>
+
+<script>
+// ===== Autocomplete Search + Popular Keywords =====
+(function() {
+    var searchInput = document.getElementById('main-search');
+    var dropdown = document.getElementById('search-autocomplete');
+    if (!searchInput || !dropdown) return;
+
+    var debounceTimer;
+    var popularCache = null;
+
+    // === Hiển thị TỪ KHÓA PHỔ BIẾN khi focus vào ô search ===
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) return;
+        showPopularKeywords();
+    });
+
+    function showPopularKeywords() {
+        if (popularCache) {
+            renderPopular(popularCache);
+            return;
+        }
+        fetch('/api/search/popular')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                popularCache = data;
+                renderPopular(data);
+            })
+            .catch(function() {});
+    }
+
+    function renderPopular(data) {
+        var html = '';
+
+        // 1. Danh mục + Thương hiệu dạng chip tags
+        html += '<div class="popular-section">';
+        html += '<div class="popular-title"><i class="fas fa-fire"></i> Từ khóa phổ biến</div>';
+        html += '<div class="popular-tags">';
+        if (data.danhMuc) {
+            data.danhMuc.forEach(function(dm) {
+                html += '<a href="/shop?categoryId=' + dm.id + '" class="popular-tag popular-tag--category">' + dm.ten + '</a>';
+            });
+        }
+        if (data.thuongHieu) {
+            data.thuongHieu.forEach(function(th) {
+                html += '<a href="/shop?brandId=' + th.id + '" class="popular-tag popular-tag--brand">' + th.ten + '</a>';
+            });
+        }
+        html += '</div></div>';
+
+        // 2. Sản phẩm bán chạy nhất
+        if (data.sanPhamNoiBat && data.sanPhamNoiBat.length > 0) {
+            html += '<div class="popular-section">';
+            html += '<div class="popular-title"><i class="fas fa-star"></i> Sản phẩm được tìm nhiều</div>';
+            data.sanPhamNoiBat.forEach(function(sp) {
+                html += '<a href="/san-pham/' + sp.id + '" class="autocomplete-item">' +
+                    '<img src="/uploads/product/' + (sp.hinhAnh || 'default.png') + '" onerror="this.src=\'/images/placeholder.png\'">' +
+                    '<div class="autocomplete-info">' +
+                        '<div class="autocomplete-name">' + sp.tenSanPham + '</div>' +
+                        '<div class="autocomplete-brand">' + sp.thuongHieu + ' · ' + sp.danhMuc + '</div>' +
+                        '<div class="autocomplete-price">' +
+                            formatVND(sp.giaSauGiam || sp.giaBan) +
+                            (sp.giamGia > 0 ? ' <span class="autocomplete-discount">-' + sp.giamGia + '%</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                '</a>';
+            });
+            html += '</div>';
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+    }
+
+    // === Autocomplete khi gõ từ khóa (≥ 2 ký tự) ===
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var query = this.value.trim();
+
+        if (query.length < 2) {
+            if (query.length === 0 && document.activeElement === searchInput) {
+                showPopularKeywords();
+            } else {
+                dropdown.style.display = 'none';
+                dropdown.innerHTML = '';
+            }
+            return;
+        }
+
+        debounceTimer = setTimeout(function() {
+            fetch('/api/search/products?q=' + encodeURIComponent(query))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.length === 0) {
+                        dropdown.innerHTML = '<div class="autocomplete-empty">' +
+                            '<i class="fas fa-search"></i> Không tìm thấy sản phẩm nào cho "' +
+                            query + '"</div>';
+                        dropdown.style.display = 'block';
+                        return;
+                    }
+                    var html = data.map(function(item) {
+                        return '<a href="/san-pham/' + item.id + '" class="autocomplete-item">' +
+                            '<img src="/uploads/product/' + (item.hinhAnh || 'default.png') +
+                            '" onerror="this.src=\'/images/placeholder.png\'">' +
+                            '<div class="autocomplete-info">' +
+                                '<div class="autocomplete-name">' + highlightMatch(item.tenSanPham, query) + '</div>' +
+                                '<div class="autocomplete-brand">' + item.thuongHieu + ' \u00b7 ' + item.danhMuc + '</div>' +
+                                '<div class="autocomplete-price">' +
+                                    formatVND(item.giaSauGiam || item.giaBan) +
+                                    (item.giamGia > 0 ? ' <span class="autocomplete-discount">-' + item.giamGia + '%</span>' : '') +
+                                '</div>' +
+                            '</div>' +
+                        '</a>';
+                    }).join('');
+                    html += '<a href="/shop?q=' + encodeURIComponent(query) +
+                            '" class="autocomplete-viewall"><i class="fas fa-search"></i> Xem tất cả kết quả cho "' + query + '" \u2192</a>';
+                    dropdown.innerHTML = html;
+                    dropdown.style.display = 'block';
+                })
+                .catch(function() {});
+        }, 300);
+    });
+
+    // Ẩn dropdown khi click ngoài
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    function highlightMatch(text, query) {
+        if (!query) return text;
+        var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var regex = new RegExp('(' + escaped + ')', 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    function formatVND(num) {
+        if (!num) return '';
+        return new Intl.NumberFormat('vi-VN').format(num) + ' \u20ab';
+    }
+})();
+</script>
         </header>
         
 

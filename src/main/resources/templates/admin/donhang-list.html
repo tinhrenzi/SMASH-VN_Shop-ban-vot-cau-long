@@ -170,7 +170,7 @@
                                                 </div>
                                             </td>
                                             <td class="text-nowrap">
-                                                <span class="badge bg-light text-dark border" th:text="${hd.donViVanChuyen != null ? (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG NHANH') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG NHANH') ? 'GHN' : hd.donViVanChuyen.tenDonVi) : 'N/A'}">GHTK</span>
+                                                <span class="badge bg-light text-dark border" th:text="${hd.donViVanChuyen != null ? (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG NHANH') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG NHANH') ? 'GHN' : (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi)) : 'N/A'}">GHTK</span>
                                             </td>
                                             <td class="text-nowrap">
                                                 <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold">
@@ -509,6 +509,7 @@ function openOrderDetailModal(orderId) {
                         <p class="mb-1"><strong>Họ tên:</strong> ${data.khachHang || 'N/A'}</p>
                         <p class="mb-1"><strong>Số điện thoại:</strong> ${data.sdt || 'N/A'}</p>
                         <p class="mb-1"><strong>Địa chỉ nhận:</strong> ${data.diaChi || 'N/A'}</p>
+                        <p class="mb-1"><strong>Hình thức vận chuyển:</strong> ${data.donViVanChuyen === 'Mua tại quầy' ? 'Tại quầy' : (data.donViVanChuyen || 'N/A')}</p>
                         <p class="mb-1"><strong>Trạng thái đơn hàng:</strong> <span class="badge bg-info">${data.trangThai || 'N/A'}</span></p>
                         ${data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' ? `
                             <p class="mb-1 text-danger">

@@ -405,6 +405,7 @@ public class AdminController {
             map.put("khachHang", tenKH);
             map.put("sdt", hd.getSdtNhan() != null ? hd.getSdtNhan() : "");
             map.put("diaChi", hd.getDiaChiNhan() != null ? hd.getDiaChiNhan() : "");
+            map.put("donViVanChuyen", hd.getDonViVanChuyen() != null ? hd.getDonViVanChuyen().getTenDonVi() : "N/A");
             map.put("tongTien", hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO);
             map.put("phiVanChuyen", hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : java.math.BigDecimal.ZERO);
             map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : java.math.BigDecimal.ZERO);
