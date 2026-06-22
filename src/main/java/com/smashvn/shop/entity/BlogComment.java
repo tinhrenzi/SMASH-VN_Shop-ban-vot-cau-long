@@ -23,32 +23,30 @@ public class BlogComment {
     @JoinColumn(name = "id_tai_khoan", nullable = false)
     private TaiKhoan taiKhoan;
 
-    @Column(name = "content", nullable = false, length = 1000)
+    @Column(name = "noi_dung", nullable = false, length = 1000)
     private String content;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "ngay_tao", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
+    @Transient
     private TaiKhoan createdBy;
 
-    @Column(name = "deleted", nullable = false)
+    @Column(name = "da_xoa", nullable = false)
     @Builder.Default
     private Boolean deleted = false;
 
-    @Column(name = "deleted_at")
+    @Column(name = "ngay_xoa")
     private LocalDateTime deletedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "deleted_by")
+    @Transient
     private TaiKhoan deletedBy;
 
-    @Column(name = "deleted_reason", length = 500)
+    @Column(name = "ly_do_xoa", length = 500)
     private String deletedReason;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_comment_id")
+    @JoinColumn(name = "id_binh_luan_cha")
     private BlogComment parentComment;
 }

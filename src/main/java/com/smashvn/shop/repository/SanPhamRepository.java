@@ -100,4 +100,11 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "         ((SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct WHERE hdct.sanPhamChiTiet.sanPham = sp) + " +
            "          (SELECT COUNT(spy) FROM SanPhamYeuThich spy WHERE spy.sanPham = sp)) DESC, sp.id DESC")
     java.util.List<SanPham> findFeaturedProducts(Pageable pageable);
+
+    @Query("SELECT sp FROM SanPham sp WHERE " +
+           "(sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') AND " +
+           "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    java.util.List<SanPham> searchByKeyword(@Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
 }

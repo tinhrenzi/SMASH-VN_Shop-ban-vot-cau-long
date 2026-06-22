@@ -132,7 +132,8 @@ public class GioHangService {
             chiTiet.setSoLuong(soLuong);
 
             TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
-                    .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1"));
+                    .orElseGet(() -> trangThaiGioHangRepository.findAll().stream().findFirst()
+                            .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1")));
             chiTiet.setTrangThai(trangThai);
         }
 

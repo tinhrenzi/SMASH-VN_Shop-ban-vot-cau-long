@@ -15,14 +15,14 @@ public class CommentModerationKeyword {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "keyword", nullable = false, unique = true)
+    @Column(name = "tu_khoa", nullable = false, unique = true)
     private String keyword;
 
-    @Column(name = "active", nullable = false)
+    @Column(name = "kich_hoat", nullable = false)
     @Builder.Default
     private Boolean active = true;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "ngay_tao", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

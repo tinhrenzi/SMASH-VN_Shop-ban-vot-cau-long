@@ -34,6 +34,6 @@ public class SanPhamChiTiet {
     @Column(name = "so_luong_ton", nullable = false)
     private Integer soLuongTon = 0;
 
-    @Column(name = "hinh_anh_san_pham", length = 200)
+    @Transient
     private String hinhAnhSanPham;
 }

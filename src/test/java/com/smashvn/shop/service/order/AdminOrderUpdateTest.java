@@ -144,7 +144,15 @@ public class AdminOrderUpdateTest {
         hd.setTrangThaiDonHang(status);
         hd.setPaymentMethod(paymentMethod);
         hd.setPaymentStatus(paymentStatus);
-        hd.setTrangThaiThanhToan(paymentStatus.equals("paid") ? "DA_THANH_TOAN" : "CHO_THANH_TOAN");
+        if ("paid".equalsIgnoreCase(paymentStatus)) {
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        } else if ("cancelled".equalsIgnoreCase(paymentStatus)) {
+            hd.setTrangThaiThanhToan("CANCELLED");
+        } else if ("refunded".equalsIgnoreCase(paymentStatus)) {
+            hd.setTrangThaiThanhToan("REFUNDED");
+        } else {
+            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+        }
         hd.setDiaChiNhan("Hà Nội");
         hd.setSdtNhan("0912345678");
         hd = hoaDonRepository.save(hd);

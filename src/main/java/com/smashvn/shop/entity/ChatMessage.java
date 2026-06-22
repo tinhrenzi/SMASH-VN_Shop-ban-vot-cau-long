@@ -16,10 +16,10 @@ public class ChatMessage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_conversation", nullable = false)
+    @JoinColumn(name = "id_cuoc_tro_chuyen", nullable = false)
     private ChatConversation conversation;
 
-    @Column(name = "sender_type", nullable = false, length = 10)
+    @Column(name = "loai_nguoi_gui", nullable = false, length = 10)
     private String senderType; // USER, BOT
 
     @Column(name = "noi_dung", nullable = false, columnDefinition = "NVARCHAR(MAX)")

@@ -75,22 +75,22 @@ public class HoaDon {
     @Column(name = "phi_van_chuyen", nullable = false)
     private BigDecimal phiVanChuyen = BigDecimal.ZERO;
 
-    @Column(name = "payment_method", length = 50)
+    @Column(name = "phuong_thuc_thanh_toan", length = 50)
     private String paymentMethod;
 
-    @Column(name = "payment_status", length = 50)
+    @Column(name = "trang_thai_thanh_toan", length = 50, insertable = false, updatable = false)
     private String paymentStatus;
 
-    @Column(name = "transaction_id", length = 100)
+    @Column(name = "ma_giao_dich", length = 100, insertable = false, updatable = false)
     private String transactionId;
 
-    @Column(name = "gateway_response", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "phan_hoi_cong_tt", columnDefinition = "NVARCHAR(MAX)")
     private String gatewayResponse;
 
-    @Column(name = "paid_at")
+    @Column(name = "ngay_thanh_toan")
     private LocalDateTime paidAt;
 
-    @Column(name = "app_trans_id", length = 100)
+    @Column(name = "ma_giao_dich_ung_dung", length = 100)
     private String appTransId;
 
     // ─── GHN shipping fields ───────────────────────────────────────────────
@@ -122,27 +122,36 @@ public class HoaDon {
     @JoinColumn(name = "id_nhan_vien_xac_nhan")
     private NhanVien nhanVienXacNhan;
 
+    @org.hibernate.annotations.Formula("CASE WHEN trang_thai_thanh_toan = 'REFUNDED' THEN 'COMPLETED' WHEN trang_thai_thanh_toan = 'CHO_HOAN_TIEN' THEN 'PENDING' ELSE NULL END")
     @Enumerated(EnumType.STRING)
-    @Column(name = "refund_status", length = 50)
     private RefundStatus refundStatus;
 
-    @Column(name = "refund_time")
+    @Transient
     private LocalDateTime refundTime;
+
+    public LocalDateTime getRefundTime() {
+        return this.ngayXacNhanHoanHang;
+    }
+
+    public void setRefundTime(LocalDateTime refundTime) {
+        this.refundTime = refundTime;
+        this.ngayXacNhanHoanHang = refundTime;
+    }
 
     @ManyToOne
     @JoinColumn(name = "id_nhan_vien_xac_nhan_hoan_tien")
     private NhanVien refundConfirmedBy;
 
-    @Column(name = "so_tien_giam_voucher", nullable = false)
+    @Column(name = "so_tien_giam_gia", nullable = false)
     private BigDecimal soTienGiamVoucher = BigDecimal.ZERO;
 
-    @Column(name = "ma_voucher_ap_dung", length = 50)
+    @Column(name = "ma_giam_gia_ap_dung", length = 50)
     private String maVoucherApDung;
 
-    @Column(name = "ten_voucher_ap_dung", length = 255)
+    @Column(name = "ten_giam_gia_ap_dung", length = 255)
     private String tenVoucherApDung;
 
-    @Column(name = "mo_ta_voucher_snapshot", length = 500)
+    @Column(name = "mo_ta_giam_gia_snapshot", length = 500)
     private String moTaVoucherSnapshot;
 }
 

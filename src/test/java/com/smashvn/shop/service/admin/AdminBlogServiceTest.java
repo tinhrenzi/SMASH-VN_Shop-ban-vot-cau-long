@@ -35,7 +35,7 @@ public class AdminBlogServiceTest {
         // we execute a native SQL query to test the database CHECK constraint CK_BLOG_STATUS.
         assertThrows(Exception.class, () -> {
             entityManager.createNativeQuery(
-                "INSERT INTO Blog (title, slug, status, deleted, created_at) " +
+                "INSERT INTO Blog (tieu_de, duong_dan, trang_thai, da_xoa, ngay_tao) " +
                 "VALUES ('Test Invalid Status', 'test-invalid-status', 'INVALID', 0, GETDATE())"
             ).executeUpdate();
             entityManager.flush();

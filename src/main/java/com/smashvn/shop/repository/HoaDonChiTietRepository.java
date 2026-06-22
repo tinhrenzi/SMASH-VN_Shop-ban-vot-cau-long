@@ -22,7 +22,7 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
     @Query("SELECT new com.smashvn.shop.dto.product.TopProductDTO(" +
            "hdct.sanPhamChiTiet.sanPham.id, " +
            "hdct.sanPhamChiTiet.sanPham.tenSanPham, " +
-           "COALESCE(MIN(hdct.sanPhamChiTiet.hinhAnhSanPham), ''), " +
+           "COALESCE((SELECT MIN(ha.urlHinhAnh) FROM HinhAnhSanPham ha WHERE ha.sanPhamChiTiet.id = MIN(hdct.sanPhamChiTiet.id)), ''), " +
            "hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc, " +
            "COALESCE(SUM(hdct.soLuong), 0L), " +
            "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)" +

@@ -72,7 +72,7 @@ public class DotGiamGia {
      * {@code true}  → đợt giảm giá còn hiệu lực (nếu cũng trong thời gian ngày bắt đầu–kết thúc).
      * {@code false} → đã bị vô hiệu hóa hoặc xóa logic, không xuất hiện trên trang sản phẩm.
      */
-    @Column(name = "active")
+    @Column(name = "kich_hoat")
     private Boolean active = true;
 
     /**

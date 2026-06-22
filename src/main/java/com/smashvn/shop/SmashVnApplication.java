@@ -12,5 +12,4 @@ public class SmashVnApplication {
     public static void main(String[] args) {
         SpringApplication.run(SmashVnApplication.class, args);
     }
-
 }

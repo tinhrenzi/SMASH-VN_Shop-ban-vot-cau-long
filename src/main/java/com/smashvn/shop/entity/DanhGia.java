@@ -29,10 +29,10 @@ public class DanhGia {
     @Column(name = "so_sao", nullable = false)
     private Double soSao;
 
-    @Column(name = "binh_luan", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "noi_dung", columnDefinition = "NVARCHAR(MAX)")
     private String binhLuan;
 
-    @Column(name = "ngay_danh_gia", nullable = false)
+    @Column(name = "ngay_tao", nullable = false)
     private LocalDateTime ngayDanhGia = LocalDateTime.now();
 
     @Column(name = "ngay_cap_nhat")

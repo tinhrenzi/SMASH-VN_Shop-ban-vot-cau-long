@@ -45,7 +45,7 @@ public class HoaDonChiTiet {
     @Column(name = "ten_san_pham_snapshot", length = 255)
     private String tenSanPhamSnapshot;
 
-    @Column(name = "sku_snapshot", length = 100)
+    @Column(name = "ma_hang_snapshot", length = 100)
     private String skuSnapshot;
 
     @Column(name = "thuoc_tinh_snapshot", length = 500)

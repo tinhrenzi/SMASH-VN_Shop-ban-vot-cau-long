@@ -1,4 +1,4 @@
-package com.smashvn.shop.controller.api;
+package com.smashvn.shop.controller.chatbot;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.smashvn.shop.dto.chatbot.ProductSuggestionDto;
 import com.smashvn.shop.entity.ChatConversation;
 import com.smashvn.shop.entity.ChatFeedback;
 import com.smashvn.shop.entity.ChatMessage;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.repository.ChatMessageRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
-import com.smashvn.shop.service.api.ChatService;
+import com.smashvn.shop.service.chatbot.ChatService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
@@ -33,11 +35,10 @@ public class ChatRestController {
 
     private final ChatService chatService;
     private final KhachHangRepository khachHangRepository;
-    private final com.smashvn.shop.repository.ChatMessageRepository chatMessageRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
 
     @Data
-    @AllArgsConstructor
     @NoArgsConstructor
     public static class MessageResponse {
 
@@ -45,6 +46,23 @@ public class ChatRestController {
         private String senderType; // USER, BOT
         private String noiDung;
         private String thoiGian;
+        private List<ProductSuggestionDto> products;
+
+        public MessageResponse(Long id, String senderType, String noiDung, String thoiGian) {
+            this.id = id;
+            this.senderType = senderType;
+            this.noiDung = noiDung;
+            this.thoiGian = thoiGian;
+            this.products = Collections.emptyList();
+        }
+
+        public MessageResponse(Long id, String senderType, String noiDung, String thoiGian, List<ProductSuggestionDto> products) {
+            this.id = id;
+            this.senderType = senderType;
+            this.noiDung = noiDung;
+            this.thoiGian = thoiGian;
+            this.products = products;
+        }
     }
 
     @Data
@@ -99,12 +117,13 @@ public class ChatRestController {
 
         // Nếu lịch sử cuộc trò chuyện rỗng, tự động chào mừng
         if (responses.isEmpty()) {
-            ChatMessage welcomeMsg = chatService.generateBotResponse(conv.getId(), "chào");
+            ChatService.BotResponseWrapper welcomeReply = chatService.generateBotResponse(conv.getId(), "chào");
             responses.add(new MessageResponse(
-                    welcomeMsg.getId(),
-                    welcomeMsg.getSenderType(),
-                    welcomeMsg.getNoiDung(),
-                    welcomeMsg.getThoiGian().format(TIME_FORMATTER)
+                    welcomeReply.getSavedMessage().getId(),
+                    welcomeReply.getSavedMessage().getSenderType(),
+                    welcomeReply.getSavedMessage().getNoiDung(),
+                    welcomeReply.getSavedMessage().getThoiGian().format(TIME_FORMATTER),
+                    welcomeReply.getProducts()
             ));
         }
 
@@ -130,10 +149,10 @@ public class ChatRestController {
 
         if (idTaiKhoan == null) {
             // Khách vãng lai: Xử lý in-memory trực tiếp bằng AI nhưng không lưu database
-            String botReply = chatService.generateAIResponseForGuest(sanitizedText);
+            ChatService.BotResponseWrapper botReply = chatService.generateAIResponseForGuest(sanitizedText);
             List<MessageResponse> replies = new ArrayList<>();
             replies.add(new MessageResponse(0L, "USER", sanitizedText, ""));
-            replies.add(new MessageResponse(0L, "BOT", botReply, ""));
+            replies.add(new MessageResponse(0L, "BOT", botReply.getMessageText(), "", botReply.getProducts()));
             return ResponseEntity.ok(replies);
         }
 
@@ -147,7 +166,7 @@ public class ChatRestController {
         // 1. Lưu tin nhắn của User
         ChatMessage userMsg = chatService.saveUserMessage(conv.getId(), sanitizedText);
         // 2. Sinh và lưu tin nhắn phản hồi của Bot
-        ChatMessage botMsg = chatService.generateBotResponse(conv.getId(), sanitizedText);
+        ChatService.BotResponseWrapper botReply = chatService.generateBotResponse(conv.getId(), sanitizedText);
 
         List<MessageResponse> replies = new ArrayList<>();
         replies.add(new MessageResponse(
@@ -157,10 +176,11 @@ public class ChatRestController {
                 userMsg.getThoiGian().format(TIME_FORMATTER)
         ));
         replies.add(new MessageResponse(
-                botMsg.getId(),
-                botMsg.getSenderType(),
-                botMsg.getNoiDung(),
-                botMsg.getThoiGian().format(TIME_FORMATTER)
+                botReply.getSavedMessage().getId(),
+                botReply.getSavedMessage().getSenderType(),
+                botReply.getSavedMessage().getNoiDung(),
+                botReply.getSavedMessage().getThoiGian().format(TIME_FORMATTER),
+                botReply.getProducts()
         ));
 
         return ResponseEntity.ok(replies);

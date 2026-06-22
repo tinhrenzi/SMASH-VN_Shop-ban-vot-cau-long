@@ -16,15 +16,15 @@ public class CommentViolationLog {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tai_khoan_id", nullable = false)
+    @JoinColumn(name = "id_tai_khoan", nullable = false)
     private TaiKhoan taiKhoan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "danh_gia_id")
+    @JoinColumn(name = "id_danh_gia")
     private DanhGia danhGia;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "san_pham_id", nullable = false)
+    @JoinColumn(name = "id_san_pham", nullable = false)
     private SanPham sanPham;
 
     @Column(name = "noi_dung_goc", nullable = false, columnDefinition = "NVARCHAR(MAX)")
@@ -46,7 +46,7 @@ public class CommentViolationLog {
     @Builder.Default
     private LocalDateTime ngayViPham = LocalDateTime.now();
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "ngay_tao", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

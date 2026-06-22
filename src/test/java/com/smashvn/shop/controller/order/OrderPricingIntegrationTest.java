@@ -97,6 +97,9 @@ public class OrderPricingIntegrationTest {
     @Autowired
     private PricingService pricingService;
 
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
+
     private MockMvc mockMvc;
     private TaiKhoan testUser;
     private KhachHang testKhachHang;
@@ -111,8 +114,14 @@ public class OrderPricingIntegrationTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
 
-        // Clean tables to ensure clean state
-        // bulk deleteAlls removed to prevent foreign key violations on pre-existing shared DB data
+        if (cacheManager != null) {
+            for (String cacheName : cacheManager.getCacheNames()) {
+                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+                if (cache != null) {
+                    cache.clear();
+                }
+            }
+        }
 
         // Seed test user
         testUser = new TaiKhoan();
@@ -195,12 +204,15 @@ public class OrderPricingIntegrationTest {
         sp = sanPhamRepository.save(sp);
 
         // Ensure carrier
-        testDvvc = donViVanChuyenDAO.findAll().stream().findFirst().orElseGet(() -> {
-            DonViVanChuyen d = new DonViVanChuyen();
-            d.setTenDonVi("Giao Hàng Nhanh");
-            d.setHotline("18006092");
-            return donViVanChuyenDAO.save(d);
-        });
+        testDvvc = donViVanChuyenDAO.findAll().stream()
+                .filter(c -> c.getTenDonVi() != null && !c.getTenDonVi().toUpperCase().contains("GHN") && !c.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH"))
+                .findFirst()
+                .orElseGet(() -> {
+                    DonViVanChuyen d = new DonViVanChuyen();
+                    d.setTenDonVi("Giao Hàng Tiết Kiệm");
+                    d.setHotline("18006092");
+                    return donViVanChuyenDAO.save(d);
+                });
 
         // Ensure payment method
         if (phuongThucThanhToanDAO.findAll().isEmpty()) {

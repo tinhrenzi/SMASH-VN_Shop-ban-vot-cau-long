@@ -37,12 +37,19 @@ public class TaiKhoan {
     @Column(name = "ngay_vi_pham_gan_nhat")
     private java.time.LocalDateTime ngayViPhamGanNhat;
 
-    @Column(name = "la_khach_hang")
+    @Transient
     private Boolean laKhachHang = false;
 
-    @Column(name = "la_nhan_vien")
+    @Transient
     private Boolean laNhanVien = false;
 
-    @Column(name = "la_quan_ly")
+    @Transient
     private Boolean laQuanLy = false;
+
+    @PostLoad
+    public void postLoad() {
+        this.laKhachHang = "KH".equals(this.vaiTro) || "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
+        this.laNhanVien = "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
+        this.laQuanLy = "QL".equals(this.vaiTro);
+    }
 }

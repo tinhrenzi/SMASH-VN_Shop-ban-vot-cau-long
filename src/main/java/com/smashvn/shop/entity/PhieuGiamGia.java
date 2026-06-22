@@ -98,7 +98,7 @@ public class PhieuGiamGia {
      * Cờ bật/tắt thủ công (soft-delete).
      * {@code false} → phiếu bị vô hiệu hóa, khách không thể dùng dù còn hạn và còn số lượng.
      */
-    @Column(name = "active")
+    @Column(name = "kich_hoat")
     private Boolean active = true;
 
     /**

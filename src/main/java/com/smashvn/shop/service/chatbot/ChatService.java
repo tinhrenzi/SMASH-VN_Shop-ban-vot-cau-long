@@ -1,12 +1,21 @@
-package com.smashvn.shop.service.api;
+package com.smashvn.shop.service.chatbot;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.*;
+import java.math.BigDecimal;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+import java.time.Duration;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 
+import com.smashvn.shop.dto.chatbot.ProductSuggestionDto;
 import com.smashvn.shop.entity.ChatConversation;
 import com.smashvn.shop.entity.ChatFeedback;
 import com.smashvn.shop.entity.ChatMessage;
@@ -22,8 +31,13 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +50,11 @@ public class ChatService {
     private final SanPhamRepository sanPhamRepository;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final HoaDonRepository hoaDonRepository;
+
+    @Value("${chatbot.groq.api-key:}")
+    private String apiKey;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public ChatConversation getOrCreateConversation(Integer khachHangId) {
@@ -72,25 +91,6 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatMessage generateBotResponse(Integer conversationId, String userContent) {
-        ChatConversation conv = chatConversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy cuộc hội thoại!"));
-
-        String response = generateBotReplyText(conv.getKhachHang(), userContent);
-
-        ChatMessage botMsg = new ChatMessage();
-        botMsg.setConversation(conv);
-        botMsg.setSenderType("BOT");
-        botMsg.setNoiDung(response);
-        botMsg.setThoiGian(LocalDateTime.now());
-
-        conv.setNgayCapNhat(LocalDateTime.now());
-        chatConversationRepository.save(conv);
-
-        return chatMessageRepository.save(botMsg);
-    }
-
-    @Transactional
     public ChatFeedback saveFeedback(Long messageId, boolean positive, String note) {
         ChatMessage msg = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tin nhắn!"));
@@ -103,9 +103,6 @@ public class ChatService {
         return chatFeedbackRepository.save(feedback);
     }
 
-    public String generateAIResponseForGuest(String userContent) {
-        return generateBotReplyText(null, userContent);
-    }
 
     private boolean isOffTopicOrUnsafe(String query) {
         if (query == null || query.trim().isEmpty()) {
@@ -145,118 +142,167 @@ public class ChatService {
         return false;
     }
 
-    private String executeHermesCLI(String prompt) {
+    private String callGroqAPI(String systemPrompt, String userMessage) {
+        long startTime = System.currentTimeMillis();
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            System.err.println("[CHATBOT WARNING] GROQ_API_KEY environment variable is not configured.");
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("Chatbot request completed in " + duration + "ms (unconfigured api key fallback)");
+            return null;
+        }
+
         try {
-            // Replace double quotes with single quotes to prevent Windows batch/shell argument parsing split issues
-            String safePrompt = prompt.replace("\"", "'");
-            // ProcessBuilder handles quotes and command execution safely
-            ProcessBuilder pb = new ProcessBuilder("hermes", "-z", safePrompt);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
+            Map<String, Object> messageSystem = new HashMap<>();
+            messageSystem.put("role", "system");
+            messageSystem.put("content", systemPrompt);
 
-            // Read with UTF-8 to preserve Vietnamese characters
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8)
-            );
+            Map<String, Object> messageUser = new HashMap<>();
+            messageUser.put("role", "user");
+            messageUser.put("content", userMessage);
 
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+            Map<String, Object> requestMap = new HashMap<>();
+            requestMap.put("model", "llama-3.1-8b-instant");
+            requestMap.put("messages", Arrays.asList(messageSystem, messageUser));
+            requestMap.put("temperature", 0.7);
+
+            String requestBody = objectMapper.writeValueAsString(requestMap);
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, java.nio.charset.StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (response.statusCode() == 200) {
+                System.out.println("Chatbot request completed in " + duration + "ms");
+                JsonNode root = objectMapper.readTree(response.body());
+                return root.path("choices").get(0).path("message").path("content").asText();
+            } else {
+                System.err.println("Chatbot request failed after " + duration + "ms (HTTP status " + response.statusCode() + ")");
+                return null;
             }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                System.err.println("Hermes CLI exited with code: " + exitCode);
-            }
-
-            String result = output.toString().trim();
-            if (result.isEmpty()) {
-                return "🤖 Rất tiếc, tôi đang gặp khó khăn khi kết nối hệ thống. Bạn vui lòng thử lại sau nhé!";
-            }
-            return result;
         } catch (Exception e) {
-            e.printStackTrace();
-            return "🤖 Rất tiếc, hệ thống AI đang bận. Bạn vui lòng liên hệ hotline **0909.123.456** để được hỗ trợ tốt nhất!";
+            long duration = System.currentTimeMillis() - startTime;
+            System.err.println("Chatbot request failed after " + duration + "ms with exception: " + e.getMessage());
+            return null;
         }
     }
 
-    private String generateBotReplyText(KhachHang khachHang, String query) {
+    @Transactional
+    public BotResponseWrapper generateBotResponse(Integer conversationId, String userContent) {
+        ChatConversation conv = chatConversationRepository.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cuộc hội thoại!"));
+
+        BotResponseWrapper serviceWrapper = getBotResponseWrapper(conv.getKhachHang(), userContent);
+
+        ChatMessage botMsg = new ChatMessage();
+        botMsg.setConversation(conv);
+        botMsg.setSenderType("BOT");
+        botMsg.setNoiDung(serviceWrapper.getMessageText());
+        botMsg.setThoiGian(LocalDateTime.now());
+
+        conv.setNgayCapNhat(LocalDateTime.now());
+        chatConversationRepository.save(conv);
+
+        ChatMessage savedMsg = chatMessageRepository.save(botMsg);
+
+        return new BotResponseWrapper(savedMsg.getNoiDung(), serviceWrapper.getProducts(), savedMsg);
+    }
+
+    public BotResponseWrapper generateAIResponseForGuest(String userContent) {
+        BotResponseWrapper wrapper = getBotResponseWrapper(null, userContent);
+        wrapper.setSavedMessage(null);
+        return wrapper;
+    }
+
+    public BotResponseWrapper getBotResponseWrapper(KhachHang khachHang, String query) {
         if (query == null || query.trim().isEmpty()) {
-            return "Xin chào! Tôi có thể hỗ trợ gì cho bạn hôm nay?";
+            return new BotResponseWrapper("Xin chào! Tôi có thể hỗ trợ gì cho bạn hôm nay?", Collections.emptyList());
         }
         if (isOffTopicOrUnsafe(query)) {
-            return "🤖 Tôi chỉ hỗ trợ các câu hỏi liên quan đến sản phẩm, đơn hàng, mã giảm giá và thông tin của SmashVN Shop. Vui lòng đặt câu hỏi liên quan đến cửa hàng để được trợ giúp tốt nhất!";
+            return new BotResponseWrapper("🤖 Tôi chỉ hỗ trợ các câu hỏi liên quan đến sản phẩm, đơn hàng, mã giảm giá và thông tin của SmashVN Shop. Vui lòng đặt câu hỏi liên quan đến cửa hàng để được trợ giúp tốt nhất!", Collections.emptyList());
         }
 
         String clean = query.trim().toLowerCase();
 
-        // Quick greeting check for instant response
+        // 1. Quick greeting check for instant response
         if (clean.equals("chào") || clean.equals("hello") || clean.equals("hi")
                 || clean.equals("xin chào") || clean.equals("chào bạn") || clean.equals("chao")) {
             String name = (khachHang != null && khachHang.getTenKh() != null) ? khachHang.getTenKh() : "bạn";
-            return "🏸 Xin chào **" + name + "**! Tôi là **Trợ lý ảo SmashVN**. Rất vui được hỗ trợ bạn ngày hôm nay! <br><br>"
+            String greetingText = "🏸 Xin chào **" + name + "**! Tôi là **Trợ lý ảo SmashVN**. Rất vui được hỗ trợ bạn ngày hôm nay! <br><br>"
                     + "Bạn có thể hỏi tôi các câu hỏi như:<br>"
                     + "• 🏸 *Xem các sản phẩm nổi bật* (gõ 'sản phẩm' hoặc 'vợt')<br>"
                     + "• 🎟️ *Các mã giảm giá đang hoạt động* (gõ 'khuyến mãi' hoặc 'voucher')<br>"
                     + "• 📦 *Trạng thái đơn hàng của bạn* (gõ 'đơn hàng' hoặc 'tra cứu')<br>"
                     + "• 📞 *Địa chỉ shop và thông tin liên hệ* (gõ 'liên hệ' hoặc 'địa chỉ')";
+            return new BotResponseWrapper(greetingText, Collections.emptyList());
         }
 
-        // Fetch products and perform keyword matching to keep context small and fast
-        List<SanPham> products = sanPhamRepository.findAll();
+        // 2. Search products (Simple Search - max 10 products)
+        List<SanPham> searchedList = sanPhamRepository.searchByKeyword(clean, PageRequest.of(0, 10));
+        List<ProductSuggestionDto> suggestions = new ArrayList<>();
         StringBuilder prodSb = new StringBuilder();
-        int includedCount = 0;
 
-        for (SanPham sp : products) {
-            boolean matchesSearch = false;
-            String tenSP = sp.getTenSanPham().toLowerCase();
-            String brandName = sp.getThuongHieu().getTenThuongHieu().toLowerCase();
-
-            if (clean.contains("yonex") && brandName.contains("yonex")) {
-                matchesSearch = true;
-            } else if (clean.contains("lining") && brandName.contains("lining")) {
-                matchesSearch = true;
-            } else if (clean.contains("victor") && brandName.contains("victor")) {
-                matchesSearch = true;
-            } else if (clean.contains(tenSP)) {
-                matchesSearch = true;
-            }
-
-            // If no specific brand match or matched, include first 8 products as default catalog
-            if (matchesSearch || (!clean.contains("yonex") && !clean.contains("lining") && !clean.contains("victor") && includedCount < 8)) {
-                prodSb.append("- ").append(sp.getTenSanPham())
-                        .append(" (Hãng: ").append(sp.getThuongHieu().getTenThuongHieu()).append(")");
-                if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
-                    prodSb.append(" [Biến thể: ");
-                    for (SanPhamChiTiet ct : sp.getSanPhamChiTiets()) {
-                        prodSb.append(ct.getTrongLuong()).append("/").append(ct.getMauSac())
-                                .append(" (Giá: ").append(String.format("%,.0f đ", ct.getGiaBan()))
-                                .append(", Sức căng: ").append(ct.getMucCang())
-                                .append(", Tồn kho: ").append(ct.getSoLuongTon()).append("), ");
+        if (searchedList != null && !searchedList.isEmpty()) {
+            for (SanPham sp : searchedList) {
+                try {
+                    String imgName = "";
+                    BigDecimal price = BigDecimal.ZERO;
+                    if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
+                        for (SanPhamChiTiet ct : sp.getSanPhamChiTiets()) {
+                            String anh = ct.getHinhAnhSanPham();
+                            if (anh != null && !anh.trim().isEmpty() && !"null".equalsIgnoreCase(anh.trim()) && imgName.isEmpty()) {
+                                imgName = anh.trim();
+                            }
+                            if (ct.getGiaBan() != null) {
+                                if (price.equals(BigDecimal.ZERO) || ct.getGiaBan().compareTo(price) < 0) {
+                                    price = ct.getGiaBan();
+                                }
+                            }
+                        }
                     }
-                    prodSb.append("]");
+                    String imageUrl = imgName.isEmpty() ? "/images/favicon.png" : "/uploads/product/" + imgName;
+                    suggestions.add(new ProductSuggestionDto(sp.getId(), sp.getTenSanPham(), imageUrl, price));
+
+                    String thuongHieu = (sp.getThuongHieu() != null) ? sp.getThuongHieu().getTenThuongHieu() : "";
+                    prodSb.append("- ").append(sp.getTenSanPham())
+                          .append(" - ").append(thuongHieu)
+                          .append(" - ").append(String.format("%,.0f đ", price)).append("\n");
+                } catch (Exception e) {
+                    System.err.println("[CHATBOT] Skipping product due to error: " + e.getMessage());
                 }
-                prodSb.append("\n");
-                includedCount++;
             }
         }
 
-        // Fetch active Vouchers
+        // 3. Check API Key configuration
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            System.err.println("[CHATBOT WARNING] GROQ_API_KEY environment variable is not configured.");
+            if (!suggestions.isEmpty()) {
+                return new BotResponseWrapper("Tôi tìm thấy một số sản phẩm phù hợp với nhu cầu của bạn.", suggestions, null);
+            } else {
+                return new BotResponseWrapper("Xin lỗi, tôi không tìm thấy sản phẩm nào phù hợp. Bạn có thể thử tìm kiếm với từ khóa khác hoặc liên hệ shop qua hotline 📞.", Collections.emptyList(), null);
+            }
+        }
+
+        // 4. Fetch active Vouchers & Order history to inject in System Prompt
         List<PhieuGiamGia> vouchers = phieuGiamGiaRepository.findAll();
         StringBuilder voucherSb = new StringBuilder();
         for (PhieuGiamGia v : vouchers) {
             if (v.getSoLuongConLai() > 0) {
                 String details = v.getDonVi().equals("%") ? v.getGiaTri().intValue() + "%" : String.format("%,.0f VNĐ", v.getGiaTri());
-                voucherSb.append("- Mã: ").append(v.getMaPhieu())
-                        .append(" (Giảm: ").append(details)
-                        .append(", Loại: ").append(v.getLoaiGiamGia())
-                        .append(", Số lượng còn: ").append(v.getSoLuongConLai()).append(" lượt")
-                        .append(")\n");
+                voucherSb.append("- Mã: ").append(v.getMaPhieu()).append(" (Giảm: ").append(details).append(")\n");
             }
         }
 
-        // Fetch Order history
         StringBuilder orderSb = new StringBuilder();
         if (khachHang != null) {
             List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(khachHang.getId());
@@ -267,18 +313,12 @@ public class ChatService {
                     HoaDon hd = orders.get(i);
                     orderSb.append("- Đơn hàng #").append(hd.getId())
                             .append(": Tổng tiền ").append(String.format("%,.0f đ", hd.getTongTien()))
-                            .append(", Trạng thái đơn hàng: ").append(hd.getTrangThaiDonHang())
-                            .append(", Trạng thái thanh toán: ").append(hd.getTrangThaiThanhToan())
-                            .append(", Ngày tạo: ").append(hd.getNgayTao().toString()).append("\n");
+                            .append(", Trạng thái đơn hàng: ").append(hd.getTrangThaiDonHang()).append("\n");
                 }
-            } else {
-                orderSb.append("Khách hàng chưa có đơn hàng nào.\n");
             }
-        } else {
-            orderSb.append("Khách hàng vãng lai chưa đăng nhập.\n");
         }
 
-        // Construct dynamic system prompt for Hermes CLI
+        // 5. Construct System Prompt
         String systemPrompt
                 = "Bạn là SmashVN Assistant - Trợ lý ảo AI thông minh và tận tâm của cửa hàng dụng cụ cầu lông SmashVN.\n"
                 + "Nhiệm vụ duy nhất của bạn là hỗ trợ khách hàng mua sắm, tư vấn vợt, giày, phụ kiện, kiểm tra đơn hàng và mã giảm giá của SmashVN Shop.\n\n"
@@ -294,14 +334,35 @@ public class ChatService {
                 + "- Email: support@smashvn.com\n\n"
                 + "🎟️ MÃ GIẢM GIÁ (VOUCHER) ĐANG HOẠT ĐỘNG:\n"
                 + (voucherSb.length() > 0 ? voucherSb.toString() : "- Không có mã giảm giá nào đang hoạt động.\n") + "\n"
-                + "🏸 DANH SÁCH SẢN PHẨM TRONG KHO (Kèm giá bán, biến thể màu sắc, trọng lượng, sức căng, tồn kho):\n"
+                + "🏸 DANH SÁCH SẢN PHẨM PHÙ HỢP NHẤT TRONG KHO (Kèm giá bán, thương hiệu):\n"
                 + (prodSb.length() > 0 ? prodSb.toString() : "- Cửa hàng đang cập nhật sản phẩm.\n") + "\n"
                 + "📦 THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG CỦA HỌ:\n"
                 + "- Tên khách hàng: " + (khachHang != null ? khachHang.getTenKh() : "Khách vãng lai") + "\n"
-                + orderSb.toString() + "\n"
+                + (orderSb.length() > 0 ? orderSb.toString() : "Khách hàng chưa có đơn hàng nào.\n") + "\n"
                 + "Dưới đây là câu hỏi của khách hàng: \"" + query + "\"\n\n"
-                + "Hãy trả lời khách hàng thật ngắn gọn, chuyên nghiệp, thân thiện bằng tiếng Việt. Sử dụng Markdown để trình bày đẹp mắt. Chỉ trả về câu trả lời, không kèm theo bất kỳ văn bản giải thích hay thẻ định dạng hệ thống nào khác.";
+                + "Hãy trả lời khách hàng thật ngắn gọn, chuyên nghiệp, thân thiện bằng tiếng Việt. Sử dụng Markdown để trình bày đẹp mắt. Chỉ trả về câu trả lời bằng văn bản thuần túy, tuyệt đối KHÔNG trả về mã HTML, JSON, ID sản phẩm hay link liên kết nào khác.";
 
-        return executeHermesCLI(systemPrompt);
+        // 6. Call Groq API
+        String replyText = callGroqAPI(systemPrompt, query);
+        if (replyText == null) {
+            return new BotResponseWrapper("Xin lỗi, hiện tại chatbot đang bận. Vui lòng thử lại sau.", Collections.emptyList(), null);
+        }
+
+        return new BotResponseWrapper(replyText, suggestions, null);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BotResponseWrapper {
+        private String messageText;
+        private List<ProductSuggestionDto> products;
+        private ChatMessage savedMessage;
+
+        public BotResponseWrapper(String messageText, List<ProductSuggestionDto> products) {
+            this.messageText = messageText;
+            this.products = products;
+            this.savedMessage = null;
+        }
     }
 }

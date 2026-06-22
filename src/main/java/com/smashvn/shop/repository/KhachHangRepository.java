@@ -37,6 +37,6 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
 
     java.util.Optional<KhachHang> findByTaiKhoan_Email(String email);
 
-    @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.laKhachHang = true")
+    @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.vaiTro = 'KH'")
     List<KhachHang> findByLaKhachHangTrue();
 }
