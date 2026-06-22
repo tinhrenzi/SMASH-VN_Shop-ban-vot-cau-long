@@ -2,6 +2,9 @@ package com.smashvn.shop.entity;
 
 import java.math.BigDecimal;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,6 +37,34 @@ public class SanPhamChiTiet {
     @Column(name = "so_luong_ton", nullable = false)
     private Integer soLuongTon = 0;
 
-    @Column(name = "hinh_anh_san_pham", length = 200)
+    @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<HinhAnhSanPham> hinhAnhSanPhams = new ArrayList<>();
+
+    @Transient
     private String hinhAnhSanPham;
+
+    public String getHinhAnhSanPham() {
+        if (hinhAnhSanPhams != null && !hinhAnhSanPhams.isEmpty()) {
+            return hinhAnhSanPhams.get(0).getUrlHinhAnh();
+        }
+        return hinhAnhSanPham;
+    }
+
+    public void setHinhAnhSanPham(String hinhAnhSanPham) {
+        this.hinhAnhSanPham = hinhAnhSanPham;
+        if (hinhAnhSanPham != null && !hinhAnhSanPham.isEmpty()) {
+            if (this.hinhAnhSanPhams == null) {
+                this.hinhAnhSanPhams = new ArrayList<>();
+            } else {
+                this.hinhAnhSanPhams.clear();
+            }
+            HinhAnhSanPham hasp = new HinhAnhSanPham();
+            hasp.setSanPhamChiTiet(this);
+            hasp.setUrlHinhAnh(hinhAnhSanPham);
+            hasp.setMauSac(this.mauSac);
+            this.hinhAnhSanPhams.add(hasp);
+        }
+    }
 }
