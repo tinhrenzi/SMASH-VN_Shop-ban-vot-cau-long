@@ -52,6 +52,15 @@ public class AdminBienTheService {
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
 
+        // Kiểm tra trùng lặp tổ hợp duy nhất (id_san_pham, mau_sac, trong_luong, muc_cang)
+        boolean exists = sanPhamChiTietRepository.findBySanPham_Id(idSanPham).stream()
+                .anyMatch(bt -> bt.getMauSac().equalsIgnoreCase(cleanMauSac)
+                        && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
+                        && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
+        if (exists) {
+            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và mức căng này đã tồn tại!");
+        }
+
         // Save image securely (required on creation)
         String secureFileName = saveImageSecurely(fileAnh, true);
 
@@ -93,6 +102,16 @@ public class AdminBienTheService {
         String cleanMucCang = mucCang != null ? mucCang.trim() : null;
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
+
+        // Kiểm tra trùng lặp tổ hợp duy nhất (trừ chính biến thể đang sửa)
+        boolean exists = sanPhamChiTietRepository.findBySanPham_Id(spct.getSanPham().getId()).stream()
+                .anyMatch(bt -> !bt.getId().equals(idBienThe)
+                        && bt.getMauSac().equalsIgnoreCase(cleanMauSac)
+                        && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
+                        && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
+        if (exists) {
+            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và mức căng này đã tồn tại!");
+        }
 
         // Save image securely (optional on update)
         String secureFileName = saveImageSecurely(fileAnh, false);

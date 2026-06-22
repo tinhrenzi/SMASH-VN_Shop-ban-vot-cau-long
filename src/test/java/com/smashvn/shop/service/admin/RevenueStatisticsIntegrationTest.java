@@ -159,14 +159,20 @@ public class RevenueStatisticsIntegrationTest {
         BigDecimal initialRefundedRevenue = (BigDecimal) initialStats.get("refundedRevenue");
 
         // 1. Projected Revenue Inclusions
-        // PAID + cho_xac_nhan => Projected Revenue
+        // PAID + cho_xac_nhan => Projected Revenue (Only for COD. Non-COD is excluded)
         createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, BigDecimal.valueOf(100000));
-        // PAID + da_xac_nhan => Projected Revenue
+        // PAID + da_xac_nhan => Projected Revenue (Only for COD. Non-COD is excluded)
         createTestOrder("da_xac_nhan", "SEPAY", "paid", ptttOnline, BigDecimal.valueOf(110000));
-        // PAID + dang_lay_hang => Projected Revenue
+        // PAID + dang_lay_hang => Projected Revenue (Only for COD. Non-COD is excluded)
         createTestOrder("dang_lay_hang", "SEPAY", "paid", ptttOnline, BigDecimal.valueOf(120000));
         // PAID + dang_giao => Projected Revenue
         createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, BigDecimal.valueOf(130000));
+
+        // COD + active states => Projected Revenue (COD orders are counted for all active states)
+        createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, BigDecimal.valueOf(50000));
+        createTestOrder("da_xac_nhan", "COD", "pending", ptttCOD, BigDecimal.valueOf(60000));
+        createTestOrder("dang_lay_hang", "COD", "pending", ptttCOD, BigDecimal.valueOf(70000));
+        createTestOrder("dang_giao", "COD", "pending", ptttCOD, BigDecimal.valueOf(80000));
 
         // 2. Actual Revenue Inclusions
         // DA_GIAO => Actual Revenue
@@ -200,8 +206,8 @@ public class RevenueStatisticsIntegrationTest {
         BigDecimal diffExpected = expectedRevenue.subtract(initialExpectedRevenue != null ? initialExpectedRevenue : BigDecimal.ZERO);
         BigDecimal diffRefunded = refundedRevenue.subtract(initialRefundedRevenue != null ? initialRefundedRevenue : BigDecimal.ZERO);
 
-        // Projected Revenue should sum the dang_giao PAID undelivered order (130k)
-        assertEquals(0, BigDecimal.valueOf(130000).compareTo(diffExpected), "Projected revenue does not match expected");
+        // Projected Revenue should sum the dang_giao PAID undelivered order (130k) + active COD orders (50k + 60k + 70k + 80k = 260k) = 390k
+        assertEquals(0, BigDecimal.valueOf(390000).compareTo(diffExpected), "Projected revenue does not match expected");
 
         // Actual Revenue should sum delivered orders (200k + 250k = 450k) minus refunded delivered order (400k) = 50k
         assertEquals(0, BigDecimal.valueOf(50000).compareTo(diffActual), "Actual revenue does not match expected");

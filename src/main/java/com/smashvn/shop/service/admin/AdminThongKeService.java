@@ -63,7 +63,8 @@ public class AdminThongKeService {
                 String trangThaiDonHang,
                 String paymentStatus,
                 String trangThaiThanhToan,
-                RefundStatus refundStatus) {
+                RefundStatus refundStatus,
+                boolean isCod) {
 
             String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
             String pStatus = paymentStatus != null ? paymentStatus.toLowerCase() : "";
@@ -78,12 +79,22 @@ public class AdminThongKeService {
                 return RevenueClassification.ACTUAL_REVENUE;
             }
 
-            // 2. Projected Revenue: only orders currently in shipping/delivery status (dang_giao)
-            boolean isProjectedStatus = "dang_giao".equals(status);
+            // 2. Projected Revenue:
             boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
+            if (isRefunded) {
+                return RevenueClassification.EXCLUDED;
+            }
 
-            if (isProjectedStatus && !isRefunded) {
-                return RevenueClassification.PROJECTED_REVENUE;
+            if (isCod) {
+                // Đơn hàng COD thì sẽ được tính vào doanh thu tạm thời khi ở các trạng thái hoạt động (chưa hủy, chưa hoàn thành)
+                if ("cho_xac_nhan".equals(status) || "da_xac_nhan".equals(status) || "dang_lay_hang".equals(status) || "dang_giao".equals(status)) {
+                    return RevenueClassification.PROJECTED_REVENUE;
+                }
+            } else {
+                // Đơn hàng online thanh toán trước, chỉ tính doanh thu tạm thời khi đang giao (dang_giao)
+                if ("dang_giao".equals(status)) {
+                    return RevenueClassification.PROJECTED_REVENUE;
+                }
             }
 
             return RevenueClassification.EXCLUDED;
@@ -307,7 +318,10 @@ public class AdminThongKeService {
             }
 
             // Centralized classification
-            RevenueClassification classification = OrderClassifier.classify(trangThaiDonHang, paymentStatus, trangThaiThanhToan, refundStatus);
+            String m1 = paymentMethod != null ? paymentMethod.toUpperCase().trim() : "";
+            String m2 = (String) row[5] != null ? ((String) row[5]).toUpperCase().trim() : "";
+            boolean isCod = m1.contains("COD") || m2.contains("COD");
+            RevenueClassification classification = OrderClassifier.classify(trangThaiDonHang, paymentStatus, trangThaiThanhToan, refundStatus, isCod);
 
             BigDecimal revenueContribution = BigDecimal.ZERO;
             if (classification == RevenueClassification.ACTUAL_REVENUE) {
