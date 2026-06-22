@@ -1314,6 +1314,26 @@
                     diaChi = parts.filter(Boolean).join(', ');
                 }
 
+                // Validate email field if guest user
+                if ($('#email').length > 0) {
+                    const emailVal = $('#email').val().trim();
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailVal) {
+                        $('#email-error').text('Email không được để trống.').show();
+                        $('#email').css('border-color', '#ef4444');
+                        showToast('Vui lòng nhập email liên hệ.', 'error');
+                        return;
+                    }
+                    if (!emailRegex.test(emailVal)) {
+                        $('#email-error').text('Email không đúng định dạng.').show();
+                        $('#email').css('border-color', '#ef4444');
+                        showToast('Email không đúng định dạng.', 'error');
+                        return;
+                    }
+                    $('#email-error').hide();
+                    $('#email').css('border-color', '');
+                }
+
                 // Call submitCheckout
                 const submitData = {
                     hoTenNhan: hoTen,
@@ -1327,6 +1347,10 @@
                     ghnProvinceId: $('#ghnProvinceId').val() || '',
                     voucherCode: appliedVoucherCode || ''
                 };
+
+                if ($('#email').length > 0) {
+                    submitData.email = $('#email').val().trim();
+                }
 
                 if (addressType === 'saved') {
                     submitData.idDiaChiLuu = parseInt($('#selectDiaChiLuu').val());

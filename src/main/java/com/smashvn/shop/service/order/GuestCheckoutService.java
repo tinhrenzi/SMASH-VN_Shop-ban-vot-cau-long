@@ -107,7 +107,7 @@ public class GuestCheckoutService {
         TokenKhoiPhuc tkp = new TokenKhoiPhuc();
         tkp.setTaiKhoan(tk);
         tkp.setMaXacNhan(token);
-        tkp.setLoaiXacNhan("GUEST_ACTIVATE");
+        tkp.setLoaiXacNhan("EMAIL");
         tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30)); // 30 days validation limit
         tkp.setDaSuDung(false);
         tokenRepository.save(tkp);
@@ -170,7 +170,7 @@ public class GuestCheckoutService {
         if (tkp.getThoiGianHetHan().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Đường link này đã hết hạn!");
         }
-        if (!"GUEST_ACTIVATE".equals(tkp.getLoaiXacNhan())) {
+        if (!"EMAIL".equals(tkp.getLoaiXacNhan())) {
             throw new RuntimeException("Loại xác nhận không hợp lệ!");
         }
 
