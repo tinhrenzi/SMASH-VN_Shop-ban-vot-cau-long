@@ -230,7 +230,8 @@ public class GuestCartService {
         }
 
         TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
-                .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1"));
+                .orElseGet(() -> trangThaiGioHangRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy trạng thái giỏ hàng")));
 
         for (GuestCartItem item : guestCart) {
             // Khóa dòng sản phẩm bằng Pessimistic Write Lock để chống race condition

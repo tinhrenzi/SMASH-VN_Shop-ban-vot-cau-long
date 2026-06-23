@@ -413,7 +413,7 @@ public class AdminPosService {
     public void confirmPaymentPos(Integer hoaDonId, Integer idNhanVienTaiKhoan) {
         HoaDon hd = hoaDonRepository.findById(hoaDonId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
-        
+
         if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
             throw new RuntimeException("Hóa đơn này không ở trạng thái chờ thanh toán!");
         }
@@ -429,8 +429,8 @@ public class AdminPosService {
         hd.setThoiGianXacNhan(LocalDateTime.now());
         hoaDonRepository.save(hd);
 
-        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE", 
-                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1", 
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1",
                 "Nhân viên xác nhận thanh toán chuyển khoản thủ công cho đơn POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
     }
 
@@ -469,8 +469,8 @@ public class AdminPosService {
         hd.setPaymentStatus(PaymentStatus.FAILED.getValue());
         hoaDonRepository.save(hd);
 
-        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE", 
-                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_HUY.getValue(), "127.0.0.1", 
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_HUY.getValue(), "127.0.0.1",
                 "Nhân viên hủy đơn hàng chờ thanh toán POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
     }
 }

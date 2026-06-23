@@ -91,7 +91,7 @@ public class ChatRestController {
             MessageResponse welcome = new MessageResponse(
                     0L,
                     "BOT",
-                    "🏸 Xin chào khách quý! Tôi là **Trợ lý ảo SmashVN**.<br>Bạn vui lòng **đăng nhập** tài khoản để tôi có thể cá nhân hóa, hiển thị mã giảm giá và tra cứu đơn hàng riêng của bạn nhé! <br><br>"
+                    "🏸 Xin chào khách quý! Tôi là **Trợ lý ảo**.<br>Bạn vui lòng **đăng nhập** tài khoản để tôi có thể cá nhân hóa, hiển thị mã giảm giá và tra cứu đơn hàng riêng của bạn nhé! <br><br>"
                     + "Hiện tại tôi có thể hỗ trợ nhanh cho bạn:<br>"
                     + "• 🏸 *Xem các sản phẩm nổi bật* (gõ 'sản phẩm' hoặc 'vợt')<br>"
                     + "• 📞 *Thông tin cửa hàng & Hotline* (gõ 'liên hệ' hoặc 'địa chỉ')",
