@@ -67,7 +67,7 @@ public class OrderViewService {
      * hàng thật nào, trả về danh sách đơn hàng giả lập (Mock Orders).
      */
     public List<Map<String, Object>> layDanhSachOrders(Integer idKhachHang) {
-        List<HoaDon> realOrders = hoaDonRepository.findByKhachHang_Id(idKhachHang);
+        List<HoaDon> realOrders = hoaDonRepository.findByKhachHang_IdOrderByIdDesc(idKhachHang);
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         if (realOrders != null && !realOrders.isEmpty()) {

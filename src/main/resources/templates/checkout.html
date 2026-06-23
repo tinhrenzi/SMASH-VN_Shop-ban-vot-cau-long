@@ -1492,15 +1492,15 @@
                 // Show modal
                 $('#zp-modal-overlay').addClass('active');
 
-                // Start polling every 5 seconds
+                // Start polling every 2 seconds
                 pollingInterval = setInterval(function() {
                     queryPaymentStatus(maDonHang);
-                }, 5000);
+                }, 2000);
             }
 
             function queryPaymentStatus(maDonHang) {
                 attempts++;
-                if (attempts > 60) { // 60 attempts * 5 seconds = 300 seconds (5 minutes)
+                if (attempts > 150) { // 150 attempts * 2 seconds = 300 seconds (5 minutes)
                     clearInterval(pollingInterval);
                     $('#zp-spinner-loading').hide();
                     $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
@@ -1518,10 +1518,10 @@
                             $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
                                 .html('<i class="fas fa-check-circle"></i> Thanh toán thành công! Đang chuyển hướng...');
                             
-                            // Redirect after 2 seconds
+                            // Redirect after 1 second
                             setTimeout(function() {
                                 window.location.href = '/user/my-order?payment=success';
-                            }, 2000);
+                            }, 1000);
                         }
                     },
                     error: function() {

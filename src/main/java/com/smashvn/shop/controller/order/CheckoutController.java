@@ -135,11 +135,17 @@ public class CheckoutController {
         }
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll().stream()
-                .filter(dv -> dv.getTenDonVi() != null 
-                        && !dv.getTenDonVi().toLowerCase().contains("quầy")
-                        && !dv.getTenDonVi().toLowerCase().contains("quay")
-                        && !dv.getTenDonVi().toLowerCase().contains("chỗ")
-                        && !dv.getTenDonVi().toLowerCase().contains("cho"))
+                .filter(dv -> {
+                    if (dv.getTenDonVi() == null) return false;
+                    String tenLower = dv.getTenDonVi().toLowerCase();
+                    return !tenLower.contains("quầy")
+                            && !tenLower.contains("quay")
+                            && !tenLower.contains("chỗ")
+                            && !tenLower.contains("cho")
+                            && !tenLower.contains("mua")
+                            && !tenLower.contains("tại")
+                            && !tenLower.contains("tai");
+                })
                 .collect(java.util.stream.Collectors.toList());
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
@@ -290,7 +296,7 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
         }
         String tenDv = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toLowerCase() : "";
-        if (tenDv.contains("quầy") || tenDv.contains("quay") || tenDv.contains("chỗ") || tenDv.contains("cho")) {
+        if (tenDv.contains("quầy") || tenDv.contains("quay") || tenDv.contains("chỗ") || tenDv.contains("cho") || tenDv.contains("mua") || tenDv.contains("tại") || tenDv.contains("tai")) {
             response.put("trangThai", "loi");
             response.put("message", "Phương thức vận chuyển này không áp dụng cho mua hàng online.");
             return ResponseEntity.ok(response);

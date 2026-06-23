@@ -335,14 +335,14 @@
                             $('#statusOverlay').css('display', 'flex');
                             setTimeout(function() {
                                 window.location.href = '/user/my-order?payment=success';
-                            }, 2000);
+                            }, 1000);
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('Error polling payment status:', error);
                     }
                 });
-            }, 3000);
+            }, 2000);
         }
     });
 </script>

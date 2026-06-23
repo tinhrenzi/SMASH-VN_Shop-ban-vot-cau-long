@@ -13,6 +13,8 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
     List<HoaDon> findByKhachHang_Id(Integer idKhachHang);
 
+    List<HoaDon> findByKhachHang_IdOrderByIdDesc(Integer idKhachHang);
+
     java.util.Optional<HoaDon> findByAppTransId(String appTransId);
 
     java.util.Optional<HoaDon> findByMaDonHang(String maDonHang);
