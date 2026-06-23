@@ -78,6 +78,25 @@ public class DatabaseSchemaRepairConfig {
                         + "WHERE la_quan_ly IS NULL"
                 );
 
+                // Alter mat_khau column to nullable
+                stmt.execute("ALTER TABLE TaiKhoan ALTER COLUMN mat_khau NVARCHAR(255) NULL;");
+
+                // Add trang_thai_tai_khoan column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('TaiKhoan') AND name = 'trang_thai_tai_khoan') "
+                        + "BEGIN "
+                        + "    ALTER TABLE TaiKhoan ADD trang_thai_tai_khoan VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'; "
+                        + "END"
+                );
+
+                // Add so_lan_mua_thanh_cong column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('TaiKhoan') AND name = 'so_lan_mua_thanh_cong') "
+                        + "BEGIN "
+                        + "    ALTER TABLE TaiKhoan ADD so_lan_mua_thanh_cong INT NOT NULL DEFAULT 0; "
+                        + "END"
+                );
+
                 log.info("[STARTUP_DB_REPAIR] TaiKhoan table schema checks completed.");
 
                 log.info("[STARTUP_DB_REPAIR] Checking HoaDon table schema...");

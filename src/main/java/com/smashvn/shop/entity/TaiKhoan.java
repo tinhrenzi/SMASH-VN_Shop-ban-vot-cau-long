@@ -16,8 +16,15 @@ public class TaiKhoan {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "mat_khau", nullable = false)
+    @Column(name = "mat_khau", nullable = true)
     private String matKhau;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai_tai_khoan", nullable = false, length = 20)
+    private AccountStatus trangThaiTaiKhoan = AccountStatus.ACTIVE;
+
+    @Column(name = "so_lan_mua_thanh_cong", nullable = false)
+    private Integer soLanMuaThanhCong = 0;
 
     @Column(name = "vai_tro", nullable = false, length = 10)
     private String vaiTro;

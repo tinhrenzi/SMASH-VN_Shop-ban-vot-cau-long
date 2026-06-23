@@ -51,6 +51,24 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.service.product.PricingService pricingService;
 
+    @Mock
+    private com.smashvn.shop.service.order.GuestCartService guestCartService;
+
+    @Mock
+    private com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+
+    @Mock
+    private com.smashvn.shop.service.user.UserDangNhapService userDangNhapService;
+
+    @Mock
+    private com.smashvn.shop.repository.SanPhamChiTietRepository sanPhamChiTietRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.TaiKhoanRepository taiKhoanRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.TokenKhoiPhucRepository tokenKhoiPhucRepository;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -61,7 +79,21 @@ public class CheckoutControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        checkoutController = new CheckoutController(gioHangService, donViVanChuyenDAO, userAddressService, sepayConfig, khachHangRepository, phieuGiamGiaRepository, pricingService);
+        checkoutController = new CheckoutController(
+                gioHangService, 
+                donViVanChuyenDAO, 
+                userAddressService, 
+                sepayConfig, 
+                khachHangRepository, 
+                phieuGiamGiaRepository, 
+                pricingService,
+                guestCartService,
+                guestCheckoutService,
+                userDangNhapService,
+                sanPhamChiTietRepository,
+                taiKhoanRepository,
+                tokenKhoiPhucRepository
+        );
 
         when(pricingService.calculateCurrentSellingPrice(any())).thenAnswer(invocation -> {
             SanPhamChiTiet arg = invocation.getArgument(0);

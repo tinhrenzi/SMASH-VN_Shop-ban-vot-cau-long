@@ -57,7 +57,7 @@ public class UserDangNhapControllerTest {
     @Test
     void testHienThiFormFormDangNhap() {
         Model model = new ConcurrentModel();
-        String view = userDangNhapController.hienThiFormFormDangNhap("Lỗi test", model);
+        String view = userDangNhapController.hienThiFormFormDangNhap("Lỗi test", null, model);
         assertEquals("signin", view);
         assertEquals("Lỗi test", model.getAttribute("loi"));
     }
