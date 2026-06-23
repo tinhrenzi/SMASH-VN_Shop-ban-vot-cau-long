@@ -98,9 +98,12 @@ public class GioHangService {
         }
 
         GioHangChiTiet chiTiet = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(gioHang.getId(), idSanPhamChiTiet);
-        // Sử dụng findByIdWithLock để khóa dòng sản phẩm chi tiết bằng Pessimistic Write (Chống Overselling)
         SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
+        if (spct.getSanPham() == null || "ngung_ban".equals(spct.getSanPham().getTrangThai())) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Sản phẩm này đã ngừng bán!");
+        }
 
         // --- BÀI TOÁN VALIDATE TỒN KHO THỰC TẾ ---
         // 1. Xem trong giỏ của khách đã có bao nhiêu chiếc này rồi?

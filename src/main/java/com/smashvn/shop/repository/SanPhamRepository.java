@@ -14,15 +14,19 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     boolean existsByThuongHieuId(Integer idThuongHieu);
     java.util.List<SanPham> findByDanhMucId(Integer idDanhMuc);
     java.util.List<SanPham> findByThuongHieuId(Integer idThuongHieu);
-    long countByDanhMucId(Integer categoryId);
-    long countByThuongHieuId(Integer brandId);
+    @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.danhMuc.id = :categoryId AND (sp.trangThai IS NULL OR sp.trangThai = 'dang_ban')")
+    long countByDanhMucId(@Param("categoryId") Integer categoryId);
+
+    @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.thuongHieu.id = :brandId AND (sp.trangThai IS NULL OR sp.trangThai = 'dang_ban')")
+    long countByThuongHieuId(@Param("brandId") Integer brandId);
 
     /**
      * Tìm kiếm sản phẩm theo nhiều tiêu chí kết hợp, hỗ trợ phân trang.
      * Lọc theo từ khóa, danh mục, thương hiệu, khoảng giá và trọng lượng (size).
      */
     @Query("SELECT sp FROM SanPham sp " +
-           "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+           "WHERE (sp.trangThai IS NULL OR sp.trangThai = 'dang_ban') " +
+           "AND (:keyword IS NULL OR :keyword = '' OR " +
            "       LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
@@ -57,7 +61,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "ORDER BY sp.id DESC")
     java.util.List<SanPham> searchAutocomplete(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN SanPhamChiTiet spct ON spct.sanPham = sp WHERE spct.trongLuong = :trongLuong")
+    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN SanPhamChiTiet spct ON spct.sanPham = sp WHERE spct.trongLuong = :trongLuong AND (sp.trangThai IS NULL OR sp.trangThai = 'dang_ban')")
     long countByTrongLuong(@Param("trongLuong") String trongLuong);
 
 
@@ -107,4 +111,25 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     java.util.List<SanPham> searchByKeyword(@Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.trangThai IS NULL OR sp.trangThai = 'dang_ban'")
+    long countActiveProducts();
+
+    @Query("SELECT sp FROM SanPham sp WHERE sp.trangThai = 'ngung_ban' AND (" +
+           "LOWER(sp.tenSanPham) = LOWER(:query) OR " +
+           "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           ":query LIKE LOWER(CONCAT('%', sp.tenSanPham, '%')))")
+    java.util.List<SanPham> findDiscontinuedProductByQuery(@Param("query") String query);
+
+    @Query("SELECT DISTINCT sp FROM SanPham sp JOIN sp.sanPhamChiTiets spct WHERE " +
+           "(sp.trangThai = 'dang_ban' OR sp.trangThai IS NULL) AND " +
+           "(:keyword IS NULL OR :keyword = '' OR LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+           "(:minPrice IS NULL OR spct.giaBan >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR spct.giaBan <= :maxPrice)")
+    java.util.List<SanPham> searchChatbotProducts(
+        @Param("keyword") String keyword,
+        @Param("minPrice") java.math.BigDecimal minPrice,
+        @Param("maxPrice") java.math.BigDecimal maxPrice,
+        org.springframework.data.domain.Pageable pageable
+    );
 }

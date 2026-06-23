@@ -46,7 +46,11 @@ public class SanPhamController {
     public String hienThiChiTietSanPham(@PathVariable("id") Integer id, Model model, HttpSession session) {
         
         SanPham sanPham = sanPhamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm này!"));
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
+        
+        if ("ngung_ban".equals(sanPham.getTrangThai())) {
+            return "redirect:/shop?loi=" + java.net.URLEncoder.encode("Sản phẩm này đã ngừng kinh doanh tại cửa hàng!", java.nio.charset.StandardCharsets.UTF_8);
+        }
         
         List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
@@ -174,7 +178,11 @@ public class SanPhamController {
     @GetMapping("/modal/quick-look/{id}")
     public String hienThiQuickLookModal(@PathVariable("id") Integer id, Model model, HttpSession session) {
         SanPham sanPham = sanPhamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
+                
+        if ("ngung_ban".equals(sanPham.getTrangThai())) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Sản phẩm này đã ngừng kinh doanh!");
+        }
                 
         List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();

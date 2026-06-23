@@ -183,7 +183,7 @@ public class HomeController {
             brandCounts.put(th.getId(), sanPhamRepository.countByThuongHieuId(th.getId()));
         }
 
-        long totalProductsCount = sanPhamRepository.count();
+        long totalProductsCount = sanPhamRepository.countActiveProducts();
 
         // Lấy danh sách 8 sản phẩm mới nhất để gắn tag "MỚI"
         List<SanPham> newProductsList = sanPhamRepository.findNewProducts(PageRequest.of(0, 8));
