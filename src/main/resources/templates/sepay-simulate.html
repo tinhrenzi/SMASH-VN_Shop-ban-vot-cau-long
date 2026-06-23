@@ -274,6 +274,9 @@
                     <button class="btn btn-simulate-cancel w-100" id="btnSimulateCancel">
                         <i class="fas fa-arrow-left me-2"></i>Quay lại đơn hàng
                     </button>
+                    <button class="btn btn-simulate-success w-100" id="btnSimulateSuccess">
+                        <i class="fas fa-check-circle me-2"></i>Mô phỏng thanh toán thành công
+                    </button>
                 </div>
             </div>
         </div>
@@ -312,6 +315,32 @@
                     xhr.setRequestHeader(header, token);
                 }
             }
+        });
+
+        // Trigger Success Simulation
+        $('#btnSimulateSuccess').on('click', function() {
+            const btn = $(this);
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...');
+            $.ajax({
+                url: '/payment/sepay/simulate/success',
+                type: 'POST',
+                data: {
+                    maDonHang: orderCode,
+                    amount: amountVal
+                },
+                success: function(response) {
+                    if (response.success) {
+                        console.log('Simulation success triggered successfully:', response);
+                    } else {
+                        alert('Mô phỏng thất bại: ' + response.message);
+                        btn.prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>Mô phỏng thanh toán thành công');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Lỗi kết nối: ' + error);
+                    btn.prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>Mô phỏng thanh toán thành công');
+                }
+            });
         });
 
         // Trigger Cancel/Failure Simulation

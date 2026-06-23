@@ -1359,12 +1359,20 @@
                 // Loader
                 $('.preloader').addClass('is-active');
 
+                console.log('[Diagnostics] checkout submit start', submitData);
                 $.ajax({
                     url: '/checkout/submit',
                     type: 'POST',
                     data: submitData,
                     success: function(response) {
+                        console.log('[Diagnostics] API response received:', response);
                         $('.preloader').removeClass('is-active');
+
+                        if (response.status === 'error' || response.errorCode === 'PAYMENT_INIT_FAILED') {
+                            console.error('[Diagnostics] Payment initialization failed:', response);
+                            showToast('Đặt hàng thất bại: ' + response.message, 'error');
+                            return;
+                        }
 
                         if (response.trangThai === 'ok') {
                             const orderId = response.orderId;
@@ -1372,7 +1380,10 @@
                                 ? '/user/my-order'
                                 : '/payment/sepay/simulate?maDonHang=' + encodeURIComponent(response.maDonHang);
 
-                            if (response.isGuest === true) {
+                            console.log('[Diagnostics] Redirect target URL:', redirectUrl);
+                            console.log('[Diagnostics] Payment initialization result: SUCCESS');
+
+                            if (response.isGuest === true && paymentMethod === 'COD') {
                                 // Show guest success modal for optional password creation
                                 if (response.soLanMuaThanhCong >= 2) {
                                     $('#guest-success-warning-text').show();

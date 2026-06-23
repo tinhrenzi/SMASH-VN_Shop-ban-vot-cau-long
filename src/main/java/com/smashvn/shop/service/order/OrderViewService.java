@@ -74,9 +74,9 @@ public class OrderViewService {
             // CÓ ĐƠN HÀNG THẬT
             for (HoaDon hd : realOrders) {
                 // Skip unpaid/pending orders (cho_thanh_toan) to prevent duplicate/misleading display in Order History
-                if ("cho_thanh_toan".equals(hd.getTrangThaiDonHang())) {
-                    continue;
-                }
+                // if ("cho_thanh_toan".equals(hd.getTrangThaiDonHang())) {
+                //     continue;
+                // }
                 Map<String, Object> orderMap = new HashMap<>();
                 orderMap.put("id", hd.getId());
                 orderMap.put("date", hd.getNgayTao().format(formatter));
@@ -86,6 +86,8 @@ public class OrderViewService {
                 orderMap.put("status", statusText);
                 orderMap.put("rawStatus", hd.getTrangThaiDonHang());
                 orderMap.put("total", hd.getTongTien());
+                orderMap.put("paymentMethod", hd.getPaymentMethod());
+                orderMap.put("maDonHang", hd.getMaDonHang());
 
                 List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
                 List<Map<String, Object>> itemMaps = new ArrayList<>();
@@ -154,9 +156,8 @@ public class OrderViewService {
 
                 // Lấy thống kê thật (dùng giá trị DB: da_huy, da_giao)
                 List<HoaDon> allUserOrders = hoaDonRepository.findByKhachHang_Id(idKhachHang);
-                // Loại trừ đơn chờ thanh toán (cho_thanh_toan) và đơn đã hủy khi tính tổng đơn đã đặt
                 long cancelCount = allUserOrders.stream().filter(o -> OrderStatus.DA_HUY.getValue().equals(o.getTrangThaiDonHang())).count();
-                long orderCount = allUserOrders.stream().filter(o -> !"cho_thanh_toan".equals(o.getTrangThaiDonHang())).count() - cancelCount;
+                long orderCount = allUserOrders.size() - cancelCount;
 
                 modelMap.put("orderCount", orderCount);
                 modelMap.put("cancelCount", cancelCount);
@@ -200,6 +201,8 @@ public class OrderViewService {
         map.put("trangThaiDonHang", hd.getTrangThaiDonHang());
         map.put("status", getFrontendStatusLabel(hd.getTrangThaiDonHang()));
         map.put("ghiChu", hd.getGhiChu());
+        map.put("paymentMethod", hd.getPaymentMethod());
+        map.put("maDonHang", hd.getMaDonHang());
 
         map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO);
         map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");

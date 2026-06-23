@@ -246,9 +246,15 @@
                                                                                 (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus)))))))}"
                                                                 >Đang xử lý</span>
                                                             </td>
-                                                            <td class="text-center">
-                                                                <a class="address-book-edit btn--e-transparent-platinum-b-2" th:href="@{/user/manage-order(id=${order.id})}">Chi tiết</a>
-                                                            </td>
+                                                             <td class="text-center" style="white-space: nowrap;">
+                                                                 <a th:if="${order.rawStatus == 'cho_thanh_toan' and order.paymentMethod == 'sepay'}"
+                                                                    class="address-book-edit btn--e-brand-b-2 u-s-m-r-8" 
+                                                                    th:href="@{/payment/sepay/simulate(maDonHang=${order.maDonHang})}"
+                                                                    style="padding: 6px 12px; font-size: 12px; border-radius: 6px; color: white; background-color: #ff4500; border: none; font-weight: 600; text-decoration: none;">
+                                                                     Thanh toán
+                                                                 </a>
+                                                                 <a class="address-book-edit btn--e-transparent-platinum-b-2" th:href="@{/user/manage-order(id=${order.id})}" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">Chi tiết</a>
+                                                             </td>
                                                         </tr>
                                                         <tr th:if="${orders.isEmpty()}">
                                                             <td colspan="6" class="text-center text-muted py-4">

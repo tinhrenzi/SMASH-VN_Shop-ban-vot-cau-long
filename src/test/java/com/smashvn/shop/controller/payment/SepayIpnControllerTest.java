@@ -99,7 +99,7 @@ public class SepayIpnControllerTest {
         when(sepayConfig.getIpnSecret()).thenReturn("super-secret-ipn-token");
         when(sepayConfig.isIpVerification()).thenReturn(true);
         when(sepayConfig.getIpRanges()).thenReturn("172.236.138.20,172.233.83.68");
-        when(sepayConfig.isDebug()).thenReturn(true);
+        when(sepayConfig.isDebug()).thenReturn(false);
 
         // Delegate findByMaDonHangOrNormalized to findByMaDonHang
         when(hoaDonRepository.findByMaDonHangOrNormalized(anyString(), anyString())).thenAnswer(invocation -> {
@@ -250,6 +250,7 @@ public class SepayIpnControllerTest {
         // Mock existing transaction in repository
         PaymentTransaction existingTx = new PaymentTransaction();
         existingTx.setTransactionId("TX100");
+        existingTx.setStatus("success");
         when(paymentTransactionRepository.findByTransactionId("TX100")).thenReturn(Optional.of(existingTx));
 
         SepayIpnRequest ipn = createMockIpnRequest("TX100", new BigDecimal("100000"), "DH20260608-A1B2C3");

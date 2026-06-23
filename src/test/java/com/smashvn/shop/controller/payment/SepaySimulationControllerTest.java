@@ -79,7 +79,7 @@ public class SepaySimulationControllerTest {
     }
 
     @Test
-    void testShowSimulationPage_OrderAlreadyPaid_RedirectsToMyOrder() throws Exception {
+    void testShowSimulationPage_OrderAlreadyPaid_RedirectsToHome() throws Exception {
         HoaDon hd = new HoaDon();
         hd.setMaDonHang("DH123");
         hd.setTrangThaiThanhToan("DA_THANH_TOAN");
@@ -90,7 +90,7 @@ public class SepaySimulationControllerTest {
         mockMvc.perform(get("/payment/sepay/simulate")
                         .param("maDonHang", "DH123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/user/my-order?payment=already_paid"));
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test

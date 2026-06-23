@@ -99,8 +99,12 @@ public class GuestCheckoutService {
         log.info("[GUEST_CHECKOUT] Incremented successful purchase count for TaiKhoan ID {} to {}.", idTaiKhoan, tk.getSoLanMuaThanhCong());
     }
 
+    @org.springframework.scheduling.annotation.Async
     @Transactional
     public void sendOrderAndAccountNotification(TaiKhoan tk, String appUrl) {
+        long startEmailThread = System.currentTimeMillis();
+        log.info("[EmailService] Starting asynchronous email sending process.");
+        
         // Tạo token kích hoạt/thiết lập mật khẩu
         String token = UUID.randomUUID().toString();
 
@@ -126,9 +130,11 @@ public class GuestCheckoutService {
                     "Trân trọng,\nSmash VN Team");
 
             mailSender.send(message);
-            log.info("[GUEST_CHECKOUT] Sent order confirmation & activation link email to {}", tk.getEmail());
+            long endEmailThread = System.currentTimeMillis();
+            log.info("[EmailService] Email sent successfully in {}ms to {}", (endEmailThread - startEmailThread), tk.getEmail());
         } catch (Exception e) {
-            log.error("[GUEST_CHECKOUT] Failed to send email to {}: {}", tk.getEmail(), e.getMessage());
+            long endEmailThread = System.currentTimeMillis();
+            log.error("[EmailService] Failed to send email in {}ms to {}. Exception: {}", (endEmailThread - startEmailThread), tk.getEmail(), e.getMessage(), e);
             // Do not fail order checkout if mail sending fails
         }
     }

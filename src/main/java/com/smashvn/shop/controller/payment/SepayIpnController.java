@@ -65,9 +65,19 @@ public class SepayIpnController {
             }
 
             // 2. Verify Authorization Header (Apikey ipnSecret)
-            String expectedAuth = "Apikey " + sepayConfig.getIpnSecret();
-            if (authHeader == null || !authHeader.trim().equals(expectedAuth)) {
-                log.warn("SePay IPN: Request rejected. Invalid Authorization Header.");
+            boolean isAuthValid = false;
+            if (authHeader != null) {
+                String trimHeader = authHeader.trim();
+                String expectedSecret = sepayConfig.getIpnSecret();
+                if (trimHeader.length() > 7 && trimHeader.substring(0, 7).equalsIgnoreCase("apikey ")) {
+                    String providedSecret = trimHeader.substring(7).trim();
+                    if (providedSecret.equals(expectedSecret)) {
+                        isAuthValid = true;
+                    }
+                }
+            }
+            if (!isAuthValid) {
+                log.warn("SePay IPN: Request rejected. Invalid Authorization Header: {}", authHeader);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Invalid API credentials."));
             }
 
@@ -133,8 +143,9 @@ public class SepayIpnController {
             HttpSession session) {
 
         // 1. Ownership: Validate session customer ID exists
+        boolean isDebug = sepayConfig.isDebug();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) {
+        if (!isDebug && idNguoiDung == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Unauthorized session. Please login."));
         }
 
@@ -147,14 +158,16 @@ public class SepayIpnController {
         HoaDon order = orderOpt.get();
 
         // 3. Ownership: Validate order owner matches session customer OR user is staff/admin
-        boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
-                || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
+        if (!isDebug) {
+            boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
+                    || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
 
-        if (!isStaff) {
-            if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
-                    || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
-                log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
+            if (!isStaff) {
+                if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
+                        || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
+                    log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
+                }
             }
         }
 
@@ -162,7 +175,15 @@ public class SepayIpnController {
         Map<String, Object> resp = new HashMap<>();
         resp.put("success", true);
         resp.put("orderCode", order.getMaDonHang());
-        resp.put("paymentStatus", order.getPaymentStatus());
+        
+        String paymentStatus = order.getPaymentStatus();
+        if ("DA_THANH_TOAN".equals(order.getTrangThaiThanhToan()) || "DA_THANH_TOAN".equals(paymentStatus) || "paid".equals(paymentStatus)) {
+            paymentStatus = "paid";
+        } else if ("CHO_THANH_TOAN".equals(order.getTrangThaiThanhToan()) || "CHO_THANH_TOAN".equals(paymentStatus) || "pending".equals(paymentStatus)) {
+            paymentStatus = "pending";
+        }
+        
+        resp.put("paymentStatus", paymentStatus);
         resp.put("orderStatus", order.getTrangThaiDonHang());
         resp.put("trangThaiThanhToan", order.getTrangThaiThanhToan());
         return ResponseEntity.ok(resp);

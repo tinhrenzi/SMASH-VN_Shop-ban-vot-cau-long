@@ -355,16 +355,23 @@
                                                 </div>
                                             </div>
 
-                                            <!-- ===== Nút hủy đơn hàng (chỉ hiện khi được phép hủy) ===== -->
+                                            <!-- ===== Nút hủy & thanh toán đơn hàng (chỉ hiện khi được phép hủy) ===== -->
                                              <div th:if="${order['trangThaiDonHang'] == 'cho_thanh_toan'
                                                            or order['trangThaiDonHang'] == 'cho_xac_nhan'
                                                            or order['trangThaiDonHang'] == 'da_xac_nhan'}"
-                                                 style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end;">
+                                                 style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+                                                <a th:if="${order['trangThaiDonHang'] == 'cho_thanh_toan' and order['paymentMethod'] == 'sepay'}"
+                                                   class="btn btn--e-brand-b-2"
+                                                   th:href="@{/payment/sepay/simulate(maDonHang=${order['maDonHang']})}"
+                                                   style="padding: 10px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; color: white; background-color: #ff4500; border: none; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; margin-bottom: 0;">
+                                                    <i class="fas fa-qrcode"></i> Thanh toán ngay
+                                                </a>
                                                 <button id="btn-huy-don"
                                                         th:data-order-id="${order.id}"
                                                         th:data-order-code="'#' + ${order.id}"
                                                         onclick="moModalHuyDon(this)"
-                                                        title="Hủy đơn hàng này">
+                                                        title="Hủy đơn hàng này"
+                                                        style="margin-bottom: 0;">
                                                     <i class="fas fa-times-circle"></i>
                                                     Hủy đơn hàng
                                                 </button>

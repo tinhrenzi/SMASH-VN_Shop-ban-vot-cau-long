@@ -50,10 +50,17 @@ public class SepayGatewayService implements PaymentGatewayService {
         // 1. Fast duplicate check (Idempotency)
         Optional<PaymentTransaction> existingTx = paymentTransactionRepository.findByTransactionId(transactionId);
         if (existingTx.isPresent()) {
-            log.info("SePay IPN: Transaction ID {} already exists (duplicate check).", transactionId);
-            auditService.log(null, "PaymentTransaction", null, "UPDATE", 
-                    null, "PAID", "127.0.0.1", "[PAYMENT_DUPLICATE] Duplicate IPN callback ignored.", "SYSTEM");
-            return createSuccessResponse("Already processed");
+            if ("success".equalsIgnoreCase(existingTx.get().getStatus())) {
+                log.info("SePay IPN: Transaction ID {} already successfully processed (duplicate check).", transactionId);
+                auditService.log(null, "PaymentTransaction", null, "UPDATE", 
+                        null, "PAID", "127.0.0.1", "[PAYMENT_DUPLICATE] Duplicate IPN callback ignored.", "SYSTEM");
+                return createSuccessResponse("Already processed");
+            } else {
+                log.info("SePay IPN: Deleting previously failed transaction record {} (status: {}) to re-process.", 
+                        transactionId, existingTx.get().getStatus());
+                paymentTransactionRepository.delete(existingTx.get());
+                paymentTransactionRepository.flush();
+            }
         }
 
         // 2. Locate order by maDonHang

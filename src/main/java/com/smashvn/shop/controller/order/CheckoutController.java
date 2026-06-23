@@ -41,9 +41,12 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.PaymentMethod;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class CheckoutController {
 
     private final GioHangService gioHangService;
@@ -214,6 +217,9 @@ public class CheckoutController {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         String emailStatus = "NEW";
 
+        long startPipeline = System.currentTimeMillis();
+        log.info("[GuestCheckout] Starting guest checkout pipeline execution.");
+
         if (idNguoiDung == null) {
             if (email == null || email.trim().isEmpty()) {
                 response.put("trangThai", "loi");
@@ -232,6 +238,7 @@ public class CheckoutController {
                 return ResponseEntity.ok(response);
             }
 
+            long startAccount = System.currentTimeMillis();
             try {
                 TaiKhoan tk = guestCheckoutService.autoRegisterGuest(hoTenNhan, sdtNhan, email);
                 com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
@@ -248,11 +255,17 @@ public class CheckoutController {
                 session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
 
                 idNguoiDung = tk.getId();
+                long endAccount = System.currentTimeMillis();
+                log.info("[GuestCheckout] Create inactive account: {}ms - SUCCESS", (endAccount - startAccount));
             } catch (Exception e) {
+                long endAccount = System.currentTimeMillis();
+                log.error("[GuestCheckout] Create inactive account: {}ms - FAILED. Exception: {}", (endAccount - startAccount), e.getMessage(), e);
                 response.put("trangThai", "loi");
                 response.put("message", e.getMessage());
                 return ResponseEntity.ok(response);
             }
+        } else {
+            log.info("[GuestCheckout] Inactive account exists or already registered: Skip autoRegisterGuest.");
         }
 
         com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
@@ -309,7 +322,10 @@ public class CheckoutController {
         }
 
         try {
+            long startOrder = System.currentTimeMillis();
             HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
+            long endOrder = System.currentTimeMillis();
+            log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
             
             guestCheckoutService.incrementPurchaseCount(idNguoiDung);
             
@@ -319,13 +335,46 @@ public class CheckoutController {
                 response.put("soLanMuaThanhCong", tk.getSoLanMuaThanhCong());
                 
                 if ("NEW".equals(emailStatus)) {
-                    String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-                    guestCheckoutService.sendOrderAndAccountNotification(tk, appUrl);
+                    long startEmail = System.currentTimeMillis();
+                    try {
+                        String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                        guestCheckoutService.sendOrderAndAccountNotification(tk, appUrl);
+                        long endEmail = System.currentTimeMillis();
+                        log.info("[GuestCheckout] Send notification email triggered: {}ms - SUCCESS (Asynchronous)", (endEmail - startEmail));
+                    } catch (Exception e) {
+                        long endEmail = System.currentTimeMillis();
+                        log.error("[GuestCheckout] Send notification email triggered: {}ms - FAILED. Exception: {}", (endEmail - startEmail), e.getMessage(), e);
+                    }
                 }
             } else {
                 response.put("isGuest", false);
                 response.put("soLanMuaThanhCong", 0);
             }
+
+            // Payment initialization & validation
+            long startPayment = System.currentTimeMillis();
+            if ("SePay".equalsIgnoreCase(phuongThucThanhToan)) {
+                if (hd.getMaDonHang() == null || hd.getMaDonHang().isEmpty() ||
+                    hd.getTongTien() == null || hd.getTongTien().compareTo(BigDecimal.ZERO) <= 0 ||
+                    !PaymentMethod.SEPAY.getValue().equalsIgnoreCase(hd.getPaymentMethod())) {
+                    
+                    long endPayment = System.currentTimeMillis();
+                    log.error("[GuestCheckout] Create payment request: {}ms - FAILED (Validation error: maDonHang={}, amount={}, method={})", 
+                              (endPayment - startPayment), hd.getMaDonHang(), hd.getTongTien(), hd.getPaymentMethod());
+                    
+                    Map<String, Object> errorMap = new HashMap<>();
+                    errorMap.put("status", "error");
+                    errorMap.put("trangThai", "loi");
+                    errorMap.put("errorCode", "PAYMENT_INIT_FAILED");
+                    errorMap.put("message", "Không thể khởi tạo thanh toán SePay.");
+                    return ResponseEntity.ok(errorMap);
+                }
+                long endPayment = System.currentTimeMillis();
+                log.info("[GuestCheckout] Create payment request: {}ms - SUCCESS", (endPayment - startPayment));
+            }
+
+            long endPipeline = System.currentTimeMillis();
+            log.info("[GuestCheckout] Guest checkout pipeline completed successfully in {}ms.", (endPipeline - startPipeline));
 
             response.put("trangThai", "ok");
             response.put("orderId", hd.getId());
@@ -336,6 +385,8 @@ public class CheckoutController {
             response.put("ghnToWardCode", hd.getGhnToWardCode());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            long endPipeline = System.currentTimeMillis();
+            log.error("[GuestCheckout] Guest checkout pipeline failed in {}ms. Exception: {}", (endPipeline - startPipeline), e.getMessage(), e);
             response.put("trangThai", "loi");
             response.put("message", e.getMessage());
             return ResponseEntity.ok(response);

@@ -53,8 +53,8 @@ public class SepaySimulationController {
 
         HoaDon hd = orderOpt.get();
         if ("DA_THANH_TOAN".equals(hd.getTrangThaiThanhToan()) || "paid".equals(hd.getPaymentStatus())) {
-            log.info("Order {} is already paid. Redirecting to order history.", maDonHang);
-            return "redirect:/user/my-order?payment=already_paid";
+            log.info("Order {} is already paid. Redirecting to home page.", maDonHang);
+            return "redirect:/";
         }
 
         model.addAttribute("order", hd);
