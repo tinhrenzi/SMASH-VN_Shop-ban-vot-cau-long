@@ -32,7 +32,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@Transactional
 public class OrderPricingIntegrationTest {
 
     @Autowired
@@ -112,6 +111,35 @@ public class OrderPricingIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Clean up any stray temp test users/customers from previous interrupted runs
+        try {
+            List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
+                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("temp_r_"))
+                    .toList();
+            for (TaiKhoan tk : strayUsers) {
+                KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+                if (kh != null) {
+                    // Delete orders
+                    List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+                    for (HoaDon hd : orders) {
+                        paymentTransactionRepository.deleteAll(paymentTransactionRepository.findByOrder_Id(hd.getId()));
+                        hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(hd.getId()));
+                        hoaDonRepository.delete(hd);
+                    }
+                    // Delete cart
+                    GioHang gh = gioHangRepository.findByKhachHang_Id(kh.getId());
+                    if (gh != null) {
+                        gioHangChiTietRepository.deleteAll(gioHangChiTietRepository.findByGioHang_Id(gh.getId()));
+                        gioHangRepository.delete(gh);
+                    }
+                    khachHangRepository.delete(kh);
+                }
+                taiKhoanRepository.delete(tk);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to clean up stray temp users in setUp: " + e.getMessage());
+        }
+
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
 

@@ -110,6 +110,48 @@ public class DanhGiaIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Clean up any stray temp test users/customers from previous interrupted runs
+        try {
+            // Delete all CommentViolationLog records linked to any TaiKhoan whose email starts with buyer_ or admin_
+            List<CommentViolationLog> logs = commentViolationLogRepository.findAll();
+            for (CommentViolationLog log : logs) {
+                if (log.getTaiKhoan() != null && log.getTaiKhoan().getEmail() != null && 
+                    (log.getTaiKhoan().getEmail().startsWith("buyer_") || log.getTaiKhoan().getEmail().startsWith("admin_"))) {
+                    commentViolationLogRepository.delete(log);
+                }
+            }
+
+            // Delete reviews created by buyer_ or admin_
+            List<DanhGia> reviews = danhGiaDAO.findAll();
+            for (DanhGia dg : reviews) {
+                if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null && 
+                    dg.getKhachHang().getTaiKhoan().getEmail() != null && 
+                    (dg.getKhachHang().getTaiKhoan().getEmail().startsWith("buyer_") || dg.getKhachHang().getTaiKhoan().getEmail().startsWith("admin_"))) {
+                    danhGiaDAO.delete(dg);
+                }
+            }
+
+            // Delete customers and users
+            List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
+                    .filter(tk -> tk.getEmail() != null && (tk.getEmail().startsWith("buyer_") || tk.getEmail().startsWith("admin_")))
+                    .toList();
+            for (TaiKhoan tk : strayUsers) {
+                KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+                if (kh != null) {
+                    // Delete orders
+                    List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+                    for (HoaDon hd : orders) {
+                        hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(hd.getId()));
+                        hoaDonRepository.delete(hd);
+                    }
+                    khachHangRepository.delete(kh);
+                }
+                taiKhoanRepository.delete(tk);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to clean up stray test users in setUp: " + e.getMessage());
+        }
+
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .addFilters(new org.springframework.web.filter.CharacterEncodingFilter("UTF-8", true))
                 .build();
