@@ -25,6 +25,7 @@ import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.util.VoucherCalculator;
 import com.smashvn.shop.service.product.PricingService;
 import java.time.LocalDateTime;
@@ -62,6 +63,7 @@ public class CheckoutController {
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final TokenKhoiPhucRepository tokenRepository;
+    private final SoDiaChiRepository soDiaChiRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping({"/checkout", "/checkout.html"})
@@ -192,6 +194,15 @@ public class CheckoutController {
         model.addAttribute("sepayBankName", sepayConfig.getBankName());
         model.addAttribute("sepayMemoPrefix", sepayConfig.getMemoPrefix());
 
+        boolean isGuest = true;
+        if (idNguoiDung != null) {
+            TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            if (tk != null && tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST) {
+                isGuest = false;
+            }
+        }
+        model.addAttribute("isGuest", isGuest);
+
         return "checkout";
     }
 
@@ -210,6 +221,11 @@ public class CheckoutController {
             @RequestParam(value = "idDiaChiLuu", required = false) Integer idDiaChiLuu,
             @RequestParam(value = "voucherCode", required = false) String voucherCode,
             @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "tinhThanhText", required = false) String tinhThanhText,
+            @RequestParam(value = "thanhPhoText", required = false) String thanhPhoText,
+            @RequestParam(value = "phuongXaText", required = false) String phuongXaText,
+            @RequestParam(value = "diaChiCuThe", required = false) String diaChiCuTheParam,
+            @RequestParam(value = "saveAddress", required = false) Boolean saveAddress,
             HttpSession session,
             HttpServletRequest request) {
 
@@ -245,8 +261,14 @@ public class CheckoutController {
                 
                 guestCartService.transferGuestCartToDb(session, kh.getId());
                 
-                // Do NOT set login session attributes here to avoid session hijacking!
-                // Just store the guest checkout email in session for password upgrade
+                request.changeSessionId();
+                session = request.getSession(true);
+
+                session.setAttribute("nguoiDungDangNhap", tk.getEmail());
+                session.setAttribute("idNguoiDung", tk.getId());
+                session.setAttribute("vaiTro", "KH");
+                session.setAttribute("laKhachHang", true);
+                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
                 session.setAttribute("guestCheckoutEmail", tk.getEmail());
 
                 idNguoiDung = tk.getId();
@@ -322,6 +344,123 @@ public class CheckoutController {
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
             
+            // Save address to SoDiaChi if applicable (after order is successfully created)
+            if (idDiaChiLuu == null && khachHang != null) {
+                TaiKhoan currentTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+                boolean shouldSave = false;
+                boolean setAsDefault = false;
+                
+                if (currentTk != null) {
+                    if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
+                        // Guest account: automatically save
+                        shouldSave = true;
+                        long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                        if (existingCount == 0) {
+                            setAsDefault = true;
+                        }
+                    } else {
+                        // Active account: save if saveAddress checkbox is checked
+                        if (saveAddress != null && saveAddress) {
+                            shouldSave = true;
+                            long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                            if (existingCount == 0) {
+                                setAsDefault = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (shouldSave) {
+                    String tinhThanhVal = tinhThanhText != null ? tinhThanhText.trim() : "";
+                    String thanhPhoVal = thanhPhoText != null ? thanhPhoText.trim() : "";
+                    String diaChiCuTheVal = diaChiCuTheParam != null ? diaChiCuTheParam.trim() : "";
+                    String sdtVal = sdtNhan != null ? sdtNhan.trim() : "";
+                    
+                    if (tinhThanhVal.isEmpty() || tinhThanhVal.contains("--")) {
+                        if (diaChiNhan != null && !diaChiNhan.trim().isEmpty()) {
+                            String[] parts = diaChiNhan.split(",");
+                            if (parts.length >= 3) {
+                                tinhThanhVal = parts[parts.length - 1].trim();
+                                thanhPhoVal = parts[parts.length - 2].trim();
+                                StringBuilder sb = new StringBuilder();
+                                for (int i = 0; i < parts.length - 2; i++) {
+                                    if (i > 0) sb.append(", ");
+                                    sb.append(parts[i].trim());
+                                }
+                                diaChiCuTheVal = sb.toString();
+                            } else if (parts.length == 2) {
+                                tinhThanhVal = parts[1].trim();
+                                thanhPhoVal = parts[1].trim();
+                                diaChiCuTheVal = parts[0].trim();
+                            } else {
+                                tinhThanhVal = diaChiNhan.trim();
+                                thanhPhoVal = diaChiNhan.trim();
+                                diaChiCuTheVal = diaChiNhan.trim();
+                            }
+                        }
+                    }
+                    
+                    // Check duplicate
+                    boolean exists = false;
+                    List<SoDiaChi> existingAddresses = soDiaChiRepository.findByKhachHang_Id(khachHang.getId());
+                    for (SoDiaChi dc : existingAddresses) {
+                        String existingDiaChiCuThe = dc.getDiaChiCuThe() != null ? dc.getDiaChiCuThe().trim() : "";
+                        String existingTinhThanh = dc.getTinhThanh() != null ? dc.getTinhThanh().trim() : "";
+                        String existingThanhPho = dc.getThanhPho() != null ? dc.getThanhPho().trim() : "";
+                        String existingSdt = dc.getSdtNguoiNhan() != null ? dc.getSdtNguoiNhan().trim() : "";
+                        
+                        if (existingDiaChiCuThe.equalsIgnoreCase(diaChiCuTheVal) &&
+                            existingTinhThanh.equalsIgnoreCase(tinhThanhVal) &&
+                            existingThanhPho.equalsIgnoreCase(thanhPhoVal) &&
+                            existingSdt.equalsIgnoreCase(sdtVal)) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!exists) {
+                        SoDiaChi newAddress = new SoDiaChi();
+                        newAddress.setKhachHang(khachHang);
+                        
+                        // Split name
+                        String ho = "Khách";
+                        String ten = "Vãng Lai";
+                        if (hoTenNhan != null && !hoTenNhan.trim().isEmpty()) {
+                            String name = hoTenNhan.trim();
+                            int lastSpace = name.lastIndexOf(' ');
+                            if (lastSpace >= 0) {
+                                ho = name.substring(0, lastSpace).trim();
+                                ten = name.substring(lastSpace + 1).trim();
+                            } else {
+                                ho = "";
+                                ten = name;
+                            }
+                        }
+                        newAddress.setHoNguoiNhan(ho);
+                        newAddress.setTenNguoiNhan(ten);
+                        newAddress.setSdtNguoiNhan(sdtVal);
+                        newAddress.setDiaChiCuThe(diaChiCuTheVal);
+                        newAddress.setTinhThanh(tinhThanhVal);
+                        newAddress.setThanhPho(thanhPhoVal);
+                        newAddress.setQuocGia("Việt Nam");
+                        newAddress.setMaBuuDien("700000");
+                        
+                        if (setAsDefault) {
+                            newAddress.setDefaultShipping(true);
+                            newAddress.setDefaultBilling(true);
+                        } else {
+                            newAddress.setDefaultShipping(false);
+                            newAddress.setDefaultBilling(false);
+                        }
+                        
+                        soDiaChiRepository.save(newAddress);
+                        log.info("[GuestCheckout] Saved new address to SoDiaChi for customer id: {}, isDefault: {}", khachHang.getId(), setAsDefault);
+                    } else {
+                        log.info("[GuestCheckout] Address already exists in SoDiaChi for customer id: {}, skipped saving.", khachHang.getId());
+                    }
+                }
+            }
+
             // If this is a guest checkout (meaning they are not logged in as a registered user),
             // grant temporary access to this specific order ID in their session for 30 minutes.
             if (session.getAttribute("idNguoiDung") == null) {

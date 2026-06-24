@@ -97,15 +97,14 @@
             color: #64748b;
         }
 
-        /* Glassmorphic Modal */
+        /* System Style Modal */
         .zp-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.55);
             z-index: 9999;
             display: none;
             align-items: center;
@@ -113,17 +112,17 @@
             padding: 20px;
         }
         .zp-modal {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-radius: 6px;
             width: 100%;
             max-width: 450px;
             overflow: hidden;
             position: relative;
-            transform: scale(0.9);
+            transform: scale(0.95);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease-out;
         }
         .zp-modal-overlay.active {
             display: flex;
@@ -133,16 +132,16 @@
             opacity: 1;
         }
         .zp-modal-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eeeeee;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
         .zp-modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1e293b;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333333;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -150,27 +149,27 @@
         .zp-modal-close {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
-            color: #64748b;
+            color: #aaaaaa;
             transition: color 0.2s;
+            line-height: 1;
         }
         .zp-modal-close:hover {
-            color: #1e293b;
+            color: #333333;
         }
         .zp-modal-body {
-            padding: 24px;
-            text-align: center;
+            padding: 20px;
         }
         .zp-qr-container {
             width: 220px;
             height: 220px;
             margin: 0 auto 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
+            border: 1px solid #eeeeee;
+            border-radius: 6px;
             padding: 10px;
-            background: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -198,18 +197,18 @@
             display: block;
             width: 100%;
             padding: 12px;
-            background-color: #0084ff;
-            color: #fff;
-            font-weight: 700;
-            border-radius: 8px;
+            background-color: #ff4500;
+            color: #ffffff;
+            font-weight: 600;
+            border-radius: 6px;
             text-align: center;
             text-decoration: none;
             margin-top: 15px;
             transition: background-color 0.2s;
         }
         .zp-btn-pay:hover {
-            background-color: #006dd4;
-            color: #fff;
+            background-color: #fa4400;
+            color: #ffffff;
         }
         .zp-status-text {
             font-weight: 600;
@@ -225,12 +224,15 @@
         .zp-status-pending {
             color: #64748b;
         }
+        .zp-modal .input-text {
+            border-radius: 6px !important;
+        }
     </style>
 </head>
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt="">
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt="">
         </div>
     </div>
 
@@ -341,6 +343,15 @@
                                             <select class="select-box select-box--primary-style" id="ghnWardCode" name="ghnToWardCode" disabled>
                                                 <option value="">-- Chọn phường/xã --</option>
                                             </select>
+                                        </div>
+                                        <!-- Active Account Address Saving Checkbox -->
+                                        <div class="u-s-m-b-15" th:if="${session.idNguoiDung != null and !isGuest}">
+                                            <div class="check-box">
+                                                <input type="checkbox" id="saveAddress" name="saveAddress" value="true">
+                                                <div class="check-box__state check-box__state--primary">
+                                                    <label class="check-box__label" for="saveAddress">Lưu địa chỉ này cho lần mua sau</label>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="u-s-m-b-15">
@@ -496,7 +507,7 @@
     </div>
 
     <!-- Guest Auth Modal (For existing member login or mandatory guest password set) -->
-    <div class="zp-modal-overlay" id="guest-auth-overlay" style="display: none;">
+    <div class="zp-modal-overlay" id="guest-auth-overlay">
         <div class="zp-modal" style="max-width: 450px;">
             <div class="zp-modal-header">
                 <div class="zp-modal-title">
@@ -515,7 +526,7 @@
                         <input class="input-text input-text--primary-style" type="password" id="guest-password-input" placeholder="Nhập mật khẩu của bạn..." style="margin-bottom: 0;">
                         <div id="guest-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                     </div>
-                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-verify-password" style="padding: 12px; font-weight: 700; border-radius: 8px; font-size: 13px;">XÁC NHẬN ĐĂNG NHẬP</button>
+                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-verify-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">XÁC NHẬN ĐĂNG NHẬP</button>
                 </div>
 
                 <!-- Mandatory password set form for GUEST_EXPIRED accounts -->
@@ -530,14 +541,14 @@
                         <input class="input-text input-text--primary-style" type="password" id="guest-confirm-password" placeholder="Nhập lại mật khẩu mới..." style="margin-bottom: 0;">
                         <div id="guest-confirm-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                     </div>
-                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-setup-password" style="padding: 12px; font-weight: 700; border-radius: 8px; font-size: 13px;">KÍCH HOẠT &amp; TIẾP TỤC</button>
+                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-setup-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">KÍCH HOẠT &amp; TIẾP TỤC</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Guest Success Modal (For optional password set after successful checkout) -->
-    <div class="zp-modal-overlay" id="guest-success-overlay" style="display: none;">
+    <div class="zp-modal-overlay" id="guest-success-overlay">
         <div class="zp-modal" style="max-width: 480px;">
             <div class="zp-modal-header" style="border-bottom: none; padding-bottom: 0;">
                 <div class="zp-modal-title" style="color: #10b981; font-size: 20px;">
@@ -565,8 +576,8 @@
                 </div>
 
                 <div style="display: flex; gap: 12px;">
-                    <button class="btn btn--e-secondary" id="btn-success-skip" style="flex: 1; padding: 12px; font-weight: 700; border-radius: 8px; font-size: 13px;">Bỏ qua</button>
-                    <button class="btn btn--e-brand-b-2" id="btn-success-save-password" style="flex: 2; padding: 12px; font-weight: 700; border-radius: 8px; font-size: 13px; color: white;">Tạo mật khẩu ngay</button>
+                    <button class="btn btn--e-secondary" id="btn-success-skip" style="flex: 1; padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">Bỏ qua</button>
+                    <button class="btn btn--e-brand-b-2" id="btn-success-save-password" style="flex: 2; padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px; color: white;">Tạo mật khẩu ngay</button>
                 </div>
             </div>
         </div>
@@ -777,14 +788,14 @@
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng và đồng bộ lịch sử mua hàng.');
                             $('#guest-password-form-group').show();
                             $('#guest-setup-password-form-group').hide();
-                            $('#guest-auth-overlay').show();
+                            $('#guest-auth-overlay').addClass('active');
                         } else if (resp.status === 'GUEST_EXPIRED') {
                             // Guest has checked out >= 3 times -> Force password setup
                             $('#guest-modal-title-text').text('Thiết lập mật khẩu bảo mật');
                             $('#guest-modal-desc').html('Email <strong>' + email + '</strong> đã mua hàng vãng lai 3 lần. Vui lòng thiết lập mật khẩu để kích hoạt tài khoản chính thức trước khi tiếp tục đặt hàng.');
                             $('#guest-password-form-group').hide();
                             $('#guest-setup-password-form-group').show();
-                            $('#guest-auth-overlay').show();
+                            $('#guest-auth-overlay').addClass('active');
                         }
                     }
                 });
@@ -792,7 +803,7 @@
 
             // Close verification overlay
             $('#guest-auth-close-btn').on('click', function() {
-                $('#guest-auth-overlay').hide();
+                $('#guest-auth-overlay').removeClass('active');
                 $('#email').val('').css('border-color', '');
                 $('#guest-password-input').val('');
                 $('#guest-new-password').val('');
@@ -823,7 +834,7 @@
                         $('#btn-guest-verify-password').prop('disabled', false).text('XÁC NHẬN ĐĂNG NHẬP');
                         if (resp.success) {
                             showToast('Xác thực thành công!', 'success');
-                            $('#guest-auth-overlay').hide();
+                            $('#guest-auth-overlay').removeClass('active');
                             window.location.reload();
                         } else {
                             $('#guest-password-error').text(resp.message || 'Mật khẩu không đúng. Vui lòng kiểm tra lại.').show();
@@ -864,7 +875,7 @@
                         $('#btn-guest-setup-password').prop('disabled', false).text('KÍCH HOẠT & TIẾP TỤC');
                         if (resp.success) {
                             showToast('Kích hoạt tài khoản thành công!', 'success');
-                            $('#guest-auth-overlay').hide();
+                            $('#guest-auth-overlay').removeClass('active');
                             window.location.reload();
                         } else {
                             $('#guest-new-password-error').text(resp.message || 'Lỗi thiết lập mật khẩu.').show();
@@ -1345,7 +1356,12 @@
                     ghnToDistrictId: $('#ghnDistrictId').val() || '',
                     ghnToWardCode: $('#ghnWardCode').val() || '',
                     ghnProvinceId: $('#ghnProvinceId').val() || '',
-                    voucherCode: appliedVoucherCode || ''
+                    voucherCode: appliedVoucherCode || '',
+                    tinhThanhText: $('#ghnProvinceId option:selected').val() ? $('#ghnProvinceId option:selected').text().trim() : '',
+                    thanhPhoText: $('#ghnDistrictId option:selected').val() ? $('#ghnDistrictId option:selected').text().trim() : '',
+                    phuongXaText: $('#ghnWardCode option:selected').val() ? $('#ghnWardCode option:selected').text().trim() : '',
+                    diaChiCuThe: $('#diaChiNhan').val() ? $('#diaChiNhan').val().trim() : '',
+                    saveAddress: $('#saveAddress').is(':checked')
                 };
 
                 if ($('#email').length > 0) {
@@ -1436,7 +1452,7 @@
                                     });
                                 });
 
-                                $('#guest-success-overlay').show();
+                                $('#guest-success-overlay').addClass('active');
                             } else {
                                 if (paymentMethod === 'COD') {
                                     showToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
@@ -1454,7 +1470,7 @@
                             $('#guest-modal-desc').html('Email <strong>' + email + '</strong> đã mua hàng vãng lai 3 lần. Vui lòng thiết lập mật khẩu để kích hoạt tài khoản chính thức trước khi tiếp tục đặt hàng.');
                             $('#guest-password-form-group').hide();
                             $('#guest-setup-password-form-group').show();
-                            $('#guest-auth-overlay').show();
+                            $('#guest-auth-overlay').addClass('active');
                         } else if (response.trangThai === 'yeucaudangnhap') {
                             showToast('Tài khoản đã tồn tại. Vui lòng đăng nhập.', 'warning');
                             const email = $('#email').val().trim();
@@ -1462,7 +1478,7 @@
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng.');
                             $('#guest-password-form-group').show();
                             $('#guest-setup-password-form-group').hide();
-                            $('#guest-auth-overlay').show();
+                            $('#guest-auth-overlay').addClass('active');
                         } else {
                             showToast('Đặt hàng thất bại: ' + response.message, 'error');
                         }

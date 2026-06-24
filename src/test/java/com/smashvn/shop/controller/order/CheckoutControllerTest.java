@@ -69,6 +69,9 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.repository.TokenKhoiPhucRepository tokenKhoiPhucRepository;
 
+    @Mock
+    private com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -92,7 +95,8 @@ public class CheckoutControllerTest {
                 userDangNhapService,
                 sanPhamChiTietRepository,
                 taiKhoanRepository,
-                tokenKhoiPhucRepository
+                tokenKhoiPhucRepository,
+                soDiaChiRepository
         );
 
         when(pricingService.calculateCurrentSellingPrice(any())).thenAnswer(invocation -> {

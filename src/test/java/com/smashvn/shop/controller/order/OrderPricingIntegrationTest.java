@@ -108,9 +108,13 @@ public class OrderPricingIntegrationTest {
     private DotGiamGia testDgg;
     private CsrfToken csrfToken;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final List<Integer> orderIdsToClean = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<Integer> adminUserIdsToClean = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     @BeforeEach
     void setUp() throws Exception {
+        orderIdsToClean.clear();
+        adminUserIdsToClean.clear();
         // Clean up any stray temp test users/customers from previous interrupted runs
         try {
             List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
@@ -234,7 +238,19 @@ public class OrderPricingIntegrationTest {
 
         // Ensure carrier
         testDvvc = donViVanChuyenDAO.findAll().stream()
-                .filter(c -> c.getTenDonVi() != null && !c.getTenDonVi().toUpperCase().contains("GHN") && !c.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH"))
+                .filter(c -> {
+                    if (c.getTenDonVi() == null) return false;
+                    String name = c.getTenDonVi().toLowerCase();
+                    return !name.contains("ghn") && 
+                           !name.contains("giao hàng nhanh") && 
+                           !name.contains("quầy") && 
+                           !name.contains("quay") && 
+                           !name.contains("chỗ") && 
+                           !name.contains("cho") && 
+                           !name.contains("mua") && 
+                           !name.contains("tại") && 
+                           !name.contains("tai");
+                })
                 .findFirst()
                 .orElseGet(() -> {
                     DonViVanChuyen d = new DonViVanChuyen();
@@ -258,7 +274,6 @@ public class OrderPricingIntegrationTest {
     }
 
     @Test
-    @Transactional
     public void testHistoricalPricingAndVariantSnapshotIntegrity() throws Exception {
         // Step 1: Add product to cart and checkout (purchase price should be 3,150,000)
         mockMvc.perform(post("/gio-hang/them")
@@ -293,6 +308,7 @@ public class OrderPricingIntegrationTest {
         Map<String, Object> respMap = objectMapper.readValue(responseStr, Map.class);
         Integer orderId = (Integer) respMap.get("orderId");
         assertNotNull(orderId);
+        orderIdsToClean.add(orderId);
 
         // Step 2: Update product variant details and campaign details in the database (simulate admin changing catalog later)
         SanPhamChiTiet spctDb = sanPhamChiTietRepository.findById(testSpct.getId()).orElseThrow();
@@ -316,6 +332,7 @@ public class OrderPricingIntegrationTest {
         testAdmin.setTrangThai("hoat_dong");
         testAdmin.setLaQuanLy(true);
         testAdmin = taiKhoanRepository.save(testAdmin);
+        adminUserIdsToClean.add(testAdmin.getId());
 
         org.springframework.security.core.context.SecurityContext securityContext = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
         org.springframework.security.authentication.UsernamePasswordAuthenticationToken securityAuth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
@@ -355,7 +372,6 @@ public class OrderPricingIntegrationTest {
     }
 
     @Test
-    @Transactional
     public void testPricingConsistencyAcrossOnlineAndPosChannels() throws Exception {
         // Online order flow
         mockMvc.perform(post("/gio-hang/them")
@@ -387,6 +403,7 @@ public class OrderPricingIntegrationTest {
 
         Map<String, Object> onlineMap = objectMapper.readValue(onlineCheckoutResult.getResponse().getContentAsString(), Map.class);
         Integer onlineOrderId = (Integer) onlineMap.get("orderId");
+        orderIdsToClean.add(onlineOrderId);
 
         // POS order flow
         AdminPosService.PosItem posItem = new AdminPosService.PosItem();
@@ -404,6 +421,7 @@ public class OrderPricingIntegrationTest {
                 testUser.getId(),
                 "127.0.0.1"
         );
+        orderIdsToClean.add(posOrder.getId());
 
         // Fetch details of both orders
         HoaDonChiTiet onlineDetail = hoaDonChiTietRepository.findByHoaDon_Id(onlineOrderId).get(0);
@@ -566,56 +584,158 @@ public class OrderPricingIntegrationTest {
                     taiKhoanRepository.deleteById(userId);
                 } catch (Exception e) {}
             }
-            // 6. Delete seeded test objects from setUp() since this test is not transactional
+            // 6. Dissociate and delete seeded test objects from setUp() since this test is not transactional
+            try {
+                if (testDgg != null) {
+                    DotGiamGia freshDgg = dotGiamGiaDAO.findById(testDgg.getId()).orElse(null);
+                    if (freshDgg != null) {
+                        freshDgg.setSanPhams(new HashSet<>());
+                        dotGiamGiaDAO.saveAndFlush(freshDgg);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error clearing DotGiamGia association in finally: " + e.getMessage());
+            }
+
+            try {
+                if (testSpct != null && testSpct.getSanPham() != null) {
+                    SanPham sp = testSpct.getSanPham();
+                    sp.setCacDotGiamGia(new HashSet<>());
+                    sanPhamRepository.saveAndFlush(sp);
+                }
+            } catch (Exception e) {
+                System.err.println("Error clearing SanPham association in finally: " + e.getMessage());
+            }
+
             if (testDgg != null) {
                 try {
-                    dotGiamGiaDAO.delete(testDgg);
-                } catch (Exception e) {}
+                    dotGiamGiaDAO.deleteById(testDgg.getId());
+                    dotGiamGiaDAO.flush();
+                } catch (Exception e) {
+                    System.err.println("Error deleting testDgg in finally: " + e.getMessage());
+                }
             }
             if (testSpct != null) {
                 try {
-                    sanPhamChiTietRepository.delete(testSpct);
-                } catch (Exception e) {}
+                    sanPhamChiTietRepository.deleteById(testSpct.getId());
+                    sanPhamChiTietRepository.flush();
+                } catch (Exception e) {
+                    System.err.println("Error deleting testSpct in finally: " + e.getMessage());
+                }
                 try {
-                    sanPhamRepository.delete(testSpct.getSanPham());
-                } catch (Exception e) {}
+                    sanPhamRepository.deleteById(testSpct.getSanPham().getId());
+                    sanPhamRepository.flush();
+                } catch (Exception e) {
+                    System.err.println("Error deleting SanPham in finally: " + e.getMessage());
+                }
             }
             if (testKhachHang != null) {
                 try {
-                    khachHangRepository.delete(testKhachHang);
-                } catch (Exception e) {}
+                    khachHangRepository.deleteById(testKhachHang.getId());
+                    khachHangRepository.flush();
+                } catch (Exception e) {
+                    System.err.println("Error deleting testKhachHang in finally: " + e.getMessage());
+                }
             }
             if (testUser != null) {
                 try {
-                    taiKhoanRepository.delete(testUser);
-                } catch (Exception e) {}
+                    taiKhoanRepository.deleteById(testUser.getId());
+                    taiKhoanRepository.flush();
+                } catch (Exception e) {
+                    System.err.println("Error deleting testUser in finally: " + e.getMessage());
+                }
             }
         }
     }
 
     @org.junit.jupiter.api.AfterEach
     void tearDown() {
+        // Clean up any test-specific orders created in the tests
+        for (Integer orderId : orderIdsToClean) {
+            try {
+                paymentTransactionRepository.deleteAll(paymentTransactionRepository.findByOrder_Id(orderId));
+                paymentTransactionRepository.flush();
+            } catch (Exception e) {}
+            try {
+                hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(orderId));
+                hoaDonChiTietRepository.flush();
+            } catch (Exception e) {}
+            try {
+                hoaDonRepository.deleteById(orderId);
+                hoaDonRepository.flush();
+            } catch (Exception e) {}
+        }
+        
+        // Clean up test admin users
+        for (Integer adminId : adminUserIdsToClean) {
+            try {
+                taiKhoanRepository.deleteById(adminId);
+                taiKhoanRepository.flush();
+            } catch (Exception e) {}
+        }
+
         try {
             if (testDgg != null) {
-                dotGiamGiaDAO.delete(testDgg);
+                DotGiamGia freshDgg = dotGiamGiaDAO.findById(testDgg.getId()).orElse(null);
+                if (freshDgg != null) {
+                    freshDgg.setSanPhams(new HashSet<>());
+                    dotGiamGiaDAO.saveAndFlush(freshDgg);
+                }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Error clearing DotGiamGia association in tearDown: " + e.getMessage());
+        }
+
+        try {
+            if (testSpct != null && testSpct.getSanPham() != null) {
+                SanPham sp = testSpct.getSanPham();
+                sp.setCacDotGiamGia(new HashSet<>());
+                sanPhamRepository.saveAndFlush(sp);
+            }
+        } catch (Exception e) {
+            System.err.println("Error clearing SanPham association in tearDown: " + e.getMessage());
+        }
+
+        try {
+            if (testDgg != null) {
+                dotGiamGiaDAO.deleteById(testDgg.getId());
+                dotGiamGiaDAO.flush();
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting testDgg in tearDown: " + e.getMessage());
+        }
         try {
             if (testSpct != null) {
-                sanPhamChiTietRepository.delete(testSpct);
-                sanPhamRepository.delete(testSpct.getSanPham());
+                sanPhamChiTietRepository.deleteById(testSpct.getId());
+                sanPhamChiTietRepository.flush();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Error deleting testSpct in tearDown: " + e.getMessage());
+        }
+        try {
+            if (testSpct != null && testSpct.getSanPham() != null) {
+                sanPhamRepository.deleteById(testSpct.getSanPham().getId());
+                sanPhamRepository.flush();
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting SanPham in tearDown: " + e.getMessage());
+        }
         try {
             if (testKhachHang != null) {
-                khachHangRepository.delete(testKhachHang);
+                khachHangRepository.deleteById(testKhachHang.getId());
+                khachHangRepository.flush();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Error deleting testKhachHang in tearDown: " + e.getMessage());
+        }
         try {
             if (testUser != null) {
-                taiKhoanRepository.delete(testUser);
+                taiKhoanRepository.deleteById(testUser.getId());
+                taiKhoanRepository.flush();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Error deleting testUser in tearDown: " + e.getMessage());
+        }
         try {
             List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
                     .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_pricing_"))
@@ -624,9 +744,14 @@ public class OrderPricingIntegrationTest {
                 NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());
                 if (nv != null) {
                     nhanVienRepository.delete(nv);
+                    nhanVienRepository.flush();
                 }
                 taiKhoanRepository.delete(tk);
+                taiKhoanRepository.flush();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Error deleting strayStaff in tearDown: " + e.getMessage());
+        }
     }
 }
+

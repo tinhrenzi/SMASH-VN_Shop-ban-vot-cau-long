@@ -284,6 +284,9 @@ public class UserDashboardController {
 
         KhachHang kh = getLoggedInCustomer(session);
         boolean isGuestView = false;
+        if (kh != null && kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
+            isGuestView = true;
+        }
 
         if (kh == null) {
             // Guest check

@@ -98,6 +98,7 @@ public class DanhGiaIntegrationTest {
 
     private DonViVanChuyen testDvvc;
     private PhuongThucThanhToan testPttt;
+    private final List<Integer> orderIdsToClean = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     // A valid 1x1 transparent PNG byte array
     private static final byte[] TINY_PNG = new byte[] {
@@ -110,47 +111,104 @@ public class DanhGiaIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Clean up any stray temp test users/customers from previous interrupted runs
+        orderIdsToClean.clear();
+        
+        // 1. Delete all CommentViolationLog records linked to any TaiKhoan whose email starts with buyer_ or admin_
         try {
-            // Delete all CommentViolationLog records linked to any TaiKhoan whose email starts with buyer_ or admin_
             List<CommentViolationLog> logs = commentViolationLogRepository.findAll();
             for (CommentViolationLog log : logs) {
-                if (log.getTaiKhoan() != null && log.getTaiKhoan().getEmail() != null && 
-                    (log.getTaiKhoan().getEmail().startsWith("buyer_") || log.getTaiKhoan().getEmail().startsWith("admin_"))) {
-                    commentViolationLogRepository.delete(log);
-                }
+                try {
+                    if (log.getTaiKhoan() != null) {
+                        String email = log.getTaiKhoan().getEmail();
+                        if (email != null && (email.startsWith("buyer_") || email.startsWith("admin_"))) {
+                            commentViolationLogRepository.delete(log);
+                        }
+                    }
+                } catch (Exception inner) {}
             }
+            commentViolationLogRepository.flush();
+        } catch (Exception e) {}
 
-            // Delete reviews created by buyer_ or admin_
+        // 2. Delete reviews created by buyer_ or admin_
+        try {
             List<DanhGia> reviews = danhGiaDAO.findAll();
             for (DanhGia dg : reviews) {
-                if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null && 
-                    dg.getKhachHang().getTaiKhoan().getEmail() != null && 
-                    (dg.getKhachHang().getTaiKhoan().getEmail().startsWith("buyer_") || dg.getKhachHang().getTaiKhoan().getEmail().startsWith("admin_"))) {
-                    danhGiaDAO.delete(dg);
-                }
+                try {
+                    if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null) {
+                        String email = dg.getKhachHang().getTaiKhoan().getEmail();
+                        if (email != null && (email.startsWith("buyer_") || email.startsWith("admin_"))) {
+                            danhGiaDAO.delete(dg);
+                        }
+                    }
+                } catch (Exception inner) {}
             }
+            danhGiaDAO.flush();
+        } catch (Exception e) {}
 
-            // Delete customers and users
+        // 3. Delete customers and users
+        try {
             List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
                     .filter(tk -> tk.getEmail() != null && (tk.getEmail().startsWith("buyer_") || tk.getEmail().startsWith("admin_")))
                     .toList();
             for (TaiKhoan tk : strayUsers) {
-                KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
-                if (kh != null) {
-                    // Delete orders
-                    List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(kh.getId());
-                    for (HoaDon hd : orders) {
-                        hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(hd.getId()));
-                        hoaDonRepository.delete(hd);
+                try {
+                    KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+                    if (kh != null) {
+                        // Delete orders
+                        List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+                        for (HoaDon hd : orders) {
+                            try {
+                                hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(hd.getId()));
+                                hoaDonRepository.delete(hd);
+                            } catch (Exception inner) {}
+                        }
+                        khachHangRepository.delete(kh);
                     }
-                    khachHangRepository.delete(kh);
-                }
-                taiKhoanRepository.delete(tk);
+                    taiKhoanRepository.delete(tk);
+                } catch (Exception inner) {}
             }
-        } catch (Exception e) {
-            System.err.println("Failed to clean up stray test users in setUp: " + e.getMessage());
-        }
+            taiKhoanRepository.flush();
+        } catch (Exception e) {}
+
+        // 4. Delete stray products
+        try {
+            List<SanPham> strayProducts = sanPhamRepository.findAll().stream()
+                    .filter(sp -> sp.getTenSanPham() != null && 
+                            (sp.getTenSanPham().equals("Yonex Astrox 88D Pro") || sp.getTenSanPham().equals("Yonex Nanoflare 800 (Ngừng bán)")))
+                    .toList();
+            for (SanPham sp : strayProducts) {
+                try {
+                    // Delete violation logs referencing this product
+                    List<CommentViolationLog> strayLogs = commentViolationLogRepository.findAll().stream()
+                            .filter(l -> l.getSanPham() != null && l.getSanPham().getId().equals(sp.getId()))
+                            .toList();
+                    commentViolationLogRepository.deleteAll(strayLogs);
+                    commentViolationLogRepository.flush();
+
+                    // Delete reviews referencing this product
+                    List<DanhGia> strayReviews = danhGiaDAO.findAll().stream()
+                            .filter(dg -> dg.getSanPham() != null && dg.getSanPham().getId().equals(sp.getId()))
+                            .toList();
+                    danhGiaDAO.deleteAll(strayReviews);
+                    danhGiaDAO.flush();
+
+                    List<SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(sp.getId());
+                    for (SanPhamChiTiet spct : variants) {
+                        try {
+                            // Delete order details referencing this variant
+                            List<HoaDonChiTiet> orderDetails = hoaDonChiTietRepository.findAll().stream()
+                                    .filter(od -> od.getSanPhamChiTiet() != null && od.getSanPhamChiTiet().getId().equals(spct.getId()))
+                                    .toList();
+                            hoaDonChiTietRepository.deleteAll(orderDetails);
+                            sanPhamChiTietRepository.delete(spct);
+                        } catch (Exception inner) {}
+                    }
+                    sanPhamChiTietRepository.flush();
+                    sanPhamRepository.delete(sp);
+                } catch (Exception inner) {}
+            }
+            sanPhamRepository.flush();
+        } catch (Exception e) {}
 
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .addFilters(new org.springframework.web.filter.CharacterEncodingFilter("UTF-8", true))
@@ -278,6 +336,7 @@ public class DanhGiaIntegrationTest {
         hd.setDonViVanChuyen(testDvvc);
         hd.setPhuongThucThanhToan(testPttt);
         hd = hoaDonRepository.save(hd);
+        orderIdsToClean.add(hd.getId());
 
         HoaDonChiTiet hdct = new HoaDonChiTiet();
         hdct.setHoaDon(hd);
@@ -642,62 +701,107 @@ public class DanhGiaIntegrationTest {
 
     @org.junit.jupiter.api.AfterEach
     void tearDown() {
+        System.out.println("DEBUG: activeProduct=" + (activeProduct != null ? activeProduct.getId() : "null") + ", inactiveProduct=" + (inactiveProduct != null ? inactiveProduct.getId() : "null"));
+        
+        // 1. Delete comment violation logs
         try {
-            // Delete reviews
-            List<DanhGia> reviews = danhGiaDAO.findAll();
-            for (DanhGia dg : reviews) {
-                if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null &&
-                    dg.getKhachHang().getTaiKhoan().getEmail() != null &&
-                    (dg.getKhachHang().getTaiKhoan().getEmail().startsWith("buyer_") || dg.getKhachHang().getTaiKhoan().getEmail().startsWith("admin_"))) {
-                    danhGiaDAO.delete(dg);
-                }
-            }
-        } catch (Exception e) {}
-        try {
-            // Delete comment violation logs
             List<CommentViolationLog> logs = commentViolationLogRepository.findAll();
             for (CommentViolationLog log : logs) {
-                if (log.getTaiKhoan() != null && log.getTaiKhoan().getEmail() != null &&
-                    (log.getTaiKhoan().getEmail().startsWith("buyer_") || log.getTaiKhoan().getEmail().startsWith("admin_"))) {
+                Integer logSpId = log.getSanPham() != null ? log.getSanPham().getId() : null;
+                System.out.println("DEBUG: Found CommentViolationLog id=" + log.getId() + " with sanPhamId=" + logSpId);
+                if (log.getSanPham() != null && 
+                    ((activeProduct != null && log.getSanPham().getId().equals(activeProduct.getId())) || 
+                     (inactiveProduct != null && log.getSanPham().getId().equals(inactiveProduct.getId())))) {
+                    System.out.println("DEBUG: Deleting CommentViolationLog id=" + log.getId());
                     commentViolationLogRepository.delete(log);
                 }
             }
-        } catch (Exception e) {}
+            commentViolationLogRepository.flush();
+        } catch (Exception e) {
+            System.err.println("Error deleting comment violation logs: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // 2. Delete reviews
+        try {
+            List<DanhGia> reviews = danhGiaDAO.findAll();
+            for (DanhGia dg : reviews) {
+                Integer dgSpId = dg.getSanPham() != null ? dg.getSanPham().getId() : null;
+                System.out.println("DEBUG: Found DanhGia id=" + dg.getId() + " with sanPhamId=" + dgSpId);
+                if (dg.getSanPham() != null && 
+                    ((activeProduct != null && dg.getSanPham().getId().equals(activeProduct.getId())) || 
+                     (inactiveProduct != null && dg.getSanPham().getId().equals(inactiveProduct.getId())))) {
+                    System.out.println("DEBUG: Deleting DanhGia id=" + dg.getId());
+                    danhGiaDAO.delete(dg);
+                }
+            }
+            danhGiaDAO.flush();
+        } catch (Exception e) {
+            System.err.println("Error deleting reviews: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // 3. Delete tracked orders
+        for (Integer orderId : orderIdsToClean) {
+            try {
+                hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(orderId));
+                hoaDonChiTietRepository.flush();
+            } catch (Exception e) {}
+            try {
+                hoaDonRepository.deleteById(orderId);
+                hoaDonRepository.flush();
+            } catch (Exception e) {}
+        }
+
+        // 4. Delete variants (SanPhamChiTiet)
         try {
             if (activeSpct != null) {
                 sanPhamChiTietRepository.delete(activeSpct);
+                sanPhamChiTietRepository.flush();
             }
         } catch (Exception e) {}
         try {
             if (inactiveSpct != null) {
                 sanPhamChiTietRepository.delete(inactiveSpct);
+                sanPhamChiTietRepository.flush();
             }
         } catch (Exception e) {}
+
+        // 5. Delete products (SanPham)
         try {
             if (activeProduct != null) {
                 sanPhamRepository.delete(activeProduct);
+                sanPhamRepository.flush();
             }
         } catch (Exception e) {}
         try {
             if (inactiveProduct != null) {
                 sanPhamRepository.delete(inactiveProduct);
+                sanPhamRepository.flush();
             }
         } catch (Exception e) {}
+
+        // 6. Delete customers and users
         try {
             if (testKhachHang != null) {
                 khachHangRepository.delete(testKhachHang);
+                khachHangRepository.flush();
             }
         } catch (Exception e) {}
         try {
             if (testUser != null) {
                 taiKhoanRepository.delete(testUser);
+                taiKhoanRepository.flush();
             }
         } catch (Exception e) {}
         try {
             if (testAdmin != null) {
                 taiKhoanRepository.delete(testAdmin);
+                taiKhoanRepository.flush();
             }
         } catch (Exception e) {}
+
+        // 7. Delete stray staff
         try {
             List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
                     .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_"))
@@ -706,8 +810,10 @@ public class DanhGiaIntegrationTest {
                 NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());
                 if (nv != null) {
                     nhanVienRepository.delete(nv);
+                    nhanVienRepository.flush();
                 }
                 taiKhoanRepository.delete(tk);
+                taiKhoanRepository.flush();
             }
         } catch (Exception e) {}
     }
