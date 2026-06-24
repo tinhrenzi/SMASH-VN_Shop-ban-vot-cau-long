@@ -275,18 +275,23 @@ public class GioHangService {
             return;
         }
         List<HoaDon> existingOrders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+        java.time.LocalDateTime fifteenMinutesAgo = java.time.LocalDateTime.now().minusMinutes(15);
         for (HoaDon oldOrder : existingOrders) {
             if ("cho_thanh_toan".equals(oldOrder.getTrangThaiDonHang()) && 
                 "pending".equalsIgnoreCase(oldOrder.getPaymentStatus())) {
-                List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(oldOrder.getId());
-                if (txs != null && !txs.isEmpty()) {
-                    paymentTransactionRepository.deleteAll(txs);
+                
+                // Only clean up orders that have expired (created more than 15 minutes ago)
+                if (oldOrder.getNgayTao() != null && oldOrder.getNgayTao().isBefore(fifteenMinutesAgo)) {
+                    List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(oldOrder.getId());
+                    if (txs != null && !txs.isEmpty()) {
+                        paymentTransactionRepository.deleteAll(txs);
+                    }
+                    List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(oldOrder.getId());
+                    hoaDonChiTietRepository.deleteAll(details);
+                    // Xóa lịch sử trạng thái đơn hàng (được tạo bởi database triggers/legacy flow) trước để tránh lỗi Foreign Key
+                    hoaDonRepository.deleteOrderStatusHistoryByOrderId(oldOrder.getId());
+                    hoaDonRepository.delete(oldOrder);
                 }
-                List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(oldOrder.getId());
-                hoaDonChiTietRepository.deleteAll(details);
-                // Xóa lịch sử trạng thái đơn hàng (được tạo bởi database triggers/legacy flow) trước để tránh lỗi Foreign Key
-                hoaDonRepository.deleteOrderStatusHistoryByOrderId(oldOrder.getId());
-                hoaDonRepository.delete(oldOrder);
             }
         }
     }
@@ -503,7 +508,10 @@ public class GioHangService {
             SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
-
+            if ("COD".equalsIgnoreCase(ptttName)) {
+                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
+                sanPhamChiTietRepository.save(lockedSpct);
+            }
 
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
 

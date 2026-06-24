@@ -387,7 +387,7 @@ public class SepayIpnControllerTest {
 
         assertTrue((Boolean) result.get("success"));
         assertEquals("paid", order.getPaymentStatus());
-        assertEquals("cho_xac_nhan", order.getTrangThaiDonHang()); // Transitions to cho_xac_nhan, not stock_conflict
+        assertEquals("stock_conflict", order.getTrangThaiDonHang()); // Transitions to stock_conflict when stock is insufficient
         assertEquals(1, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock NOT deducted
         verify(auditService, times(1)).log(
                 eq(null), eq("HoaDon"), eq(Long.valueOf(order.getId())),

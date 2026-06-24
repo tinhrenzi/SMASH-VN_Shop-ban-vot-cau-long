@@ -18,6 +18,7 @@ import com.smashvn.shop.dto.user.UserProfileEditDto;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import com.smashvn.shop.repository.ThongBaoRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.entity.ThongBao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.BindingResult;
@@ -31,6 +32,7 @@ public class UserDashboardController {
     private final OrderViewService orderViewService;
     private final SanPhamYeuThichRepository wishlistRepository;
     private final ThongBaoRepository thongBaoRepository;
+    private final HoaDonRepository hoaDonRepository;
 
     // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
     private KhachHang getLoggedInCustomer(HttpSession session) {
@@ -275,14 +277,51 @@ public class UserDashboardController {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) return redirect;
 
-        KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) {
-            return "redirect:/user/dang-nhap";
-        }
-
         Integer targetId = (pathId != null) ? pathId : paramId;
         if (targetId == null) {
             return "redirect:/user/my-order";
+        }
+
+        KhachHang kh = getLoggedInCustomer(session);
+        boolean isGuestView = false;
+
+        if (kh == null) {
+            // Guest check
+            String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
+            List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses = 
+                    (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
+            
+            boolean isAllowed = false;
+            if (guestEmail != null && allowedAccesses != null) {
+                synchronized (session) {
+                    allowedAccesses.removeIf(com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess::isExpired);
+                    for (com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access : allowedAccesses) {
+                        if (access.getOrderId().equals(targetId)) {
+                            isAllowed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!isAllowed) {
+                return "redirect:/user/dang-nhap";
+            }
+            
+            // Cross-email validation to prevent IDOR
+            java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findById(targetId);
+            if (hdOpt.isEmpty()) {
+                return "redirect:/user/my-order?loi=donhangkhongton";
+            }
+            com.smashvn.shop.entity.HoaDon hd = hdOpt.get();
+            String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
+                    ? hd.getKhachHang().getTaiKhoan().getEmail() : null;
+            if (orderEmail == null || !orderEmail.equalsIgnoreCase(guestEmail)) {
+                return "redirect:/user/dang-nhap";
+            }
+            
+            kh = hd.getKhachHang();
+            isGuestView = true;
         }
 
         try {
@@ -296,6 +335,7 @@ public class UserDashboardController {
 
             long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
             model.addAttribute("wishlistCount", wishlistCount);
+            model.addAttribute("isGuestView", isGuestView);
 
             return "dash-manage-order";
         } catch (Exception e) {

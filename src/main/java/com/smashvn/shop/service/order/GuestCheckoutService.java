@@ -141,8 +141,14 @@ public class GuestCheckoutService {
 
     @Transactional
     public void setPasswordForGuest(Integer idTaiKhoan, String password) {
-        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan)
+        // Concurrency lock: Load TaiKhoan with Pessimistic Write Lock
+        TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(idTaiKhoan)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
+
+        // Password Activation Race Protection: only GUEST state allowed
+        if (tk.getTrangThaiTaiKhoan() != AccountStatus.GUEST) {
+            throw new IllegalStateException("Tài khoản đã được kích hoạt trước đó.");
+        }
 
         if (password == null || password.isEmpty()) {
             throw new RuntimeException("Mật khẩu mới không được để trống!");

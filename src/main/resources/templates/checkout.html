@@ -1377,7 +1377,7 @@
                         if (response.trangThai === 'ok') {
                             const orderId = response.orderId;
                             const redirectUrl = (paymentMethod === 'COD')
-                                ? '/user/my-order'
+                                ? (response.isGuest ? '/user/manage-order/' + orderId : '/user/my-order')
                                 : '/payment/sepay/simulate?maDonHang=' + encodeURIComponent(response.maDonHang);
 
                             console.log('[Diagnostics] Redirect target URL:', redirectUrl);

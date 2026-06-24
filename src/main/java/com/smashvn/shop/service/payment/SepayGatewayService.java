@@ -149,7 +149,42 @@ public class SepayGatewayService implements PaymentGatewayService {
         // 5. Normal Payment Processing
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(order.getId());
 
-        // Update statuses to PAID and CHO_XAC_NHAN
+        // Verify stock is sufficient
+        boolean stockSufficient = true;
+        for (HoaDonChiTiet item : orderItems) {
+            SanPhamChiTiet spct = item.getSanPhamChiTiet();
+            if (spct != null) {
+                Optional<SanPhamChiTiet> lockedSpctOpt = sanPhamChiTietRepository.findByIdWithLock(spct.getId());
+                if (lockedSpctOpt.isPresent()) {
+                    if (lockedSpctOpt.get().getSoLuongTon() < item.getSoLuong()) {
+                        stockSufficient = false;
+                        break;
+                    }
+                } else {
+                    stockSufficient = false;
+                    break;
+                }
+            }
+        }
+
+        String targetOrderStatus = OrderStatus.CHO_XAC_NHAN.getValue();
+        if (stockSufficient) {
+            // Deduct stock
+            for (HoaDonChiTiet item : orderItems) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).get();
+                    lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
+                    sanPhamChiTietRepository.save(lockedSpct);
+                }
+            }
+        } else {
+            // Stock conflict
+            targetOrderStatus = OrderStatus.STOCK_CONFLICT.getValue();
+            log.warn("[STOCK_CONFLICT] SePay: Insufficient stock for order #{} on payment success. Set status to stock_conflict.", order.getId());
+        }
+
+        // Update statuses to PAID and target status
         order.setPaymentStatus(PaymentStatus.PAID.getValue());
         order.setTrangThaiThanhToan("DA_THANH_TOAN");
         order.setTransactionId(transactionId);
@@ -157,7 +192,7 @@ public class SepayGatewayService implements PaymentGatewayService {
         order.setPaidAt(LocalDateTime.now());
         order.setThoiGianXacNhan(LocalDateTime.now());
         order.setNguoiXacNhanThanhToan("SePay Gateway");
-        order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue());
+        order.setTrangThaiDonHang(targetOrderStatus);
         
         if (sepayConfig.isDebug()) {
             order.setGatewayResponse("SePay: Successful payment processed. Ref: " + transactionId);

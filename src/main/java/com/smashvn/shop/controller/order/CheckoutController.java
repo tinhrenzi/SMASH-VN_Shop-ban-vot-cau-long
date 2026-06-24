@@ -245,18 +245,13 @@ public class CheckoutController {
                 
                 guestCartService.transferGuestCartToDb(session, kh.getId());
                 
-                request.changeSessionId();
-                session = request.getSession(true);
-
-                session.setAttribute("nguoiDungDangNhap", tk.getEmail());
-                session.setAttribute("idNguoiDung", tk.getId());
-                session.setAttribute("vaiTro", "KH");
-                session.setAttribute("laKhachHang", true);
-                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
+                // Do NOT set login session attributes here to avoid session hijacking!
+                // Just store the guest checkout email in session for password upgrade
+                session.setAttribute("guestCheckoutEmail", tk.getEmail());
 
                 idNguoiDung = tk.getId();
                 long endAccount = System.currentTimeMillis();
-                log.info("[GuestCheckout] Create inactive account: {}ms - SUCCESS", (endAccount - startAccount));
+                log.info("[GuestCheckout] Auto-register guest account: {}ms - SUCCESS", (endAccount - startAccount));
             } catch (Exception e) {
                 long endAccount = System.currentTimeMillis();
                 log.error("[GuestCheckout] Create inactive account: {}ms - FAILED. Exception: {}", (endAccount - startAccount), e.getMessage(), e);
@@ -326,6 +321,19 @@ public class CheckoutController {
             HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
+            
+            // If this is a guest checkout (meaning they are not logged in as a registered user),
+            // grant temporary access to this specific order ID in their session for 30 minutes.
+            if (session.getAttribute("idNguoiDung") == null) {
+                synchronized (session) {
+                    List<GuestOrderAccess> allowedAccesses = (List<GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
+                    if (allowedAccesses == null) {
+                        allowedAccesses = new java.util.ArrayList<>();
+                    }
+                    allowedAccesses.add(new GuestOrderAccess(hd.getId(), java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
+                    session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
+                }
+            }
             
             guestCheckoutService.incrementPurchaseCount(idNguoiDung);
             
@@ -545,13 +553,16 @@ public class CheckoutController {
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
-            if (email == null || email.trim().isEmpty()) {
+            String sessionEmail = (String) session.getAttribute("guestCheckoutEmail");
+            String targetEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : sessionEmail;
+
+            if (targetEmail == null || targetEmail.trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "Chưa đăng nhập và không cung cấp email");
+                response.put("message", "Chưa đăng nhập và không xác định được email đặt hàng.");
                 return ResponseEntity.ok(response);
             }
             
-            TaiKhoan tk = taiKhoanRepository.findByEmail(email.trim());
+            TaiKhoan tk = taiKhoanRepository.findByEmail(targetEmail.trim());
             if (tk == null) {
                 response.put("success", false);
                 response.put("message", "Không tìm thấy tài khoản");
@@ -565,26 +576,35 @@ public class CheckoutController {
             }
             
             idNguoiDung = tk.getId();
-            
-            // Log in the user to the session
-            request.changeSessionId();
-            session = request.getSession(true);
-            session.setAttribute("nguoiDungDangNhap", tk.getEmail());
-            session.setAttribute("idNguoiDung", tk.getId());
-            session.setAttribute("vaiTro", "KH");
-            session.setAttribute("laKhachHang", true);
-            
-            com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
-            if (kh != null) {
-                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
-                guestCartService.transferGuestCartToDb(session, kh.getId());
-            } else {
-                session.setAttribute("tenHienThi", "Khách hàng");
-            }
         }
 
         try {
             guestCheckoutService.setPasswordForGuest(idNguoiDung, password);
+            
+            // Success! Rotate Session ID to prevent session fixation
+            TaiKhoan activatedTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            
+            // Invalidate the old guest session completely (clears guestCheckoutEmail, allowedGuestOrderAccesses)
+            session.invalidate();
+            
+            // Create a brand new authenticated session
+            HttpSession newSession = request.getSession(true);
+            
+            if (activatedTk != null) {
+                newSession.setAttribute("nguoiDungDangNhap", activatedTk.getEmail());
+                newSession.setAttribute("idNguoiDung", activatedTk.getId());
+                newSession.setAttribute("vaiTro", "KH");
+                newSession.setAttribute("laKhachHang", true);
+                
+                com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(activatedTk.getId());
+                if (kh != null) {
+                    newSession.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
+                    guestCartService.transferGuestCartToDb(newSession, kh.getId());
+                } else {
+                    newSession.setAttribute("tenHienThi", "Khách hàng");
+                }
+            }
+
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -629,6 +649,29 @@ public class CheckoutController {
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("token", token);
             return "set-password-by-token";
+        }
+    }
+
+    public static class GuestOrderAccess implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+        private final Integer orderId;
+        private final java.time.Instant expiresAt;
+
+        public GuestOrderAccess(Integer orderId, java.time.Instant expiresAt) {
+            this.orderId = orderId;
+            this.expiresAt = expiresAt;
+        }
+
+        public Integer getOrderId() {
+            return orderId;
+        }
+
+        public java.time.Instant getExpiresAt() {
+            return expiresAt;
+        }
+
+        public boolean isExpired() {
+            return java.time.Instant.now().isAfter(expiresAt);
         }
     }
 }

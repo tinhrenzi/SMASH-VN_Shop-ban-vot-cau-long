@@ -359,6 +359,41 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
 
+        // Verify stock is sufficient
+        boolean stockSufficient = true;
+        for (HoaDonChiTiet item : orderItems) {
+            SanPhamChiTiet spct = item.getSanPhamChiTiet();
+            if (spct != null) {
+                Optional<SanPhamChiTiet> lockedSpctOpt = sanPhamChiTietRepository.findByIdWithLock(spct.getId());
+                if (lockedSpctOpt.isPresent()) {
+                    if (lockedSpctOpt.get().getSoLuongTon() < item.getSoLuong()) {
+                        stockSufficient = false;
+                        break;
+                    }
+                } else {
+                    stockSufficient = false;
+                    break;
+                }
+            }
+        }
+
+        if (stockSufficient) {
+            // Deduct stock
+            for (HoaDonChiTiet item : orderItems) {
+                SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct != null) {
+                    SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).get();
+                    lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
+                    sanPhamChiTietRepository.save(lockedSpct);
+                }
+            }
+            hd.setTrangThaiDonHang("cho_xac_nhan");
+        } else {
+            // Stock conflict
+            hd.setTrangThaiDonHang("stock_conflict");
+            log.warn("[STOCK_CONFLICT] ZaloPay: Insufficient stock for order #{} on payment success. Set status to stock_conflict.", hd.getId());
+        }
+
         // Update status to PAID
         hd.setPaymentStatus("PAID");
         hd.setTrangThaiThanhToan("DA_THANH_TOAN");
@@ -368,7 +403,6 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         hd.setThoiGianXacNhan(LocalDateTime.now());
         hd.setNguoiXacNhanThanhToan("ZaloPay Gateway");
         hd.setGatewayResponse(rawResponse);
-        hd.setTrangThaiDonHang("cho_xac_nhan");
         hoaDonRepository.save(hd);
 
         // 2. Remove ONLY items belonging to this order from the customer's cart

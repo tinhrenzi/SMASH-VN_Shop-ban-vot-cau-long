@@ -727,7 +727,9 @@ public class OrderViewService {
     private boolean isStockDeductedState(String status) {
         if (status == null) return false;
         String lower = status.toLowerCase();
-        return "dang_giao".equals(lower) || "da_giao".equals(lower);
+        return "cho_xac_nhan".equals(lower) || "da_xac_nhan".equals(lower) 
+                || "dang_lay_hang".equals(lower) || "dang_giao".equals(lower) 
+                || "da_giao".equals(lower);
     }
 
     public String getNextStatus(String currentStatus) {
