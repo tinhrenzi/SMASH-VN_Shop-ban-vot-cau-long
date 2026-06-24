@@ -228,7 +228,7 @@ public class SepayIpnControllerTest {
         assertTrue((Boolean) result.get("success"));
         assertEquals("paid", order.getPaymentStatus());
         assertEquals("cho_xac_nhan", order.getTrangThaiDonHang());
-        assertEquals(5, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock NOT deducted
+        assertEquals(3, items.get(0).getSanPhamChiTiet().getSoLuongTon()); // Stock IS deducted
         verify(paymentTransactionRepository, times(1)).saveAndFlush(any(PaymentTransaction.class));
     }
 

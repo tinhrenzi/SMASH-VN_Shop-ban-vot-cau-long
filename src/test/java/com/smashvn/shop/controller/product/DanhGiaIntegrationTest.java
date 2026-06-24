@@ -639,4 +639,76 @@ public class DanhGiaIntegrationTest {
         assertTrue(updatedUser.getSoLanNhacNhoViPham() >= 1);
         assertNotNull(updatedUser.getNgayKhoaBinhLuanDen());
     }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        try {
+            // Delete reviews
+            List<DanhGia> reviews = danhGiaDAO.findAll();
+            for (DanhGia dg : reviews) {
+                if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null &&
+                    dg.getKhachHang().getTaiKhoan().getEmail() != null &&
+                    (dg.getKhachHang().getTaiKhoan().getEmail().startsWith("buyer_") || dg.getKhachHang().getTaiKhoan().getEmail().startsWith("admin_"))) {
+                    danhGiaDAO.delete(dg);
+                }
+            }
+        } catch (Exception e) {}
+        try {
+            // Delete comment violation logs
+            List<CommentViolationLog> logs = commentViolationLogRepository.findAll();
+            for (CommentViolationLog log : logs) {
+                if (log.getTaiKhoan() != null && log.getTaiKhoan().getEmail() != null &&
+                    (log.getTaiKhoan().getEmail().startsWith("buyer_") || log.getTaiKhoan().getEmail().startsWith("admin_"))) {
+                    commentViolationLogRepository.delete(log);
+                }
+            }
+        } catch (Exception e) {}
+        try {
+            if (activeSpct != null) {
+                sanPhamChiTietRepository.delete(activeSpct);
+            }
+        } catch (Exception e) {}
+        try {
+            if (inactiveSpct != null) {
+                sanPhamChiTietRepository.delete(inactiveSpct);
+            }
+        } catch (Exception e) {}
+        try {
+            if (activeProduct != null) {
+                sanPhamRepository.delete(activeProduct);
+            }
+        } catch (Exception e) {}
+        try {
+            if (inactiveProduct != null) {
+                sanPhamRepository.delete(inactiveProduct);
+            }
+        } catch (Exception e) {}
+        try {
+            if (testKhachHang != null) {
+                khachHangRepository.delete(testKhachHang);
+            }
+        } catch (Exception e) {}
+        try {
+            if (testUser != null) {
+                taiKhoanRepository.delete(testUser);
+            }
+        } catch (Exception e) {}
+        try {
+            if (testAdmin != null) {
+                taiKhoanRepository.delete(testAdmin);
+            }
+        } catch (Exception e) {}
+        try {
+            List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
+                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_"))
+                    .toList();
+            for (TaiKhoan tk : strayStaff) {
+                NhanVien nv = nhanVienRepository.findByTaiKhoan_Id(tk.getId());
+                if (nv != null) {
+                    nhanVienRepository.delete(nv);
+                }
+                taiKhoanRepository.delete(tk);
+            }
+        } catch (Exception e) {}
+    }
 }

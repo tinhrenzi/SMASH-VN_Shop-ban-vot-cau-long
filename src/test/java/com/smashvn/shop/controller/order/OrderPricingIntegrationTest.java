@@ -592,4 +592,41 @@ public class OrderPricingIntegrationTest {
             }
         }
     }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        try {
+            if (testDgg != null) {
+                dotGiamGiaDAO.delete(testDgg);
+            }
+        } catch (Exception e) {}
+        try {
+            if (testSpct != null) {
+                sanPhamChiTietRepository.delete(testSpct);
+                sanPhamRepository.delete(testSpct.getSanPham());
+            }
+        } catch (Exception e) {}
+        try {
+            if (testKhachHang != null) {
+                khachHangRepository.delete(testKhachHang);
+            }
+        } catch (Exception e) {}
+        try {
+            if (testUser != null) {
+                taiKhoanRepository.delete(testUser);
+            }
+        } catch (Exception e) {}
+        try {
+            List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
+                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_pricing_"))
+                    .toList();
+            for (TaiKhoan tk : strayStaff) {
+                NhanVien nv = nhanVienRepository.findByTaiKhoan_Id(tk.getId());
+                if (nv != null) {
+                    nhanVienRepository.delete(nv);
+                }
+                taiKhoanRepository.delete(tk);
+            }
+        } catch (Exception e) {}
+    }
 }
