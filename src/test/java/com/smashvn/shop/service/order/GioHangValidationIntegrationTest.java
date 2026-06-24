@@ -393,4 +393,40 @@ public class GioHangValidationIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Số lượng sản phẩm trong giỏ hàng không được vượt quá 999."));
     }
+
+    @Test
+    void testThemVaoGio_NoKhachHangProfile() throws Exception {
+        // Create a new user account without a KhachHang profile
+        TaiKhoan noProfileUser = new TaiKhoan();
+        noProfileUser.setEmail("noprofile_tester@gmail.com");
+        noProfileUser.setMatKhau("testpass123");
+        noProfileUser.setVaiTro("QL"); // Role manager, typically doesn't have a profile by default
+        noProfileUser.setTrangThai("hoat_dong");
+        noProfileUser.setLaKhachHang(true);
+        noProfileUser = taiKhoanRepository.save(noProfileUser);
+
+        // Verify that the profile doesn't exist
+        assertNull(khachHangRepository.findByTaiKhoan_Id(noProfileUser.getId()));
+
+        // Perform add to cart
+        mockMvc.perform(post("/gio-hang/them")
+                        .sessionAttr("idNguoiDung", noProfileUser.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laKhachHang", true)
+                        .sessionAttr("laNhanVien", true)
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
+                        .param("soLuong", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.soLuongThem").value(3));
+
+        // Verify that the KhachHang profile was automatically created and links to this user
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(noProfileUser.getId());
+        assertNotNull(kh);
+        assertEquals("noprofile_tester", kh.getTenKh());
+        assertEquals("", kh.getHoKh());
+        assertEquals("", kh.getSoDienThoaiKh());
+        assertTrue(kh.isLaTaiKhoanNoiBo()); // QL is an internal account
+    }
 }

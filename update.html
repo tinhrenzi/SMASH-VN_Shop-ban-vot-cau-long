@@ -62,6 +62,21 @@
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
+    <h2>85. Sửa lỗi: Khắc phục lỗi không thêm được sản phẩm vào giỏ hàng và tự động khởi tạo hồ sơ khách hàng (Fix Add-to-Cart Bug &amp; Automatic Customer Profile Initialization)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tự động khởi tạo hồ sơ khách hàng (Automatic Customer Profile Provisioning):</strong> Khắc phục triệt để lỗi không thêm được sản phẩm vào giỏ hàng đối với các tài khoản đăng nhập (như tài khoản Admin, Manager, Nhân viên hệ thống có vai trò <code>QL</code>, <code>NV</code>) khi họ không có sẵn bản ghi trong bảng <code>KhachHang</code>. Hệ thống hiện tự động phát hiện và tạo hồ sơ <code>KhachHang</code> mặc định liên kết với tài khoản tương ứng ngay khi thực hiện hành động thêm sản phẩm vào giỏ hàng hoặc tạo đơn hàng mới.</li>
+            <li><strong>Đồng bộ hóa phương thức giỏ hàng và đơn hàng (Cart &amp; Order API Hardening):</strong> Áp dụng cơ chế nạp/tạo hồ sơ tự động <code>getOrCreateKhachHang</code> đồng bộ trên các phương thức nghiệp vụ của <code>GioHangService</code> (bao gồm thêm vào giỏ, xóa sản phẩm khỏi giỏ, cập nhật số lượng, và tạo đơn hàng checkout) để đảm bảo không xảy ra lỗi <code>NullPointerException</code> hoặc lỗi cấu hình tài khoản.</li>
+            <li><strong>Bổ sung kiểm thử tích hợp (Integration Testing):</strong> Xây dựng ca kiểm thử tự động <code>testThemVaoGio_NoKhachHangProfile</code> trong lớp <code>GioHangValidationIntegrationTest</code> để kiểm chứng hành vi tự động khởi tạo và gán giá trị mặc định cho hồ sơ khách hàng của tài khoản nội bộ khi thực hiện thêm sản phẩm vào giỏ hàng qua endpoint <code>/gio-hang/them</code>.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/main/java/com/smashvn/shop/service/order/GioHangService.java">GioHangService.java</a></li>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/test/java/com/smashvn/shop/service/order/GioHangValidationIntegrationTest.java">GioHangValidationIntegrationTest.java</a></li>
+        </ul>
+    </div>
+
     <h2>84. Tài liệu: Cải tiến Giao diện Tài liệu Cấu trúc Dự án (project-structure.html) thành Living Portal hỗ trợ Developer Onboarding &amp; Code Review</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

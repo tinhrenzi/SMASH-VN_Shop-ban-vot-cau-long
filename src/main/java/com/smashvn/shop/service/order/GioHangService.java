@@ -37,6 +37,8 @@ import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import java.time.LocalDateTime;
@@ -72,6 +74,26 @@ public class GioHangService {
     private final SoDiaChiRepository soDiaChiRepository;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final PricingService pricingService;
+    private final TaiKhoanRepository taiKhoanRepository;
+
+    private KhachHang getOrCreateKhachHang(Integer idTaiKhoan) {
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (kh == null) {
+            TaiKhoan taiKhoan = taiKhoanRepository.findById(idTaiKhoan)
+                    .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại!"));
+            kh = new KhachHang();
+            kh.setTaiKhoan(taiKhoan);
+            kh.setHoKh("");
+            String email = taiKhoan.getEmail();
+            String name = (email != null && email.contains("@")) ? email.split("@")[0] : "Người dùng";
+            kh.setTenKh(name);
+            kh.setSoDienThoaiKh("");
+            kh.setNhanBanTin(false);
+            kh.setLaTaiKhoanNoiBo("QL".equals(taiKhoan.getVaiTro()) || "NV".equals(taiKhoan.getVaiTro()));
+            kh = khachHangRepository.save(kh);
+        }
+        return kh;
+    }
 
     @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> themVaoGio(Integer idTaiKhoan, Integer idSanPhamChiTiet, Integer soLuong) {
@@ -85,10 +107,7 @@ public class GioHangService {
             throw new IllegalArgumentException("Sản phẩm không hợp lệ.");
         }
 
-        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (khachHang == null) {
-            throw new RuntimeException("Tài khoản này chưa được cập nhật thông tin Khách Hàng!");
-        }
+        KhachHang khachHang = getOrCreateKhachHang(idTaiKhoan);
 
         GioHang gioHang = gioHangRepository.findByKhachHang_Id(khachHang.getId());
         if (gioHang == null) {
@@ -213,10 +232,7 @@ public class GioHangService {
 
     @org.springframework.transaction.annotation.Transactional
     public void xoaSanPhamKhoiGio(Integer idGioHangChiTiet, Integer idTaiKhoan) {
-        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (khachHang == null) {
-            throw new RuntimeException("Tài khoản không hợp lệ!");
-        }
+        KhachHang khachHang = getOrCreateKhachHang(idTaiKhoan);
 
         GioHangChiTiet chiTiet = gioHangChiTietRepository.findById(idGioHangChiTiet)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm trong giỏ"));
@@ -241,10 +257,7 @@ public class GioHangService {
             throw new IllegalArgumentException("Chi tiết giỏ hàng không hợp lệ.");
         }
 
-        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (khachHang == null) {
-            throw new RuntimeException("Tài khoản không hợp lệ!");
-        }
+        KhachHang khachHang = getOrCreateKhachHang(idTaiKhoan);
 
         GioHangChiTiet chiTiet = gioHangChiTietRepository.findById(idGioHangChiTiet)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm trong giỏ"));
@@ -307,10 +320,7 @@ public class GioHangService {
             throw new IllegalArgumentException("Ghi chú đơn hàng tối đa 500 ký tự.");
         }
 
-        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (kh == null) {
-            throw new RuntimeException("Tài khoản chưa được cập nhật thông tin Khách Hàng!");
-        }
+        KhachHang kh = getOrCreateKhachHang(idTaiKhoan);
 
         String finalHoTenNhan;
         String finalSdtNhan;

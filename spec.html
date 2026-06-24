@@ -64,6 +64,13 @@
     <div class="section-block">
         <ul>
              <!-- NEWEST FIRST -->
+            <li><strong>Khắc phục lỗi không thêm được sản phẩm vào giỏ hàng và tự động khởi tạo hồ sơ khách hàng (Fix Add-to-Cart Bug &amp; Automatic Customer Profile Initialization) (Mục 85) — 24/06/2026:</strong>
+                <ul>
+                    <li><strong>Tự động khởi tạo hồ sơ khách hàng (Automatic Customer Profile Provisioning):</strong> Khắc phục lỗi không thể thêm sản phẩm vào giỏ hàng đối với các tài khoản đăng nhập (như tài khoản Admin, Manager, Nhân viên hệ thống có vai trò <code>QL</code>, <code>NV</code>) khi họ chưa có hồ sơ <code>KhachHang</code> tương ứng trong CSDL. Tự động kiểm tra và tạo mới hồ sơ khách hàng mặc định (liên kết với <code>TaiKhoan</code> và thiết lập cờ <code>laTaiKhoanNoiBo</code> dựa theo vai trò tài khoản) khi có sự kiện thêm sản phẩm vào giỏ hoặc thanh toán đơn hàng.</li>
+                    <li><strong>Đồng bộ hóa phương thức giỏ hàng và đơn hàng (Cart &amp; Order API Hardening):</strong> Tích hợp phương thức tiện ích <code>getOrCreateKhachHang</code> trong <code>GioHangService</code> đồng bộ cho các phương thức tác vụ chính gồm <code>themVaoGio</code>, <code>xoaSanPhamKhoiGio</code>, <code>capNhatSoLuong</code>, và <code>createOrder</code>, loại bỏ hoàn toàn các ngoại lệ <code>RuntimeException</code> liên quan đến hồ sơ khách hàng chưa cập nhật thông tin.</li>
+                    <li><strong>Bổ sung kiểm thử tích hợp (Integration Testing):</strong> Thêm test case <code>testThemVaoGio_NoKhachHangProfile</code> kiểm thử tự động luồng thêm sản phẩm vào giỏ của tài khoản chưa có thông tin khách hàng, đảm bảo hồ sơ khách hàng được khởi tạo thành công và chứa thông tin chính xác.</li>
+                </ul>
+            </li>
             <li><strong>Cải tiến Giao diện Tài liệu Cấu trúc Dự án (project-structure.html) thành Living Portal hỗ trợ Developer Onboarding &amp; Code Review (Mục 84) — 24/06/2026:</strong>
                 <ul>
                     <li><strong>Bổ sung Architecture Overview:</strong> Tích hợp sơ đồ phân rã kiến trúc 4 lớp (Customer, Admin, Integration, Persistence Layer) định hướng vị trí mã nguồn cho lập trình viên mới.</li>
