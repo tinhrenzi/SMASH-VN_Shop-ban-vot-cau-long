@@ -621,7 +621,7 @@ public class OrderPricingIntegrationTest {
                     .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_pricing_"))
                     .toList();
             for (TaiKhoan tk : strayStaff) {
-                NhanVien nv = nhanVienRepository.findByTaiKhoan_Id(tk.getId());
+                NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());
                 if (nv != null) {
                     nhanVienRepository.delete(nv);
                 }
