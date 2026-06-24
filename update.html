@@ -62,6 +62,76 @@
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
+    <h2>84. Tài liệu: Cải tiến Giao diện Tài liệu Cấu trúc Dự án (project-structure.html) thành Living Portal hỗ trợ Developer Onboarding &amp; Code Review</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Phân đoạn Kiến trúc Tổng quan (Architecture Overview):</strong> Tích hợp sơ đồ kiến trúc phân rã 4 lớp (Customer Layer, Admin Layer, Integration Layer, Persistence Layer) trực quan ngay đầu tài liệu mô tả chi tiết vị trí và nhiệm vụ của từng tầng.</li>
+            <li><strong>Thống kê &amp; Dashboard Chỉ số Sức khỏe Tài liệu:</strong> Tự động quét dữ liệu và hiển thị trực quan các chỉ số (Tổng số luồng, Số luồng đã Verified, Needs Review, Stale, Risk Level counters và Business Criticality).</li>
+            <li><strong>Tìm kiếm Toàn cục &amp; Bộ lọc Đa Điều Kiện:</strong> Bổ sung thanh tìm kiếm toàn cục (cho phép quét theo tên luồng, endpoint, controllers, services, repositories, database tables) kết hợp bộ lọc theo Risk Level, Complexity, và Status.</li>
+            <li><strong>Ba Chế độ Xem Tương Tác:</strong>
+                <ul>
+                    <li><em>Full Documentation Mode</em>: Hiển thị đầy đủ thông tin nghiệp vụ, sequence diagram và chỉ dẫn kỹ thuật nâng cao.</li>
+                    <li><em>Quick Review Mode</em>: Rút gọn các thông số kỹ thuật cốt lõi (Endpoint, Controllers, Services, Repos, DB Tables, Hotspots, Risk) vừa khít trên một màn hình cho Reviewer xem nhanh.</li>
+                    <li><em>Developer Onboarding Mode</em>: Hướng dẫn cơ bản cho lập trình viên mới (mục đích luồng, execution path, hotspots, common failures), ẩn đi các chi tiết bảo mật/transaction phức tạp.</li>
+                </ul>
+            </li>
+            <li><strong>Cơ cấu Xếp Gọn Accordions:</strong> Thu gọn mặc định các phần nâng cao (ADR, Dependency Map, Database Impact, Security Review 9 lớp, Debugging, Testing, Change Impact Analysis, Governance) để tránh quá tải thông tin cho người đọc.</li>
+            <li><strong>Đồng bộ 24 Luồng Nghiệp Vụ Cốt Lõi:</strong> Cấu trúc lại toàn bộ 24 luồng nghiệp vụ thực tế của dự án Spring Boot thành cấu trúc phẳng, đồng nhất tất cả các thuộc tính mô tả nghiệp vụ và kỹ thuật theo chuẩn mẫu V5.</li>
+            <li><strong>Khắc phục lỗi vỡ giao diện (Grid Overflow Fix):</strong> Thiết lập thuộc tính CSS <code>min-width: 0</code> trên container <code>#flow-detail-pane-container</code> và thay thế toàn bộ grid layout tĩnh <code>1fr 1fr</code> trong chi tiết luồng bằng CSS Grid responsive <code>repeat(auto-fit, minmax(280px, 1fr))</code> để tự động co giãn và xuống dòng trên thiết bị hẹp, giải quyết dứt điểm hiện tượng tràn khung hình.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>docs/project-structure.html</code></li>
+        </ul>
+    </div>
+
+    <h2>83. Tính năng: Xử lý Webhook SePay, Chuẩn hóa Trạng thái Polling &amp; Cải tiến Trình mô phỏng (SePay Webhook Integration, Polling Status Normalization &amp; Simulation Improvement)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Chuẩn hóa Trạng thái Polling Thanh toán (SePay Polling Status Normalization):</strong> Giải quyết bất tương thích giữa cơ sở dữ liệu (cột <code>trang_thai_thanh_toan</code> lưu <code>DA_THANH_TOAN</code>) và client-side polling Javascript mong đợi chuỗi <code>paid</code>. API <code>/api/payment/sepay/query/{maDonHang}</code> hiện tại tự động ánh xạ trạng thái sang <code>paid</code> hoặc <code>pending</code> để client-side AJAX có thể chuyển hướng khách hàng ngay lập tức khi thanh toán thành công.</li>
+            <li><strong>Bỏ qua Xác thực Session trong chế độ Debug (Debug Session Bypass):</strong> Cập nhật API polling trạng thái đơn hàng để tự động bypass kiểm tra session/cookie người dùng nếu cấu hình <code>sepayConfig.isDebug()</code> bằng <code>true</code>. Điều này giúp hỗ trợ việc kiểm thử local, giả lập thanh toán khi chạy qua proxy/Ngrok hoặc khi phiên đăng nhập hết hạn mà không ảnh hưởng tới tiến trình trải nghiệm người dùng.</li>
+            <li><strong>Xác thực Webhook case-insensitive:</strong> Nâng cấp bộ so khớp header <code>Authorization</code> trong <code>SepayIpnController.java</code>, cho phép khớp chuỗi <code>apikey </code> không phân biệt chữ hoa chữ thường. Việc này bảo vệ webhook khỏi việc bị chặn bởi cấu hình header khác biệt của các server SePay (ví dụ: <code>ApiKey</code>, <code>APIKey</code>).</li>
+            <li><strong>Chặn lặp giao dịch và chuyển hướng khi nhấn Back:</strong> Nâng cấp <code>SepaySimulationController.java</code> tự động kiểm tra trạng thái đơn hàng và chuyển hướng (Redirect 302) trực tiếp về trang chủ (<code>/</code>) nếu đơn hàng đã được thanh toán. Tránh tình trạng khách hàng bị kẹt trên trang quét mã hoặc gửi IPN trùng lặp khi bấm nút Back của trình duyệt.</li>
+            <li><strong>Giao diện nút "Mô phỏng thanh toán thành công" tiện lợi:</strong> Tích hợp nút mô phỏng trên giao diện <code>sepay-simulate.html</code> kết hợp Ajax gửi POST lên backend để kích hoạt IPN nội bộ an toàn trên server, bảo vệ khóa <code>ipnSecret</code> không bị rò rỉ phía client.</li>
+            <li><strong>Tránh nghẽn luồng tạo đơn do lỗi gửi Email:</strong> Tách biệt cuộc gọi gửi email kích hoạt tài khoản/đơn hàng cho khách vãng lai thành một tác vụ an toàn được bao bọc bởi khối try-catch độc lập. Giúp loại bỏ lỗi gửi email SMTP làm treo tiến trình thanh toán online hoặc rollback đơn hàng.</li>
+            <li><strong>Hồi phục &amp; Xử lý lại IPN cũ khi bị lỗi:</strong> Cập nhật <code>SepayGatewayService.java</code> để tự động xóa vết giao dịch cũ nếu giao dịch đó có trạng thái thất bại (như <code>amount_mismatch</code> hoặc <code>order_not_found</code>) trước khi xử lý lại giao dịch mới gửi từ IPN, đảm bảo tính mềm dẻo của dữ liệu.</li>
+            <li><strong>Cập nhật bộ kiểm thử tự động:</strong> Sửa đổi và cập nhật thành công các ca kiểm thử trong <code>SepayIpnControllerTest.java</code> và <code>SepaySimulationControllerTest.java</code>, đảm bảo 100% test case (21/21) chạy thành công.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/payment/SepayIpnController.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/payment/SepaySimulationController.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/payment/SepayGatewayService.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/controller/order/CheckoutController.java</code></li>
+            <li>[MODIFY] <code>src/main/java/com/smashvn/shop/service/order/GuestCheckoutService.java</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/checkout.html</code></li>
+            <li>[MODIFY] <code>src/main/resources/templates/sepay-simulate.html</code></li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/controller/payment/SepayIpnControllerTest.java</code></li>
+            <li>[MODIFY] <code>src/test/java/com/smashvn/shop/controller/payment/SepaySimulationControllerTest.java</code></li>
+            <li>[MODIFY] <code>spec.html</code></li>
+            <li>[MODIFY] <code>update.html</code></li>
+        </ul>
+    </div>
+
+    <h2>82. Công cụ: Đồng bộ &amp; Reset Identity SQL Server 2022 (Bản Cải Tiến Bảo Mật &amp; Làm Sạch Dữ Liệu Kiểm Thử)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Sử dụng sys.identity_columns:</strong> Tối ưu hóa truy vấn catalog trên SQL Server 2022, quét trực tiếp các cột tự tăng để lấy thông tin <code>last_value</code> thay vì tham chiếu <code>sys.columns</code> kết hợp lọc <code>is_identity</code>.</li>
+            <li><strong>Định dạng DBCC CHECKIDENT chuẩn hóa:</strong> Loại bỏ dấu ngoặc vuông trong dynamic SQL sinh ra cho lệnh DBCC, sử dụng cú pháp <code>schema.table</code> chuẩn (ví dụ: <code>dbo.HoaDon</code>).</li>
+            <li><strong>Hỗ trợ chế độ Dry-Run:</strong> Tích hợp cấu hình <code>@DryRun = 1</code> mặc định, cho phép in ra console các câu lệnh DBCC CHECKIDENT động sẽ được sinh ra mà không thực thi trực tiếp, hỗ trợ DBA kiểm tra an toàn hệ thống.</li>
+            <li><strong>Thống kê &amp; Báo cáo chi tiết:</strong> Thêm cột tên Database hiện tại (<code>DB_NAME()</code>) vào báo cáo xác minh chi tiết và in tổng số bảng được xử lý thành công (<code>TotalIdentityTablesProcessed</code>).</li>
+            <li><strong>Làm sạch dữ liệu kiểm thử &amp; Ánh xạ lại (Re-sequencing) ID:</strong> Xóa toàn bộ các sản phẩm test (ID &gt; 23 trong <code>SanPham</code>), các biến thể test (ID &gt; 23 trong <code>SanPhamChiTiet</code>), và nhật ký <code>EditLog</code>. Tiến hành ánh xạ lại các tài khoản seed nhân viên (ID 707 &rarr; 3), nhân viên Trần Văn Chung (ID 171 &rarr; 3), phương thức thanh toán (SePay từ 209 &rarr; 2, COD từ 32 &rarr; 1), đơn vị vận chuyển (GHTK từ 29 &rarr; 1, GHN từ 31 &rarr; 2) để đảm bảo sau khi reseed, không còn identity counter nào ở mức vài trăm.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[NEW] <code>reseed_utility.sql</code></li>
+            <li>[NEW] <code>C:\Users\VINH\.gemini\antigravity\brain\08513562-6b65-439a-8f8d-0fe9a788611c\scratch\clean_test_data.sql</code></li>
+        </ul>
+    </div>
+
     <h2>81. Tính năng: Hệ thống Quản lý Bài viết &amp; Blogs (Admin Blog CMS) &amp; Tự động Cập nhật Trạng thái Khuyến mãi</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

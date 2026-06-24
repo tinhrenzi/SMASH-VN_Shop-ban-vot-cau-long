@@ -1404,7 +1404,7 @@
 
         .score-box {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 10px;
             margin-top: 10px;
         }
@@ -1711,7 +1711,7 @@
                 </div>
 
                 <!-- Right Detail: Chi tiết từng luồng -->
-                <div id="flow-detail-pane-container" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                <div id="flow-detail-pane-container" style="display: flex; flex-direction: column; gap: 15px; width: 100%; min-width: 0;">
                     <!-- View Mode Toggle Buttons -->
                     <div class="view-mode-bar">
                         <button class="view-mode-btn active" id="view-mode-full" onclick="changeViewMode('full')">📄 Full Documentation</button>
@@ -1738,6 +1738,12 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <tr>
+                            <td>2026-06-24</td>
+                            <td>Tất cả 24 luồng nghiệp vụ</td>
+                            <td>Nâng cấp Living Architecture Portal &amp; 3 Chế độ xem &amp; Grid responsive</td>
+                            <td>Hỗ trợ đắc lực cho Developer Onboarding &amp; Code Review &amp; Tránh vỡ UI</td>
+                        </tr>
                         <tr>
                             <td>2026-06-18</td>
                             <td>Thanh toán SePay (flow-sepay-pay)</td>
@@ -4955,7 +4961,7 @@
                             <span class="endpoint-text">${flow.endpoint}</span>
                         </div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:10px;">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-top:10px;">
                         <div style="background:#18181b; padding:18px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap:10px;">
                             <h3 style="color:var(--color-primary); border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px; font-family: var(--font-header);">🔍 Code Coordinates</h3>
                             <p><strong>Primary Entry Point:</strong> <code>${flow.entryPrimary}</code></p>
@@ -5244,7 +5250,7 @@
                         <span class="flow-accordion-toggle-icon">▶</span>
                     </div>
                     <div class="flow-accordion-content">
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
                             <div>
                                 <strong>Upstream Dependencies (Phụ thuộc nguồn trên):</strong>
                                 <pre style="background:#09090b; padding:10px; border-radius:6px; margin-top:8px; font-family:var(--font-mono); font-size:0.8rem; color:#a1a1aa;">${upstreamHtml}</pre>
@@ -5279,7 +5285,7 @@
                         <span>🛡️ Security Review (Đánh giá bảo mật 9 tầng)</span>
                         <span class="flow-accordion-toggle-icon">▶</span>
                     </div>
-                    <div class="flow-accordion-content" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.85rem;">
+                    <div class="flow-accordion-content" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.85rem;">
                         <div><strong>Session Security:</strong> <span style="color:var(--text-muted);">${flow.secSession}</span></div>
                         <div><strong>JWT Validation:</strong> <span style="color:var(--text-muted);">${flow.secJwt}</span></div>
                         <div><strong>CSRF Protection:</strong> <span style="color:var(--text-muted);">${flow.secCsrf}</span></div>
@@ -5325,7 +5331,7 @@
                         <span>⚠️ Change Impact Analysis (Phân tích vùng ảnh hưởng)</span>
                         <span class="flow-accordion-toggle-icon">▶</span>
                     </div>
-                    <div class="flow-accordion-content" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.85rem;">
+                    <div class="flow-accordion-content" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.85rem;">
                         <div><strong>Affected Modules:</strong> <code>${flow.impactModules.join(', ')}</code></div>
                         <div><strong>Affected APIs:</strong> <code>${flow.impactApis.join(', ')}</code></div>
                         <div><strong>Affected UI Pages:</strong> <code>${flow.impactPages.join(', ')}</code></div>
@@ -5351,7 +5357,7 @@
                         <span class="flow-accordion-toggle-icon">▶</span>
                     </div>
                     <div class="flow-accordion-content">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:0.85rem;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.85rem;">
                             <div><strong>Owner Team:</strong> <code>${flow.govOwnerTeam}</code></div>
                             <div><strong>Owner Module:</strong> <code>${flow.govOwnerModule}</code></div>
                             <div><strong>Last Review Date:</strong> <code>${flow.govLastReviewDate}</code></div>
