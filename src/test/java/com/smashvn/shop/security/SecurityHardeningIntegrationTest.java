@@ -407,6 +407,32 @@ public class SecurityHardeningIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("không được vượt quá 2000 ký tự")));
     }
 
+    @Test
+    void testChat_NoKhachHangProfile_AutoCreation() throws Exception {
+        // managerTk has no KhachHang profile initially
+        org.junit.jupiter.api.Assertions.assertNull(khachHangRepository.findByTaiKhoan_Id(managerTk.getId()));
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idNguoiDung", managerTk.getId());
+
+        // Perform request to /api/chat/history, which should auto-create the KhachHang profile
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/chat/history")
+                .session(session))
+                .andExpect(status().isOk());
+
+        // Verify that the KhachHang profile was indeed automatically created
+        KhachHang profile = khachHangRepository.findByTaiKhoan_Id(managerTk.getId());
+        org.junit.jupiter.api.Assertions.assertNotNull(profile);
+        org.junit.jupiter.api.Assertions.assertTrue(profile.isLaTaiKhoanNoiBo());
+
+        // Now perform a message send, it should also work perfectly
+        mockMvc.perform(post("/api/chat/send")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"Xin chào\"}")
+                .session(session))
+                .andExpect(status().isOk());
+    }
+
     // ================================================================
     // AUTHORIZATION TESTS
     // ================================================================

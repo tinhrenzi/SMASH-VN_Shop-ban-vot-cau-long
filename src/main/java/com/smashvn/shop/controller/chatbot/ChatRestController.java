@@ -20,6 +20,8 @@ import com.smashvn.shop.entity.ChatMessage;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.repository.ChatMessageRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.chatbot.ChatService;
 
 import jakarta.servlet.http.HttpSession;
@@ -36,6 +38,7 @@ public class ChatRestController {
     private final ChatService chatService;
     private final KhachHangRepository khachHangRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
 
     @Data
@@ -83,6 +86,25 @@ public class ChatRestController {
         private String note;
     }
 
+    private KhachHang getOrCreateKhachHang(Integer idTaiKhoan) {
+        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (kh == null) {
+            TaiKhoan taiKhoan = taiKhoanRepository.findById(idTaiKhoan)
+                    .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại!"));
+            kh = new KhachHang();
+            kh.setTaiKhoan(taiKhoan);
+            kh.setHoKh("");
+            String email = taiKhoan.getEmail();
+            String name = (email != null && email.contains("@")) ? email.split("@")[0] : "Người dùng";
+            kh.setTenKh(name);
+            kh.setSoDienThoaiKh("");
+            kh.setNhanBanTin(false);
+            kh.setLaTaiKhoanNoiBo("QL".equals(taiKhoan.getVaiTro()) || "NV".equals(taiKhoan.getVaiTro()));
+            kh = khachHangRepository.save(kh);
+        }
+        return kh;
+    }
+
     @GetMapping("/history")
     public ResponseEntity<?> getChatHistory(HttpSession session) {
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
@@ -100,10 +122,7 @@ public class ChatRestController {
             return ResponseEntity.ok(Collections.singletonList(welcome));
         }
 
-        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (kh == null) {
-            return ResponseEntity.badRequest().body("Không tìm thấy thông tin khách hàng liên kết!");
-        }
+        KhachHang kh = getOrCreateKhachHang(idTaiKhoan);
 
         ChatConversation conv = chatService.getOrCreateConversation(kh.getId());
         List<ChatMessage> messages = chatService.getMessages(conv.getId());
@@ -156,10 +175,7 @@ public class ChatRestController {
             return ResponseEntity.ok(replies);
         }
 
-        KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (kh == null) {
-            return ResponseEntity.badRequest().body("Không tìm thấy thông tin khách hàng liên kết!");
-        }
+        KhachHang kh = getOrCreateKhachHang(idTaiKhoan);
 
         ChatConversation conv = chatService.getOrCreateConversation(kh.getId());
 
@@ -198,10 +214,7 @@ public class ChatRestController {
             return ResponseEntity.ok("Cảm ơn đóng góp của bạn!");
         }
 
-        KhachHang currentKhachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
-        if (currentKhachHang == null) {
-            return ResponseEntity.badRequest().body("Không tìm thấy thông tin khách hàng liên kết!");
-        }
+        KhachHang currentKhachHang = getOrCreateKhachHang(idTaiKhoan);
 
         ChatMessage msg = chatMessageRepository.findById(payload.getMessageId()).orElse(null);
         if (msg == null) {

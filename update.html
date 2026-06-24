@@ -62,6 +62,25 @@
     <h1>Nhật Ký Cập Nhật Chức Năng (Features & Functions Updated)</h1>
     <p>Tài liệu này ghi lại chi tiết các chức năng đã được cập nhật/thêm mới (sắp xếp theo thứ tự mới nhất ở trên).</p>
 
+    <h2>86. Sửa lỗi &amp; Cải tiến: Khắc phục lỗi không tải được lịch sử Chatbot và lỗi đồng bộ CSDL của Chatbot (Fix Chatbot History Load Failure &amp; Database Identity Resync)</h2>
+    <div class="feature-block">
+        <div class="feature-title">Cập nhật những tính năng gì:</div>
+        <ul>
+            <li><strong>Tự động khởi tạo hồ sơ khi truy cập Chatbot (Chatbot Customer Profile Auto-Provisioning):</strong> Đồng bộ hóa cơ chế tự động tạo hồ sơ khách hàng <code>getOrCreateKhachHang</code> vào <code>ChatRestController</code> cho các endpoint <code>/api/chat/history</code>, <code>/api/chat/send</code>, và <code>/api/chat/feedback</code>. Khắc phục triệt để lỗi chatbot bị treo hoặc trả về lỗi <code>400 Bad Request</code> đối với tài khoản Admin/Staff chưa cập nhật hồ sơ khách hàng.</li>
+            <li><strong>Khắc phục đồng bộ identity database (Database Identity Resync):</strong> Sửa các lỗi cú pháp khoảng trắng trong công cụ <code>reseed_utility.sql</code> để thực hiện đồng bộ lại identity của toàn bộ các bảng trong CSDL (đặc biệt là <code>SanPham</code>, <code>SanPhamChiTiet</code>, <code>TaiKhoan</code>, <code>KhachHang</code>, <code>NhanVien</code>) khớp chính xác với ID lớn nhất hiện tại, chấm dứt hoàn toàn hiện tượng trùng khóa ngoại/khóa chính khi test case hoặc người dùng tạo dữ liệu mới.</li>
+            <li><strong>Chuẩn hóa mô hình AI Gemini (Gemini AI Model Alignment):</strong> Cập nhật tên mô hình mặc định của trợ lý ảo từ <code>gemini-3.5-flash</code> (không tồn tại) sang <code>gemini-1.5-flash</code> tương thích chuẩn trong <code>application.properties</code> và <code>ChatService.java</code>.</li>
+            <li><strong>Bổ sung kiểm thử tích hợp chatbot (Chatbot Integration Testing):</strong> Thêm test case <code>testChat_NoKhachHangProfile_AutoCreation</code> trong <code>SecurityHardeningIntegrationTest</code> để tự động kiểm thử luồng truy cập lịch sử và gửi tin nhắn chat của tài khoản chưa có thông tin khách hàng.</li>
+        </ul>
+        <div class="feature-title">Files thay đổi:</div>
+        <ul>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/main/java/com/smashvn/shop/controller/chatbot/ChatRestController.java">ChatRestController.java</a></li>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/main/java/com/smashvn/shop/service/chatbot/ChatService.java">ChatService.java</a></li>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/main/resources/application.properties">application.properties</a></li>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/reseed_utility.sql">reseed_utility.sql</a></li>
+            <li>[MODIFY] <a href="file:///h:/SMASH_VN/SMASH-VN_Shop-ban-vot-cau-long/src/test/java/com/smashvn/shop/security/SecurityHardeningIntegrationTest.java">SecurityHardeningIntegrationTest.java</a></li>
+        </ul>
+    </div>
+
     <h2>85. Sửa lỗi: Khắc phục lỗi không thêm được sản phẩm vào giỏ hàng và tự động khởi tạo hồ sơ khách hàng (Fix Add-to-Cart Bug &amp; Automatic Customer Profile Initialization)</h2>
     <div class="feature-block">
         <div class="feature-title">Cập nhật những tính năng gì:</div>

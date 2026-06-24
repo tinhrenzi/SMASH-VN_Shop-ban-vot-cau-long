@@ -68,7 +68,7 @@ public class ChatService {
     @Value("${chatbot.gemini.api-key:}")
     private String apiKey;
 
-    @Value("${chatbot.gemini.model:gemini-3.5-flash}")
+    @Value("${chatbot.gemini.model:gemini-1.5-flash}")
     private String modelName;
 
     @Value("${chatbot.gemini.api-url:https://generativelanguage.googleapis.com/v1beta/openai/chat/completions}")

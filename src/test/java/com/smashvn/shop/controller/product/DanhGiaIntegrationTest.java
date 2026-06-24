@@ -174,7 +174,7 @@ public class DanhGiaIntegrationTest {
         try {
             List<SanPham> strayProducts = sanPhamRepository.findAll().stream()
                     .filter(sp -> sp.getTenSanPham() != null && 
-                            (sp.getTenSanPham().equals("Yonex Astrox 88D Pro") || sp.getTenSanPham().equals("Yonex Nanoflare 800 (Ngừng bán)")))
+                            (sp.getTenSanPham().equals("Yonex Astrox 88D Pro TEST") || sp.getTenSanPham().equals("Yonex Nanoflare 800 (Ngừng bán) TEST")))
                     .toList();
             for (SanPham sp : strayProducts) {
                 try {
@@ -272,7 +272,7 @@ public class DanhGiaIntegrationTest {
 
         // Seed Active Product
         activeProduct = new SanPham();
-        activeProduct.setTenSanPham("Yonex Astrox 88D Pro");
+        activeProduct.setTenSanPham("Yonex Astrox 88D Pro TEST");
         activeProduct.setTrangThai("dang_ban");
         activeProduct.setDanhMuc(dm);
         activeProduct.setThuongHieu(th);
@@ -292,7 +292,7 @@ public class DanhGiaIntegrationTest {
 
         // Seed Inactive Product
         inactiveProduct = new SanPham();
-        inactiveProduct.setTenSanPham("Yonex Nanoflare 800 (Ngừng bán)");
+        inactiveProduct.setTenSanPham("Yonex Nanoflare 800 (Ngừng bán) TEST");
         inactiveProduct.setTrangThai("ngung_kinh_doanh");
         inactiveProduct.setDanhMuc(dm);
         inactiveProduct.setThuongHieu(th);

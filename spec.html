@@ -64,6 +64,14 @@
     <div class="section-block">
         <ul>
              <!-- NEWEST FIRST -->
+            <li><strong>Khắc phục lỗi không tải được lịch sử Chatbot và lỗi đồng bộ CSDL của Chatbot (Fix Chatbot History Load Failure &amp; Database Identity Resync) (Mục 86) — 24/06/2026:</strong>
+                <ul>
+                    <li><strong>Tự động khởi tạo hồ sơ khi truy cập Chatbot (Chatbot Customer Profile Auto-Provisioning):</strong> Cải tiến <code>ChatRestController</code> tích hợp logic tự động khởi tạo hồ sơ <code>KhachHang</code> khi tài khoản truy cập vào lịch sử hoặc gửi tin nhắn chat, khắc phục lỗi chatbot bị lỗi <code>400 Bad Request</code> cho các tài khoản Quản lý (Admin/Manager) hoặc Nhân viên.</li>
+                    <li><strong>Đồng bộ hóa Identity database (Database Identity Resync):</strong> Sửa lỗi cú pháp của script database <code>reseed_utility.sql</code> giúp đồng bộ hóa chính xác tất cả các identity counter của toàn bộ 32 bảng về đúng giá trị khóa chính lớn nhất hiện tại (thay vì bị kẹt ở các giá trị nhỏ hơn như 0 hoặc 1), giải quyết triệt để lỗi trùng lặp khóa ngoại/khóa chính khi chạy kiểm thử hoặc phát sinh giao dịch mới.</li>
+                    <li><strong>Chuẩn hóa mô hình AI Gemini (Gemini AI Model Alignment):</strong> Khắc phục lỗi khai báo mô hình <code>gemini-3.5-flash</code> không tồn tại bằng cách chuyển đổi sang mô hình chuẩn của Google Gemini API: <code>gemini-1.5-flash</code>.</li>
+                    <li><strong>Bổ sung kiểm thử tích hợp chatbot (Chatbot Integration Testing):</strong> Thêm test case <code>testChat_NoKhachHangProfile_AutoCreation</code> xác minh luồng JIT profile provisioning khi tài khoản nội bộ (chưa có thông tin khách hàng) tương tác với API chatbot.</li>
+                </ul>
+            </li>
             <li><strong>Khắc phục lỗi không thêm được sản phẩm vào giỏ hàng và tự động khởi tạo hồ sơ khách hàng (Fix Add-to-Cart Bug &amp; Automatic Customer Profile Initialization) (Mục 85) — 24/06/2026:</strong>
                 <ul>
                     <li><strong>Tự động khởi tạo hồ sơ khách hàng (Automatic Customer Profile Provisioning):</strong> Khắc phục lỗi không thể thêm sản phẩm vào giỏ hàng đối với các tài khoản đăng nhập (như tài khoản Admin, Manager, Nhân viên hệ thống có vai trò <code>QL</code>, <code>NV</code>) khi họ chưa có hồ sơ <code>KhachHang</code> tương ứng trong CSDL. Tự động kiểm tra và tạo mới hồ sơ khách hàng mặc định (liên kết với <code>TaiKhoan</code> và thiết lập cờ <code>laTaiKhoanNoiBo</code> dựa theo vai trò tài khoản) khi có sự kiện thêm sản phẩm vào giỏ hoặc thanh toán đơn hàng.</li>
