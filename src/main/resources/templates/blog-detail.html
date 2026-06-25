@@ -46,7 +46,7 @@
       "headline": /*[[${blog.title}]]*/ "Tiêu đề bài viết",
       "image": /*[[${#strings.startsWith(blog.image, '/uploads/') ? 'https://smashvn.com' + blog.image : 'https://smashvn.com/images/blog/' + blog.image}]]*/ "",
       "genre": /*[[${blog.category}]]*/ "Category",
-      "keywords": /*[[${#strings.listJoin(blog.tags, ',')}]]*/ "Tags",
+      "keywords": /*[[${#strings.join(blog.tags, ',')}]]*/ "Tags",
       "publisher": {
         "@type": "Organization",
         "name": "Smash VN",

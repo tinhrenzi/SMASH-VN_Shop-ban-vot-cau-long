@@ -154,7 +154,7 @@
                             <!-- Tags -->
                             <div class="col-md-6">
                                 <label for="tagsInput" class="form-label fw-bold">Thẻ (Tags) <small class="text-muted">(phân tách bằng dấu phẩy)</small></label>
-                                <input type="text" class="form-control" id="tagsInput" name="tags" placeholder="Yonex, Astrox, Hướng dẫn..." th:value="${blog.tags != null ? #strings.listJoin(blog.tags, ', ') : ''}">
+                                <input type="text" class="form-control" id="tagsInput" name="tags" placeholder="Yonex, Astrox, Hướng dẫn..." th:value="${blog.tags != null ? #strings.join(blog.tags, ', ') : ''}">
                             </div>
 
                             <!-- Image Cover -->
@@ -180,8 +180,8 @@
                             <!-- Summary -->
                             <div class="col-12">
                                 <label for="summary" class="form-label fw-bold">Tóm tắt ngắn bài viết <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="summary" th:field="${blog.summary}" rows="3" placeholder="Nhập một đoạn tóm tắt ngắn thu hút người đọc trên danh sách tin tức..." required maxlength="900"></textarea>
-                                <div class="form-text text-end" id="summaryCounter">0/900 ký tự</div>
+                                <textarea class="form-control" id="summary" th:field="${blog.summary}" rows="3" placeholder="Nhập một đoạn tóm tắt ngắn thu hút người đọc trên danh sách tin tức..." required maxlength="500"></textarea>
+                                <div class="form-text text-end" id="summaryCounter">0/500 ký tự</div>
                             </div>
 
                             <!-- Content (CKEditor) -->
@@ -232,7 +232,7 @@
     
     function updateCounter() {
         const count = summaryInput.value.length;
-        summaryCounter.textContent = `${count}/900 ký tự`;
+        summaryCounter.textContent = `${count}/500 ký tự`;
     }
     
     summaryInput.addEventListener('compositionstart', () => {
