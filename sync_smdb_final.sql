@@ -139,7 +139,7 @@ GO
 DECLARE @ConstraintName nvarchar(200);
 SELECT @ConstraintName = Name FROM sys.default_constraints
 WHERE parent_object_id = object_id('SanPham')
-WHERE parent_column_id = (SELECT column_id FROM sys.columns WHERE object_id = object_id('SanPham') AND name = 'diem_trung_binh');
+AND parent_column_id = (SELECT column_id FROM sys.columns WHERE object_id = object_id('SanPham') AND name = 'diem_trung_binh');
 IF @ConstraintName IS NOT NULL
     EXEC('ALTER TABLE SanPham DROP CONSTRAINT ' + @ConstraintName);
 
