@@ -374,7 +374,7 @@
         const input = document.getElementById(inputId);
         const value = input.value.trim();
         if (!value) {
-            alert('Vui lòng nhập giá trị!');
+            showToast('Vui lòng nhập giá trị!', 'warning');
             return;
         }
 
@@ -383,7 +383,7 @@
         const existingCheckboxes = container.querySelectorAll(`input[name="${name}"]`);
         for (let cb of existingCheckboxes) {
             if (cb.value.toLowerCase() === value.toLowerCase()) {
-                alert('Giá trị này đã tồn tại!');
+                showToast('Giá trị này đã tồn tại!', 'warning');
                 return;
             }
         }

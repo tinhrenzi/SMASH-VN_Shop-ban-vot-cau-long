@@ -33,6 +33,14 @@ body {
     background-color: var(--brand-bg);
     min-height: 100vh;
 }
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 16.666667% !important;
+        width: 83.333333% !important;
+        flex: 0 0 83.333333% !important;
+        max-width: 83.333333% !important;
+    }
+}
 
 /* Premium Card Design */
 .card {
@@ -120,8 +128,7 @@ body {
 }
 
 .table thead th {
-    background-color: var(--brand-primary);
-    color: #ffffff;
+    background-color: var(--brand-card-bg);
     font-weight: 700;
     font-size: 0.88rem;
     text-transform: uppercase;
@@ -322,6 +329,23 @@ body {
     background-color: var(--brand-primary);
 }
 
+.stat-card-premium.accent-success::before {
+    background-color: #198754;
+}
+
+.stat-card-premium.accent-primary::before {
+    background-color: #0d6efd;
+}
+
+.stat-card-premium.accent-warning::before {
+    background-color: #ffc107;
+}
+
+.stat-card-premium.accent-danger::before {
+    background-color: #dc3545;
+}
+
+
 .stat-icon {
     font-size: 2.2rem;
     color: var(--brand-accent);
@@ -395,3 +419,197 @@ body {
     align-items: center;
     gap: 12px;
 }
+
+
+/* Custom Toast Notifications for Admin Panel */
+#custom-toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.custom-toast {
+    pointer-events: auto;
+    min-width: 300px;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 10px 30px rgba(21, 23, 28, 0.08), 0 4px 12px rgba(21, 23, 28, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease;
+    border-left: 5px solid var(--brand-accent);
+}
+
+.custom-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.custom-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-grow: 1;
+}
+
+.custom-toast-content i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.custom-toast__message {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    line-height: 1.4;
+}
+
+/* Toast States */
+.toast-success {
+    border-left-color: #10b981;
+}
+.toast-success i {
+    color: #10b981;
+}
+
+.toast-error {
+    border-left-color: #ef4444;
+}
+.toast-error i {
+    color: #ef4444;
+}
+
+.toast-warning {
+    border-left-color: #ff9f43;
+}
+.toast-warning i {
+    color: #ff9f43;
+}
+
+.toast-info {
+    border-left-color: #00cfe8;
+}
+.toast-info i {
+    color: #00cfe8;
+}
+
+/* Close Button */
+.toast-close {
+    background: none;
+    border: none;
+    color: #a0a5b0;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
+    color: var(--brand-primary);
+}
+
+/* Seamless Tables inside Cards */
+.card .card-body.p-0 .table-responsive,
+.card > .table-responsive {
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.card .card-body.p-0 .table,
+.card > .table {
+    border-radius: 0 !important;
+    border: none !important;
+}
+
+/* Subtle separator between card header and table header */
+.card-header + .card-body.p-0 .table-responsive thead th,
+.card-header + .table-responsive thead th {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Custom Tag Badges for Category and Brand */
+.tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f1f3f5;
+    border: 1.5px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-transform: none;
+    line-height: 1.2;
+}
+
+.tag-badge i {
+    font-size: 0.72rem;
+    color: #6c757d;
+}
+
+.tag-badge:hover {
+    background-color: #e9ecef;
+    color: var(--brand-primary);
+}
+
+/* Compact Square Action Buttons */
+.btn-action-square {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    border: none !important;
+    transition: all 0.2s ease;
+}
+
+.btn-action-square i {
+    margin: 0 !important;
+    font-size: 13px !important;
+}
+
+/* Compact Filter Bar */
+.product-filter-bar {
+    background-color: #fafbfc;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(21, 23, 28, 0.06);
+}
+
+.product-filter-bar .form-control-sm,
+.product-filter-bar .form-select-sm {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    border: 1.5px solid rgba(21, 23, 28, 0.08);
+}
+
+.product-filter-bar .form-control-sm:focus,
+.product-filter-bar .form-select-sm:focus {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.12);
+}
+

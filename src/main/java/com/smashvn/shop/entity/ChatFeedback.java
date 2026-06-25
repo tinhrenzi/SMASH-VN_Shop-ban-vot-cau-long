@@ -16,15 +16,15 @@ public class ChatFeedback {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_message", nullable = false)
+    @JoinColumn(name = "id_tin_nhan", nullable = false)
     private ChatMessage message;
 
-    @Column(name = "danh_gia", nullable = false)
+    @Column(name = "diem_danh_gia", nullable = false)
     private boolean danhGia; // true for Like, false for Dislike
 
-    @Column(name = "ghi_chu", length = 500, columnDefinition = "NVARCHAR(500)")
+    @Column(name = "noi_dung", length = 500, columnDefinition = "NVARCHAR(500)")
     private String ghiChu;
 
-    @Column(name = "thoi_gian")
+    @Column(name = "ngay_tao")
     private LocalDateTime thoiGian = LocalDateTime.now();
 }

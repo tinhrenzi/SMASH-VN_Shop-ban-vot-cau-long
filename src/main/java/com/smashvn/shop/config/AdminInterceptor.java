@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.smashvn.shop.service.UserDangNhapService;
+import com.smashvn.shop.service.user.UserDangNhapService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,9 +43,7 @@ public class AdminInterceptor implements HandlerInterceptor {
         // Kiểm tra tài khoản qua Cache dịch vụ để xem trạng thái có bị khóa không
         String trangThai = userDangNhapService.layTrangThaiTaiKhoan(idNguoiDung);
         if (!"hoat_dong".equals(trangThai) && !"cho_khoa".equals(trangThai)) {
-            if (session != null) {
-                session.invalidate();
-            }
+            session.invalidate();
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
             response.sendRedirect(request.getContextPath() + "/admin/dang-nhap?loi=" + URLEncoder.encode("Tài khoản của bạn đã bị khóa.", StandardCharsets.UTF_8.toString()));
             return false;

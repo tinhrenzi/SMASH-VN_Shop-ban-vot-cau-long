@@ -34,11 +34,11 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
                     int index = line.indexOf('=');
                     String key = line.substring(0, index).trim();
                     String value = line.substring(index + 1).trim();
-                    if ((value.startsWith("\"") && value.endsWith("\"")) ||
-                        (value.startsWith("'") && value.endsWith("'"))) {
+                    if ((value.startsWith("\"") && value.endsWith("\""))
+                            || (value.startsWith("'") && value.endsWith("'"))) {
                         value = value.substring(1, value.length() - 1);
                     }
-                    
+
                     // Only load from .env if the key is not already defined as a System Property or an OS Environment Variable
                     if (System.getProperty(key) == null && System.getenv(key) == null) {
                         dotenvMap.put(key, value);

@@ -38,18 +38,18 @@ public class SoDiaChi {
     @Column(name = "thanh_pho", nullable = false, length = 100)
     private String thanhPho;
 
-    @Column(name = "ma_buu_dien", nullable = false, length = 20)
+    @Transient
     private String maBuuDien;
 
-    @Column(name = "is_default_shipping", nullable = false)
+    @Column(name = "la_mac_dinh_giao_hang", nullable = false)
     private boolean defaultShipping;
 
-    @Column(name = "is_default_billing", nullable = false)
+    @Column(name = "la_mac_dinh_thanh_toan", nullable = false)
     private boolean defaultBilling;
 
-    @Column(name = "latitude")
+    @Column(name = "vi_do")
     private Double latitude;
 
-    @Column(name = "longitude")
+    @Column(name = "kinh_do")
     private Double longitude;
 }

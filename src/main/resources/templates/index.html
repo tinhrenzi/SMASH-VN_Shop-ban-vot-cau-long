@@ -26,7 +26,7 @@
     <div class="preloader is-active">
         <div class="preloader__wrap">
 
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
     </div>
 
     <!--====== app js ======-->
@@ -45,65 +45,61 @@
             <!--====== Khối nội dung slider ======-->
             <div class="s-skeleton s-skeleton--h-600 s-skeleton--bg-grey">
                 <div class="owl-carousel primary-style-1" id="hero-slider">
+                    <!--====== Slide 1: YONEX ASTROX 100ZZ ======-->
                     <div class="hero-slide hero-slide--1">
                         <div class="container">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="slider-content slider-content--animation">
-
-                                        <span class="content-span-1 u-c-secondary">dòng 1</span>
-
-                                        <span class="content-span-2 u-c-secondary">dòng 2</span>
-
-                                        <span class="content-span-3 u-c-secondary">dòng 3</span>
-
-                                        <span class="content-span-4 u-c-secondary">Kiểu quảng cáo 1
-
-                                            <span class="u-c-brand">Tiền</span></span>
-
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
+                                        <span class="content-span-1 u-c-white">Siêu phẩm tấn công</span>
+                                        <span class="content-span-2 u-c-white">YONEX ASTROX 100ZZ</span>
+                                        <span class="content-span-3 u-c-white">Trọng lượng phân bố hoàn hảo - Uy lực trên từng cú đập</span>
+                                        <span class="content-span-4 u-c-white">Hàng Mới Về
+                                            <span class="u-c-brand"></span></span>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">XEM CHI TIẾT</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <!--====== Slide 2: SALE UP TO 30% ======-->
                     <div class="hero-slide hero-slide--2">
                         <div class="container">
                             <div class="row">
                                 <div class="col-12">
-                                    <div class="slider-content slider-content--animation">
-
-                                        <span class="content-span-1 u-c-white">dòng 1</span>
-
-                                        <span class="content-span-2 u-c-white">dòng 2</span>
-
-                                        <span class="content-span-3 u-c-white">dòng 3</span>
-
-                                        <span class="content-span-4 u-c-white">Kiểu quảng cáo 2
-
-                                            <span class="u-c-brand">Tiền</span></span>
-
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
+                                    <div class="slider-content slider-content--animation" th:if="${highestDiscountCampaign != null}">
+                                        <span class="content-span-1 u-c-white">SIÊU SỰ KIỆN ƯU ĐÃI</span>
+                                        <span class="content-span-2 u-c-white" th:text="${highestDiscountCampaign.tenChienDich}">SALE UP TO 30%</span>
+                                        <span class="content-span-3 u-c-white" th:text="'Chương trình ưu đãi giảm giá cực sốc lên tới ' + ${highestDiscountCampaign.phanTramGiam} + '% áp dụng cho các sản phẩm trong chiến dịch.'">Áp dụng cho toàn bộ phụ kiện và giày cầu lông</span>
+                                        <span class="content-span-4 u-c-white">GIẢM SHOCK LÊN TỚI
+                                            <span class="u-c-brand" th:text="'-' + ${highestDiscountCampaign.phanTramGiam} + '%'"></span></span>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">SĂN DEAL NGAY</a>
+                                    </div>
+                                    <div class="slider-content slider-content--animation" th:unless="${highestDiscountCampaign != null}">
+                                        <span class="content-span-1 u-c-white">Đón hè bùng nổ cùng SMASH-VN</span>
+                                        <span class="content-span-2 u-c-white">SALE UP TO 30%</span>
+                                        <span class="content-span-3 u-c-white">Áp dụng cho toàn bộ phụ kiện và giày cầu lông</span>
+                                        <span class="content-span-4 u-c-white">Khuyến Mãi Ưu Đãi
+                                            <span class="u-c-brand"></span></span>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">SĂN DEAL NGAY</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <!--====== Slide 3: YONEX ASTROX 99 ======-->
                     <div class="hero-slide hero-slide--3">
                         <div class="container">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="slider-content slider-content--animation">
-
-                                        <span class="content-span-1 u-c-secondary">dòng 1</span>
-
-                                        <span class="content-span-2 u-c-secondary">dòng 2</span>
-
-                                        <span class="content-span-3 u-c-secondary">dòng 3</span>
-
-                                        <span class="content-span-4 u-c-secondary">Kiểu quảng cáo 3
-
-                                            <span class="u-c-brand">Tiền</span></span>
-
-                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">MUA NGAY</a></div>
+                                        <span class="content-span-1 u-c-white">Sức mạnh bứt phá - Lựa chọn của nhà vô địch</span>
+                                        <span class="content-span-2 u-c-white">YONEX ASTROX 99 2025</span>
+                                        <span class="content-span-3 u-c-white">Sẵn sàng thống trị mọi trận đấu căng thẳng nhất</span>
+                                        <span class="content-span-4 u-c-white">Top Bán Chạy
+                                            <span class="u-c-brand"></span></span>
+                                        <a class="shop-now-link btn--e-brand" th:href="@{/shop}">ĐẶT HÀNG NGAY</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -205,7 +201,7 @@
 										<div class="filter__category-wrapper" th:each="brand : ${brands}">
 										    <button class="btn filter__btn filter__btn--style-1" 
 										            type="button" 
-										            th:attr="data-filter='.' + ${brand.tenThuongHieu}"
+										            th:attr="data-filter='.' + ${brand.tenThuongHieu.replaceAll(' ', '')}"
 										            th:text="${brand.tenThuongHieu}">
 										        Tên Hãng
 										    </button>
@@ -213,7 +209,7 @@
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item headphone" th:each="product : ${products}">
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:classappend="${product.thuongHieu.tenThuongHieu.replaceAll(' ', '')}" th:each="product, iterStat : ${bestSellers}" th:if="${iterStat.index &lt; 14}">
 									    
 											<div class="product-o product-o--hover-on product-o--radius">
 											    
@@ -223,6 +219,8 @@
 											                 th:if="${!product.sanPhamChiTiets.isEmpty()}"
 											                 th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
 											        </a>
+											        <!-- Shopee Discount Badge -->
+											        <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
 											        
 											        <div class="product-o__action-wrap">
 											            <ul class="product-o__action-list">
@@ -238,7 +236,7 @@
 											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
 											                        <i class="fas fa-plus-circle text-success"></i>
 											                    </a>
-											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
 											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
 											                    </a>
 											                </li>
@@ -260,12 +258,14 @@
 											    </span>
 											    
 											    <div class="product-o__rating gl-rating-style">
-											        <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
-											        <span class="product-o__review">(0)</span>
+											        <i th:each="i : ${#numbers.sequence(1, 5)}"
+											           th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+											        <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
 											    </div>
 											
-											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
-											        <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+											    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+											        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+											        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
 											    </span>
 											    
 											</div>
@@ -277,7 +277,7 @@
                             <div class="col-lg-12">
                                 <div class="load-more">
 
-                                    <button class="btn btn--e-brand" type="button">Xem Thêm</button></div>
+                                     <a class="btn btn--e-brand" th:href="@{/shop}" style="padding: 22px 56px; border-radius: 5px; font-size: 13px; display: inline-block; line-height: 1;">Xem Thêm</a></div>
                             </div>
                         </div>
                     </div>
@@ -313,51 +313,63 @@
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
-                            <div class="col-lg-6 col-md-6 u-s-m-b-30">
+                            <div class="col-lg-6 col-md-6 u-s-m-b-30" th:each="product, iter : ${products}" th:if="${iter.index < 2}">
                                 <div class="product-o product-o--radius product-o--hover-off u-h-100">
                                     <div class="product-o__wrap">
-
-                                        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/product-detail.html}">
-
-                                            <img class="aspect__img" th:src="@{/images/product/electronic/product11.jpg}" alt=""></a>
+                                        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+                                            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+                                                 th:if="${!product.sanPhamChiTiets.isEmpty()}"
+                                                 th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                        </a>
+                                        <!-- Shopee Discount Badge -->
+                                        <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
                                         <div class="product-o__special-count-wrap">
-                                            <div class="countdown countdown--style-special" data-countdown="2020/05/01"></div>
+                                            <div class="countdown countdown--style-special" th:attr="data-countdown=${product.getActiveChienDichNgayKetThuc()}"></div>
                                         </div>
                                         <div class="product-o__action-wrap">
                                             <ul class="product-o__action-list">
                                                 <li>
-                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
+                                                    <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+                                                        <i class="fas fa-search-plus"></i>
+                                                    </a>
+                                                </li>
                                                 <li>
-                                                    <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
+                                                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+                                                        <i class="fas fa-plus-circle"></i>
+                                                    </a>
+                                                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+                                                        <i class="fas fa-plus-circle text-success"></i>
+                                                    </a>
+                                                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+                                                    </a>
+                                                </li>
                                                 <li>
-
-                                                    <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
-                                                <li>
-
-                                                    <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                    <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+                                                        <i class="fas fa-heart"></i>
+                                                    </a>
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
-
                                     <span class="product-o__category">
-
-                                        <a th:href="@{/shop}">Electronics</a></span>
+                                        <a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+                                    </span>
 
                                     <span class="product-o__name">
+                                        <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+                                    </span>
+                                    <div class="product-o__rating gl-rating-style">
+                                        <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                           th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                        <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
+                                    </div>
 
-                                        <a th:href="@{/product-detail.html}">DJI Phantom Drone 4k</a></span>
-                                    <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                        <span class="product-o__review">(2)</span></div>
-
-                                    <span class="product-o__price">125.000 đ
-
-                                        <span class="product-o__discount">160.000 đ</span></span>
+                                    <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+                                        <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                    </span>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 u-s-m-b-30">
-                                <div class="product-o product-o--radius product-o--hover-off u-h-100">
-                                    
                             </div>
                         </div>
                     </div>
@@ -392,59 +404,58 @@
                     <div class="container">
                         <div class="slider-fouc">
                             <div class="owl-carousel product-slider" data-item="6">
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
+                                <div class="u-s-m-b-30" th:each="product : ${newProducts}">
+                                    <div class="product-o product-o--hover-on product-o--radius">
                                         <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/product-detail.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product13.jpg}" alt=""></a>
+                                            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+                                                <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+                                                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
+                                                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                            </a>
+                                            <!-- Shopee Discount Badge -->
+                                            <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+                                                            <i class="fas fa-search-plus"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+                                                            <i class="fas fa-plus-circle text-success"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                            <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Add to Wishlist"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Email me When the price drops"><i class="fas fa-envelope"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${product.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+                                                            <i class="fas fa-heart"></i>
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
-
                                         <span class="product-o__category">
-
-                                            <a th:href="@{/shop}">Electronics</a></span>
-
+                                            <a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a>
+                                        </span>
                                         <span class="product-o__name">
-
-                                            <a th:href="@{/product-detail.html}">Nikon DSLR 4K Camera</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
-
-                                            <span class="product-o__review">(0)</span></div>
-
-                                        <span class="product-o__price">125.000 đ
-
-                                            <span class="product-o__discount">160.000 đ</span></span>
+                                            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
+                                        </span>
+                                        <div class="product-o__rating gl-rating-style">
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                            <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
+                                        </div>
+                                        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        </span>
                                     </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    
                                 </div>
                             </div>
                         </div>
@@ -455,8 +466,7 @@
             <!--====== End - Hàng 4 ======-->
 
 
-            <!--====== Hàng 5 ======-->
-            <div class="banner-bg">
+            <div class="banner-bg" th:with="hasCamp=${highestDiscountCampaign != null}">
 
                 <!--====== Hàng Content ngày giờ sales ======-->
                 <div class="section__content">
@@ -464,23 +474,23 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="banner-bg__countdown">
-                                    <div class="countdown countdown--style-banner" data-countdown="2020/05/01"></div>
+                                    <div class="countdown countdown--style-banner" th:attr="data-countdown=${hasCamp ? campaignEndDate : '2027/01/01 00:00:00'}"></div>
                                 </div>
                                 <div class="banner-bg__wrap">
                                     <div class="banner-bg__text-1">
 
-                                        <span class="u-c-white">Việt Nam</span>
+                                        <span class="u-c-white" th:text="${hasCamp ? highestDiscountCampaign.tenChienDich : 'Việt Nam'}">Việt Nam</span>
 
-                                        <span class="u-c-secondary">Offers</span></div>
+                                        <span class="u-c-brand" th:text="${hasCamp ? ' -' + highestDiscountCampaign.phanTramGiam + '%' : ' Offers'}">Offers</span></div>
                                     <div class="banner-bg__text-2">
 
-                                        <span class="u-c-secondary">Official Launch</span>
+                                        <span class="u-c-brand" th:text="${hasCamp ? 'SIÊU ƯU ĐÃI' : 'Official Launch'}">Official Launch</span>
 
                                         <span class="u-c-white">Đừng bỏ lỡ!</span></div>
 
-                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-secondary">Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!</span>
+                                    <span class="banner-bg__text-block banner-bg__text-3 u-c-white" th:text="${hasCamp ? 'Giảm giá trực tiếp áp dụng cho toàn bộ sản phẩm trong chương trình!' : 'Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!'}">Miễn phí vận chuyển khi mua từ 2 sản phẩm trở lên!</span>
 
-                                    <a class="banner-bg__shop-now btn--e-secondary" th:href="@{/shop}">Mua Ngay</a>
+                                    <a class="banner-bg__shop-now btn--e-brand" th:href="@{/shop}">Mua Ngay</a>
                                 </div>
                             </div>
                         </div>
@@ -515,7 +525,7 @@
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
-						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${products}">
+						    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:each="product : ${featuredProducts}">
 							    <div class="product-o product-o--hover-on product-o--radius">
 							        <div class="product-o__wrap">
 							            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
@@ -523,6 +533,8 @@
 							                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
 							                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
 							            </a>
+							            <!-- Shopee Discount Badge -->
+							            <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
 							            
 							            <div class="product-o__action-wrap">
 											            <ul class="product-o__action-list">
@@ -538,7 +550,7 @@
 											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${product.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
 											                        <i class="fas fa-plus-circle text-success"></i>
 											                    </a>
-											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="alert('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+											                    <a href="javascript:void(0)" th:if="${product.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
 											                        <i class="fas fa-plus-circle" style="color: #ccc;"></i>
 											                    </a>
 											                </li>
@@ -559,8 +571,15 @@
 							            <a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên Sản Phẩm</a>
 							        </span>
 							        
-							        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}">
-							            Từ <span th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+							        <div class="product-o__rating gl-rating-style">
+							            <i th:each="i : ${#numbers.sequence(1, 5)}"
+							               th:class="${i <= product.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= product.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+							            <span class="product-o__review" th:text="'(' + ${product.soDanhGia} + ')'">(0)</span>
+							        </div>
+							        
+							        <span class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+							            Từ <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')}"></span> đ
+							            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(product.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
 							        </span>
 							    </div>
 							</div>
@@ -574,35 +593,119 @@
 
             <!--====== Section 7 ======-->
             <div class="u-s-p-b-60">
-
                 <!--====== Section Content ======-->
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
+                            <!-- Cột 1: Banners & New Products -->
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
-
                                 <a class="promotion" th:href="@{/shop}">
                                     <div class="aspect aspect--bg-grey aspect--vertical">
-
-                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-1.jpg}" alt=""></div>
+                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-1.jpg}" alt="">
+                                    </div>
                                     <div class="promotion__content">
                                         <div class="promotion__text-wrap">
                                             <div class="promotion__text-1">
-
-                                                <span class="u-c-secondary">ACCESSORIES FOR YOUR EVERYDAY</span></div>
+                                                <span class="u-c-secondary">PHỤ KIỆN CHÍNH HÃNG</span>
+                                            </div>
                                             <div class="promotion__text-2">
-
-                                                <span class="u-c-secondary">GET IN</span>
-
-                                                <span class="u-c-brand">TOUCH</span></div>
+                                                <span class="u-c-secondary">PHONG</span>
+                                                <span class="u-c-brand">CÁCH</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </a></div>
-                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
-
+                                </a>
+                                
+                                <!-- Danh sách gợi ý: Sản phẩm mới -->
+                                <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">SẢN PHẨM MỚI</h2>
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${newProducts}" th:if="${iter.index < 3}">
+                                    <div class="col-4">
+                                        <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+                                            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">
+                                        </a>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
 
+                            <!-- Cột 2: Banners & Best Sellers -->
+                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
+                                <a class="promotion" th:href="@{/shop}">
+                                    <div class="aspect aspect--bg-grey aspect--vertical">
+                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-2.jpg}" alt="">
+                                    </div>
+                                    <div class="promotion__content">
+                                        <div class="promotion__text-wrap">
+                                            <div class="promotion__text-1">
+                                                <span class="u-c-secondary">GIÀY CẦU LÔNG CAO CẤP</span>
+                                            </div>
+                                            <div class="promotion__text-2">
+                                                <span class="u-c-secondary">TỐC</span>
+                                                <span class="u-c-brand">ĐỘ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                
+                                <!-- Danh sách gợi ý: Bán chạy -->
+                                <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">BÁN CHẠY NHẤT</h2>
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${bestSellers}" th:if="${iter.index < 3}">
+                                    <div class="col-4">
+                                        <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+                                            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">
+                                        </a>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột 3: Banners & Featured Products -->
+                            <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
+                                <a class="promotion" th:href="@{/shop}">
+                                    <div class="aspect aspect--bg-grey aspect--vertical">
+                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-3.jpg}" alt="">
+                                    </div>
+                                    <div class="promotion__content">
+                                        <div class="promotion__text-wrap">
+                                            <div class="promotion__text-1">
+                                                <span class="u-c-secondary">VỢT CẦU LÔNG CHUYÊN NGHIỆP</span>
+                                            </div>
+                                            <div class="promotion__text-2">
+                                                <span class="u-c-secondary">CHIẾN</span>
+                                                <span class="u-c-brand">THẮNG</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                
+                                <!-- Danh sách gợi ý: Nổi bật -->
+                                <h2 class="u-s-m-t-30 u-s-m-b-20" style="font-size: 16px; font-weight: 700; border-bottom: 2px solid #ff4500; padding-bottom: 8px; color: #333;">NỔI BẬT NHẤT</h2>
+                                <div class="row align-items-center u-s-m-b-20" th:each="product, iter : ${featuredProducts}" th:if="${iter.index < 3}">
+                                    <div class="col-4">
+                                        <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
+                                            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="">
+                                        </a>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -681,77 +784,339 @@
                 <div class="section__content">
                     <div class="container">
                         <div class="row">
-                            <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                <div class="bp-mini bp-mini--img u-h-100">
-                                    <div class="bp-mini__thumbnail">
-
-                                        <!--====== Image Code ======-->
-
-                                        <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog-detail.html}">
-
-                                            <img class="aspect__img" th:src="@{/images/blog/post-2.jpg}" alt=""></a>
-                                        <!--====== End - Image Code ======-->
-                                    </div>
-                                    <div class="bp-mini__content">
-                                        <div class="bp-mini__stat">
-
-                                            <span class="bp-mini__stat-wrap">
-
-                                                <span class="bp-mini__publish-date">
-
-                                                    <a>
-
-                                                        <span>25 February 2018</span></a></span></span>
-
-                                            <span class="bp-mini__stat-wrap">
-
-                                                <span class="bp-mini__preposition">By</span>
-
-                                                <span class="bp-mini__author">
-
-                                                    <a href="#">Dayle</a></span></span>
-
-                                            <span class="bp-mini__stat">
-
-                                                <span class="bp-mini__comment">
-
-                                                    <a th:href="@{/blog-detail.html}"><i class="far fa-comments u-s-m-r-4"></i>
-
-                                                        <span>8</span></a></span></span></div>
-                                        <div class="bp-mini__category">
-
-                                            <a>Learning</a>
-
-                                            <a>News</a>
-
-                                            <a>Health</a></div>
-
-                                        <span class="bp-mini__h1">
-
-                                            <a th:href="@{/blog-detail.html}">Life is an extraordinary Adventure</a></span>
-                                        <p class="bp-mini__p">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-                                        <div class="blog-t-w">
-
-                                            <a class="gl-tag btn--e-transparent-hover-brand-b-2">Travel</a>
-
-                                            <a class="gl-tag btn--e-transparent-hover-brand-b-2">Culture</a>
-
-                                            <a class="gl-tag btn--e-transparent-hover-brand-b-2">Place</a></div>
+                            <!-- Khối lặp tin tức động từ Database -->
+                            <th:block th:if="${blogs != null && !blogs.isEmpty()}">
+                                <div class="col-lg-4 col-md-6 u-s-m-b-30" th:each="blog : ${blogs}">
+                                    <div class="bp-mini bp-mini--img u-h-100">
+                                        <div class="bp-mini__thumbnail">
+                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog/{slug}(slug=${blog.slug})}">
+                                                <img class="aspect__img" th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" alt="Ảnh bài viết">
+                                            </a>
+                                        </div>
+                                        <div class="bp-mini__content">
+                                            <div class="bp-mini__stat">
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__publish-date">
+                                                        <a th:text="${blog.publishDate}">Date</a>
+                                                    </span>
+                                                </span>
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__preposition">By</span>
+                                                    <span class="bp-mini__author">
+                                                        <a href="#" th:text="${blog.author}">Author</a>
+                                                    </span>
+                                                </span>
+                                                <span class="bp-mini__stat">
+                                                    <span class="bp-mini__comment">
+                                                        <a th:href="@{/blog/{slug}(slug=${blog.slug})}"><i class="far fa-comments u-s-m-r-4"></i>
+                                                            <span th:text="${blog.commentsCount}">0</span>
+                                                        </a>
+                                                    </span>
+                                                </span>
+                                            </div>
+                                            <div class="bp-mini__category">
+                                                <a th:text="${blog.category}">Learning</a>
+                                            </div>
+                                            <span class="bp-mini__h1">
+                                                <a th:href="@{/blog/{slug}(slug=${blog.slug})}" th:text="${blog.title}">Blog Title</a>
+                                            </span>
+                                            <p class="bp-mini__p" th:text="${blog.summary}">Blog Summary</p>
+                                            <div class="blog-t-w" th:if="${blog.tags != null}">
+                                                <a class="gl-tag btn--e-transparent-hover-brand-b-2" th:each="tag : ${blog.tags}" th:text="${tag}">Tag</a>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                
-                            </div>
-                            <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                
-                            </div>
+                            </th:block>
+
+                            <!-- Khối fallback tĩnh khi DB chưa có bài viết -->
+                            <th:block th:if="${blogs == null || blogs.isEmpty()}">
+                                <!-- Bài 1 -->
+                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
+                                    <div class="bp-mini bp-mini--img u-h-100">
+                                        <div class="bp-mini__thumbnail">
+                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
+                                                <img class="aspect__img" th:src="@{/images/blog/post-1.jpg}" alt="">
+                                            </a>
+                                        </div>
+                                        <div class="bp-mini__content">
+                                            <div class="bp-mini__stat">
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__publish-date">
+                                                        <a><span>20 May 2026</span></a>
+                                                    </span>
+                                                </span>
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__preposition">By</span>
+                                                    <span class="bp-mini__author"><a href="#">Vinh</a></span>
+                                                </span>
+                                            </div>
+                                            <div class="bp-mini__category">
+                                                <a>Hướng Dẫn</a>
+                                            </div>
+                                            <span class="bp-mini__h1">
+                                                <a th:href="@{/blog}">Hướng dẫn chọn vợt cầu lông phù hợp cho người mới bắt đầu</a>
+                                            </span>
+                                            <p class="bp-mini__p">Chọn vợt cầu lông phù hợp là bước quan trọng giúp người mới tập chơi tránh chấn thương và nhanh chóng tiến bộ.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Bài 2 -->
+                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
+                                    <div class="bp-mini bp-mini--img u-h-100">
+                                        <div class="bp-mini__thumbnail">
+                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
+                                                <img class="aspect__img" th:src="@{/images/blog/post-2.jpg}" alt="">
+                                            </a>
+                                        </div>
+                                        <div class="bp-mini__content">
+                                            <div class="bp-mini__stat">
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__publish-date">
+                                                        <a><span>25 May 2026</span></a>
+                                                    </span>
+                                                </span>
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__preposition">By</span>
+                                                    <span class="bp-mini__author"><a href="#">Quân</a></span>
+                                                </span>
+                                            </div>
+                                            <div class="bp-mini__category">
+                                                <a>Review</a>
+                                            </div>
+                                            <span class="bp-mini__h1">
+                                                <a th:href="@{/blog}">Top 5 cây vợt cầu lông Yonex đáng mua nhất năm 2026</a>
+                                            </span>
+                                            <p class="bp-mini__p">Yonex luôn là ông vua trong làng cầu lông thế giới. Khám phá ngay danh sách 5 cây vợt Yonex được săn đón nhất năm 2026.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Bài 3 -->
+                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
+                                    <div class="bp-mini bp-mini--img u-h-100">
+                                        <div class="bp-mini__thumbnail">
+                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
+                                                <img class="aspect__img" th:src="@{/images/blog/post-3.jpg}" alt="">
+                                            </a>
+                                        </div>
+                                        <div class="bp-mini__content">
+                                            <div class="bp-mini__stat">
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__publish-date">
+                                                        <a><span>28 May 2026</span></a>
+                                                    </span>
+                                                </span>
+                                                <span class="bp-mini__stat-wrap">
+                                                    <span class="bp-mini__preposition">By</span>
+                                                    <span class="bp-mini__author"><a href="#">Nam</a></span>
+                                                </span>
+                                            </div>
+                                            <div class="bp-mini__category">
+                                                <a>Kỹ Thuật</a>
+                                            </div>
+                                            <span class="bp-mini__h1">
+                                                <a th:href="@{/blog}">Kỹ thuật giao cầu lông chuẩn xác và cách khắc phục lỗi thường gặp</a>
+                                            </span>
+                                            <p class="bp-mini__p">Giao cầu là khởi đầu của mọi đường bóng. Nắm vững kỹ thuật giao cầu giúp bạn làm chủ thế trận ngay từ đầu.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th:block>
                         </div>
                     </div>
                 </div>
                 <!--====== End - Section Content ======-->
             </div>
             <!--====== End - Section 10 ======-->
+
+            <style>
+                .testimonial__img-avatar {
+                    width: 165px !important;
+                    height: 165px !important;
+                    border-radius: 50% !important;
+                    object-fit: cover !important;
+                    display: inline-block !important;
+                    box-shadow: 0 8px 24px rgba(21, 23, 28, 0.25);
+                    margin: 0 auto 16px auto;
+                    border: 4px solid rgba(255, 69, 0, 0.15);
+                    background: linear-gradient(135deg, #15171c, #2a2e3d);
+                }
+                .brand-slide {
+                    height: 110px !important;
+                }
+                .brand-slide a {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px !important;
+                    height: 110px !important;
+                    padding: 15px 10px !important;
+                    background: #ffffff !important;
+                    border: 1px solid rgba(21, 23, 28, 0.08) !important;
+                    border-radius: 10px !important;
+                    color: #15171c !important;
+                    text-decoration: none;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                }
+                .brand-slide a:hover {
+                    border-color: #ff4500 !important;
+                    box-shadow: 0 6px 16px rgba(255, 69, 0, 0.12) !important;
+                    transform: translateY(-2px) !important;
+                }
+                .brand-slide a span {
+                    transition: color 0.25s ease !important;
+                }
+                .brand-slide a:hover span {
+                    color: #ff4500 !important;
+                }
+                #brand-slider.carousel-centered .owl-stage {
+                    display: flex !important;
+                    justify-content: center !important;
+                    margin: 1.25rem auto !important;
+                }
+            </style>
+
+            <!--====== Section 11: CLIENTS FEEDBACK (Founders) ======-->
+            <div class="u-s-p-b-90 u-s-m-b-30">
+                <!--====== Section Intro ======-->
+                <div class="section__intro u-s-m-b-46">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="section__text-wrap">
+                                    <h1 class="section__heading u-c-secondary u-s-m-b-12">BAN SÁNG LẬP</h1>
+                                    <span class="section__span u-c-silver">NHỮNG NGƯỜI ĐẶT NỀN MÓNG CHO SMASH-VN</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--====== End - Section Intro ======-->
+
+                <!--====== Section Content ======-->
+                <div class="section__content">
+                    <div class="container">
+                        <!--====== Testimonial Slider ======-->
+                        <div class="slider-fouc">
+                            <div class="owl-carousel" id="testimonial-slider">
+                                <!-- Lương Văn Hiệp -->
+                                <div class="testimonial">
+                                    <div class="testimonial__img-wrap">    
+                                        <img class="testimonial__img-avatar" alt="" th:src="@{/images/about/Hiep.jpg}">
+                                    </div>
+                                    <div class="testimonial__content-wrap">
+                                        <span class="testimonial__double-quote"><i class="fas fa-quote-right"></i></span>
+                                        <blockquote class="testimonial__block-quote">
+                                            <p>"SMASH-VN ra đời từ niềm đam mê cầu lông bất tận. Chúng tôi cam kết mang đến những sản phẩm chất lượng nhất và dịch vụ chu đáo nhất cho cộng đồng lông thủ Việt Nam."</p>
+                                        </blockquote>
+                                        <span class="testimonial__author">Lương Văn Hiệp / CEO & Co-Founder</span>
+                                    </div>
+                                </div>
+                                <!-- Lục Xuân Tĩnh -->
+                                <div class="testimonial">
+                                    <div class="testimonial__img-wrap">
+                                        <img class="testimonial__img-avatar" alt="" th:src="@{/images/about/Tinh.jpg}">
+                                    </div>
+                                    <div class="testimonial__content-wrap">
+                                        <span class="testimonial__double-quote"><i class="fas fa-quote-right"></i></span>
+                                        <blockquote class="testimonial__block-quote">
+                                            <p>"Mỗi cây vợt, mỗi đôi giày tại SMASH-VN đều được kiểm duyệt kỹ lưỡng để đảm bảo trải nghiệm chơi bóng tối ưu nhất cho khách hàng."</p>
+                                        </blockquote>
+                                        <span class="testimonial__author">Lục Xuân Tĩnh / Co-Founder & Product Director</span>
+                                    </div>
+                                </div>
+                                <!-- Trần Văn Chung -->
+                                <div class="testimonial">
+                                    <div class="testimonial__img-wrap">
+                                        <img class="testimonial__img-avatar" alt="" th:src="@{/images/about/ChungU.jpg}">
+                                    </div>
+                                    <div class="testimonial__content-wrap">
+                                        <span class="testimonial__double-quote"><i class="fas fa-quote-right"></i></span>
+                                        <blockquote class="testimonial__block-quote">
+                                            <p>"Sự hài lòng của quý khách là động lực phát triển của chúng tôi. SMASH-VN luôn nỗ lực tối ưu quy trình vận chuyển nhanh chóng và dịch vụ hậu mãi uy tín."</p>
+                                        </blockquote>
+                                        <span class="testimonial__author">Trần Văn Chung / Co-Founder & Operations Director</span>
+                                    </div>
+                                </div>
+                                <!-- Âu Đình Ngọc Bảo -->
+                                <div class="testimonial">
+                                    <div class="testimonial__img-wrap">
+                                        <img class="testimonial__img-avatar" alt="" th:src="@{/images/about/ABao.jpg}">
+                                    </div>
+                                    <div class="testimonial__content-wrap">
+                                        <span class="testimonial__double-quote"><i class="fas fa-quote-right"></i></span>
+                                        <blockquote class="testimonial__block-quote">
+                                            <p>"Xây dựng hệ thống quản lý bán hàng và website mượt mà giúp khách hàng dễ dàng tiếp cận và mua sắm các thiết bị cầu lông chính hãng chỉ với vài click chuột."</p>
+                                        </blockquote>
+                                        <span class="testimonial__author">Âu Đình Ngọc Bảo / Co-Founder & Tech Director</span>
+                                    </div>
+                                </div>
+                                <!-- Nguyễn Anh Tuấn -->
+                                <div class="testimonial">
+                                    <div class="testimonial__img-wrap">
+                                        <img class="testimonial__img-avatar" alt="" th:src="@{/images/about/Tuan.jpg}">
+                                    </div>
+                                    <div class="testimonial__content-wrap">
+                                        <span class="testimonial__double-quote"><i class="fas fa-quote-right"></i></span>
+                                        <blockquote class="testimonial__block-quote">
+                                            <p>"Chúng tôi không chỉ bán sản phẩm, chúng tôi đồng hành cùng đam mê của bạn. SMASH-VN mong muốn trở thành người bạn tin cậy của mọi lông thủ."</p>
+                                        </blockquote>
+                                        <span class="testimonial__author">Nguyễn Anh Tuấn / Co-Founder & Marketing Director</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--====== End - Testimonial Slider ======-->
+                    </div>
+                </div>
+                <!--====== End - Section Content ======-->
+            </div>
+            <!--====== End - Section 11 ======-->
+
+            <!--====== Section 12: Brand Slider ======-->
+            <div class="u-s-p-b-60" th:if="${brands != null && !brands.isEmpty()}">
+                <!--====== Section Content ======-->
+                <div class="section__content">
+                    <div class="container">
+                        <!--====== Brand Slider ======-->
+                        <div class="slider-fouc">
+                            <div th:class="'owl-carousel' + (${brands.size() < 5} ? ' carousel-centered' : '')" id="brand-slider" data-item="5">
+                                <div class="brand-slide" th:each="brand : ${brands}">
+                                    <a th:href="@{/shop(brandId=${brand.id})}">
+                                        <!-- Logo Container (Fixed height to keep logos vertically aligned) -->
+                                        <div style="height: 40px; display: flex; align-items: center; justify-content: center; width: 100%;">
+                                            <!-- YONEX -->
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'YONEX'}" th:src="@{/images/brand/yonex.png}" alt="YONEX" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            
+                                            <!-- VICTOR -->
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'VICTOR'}" th:src="@{/images/brand/victor.png}" alt="VICTOR" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            
+                                            <!-- LINING -->
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'LINING' || brand.tenThuongHieu.toUpperCase() == 'LI-NING'}" th:src="@{/images/brand/lining.png}" alt="LINING" style="max-height: 30px; max-width: 100px; object-fit: contain;">
+                                            
+                                            <!-- KAWASAKI -->
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'KAWASAKI'}" th:src="@{/images/brand/kawasaki.png}" alt="KAWASAKI" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            
+                                            <!-- Fallback Logo circle for other brands -->
+                                            <div th:if="${brand.tenThuongHieu.toUpperCase() != 'YONEX' && brand.tenThuongHieu.toUpperCase() != 'VICTOR' && brand.tenThuongHieu.toUpperCase() != 'LINING' && brand.tenThuongHieu.toUpperCase() != 'LI-NING' && brand.tenThuongHieu.toUpperCase() != 'KAWASAKI'}" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #15171c, #2a2e3d); color: #ff4500; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 1.5px solid rgba(255, 69, 0, 0.2);">
+                                                <span th:text="${brand.tenThuongHieu != null && !brand.tenThuongHieu.isEmpty() ? brand.tenThuongHieu.substring(0, 1).toUpperCase() : ''}">B</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Brand Name text label -->
+                                        <span th:text="${brand.tenThuongHieu.toUpperCase()}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; color: #15171c; text-align: center; display: block;">BRAND</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <!--====== End - Brand Slider ======-->
+                    </div>
+                </div>
+                <!--====== End - Section Content ======-->
+            </div>
+            <!--====== End - Section 12 ======-->
         </div>
         <!--====== End - App Content ======-->
 

@@ -15,12 +15,12 @@ public class NhanVien {
     @JoinColumn(name = "id_tai_khoan", nullable = false, unique = true)
     private TaiKhoan taiKhoan;
 
-    @Column(name = "ho_ten_nv", nullable = false, length = 100)
+    @Column(name = "ho_ten", nullable = false, length = 100)
     private String hoTenNv;
 
     @Column(name = "chuc_vu", nullable = false, length = 100)
     private String chucVu;
 
-    @Column(name = "so_dien_thoai_nv", nullable = false, length = 15)
+    @Column(name = "so_dien_thoai", nullable = false, length = 15)
     private String soDienThoaiNv;
 }

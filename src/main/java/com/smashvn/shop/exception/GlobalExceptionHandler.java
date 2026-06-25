@@ -46,6 +46,14 @@ public class GlobalExceptionHandler {
         return mav;
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ModelAndView handleResponseStatus(HttpServletRequest request, org.springframework.web.server.ResponseStatusException ex) {
+        ModelAndView mav = new ModelAndView();
+        mav.addObject("loi", ex.getReason());
+        mav.setViewName("error/generic");
+        return mav;
+    }
+
     @ExceptionHandler(Exception.class)
     public ModelAndView handleGenericException(HttpServletRequest request, Exception ex) {
         // Log stack trace nội bộ

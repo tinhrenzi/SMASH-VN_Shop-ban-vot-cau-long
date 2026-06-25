@@ -15,7 +15,7 @@
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt="">
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt="">
         </div>
     </div>
 
@@ -78,10 +78,18 @@
 											                <span class="table-p__category" th:if="${item.sanPhamChiTiet.sanPham.danhMuc != null}">
 											                    <a th:href="@{#}" th:text="${item.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc}">Danh Mục</a>
 											                </span>
-											                <ul class="table-p__variant-list">
-											                    <li><span th:text="'Màu sắc: ' + ${item.sanPhamChiTiet.mauSac}">Màu</span></li>
-											                    <li><span th:text="'Size/Trọng lượng: ' + ${item.sanPhamChiTiet.trongLuong}">Size</span></li>
-											                </ul>
+											                <div class="cart-product__variants u-s-m-t-8" th:if="${(item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()) or (item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty())}">
+											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()}">
+											                        <i class="fas fa-palette"></i>
+											                        <span class="badge-label">Màu sắc:</span>
+											                        <strong th:text="${item.sanPhamChiTiet.mauSac}">Màu</strong>
+											                    </span>
+											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty()}">
+											                        <i class="fas fa-ruler-combined"></i>
+											                        <span class="badge-label">Size:</span>
+											                        <strong th:text="${item.sanPhamChiTiet.trongLuong}">Size</strong>
+											                    </span>
+											                </div>
 											                
 											                <div th:if="${ngungBan}" class="text-danger fw-bold u-s-m-t-8">
 											                    <i class="fas fa-exclamation-circle"></i> Sản phẩm đã ngừng kinh doanh
@@ -103,6 +111,8 @@
 											                       type="text" 
 											                       th:value="${item.soLuong}" 
 											                       th:attr="data-item-id=${item.id}, data-max=${item.sanPhamChiTiet.soLuongTon}"
+											                       min="1"
+											                       max="999"
 											                       data-min="1">
 											                <span class="input-counter__plus fas fa-plus"></span>
 											            </div>
@@ -162,7 +172,7 @@
                                                     <tbody>
                                                         <tr>
                                                             <td>TẠM TÍNH</td>
-                                                            <td th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                            <td class="js-cart-summary-subtotal" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
                                                         </tr>
                                                         <tr>
                                                             <td>VẬN CHUYỂN</td>
@@ -201,13 +211,59 @@
         $(document).ready(function() {
             let updateTimer;
 
-            // Bắt sự kiện khi số lượng thay đổi (do click +/- hoặc gõ tay)
+            // Chặn phím không hợp lệ khi gõ trực tiếp
+            $('.js-cart-qty-input').on('keydown', function(e) {
+                if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === '.') {
+                    e.preventDefault();
+                }
+            });
+
+            // Chặn dán dữ liệu không hợp lệ
+            $('.js-cart-qty-input').on('paste', function(e) {
+                var clipboardData = e.originalEvent.clipboardData || window.clipboardData;
+                var pastedData = clipboardData.getData('text');
+                if (!/^\d+$/.test(pastedData) || parseInt(pastedData) <= 0) {
+                    e.preventDefault();
+                    showToast("Vui lòng chỉ nhập số lượng nguyên dương hợp lệ!", "error");
+                }
+            });
+
+            // Lọc dữ liệu thời gian thực qua sự kiện input
+            $('.js-cart-qty-input').on('input', function() {
+                var valStr = $(this).val();
+                var sanitized = valStr.replace(/\D/g, '');
+                if (sanitized !== valStr) {
+                    $(this).val(sanitized);
+                }
+            });
+
+            // Bắt sự kiện khi số lượng thay đổi (do click +/- hoặc kết thúc gõ tay)
             $('.js-cart-qty-input').on('change', function() {
                 clearTimeout(updateTimer); // Hủy thao tác cũ nếu người dùng click liên tục
                 
                 const input = $(this);
                 const idChiTiet = input.attr('data-item-id');
-                const soLuong = input.val();
+                let soLuongStr = input.val().trim();
+                
+                let soLuong = parseInt(soLuongStr);
+                const minVal = parseInt(input.attr('data-min')) || 1;
+                const maxVal = parseInt(input.attr('data-max')) || 999;
+                const absoluteMax = 999;
+                
+                if (isNaN(soLuong) || soLuong < minVal) {
+                    soLuong = minVal;
+                    input.val(soLuong);
+                    showToast("Số lượng sản phẩm tối thiểu là " + minVal, "error");
+                } else if (soLuong > Math.min(maxVal, absoluteMax)) {
+                    const limit = Math.min(maxVal, absoluteMax);
+                    soLuong = limit;
+                    input.val(soLuong);
+                    if (maxVal < absoluteMax) {
+                        showToast("Số lượng vượt quá số lượng tồn kho (" + maxVal + ")!", "error");
+                    } else {
+                        showToast("Số lượng trong giỏ tối đa là " + absoluteMax, "error");
+                    }
+                }
 
                 // Đợi 500ms (0.5 giây) sau lần click cuối mới gửi lên Server
                 updateTimer = setTimeout(function() {
@@ -232,14 +288,16 @@
                                     if (res.trangThai === 'ok') {
                                         var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
                                         // Cập nhật text mà không cần load lại trang
+                                        $('.js-cart-summary-subtotal').text(formattedTotal);
                                         $('.js-cart-summary-total').text(formattedTotal);
                                     }
                                 }
                             });
                         },
-                        error: function() {
-                            alert("Có lỗi xảy ra khi cập nhật số lượng!");
-                        }
+                        error: function(xhr) {
+                             var errorMsg = xhr.responseText || "Có lỗi xảy ra khi cập nhật số lượng!";
+                             showToast(errorMsg, "error");
+                         }
                     });
                 }, 500); 
             });

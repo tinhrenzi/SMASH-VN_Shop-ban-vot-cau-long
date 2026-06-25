@@ -53,4 +53,43 @@ public class SanPham {
                 .mapToInt(spct -> spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
                 .sum();
     }
+
+    public Integer getActiveGiamGiaPhanTram() {
+        if (cacDotGiamGia == null || cacDotGiamGia.isEmpty()) {
+            return 0;
+        }
+        return cacDotGiamGia.stream()
+                .filter(dgg -> dgg.getActive() && "ACTIVE".equals(dgg.getDynamicStatus()))
+                .mapToInt(DotGiamGia::getPhanTramGiam)
+                .max()
+                .orElse(0);
+    }
+
+    public java.math.BigDecimal getGiaSauGiam(java.math.BigDecimal giaGoc) {
+        int phanTram = getActiveGiamGiaPhanTram();
+        if (phanTram <= 0) {
+            return giaGoc;
+        }
+        return giaGoc.multiply(java.math.BigDecimal.valueOf(100 - phanTram))
+                .divide(java.math.BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    public String getActiveChienDichNgayKetThuc() {
+        if (cacDotGiamGia == null || cacDotGiamGia.isEmpty()) {
+            return "2027/01/01 00:00:00";
+        }
+        return cacDotGiamGia.stream()
+                .filter(dgg -> dgg.getActive() && "ACTIVE".equals(dgg.getDynamicStatus()))
+                .map(DotGiamGia::getNgayKetThuc)
+                .filter(java.util.Objects::nonNull)
+                .max(java.time.LocalDateTime::compareTo)
+                .map(ldt -> ldt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")))
+                .orElse("2027/01/01 00:00:00");
+    }
+
+    @Column(name = "so_danh_gia", nullable = false)
+    private Integer soDanhGia = 0;
+
+    @Column(name = "diem_trung_binh", nullable = false)
+    private Double diemTrungBinh = 0.0;
 }

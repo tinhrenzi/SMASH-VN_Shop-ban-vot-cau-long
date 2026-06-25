@@ -6,32 +6,32 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "PaymentTransaction")
+@Table(name = "GiaoDichThanhToan")
 @Data
 public class PaymentTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "transaction_id", nullable = false, unique = true, length = 100)
+    @Column(name = "ma_giao_dich", nullable = false, unique = true, length = 100)
     private String transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "id_hoa_don", nullable = true)
     private HoaDon order;
 
-    @Column(name = "amount", nullable = false, precision = 18, scale = 2)
+    @Column(name = "so_tien", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "gateway", nullable = false, length = 50)
+    @Column(name = "cong_thanh_toan", nullable = false, length = 50)
     private String gateway;
 
-    @Column(name = "status", nullable = false, length = 50)
+    @Column(name = "trang_thai", nullable = false, length = 50)
     private String status;
 
-    @Column(name = "raw_payload", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "du_lieu_tho", columnDefinition = "NVARCHAR(MAX)")
     private String rawPayload;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "ngay_tao", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

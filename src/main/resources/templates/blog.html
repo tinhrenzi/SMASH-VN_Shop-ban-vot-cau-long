@@ -55,7 +55,7 @@
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt="Loading...">
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt="Loading...">
         </div>
     </div>
 
@@ -164,7 +164,7 @@
                             <div th:if="${blogsPage.isEmpty()}" class="u-s-p-y-60 text-center" style="background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
                                 <h3 style="color: #666; font-weight: 600;">Không tìm thấy bài viết nào phù hợp với từ khóa của bạn.</h3>
                                 <p style="color: #999; margin-top: 10px;">Thử tìm kiếm với từ khóa khác như "Yonex", "Giao Cầu", "Căng Vợt".</p>
-                                <a th:href="@{/blog}" class="btn btn--e-brand-b-2 u-s-m-t-20">Quay Lại Danh Sách Tin Tức</a>
+                                <a th:href="@{/blog}" class="btn btn--e-brand-b-2 u-s-m-t-20" style="display: inline-block; padding: 12px 28px; border-radius: 5px; font-weight: 600; text-decoration: none;">Quay Lại Danh Sách Tin Tức</a>
                             </div>
 
                             <!-- List loop -->
@@ -172,7 +172,9 @@
                                 <div class="bp__wrap">
                                     <div class="bp__thumbnail">
                                         <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog/{slug}(slug=${blog.slug})}">
-                                            <img class="aspect__img" th:src="@{'/images/blog/' + ${blog.image}}" th:alt="${blog.title}">
+                                            <img class="aspect__img" 
+                                                 th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" 
+                                                 th:alt="${blog.title}">
                                         </a>
                                     </div>
                                     <div class="bp__info-wrap" style="padding: 25px;">
@@ -226,22 +228,24 @@
 
                             <!-- Pagination controls -->
                             <nav class="post-center-wrap u-s-p-y-60" th:if="${totalPages > 1}">
-                                <ul class="blog-pg" style="display: flex; gap: 8px; justify-content: center; list-style: none;">
+                                <ul class="blog-pg">
                                     <!-- Previous Button -->
-                                    <li th:class="${currentPage == 0 ? 'disabled' : ''}">
-                                        <a class="fas fa-angle-left" th:href="@{/blog(q=${query}, page=${currentPage - 1})}" th:if="${currentPage > 0}" style="padding: 10px 15px; border: 1px solid #ddd; display: block; border-radius: 4px; color: #333;"></a>
-                                        <span class="fas fa-angle-left" th:unless="${currentPage > 0}" style="opacity: 0.5; padding: 10px 15px; border: 1px solid #ddd; display: block; border-radius: 4px; color: #ccc;"></span>
+                                    <li th:if="${currentPage > 0}">
+                                        <a th:href="@{/blog(q=${query}, page=${currentPage - 1})}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
                                     </li>
 
                                     <!-- Page Number Buttons -->
                                     <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:class="${currentPage == i ? 'blog-pg--active' : ''}">
-                                        <a th:href="@{/blog(q=${query}, page=${i})}" th:text="${i + 1}" th:style="${currentPage == i ? 'background: #ff4500; color: #fff; border-color: #ff4500;' : ''}" style="padding: 10px 15px; border: 1px solid #ddd; display: block; border-radius: 4px; color: #333; text-decoration: none;">1</a>
+                                        <a th:href="@{/blog(q=${query}, page=${i})}" th:text="${i + 1}">1</a>
                                     </li>
 
                                     <!-- Next Button -->
-                                    <li th:class="${currentPage == totalPages - 1 ? 'disabled' : ''}">
-                                        <a class="fas fa-angle-right" th:href="@{/blog(q=${query}, page=${currentPage + 1})}" th:if="${currentPage < totalPages - 1}" style="padding: 10px 15px; border: 1px solid #ddd; display: block; border-radius: 4px; color: #333;"></a>
-                                        <span class="fas fa-angle-right" th:unless="${currentPage < totalPages - 1}" style="opacity: 0.5; padding: 10px 15px; border: 1px solid #ddd; display: block; border-radius: 4px; color: #ccc;"></span>
+                                    <li th:if="${currentPage < totalPages - 1}">
+                                        <a th:href="@{/blog(q=${query}, page=${currentPage + 1})}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
                                     </li>
                                 </ul>
                             </nav>

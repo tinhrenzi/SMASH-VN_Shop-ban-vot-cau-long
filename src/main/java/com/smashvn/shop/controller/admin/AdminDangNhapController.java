@@ -1,0 +1,143 @@
+package com.smashvn.shop.controller.admin;
+
+import java.util.List;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.security.LoginRateLimiter;
+import com.smashvn.shop.service.user.UserDangNhapService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Controller
+@RequestMapping("/admin")
+@RequiredArgsConstructor
+@Slf4j
+public class AdminDangNhapController {
+
+    private final UserDangNhapService userDangNhapService;
+    private final NhanVienRepository nhanVienRepository;
+    private final LoginRateLimiter loginRateLimiter;
+
+    // Hiển thị form đăng nhập Admin
+    @GetMapping("/dang-nhap")
+    public String hienThiFormDangNhapAdmin(@RequestParam(value = "loi", required = false) String loi, Model model, HttpSession session) {
+        // Nếu đã đăng nhập quyền quản trị rồi thì redirect thẳng vào dashboard
+        if (session != null && session.getAttribute("idNguoiDung") != null) {
+            String vaiTro = (String) session.getAttribute("vaiTro");
+            if ("QL".equals(vaiTro)) {
+                return "redirect:/admin/all";
+            } else if ("NV".equals(vaiTro)) {
+                return "redirect:/admin/don-hang";
+            }
+        }
+        if (loi != null) {
+            model.addAttribute("loi", loi);
+        }
+        return "admin/signin";
+    }
+
+    // Xử lý khi bấm nút "Đăng nhập" Admin
+    @PostMapping("/dang-nhap")
+    public String xuLyDangNhapAdmin(@RequestParam("email") String email,
+            @RequestParam("matKhau") String matKhau,
+            HttpServletRequest request,
+            HttpSession session,
+            Model model) {
+        String ip = request.getRemoteAddr();
+
+        // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
+        if (loginRateLimiter.isBlocked(ip)) {
+            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
+            return "admin/signin";
+        }
+
+        try {
+            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(email, matKhau);
+
+            // 2. Kiểm tra vai trò: Chỉ cho phép QL và NV
+            if (!Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()) && !Boolean.TRUE.equals(tkDangNhap.getLaQuanLy())) {
+                loginRateLimiter.loginFailed(ip);
+                log.warn("[SECURITY_EVENT] UNAUTHORIZED_ADMIN_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
+                model.addAttribute("loi", "Tài khoản không có quyền truy cập trang quản trị!");
+                return "admin/signin";
+            }
+
+            // Đăng nhập thành công -> Reset bộ đếm rate limiter
+            loginRateLimiter.loginSucceeded(ip);
+
+            // 3. Chống Session Fixation
+            request.changeSessionId();
+            session = request.getSession(true);
+
+            // Default active role for admin login
+            String vaiTro = Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()) ? "QL" : "NV";
+
+            // Lưu thông tin vào Session
+            session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
+            session.setAttribute("idNguoiDung", tkDangNhap.getId());
+            session.setAttribute("vaiTro", vaiTro);
+            session.setAttribute("activeRole", vaiTro);
+            session.setAttribute("laKhachHang", Boolean.TRUE.equals(tkDangNhap.getLaKhachHang()));
+            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()));
+            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()));
+
+            // Tìm tên hiển thị của nhân viên
+            NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkDangNhap.getId());
+            if (nv != null) {
+                session.setAttribute("tenHienThi", nv.getHoTenNv());
+            } else {
+                session.setAttribute("tenHienThi", "QL".equals(vaiTro) ? "Quản lý hệ thống" : "Nhân viên hệ thống");
+            }
+
+            // 4. Gán/Cập nhật Authentication vào Spring Security Context
+            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + vaiTro));
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(tkDangNhap.getEmail(), null, authorities);
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+
+            log.info("[SECURITY_EVENT] ADMIN_LOGIN_SUCCESS: Email: {}, VaiTro: {}, IP: {}", email, vaiTro, ip);
+
+            // Đăng nhập thành công, chuyển hướng theo vai trò
+            if ("QL".equals(vaiTro)) {
+                return "redirect:/admin/all";
+            } else {
+                return "redirect:/admin/don-hang";
+            }
+
+        } catch (RuntimeException e) {
+            loginRateLimiter.loginFailed(ip);
+            log.warn("[SECURITY_EVENT] FAILED_ADMIN_LOGIN: Email: {}, IP: {}, Lỗi: {}", email, ip, e.getMessage());
+
+            model.addAttribute("loi", e.getMessage());
+            return "admin/signin";
+        }
+    }
+
+    // Đăng xuất Admin
+    @GetMapping("/dang-xuat")
+    public String xuLyDangXuatAdmin(HttpSession session) {
+        if (session != null) {
+            session.invalidate(); // Xóa toàn bộ dữ liệu trong Session
+        }
+        SecurityContextHolder.clearContext(); // Xóa context của Spring Security
+        return "redirect:/admin/dang-nhap";
+    }
+}

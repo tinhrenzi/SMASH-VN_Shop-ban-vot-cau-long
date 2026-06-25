@@ -74,7 +74,7 @@
                                     <!-- Phần trăm giảm -->
                                     <div class="col-md-3">
                                         <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
-                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${campaign.phanTramGiam}" class="form-control" min="1" max="100" required>
+                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${campaign.phanTramGiam}" class="form-control" min="1" max="40" step="1" required>
                                     </div>
 
                                     <!-- Loại giảm giá -->
@@ -89,13 +89,13 @@
                                     <!-- Ngày bắt đầu -->
                                     <div class="col-md-6">
                                         <label for="ngayBatDau" class="form-label fw-bold">Ngày & Giờ Bắt Đầu <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${#temporals.format(campaign.ngayBatDau, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${campaign.ngayBatDau != null ? #temporals.format(campaign.ngayBatDau, 'yyyy-MM-dd') + 'T' + #temporals.format(campaign.ngayBatDau, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <!-- Ngày kết thúc -->
                                     <div class="col-md-6">
                                         <label for="ngayKetThuc" class="form-label fw-bold">Ngày & Giờ Kết Thúc <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${#temporals.format(campaign.ngayKetThuc, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${campaign.ngayKetThuc != null ? #temporals.format(campaign.ngayKetThuc, 'yyyy-MM-dd') + 'T' + #temporals.format(campaign.ngayKetThuc, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <!-- Phần chọn sản phẩm -->
@@ -153,7 +153,7 @@
 
                                     <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">
                                         <a th:href="@{/admin/khuyen-mai}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Hủy bỏ</a>
-                                        <button type="submit" class="btn btn-brand text-white"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
+                                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
                                     </div>
                                 </div>
                             </form>
@@ -227,10 +227,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form validation before submit
     document.getElementById('campaignForm').addEventListener('submit', function(e) {
+        const tenChienDich = document.getElementById('tenChienDich').value.trim();
+        const phanTramGiam = parseInt(document.getElementById('phanTramGiam').value);
+        const ngayBatDauStr = document.getElementById('ngayBatDau').value;
+        const ngayKetThucStr = document.getElementById('ngayKetThuc').value;
         const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
+
+        if (tenChienDich.length < 2 || tenChienDich.length > 100) {
+            e.preventDefault();
+            alert('Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!');
+            document.getElementById('tenChienDich').focus();
+            return;
+        }
+
+        const phanTramGiamRaw = document.getElementById('phanTramGiam').value.trim();
+        if (phanTramGiamRaw.includes('.') || phanTramGiamRaw.includes(',')) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá phải là số nguyên, không được là số thập phân!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        const phanTramGiamVal = parseFloat(phanTramGiamRaw);
+        if (isNaN(phanTramGiamVal)) {
+            e.preventDefault();
+            alert('Vui lòng nhập phần trăm giảm giá!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal < 0) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá không được là số âm!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal === 0) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá phải lớn hơn 0!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+        if (phanTramGiamVal > 40) {
+            e.preventDefault();
+            alert('Phần trăm giảm giá tối đa cho đợt giảm giá là 40%!');
+            document.getElementById('phanTramGiam').focus();
+            return;
+        }
+
+        if (!ngayBatDauStr || !ngayKetThucStr) {
+            e.preventDefault();
+            alert('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc!');
+            return;
+        }
+
+        const ngayBatDau = new Date(ngayBatDauStr);
+        const ngayKetThuc = new Date(ngayKetThucStr);
+        if (ngayBatDau >= ngayKetThuc) {
+            e.preventDefault();
+            alert('Ngày bắt đầu phải xảy ra trước ngày kết thúc!');
+            document.getElementById('ngayBatDau').focus();
+            return;
+        }
+
         if (checkedCount === 0) {
             e.preventDefault();
             alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!');
+            return;
         }
     });
 });

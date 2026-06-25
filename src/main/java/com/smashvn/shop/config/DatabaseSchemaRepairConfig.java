@@ -1,13 +1,17 @@
 package com.smashvn.shop.config;
 
-import lombok.extern.slf4j.Slf4j;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import javax.sql.DataSource;
+
+import org.flywaydb.core.api.FlywayException;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.Statement;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j
@@ -22,7 +26,7 @@ public class DatabaseSchemaRepairConfig {
             try {
                 log.info("[STARTUP_DB_REPAIR] Repairing Flyway schema history...");
                 flyway.repair();
-            } catch (Exception e) {
+            } catch (FlywayException e) {
                 log.error("[STARTUP_DB_REPAIR] Failed to repair Flyway schema history: {}", e.getMessage(), e);
             }
 
@@ -74,10 +78,29 @@ public class DatabaseSchemaRepairConfig {
                         + "WHERE la_quan_ly IS NULL"
                 );
 
+                // Alter mat_khau column to nullable
+                stmt.execute("ALTER TABLE TaiKhoan ALTER COLUMN mat_khau NVARCHAR(255) NULL;");
+
+                // Add trang_thai_tai_khoan column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('TaiKhoan') AND name = 'trang_thai_tai_khoan') "
+                        + "BEGIN "
+                        + "    ALTER TABLE TaiKhoan ADD trang_thai_tai_khoan VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'; "
+                        + "END"
+                );
+
+                // Add so_lan_mua_thanh_cong column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('TaiKhoan') AND name = 'so_lan_mua_thanh_cong') "
+                        + "BEGIN "
+                        + "    ALTER TABLE TaiKhoan ADD so_lan_mua_thanh_cong INT NOT NULL DEFAULT 0; "
+                        + "END"
+                );
+
                 log.info("[STARTUP_DB_REPAIR] TaiKhoan table schema checks completed.");
 
                 log.info("[STARTUP_DB_REPAIR] Checking HoaDon table schema...");
-                
+
                 // Add ghi_chu column if missing
                 stmt.execute(
                         "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HoaDon') AND name = 'ghi_chu') "
@@ -109,9 +132,9 @@ public class DatabaseSchemaRepairConfig {
                         + "    ALTER TABLE HoaDon ADD thoi_gian_xac_nhan DATETIME NULL; "
                         + "END"
                 );
-                
+
                 log.info("[STARTUP_DB_REPAIR] HoaDon table schema checks completed.");
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 log.error("[STARTUP_DB_REPAIR] Error during programmatic schema updates: {}", e.getMessage(), e);
             }
 
@@ -120,7 +143,7 @@ public class DatabaseSchemaRepairConfig {
                 log.info("[STARTUP_DB_REPAIR] Migrating Flyway migrations...");
                 flyway.migrate();
                 log.info("[STARTUP_DB_REPAIR] Flyway migrations completed successfully.");
-            } catch (Exception e) {
+            } catch (FlywayException e) {
                 log.error("[STARTUP_DB_REPAIR] Flyway migration failed: {}", e.getMessage(), e);
                 throw e; // rethrow to stop startup if migration cannot succeed
             }

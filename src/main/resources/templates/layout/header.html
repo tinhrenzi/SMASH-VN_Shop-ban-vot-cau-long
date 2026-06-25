@@ -20,11 +20,13 @@
 
 
                         <!--====== Mẫu tìm kiếm ======-->
-                        <form class="main-form">
+                        <form class="main-form" th:action="@{/shop}" method="get" autocomplete="off">
 
                             <label for="main-search"></label>
 
-                            <input class="input-text input-text--border-radius input-text--style-1" type="text" id="main-search" placeholder="Search">
+                            <input class="input-text input-text--border-radius input-text--style-1" type="text" id="main-search" name="q" placeholder="Tìm vợt, giày, phụ kiện..." autocomplete="off" th:value="${keyword}">
+                            <!-- Autocomplete Dropdown -->
+                            <div id="search-autocomplete" class="search-autocomplete-dropdown"></div>
 
                             <button class="btn btn--icon fas fa-search main-search-button" type="submit"></button></form>
                         <!--====== Kết thúc - Mẫu tìm kiếm ======-->
@@ -42,7 +44,7 @@
 
                                 <!--====== Danh sách ======-->
                                 <ul class="ah-list ah-list--design1 ah-list--link-color-secondary">
-                                    <li class="has-dropdown" data-tooltip="tooltip" data-placement="left" title="Account">
+                                    <li class="has-dropdown" data-tooltip="tooltip" data-placement="left" title="Tài khoản">
 									    <a><i class="far fa-user-circle"></i></a>
 									    <span class="js-menu-toggle"></span>
 									    <ul style="width:220px">
@@ -60,9 +62,13 @@
 									                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
 									                    <span>Tài khoản</span></a>
 									            </li>
+									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV'}">
+									                <a th:href="@{/user/notifications}"><i class="fas fa-bell u-s-m-r-6"></i>
+									                    <span>Thông báo</span></a>
+									            </li>
 									            
 									            <!-- Chuyển vai trò nếu có nhiều vai trò -->
-									            <th:block th:with="roleCount=${(session.laKhachHang ? 1 : 0) + (session.laNhanVien ? 1 : 0) + (session.laQuanLy ? 1 : 0)}">
+									            <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">
 									                <th:block th:if="${roleCount > 1}">
 									                    <li><hr style="margin: 5px 0; border-top: 1px solid #ddd;"></li>
 									                    <li style="padding: 3px 15px; font-weight: bold; font-size: 11px; color: #888; text-transform: uppercase;">Đăng nhập với vai trò:</li>
@@ -108,12 +114,12 @@
 									    </ul>
 									</li>
                                     
-                                    <li data-tooltip="tooltip" data-placement="left" title="Contact">
+                                    <li data-tooltip="tooltip" data-placement="left" title="Liên hệ: 0835420088">
 
-                                        <a th:href="@{/tel:+0900901904}"><i class="fas fa-phone-volume"></i></a></li>
-                                    <li data-tooltip="tooltip" data-placement="left" title="Mail">
+                                        <a href="tel:0835420088"><i class="fas fa-phone-volume"></i></a></li>
+                                    <li data-tooltip="tooltip" data-placement="left" title="Email: luonghiep334@gmail.com">
 
-                                        <a th:href="@{/mailto:luonghiep334@gmail.com}"><i class="far fa-envelope"></i></a></li>
+                                        <a href="mailto:luonghiep334@gmail.com"><i class="far fa-envelope"></i></a></li>
                                 </ul>
                                 <!--====== Kết thúc - Danh sách ======-->
                             </div>
@@ -158,380 +164,130 @@
                                                 <div class="mega-menu-list">
                                                     <ul>
                                                         <li class="js-active">
-
-                                                            <a th:href="@{/shop}"><i class="fa-solid fa-table-tennis-paddle-ball"></i>
-
-                                                                <span>Sản phẩm</span></a>
-
-                                                            <span class="js-menu-toggle js-toggle-mark"></span></li>
+                                                            <a th:href="@{/shop(categoryId=1)}"><i class="fa-solid fa-table-tennis-paddle-ball"></i>
+                                                                <span>Vợt Cầu Lông</span></a>
+                                                            <span class="js-menu-toggle js-toggle-mark"></span>
+                                                        </li>
                                                         <li>
-
-                                                            <a th:href="@{/shop}"><i class="fas fa-female u-s-m-r-6"></i>
-
-                                                                <span>Tag 2</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
+                                                            <a th:href="@{/shop(categoryId=2)}"><i class="fas fa-shoe-prints u-s-m-r-6"></i>
+                                                                <span>Giày Cầu Lông</span></a>
+                                                            <span class="js-menu-toggle"></span>
+                                                        </li>
                                                         <li>
-
-                                                            <a th:href="@{/shop}"><i class="fas fa-male u-s-m-r-6"></i>
-
-                                                                <span>Tag 3</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
-                                                        <li>
-
-                                                            <a th:href="@{/index.html}"><i class="fas fa-utensils u-s-m-r-6"></i>
-
-                                                                <span>Tag 4</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
-                                                        <li>
-
-                                                            <a th:href="@{/index.html}"><i class="fas fa-couch u-s-m-r-6"></i>
-
-                                                                <span>Tag 5</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
-                                                        <li>
-
-                                                            <a th:href="@{/index.html}"><i class="fas fa-football-ball u-s-m-r-6"></i>
-
-                                                                <span>Tag 6</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
-                                                        <li>
-
-                                                            <a th:href="@{/index.html}"><i class="fas fa-heartbeat u-s-m-r-6"></i>
-
-                                                                <span>Tag 7</span></a>
-
-                                                            <span class="js-menu-toggle"></span></li>
+                                                            <a th:href="@{/shop(categoryId=3)}"><i class="fas fa-toolbox u-s-m-r-6"></i>
+                                                                <span>Phụ Kiện</span></a>
+                                                            <span class="js-menu-toggle"></span>
+                                                        </li>
                                                     </ul>
                                                 </div>
 
-                                                <!--====== Hộp menu tag 1 của chữ M ======-->
+                                                <!--====== Hộp menu tag 1 của chữ M: Vợt Cầu Lông ======-->
                                                 <div class="mega-menu-content js-active">
-
-                                                    <!--====== Hàng Menu 1 ======-->
                                                     <div class="row">
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-4">
                                                             <ul>
-                                                                <li class="mega-list-title">
-                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 1</a></li>
+                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,brandId=1)}">Vợt Yonex</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,brandId=2)}">Vợt Victor</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,brandId=3)}">Vợt Lining</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,brandId=4)}">Vợt Kawasaki</a></li>
                                                             </ul>
                                                         </div>
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-4">
                                                             <ul>
-                
+                                                                <li class="mega-list-title"><a href="#">Mức Giá</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,maxPrice=1000000)}">Dưới 1 Triệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,minPrice=1000000,maxPrice=2000000)}">1 - 2 Triệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,minPrice=2000000)}">Trên 2 Triệu</a></li>
                                                             </ul>
                                                         </div>
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-4">
                                                             <ul>
-
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-
+                                                                <li class="mega-list-title"><a href="#">Trọng Lượng</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='3U')}">3U (Nặng)</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='4U')}">4U (Trung bình)</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='5U')}">5U (Nhẹ)</a></li>
                                                             </ul>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 1 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 2 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                <li class="mega-list-title">
-                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 2</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                            
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    <!--====== Kết thúc - Hàng Menu 2 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 3 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                <li class="mega-list-title">
-
-                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 3</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-9 mega-image">
+                                                    <div class="row u-s-m-t-20">
+                                                        <div class="col-lg-12 mega-image">
                                                             <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-0.jpg}" alt=""></a></div>
+                                                                <a class="u-d-block" th:href="@{/shop(categoryId=1)}">
+                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-0.jpg}" alt="Banner Rackets">
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 3 ======-->
                                                 </div>
-                                                <!--====== Kết thúc - Hộp menu tag 1 của chữ M ======-->
 
-
-                                                <!--====== Hộp menu tag 2 của chữ M ======-->
+                                                <!--====== Hộp menu tag 2 của chữ M: Giày Cầu Lông ======-->
                                                 <div class="mega-menu-content">
-
-                                                    <!--====== Hàng Menu 1 ======-->
                                                     <div class="row">
-                                                        <div class="col-lg-6 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-1.jpg}" alt=""></a></div>
-                                                        </div>
-                                                        <div class="col-lg-6 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-2.jpg}" alt=""></a></div>
-                                                        </div>
-                                                    </div>
-                                                    <!--====== Kết thúc - Hàng Menu 1 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 2 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-6">
                                                             <ul>
-                                                                <li class="mega-list-title">
-
-                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 2</a></li>
+                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,brandId=1)}">Giày Yonex</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,brandId=2)}">Giày Victor</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,brandId=3)}">Giày Lining</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,brandId=4)}">Giày Kawasaki</a></li>
                                                             </ul>
                                                         </div>
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-6">
                                                             <ul>
-                                                            
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                            
+                                                                <li class="mega-list-title"><a href="#">Mức Giá</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,maxPrice=1500000)}">Dưới 1.5 Triệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=2,minPrice=1500000)}">Trên 1.5 Triệu</a></li>
                                                             </ul>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 2 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 3 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                <li class="mega-list-title">
-
-                                                                    <a th:href="@{/shop}">Hàng trỏ đến sản phẩm 3</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                            
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
+                                                    <div class="row u-s-m-t-20">
+                                                        <div class="col-lg-12 mega-image">
+                                                            <div class="mega-banner">
+                                                                <a class="u-d-block" th:href="@{/shop(categoryId=2)}">
+                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-1.jpg}" alt="Banner Shoes">
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 3 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 4 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-9 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-3.jpg}" alt=""></a></div>
-                                                        </div>
-                                                        <div class="col-lg-3 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-4.jpg}" alt=""></a></div>
-                                                        </div>
-                                                    </div>
-                                                    <!--====== Kết thúc - Hàng Menu 4 ======-->
                                                 </div>
-                                                <!--====== Kết thúc - Hộp menu tag 2 của chữ M ======-->
 
-
-                                                <!--====== Hộp menu tag 3 của chữ M ======-->
+                                                <!--====== Hộp menu tag 3 của chữ M: Phụ Kiện ======-->
                                                 <div class="mega-menu-content">
-
-                                                    <!--====== Hàng Menu 1 ======-->
                                                     <div class="row">
-                                                        <div class="col-lg-4 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-5.jpg}" alt=""></a></div>
-                                                        </div>
-                                                        <div class="col-lg-4 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-6.jpg}" alt=""></a></div>
-                                                        </div>
-                                                        <div class="col-lg-4 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-7.jpg}" alt=""></a></div>
-                                                        </div>
-                                                    </div>
-                                                    <!--====== Kết thúc - Hàng Menu 1 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 2 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-6">
                                                             <ul>
-                                                                <li class="mega-list-title">
-
-                                                                    <a th:href="@{/shop}">Hàng mẫu 2</a></li>
+                                                                <li class="mega-list-title"><a href="#">Loại Phụ Kiện</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3)}">Quấn cán vợt</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3)}">Bao vợt / Balo</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3)}">Tất cầu lông</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3)}">Căng dây vợt</a></li>
                                                             </ul>
                                                         </div>
-                                                        <div class="col-lg-3">
+                                                        <div class="col-lg-6">
                                                             <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-
+                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3,brandId=1)}">Phụ kiện Yonex</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3,brandId=2)}">Phụ kiện Victor</a></li>
+                                                                <li><a th:href="@{/shop(categoryId=3,brandId=3)}">Phụ kiện Lining</a></li>
                                                             </ul>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 2 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 3 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                <li class="mega-list-title">
-
-                                                                    <a th:href="@{/shop}">Hàng mẫu</a></li>
-                                            
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                            
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-3">
-                                                            <ul>
-                                                                
-                                                            </ul>
+                                                    <div class="row u-s-m-t-20">
+                                                        <div class="col-lg-12 mega-image">
+                                                            <div class="mega-banner">
+                                                                <a class="u-d-block" th:href="@{/shop(categoryId=3)}">
+                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-2.jpg}" alt="Banner Accessories">
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <!--====== Kết thúc - Hàng Menu 3 ======-->
-                                                    <br>
-
-                                                    <!--====== Hàng Menu 4 ======-->
-                                                    <div class="row">
-                                                        <div class="col-lg-6 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-8.jpg}" alt=""></a></div>
-                                                        </div>
-                                                        <div class="col-lg-6 mega-image">
-                                                            <div class="mega-banner">
-
-                                                                <a class="u-d-block" th:href="@{/shop}">
-
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-9.jpg}" alt=""></a></div>
-                                                        </div>
-                                                    </div>
-                                                    <!--====== Kết thúc - Hàng Menu 4 ======-->
                                                 </div>
-                                                <!--====== Kết thúc - Hộp menu tag 3 ======-->
-
-
-                                                <!--====== Không có danh mục con ======-->
-                                                <div class="mega-menu-content">
-                                                    <h5>No Categories</h5>
-                                                </div>
-                                                <!--====== Kết thúc - Không có danh mục con ======-->
-
-
-                                                <!--====== Không có danh mục con ======-->
-                                                <div class="mega-menu-content">
-                                                    <h5>No Categories</h5>
-                                                </div>
-                                                <!--====== Kết thúc - Không có danh mục con ======-->
-
-
-                                                <!--====== Không có danh mục con ======-->
-                                                <div class="mega-menu-content">
-                                                    <h5>No Categories</h5>
-                                                </div>
-                                                <!--====== Kết thúc - Không có danh mục con ======-->
-
-
-                                                <!--====== Không có danh mục con ======-->
-                                                <div class="mega-menu-content">
-                                                    <h5>No Categories</h5>
-                                                </div>
-                                                <!--====== Kết thúc - Không có danh mục con ======-->
                                             </div>
                                         </div>
-                                        <!--====== Kết thúc - Menu lớn ======-->
                                     </li>
                                 </ul>
-                                <!--====== Kết thúc - Danh sách ======-->
                             </div>
-                            <!--====== Kết thúc - Menu ======-->
                         </div>
                         <!--====== Kết thúc - Plugin Dropdown chính ======-->
 
@@ -640,6 +396,149 @@
 			    </div>
 			
 			</div>
+
+<script>
+// ===== Autocomplete Search + Popular Keywords =====
+(function() {
+    var searchInput = document.getElementById('main-search');
+    var dropdown = document.getElementById('search-autocomplete');
+    if (!searchInput || !dropdown) return;
+
+    var debounceTimer;
+    var popularCache = null;
+
+    // === Hiển thị TỪ KHÓA PHỔ BIẾN khi focus vào ô search ===
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) return;
+        showPopularKeywords();
+    });
+
+    function showPopularKeywords() {
+        if (popularCache) {
+            renderPopular(popularCache);
+            return;
+        }
+        fetch('/api/search/popular')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                popularCache = data;
+                renderPopular(data);
+            })
+            .catch(function() {});
+    }
+
+    function renderPopular(data) {
+        var html = '';
+
+        // 1. Danh mục + Thương hiệu dạng chip tags
+        html += '<div class="popular-section">';
+        html += '<div class="popular-title"><i class="fas fa-fire"></i> Từ khóa phổ biến</div>';
+        html += '<div class="popular-tags">';
+        if (data.danhMuc) {
+            data.danhMuc.forEach(function(dm) {
+                html += '<a href="/shop?categoryId=' + dm.id + '" class="popular-tag popular-tag--category">' + dm.ten + '</a>';
+            });
+        }
+        if (data.thuongHieu) {
+            data.thuongHieu.forEach(function(th) {
+                html += '<a href="/shop?brandId=' + th.id + '" class="popular-tag popular-tag--brand">' + th.ten + '</a>';
+            });
+        }
+        html += '</div></div>';
+
+        // 2. Sản phẩm bán chạy nhất
+        if (data.sanPhamNoiBat && data.sanPhamNoiBat.length > 0) {
+            html += '<div class="popular-section">';
+            html += '<div class="popular-title"><i class="fas fa-star"></i> Sản phẩm được tìm nhiều</div>';
+            data.sanPhamNoiBat.forEach(function(sp) {
+                html += '<a href="/san-pham/' + sp.id + '" class="autocomplete-item">' +
+                    '<img src="/uploads/product/' + (sp.hinhAnh || 'default.png') + '" onerror="this.src=\'/images/placeholder.png\'">' +
+                    '<div class="autocomplete-info">' +
+                        '<div class="autocomplete-name">' + sp.tenSanPham + '</div>' +
+                        '<div class="autocomplete-brand">' + sp.thuongHieu + ' · ' + sp.danhMuc + '</div>' +
+                        '<div class="autocomplete-price">' +
+                            formatVND(sp.giaSauGiam || sp.giaBan) +
+                            (sp.giamGia > 0 ? ' <span class="autocomplete-discount">-' + sp.giamGia + '%</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                '</a>';
+            });
+            html += '</div>';
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+    }
+
+    // === Autocomplete khi gõ từ khóa (≥ 2 ký tự) ===
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var query = this.value.trim();
+
+        if (query.length < 2) {
+            if (query.length === 0 && document.activeElement === searchInput) {
+                showPopularKeywords();
+            } else {
+                dropdown.style.display = 'none';
+                dropdown.innerHTML = '';
+            }
+            return;
+        }
+
+        debounceTimer = setTimeout(function() {
+            fetch('/api/search/products?q=' + encodeURIComponent(query))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.length === 0) {
+                        dropdown.innerHTML = '<div class="autocomplete-empty">' +
+                            '<i class="fas fa-search"></i> Không tìm thấy sản phẩm nào cho "' +
+                            query + '"</div>';
+                        dropdown.style.display = 'block';
+                        return;
+                    }
+                    var html = data.map(function(item) {
+                        return '<a href="/san-pham/' + item.id + '" class="autocomplete-item">' +
+                            '<img src="/uploads/product/' + (item.hinhAnh || 'default.png') +
+                            '" onerror="this.src=\'/images/placeholder.png\'">' +
+                            '<div class="autocomplete-info">' +
+                                '<div class="autocomplete-name">' + highlightMatch(item.tenSanPham, query) + '</div>' +
+                                '<div class="autocomplete-brand">' + item.thuongHieu + ' \u00b7 ' + item.danhMuc + '</div>' +
+                                '<div class="autocomplete-price">' +
+                                    formatVND(item.giaSauGiam || item.giaBan) +
+                                    (item.giamGia > 0 ? ' <span class="autocomplete-discount">-' + item.giamGia + '%</span>' : '') +
+                                '</div>' +
+                            '</div>' +
+                        '</a>';
+                    }).join('');
+                    html += '<a href="/shop?q=' + encodeURIComponent(query) +
+                            '" class="autocomplete-viewall"><i class="fas fa-search"></i> Xem tất cả kết quả cho "' + query + '" \u2192</a>';
+                    dropdown.innerHTML = html;
+                    dropdown.style.display = 'block';
+                })
+                .catch(function() {});
+        }, 300);
+    });
+
+    // Ẩn dropdown khi click ngoài
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    function highlightMatch(text, query) {
+        if (!query) return text;
+        var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var regex = new RegExp('(' + escaped + ')', 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    function formatVND(num) {
+        if (!num) return '';
+        return new Intl.NumberFormat('vi-VN').format(num) + ' \u20ab';
+    }
+})();
+</script>
         </header>
         
 

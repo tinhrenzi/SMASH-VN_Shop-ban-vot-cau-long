@@ -25,7 +25,7 @@
     <div class="preloader is-active">
         <div class="preloader__wrap">
 
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
     </div>
 
     <!--====== Ứng dụng chính ======-->
@@ -80,62 +80,48 @@
                                         <div class="dash__pad-1">
 
                                             <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
-                                            <ul class="dash__f-list">
-                                                <li>
-
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/address}">Địa chỉ</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/my-order}">Đơn hàng</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
-                                                <li>
-
-                                                    <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
-                                            </ul>
+                                             <ul class="dash__f-list">
+                                                 <li>
+                                                     <a th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/profile}">Thông tin cá nhân</a></li>
+                                                 <li>
+                                                     <a class="dash-active" th:href="@{/user/address}">Địa chỉ</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/track-order}">Theo dõi đơn hàng</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/my-order}">Đơn hàng</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/notifications}">Thông báo</a></li>
+                                             </ul>
                                         </div>
                                     </div>
                                     <div class="dash__box dash__box--bg-white dash__box--shadow dash__box--w">
                                         <div class="dash__pad-1">
-                                            <ul class="dash__w-list">
-                                                <li>
-                                                    <div class="dash__w-wrap">
-
-                                                        <span class="dash__w-icon dash__w-icon-style-1"><i class="fas fa-cart-arrow-down"></i></span>
-
-                                                        <span class="dash__w-text">4</span>
-
-                                                        <span class="dash__w-name">Đơn Hàng Đã Đặt</span></div>
-                                                </li>
-                                                <li>
-                                                    <div class="dash__w-wrap">
-
-                                                        <span class="dash__w-icon dash__w-icon-style-2"><i class="fas fa-times"></i></span>
-
-                                                        <span class="dash__w-text">0</span>
-
-                                                        <span class="dash__w-name">Đơn Hàng Đã Hủy</span></div>
-                                                </li>
-                                                <li>
-                                                    <div class="dash__w-wrap">
-
-                                                        <span class="dash__w-icon dash__w-icon-style-3"><i class="far fa-heart"></i></span>
-
-                                                        <span class="dash__w-text">0</span>
-
-                                                        <span class="dash__w-name">Yêu Thích</span></div>
-                                                </li>
-                                            </ul>
+                                             <ul class="dash__w-list">
+                                                 <li>
+                                                     <div class="dash__w-wrap">
+                                                         <span class="dash__w-icon dash__w-icon-style-1"><i class="fas fa-cart-arrow-down"></i></span>
+                                                         <span class="dash__w-text" th:text="${orderPlaced}">0</span>
+                                                         <span class="dash__w-name">Đơn Hàng Đã Đặt</span></div>
+                                                 </li>
+                                                 <li>
+                                                     <div class="dash__w-wrap">
+                                                         <span class="dash__w-icon dash__w-icon-style-2"><i class="fas fa-times"></i></span>
+                                                         <span class="dash__w-text" th:text="${cancelOrders}">0</span>
+                                                         <span class="dash__w-name">Đơn Hàng Đã Hủy</span></div>
+                                                 </li>
+                                                 <li>
+                                                     <div class="dash__w-wrap">
+                                                         <span class="dash__w-icon dash__w-icon-style-3"><i class="far fa-heart"></i></span>
+                                                         <span class="dash__w-text" th:text="${wishlist}">0</span>
+                                                         <span class="dash__w-name">Yêu Thích</span></div>
+                                                 </li>
+                                             </ul>
                                         </div>
                                     </div>
                                     <!--====== End - Dashboard Features ======-->
@@ -223,7 +209,8 @@
 
 
         <!--====== Main Footer ======-->
-        <footer id="footer-placeholder">
+        <footer>
+            <div th:replace="~{layout/footer :: footer}"></div>
         </footer>
     </div>
     <!--====== End - Main App ======-->

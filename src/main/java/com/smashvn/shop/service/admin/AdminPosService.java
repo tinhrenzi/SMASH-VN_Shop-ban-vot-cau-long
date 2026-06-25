@@ -1,0 +1,476 @@
+package com.smashvn.shop.service.admin;
+
+import com.smashvn.shop.service.AuditService;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
+import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.PaymentStatus;
+import com.smashvn.shop.util.VoucherCalculator;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.PriceSnapshot;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AdminPosService {
+
+    private final HoaDonRepository hoaDonRepository;
+    private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final KhachHangRepository khachHangRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final NhanVienRepository nhanVienRepository;
+    private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
+    private final DonViVanChuyenDAO donViVanChuyenDAO;
+    private final AuditService auditService;
+    private final SanPhamRepository sanPhamRepository;
+    private final PricingService pricingService;
+
+    // Tìm kiếm biến thể sản phẩm đang bán kèm lọc danh mục & thương hiệu
+    public List<SanPhamChiTiet> searchActiveVariants(String query, Integer idDanhMuc, Integer idThuongHieu) {
+        List<SanPhamChiTiet> all = sanPhamChiTietRepository.findAll();
+        return all.stream()
+                .filter(v -> "dang_ban".equals(v.getSanPham().getTrangThai()))
+                .filter(v -> idDanhMuc == null || idDanhMuc == -1 || (v.getSanPham().getDanhMuc() != null && v.getSanPham().getDanhMuc().getId().equals(idDanhMuc)))
+                .filter(v -> idThuongHieu == null || idThuongHieu == -1 || (v.getSanPham().getThuongHieu() != null && v.getSanPham().getThuongHieu().getId().equals(idThuongHieu)))
+                .filter(v -> {
+                    if (query == null || query.trim().isEmpty()) {
+                        return true;
+                    }
+                    String lowerQuery = query.toLowerCase().trim();
+                    return v.getSanPham().getTenSanPham().toLowerCase().contains(lowerQuery)
+                            || v.getMauSac().toLowerCase().contains(lowerQuery)
+                            || v.getTrongLuong().toLowerCase().contains(lowerQuery)
+                            || v.getMucCang().toLowerCase().contains(lowerQuery)
+                            || (v.getSanPham().getDanhMuc() != null && v.getSanPham().getDanhMuc().getTenDanhMuc().toLowerCase().contains(lowerQuery))
+                            || (v.getSanPham().getThuongHieu() != null && v.getSanPham().getThuongHieu().getTenThuongHieu().toLowerCase().contains(lowerQuery));
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Tìm kiếm khách hàng — tương thích multi-role (dùng flag la_khach_hang =
+     * true). Loại trừ tài khoản Khách Lẻ nội bộ (guest@smashvn.com).
+     */
+    public List<KhachHang> searchCustomers(String query) {
+        List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
+                .stream()
+                .filter(c -> !"guest@smashvn.com".equals(c.getTaiKhoan().getEmail()))
+                .collect(Collectors.toList());
+
+        if (query == null || query.trim().isEmpty()) {
+            return customers;
+        }
+        String lowerQuery = query.toLowerCase().trim();
+        return customers.stream()
+                .filter(c -> c.getHoKh().toLowerCase().contains(lowerQuery)
+                || c.getTenKh().toLowerCase().contains(lowerQuery)
+                || c.getSoDienThoaiKh().contains(lowerQuery)
+                || c.getTaiKhoan().getEmail().toLowerCase().contains(lowerQuery))
+                .collect(Collectors.toList());
+    }
+
+    // Lấy thông tin voucher và xác thực
+    public PhieuGiamGia checkVoucher(String maVoucher, BigDecimal tongTien) {
+        if (maVoucher == null || maVoucher.trim().isEmpty()) {
+            return null;
+        }
+        PhieuGiamGia voucher = phieuGiamGiaRepository.findByMaPhieu(maVoucher.trim())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher: " + maVoucher));
+
+        if (!voucher.getActive()) {
+            throw new RuntimeException("Voucher đã ngưng hoạt động.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (voucher.getNgayBatDau() != null && now.isBefore(voucher.getNgayBatDau())) {
+            throw new RuntimeException("Voucher chưa bắt đầu sử dụng.");
+        }
+        if (voucher.getNgayKetThuc() != null && now.isAfter(voucher.getNgayKetThuc())) {
+            throw new RuntimeException("Voucher đã hết hạn sử dụng.");
+        }
+        if (voucher.getSoLuongConLai() != null && voucher.getSoLuongConLai() <= 0) {
+            throw new RuntimeException("Voucher đã hết lượt sử dụng.");
+        }
+        if (tongTien.compareTo(voucher.getGiaTriDonHangToiThieu()) < 0) {
+            throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher: " + voucher.getGiaTriDonHangToiThieu() + " đ");
+        }
+        return voucher;
+    }
+
+    // DTO cho POS item
+    public static class PosItem {
+
+        public Integer idSanPhamChiTiet;
+        public Integer soLuong;
+    }
+
+    /**
+     * Hàm thanh toán POS trong transaction an toàn.
+     *
+     * @param phuongThucPos TIEN_MAT | CHUYEN_KHOAN (phương thức thanh toán POS)
+     * @param ghiChu Ghi chú hóa đơn (nullable)
+     */
+    @Transactional
+    public HoaDon thanhToanPos(Integer idKhachHang, String maVoucher, List<PosItem> items,
+            String phuongThucPos, String maGiaoDich, String ghiChu,
+            Integer idNhanVienTaiKhoan, String clientIp) {
+        String sanitizedGiaoDich = null;
+        if (maGiaoDich != null) {
+            String trimmed = maGiaoDich.trim();
+            sanitizedGiaoDich = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
+            if (sanitizedGiaoDich.length() > 100) {
+                throw new RuntimeException("Mã giao dịch không được vượt quá 100 ký tự!");
+            }
+        }
+
+        String sanitizedGhiChu = null;
+        if (ghiChu != null) {
+            String trimmed = ghiChu.trim();
+            sanitizedGhiChu = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
+            if (sanitizedGhiChu.length() > 500) {
+                throw new RuntimeException("Ghi chú không được vượt quá 500 ký tự!");
+            }
+        }
+
+        if (items == null || items.isEmpty()) {
+            throw new RuntimeException("Đơn hàng không có sản phẩm nào!");
+        }
+
+        // 1. Xác định nhân viên thực hiện
+        TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện giao dịch không hợp lệ!"));
+
+        NhanVien nhanVien = nhanVienRepository.findByTaiKhoanId(nvTk.getId());
+
+        // 2. Xác định khách hàng (Nếu không có, dùng tài khoản Khách Lẻ mặc định)
+        KhachHang khachHang;
+        if (idKhachHang == null || idKhachHang == -1) {
+            TaiKhoan guestTk = taiKhoanRepository.findByEmail("guest@smashvn.com");
+            if (guestTk == null) {
+                TaiKhoan tk = new TaiKhoan();
+                tk.setEmail("guest@smashvn.com");
+                tk.setMatKhau("GUEST_NO_PASSWORD");
+                tk.setVaiTro("KH");
+                tk.setTrangThai("hoat_dong");
+                guestTk = taiKhoanRepository.save(tk);
+            }
+            final TaiKhoan guestTkFinal = guestTk;
+            khachHang = khachHangRepository.findByTaiKhoan_Email("guest@smashvn.com").orElseGet(() -> {
+                KhachHang kh = new KhachHang();
+                kh.setTaiKhoan(guestTkFinal);
+                kh.setHoKh("Khách");
+                kh.setTenKh("Lẻ");
+                kh.setSoDienThoaiKh("0000000000");
+                kh.setNhanBanTin(false);
+                kh.setLaTaiKhoanNoiBo(false);
+                return khachHangRepository.save(kh);
+            });
+        } else {
+            khachHang = khachHangRepository.findById(idKhachHang)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng trong hệ thống!"));
+        }
+
+        // 3. Ánh xạ phương thức thanh toán POS → PhuongThucThanhToan (giữ FK cho tương thích)
+        String tenPhuongThucCan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "chuyển khoản" : "tiền mặt";
+        List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
+        PhuongThucThanhToan pttt;
+        if (allPttt.isEmpty()) {
+            PhuongThucThanhToan defaultPttt = new PhuongThucThanhToan();
+            defaultPttt.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
+            pttt = phuongThucThanhToanDAO.save(defaultPttt);
+        } else {
+            pttt = allPttt.stream()
+                    .filter(p -> p.getTenPhuongThuc().toLowerCase().contains(tenPhuongThucCan))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        PhuongThucThanhToan newP = new PhuongThucThanhToan();
+                        newP.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
+                        return phuongThucThanhToanDAO.save(newP);
+                    });
+        }
+
+        // 4. Lấy đơn vị vận chuyển (Bán tại quầy)
+        DonViVanChuyen dvvc = null;
+        List<DonViVanChuyen> allDvvc = donViVanChuyenDAO.findAll();
+        if (allDvvc.isEmpty()) {
+            DonViVanChuyen defaultDvvc = new DonViVanChuyen();
+            defaultDvvc.setTenDonVi("Mua tại quầy");
+            defaultDvvc.setHotline("000000");
+            dvvc = donViVanChuyenDAO.save(defaultDvvc);
+        } else {
+            dvvc = allDvvc.stream()
+                    .filter(d -> d.getTenDonVi().toLowerCase().contains("quầy") || d.getTenDonVi().toLowerCase().contains("chỗ"))
+                    .findFirst()
+                    .orElse(allDvvc.get(0));
+        }
+
+        // 5. Khóa và kiểm tra tồn kho các sản phẩm chi tiết bằng Pessimistic Write
+        BigDecimal tongTienHang = BigDecimal.ZERO;
+        List<HoaDonChiTiet> listCt = new java.util.ArrayList<>();
+
+        for (PosItem item : items) {
+            if (item.soLuong == null || item.soLuong <= 0) {
+                throw new RuntimeException("Số lượng sản phẩm không hợp lệ!");
+            }
+            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(item.idSanPhamChiTiet)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể sản phẩm ID: " + item.idSanPhamChiTiet));
+
+            if (!"dang_ban".equals(spct.getSanPham().getTrangThai())) {
+                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + "' hiện đã ngưng kinh doanh!");
+            }
+
+            if (spct.getSoLuongTon() < item.soLuong) {
+                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + " [" + spct.getMauSac() + "]' không đủ hàng tồn kho! Còn lại: " + spct.getSoLuongTon());
+            }
+
+            // Trừ tồn kho
+            spct.setSoLuongTon(spct.getSoLuongTon() - item.soLuong);
+            sanPhamChiTietRepository.save(spct);
+
+            // Tính tiền thông qua PricingService (giá đã chiết khấu theo DotGiamGia)
+            PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(spct);
+            BigDecimal sellingPrice = priceSnapshot.giaBanSauGiam();
+            BigDecimal itemTotal = sellingPrice.multiply(new BigDecimal(item.soLuong));
+            tongTienHang = tongTienHang.add(itemTotal);
+
+            // Lưu tạm chi tiết kèm Snapshot dữ liệu
+            HoaDonChiTiet hdct = new HoaDonChiTiet();
+            hdct.setSanPhamChiTiet(spct);
+            hdct.setSoLuong(item.soLuong);
+            hdct.setDonGia(sellingPrice);
+            hdct.setGiaNiemYet(priceSnapshot.giaNiemYet());
+            hdct.setPhanTramGiam(priceSnapshot.phanTramGiam());
+            hdct.setSoTienGiamSanPham(priceSnapshot.soTienGiamSanPham());
+            hdct.setTenDotGiamGia(priceSnapshot.tenDotGiamGia());
+            hdct.setIdDotGiamGia(priceSnapshot.idDotGiamGia());
+            hdct.setTenSanPhamSnapshot(spct.getSanPham().getTenSanPham());
+
+            // SKU Snapshot
+            String sku = null;
+            try {
+                java.lang.reflect.Method getSkuMethod = spct.getClass().getMethod("getSku");
+                sku = (String) getSkuMethod.invoke(spct);
+            } catch (Exception e) {
+                // ignore
+            }
+            if (sku == null || sku.isBlank()) {
+                sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
+            }
+            hdct.setSkuSnapshot(sku);
+
+            // Variant attribute snapshot
+            StringBuilder sb = new StringBuilder();
+            sb.append("Màu sắc: ").append(spct.getMauSac() != null ? spct.getMauSac() : "N/A");
+            if (spct.getTrongLuong() != null && !spct.getTrongLuong().trim().isEmpty()) {
+                sb.append(" | Trọng lượng: ").append(spct.getTrongLuong());
+            }
+            if (spct.getMucCang() != null && !spct.getMucCang().trim().isEmpty()) {
+                sb.append(" | Mức căng: ").append(spct.getMucCang());
+            }
+            hdct.setThuocTinhSnapshot(sb.toString());
+
+            // Brand & Category
+            if (spct.getSanPham().getThuongHieu() != null) {
+                hdct.setThuongHieuSnapshot(spct.getSanPham().getThuongHieu().getTenThuongHieu());
+            }
+            if (spct.getSanPham().getDanhMuc() != null) {
+                hdct.setDanhMucSnapshot(spct.getSanPham().getDanhMuc().getTenDanhMuc());
+            }
+
+            listCt.add(hdct);
+        }
+
+        // 6. Xử lý Voucher và Khóa Pessimistic Write voucher
+        PhieuGiamGia phieu = null;
+        BigDecimal giamGia = BigDecimal.ZERO;
+
+        if (maVoucher != null && !maVoucher.trim().isEmpty()) {
+            phieu = phieuGiamGiaRepository.findByMaPhieuWithLock(maVoucher.trim())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher: " + maVoucher));
+
+            if (!phieu.getActive()) {
+                throw new RuntimeException("Voucher đã ngưng hoạt động.");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            if (phieu.getNgayBatDau() != null && now.isBefore(phieu.getNgayBatDau())) {
+                throw new RuntimeException("Voucher chưa bắt đầu.");
+            }
+            if (phieu.getNgayKetThuc() != null && now.isAfter(phieu.getNgayKetThuc())) {
+                throw new RuntimeException("Voucher đã hết hạn.");
+            }
+            if (phieu.getSoLuongConLai() != null && phieu.getSoLuongConLai() <= 0) {
+                throw new RuntimeException("Voucher đã hết lượt sử dụng.");
+            }
+            if (tongTienHang.compareTo(phieu.getGiaTriDonHangToiThieu()) < 0) {
+                throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu của voucher (" + phieu.getGiaTriDonHangToiThieu() + " đ)");
+            }
+
+            // Tính tiền giảm qua VoucherCalculator (bao gồm cả giới hạn giảm tối đa)
+            giamGia = VoucherCalculator.calculateVoucherDiscount(tongTienHang, phieu);
+
+            // Trừ lượt sử dụng voucher
+            phieu.setSoLuongConLai(phieu.getSoLuongConLai() - 1);
+            phieuGiamGiaRepository.save(phieu);
+        }
+
+        BigDecimal tongTienCuoi = tongTienHang.subtract(giamGia);
+        if (tongTienCuoi.compareTo(BigDecimal.ZERO) < 0) {
+            tongTienCuoi = BigDecimal.ZERO;
+        }
+
+        // 7. Tạo hóa đơn
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(khachHang);
+        hd.setNhanVien(nhanVien);
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setPhieuGiamGia(phieu);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setNgayTao(LocalDateTime.now());
+        hd.setTongTien(tongTienCuoi);
+        hd.setPhiVanChuyen(BigDecimal.ZERO);
+        hd.setDiaChiNhan("Bán tại quầy");
+        hd.setSdtNhan(khachHang.getSoDienThoaiKh() != null && !khachHang.getSoDienThoaiKh().trim().isEmpty()
+                ? khachHang.getSoDienThoaiKh()
+                : "0000000000");
+        hd.setGhiChu(sanitizedGhiChu);
+        hd.setMaGiaoDich(sanitizedGiaoDich);
+
+        boolean isChuyenKhoan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos);
+        if (isChuyenKhoan) {
+            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
+            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+            hd.setPaymentStatus(PaymentStatus.PENDING.getValue());         // "pending"
+            hd.setNguoiXacNhanThanhToan(null);
+            hd.setThoiGianXacNhan(null);
+        } else {
+            hd.setTrangThaiDonHang("da_giao");                             // Bán tại quầy → hoàn thành ngay
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");                     // Nhân viên đã xác nhận
+            hd.setPaymentStatus(PaymentStatus.PAID.getValue());            // "paid"
+            hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+            hd.setThoiGianXacNhan(LocalDateTime.now());
+        }
+
+        hd.setSoTienGiamVoucher(giamGia);
+        if (phieu != null) {
+            hd.setMaVoucherApDung(phieu.getMaPhieu());
+            hd.setTenVoucherApDung("Voucher " + phieu.getMaPhieu());
+            String limitDesc = phieu.getGiaTriGiamToiDa() != null ? " (Giảm tối đa " + phieu.getGiaTriGiamToiDa() + "đ)" : "";
+            hd.setMoTaVoucherSnapshot("Giảm " + phieu.getGiaTri() + ("%".equals(phieu.getDonVi()) ? "%" : "đ") + limitDesc + " cho đơn hàng từ " + phieu.getGiaTriDonHangToiThieu() + "đ");
+        } else {
+            hd.setSoTienGiamVoucher(BigDecimal.ZERO);
+        }
+
+        // Generate unique maDonHang for POS orders
+        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        hd.setMaDonHang("HDSVN" + dateStr + "-" + uuidStr);
+
+        hd = hoaDonRepository.save(hd);
+
+        // 8. Lưu các chi tiết hóa đơn
+        for (HoaDonChiTiet ct : listCt) {
+            ct.setHoaDon(hd);
+            hoaDonChiTietRepository.save(ct);
+        }
+
+        // 9. Ghi nhật ký kiểm toán
+        String ptLabel = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt";
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp,
+                "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
+
+        return hd;
+    }
+
+    @Transactional
+    public void confirmPaymentPos(Integer hoaDonId, Integer idNhanVienTaiKhoan) {
+        HoaDon hd = hoaDonRepository.findById(hoaDonId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
+
+        if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
+            throw new RuntimeException("Hóa đơn này không ở trạng thái chờ thanh toán!");
+        }
+
+        TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện giao dịch không hợp lệ!"));
+        NhanVien nhanVien = nhanVienRepository.findByTaiKhoanId(nvTk.getId());
+
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+        hd.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue());
+        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+        hd.setThoiGianXacNhan(LocalDateTime.now());
+        hoaDonRepository.save(hd);
+
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1",
+                "Nhân viên xác nhận thanh toán chuyển khoản thủ công cho đơn POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
+    }
+
+    @Transactional
+    public void cancelOrderPos(Integer hoaDonId, Integer idNhanVienTaiKhoan) {
+        HoaDon hd = hoaDonRepository.findById(hoaDonId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
+
+        if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
+            throw new RuntimeException("Chỉ có thể hủy hóa đơn ở trạng thái chờ thanh toán!");
+        }
+
+        TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện không hợp lệ!"));
+
+        // 1. Hoàn lại tồn kho sản phẩm chi tiết
+        List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(hoaDonId);
+        for (HoaDonChiTiet ct : details) {
+            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(ct.getSanPhamChiTiet().getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết ID: " + ct.getSanPhamChiTiet().getId()));
+            spct.setSoLuongTon(spct.getSoLuongTon() + ct.getSoLuong());
+            sanPhamChiTietRepository.save(spct);
+        }
+
+        // 2. Hoàn lại lượt sử dụng Voucher (nếu có)
+        if (hd.getPhieuGiamGia() != null) {
+            PhieuGiamGia phieu = phieuGiamGiaRepository.findByMaPhieuWithLock(hd.getPhieuGiamGia().getMaPhieu())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher: " + hd.getPhieuGiamGia().getMaPhieu()));
+            phieu.setSoLuongConLai(phieu.getSoLuongConLai() + 1);
+            phieuGiamGiaRepository.save(phieu);
+        }
+
+        // 3. Cập nhật trạng thái hóa đơn sang đã hủy
+        hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue());
+        hd.setTrangThaiThanhToan("HUY");
+        hd.setPaymentStatus(PaymentStatus.FAILED.getValue());
+        hoaDonRepository.save(hd);
+
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
+                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_HUY.getValue(), "127.0.0.1",
+                "Nhân viên hủy đơn hàng chờ thanh toán POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
+    }
+}

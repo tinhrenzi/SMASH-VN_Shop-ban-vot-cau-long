@@ -15,33 +15,64 @@ public class Blog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "tieu_de", nullable = false)
     private String title;
 
-    @Column(name = "slug", nullable = false, unique = true)
+    @Column(name = "duong_dan", nullable = false, unique = true)
     private String slug;
 
-    @Column(name = "summary", length = 1000)
+    @Column(name = "tom_tat", length = 1000)
     private String summary;
 
-    @Column(name = "content", columnDefinition = "TEXT")
+    @Column(name = "noi_dung", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "image")
+    @Column(name = "hinh_anh")
     private String image;
 
-    @Column(name = "publish_date")
+    @Column(name = "ngay_dang")
     private LocalDate publishDate;
 
-    @Column(name = "author")
+    @org.hibernate.annotations.Formula("COALESCE((SELECT nv.ho_ten FROM NhanVien nv WHERE nv.id_tai_khoan = id_tai_khoan), (SELECT kh.ho_kh + ' ' + kh.ten_kh FROM KhachHang kh WHERE kh.id_tai_khoan = id_tai_khoan))")
     private String author;
 
-    @Column(name = "category")
+    @Column(name = "danh_muc")
     private String category;
 
-    @Column(name = "tags")
+    @Column(name = "the")
     private String tags;
 
-    @Column(name = "comments_count")
+    @Transient
     private Integer commentsCount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai", nullable = false)
+    @Builder.Default
+    private BlogStatus status = BlogStatus.DRAFT;
+
+    @Column(name = "da_xoa", nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    @Column(name = "ngay_xoa")
+    private java.time.LocalDateTime deletedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tai_khoan")
+    private TaiKhoan nguoiDang;
+
+    @Transient
+    private String createdBy;
+
+
+    @Column(name = "ngay_tao", nullable = false)
+    @Builder.Default
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "ngay_cap_nhat")
+    private java.time.LocalDateTime updatedAt;
 }
+

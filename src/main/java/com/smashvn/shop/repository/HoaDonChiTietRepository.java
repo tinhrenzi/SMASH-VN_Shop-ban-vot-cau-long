@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 
 import com.smashvn.shop.entity.HoaDonChiTiet;
-import com.smashvn.shop.dto.TopProductDTO;
+import com.smashvn.shop.dto.product.TopProductDTO;
 
 public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, Integer> {
 
@@ -19,10 +19,10 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
            "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
     Long getTotalProductsSold(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT new com.smashvn.shop.dto.TopProductDTO(" +
+    @Query("SELECT new com.smashvn.shop.dto.product.TopProductDTO(" +
            "hdct.sanPhamChiTiet.sanPham.id, " +
            "hdct.sanPhamChiTiet.sanPham.tenSanPham, " +
-           "COALESCE(MIN(hdct.sanPhamChiTiet.hinhAnhSanPham), ''), " +
+           "COALESCE((SELECT MIN(ha.urlHinhAnh) FROM HinhAnhSanPham ha WHERE ha.sanPhamChiTiet.id = MIN(hdct.sanPhamChiTiet.id)), ''), " +
            "hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc, " +
            "COALESCE(SUM(hdct.soLuong), 0L), " +
            "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)" +
@@ -37,4 +37,10 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
+    @Query("SELECT COUNT(hdct) > 0 FROM HoaDonChiTiet hdct " +
+           "WHERE hdct.hoaDon.khachHang.taiKhoan.id = :taiKhoanId " +
+           "AND hdct.sanPhamChiTiet.sanPham.id = :sanPhamId " +
+           "AND LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh')")
+    boolean hasPurchasedProduct(@Param("taiKhoanId") Integer taiKhoanId, @Param("sanPhamId") Integer sanPhamId);
 }

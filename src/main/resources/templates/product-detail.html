@@ -26,7 +26,7 @@
     <div class="preloader is-active">
         <div class="preloader__wrap">
 
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
     </div>
 
     <!--====== Ứng dụng chính ======-->
@@ -98,17 +98,26 @@
 								    </div>
 								
 								    <div>
-								        <div class="pd-detail__inline">
-								            <span id="js-display-price" class="pd-detail__price" th:if="${!listChiTiet.isEmpty()}" 
-								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								        <div class="pd-detail__inline" th:if="${!listChiTiet.isEmpty()}" th:with="percent=${sp.getActiveGiamGiaPhanTram()}">
+								            <span class="pd-detail__price js-display-price" 
+								                  th:text="${#numbers.formatDecimal(percent > 0 ? sp.getGiaSauGiam(listChiTiet[0].giaBan) : listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá tiền</span>
+								            
+								            <span class="pd-detail__del js-display-original-price" 
+								                  th:style="${percent > 0 ? 'text-decoration: line-through; margin-left: 8px; display: inline-block;' : 'display: none;'}"
+								                  th:text="${#numbers.formatDecimal(listChiTiet[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá gốc</span>
+								            
+								            <span class="pd-detail__discount js-display-discount-badge" 
+								                  th:style="${percent > 0 ? 'margin-left: 8px; display: inline-block;' : 'display: none;'}"
+								                  th:text="'(Giảm ' + ${percent} + '%)'">Phần trăm giảm</span>
 								        </div>
 								    </div>
 								    
 								    <div class="u-s-m-b-15 u-s-m-t-15">
 								        <div class="pd-detail__rating gl-rating-style">
-								            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+								            <i th:each="i : ${#numbers.sequence(1, 5)}"
+								               th:class="${i <= avgRating} ? 'fas fa-star' : (${i - 0.5 <= avgRating} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
 								            <span class="pd-detail__review u-s-m-l-4">
-								                <a data-click-scroll="#view-review">23 Đánh giá</a>
+								                <a data-click-scroll="#view-review" th:text="${totalDanhGia} + ' Đánh giá'">0 Đánh giá</a>
 								            </span>
 								        </div>
 								    </div>
@@ -119,11 +128,15 @@
 								    
 								    <div class="u-s-m-b-15">
 										<div class="pd-detail__inline">
-											<span class="pd-detail__click-wrap"><i class="far fa-heart u-s-m-r-6"></i>
-												 <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ')'" >
-												 Thêm vào yêu thích
-												</a>
-											</span>
+											<a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${sp.id} + ', this)'"
+											   class="pd-detail__wishlist-lnk">
+												<i th:class="${inWishlist} ? 'fas fa-heart' : 'far fa-heart'"
+												   th:style="${inWishlist} ? 'color:#ff4500;' : 'color:#888;'"></i>
+												<span style="display:inline-flex; align-items:center;">
+													<span class="js-wishlist-lnk-text">Thêm vào danh sách yêu thích</span>
+													<span class="js-wishlist-count" style="color:#aaa; margin-left:4px;" th:text="'(' + ${soLuongYeuThich} + ')'">(0)</span>
+												</span>
+											</a>
 										 </div>
 									</div>
 								    
@@ -159,10 +172,10 @@
 								            </div>
 
 								            <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
-								            <div id="js-variant-stock-info" class="u-s-m-b-15" style="display:none;">
+								            <div id="js-variant-stock-info" class="js-variant-stock-info u-s-m-b-15" style="display:none;">
 								                <span class="pd-detail__label">Kho: </span>
-								                <span id="js-variant-stock-count" class="fw-bold"></span>
-								                <span id="js-variant-stock-badge" class="pd-detail__stock" style="margin-left:8px;"></span>
+								                <span id="js-variant-stock-count" class="js-variant-stock-count fw-bold"></span>
+								                <span id="js-variant-stock-badge" class="js-variant-stock-badge pd-detail__stock" style="margin-left:8px;"></span>
 								            </div>
 								        
 								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
@@ -176,7 +189,7 @@
 								                    </div>
 								                </div>
 								                <div class="pd-detail-action-row__btn">
-								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit" disabled>THÊM VÀO GIỎ</button>
+								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit">THÊM VÀO GIỎ</button>
 								                </div>
 								            </div>
 								        </form>
@@ -197,7 +210,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!--====== Product Detail Tab ======-->
             <div class="u-s-p-y-90">
@@ -208,15 +220,14 @@
                                <div class="u-s-m-b-30">
                                     <ul class="nav pd-tab__list">
                                         <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-desc}">MÔ TẢ CHI TIẾT</a></li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" th:href="@{/#pd-tag}">THẺ</a></li>
-                                        <li class="nav-item">
-                                            <a class="nav-link active" id="view-review" data-toggle="tab" th:href="@{/#pd-rev}">ĐÁNH GIÁ <span>(23)</span></a></li>
+                                            <a class="nav-link active" data-toggle="tab" href="#pd-desc">MÔ TẢ CHI TIẾT</a></li>
+                                         <li class="nav-item">
+                                             <a class="nav-link" id="view-review" data-toggle="tab" href="#pd-rev">ĐÁNH GIÁ <span th:text="'(' + ${totalDanhGia} + ')'">(0)</span></a></li>
                                     </ul>
                                 </div>
+                                <div class="tab-content">
                                      <!--====== Tab 1 ======-->
-                                    <div class="tab-pane" id="pd-desc">
+                                    <div class="tab-pane fade show active" id="pd-desc">
                                         <div class="pd-tab__desc">
                                             <div class="u-s-m-b-15">
                                                 <p th:text="${sp.moTa}">Đây là thông tin mô tả chi tiết của sản phẩm. Sản phẩm vợt cầu lông SmashVN chất lượng cao, độ bền tốt, hỗ trợ tối đa cho người chơi.</p>
@@ -248,19 +259,25 @@
                                                             </tr>
                                                             <tr>
                                                                 <td>Màu sắc hiện có</td>
-                                                                <td>Đa dạng phiên bản màu sắc</td>
+                                                                <td>
+                                                                    <th:block th:if="${listMauSac != null and !listMauSac.isEmpty()}">
+                                                                        <span th:each="mau, iterStat : ${listMauSac}"><span th:text="${mau}"></span><span th:if="${!iterStat.last}">, </span></span>
+                                                                    </th:block>
+                                                                    <span th:if="${listMauSac == null or listMauSac.isEmpty()}">Chưa có thông tin</span>
+                                                                </td>
                                                             </tr>
                                                             <tr>
-                                                                <td>Độ cứng</td>
-                                                                <td>Trung bình / Dẻo / Cứng</td>
+                                                                <td>Size / Trọng lượng</td>
+                                                                <td>
+                                                                    <th:block th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
+                                                                        <span th:each="size, iterStat : ${listKichThuoc}"><span th:text="${size}"></span><span th:if="${!iterStat.last}">, </span></span>
+                                                                    </th:block>
+                                                                    <span th:if="${listKichThuoc == null or listKichThuoc.isEmpty()}">Chưa có thông tin</span>
+                                                                </td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Đối tượng sử dụng</td>
                                                                 <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Khối lượng vận chuyển (kg)</td>
-                                                                <td>0.5 kg</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -271,31 +288,20 @@
                                     <!--====== End - Tab 1 ======-->
 
 
-                                    <!--====== Tab 2 ======-->
-                                    <div class="tab-pane" id="pd-tag">
-                                        <div class="pd-tab__tag">
-                                            <h2 class="u-s-m-b-15">THÊM THẺ CỦA BẠN</h2>
-                                            <div class="u-s-m-b-15">
-                                                <form>
-                                                     <input class="input-text input-text--primary-style" type="text">
-                                                     <button class="btn btn--e-brand-b-2" type="submit">THÊM THẺ</button></form>
-                                            </div>
-
-                                            <span class="gl-text">Sử dụng dấu cách để phân tách các thẻ. Sử dụng dấu nháy đơn (') cho các cụm từ.</span>
-                                        </div>
-                                    </div>
-                                    <!--====== End - Tab 2 ======-->
 
 
                                     <!--====== Tab 3 ======-->
-                                    <div class="tab-pane fade show active" id="pd-rev">
+                                    <div class="tab-pane fade" id="pd-rev">
                                         <div class="pd-tab__rev">
                                             <div class="u-s-m-b-30">
                                                 <div class="pd-tab__rev-score">
                                                     <div class="u-s-m-b-8">
-                                                        <h2>23 Đánh giá - 4.6 (Trung bình)</h2>
+                                                        <h2 th:text="${totalDanhGia} + ' Đánh giá - ' + ${avgRating} + ' (Trung bình)'">0 Đánh giá - 0.0 (Trung bình)</h2>
                                                     </div>
-                                                    <div class="gl-rating-style-2 u-s-m-b-8"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
+                                                    <div class="gl-rating-style-2 u-s-m-b-8">
+                                                        <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                                           th:class="${i <= avgRating} ? 'fas fa-star' : (${i - 0.5 <= avgRating} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                                    </div>
                                                     <div class="u-s-m-b-8">
                                                         <h4>Chúng tôi muốn nghe ý kiến từ bạn!</h4>
                                                     </div>
@@ -304,247 +310,290 @@
                                                 </div>
                                             </div>
                                             <div class="u-s-m-b-30">
-                                                <form class="pd-tab__rev-f1">
+                                                <div class="pd-tab__rev-f1">
                                                     <div class="rev-f1__group">
                                                          <div class="u-s-m-b-15">
-                                                             <h2 th:text="'Có 23 đánh giá cho sản phẩm ' + ${sp.tenSanPham}">23 Đánh giá cho sản phẩm</h2>
+                                                             <h2 th:text="'Có ' + ${totalDanhGia} + ' đánh giá cho sản phẩm ' + ${sp.tenSanPham}">0 Đánh giá cho sản phẩm</h2>
                                                          </div>
-                                                        <div class="u-s-m-b-15">
-                                                            <label for="sort-review"></label><select class="select-box select-box--primary-style" id="sort-review">
-                                                                <option selected>Sắp xếp: Đánh giá cao nhất</option>
-                                                                <option>Sắp xếp: Đánh giá thấp nhất</option>
-                                                            </select></div>
                                                     </div>
                                                     <div class="rev-f1__review">
-                                                        <div class="review-o u-s-m-b-15">
+                                                        <div th:each="dg : ${listDanhGia}" class="review-o u-s-m-b-15">
                                                             <div class="review-o__info u-s-m-b-8">
+                                                                <span class="review-o__name" th:text="${dg.khachHang.hoKh} + ' ' + ${dg.khachHang.tenKh}">John Doe</span>
+                                                                <span class="review-o__date">
+                                                                    <span th:text="${#temporals.format(dg.ngayDanhGia, 'dd/MM/yyyy HH:mm:ss')}">27 Feb 2018</span>
+                                                                    <span th:if="${dg.ngayCapNhat != null}" class="text-muted small ms-1" th:text="'(Đã chỉnh sửa lúc ' + ${#temporals.format(dg.ngayCapNhat, 'dd/MM/yyyy HH:mm:ss')} + ')'">(Đã chỉnh sửa)</span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="review-o__rating gl-rating-style u-s-m-b-8">
+                                                                <i th:each="i : ${#numbers.sequence(1, 5)}" th:class="${i <= dg.soSao} ? 'fas fa-star' : 'far fa-star'"></i>
+                                                                <span th:text="'(' + ${dg.soSao} + ')'">(5)</span>
+                                                            </div>
+                                                            
+                                                            <!-- Nội dung bình luận (XSS Protected & Soft Moderation) -->
+                                                            <p class="review-o__text">
+                                                                <span th:if="${dg.anBinhLuan}" class="text-muted italic" style="font-style: italic; color: #868e96;">Bình luận đã bị ẩn bởi quản trị viên vì vi phạm tiêu chuẩn cộng đồng.</span>
+                                                                <span th:unless="${dg.anBinhLuan}" th:text="${dg.binhLuan}">Lorem Ipsum...</span>
+                                                            </p>
 
-                                                                <span class="review-o__name">John Doe</span>
-
-                                                                <span class="review-o__date">27 Feb 2018 10:57:43</span></div>
-                                                            <div class="review-o__rating gl-rating-style u-s-m-b-8"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
-
-                                                                <span>(4)</span></div>
-                                                            <p class="review-o__text">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.</p>
+                                                            <!-- Gallery Ảnh đính kèm (Tối đa 5 ảnh, có cờ ẩn ảnh) -->
+                                                             <div th:if="${!dg.anHinhAnh and dg.danhSachAnh != null and !dg.danhSachAnh.isEmpty()}" class="review-o__gallery u-s-m-t-8 d-flex flex-wrap gap-2">
+                                                                 <div th:each="img : ${dg.danhSachAnh}" style="display: inline-block;">
+                                                                     <a class="review-image-link" th:href="@{'/uploads/reviews/' + ${img.duongDan}}">
+                                                                         <img th:src="@{'/uploads/reviews/' + ${img.duongDan}}" class="review-thumb-img" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); margin-right: 6px; cursor: pointer; transition: all 0.2s;" alt="Review Image">
+                                                                     </a>
+                                                                 </div>
+                                                             </div>
                                                         </div>
-                                                        <div class="review-o u-s-m-b-15">
-                                                            <div class="review-o__info u-s-m-b-8">
-
-                                                                <span class="review-o__name">John Doe</span>
-
-                                                                <span class="review-o__date">27 Feb 2018 10:57:43</span></div>
-                                                            <div class="review-o__rating gl-rating-style u-s-m-b-8"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
-
-                                                                <span>(4)</span></div>
-                                                            <p class="review-o__text">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.</p>
-                                                        </div>
-                                                        <div class="review-o u-s-m-b-15">
-                                                            <div class="review-o__info u-s-m-b-8">
-
-                                                                <span class="review-o__name">John Doe</span>
-
-                                                                <span class="review-o__date">27 Feb 2018 10:57:43</span></div>
-                                                            <div class="review-o__rating gl-rating-style u-s-m-b-8"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
-
-                                                                <span>(4)</span></div>
-                                                            <p class="review-o__text">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.</p>
+                                                        <div th:if="${listDanhGia.isEmpty()}" class="text-center text-muted py-4">
+                                                            Chưa có đánh giá nào cho sản phẩm này.
                                                         </div>
                                                     </div>
-                                                </form>
-                                            </div>
+                                                </div>
                                             <div class="u-s-m-b-30">
-                                                <form class="pd-tab__rev-f2">
-                                                    <h2 class="u-s-m-b-15">Thêm Đánh Giá</h2>
+                                                <!-- Trường hợp 1: Sản phẩm ngừng kinh doanh -->
+                                                <div th:if="${!sanPhamKhaDung}" class="alert alert-warning text-center p-4" style="border-left: 5px solid #ffc107; background-color: #fff3cd; color: #856404; border-radius: 8px;">
+                                                    <i class="fas fa-exclamation-triangle fa-2x mb-2" style="margin-bottom: 8px;"></i>
+                                                    <p class="font-weight-bold mb-0" style="font-weight: bold; margin-bottom: 0;">Sản phẩm này hiện đã ngừng kinh doanh. Không thể thực hiện đánh giá.</p>
+                                                </div>
 
-                                                    <span class="gl-text u-s-m-b-15">Địa chỉ email của bạn sẽ không bị công khai. Các trường bắt buộc được đánh dấu *</span>
+                                                <!-- Trường hợp 2: Chưa đăng nhập -->
+                                                <div th:if="${sanPhamKhaDung and session.idNguoiDung == null}" class="alert alert-info text-center p-4" style="border-left: 5px solid #17a2b8; background-color: #d1ecf1; color: #0c5460; border-radius: 8px;">
+                                                    <i class="fas fa-info-circle fa-2x mb-2" style="margin-bottom: 8px;"></i>
+                                                    <p style="margin-bottom: 10px;">Bạn cần đăng nhập để đánh giá sản phẩm này.</p>
+                                                    <a th:href="@{/user/dang-nhap}" class="btn btn-primary btn-sm" style="background-color: #17a2b8; border-color: #17a2b8; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; display: inline-block;">Đăng nhập ngay</a>
+                                                </div>
+
+                                                <!-- Trường hợp 3: Đã đăng nhập nhưng chưa mua hàng -->
+                                                <div th:if="${sanPhamKhaDung and session.idNguoiDung != null and !daMuaHang}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
+                                                    <i class="fas fa-shopping-cart fa-2x mb-2" style="margin-bottom: 8px;"></i>
+                                                    <p class="mb-0" style="margin-bottom: 0;">Bạn chỉ có thể đánh giá sản phẩm này sau khi mua hàng thành công và đơn hàng ở trạng thái đã giao hoặc hoàn thành.</p>
+                                                </div>
+
+                                                <!-- Trường hợp 5: Tài khoản bị khóa bình luận do vi phạm -->
+                                                <div th:if="${sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and biKhoaBinhLuan}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
+                                                    <i class="fas fa-ban fa-2x mb-2" style="margin-bottom: 8px;"></i>
+                                                    <p class="font-weight-bold mb-1" style="font-weight: bold; margin-bottom: 4px;">Tài khoản của bạn đang bị khóa tính năng bình luận/đánh giá do vi phạm tiêu chuẩn cộng đồng (spam từ tục tĩu).</p>
+                                                    <p class="mb-0" style="margin-bottom: 0;" th:if="${ngayKhoaDen != null && ngayKhoaDen.year < 9999}">
+                                                        Thời hạn khóa đến: <span th:text="${#temporals.format(ngayKhoaDen, 'dd/MM/yyyy HH:mm')}"></span>
+                                                    </p>
+                                                    <p class="mb-0" style="margin-bottom: 0;" th:if="${ngayKhoaDen != null && ngayKhoaDen.year >= 9999}">
+                                                        Thời hạn khóa: <strong>Vĩnh viễn</strong>.
+                                                    </p>
+                                                </div>
+
+                                                <!-- Trường hợp 4: Đủ điều kiện đánh giá -->
+                                                <form th:if="${sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and !biKhoaBinhLuan}" 
+                                                      class="pd-tab__rev-f2" 
+                                                      th:action="@{'/san-pham/' + ${sp.id} + '/danh-gia'}" 
+                                                      method="POST" 
+                                                      enctype="multipart/form-data"
+                                                      id="reviewForm"
+                                                      onsubmit="return validateReviewForm()">
+                                                    
+                                                    <!-- Thông báo thành công / thất bại -->
+                                                    <div th:if="${successMsg}" class="alert alert-success p-3 mb-3" style="border-left: 5px solid #28a745; background-color: #d4edda; color: #155724; border-radius: 6px; padding: 10px; margin-bottom: 15px;">
+                                                        <i class="fas fa-check-circle mr-1" style="margin-right: 5px;"></i> <span th:text="${successMsg}">Thành công</span>
+                                                    </div>
+                                                    <div th:if="${errorMsg}" class="alert alert-danger p-3 mb-3" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 6px; padding: 10px; margin-bottom: 15px;">
+                                                        <i class="fas fa-exclamation-circle mr-1" style="margin-right: 5px;"></i> <span th:text="${errorMsg}">Lỗi</span>
+                                                    </div>
+
+                                                    <h2 class="u-s-m-b-15" th:text="${daDanhGia} ? 'Chỉnh Sửa Đánh Giá Của Bạn' : 'Viết Đánh Giá Của Bạn'">Thêm Đánh Giá</h2>
+                                                    <div th:if="${daDanhGia and oldDanhGia.ngayCapNhat != null}" class="u-s-m-b-15">
+                                                        <span class="badge badge-info" style="background-color: #17a2b8; color: white; padding: 5px 10px; border-radius: 4px; display: inline-block; font-size: 0.85em;">
+                                                            (Đã chỉnh sửa)
+                                                        </span>
+                                                    </div>
+
                                                     <div class="u-s-m-b-30">
-                                                        <div class="rev-f2__table-wrap gl-scroll">
+                                                        <label class="gl-label">ĐIỂM ĐÁNH GIÁ *</label>
+                                                        <div class="rev-f2__table-wrap gl-scroll" style="margin-top: 10px;">
                                                             <table class="rev-f2__table">
                                                                 <thead>
                                                                     <tr>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i>
-
-                                                                                <span>(1)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><span>(1)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-
-                                                                                <span>(1.5)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(1.5)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                                                                <span>(2)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(2)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-
-                                                                                <span>(2.5)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(2.5)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                                                                <span>(3)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(3)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-
-                                                                                <span>(3.5)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(3.5)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                                                                <span>(4)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(4)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-
-                                                                                <span>(4.5)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span>(4.5)</span></div>
                                                                         </th>
                                                                         <th>
-                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                                                                <span>(5)</span></div>
+                                                                            <div class="gl-rating-style-2"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span>(5)</span></div>
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
                                                                     <tr>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-1" name="rating">
+                                                                                <input type="radio" id="star-1" name="rating" value="1.0" th:checked="${daDanhGia and oldDanhGia.soSao == 1.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-1"></label></div>
+                                                                                    <label class="radio-box__label" for="star-1"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-1.5" name="rating">
+                                                                                <input type="radio" id="star-1-5" name="rating" value="1.5" th:checked="${daDanhGia and oldDanhGia.soSao == 1.5}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-1.5"></label></div>
+                                                                                    <label class="radio-box__label" for="star-1-5"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-2" name="rating">
+                                                                                <input type="radio" id="star-2" name="rating" value="2.0" th:checked="${daDanhGia and oldDanhGia.soSao == 2.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-2"></label></div>
+                                                                                    <label class="radio-box__label" for="star-2"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-2.5" name="rating">
+                                                                                <input type="radio" id="star-2-5" name="rating" value="2.5" th:checked="${daDanhGia and oldDanhGia.soSao == 2.5}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-2.5"></label></div>
+                                                                                    <label class="radio-box__label" for="star-2-5"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-3" name="rating">
+                                                                                <input type="radio" id="star-3" name="rating" value="3.0" th:checked="${daDanhGia and oldDanhGia.soSao == 3.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-3"></label></div>
+                                                                                    <label class="radio-box__label" for="star-3"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-3.5" name="rating">
+                                                                                <input type="radio" id="star-3-5" name="rating" value="3.5" th:checked="${daDanhGia and oldDanhGia.soSao == 3.5}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-3.5"></label></div>
+                                                                                    <label class="radio-box__label" for="star-3-5"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-4" name="rating">
+                                                                                <input type="radio" id="star-4" name="rating" value="4.0" th:checked="${daDanhGia and oldDanhGia.soSao == 4.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-4"></label></div>
+                                                                                    <label class="radio-box__label" for="star-4"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-4.5" name="rating">
+                                                                                <input type="radio" id="star-4-5" name="rating" value="4.5" th:checked="${daDanhGia and oldDanhGia.soSao == 4.5}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-4.5"></label></div>
+                                                                                    <label class="radio-box__label" for="star-4-5"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                         <td>
-
-                                                                            <!--====== Radio Box ======-->
                                                                             <div class="radio-box">
-
-                                                                                <input type="radio" id="star-5" name="rating">
+                                                                                <input type="radio" id="star-5" name="rating" value="5.0" th:checked="${!daDanhGia or oldDanhGia.soSao == 5.0}">
                                                                                 <div class="radio-box__state radio-box__state--primary">
-
-                                                                                    <label class="radio-box__label" for="star-5"></label></div>
+                                                                                    <label class="radio-box__label" for="star-5"></label>
+                                                                                </div>
                                                                             </div>
-                                                                            <!--====== End - Radio Box ======-->
                                                                         </td>
                                                                     </tr>
                                                                 </tbody>
                                                             </table>
                                                         </div>
                                                     </div>
+
                                                     <div class="rev-f2__group">
-                                                         <div class="u-s-m-b-15">
-                                                             <label class="gl-label" for="reviewer-text">ĐÁNH GIÁ CỦA BẠN *</label><textarea class="text-area text-area--primary-style" id="reviewer-text"></textarea></div>
-                                                         <div>
-                                                             <p class="u-s-m-b-30">
-                                                                 <label class="gl-label" for="reviewer-name">HỌ TÊN *</label>
-                                                                 <input class="input-text input-text--primary-style" type="text" id="reviewer-name"></p>
-                                                             <p class="u-s-m-b-30">
-                                                                 <label class="gl-label" for="reviewer-email">EMAIL *</label>
-                                                                 <input class="input-text input-text--primary-style" type="text" id="reviewer-email"></p>
-                                                         </div>
-                                                     </div>
-                                                     <div>
-                                                         <button class="btn btn--e-brand-shadow" type="submit">GỬI</button></div>
+                                                        <div class="u-s-m-b-15">
+                                                            <label class="gl-label" for="reviewer-text">ĐÁNH GIÁ CỦA BẠN *</label>
+                                                            <textarea class="text-area text-area--primary-style" id="reviewer-text" name="comment" required th:text="${daDanhGia} ? ${oldDanhGia.binhLuan} : ''" placeholder="Nhập nhận xét của bạn về sản phẩm..."></textarea>
+                                                        </div>
+                                                        
+                                                        <div class="u-s-m-b-20">
+                                                            <label class="gl-label" for="review-images">HÌNH ẢNH SẢN PHẨM (Tối đa 5 ảnh, mỗi ảnh tối đa 5MB, tổng tối đa 20MB)</label>
+                                                            <input class="input-text input-text--primary-style" type="file" id="review-images" name="fileAnh" multiple accept="image/jpeg, image/png, image/jpg" style="padding: 10px;">
+                                                            <div id="file-error" class="text-danger u-s-m-t-5" style="display: none; color: #dc3545; font-size: 0.9em; margin-top: 5px;"></div>
+                                                        </div>
+
+                                                        <div th:if="${daDanhGia and oldDanhGia.danhSachAnh != null and !oldDanhGia.danhSachAnh.isEmpty()}" class="u-s-m-b-20" style="background-color: #f8f9fa; padding: 15px; border-radius: 6px;">
+                                                            <p class="gl-label" style="font-weight: 600; margin-bottom: 8px;">Ảnh đánh giá hiện tại của bạn:</p>
+                                                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                                                <div th:each="img : ${oldDanhGia.danhSachAnh}" style="display: inline-block; margin-right: 8px;">
+                                                                    <img th:src="@{'/uploads/reviews/' + ${img.duongDan}}" style="max-height: 60px; border-radius: 4px; border: 1px solid #dee2e6;" alt="Current Review Image">
+                                                                </div>
+                                                            </div>
+                                                            <span class="text-muted" style="font-size: 0.85em; font-style: italic; color: #6c757d; display: block; margin-top: 5px;">
+                                                                * Lưu ý: Nếu tải lên các hình ảnh mới, toàn bộ các hình ảnh cũ sẽ bị xóa và thay thế.
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <button class="btn btn--e-brand-shadow" type="submit" th:text="${daDanhGia} ? 'CẬP NHẬT' : 'GỬI'">GỬI</button>
+                                                    </div>
                                                 </form>
+
+                                                <script>
+                                                    function validateReviewForm() {
+                                                        var fileInput = document.getElementById('review-images');
+                                                        var errorDiv = document.getElementById('file-error');
+                                                        if (!fileInput || !fileInput.files) return true;
+
+                                                        var files = fileInput.files;
+                                                        if (files.length > 5) {
+                                                            errorDiv.textContent = 'Bạn chỉ được tải lên tối đa 5 hình ảnh.';
+                                                            errorDiv.style.display = 'block';
+                                                            return false;
+                                                        }
+
+                                                        var maxSingleSize = 5 * 1024 * 1024; // 5MB
+                                                        var maxTotalSize = 20 * 1024 * 1024; // 20MB
+                                                        var totalSize = 0;
+
+                                                        for (var i = 0; i < files.length; i++) {
+                                                            var file = files[i];
+                                                            if (file.size > maxSingleSize) {
+                                                                errorDiv.textContent = 'Kích thước tệp tin "' + file.name + '" vượt quá giới hạn 5MB.';
+                                                                errorDiv.style.display = 'block';
+                                                                return false;
+                                                            }
+                                                            totalSize += file.size;
+                                                        }
+
+                                                        if (totalSize > maxTotalSize) {
+                                                            errorDiv.textContent = 'Tổng kích thước tất cả các tệp vượt quá giới hạn 20MB.';
+                                                            errorDiv.style.display = 'block';
+                                                            return false;
+                                                        }
+
+                                                        errorDiv.style.display = 'none';
+                                                        return true;
+                                                    }
+                                                </script>
                                             </div>
                                         </div>
-                                    </div>
-                                    <!--====== End - Tab 3 ======-->
-                                </div>
-                            </div>
+                                     </div>
+                                     <!--====== End - Tab 3 ======-->
+                                 </div>
+                                 </div>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -574,208 +623,61 @@
                     <div class="container">
                         <div class="slider-fouc">
                             <div class="owl-carousel product-slider" data-item="4">
-                                <div class="u-s-m-b-30">
+                                <div class="u-s-m-b-30" th:each="related : ${relatedProducts}">
                                     <div class="product-o product-o--hover-on">
                                         <div class="product-o__wrap">
+                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${related.id})}">
+                                                <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
+                                                     th:if="${!related.sanPhamChiTiets.isEmpty()}"
+                                                     th:src="@{'/uploads/product/' + ${related.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                            </a>
+                                            <!-- Shopee Discount Badge -->
+                                            <div th:if="${related.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${related.getActiveGiamGiaPhanTram()} + '%'"></div>
 
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product1.jpg}" alt=""></a>
                                             <div class="product-o__action-wrap">
                                                 <ul class="product-o__action-list">
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'openQuickLookModal(' + ${related.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Xem nhanh">
+                                                            <i class="fas fa-search-plus"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() > 1}" th:onclick="'openQuickLookModal(' + ${related.id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ (Chọn phân loại)">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() == 1}" th:onclick="'quickAddToCart(' + ${related.sanPhamChiTiets[0].id} + ')'" data-tooltip="tooltip" data-placement="top" title="Thêm vào giỏ nhanh">
+                                                            <i class="fas fa-plus-circle text-success"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" th:if="${related.sanPhamChiTiets.size() == 0}" onclick="showToast('Sản phẩm này đang được cập nhật phân loại, vui lòng quay lại sau!', 'info');" data-tooltip="tooltip" data-placement="top" title="Chưa mở bán">
+                                                            <i class="fas fa-plus-circle" style="color: #ccc;"></i>
+                                                        </a>
+                                                    </li>
                                                     <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
+                                                        <a href="javascript:void(0)" th:onclick="'addToWishlist(' + ${related.id} + ', this)'" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích">
+                                                            <i class="fas fa-heart"></i>
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
 
                                         <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
+                                            <a th:href="@{/shop(danhMuc=${related.danhMuc.id})}" th:text="${related.danhMuc.tenDanhMuc}">Vợt Cầu Lông</a>
+                                        </span>
 
                                         <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Astrox 88D Pro</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product2.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
+                                            <a th:href="@{/san-pham/{id}(id=${related.id})}" th:text="${related.tenSanPham}">Tên Sản Phẩm</a>
+                                        </span>
+                                        <div class="product-o__rating gl-rating-style">
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:class="${i <= related.diemTrungBinh} ? 'fas fa-star' : (${i - 0.5 <= related.diemTrungBinh} ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
+                                            <span class="product-o__review" th:text="'(' + ${related.soDanhGia} + ')'">(0)</span>
                                         </div>
 
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Tectonic 7</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product3.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor Thruster K 9900</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product23.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Yonex Nanoflare 800</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{images/product/electronic/product26.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Lining Windstorm 72</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
-                                    </div>
-                                </div>
-                                <div class="u-s-m-b-30">
-                                    <div class="product-o product-o--hover-on">
-                                        <div class="product-o__wrap">
-
-                                            <a class="aspect aspect--bg-grey aspect--square u-d-block" th:href="@{/index.html}">
-
-                                                <img class="aspect__img" th:src="@{/images/product/electronic/product30.jpg}" alt=""></a>
-                                            <div class="product-o__action-wrap">
-                                                <ul class="product-o__action-list">
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-search-plus"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/shop}" data-tooltip="tooltip" data-placement="top" title="Xem cửa hàng"><i class="fas fa-plus-circle"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Thêm vào yêu thích"><i class="fas fa-heart"></i></a></li>
-                                                    <li>
-                                                        <a th:href="@{/signin.html}" data-tooltip="tooltip" data-placement="top" title="Gửi email khi giảm giá"><i class="fas fa-envelope"></i></a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <span class="product-o__category">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông</a></span>
-
-                                        <span class="product-o__name">
-                                            <a th:href="@{/index.html}">Vợt Cầu Lông Victor AuraSpeed 90K</a></span>
-                                        <div class="product-o__rating gl-rating-style"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-
-                                            <span class="product-o__review">(20)</span></div>
-
-                                        <span class="product-o__price">1.250.000 đ
-                                            <span class="product-o__discount">1.600.000 đ</span></span>
+                                        <span class="product-o__price" th:if="${!related.sanPhamChiTiets.isEmpty()}" th:with="percent=${related.getActiveGiamGiaPhanTram()}">
+                                            <span th:text="${#numbers.formatDecimal(related.getGiaSauGiam(related.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                            <span class="product-o__discount" th:if="${percent > 0}" th:text="${#numbers.formatDecimal(related.sanPhamChiTiets[0].giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -815,6 +717,10 @@
 	        var container = document.getElementById('product-detail-container');
 	        if (container) {
 	            container.danhSachBienThe = variants;
+	            // Tự động kích hoạt kiểm tra tồn kho & khởi tạo biến thể ban đầu
+	            if (typeof checkAndApplyVariant === 'function') {
+	                checkAndApplyVariant(container);
+	            }
 	        } else {
 	            console.error("Lỗi: Không tìm thấy #product-detail-container!");
 	        }
@@ -848,5 +754,68 @@
             </div>
         </div>
     </noscript>
+
+    <!-- Lightbox Modal for Review Images -->
+    <div id="review-image-modal" class="review-image-modal" style="display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); align-items: center; justify-content: center;">
+        <span class="close-modal" style="position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 100000; text-shadow: 0 1px 5px rgba(0,0,0,0.5);">&times;</span>
+        <img class="modal-content" id="modal-img" style="margin: auto; display: block; max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 6px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); animation: zoomIn 0.2s ease-out; border: 3px solid #fff;">
+    </div>
+
+    <style>
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .review-image-modal .close-modal:hover {
+            color: #ff4500 !important;
+            transform: scale(1.1);
+        }
+        .review-thumb-img:hover {
+            transform: scale(1.06);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
+        }
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var modal = document.getElementById("review-image-modal");
+            var modalImg = document.getElementById("modal-img");
+            var closeSpan = document.querySelector("#review-image-modal .close-modal");
+
+            document.addEventListener("click", function(e) {
+                var link = e.target.closest(".review-image-link");
+                if (link) {
+                    e.preventDefault();
+                    var imgSrc = link.getAttribute("href");
+                    modalImg.src = imgSrc;
+                    modal.style.display = "flex";
+                    document.body.style.overflow = "hidden"; // Prevent scrolling behind modal
+                }
+            });
+
+            if (closeSpan) {
+                closeSpan.onclick = function() {
+                    modal.style.display = "none";
+                    document.body.style.overflow = ""; // Restore scrolling
+                }
+            }
+
+            if (modal) {
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = "none";
+                        document.body.style.overflow = "";
+                    }
+                }
+            }
+
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") {
+                    modal.style.display = "none";
+                    document.body.style.overflow = "";
+                }
+            });
+        });
+    </script>
 </body>
 </html>

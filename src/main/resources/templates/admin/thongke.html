@@ -126,24 +126,52 @@
             <div id="statsContent">
                 <!-- Row 1: KPI Cards -->
                 <div class="row g-4 mb-4">
-                    <!-- Doanh thu thuần -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="stat-card-premium d-flex justify-content-between align-items-center">
+                    <!-- Doanh thu thực tế -->
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-danger d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Thuần</h6>
-                                <h2 class="mb-0 metric-value text-danger" id="valRevenue">0 đ</h2>
+                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Thực Tế</h6>
+                                <h2 class="mb-0 metric-value text-danger" id="valRevenue" style="font-size: 1.45rem;">0 đ</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Đơn giao thành công</small>
                             </div>
                             <div class="stat-icon-wrapper p-3 rounded-circle bg-danger bg-opacity-10">
                                 <i class="fas fa-wallet stat-icon text-danger"></i>
                             </div>
                         </div>
                     </div>
+                    <!-- Doanh thu dự kiến -->
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-warning d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Dự Kiến</h6>
+                                <h2 class="mb-0 metric-value text-warning" id="valExpectedRevenue" style="font-size: 1.45rem;">0 đ</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Đơn hàng đang giao</small>
+                            </div>
+                            <div class="stat-icon-wrapper p-3 rounded-circle bg-warning bg-opacity-10">
+                                <i class="fas fa-truck stat-icon text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Doanh thu đã hoàn -->
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-secondary d-flex justify-content-between align-items-center" style="border-top: 4px solid #6c757d;">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Doanh Thu Đã Hoàn</h6>
+                                <h2 class="mb-0 metric-value text-secondary" id="valRefundedRevenue" style="font-size: 1.45rem;">0 đ</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Đơn giao đã hoàn trả tiền</small>
+                            </div>
+                            <div class="stat-icon-wrapper p-3 rounded-circle bg-secondary bg-opacity-10">
+                                <i class="fas fa-undo-alt stat-icon text-secondary"></i>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Đơn hàng thành công -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="stat-card-premium d-flex justify-content-between align-items-center">
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-success d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Đơn Thành Công</h6>
-                                <h2 class="mb-0 metric-value text-success" id="valSuccessOrders">0</h2>
+                                <h2 class="mb-0 metric-value text-success" id="valSuccessOrders" style="font-size: 1.45rem;">0</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Tổng số đơn thành công</small>
                             </div>
                             <div class="stat-icon-wrapper p-3 rounded-circle bg-success bg-opacity-10">
                                 <i class="fas fa-check-double stat-icon text-success"></i>
@@ -151,11 +179,12 @@
                         </div>
                     </div>
                     <!-- Tổng sản phẩm đã bán -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="stat-card-premium d-flex justify-content-between align-items-center">
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-primary d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Sản Phẩm Đã Bán</h6>
-                                <h2 class="mb-0 metric-value text-primary" id="valProductsSold">0</h2>
+                                <h2 class="mb-0 metric-value text-primary" id="valProductsSold" style="font-size: 1.45rem;">0</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Sản phẩm giao thành công</small>
                             </div>
                             <div class="stat-icon-wrapper p-3 rounded-circle bg-primary bg-opacity-10">
                                 <i class="fas fa-shopping-bag stat-icon text-primary"></i>
@@ -163,14 +192,15 @@
                         </div>
                     </div>
                     <!-- Giá trị trung bình đơn -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="stat-card-premium d-flex justify-content-between align-items-center">
+                    <div class="col-xl col-md-6">
+                        <div class="stat-card-premium accent-slate d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.1em; font-size: 0.78rem;">Giá Trị TB Đơn</h6>
-                                <h2 class="mb-0 metric-value text-warning" id="valAvgOrderValue">0 đ</h2>
+                                <h2 class="mb-0 metric-value text-dark" id="valAvgOrderValue" style="font-size: 1.45rem;">0 đ</h2>
+                                <small class="text-muted" style="font-size: 0.75rem;">Doanh thu / số đơn thành</small>
                             </div>
-                            <div class="stat-icon-wrapper p-3 rounded-circle bg-warning bg-opacity-10">
-                                <i class="fas fa-calculator stat-icon text-warning"></i>
+                            <div class="stat-icon-wrapper p-3 rounded-circle bg-dark bg-opacity-10">
+                                <i class="fas fa-calculator stat-icon text-dark"></i>
                             </div>
                         </div>
                     </div>
@@ -179,7 +209,7 @@
                 <!-- Row 1.5: Extra KPIs -->
                 <div class="row g-4 mb-4">
                     <!-- Khách hàng mới -->
-                    <div class="col-md-4 col-lg-4">
+                    <div class="col-md-3 col-lg-3">
                         <div class="card border-0 shadow-sm h-100 py-2 px-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-info bg-opacity-10 text-info">
@@ -194,7 +224,7 @@
                         </div>
                     </div>
                     <!-- Đơn hàng đã hủy -->
-                    <div class="col-md-4 col-lg-4">
+                    <div class="col-md-3 col-lg-3">
                         <div class="card border-0 shadow-sm h-100 py-2 px-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-danger bg-opacity-10 text-danger">
@@ -209,7 +239,7 @@
                         </div>
                     </div>
                     <!-- Tỷ lệ hủy đơn -->
-                    <div class="col-md-4 col-lg-4">
+                    <div class="col-md-3 col-lg-3">
                         <div class="card border-0 shadow-sm h-100 py-2 px-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-secondary bg-opacity-10 text-secondary">
@@ -219,6 +249,21 @@
                                     <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Tỷ Lệ Hủy Đơn Hàng</h6>
                                     <h4 class="mb-0 fw-extrabold text-dark" id="valCancellationRate">0.0%</h4>
                                     <small class="text-muted">Tổng đơn hàng đã hủy / Tổng đơn tạo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tiền chờ hoàn -->
+                    <div class="col-md-3 col-lg-3">
+                        <div class="card border-0 shadow-sm h-100 py-2 px-3" style="border-left: 4px solid #ff9f43 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-3 rounded-circle bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-hand-holding-usd fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Tiền Chờ Hoàn</h6>
+                                    <h4 class="mb-0 fw-extrabold text-dark" id="valPendingRefund">0 đ</h4>
+                                    <small class="text-muted">Đang chờ hoàn trả khách</small>
                                 </div>
                             </div>
                         </div>
@@ -475,13 +520,16 @@ document.addEventListener("DOMContentLoaded", function() {
     function updateMetrics(data) {
         const m = data.metrics;
         
-        document.getElementById("valRevenue").textContent = formatVND(m.totalRevenue);
+        document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
+        document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
+        document.getElementById("valRefundedRevenue").textContent = formatVND(data.refundedRevenue);
         document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
         document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
         document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
         document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
         document.getElementById("valCancelledOrders").textContent = formatNumber(m.cancelledOrders);
         document.getElementById("valCancellationRate").textContent = data.cancellationRate.toFixed(1) + "%";
+        document.getElementById("valPendingRefund").textContent = formatVND(data.pendingRefund);
 
         // Cập nhật Online Payment KPI
         document.getElementById("valOnlineTotal").textContent = formatNumber(data.onlineTotal);

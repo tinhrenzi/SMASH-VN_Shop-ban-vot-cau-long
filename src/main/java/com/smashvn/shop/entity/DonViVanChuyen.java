@@ -14,27 +14,28 @@ public class DonViVanChuyen {
     @Column(name = "ten_don_vi", length = 100)
     private String tenDonVi;
 
-    @Column(length = 20)
+    @Column(name = "so_hotline", length = 20)
     private String hotline;
 
-    @Column(length = 100)
+    @Column(name = "trang_web", length = 100)
     private String website;
 
-    @Column(length = 255)
+    @Column(name = "ma_token", length = 255)
     private String token;
 
-    @Column(name = "client_id", length = 100)
+    @Column(name = "ma_client", length = 100)
     private String clientId;
 
     @Column(name = "dia_chi_kho", length = 500)
     private String diaChiKho;
 
-    @Column(name = "phi_local")
+    @Column(name = "phi_noi_dia")
     private java.math.BigDecimal phiLocal;
 
-    @Column(name = "phi_nationwide")
+    @Column(name = "phi_toan_quoc")
     private java.math.BigDecimal phiNationwide;
 
     @Version
+    @Column(name = "phien_ban")
     private Long version;
 }

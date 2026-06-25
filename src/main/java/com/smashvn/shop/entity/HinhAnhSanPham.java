@@ -15,7 +15,7 @@ public class HinhAnhSanPham {
     @JoinColumn(name = "id_san_pham_chi_tiet", nullable = false)
     private SanPhamChiTiet sanPhamChiTiet;
 
-    @Column(name = "url_hinh_anh", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "duong_dan", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String urlHinhAnh;
 
     @Column(name = "mau_sac", length = 50)

@@ -14,12 +14,12 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar layout dùng chung -->
-        <div th:replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
+        <div data-th-replace="~{admin/layout/sidebar :: sidebar('khuyenmai')}"></div>
 
         <!-- Main Content -->
         <main class="col-md-10 main-content">
             <!-- Header layout dùng chung -->
-            <div th:replace="~{admin/layout/header :: header}"></div>
+            <div data-th-replace="~{admin/layout/header :: header}"></div>
 
             <!-- Page Title Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -81,31 +81,47 @@
                                         <input type="number" id="soLuongConLai" name="soLuongConLai" th:value="${voucher.soLuongConLai}" class="form-control" min="0" required>
                                     </div>
 
-                                    <!-- Giá trị đơn hàng tối thiểu (Requirement 4) -->
-                                    <div class="col-md-12">
-                                        <label for="giaTriDonHangToiThieu" class="form-label fw-bold">Giá Trị Đơn Hàng Tối Thiểu (Hạn mức áp dụng) <span class="text-danger">*</span></label>
+                                    <!-- Giá trị đơn hàng tối thiểu -->
+                                    <div class="col-md-6">
+                                        <label for="giaTriDonHangToiThieu" class="form-label fw-bold">Giá Trị Đơn Hàng Tối Thiểu <span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <input type="number" id="giaTriDonHangToiThieu" name="giaTriDonHangToiThieu" th:value="${voucher.getGiaTriDonHangToiThieu()}" class="form-control" min="0" required>
                                             <span class="input-group-text bg-light">VNĐ</span>
                                         </div>
-                                        <div class="form-text text-muted">Voucher chỉ được áp dụng nếu giá trị đơn hàng bằng hoặc lớn hơn hạn mức này (Nhập 0 nếu không giới hạn).</div>
+                                        <div class="form-text text-muted">Voucher chỉ áp dụng khi đơn hàng đạt hạn mức này (0 = không giới hạn).</div>
+                                    </div>
+
+                                    <!-- Giá trị giảm tối đa (chỉ hiển thị cho voucher %) -->
+                                    <div class="col-md-6" id="capGroup">
+                                        <label for="giaTriGiamToiDa" class="form-label fw-bold">
+                                            Giảm Tối Đa
+                                            <span class="badge bg-info text-dark ms-1" style="font-size:0.7em;">Chỉ cho voucher %</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" id="giaTriGiamToiDa" name="giaTriGiamToiDa"
+                                                   th:value="${voucher.giaTriGiamToiDa}"
+                                                   class="form-control" min="1000" step="1000"
+                                                   placeholder="Để trống = không giới hạn">
+                                            <span class="input-group-text bg-light">VNĐ</span>
+                                        </div>
+                                        <div class="form-text text-muted">Số tiền giảm tối đa được áp dụng. Không điền = không giới hạn. Tối đa 100,000,000 VNĐ.</div>
                                     </div>
 
                                     <!-- Ngày bắt đầu -->
                                     <div class="col-md-6">
                                         <label for="ngayBatDau" class="form-label fw-bold">Hiệu Lực Từ Ngày <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${#temporals.format(voucher.ngayBatDau, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${voucher.ngayBatDau != null ? #temporals.format(voucher.ngayBatDau, 'yyyy-MM-dd') + 'T' + #temporals.format(voucher.ngayBatDau, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <!-- Ngày kết thúc -->
                                     <div class="col-md-6">
                                         <label for="ngayKetThuc" class="form-label fw-bold">Hết Hạn Vào Ngày <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${#temporals.format(voucher.ngayKetThuc, 'yyyy-MM-dd\'T\'HH:mm')}" class="form-control" required>
+                                        <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${voucher.ngayKetThuc != null ? #temporals.format(voucher.ngayKetThuc, 'yyyy-MM-dd') + 'T' + #temporals.format(voucher.ngayKetThuc, 'HH:mm') : ''}" class="form-control" required>
                                     </div>
 
                                     <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-end gap-2">
                                         <a th:href="@{/admin/khuyen-mai}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Hủy bỏ</a>
-                                        <button type="submit" class="btn btn-brand text-white"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
+                                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
                                     </div>
                                 </div>
                             </form>
@@ -119,14 +135,210 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-document.getElementById('voucherForm').addEventListener('submit', function(e) {
-    const giaTri = parseFloat(document.getElementById('giaTri').value);
-    const donVi = document.getElementById('donVi').value;
+document.addEventListener('DOMContentLoaded', function() {
+    const loaiGiamGiaSelect = document.getElementById('loaiGiamGia');
+    const donViSelect = document.getElementById('donVi');
+    const maPhieuInput = document.getElementById('maPhieu');
+    const voucherForm = document.getElementById('voucherForm');
+    const capGroup = document.getElementById('capGroup');
+    const capInput = document.getElementById('giaTriGiamToiDa');
 
-    if (donVi === '%' && giaTri > 100) {
-        e.preventDefault();
-        alert('Nếu áp dụng đơn vị giảm %, giá trị không được phép lớn hơn 100%!');
+    // Auto-uppercase for voucher code and restrict characters
+    maPhieuInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+    });
+
+    // Toggle cap field visibility based on voucher unit
+    function updateCapVisibility() {
+        const isPercent = donViSelect.value === '%';
+        if (isPercent) {
+            capGroup.style.display = '';
+            capInput.disabled = false;
+        } else {
+            capGroup.style.display = 'none';
+            capInput.disabled = true;
+            capInput.value = '';
+        }
     }
+
+    // Auto-sync Voucher Type and Unit
+    loaiGiamGiaSelect.addEventListener('change', function() {
+        if (this.value === 'Giảm trực tiếp') {
+            donViSelect.value = 'VND';
+        } else if (this.value === 'Giảm phần trăm') {
+            donViSelect.value = '%';
+        }
+        updateCapVisibility();
+    });
+
+    donViSelect.addEventListener('change', function() {
+        if (this.value === 'VND') {
+            loaiGiamGiaSelect.value = 'Giảm trực tiếp';
+        } else if (this.value === '%') {
+            loaiGiamGiaSelect.value = 'Giảm phần trăm';
+        }
+        updateCapVisibility();
+    });
+
+    // Init on page load
+    updateCapVisibility();
+
+    // Form submit validation
+    voucherForm.addEventListener('submit', function(e) {
+        const maPhieu = maPhieuInput.value.trim();
+        const donVi = donViSelect.value;
+        const ngayBatDauStr = document.getElementById('ngayBatDau').value;
+        const ngayKetThucStr = document.getElementById('ngayKetThuc').value;
+
+        if (!/^[A-Z0-9_]{2,50}$/.test(maPhieu)) {
+            e.preventDefault();
+            alert('Mã phiếu chỉ được chứa chữ cái in hoa, số và dấu gạch dưới (độ dài từ 2 đến 50 ký tự)!');
+            maPhieuInput.focus();
+            return;
+        }
+
+        const giaTriRaw = document.getElementById('giaTri').value.trim();
+        if (giaTriRaw.includes('.') || giaTriRaw.includes(',')) {
+            e.preventDefault();
+            if (donVi === '%') {
+                alert('Giá trị giảm % phải là số nguyên, không được là số thập phân!');
+            } else {
+                alert('Giá trị giảm tiền (VND) phải là số nguyên, không được là số thập phân!');
+            }
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        const giaTri = parseFloat(giaTriRaw);
+        if (isNaN(giaTri)) {
+            e.preventDefault();
+            alert('Vui lòng nhập giá trị giảm!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (giaTri < 0) {
+            e.preventDefault();
+            if (donVi === '%') {
+                alert('Giá trị giảm % không được là số âm!');
+            } else {
+                alert('Giá trị giảm tiền (VND) không được là số âm!');
+            }
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (giaTri === 0) {
+            e.preventDefault();
+            alert('Giá trị giảm phải lớn hơn 0!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (donVi === '%' && giaTri > 100) {
+            e.preventDefault();
+            alert('Giá trị giảm % không được vượt quá 100%!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+        if (donVi === 'VND' && giaTri > 100000000) {
+            e.preventDefault();
+            alert('Giá trị giảm tiền không được vượt quá 100,000,000 VNĐ!');
+            document.getElementById('giaTri').focus();
+            return;
+        }
+
+        const soLuongConLaiRaw = document.getElementById('soLuongConLai').value.trim();
+        if (soLuongConLaiRaw.includes('.') || soLuongConLaiRaw.includes(',')) {
+            e.preventDefault();
+            alert('Số lượng voucher phải là số nguyên, không được là số thập phân!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
+        const soLuongConLai = parseFloat(soLuongConLaiRaw);
+        if (isNaN(soLuongConLai) || soLuongConLai < 0) {
+            e.preventDefault();
+            alert('Số lượng không được âm!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
+        if (soLuongConLai > 1000000) {
+            e.preventDefault();
+            alert('Số lượng voucher không được vượt quá 1,000,000!');
+            document.getElementById('soLuongConLai').focus();
+            return;
+        }
+
+        const giaTriDonHangToiThieuRaw = document.getElementById('giaTriDonHangToiThieu').value.trim();
+        if (giaTriDonHangToiThieuRaw.includes('.') || giaTriDonHangToiThieuRaw.includes(',')) {
+            e.preventDefault();
+            alert('Giá trị đơn hàng tối thiểu phải là số nguyên, không được là số thập phân!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+        const giaTriDonHangToiThieu = parseFloat(giaTriDonHangToiThieuRaw);
+        if (isNaN(giaTriDonHangToiThieu) || giaTriDonHangToiThieu < 0) {
+            e.preventDefault();
+            alert('Giá trị đơn hàng tối thiểu không được là số âm!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+        if (giaTriDonHangToiThieu > 100000000) {
+            e.preventDefault();
+            alert('Giá trị đơn hàng tối thiểu không được vượt quá 100,000,000 VNĐ!');
+            document.getElementById('giaTriDonHangToiThieu').focus();
+            return;
+        }
+
+        // Cap validation (only for percentage vouchers)
+        if (donVi === '%') {
+            const capVal = capInput.value.trim();
+            if (capVal === '') {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa là bắt buộc đối với voucher giảm theo phần trăm!');
+                capInput.focus();
+                return;
+            }
+            if (capVal.includes('.') || capVal.includes(',')) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa phải là số nguyên, không được là số thập phân!');
+                capInput.focus();
+                return;
+            }
+            const cap = parseFloat(capVal);
+            if (isNaN(cap) || cap <= 0) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa phải lớn hơn 0!');
+                capInput.focus();
+                return;
+            }
+            if (cap > 100000000) {
+                e.preventDefault();
+                alert('Giá trị giảm tối đa không được vượt quá 100,000,000 VNĐ!');
+                capInput.focus();
+                return;
+            }
+        } else {
+            const capVal = capInput.value.trim();
+            if (capVal !== '') {
+                e.preventDefault();
+                alert('Voucher giảm trực tiếp (VND) không được có giá trị giảm tối đa!');
+                capInput.focus();
+                return;
+            }
+        }
+
+        if (!ngayBatDauStr || !ngayKetThucStr) {
+            e.preventDefault();
+            alert('Vui lòng chọn đầy đủ thời gian hiệu lực và ngày hết hạn!');
+            return;
+        }
+
+        const ngayBatDau = new Date(ngayBatDauStr);
+        const ngayKetThuc = new Date(ngayKetThucStr);
+        if (ngayBatDau >= ngayKetThuc) {
+            e.preventDefault();
+            alert('Ngày hiệu lực (bắt đầu) phải xảy ra trước ngày hết hạn (kết thúc)!');
+            document.getElementById('ngayBatDau').focus();
+            return;
+        }
+    });
 });
 </script>
 </body>

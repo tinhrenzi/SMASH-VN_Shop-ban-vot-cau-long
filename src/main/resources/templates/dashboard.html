@@ -25,7 +25,7 @@
     <div class="preloader is-active">
         <div class="preloader__wrap">
 
-            <img class="preloader__img" th:src="@{/images/preloader.png}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
     </div>
 
     <!--====== Ứng dụng chính ======-->
@@ -102,6 +102,9 @@
                                                 <li>
 
                                                     <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a></li>
+                                                <li>
+
+                                                    <a th:href="@{/user/notifications}">Thông báo</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -212,8 +215,8 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr th:each="order : ${orders}">
-                                                        <td class="fw-bold" th:text="'#' + ${order.id}"></td>
+                                                    <tr th:each="order, iterStat : ${orders}">
+                                                        <td class="fw-bold" th:text="'#' + ${iterStat.count}"></td>
                                                         <td th:text="${order.date}"></td>
                                                         <td>
                                                             <div class="d-flex align-items-center gap-2 flex-wrap">
