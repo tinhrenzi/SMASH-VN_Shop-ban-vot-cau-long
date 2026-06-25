@@ -46,11 +46,11 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
 
 | Giai đoạn             | Nội dung công việc                          | Tổng Tasks |  Chưa làm  | Đang làm | Hoàn thành |   Tiến độ   |
 | :---------------------- | :--------------------------------------------- | :----------: | :----------: | :---------: | :----------: | :------------: |
-| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 4 | 0 | 4 | 50% |
-| **Giai đoạn 2** | Khắc phục bảo mật Ưu tiên cao (High) | 12 | 10 | 0 | 2 | 16.7% |
-| **Giai đoạn 3** | Tối ưu hóa & Sửa lỗi Trung bình (Medium) | 18 | 18 | 0 | 0 | 0% |
-| **Giai đoạn 4** | Phát triển tính năng mới & Hoàn thiện | 9 | 9 | 0 | 0 | 0% |
-| **TỔNG CỘNG**   |                                                | **47** | **41** | **0** | **6** | **12.8%** |
+| **Giai đoạn 1** | Sửa lỗi bảo mật Khẩn cấp (Critical) | 8 | 2 | 0 | 6 | 75% |
+| **Giai đoạn 2** | Khắc phục bảo mật Ưu tiên cao (High) | 12 | 9 | 0 | 3 | 25% |
+| **Giai đoạn 3** | Tối ưu hóa & Sửa lỗi Trung bình (Medium) | 18 | 14 | 0 | 4 | 22.2% |
+| **Giai đoạn 4** | Phát triển tính năng mới & Hoàn thiện | 9 | 4 | 0 | 5 | 55.6% |
+| **TỔNG CỘNG**   |                                                | **47** | **29** | **0** | **18** | **38.3%** |
 
 ---
 
@@ -68,8 +68,8 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `TaiKhoan.java`, `TokenKhoiPhuc.java`
 - [X] **T-05:** Đồng bộ logic bảo mật upload (MIME check, extension whitelist, path traversal) từ `AdminSanPhamService` sang `AdminBienTheService`.
   - *Files:* `AdminBienTheService.java`, `AdminBienTheController.java`, `bienthe-list.html`, `bienthe-edit.html` (Hoàn thành: 12/06/2026 09:27)
-- [ ] **T-06:** Sanitize đầu vào cho ChatService CLI chống OS Command Injection (loại bỏ `| & ^ > < ; \`).
-  - *Files:* `ChatService.java`
+- [X] **T-06:** Sanitize đầu vào cho ChatService CLI chống OS Command Injection (loại bỏ `| & ^ > < ; \`).
+  - *Files:* `ChatService.java` (Hoàn thành: 23/06/2026 - Đã thay thế CLI hermes bằng tích hợp API Gemini qua HTTP client)
 - [ ] **T-07:** Hash mật khẩu cho tài khoản khách mua tại quầy (`GUEST_NO_PASSWORD` -> BCrypt hash).
   - *Files:* `AdminPosService.java`
 - [X] **T-08:** Bảo mật và Tối ưu hóa luồng Thanh toán — Chống giả mạo phí vận chuyển, IDOR địa chỉ, Tạo đơn GHN sau IPN.
@@ -81,8 +81,8 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `AdminBienTheController.java`, `AdminDanhMucController.java`, `AdminKhuyenMaiController.java`, `SanPhamYeuThichController.java`, `UserAddressController.java`
 - [ ] **T-10:** Chuyển endpoint đăng xuất `GET /dang-xuat` sang `POST` + Bật bảo vệ CSRF.
   - *Files:* `UserDangNhapController.java`, `SecurityConfig.java`
-- [ ] **T-11:** Cấu hình thuộc tính an toàn cho session cookie (`secure=true`, `http-only=true`, `same-site=Lax`).
-  - *Files:* `application.properties`
+- [X] **T-11:** Cấu hình thuộc tính an toàn cho session cookie (`secure=true`, `http-only=true`, `same-site=Lax`).
+  - *Files:* `application.properties` (Hoàn thành: 15/06/2026)
 - [ ] **T-12:** Validate định dạng IP đầu vào và chặn dải IP Private/Loopback trước khi gọi external API (Chống SSRF).
   - *Files:* `LocationService.java`
 - [X] **T-13:** Thêm kiểm tra độ mạnh mật khẩu mới khi người dùng thực hiện reset mật khẩu.
@@ -121,23 +121,28 @@ Tài liệu này dùng để theo dõi toàn bộ chức năng của dự án **
   - *Files:* `AdminInterceptor.java`, `SecurityConfig.java`
 - [ ] **T-43:** Loại bỏ thư viện `jbcrypt` khỏi `pom.xml`, đồng bộ hóa việc băm mật khẩu bằng `BCryptPasswordEncoder` của Spring Security.
   - *Files:* `pom.xml`, `PlaintextPasswordMigrator.java`, v.v.
-- [ ] **T-44:** Đồng bộ hóa cơ chế upload path động (sử dụng `app.upload.path` thay vì hardcode `Paths.get("uploads/product/")`).
-  - *Files:* `AdminBienTheService.java`
+- [X] **T-44:** Đồng bộ hóa cơ chế upload path động (sử dụng `app.upload.path` thay vì hardcode `Paths.get("uploads/product/")`).
+  - *Files:* `AdminBienTheService.java` (Hoàn thành: 12/06/2026)
 - [ ] **T-45:** Tái cấu trúc Rate Limiter sử dụng Caffeine Cache có sẵn để tự động giải phóng bộ nhớ (eviction) và tránh memory leak.
   - *Files:* `LocationRestController.java`, `LoginRateLimiter.java`
-- [ ] **T-46:** Tách logic bảo mật upload (MIME check, extension whitelist) thành class tiện ích dùng chung `FileStorageService`.
-  - *Files:* `AdminSanPhamService.java`, `AdminBienTheService.java`
-- [ ] **T-47:** Dọn dẹp các import trùng lặp trong file Interceptor.
-  - *Files:* `AdminInterceptor.java`
+- [X] **T-46:** Tách logic bảo mật upload (MIME check, extension whitelist) thành class tiện ích dùng chung `FileStorageService`.
+  - *Files:* `FileStorageService.java` (Hoàn thành: 15/06/2026 - Được tích hợp vào BlogService và DanhGiaService)
+- [X] **T-47:** Dọn dẹp các import trùng lặp trong file Interceptor.
+  - *Files:* `AdminInterceptor.java` (Hoàn thành: 15/06/2026)
 
 ### 🟢 GIAI ĐOẠN 4: PHÁT TRIỂN CHỨC NĂNG MỚI (LÀM SAU CÙNG)
 
-- [ ] **T-33:** **Quản lý Đơn hàng online:** Thao tác xem, duyệt, xác nhận đơn hàng do khách đặt từ web.
-- [ ] **T-34:** **Bình luận & Đánh giá:** Khách hàng đánh giá số sao, đính kèm ảnh thực tế.
-- [ ] **T-35:** **Kiểm duyệt bình luận:** Bộ lọc tự động phát hiện và chuyển từ tục tĩu thành `***`.
+- [X] **T-33:** **Quản lý Đơn hàng online:** Thao tác xem, duyệt, xác nhận đơn hàng do khách đặt từ web.
+  - *Files:* `AdminController.java`, `donhang-list.html` (Hoàn thành: 21/06/2026)
+- [X] **T-34:** **Bình luận & Đánh giá:** Khách hàng đánh giá số sao, đính kèm ảnh thực tế.
+  - *Files:* `DanhGiaService.java`, `AdminDanhGiaController.java`, `product-detail.html` (Hoàn thành: 16/06/2026)
+- [X] **T-35:** **Kiểm duyệt bình luận:** Bộ lọc tự động phát hiện và chuyển từ tục tĩu thành `***`.
+  - *Files:* `ProfanityFilter.java`, `CommentModerationAdminController.java` (Hoàn thành: 17/06/2026)
 - [ ] **T-36:** **Quản lý Bảo hành theo IMEI:** Lưu serial/IMEI sản phẩm, kiểm tra hạn bảo hành.
-- [ ] **T-37:** **Quản lý Hoàn trả:** Xử lý yêu cầu hoàn tiền/đổi trả sản phẩm lỗi trong vòng 7 ngày.
-- [ ] **T-38:** **Quản lý Tin tức / Blog:** Soạn thảo, đăng tải các bài review, hướng dẫn chọn vợt.
+- [X] **T-37:** **Quản lý Hoàn trả:** Xử lý yêu cầu hoàn tiền/đổi trả sản phẩm lỗi trong vòng 7 ngày.
+  - *Files:* `AdminController.java` (Hoàn thành: 21/06/2026)
+- [X] **T-38:** **Quản lý Tin tức / Blog:** Soạn thảo, đăng tải các bài review, hướng dẫn chọn vợt.
+  - *Files:* `BlogService.java`, `BlogController.java`, `AdminBlogController.java` (Hoàn thành: 15/06/2026)
 - [ ] **T-39:** **So sánh sản phẩm:** Giao diện so sánh thông số của 2-3 vợt cầu lông.
 - [ ] **T-40:** **Đa ngôn ngữ:** Tích hợp bộ chuyển dịch ngôn ngữ giao diện (Google Translate widget).
 - [ ] **T-41:** **Liên hệ:** Form gửi phản hồi từ khách hàng đến hệ thống quản trị.
@@ -169,6 +174,7 @@ Mỗi khi có thay đổi (bắt đầu làm, sửa đổi code, hoàn thành ta
 | **12/06/2026 16:41** | **T-08**             | **Đã hoàn thành**     | Tối ưu hóa luồng Thanh toán & Bảo mật Phí Vận chuyển GHN: (1) Cấu hình Province ID từ `application.properties`; (2) `ShippingZoneResolver` dùng districtId cache chống giả mạo vùng; (3) `GhnService.resolveGhnAddress()` resolve server-side; (4) `GioHangService.createOrder()` reload địa chỉ trong transaction, validate IDOR, tính phí độc lập; (5) `SepayGatewayService.handleIpn()` tạo đơn GHN sau SePay IPN; (6) UX: manual-address-fields ẩn mặc định, debounce 300ms, isGhnLoadingMasterData guard; (7) 5 integration test mới: fee tampering, IDOR address, deleted address, recalculation, GHN mapping missing. | Antigravity AI      |
 | **12/06/2026 16:47** | —                   | **Sửa lỗi UX**         | Phân luồng redirect sau khi thêm địa chỉ: nếu vào từ `/checkout` (param `from=checkout`) thì redirect về `/checkout` sau khi lưu thành công; vào từ trang cá nhân thì redirect về `/user/address`. Files: `UserAddressController.java` (thêm `@RequestParam from`), `checkout.html` (thêm `?from=checkout`), `dash-address-add.html` (cập nhật form action giữ param). | Antigravity AI      |
 | **12/06/2026 16:55** | —                   | **Sửa lỗi URL cứng**   | Thay thế toàn bộ URL ngrok hardcode trong `checkout.html` bằng Thymeleaf `th:href="@{/user/address/add(from='checkout')}"`. Thymeleaf tự build URL từ domain hiện tại — tự động đúng trên local (`localhost:8080`) lẫn ngrok, không cần đổi code khi chuyển môi trường. | Antigravity AI      |
+| **25/06/2026 09:00** | **T-06, T-11, T-33, T-34, T-35, T-37, T-38, T-44, T-46, T-47** | **Đã hoàn thành** | Cập nhật tiến độ sau các commit phát triển: (1) Chatbot dùng Gemini API (T-06); (2) Cookie Security (T-11); (3) Order Online & Refund (T-33, T-37); (4) Đánh giá & Profanity Filter (T-34, T-35); (5) Blog (T-38); (6) Upload Path động & FileStorageService (T-44, T-46); (7) Xóa import trùng lặp (T-47). | Antigravity AI      |
 
 ---
 

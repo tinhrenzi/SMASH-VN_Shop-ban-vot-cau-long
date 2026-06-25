@@ -830,98 +830,17 @@
                             </th:block>
 
                             <!-- Khối fallback tĩnh khi DB chưa có bài viết -->
-                            <th:block th:if="${blogs == null || blogs.isEmpty()}">
-                                <!-- Bài 1 -->
-                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                    <div class="bp-mini bp-mini--img u-h-100">
-                                        <div class="bp-mini__thumbnail">
-                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
-                                                <img class="aspect__img" th:src="@{/images/blog/post-1.jpg}" alt="">
-                                            </a>
-                                        </div>
-                                        <div class="bp-mini__content">
-                                            <div class="bp-mini__stat">
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__publish-date">
-                                                        <a><span>20 May 2026</span></a>
-                                                    </span>
-                                                </span>
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__preposition">By</span>
-                                                    <span class="bp-mini__author"><a href="#">Vinh</a></span>
-                                                </span>
-                                            </div>
-                                            <div class="bp-mini__category">
-                                                <a>Hướng Dẫn</a>
-                                            </div>
-                                            <span class="bp-mini__h1">
-                                                <a th:href="@{/blog}">Hướng dẫn chọn vợt cầu lông phù hợp cho người mới bắt đầu</a>
-                                            </span>
-                                            <p class="bp-mini__p">Chọn vợt cầu lông phù hợp là bước quan trọng giúp người mới tập chơi tránh chấn thương và nhanh chóng tiến bộ.</p>
-                                        </div>
+                            <div class="col-lg-12 text-center u-s-m-b-30" th:if="${blogs == null || blogs.isEmpty()}">
+                                <div style="background: rgba(255, 69, 0, 0.05); border: 2px dashed rgba(255, 69, 0, 0.2); padding: 40px 20px; border-radius: 12px; max-width: 600px; margin: 0 auto; transition: all 0.3s ease;">
+                                    <div style="background: linear-gradient(135deg, #ff4500, #ff8c00); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 10px 20px rgba(255, 69, 0, 0.2);">
+                                        <i class="far fa-newspaper" style="font-size: 28px; color: #ffffff;"></i>
                                     </div>
+                                    <h3 style="font-size: 20px; font-weight: 700; color: #15171c; margin-bottom: 10px;">Chưa Có Bài Viết Nào Được Đăng</h3>
+                                    <p style="color: #666666; font-size: 14px; line-height: 1.6; max-width: 400px; margin: 0 auto;">
+                                        Hiện tại hệ thống chưa cập nhật tin tức mới. Hãy quay lại sau để đón đọc những thông tin thú vị và mẹo hay về cầu lông nhé!
+                                    </p>
                                 </div>
-                                <!-- Bài 2 -->
-                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                    <div class="bp-mini bp-mini--img u-h-100">
-                                        <div class="bp-mini__thumbnail">
-                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
-                                                <img class="aspect__img" th:src="@{/images/blog/post-2.jpg}" alt="">
-                                            </a>
-                                        </div>
-                                        <div class="bp-mini__content">
-                                            <div class="bp-mini__stat">
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__publish-date">
-                                                        <a><span>25 May 2026</span></a>
-                                                    </span>
-                                                </span>
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__preposition">By</span>
-                                                    <span class="bp-mini__author"><a href="#">Quân</a></span>
-                                                </span>
-                                            </div>
-                                            <div class="bp-mini__category">
-                                                <a>Review</a>
-                                            </div>
-                                            <span class="bp-mini__h1">
-                                                <a th:href="@{/blog}">Top 5 cây vợt cầu lông Yonex đáng mua nhất năm 2026</a>
-                                            </span>
-                                            <p class="bp-mini__p">Yonex luôn là ông vua trong làng cầu lông thế giới. Khám phá ngay danh sách 5 cây vợt Yonex được săn đón nhất năm 2026.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Bài 3 -->
-                                <div class="col-lg-4 col-md-6 u-s-m-b-30">
-                                    <div class="bp-mini bp-mini--img u-h-100">
-                                        <div class="bp-mini__thumbnail">
-                                            <a class="aspect aspect--bg-grey aspect--1366-768 u-d-block" th:href="@{/blog}">
-                                                <img class="aspect__img" th:src="@{/images/blog/post-3.jpg}" alt="">
-                                            </a>
-                                        </div>
-                                        <div class="bp-mini__content">
-                                            <div class="bp-mini__stat">
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__publish-date">
-                                                        <a><span>28 May 2026</span></a>
-                                                    </span>
-                                                </span>
-                                                <span class="bp-mini__stat-wrap">
-                                                    <span class="bp-mini__preposition">By</span>
-                                                    <span class="bp-mini__author"><a href="#">Nam</a></span>
-                                                </span>
-                                            </div>
-                                            <div class="bp-mini__category">
-                                                <a>Kỹ Thuật</a>
-                                            </div>
-                                            <span class="bp-mini__h1">
-                                                <a th:href="@{/blog}">Kỹ thuật giao cầu lông chuẩn xác và cách khắc phục lỗi thường gặp</a>
-                                            </span>
-                                            <p class="bp-mini__p">Giao cầu là khởi đầu của mọi đường bóng. Nắm vững kỹ thuật giao cầu giúp bạn làm chủ thế trận ngay từ đầu.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </th:block>
+                            </div>
                         </div>
                     </div>
                 </div>
