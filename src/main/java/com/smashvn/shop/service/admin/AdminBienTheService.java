@@ -113,17 +113,24 @@ public class AdminBienTheService {
             throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và mức căng này đã tồn tại!");
         }
 
-        // Save image securely (optional on update)
-        String secureFileName = saveImageSecurely(fileAnh, false);
-        if (secureFileName != null) {
-            spct.setHinhAnhSanPham(secureFileName);
-        }
-
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
         spct.setMauSac(cleanMauSac);
         spct.setTrongLuong(cleanTrongLuong);
         spct.setMucCang(cleanMucCang);
+
+        // Save image securely (optional on update)
+        String secureFileName = saveImageSecurely(fileAnh, false);
+        if (secureFileName != null) {
+            spct.setHinhAnhSanPham(secureFileName);
+        } else {
+            // Update mauSac in existing image records if color changed
+            if (spct.getHinhAnhSanPhams() != null) {
+                for (com.smashvn.shop.entity.HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
+                    hasp.setMauSac(cleanMauSac);
+                }
+            }
+        }
 
         sanPhamChiTietRepository.save(spct);
     }
