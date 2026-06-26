@@ -1111,4 +1111,80 @@ public class CheckoutValidationIntegrationTest {
                 .andExpect(jsonPath("$.trangThai").value("loi"))
                 .andExpect(jsonPath("$.message").value("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
     }
+
+    @Test
+    void testSubmitCheckout_SaveAndReuseAddress() throws Exception {
+        // 1. First checkout: Enter new address and check saveAddress=true
+        MvcResult result1 = mockMvc.perform(post("/checkout/submit")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .requestAttr("_csrf", csrfToken)
+                .param("hoTenNhan", "Trần Văn B")
+                .param("sdtNhan", "0987654321")
+                .param("diaChiNhan", "456 Đường CMT8")
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
+                .param("tinhThanhText", "Hà Nội")
+                .param("thanhPhoText", "Quận Đống Đa")
+                .param("phuongXaText", "Phường Láng Thượng")
+                .param("diaChiCuThe", "456 Đường CMT8")
+                .param("saveAddress", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andReturn();
+
+        // 2. Query the saved address from database and assert it has GHN details saved correctly
+        List<SoDiaChi> savedAddresses = soDiaChiRepository.findByKhachHang_Id(testKhachHang.getId());
+        SoDiaChi reusedAddress = null;
+        for (SoDiaChi dc : savedAddresses) {
+            if ("456 Đường CMT8".equals(dc.getDiaChiCuThe())) {
+                reusedAddress = dc;
+                break;
+            }
+        }
+        assertNotNull(reusedAddress, "Address should be saved to database");
+        assertEquals(201, reusedAddress.getProvinceId());
+        assertEquals(1454, reusedAddress.getDistrictId());
+        assertEquals("1A0807", reusedAddress.getWardCode());
+
+        // 3. Clear GHN IDs from the address in the database to simulate a legacy/unstandardized address
+        reusedAddress.setProvinceId(null);
+        reusedAddress.setDistrictId(null);
+        reusedAddress.setWardCode(null);
+        reusedAddress = soDiaChiRepository.save(reusedAddress);
+
+        // 4. Re-add product to cart (since the first checkout cleared the cart)
+        mockMvc.perform(post("/gio-hang/them")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .sessionAttr("vaiTro", "KH")
+                .sessionAttr("laKhachHang", true)
+                .sessionAttr("laNhanVien", false)
+                .sessionAttr("laQuanLy", false)
+                .requestAttr("_csrf", csrfToken)
+                .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
+                .param("soLuong", "1"))
+                .andExpect(status().isOk());
+
+        // 5. Second checkout: Reuse this saved address ID and supply the dropdown GHN IDs to auto-heal
+        mockMvc.perform(post("/checkout/submit")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .requestAttr("_csrf", csrfToken)
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("idDiaChiLuu", String.valueOf(reusedAddress.getId()))
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"));
+
+        // 6. Verify that the address in the database was auto-healed (GHN IDs are restored/populated)
+        SoDiaChi healedAddress = soDiaChiRepository.findById(reusedAddress.getId()).orElse(null);
+        assertNotNull(healedAddress);
+        assertEquals(201, healedAddress.getProvinceId(), "Province ID should be auto-healed");
+        assertEquals(1454, healedAddress.getDistrictId(), "District ID should be auto-healed");
+        assertEquals("1A0807", healedAddress.getWardCode(), "Ward Code should be auto-healed");
+    }
 }

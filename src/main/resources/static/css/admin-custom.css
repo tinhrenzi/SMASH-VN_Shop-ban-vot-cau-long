@@ -613,3 +613,52 @@ body {
     box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.12);
 }
 
+/* Brand Background badge and Dark headers overrides */
+.bg-brand {
+    background-color: var(--brand-accent) !important;
+}
+
+.table thead.table-dark th,
+.table-dark thead th,
+.product-list-container thead th {
+    background-color: #212529 !important;
+    color: #ffffff !important;
+}
+
+/* Responsive Layout overrides for mobile/tablet */
+@media (max-width: 767.98px) {
+    .sidebar {
+        display: block !important; /* Override d-none on mobile */
+        position: fixed !important;
+        top: 0 !important;
+        left: -260px !important;
+        width: 260px !important;
+        height: 100vh !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        z-index: 1050 !important;
+    }
+    
+    .sidebar.show-mobile-sidebar {
+        left: 0 !important;
+    }
+    
+    .main-content {
+        padding: 20px 15px !important;
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+}
+
+/* Responsive tables for small screens */
+@media (max-width: 991.98px) {
+    .table:not(.table-inline):not(.pos-table) {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+    }
+}
+

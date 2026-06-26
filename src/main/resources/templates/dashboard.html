@@ -170,7 +170,7 @@
                                                             </div>
                                                             <div th:if="${defaultShipping != null}">
                                                                 <span class="dash__text" th:text="${defaultShipping.hoNguoiNhan} + ' ' + ${defaultShipping.tenNguoiNhan}"></span>
-                                                                <span class="dash__text" th:text="${defaultShipping.diaChiCuThe} + ', ' + ${defaultShipping.thanhPho} + ', ' + ${defaultShipping.tinhThanh}"></span>
+                                                                 <span class="dash__text" th:text="${defaultShipping.diaChiCuThe} + (${defaultShipping.wardName != null and !defaultShipping.wardName.isEmpty()} ? ', ' + ${defaultShipping.wardName} : '') + ', ' + ${defaultShipping.thanhPho} + ', ' + ${defaultShipping.tinhThanh}"></span>
                                                                 <span class="dash__text" th:text="${defaultShipping.sdtNguoiNhan}"></span>
                                                             </div>
                                                             <div th:if="${defaultShipping == null}">
@@ -190,7 +190,7 @@
                                                             </div>
                                                             <div th:if="${defaultBilling != null}">
                                                                 <span class="dash__text" th:text="${defaultBilling.hoNguoiNhan} + ' ' + ${defaultBilling.tenNguoiNhan}"></span>
-                                                                <span class="dash__text" th:text="${defaultBilling.diaChiCuThe} + ', ' + ${defaultBilling.thanhPho} + ', ' + ${defaultBilling.tinhThanh}"></span>
+                                                                 <span class="dash__text" th:text="${defaultBilling.diaChiCuThe} + (${defaultBilling.wardName != null and !defaultBilling.wardName.isEmpty()} ? ', ' + ${defaultBilling.wardName} : '') + ', ' + ${defaultBilling.thanhPho} + ', ' + ${defaultBilling.tinhThanh}"></span>
                                                                 <span class="dash__text" th:text="${defaultBilling.sdtNguoiNhan}"></span>
                                                             </div>
                                                             <div th:if="${defaultBilling == null}">

@@ -287,7 +287,7 @@
                                                     <option th:each="dc : ${listDiaChi}" 
                                                             th:value="${dc.id}"
                                                             th:selected="${dc.defaultShipping}"
-                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + ', ' + dc.tinhThanh + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
+                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.thanhPho != null and !dc.thanhPho.isEmpty() and dc.thanhPho != dc.tinhThanh ? ', ' + dc.thanhPho : '') + ', ' + dc.tinhThanh + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
                                                     </option>
                                                     <option value="new_address">-- Nhập địa chỉ mới --</option>
                                                 </select>

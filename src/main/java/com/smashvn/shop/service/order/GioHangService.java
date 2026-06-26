@@ -339,6 +339,18 @@ public class GioHangService {
                 throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền sử dụng địa chỉ này.");
             }
 
+            // Auto-heal / update saved address with GHN IDs from frontend if missing
+            if (soDiaChi.getProvinceId() == null || soDiaChi.getDistrictId() == null || soDiaChi.getWardCode() == null || soDiaChi.getWardCode().trim().isEmpty()) {
+                if (ghnProvinceId != null && ghnToDistrictId != null && ghnToWardCode != null && !ghnToWardCode.trim().isEmpty()) {
+                    soDiaChi.setProvinceId(ghnProvinceId);
+                    soDiaChi.setDistrictId(ghnToDistrictId);
+                    soDiaChi.setWardCode(ghnToWardCode.trim());
+                    soDiaChiRepository.save(soDiaChi);
+                    log.info("Auto-healed saved address ID {} with GHN IDs: provinceId={}, districtId={}, wardCode={}",
+                             soDiaChi.getId(), ghnProvinceId, ghnToDistrictId, ghnToWardCode);
+                }
+            }
+
             // Resolve GHN mapping on server
             GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(soDiaChi);
             if (mapping == null || mapping.getDistrictId() == null || mapping.getWardCode() == null) {
@@ -348,10 +360,18 @@ public class GioHangService {
             finalHoTenNhan = soDiaChi.getHoNguoiNhan() + " " + soDiaChi.getTenNguoiNhan();
             finalSdtNhan = soDiaChi.getSdtNguoiNhan();
             String fullAddress = soDiaChi.getDiaChiCuThe();
-            if (soDiaChi.getThanhPho() != null && !soDiaChi.getThanhPho().trim().isEmpty() && !soDiaChi.getThanhPho().equalsIgnoreCase(soDiaChi.getTinhThanh())) {
-                fullAddress += ", " + soDiaChi.getThanhPho();
+            if (soDiaChi.getWardName() != null && !soDiaChi.getWardName().trim().isEmpty() && !fullAddress.contains(soDiaChi.getWardName())) {
+                fullAddress += ", " + soDiaChi.getWardName().trim();
             }
-            fullAddress += ", " + soDiaChi.getTinhThanh() + ", " + soDiaChi.getQuocGia();
+            if (soDiaChi.getThanhPho() != null && !soDiaChi.getThanhPho().trim().isEmpty() && !soDiaChi.getThanhPho().equalsIgnoreCase(soDiaChi.getTinhThanh()) && !fullAddress.contains(soDiaChi.getThanhPho())) {
+                fullAddress += ", " + soDiaChi.getThanhPho().trim();
+            }
+            if (soDiaChi.getTinhThanh() != null && !soDiaChi.getTinhThanh().trim().isEmpty() && !fullAddress.contains(soDiaChi.getTinhThanh())) {
+                fullAddress += ", " + soDiaChi.getTinhThanh().trim();
+            }
+            if (soDiaChi.getQuocGia() != null && !soDiaChi.getQuocGia().trim().isEmpty() && !fullAddress.contains(soDiaChi.getQuocGia())) {
+                fullAddress += ", " + soDiaChi.getQuocGia().trim();
+            }
             finalDiaChiNhan = fullAddress;
             finalDistrictId = mapping.getDistrictId();
             finalWardCode = mapping.getWardCode();

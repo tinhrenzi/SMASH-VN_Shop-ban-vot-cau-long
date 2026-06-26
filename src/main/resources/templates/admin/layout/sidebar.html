@@ -6,6 +6,10 @@
 <body>
 
     <nav th:fragment="sidebar(activeTab)" class="col-md-2 d-none d-md-block sidebar">
+        <!-- Close button for mobile -->
+        <div class="d-md-none text-end px-3 pt-2">
+            <button class="btn btn-close btn-close-white" id="mobile-sidebar-close" aria-label="Close" style="filter: invert(1);"></button>
+        </div>
         <!-- Logo khu vực quản trị thiết kế theo style trang chủ -->
         <div class="sidebar-logo text-center py-4 mb-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-left: 15px; padding-right: 15px;">
             <a th:href="@{/admin/all}">
