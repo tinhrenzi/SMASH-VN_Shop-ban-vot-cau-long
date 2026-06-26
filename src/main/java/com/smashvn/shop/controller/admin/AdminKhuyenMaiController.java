@@ -3,7 +3,11 @@ package com.smashvn.shop.controller.admin;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.smashvn.shop.entity.DotGiamGia;
 import com.smashvn.shop.entity.PhieuGiamGia;
@@ -18,6 +23,7 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.exception.PromotionValidationException;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.service.admin.AdminKhuyenMaiService;
+import com.smashvn.shop.util.PromotionValidationConstants;
 import com.smashvn.shop.util.PromotionValidationConstants;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,8 +81,40 @@ public class AdminKhuyenMaiController {
      */
     @GetMapping("/dot-giam-gia/them")
     public String viewThemDotGiamGia(Model model) {
-        model.addAttribute("sanPhams", sanPhamRepository.findAll());
+        // Dùng findAllActiveProducts() thay vì findAll() để không hiển thị SP ngừng bán
+        model.addAttribute("sanPhams", sanPhamRepository.findAllActiveProducts());
         return "admin/dotgiamgia-add";
+    }
+
+    /**
+     * [GET] API xem trước sản phẩm phù hợp theo khoảng giá (AJAX).
+     * Trả về JSON với:
+     * - count: tổng số sản phẩm tìm thấy.
+     * - sanPhams: tối đa 10 sản phẩm đầu (id + tenSanPham).
+     * HTTP 400 kèm {"error": "..."} nếu dữ liệu không hợp lệ.
+     *
+     * @param giaFromStr Giá từ (có thể rỗng, sẽ trả lỗi 400).
+     * @param giaDenStr  Giá đến (tùy chọn, null = không giới hạn trên).
+     * @return ResponseEntity chứa JSON.
+     */
+    @GetMapping("/dot-giam-gia/preview-by-price")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> previewByPrice(
+            @RequestParam(value = "giaFrom", required = false) String giaFromStr,
+            @RequestParam(value = "giaDen",  required = false) String giaDenStr) {
+        try {
+            BigDecimal giaFrom = adminKhuyenMaiService.parseVndCurrency(giaFromStr, "Giá từ", false);
+            BigDecimal giaDen  = adminKhuyenMaiService.parseVndCurrency(giaDenStr,  "Giá đến", true);
+            List<SanPham> list = adminKhuyenMaiService.findProductsByPriceRange(giaFrom, giaDen);
+            int count = list.size();
+            List<Map<String, Object>> preview = list.stream()
+                .limit(10)
+                .map(sp -> Map.<String, Object>of("id", sp.getId(), "tenSanPham", sp.getTenSanPham()))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("count", count, "sanPhams", preview));
+        } catch (PromotionValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**
@@ -110,7 +148,10 @@ public class AdminKhuyenMaiController {
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("phanTramGiam") String phanTramGiamStr,
             @RequestParam("loaiGiamGia") String loaiGiamGia,
+            @RequestParam(value = "kieuApDung", defaultValue = "MANUAL") String kieuApDungStr,
             @RequestParam(value = "productIds", required = false) List<Integer> productIds,
+            @RequestParam(value = "giaFrom", required = false) String giaFromStr,
+            @RequestParam(value = "giaDen",  required = false) String giaDenStr,
             HttpSession session,
             HttpServletRequest request,
             Model model) {
@@ -125,17 +166,30 @@ public class AdminKhuyenMaiController {
             // Parse và validate % giảm: phải là số nguyên, không âm, trong phạm vi cho phép
             Integer phanTramGiam = parseAndValidateInteger(phanTramGiamStr, "Phần trăm giảm giá", 1, PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT, false);
 
-            adminKhuyenMaiService.createDotGiamGia(tenChienDich, start, end, phanTramGiam, loaiGiamGia, productIds, actingTaiKhoanId, ipAddress);
+            // Parse giaFrom/giaDen CHỈ khi kiểu PRICE_RANGE
+            // Nếu MANUAL thì không parse để tránh lỗi khi các ô này rỗng
+            BigDecimal giaFrom = null;
+            BigDecimal giaDen  = null;
+            if ("PRICE_RANGE".equalsIgnoreCase(kieuApDungStr)) {
+                giaFrom = adminKhuyenMaiService.parseVndCurrency(giaFromStr, "Giá từ", false);
+                giaDen  = adminKhuyenMaiService.parseVndCurrency(giaDenStr,  "Giá đến", true);
+            }
+
+            adminKhuyenMaiService.createDotGiamGia(tenChienDich, start, end, phanTramGiam, loaiGiamGia,
+                    kieuApDungStr, productIds, giaFrom, giaDen, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/khuyen-mai?themChienDichThanhCong";
         } catch (Exception e) {
             // Lỗi xảy ra → hiển thị lại form với thông báo lỗi và giữ lại dữ liệu đã nhập
             model.addAttribute("loi", e.getMessage());
-            model.addAttribute("sanPhams", sanPhamRepository.findAll());
+            model.addAttribute("sanPhams", sanPhamRepository.findAllActiveProducts());
             model.addAttribute("tenChienDich", tenChienDich);
             model.addAttribute("ngayBatDau", ngayBatDauStr);
             model.addAttribute("ngayKetThuc", ngayKetThucStr);
             model.addAttribute("phanTramGiam", phanTramGiamStr);
             model.addAttribute("loaiGiamGia", loaiGiamGia);
+            model.addAttribute("kieuApDung", kieuApDungStr);
+            model.addAttribute("giaFrom", giaFromStr);
+            model.addAttribute("giaDen",  giaDenStr);
             model.addAttribute("selectedProductIds", productIds);
             return "admin/dotgiamgia-add";
         }
@@ -153,10 +207,25 @@ public class AdminKhuyenMaiController {
     public String viewSuaDotGiamGia(@PathVariable("id") Integer id, Model model) {
         try {
             DotGiamGia dgg = adminKhuyenMaiService.getDotGiamGiaById(id);
+            List<SanPham> activeProducts = sanPhamRepository.findAllActiveProducts();
+            // Phát hiện SP ngưng bán đang gắn với chiến dịch này
+            Set<Integer> activeIds = activeProducts.stream()
+                .map(SanPham::getId).collect(Collectors.toSet());
+            List<String> discontinuedNames = dgg.getSanPhams().stream()
+                .filter(sp -> !activeIds.contains(sp.getId()))
+                .map(SanPham::getTenSanPham)
+                .collect(Collectors.toList());
+            if (!discontinuedNames.isEmpty()) {
+                model.addAttribute("canhBaoNgungBan",
+                    "Một số sản phẩm trong chiến dịch hiện đã ngừng bán và sẽ không được hiển thị trong danh sách chọn: "
+                    + String.join(", ", discontinuedNames));
+            }
             model.addAttribute("campaign", dgg);
-            model.addAttribute("sanPhams", sanPhamRepository.findAll());
-            // Danh sách ID sản phẩm đang được gán cho đợt này (để pre-check checkbox)
-            model.addAttribute("selectedProductIds", dgg.getSanPhams().stream().map(SanPham::getId).toList());
+            model.addAttribute("sanPhams", activeProducts);
+            // Danh sách ID sản phẩm đang được gán cho đợt này (chỉ giữ lại SP đang bán)
+            model.addAttribute("selectedProductIds", dgg.getSanPhams().stream()
+                .filter(sp -> activeIds.contains(sp.getId()))
+                .map(SanPham::getId).collect(Collectors.toList()));
             return "admin/dotgiamgia-edit";
         } catch (Exception e) {
             return "redirect:/admin/khuyen-mai?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
@@ -214,7 +283,7 @@ public class AdminKhuyenMaiController {
             try { dgg.setPhanTramGiam(phanTramGiamStr == null || phanTramGiamStr.isEmpty() ? null : Integer.parseInt(phanTramGiamStr)); } catch (Exception ignored) { }
             dgg.setLoaiGiamGia(loaiGiamGia);
             model.addAttribute("campaign", dgg);
-            model.addAttribute("sanPhams", sanPhamRepository.findAll());
+            model.addAttribute("sanPhams", sanPhamRepository.findAllActiveProducts());
             model.addAttribute("selectedProductIds", productIds);
             return "admin/dotgiamgia-edit";
         }

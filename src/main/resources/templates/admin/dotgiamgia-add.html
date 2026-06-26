@@ -28,6 +28,11 @@
         .search-box input {
             padding-left: 35px;
         }
+        .helper-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -65,43 +70,88 @@
                         <div class="card-body">
                             <form th:action="@{/admin/khuyen-mai/dot-giam-gia/them}" method="POST" id="campaignForm">
                                 <div class="row g-4">
-                                    <!-- Tên chiến dịch -->
-                                    <div class="col-md-6">
+                                    <!-- A. Thông tin chiến dịch -->
+                                    <div class="col-12 border-bottom pb-2">
+                                        <h6 class="text-brand fw-bold mb-0"><i class="fas fa-info-circle me-2"></i>A. Thông Tin Chiến Dịch</h6>
+                                    </div>
+                                    <div class="col-md-12">
                                         <label for="tenChienDich" class="form-label fw-bold">Tên Chiến Dịch <span class="text-danger">*</span></label>
                                         <input type="text" id="tenChienDich" name="tenChienDich" th:value="${tenChienDich}" class="form-control" placeholder="Ví dụ: Siêu Sale Mùa Hè" required>
+                                        <div class="helper-text">Độ dài từ 2 đến 100 ký tự.</div>
                                     </div>
 
-                                    <!-- Phần trăm giảm -->
-                                    <div class="col-md-3">
-                                        <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
-                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${phanTramGiam}" class="form-control" placeholder="1 - 40" min="1" max="40" step="1" required>
-                                    </div>
-
-                                    <!-- Loại giảm giá -->
-                                    <div class="col-md-3">
-                                        <label for="loaiGiamGia" class="form-label fw-bold">Loại Giảm Giá <span class="text-danger">*</span></label>
-                                        <select id="loaiGiamGia" name="loaiGiamGia" class="form-select" required>
-                                            <option value="Theo Phần Trăm" th:selected="${loaiGiamGia == 'Theo Phần Trăm'}">Theo Phần Trăm</option>
-                                            <option value="Theo Khoảng" th:selected="${loaiGiamGia == 'Theo Khoảng'}">Theo Khoảng</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Ngày bắt đầu -->
                                     <div class="col-md-6">
                                         <label for="ngayBatDau" class="form-label fw-bold">Ngày & Giờ Bắt Đầu <span class="text-danger">*</span></label>
                                         <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${ngayBatDau}" class="form-control" required>
+                                        <div class="helper-text">Ngày giờ bắt đầu áp dụng chương trình.</div>
                                     </div>
 
-                                    <!-- Ngày kết thúc -->
                                     <div class="col-md-6">
                                         <label for="ngayKetThuc" class="form-label fw-bold">Ngày & Giờ Kết Thúc <span class="text-danger">*</span></label>
                                         <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${ngayKetThuc}" class="form-control" required>
+                                        <div class="helper-text">Ngày giờ kết thúc chương trình (phải sau ngày bắt đầu).</div>
                                     </div>
 
-                                    <!-- Phần chọn sản phẩm -->
-                                    <div class="col-12 mt-4">
+                                    <!-- B. Mức giảm -->
+                                    <div class="col-12 border-bottom pb-2 mt-4">
+                                        <h6 class="text-brand fw-bold mb-0"><i class="fas fa-tags me-2"></i>B. Mức Giảm</h6>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
+                                        <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${phanTramGiam}" class="form-control" placeholder="Nhập số nguyên từ 1 đến 40" min="1" max="40" step="1" required>
+                                        <div class="helper-text">Nhập số nguyên từ 1 đến 40.</div>
+                                    </div>
+                                    <!-- Hidden input loaiGiamGia mặc định là Theo Phần Trăm -->
+                                    <input type="hidden" name="loaiGiamGia" value="Theo Phần Trăm">
+
+                                    <!-- C. Cách chọn sản phẩm áp dụng -->
+                                    <div class="col-12 border-bottom pb-2 mt-4">
+                                        <h6 class="text-brand fw-bold mb-0"><i class="fas fa-tasks me-2"></i>C. Cách Chọn Sản Phẩm Áp Dụng</h6>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="d-flex gap-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="kieuApDung" id="kieuApDungManual" value="MANUAL" th:checked="${kieuApDung == null || kieuApDung == 'MANUAL'}" checked>
+                                                <label class="form-check-label fw-bold text-dark" for="kieuApDungManual">
+                                                    Chọn sản phẩm thủ công
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="kieuApDung" id="kieuApDungPriceRange" value="PRICE_RANGE" th:checked="${kieuApDung == 'PRICE_RANGE'}">
+                                                <label class="form-check-label fw-bold text-dark" for="kieuApDungPriceRange">
+                                                    Theo khoảng giá sản phẩm
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="helper-text mt-2">Chọn phương thức để gán sản phẩm vào chương trình giảm giá.</div>
+                                    </div>
+
+                                    <!-- E. Nếu chọn “Theo khoảng giá sản phẩm” -->
+                                    <div class="col-12 mt-3" id="priceRangeSection" style="display: none;">
+                                        <div class="card bg-light border-0 p-3">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="giaFrom" class="form-label fw-bold text-dark">Giá bán từ (VNĐ) <span class="text-danger">*</span></label>
+                                                    <input type="text" id="giaFrom" name="giaFrom" th:value="${giaFrom}" class="form-control bg-white" placeholder="Ví dụ: 500.000 hoặc 500000">
+                                                    <div class="helper-text">Nhập giá bán tối thiểu của sản phẩm (ví dụ: 500.000 hoặc 500000). Bắt buộc.</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="giaDen" class="form-label fw-bold text-dark">Giá bán đến (VNĐ)</label>
+                                                    <input type="text" id="giaDen" name="giaDen" th:value="${giaDen}" class="form-control bg-white" placeholder="Ví dụ: 2.000.000 hoặc 2000000">
+                                                    <div class="helper-text">Nhập giá bán tối đa (ví dụ: 2.000.000 hoặc 2000000). Để trống nếu không giới hạn trên.</div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="button" id="btnPreviewRange" class="btn btn-outline-primary btn-sm"><i class="fas fa-eye me-1"></i> Xem sản phẩm phù hợp</button>
+                                                    <div id="previewResult" class="mt-2" style="display: none;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- D. Nếu chọn “Chọn sản phẩm thủ công” -->
+                                    <div class="col-12 mt-4" id="manualSection">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <label class="form-label fw-bold mb-0">Áp Dụng Cho Sản Phẩm <span class="text-danger">*</span></label>
+                                            <label class="form-label fw-bold mb-0">Chọn Sản Phẩm Áp Dụng <span class="text-danger">*</span></label>
                                             <div class="fw-semibold text-brand">
                                                 Đã chọn: <span id="selectedCount" class="badge bg-brand fs-6 text-white">0</span> / <span id="totalCount" th:text="${sanPhams.size()}">0</span> sản phẩm
                                             </div>
@@ -225,6 +275,95 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCounter();
     });
 
+    // Handle show/hide and disabled state for Kiểu Áp Dụng
+    const kieuApDungManual = document.getElementById('kieuApDungManual');
+    const kieuApDungPriceRange = document.getElementById('kieuApDungPriceRange');
+    const priceRangeSection = document.getElementById('priceRangeSection');
+    const manualSection = document.getElementById('manualSection');
+
+    function handleKieuApDungChange() {
+        if (kieuApDungPriceRange && kieuApDungPriceRange.checked) {
+            priceRangeSection.style.display = 'block';
+            manualSection.style.display = 'none';
+            productCheckboxes.forEach(cb => {
+                cb.disabled = true;
+            });
+        } else {
+            if (priceRangeSection) priceRangeSection.style.display = 'none';
+            if (manualSection) manualSection.style.display = 'block';
+            productCheckboxes.forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+    }
+
+    if (kieuApDungManual && kieuApDungPriceRange) {
+        kieuApDungManual.addEventListener('change', handleKieuApDungChange);
+        kieuApDungPriceRange.addEventListener('change', handleKieuApDungChange);
+        handleKieuApDungChange(); // Init state
+    }
+
+    // Ajax preview logic
+    const btnPreviewRange = document.getElementById('btnPreviewRange');
+    const previewResult = document.getElementById('previewResult');
+
+    if (btnPreviewRange) {
+        btnPreviewRange.addEventListener('click', function() {
+            const giaFrom = document.getElementById('giaFrom').value.trim();
+            const giaDen = document.getElementById('giaDen').value.trim();
+
+            if (!giaFrom) {
+                previewResult.style.display = 'block';
+                previewResult.className = 'mt-2 alert alert-danger p-2 fs-6';
+                previewResult.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Giá bán từ không được để trống!';
+                return;
+            }
+
+            const url = `/admin/khuyen-mai/dot-giam-gia/preview-by-price?giaFrom=${encodeURIComponent(giaFrom)}&giaDen=${encodeURIComponent(giaDen)}`;
+
+            previewResult.style.display = 'block';
+            previewResult.className = 'mt-2 alert alert-info p-2 fs-6';
+            previewResult.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tìm sản phẩm phù hợp...';
+
+            fetch(url)
+                .then(response => {
+                    return response.json().then(data => {
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Có lỗi xảy ra!');
+                        }
+                        return data;
+                    });
+                })
+                .then(data => {
+                    if (data.count === 0) {
+                        previewResult.className = 'mt-2 alert alert-warning p-2 fs-6';
+                        previewResult.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Không tìm thấy sản phẩm nào đang bán thỏa mãn khoảng giá này.';
+                    } else {
+                        let listHtml = '';
+                        if (data.sanPhams && data.sanPhams.length > 0) {
+                            listHtml = '<ul class="mb-0 mt-2 list-unstyled ps-3 border-top pt-2" style="max-height: 150px; overflow-y: auto; font-size: 13px;">';
+                            data.sanPhams.forEach(sp => {
+                                listHtml += `<li class="py-1"><i class="fas fa-check text-success me-2"></i> #${sp.id} - ${sp.tenSanPham}</li>`;
+                            });
+                            if (data.count > 10) {
+                                listHtml += `<li class="text-muted fst-italic pt-1">... và ${data.count - 10} sản phẩm khác.</li>`;
+                            }
+                            listHtml += '</ul>';
+                        }
+                        previewResult.className = 'mt-2 alert alert-success p-3 fs-6';
+                        previewResult.innerHTML = `
+                            <div><i class="fas fa-check-circle me-1"></i> Tìm thấy <strong>${data.count}</strong> sản phẩm đang bán phù hợp trong khoảng giá này.</div>
+                            ${listHtml}
+                        `;
+                    }
+                })
+                .catch(error => {
+                    previewResult.className = 'mt-2 alert alert-danger p-2 fs-6';
+                    previewResult.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i> ${error.message}`;
+                });
+        });
+    }
+
     // Form validation before submit
     document.getElementById('campaignForm').addEventListener('submit', function(e) {
         const tenChienDich = document.getElementById('tenChienDich').value.trim();
@@ -288,10 +427,62 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (checkedCount === 0) {
-            e.preventDefault();
-            alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!');
-            return;
+        // Validate selection mode logic
+        if (kieuApDungPriceRange && kieuApDungPriceRange.checked) {
+            const giaFromRaw = document.getElementById('giaFrom').value.trim();
+            const giaDenRaw = document.getElementById('giaDen').value.trim();
+
+            if (!giaFromRaw) {
+                e.preventDefault();
+                alert('Giá bán từ không được để trống!');
+                document.getElementById('giaFrom').focus();
+                return;
+            }
+
+            const parseVnd = function(valStr, fieldName) {
+                if (valStr.startsWith("-")) {
+                    throw new Error(fieldName + " không được là số âm!");
+                }
+                if (!/^\d+$/.test(valStr) && !/^\d{1,3}([.,]\d{3})+$/.test(valStr)) {
+                    throw new Error(fieldName + " phải là số nguyên VNĐ hợp lệ. Ví dụ: 500000 hoặc 500.000!");
+                }
+                const normalized = valStr.replace(/\./g, "").replace(/,/g, "");
+                const val = parseFloat(normalized);
+                if (val < 0) {
+                    throw new Error(fieldName + " không được là số âm!");
+                }
+                return val;
+            };
+
+            try {
+                const giaFrom = parseVnd(giaFromRaw, "Giá bán từ");
+                if (giaFrom === 0) {
+                    e.preventDefault();
+                    alert('Giá bán từ phải lớn hơn 0!');
+                    document.getElementById('giaFrom').focus();
+                    return;
+                }
+
+                if (giaDenRaw) {
+                    const giaDen = parseVnd(giaDenRaw, "Giá bán đến");
+                    if (giaDen < giaFrom) {
+                        e.preventDefault();
+                        alert('Giá bán đến phải lớn hơn hoặc bằng Giá bán từ!');
+                        document.getElementById('giaDen').focus();
+                        return;
+                    }
+                }
+            } catch (err) {
+                e.preventDefault();
+                alert(err.message);
+                return;
+            }
+        } else {
+            if (checkedCount === 0) {
+                e.preventDefault();
+                alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!');
+                return;
+            }
         }
     });
 });

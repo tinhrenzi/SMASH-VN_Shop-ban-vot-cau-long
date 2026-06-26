@@ -48,6 +48,9 @@ public class RevenueStatisticsIntegrationTest {
     @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
     private KhachHang testKhachHang;
     private PhuongThucThanhToan ptttCOD;
     private PhuongThucThanhToan ptttOnline;
@@ -102,7 +105,9 @@ public class RevenueStatisticsIntegrationTest {
         }
 
         // Fetch / Create variant
-        List<SanPhamChiTiet> spcts = sanPhamChiTietRepository.findAll();
+        List<SanPhamChiTiet> spcts = entityManager.createQuery(
+                "SELECT spct FROM SanPhamChiTiet spct JOIN FETCH spct.sanPham sp",
+                SanPhamChiTiet.class).getResultList();
         assertFalse(spcts.isEmpty(), "SanPhamChiTiet table must not be empty for integration tests");
         testSpct = spcts.get(0);
 

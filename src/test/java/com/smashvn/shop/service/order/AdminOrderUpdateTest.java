@@ -49,6 +49,9 @@ public class AdminOrderUpdateTest {
     @Autowired
     private DonViVanChuyenDAO donViVanChuyenDAO;
 
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
     private TaiKhoan adminUser;
     private TaiKhoan staffUser;
     private TaiKhoan customerUser;
@@ -128,7 +131,9 @@ public class AdminOrderUpdateTest {
         }
 
         // Fetch / Create variant
-        List<SanPhamChiTiet> spcts = sanPhamChiTietRepository.findAll();
+        List<SanPhamChiTiet> spcts = entityManager.createQuery(
+                "SELECT spct FROM SanPhamChiTiet spct JOIN FETCH spct.sanPham sp",
+                SanPhamChiTiet.class).getResultList();
         assertFalse(spcts.isEmpty(), "SanPhamChiTiet table must not be empty for integration tests");
         testSpct = spcts.get(0);
     }

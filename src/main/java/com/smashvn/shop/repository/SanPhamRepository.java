@@ -7,8 +7,49 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.smashvn.shop.entity.SanPham;
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
+
+    // ==========================================
+    // DISCOUNT CAMPAIGN — PRODUCT SELECTION HELPERS
+    // ==========================================
+
+    /**
+     * Trả về tất cả sản phẩm đang bán (trangThai = 'dang_ban' hoặc null).
+     * Dùng trong form tạo/sửa đợt giảm giá để tránh hiển thị sản phẩm ngừng bán.
+     */
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE (sp.trangThai = 'dang_ban' OR sp.trangThai IS NULL) " +
+           "ORDER BY sp.id ASC")
+    List<SanPham> findAllActiveProducts();
+
+    /**
+     * Tìm sản phẩm đang bán có ít nhất một biến thể đang bán với giá trong khoảng [minPrice, maxPrice].
+     * Lọc cả SanPham.trangThai lẫn SanPhamChiTiet.trangThai.
+     * maxPrice = null → không giới hạn trên.
+     */
+    @Query("SELECT DISTINCT sp FROM SanPham sp JOIN sp.sanPhamChiTiets spct " +
+           "WHERE (sp.trangThai = 'dang_ban' OR sp.trangThai IS NULL) " +
+           "AND (spct.trangThai = 'dang_ban' OR spct.trangThai IS NULL) " +
+           "AND spct.giaBan >= :minPrice " +
+           "AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice) " +
+           "ORDER BY sp.id ASC")
+    List<SanPham> findActiveByPriceRange(
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice
+    );
+
+    /**
+     * Tìm sản phẩm đang bán trong danh sách ID cho trước.
+     * Dùng để validate productIds từ MANUAL form chống tamper:
+     * nếu kết quả.size() != ids.size() thì có sản phẩm ngừng bán hoặc ID không tồn tại.
+     */
+    @Query("SELECT sp FROM SanPham sp " +
+           "WHERE sp.id IN :ids " +
+           "AND (sp.trangThai = 'dang_ban' OR sp.trangThai IS NULL)")
+    List<SanPham> findActiveByIdIn(@Param("ids") List<Integer> ids);
+
 
     boolean existsByDanhMucId(Integer idDanhMuc);
     boolean existsByThuongHieuId(Integer idThuongHieu);

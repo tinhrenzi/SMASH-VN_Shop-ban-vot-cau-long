@@ -28,6 +28,11 @@
         .search-box input {
             padding-left: 35px;
         }
+        .helper-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +61,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
+            <!-- Alert Cảnh Báo Ngừng Bán nếu có -->
+            <div th:if="${canhBaoNgungBan != null}" class="alert alert-warning alert-dismissible fade show border-start border-warning border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${canhBaoNgungBan}">Cảnh báo ngừng bán</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <div class="row">
                 <div class="col-lg-10 mx-auto">
                     <div class="card border-0 shadow-sm mb-5">
@@ -69,33 +80,31 @@
                                     <div class="col-md-6">
                                         <label for="tenChienDich" class="form-label fw-bold">Tên Chiến Dịch <span class="text-danger">*</span></label>
                                         <input type="text" id="tenChienDich" name="tenChienDich" th:value="${campaign.tenChienDich}" class="form-control" required>
+                                        <div class="helper-text">Độ dài từ 2 đến 100 ký tự.</div>
                                     </div>
 
                                     <!-- Phần trăm giảm -->
-                                    <div class="col-md-3">
+                                    <div class="col-md-6">
                                         <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
                                         <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${campaign.phanTramGiam}" class="form-control" min="1" max="40" step="1" required>
+                                        <div class="helper-text">Nhập số nguyên từ 1 đến 40.</div>
                                     </div>
 
-                                    <!-- Loại giảm giá -->
-                                    <div class="col-md-3">
-                                        <label for="loaiGiamGia" class="form-label fw-bold">Loại Giảm Giá <span class="text-danger">*</span></label>
-                                        <select id="loaiGiamGia" name="loaiGiamGia" class="form-select" required>
-                                            <option value="Theo Phần Trăm" th:selected="${campaign.loaiGiamGia == 'Theo Phần Trăm'}">Theo Phần Trăm</option>
-                                            <option value="Theo Khoảng" th:selected="${campaign.loaiGiamGia == 'Theo Khoảng'}">Theo Khoảng</option>
-                                        </select>
-                                    </div>
+                                    <!-- Hidden input loaiGiamGia mặc định là Theo Phần Trăm -->
+                                    <input type="hidden" name="loaiGiamGia" value="Theo Phần Trăm">
 
                                     <!-- Ngày bắt đầu -->
                                     <div class="col-md-6">
                                         <label for="ngayBatDau" class="form-label fw-bold">Ngày & Giờ Bắt Đầu <span class="text-danger">*</span></label>
                                         <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${campaign.ngayBatDau != null ? #temporals.format(campaign.ngayBatDau, 'yyyy-MM-dd') + 'T' + #temporals.format(campaign.ngayBatDau, 'HH:mm') : ''}" class="form-control" required>
+                                        <div class="helper-text">Ngày giờ bắt đầu áp dụng chương trình.</div>
                                     </div>
 
                                     <!-- Ngày kết thúc -->
                                     <div class="col-md-6">
                                         <label for="ngayKetThuc" class="form-label fw-bold">Ngày & Giờ Kết Thúc <span class="text-danger">*</span></label>
                                         <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${campaign.ngayKetThuc != null ? #temporals.format(campaign.ngayKetThuc, 'yyyy-MM-dd') + 'T' + #temporals.format(campaign.ngayKetThuc, 'HH:mm') : ''}" class="form-control" required>
+                                        <div class="helper-text">Ngày giờ kết thúc chương trình (phải sau ngày bắt đầu).</div>
                                     </div>
 
                                     <!-- Phần chọn sản phẩm -->

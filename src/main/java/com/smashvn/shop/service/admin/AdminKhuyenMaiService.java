@@ -23,6 +23,7 @@ import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.util.ApDungKieu;
 import com.smashvn.shop.util.PromotionValidationConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -115,9 +116,22 @@ public class AdminKhuyenMaiService {
      * @return đợt giảm giá vừa được tạo.
      * @throws PromotionValidationException nếu dữ liệu không hợp lệ.
      */
+    /**
+     * Overloaded method for backward compatibility with existing tests.
+     */
     @Transactional
     public DotGiamGia createDotGiamGia(String tenChienDich, LocalDateTime start, LocalDateTime end,
             Integer phanTramGiam, String loaiGiamGia, List<Integer> productIds,
+            Integer actingTaiKhoanId, String ipAddress) {
+        return createDotGiamGia(tenChienDich, start, end, phanTramGiam, loaiGiamGia,
+                "MANUAL", productIds, null, null, actingTaiKhoanId, ipAddress);
+    }
+
+    @Transactional
+    public DotGiamGia createDotGiamGia(String tenChienDich, LocalDateTime start, LocalDateTime end,
+            Integer phanTramGiam, String loaiGiamGia,
+            String kieuApDungStr, List<Integer> productIds,
+            BigDecimal giaFrom, BigDecimal giaDen,
             Integer actingTaiKhoanId, String ipAddress) {
         // 1. Validation tên chiến dịch
         if (tenChienDich == null || tenChienDich.trim().isEmpty()) {
@@ -143,13 +157,29 @@ public class AdminKhuyenMaiService {
             throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
 
-        // 5. Phải có ít nhất 1 sản phẩm
-        if (productIds == null || productIds.isEmpty()) {
-            throw new PromotionValidationException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
+        // 5. Resolve danh sách sản phẩm theo kiểu áp dụng
+        ApDungKieu kieuApDung = ApDungKieu.fromString(kieuApDungStr);
+        List<Integer> finalProductIds;
+        if (kieuApDung == ApDungKieu.PRICE_RANGE) {
+            // PRICE_RANGE: hệ thống tự tìm sản phẩm theo khoảng giá
+            List<SanPham> matchedProducts = findProductsByPriceRange(giaFrom, giaDen);
+            finalProductIds = matchedProducts.stream().map(SanPham::getId).toList();
+        } else {
+            // MANUAL: validate productIds không rỗng và chỉ chứa SP đang bán
+            if (productIds == null || productIds.isEmpty()) {
+                throw new PromotionValidationException(
+                    "Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
+            }
+            List<SanPham> activeFromIds = sanPhamRepository.findActiveByIdIn(productIds);
+            if (activeFromIds.size() != productIds.size()) {
+                throw new PromotionValidationException(
+                    "Danh sách sản phẩm không hợp lệ hoặc có sản phẩm đã ngừng bán!");
+            }
+            finalProductIds = productIds;
         }
 
         // 6. Kiểm tra không chồng đợt giảm giá lên nhau (cùng sản phẩm, cùng thời gian)
-        checkCampaignOverlaps(productIds, start, end, null);
+        checkCampaignOverlaps(finalProductIds, start, end, null);
 
         // 7. Lấy thông tin nhân viên thực hiện
         NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
@@ -168,7 +198,7 @@ public class AdminKhuyenMaiService {
         dgg.setActive(true);
 
         // Gán danh sách sản phẩm (quản lý từ phía DotGiamGia trong ManyToMany)
-        Set<SanPham> selectedProducts = new HashSet<>(sanPhamRepository.findAllById(productIds));
+        Set<SanPham> selectedProducts = new HashSet<>(sanPhamRepository.findAllById(finalProductIds));
         dgg.setSanPhams(selectedProducts);
 
         DotGiamGia saved = dotGiamGiaDAO.save(dgg);
@@ -226,6 +256,12 @@ public class AdminKhuyenMaiService {
         }
         if (productIds == null || productIds.isEmpty()) {
             throw new PromotionValidationException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
+        }
+        // Validate productIds chỉ chứa sản phẩm đang bán (chống tamper từ request)
+        List<SanPham> activeFromIds = sanPhamRepository.findActiveByIdIn(productIds);
+        if (activeFromIds.size() != productIds.size()) {
+            throw new PromotionValidationException(
+                "Danh sách sản phẩm không hợp lệ hoặc có sản phẩm đã ngừng bán!");
         }
 
         // Kiểm tra chồng chéo, loại trừ chính đợt đang sửa (truyền excludeCampaignId = id)
@@ -328,6 +364,86 @@ public class AdminKhuyenMaiService {
      * @param end ngày kết thúc.
      * @throws PromotionValidationException nếu thời gian không hợp lệ.
      */
+    // ==========================================
+    // PRICE-RANGE HELPERS
+    // ==========================================
+
+    /**
+     * Parse chuỗi tiền VNĐ nhập từ form về BigDecimal.
+     * Chấp nhận các định dạng: "500000", "500.000", "500,000", "1.500.000".
+     * Trả về null nếu chuỗi rỗng và allowNull = true.
+     *
+     * @param valueStr  chuỗi nhập từ form.
+     * @param fieldName tên trường hiển thị trong thông báo lỗi.
+     * @param allowNull true nếu cho phép trường rỗng (trả null).
+     * @return giá trị BigDecimal đã parse, hoặc null nếu allowNull và rỗng.
+     * @throws PromotionValidationException nếu vi phạm bất kỳ ràng buộc nào.
+     */
+    public BigDecimal parseVndCurrency(String valueStr, String fieldName, boolean allowNull) {
+        if (valueStr == null || valueStr.trim().isEmpty()) {
+            if (allowNull) return null;
+            throw new PromotionValidationException(fieldName + " không được để trống!");
+        }
+        String trimmed = valueStr.trim();
+        // Bắt đầu bằng dấu "-" → số âm
+        if (trimmed.startsWith("-")) {
+            throw new PromotionValidationException(fieldName + " không được là số âm!");
+        }
+        // Validate format: chỉ chấp nhận số nguyên hoặc dạng phân cách hàng nghìn
+        if (!trimmed.matches("\\d+") && !trimmed.matches("\\d{1,3}([.,]\\d{3})+")) {
+            throw new PromotionValidationException(
+                fieldName + " phải là số nguyên VNĐ hợp lệ. Ví dụ: 500000 hoặc 500.000!");
+        }
+        // Xóa dấu phân cách hàng nghìn
+        String normalized = trimmed.replace(".", "").replace(",", "");
+        BigDecimal val;
+        try {
+            val = new BigDecimal(normalized);
+        } catch (NumberFormatException e) {
+            throw new PromotionValidationException(fieldName + " phải là số hợp lệ!");
+        }
+        if (val.compareTo(BigDecimal.ZERO) < 0) {
+            // guard: không bao giờ xảy ra sau regex, nhưng giữ lại cho an toàn
+            throw new PromotionValidationException(fieldName + " không được là số âm!");
+        }
+        return val;
+    }
+
+    /**
+     * Validate khoảng giá và trả về danh sách sản phẩm đang bán phù hợp.
+     * <ul>
+     *   <li>giaFrom bắt buộc, phải &gt; 0.</li>
+     *   <li>giaDen tùy chọn; nếu có thì phải &ge; giaFrom.</li>
+     *   <li>Phải tìm được ít nhất 1 sản phẩm.</li>
+     * </ul>
+     *
+     * @param giaFrom giá tối thiểu (bắt buộc, &gt; 0).
+     * @param giaDen  giá tối đa (null = không giới hạn trên).
+     * @return danh sách {@link SanPham} phù hợp.
+     * @throws PromotionValidationException nếu khoảng giá không hợp lệ hoặc không có sản phẩm.
+     */
+    @Transactional(readOnly = true)
+    public List<SanPham> findProductsByPriceRange(BigDecimal giaFrom, BigDecimal giaDen) {
+        if (giaFrom == null) {
+            throw new PromotionValidationException("Giá từ không được để trống!");
+        }
+        if (giaFrom.compareTo(BigDecimal.ZERO) == 0) {
+            throw new PromotionValidationException("Giá từ phải lớn hơn 0!");
+        }
+        if (giaFrom.compareTo(BigDecimal.ZERO) < 0) {
+            throw new PromotionValidationException("Giá từ không được là số âm!");
+        }
+        if (giaDen != null && giaDen.compareTo(giaFrom) < 0) {
+            throw new PromotionValidationException("Giá đến phải lớn hơn hoặc bằng Giá từ!");
+        }
+        List<SanPham> result = sanPhamRepository.findActiveByPriceRange(giaFrom, giaDen);
+        if (result.isEmpty()) {
+            throw new PromotionValidationException(
+                "Không tìm thấy sản phẩm nào đang bán có giá trong khoảng đã nhập. Vui lòng kiểm tra lại khoảng giá.");
+        }
+        return result;
+    }
+
     private void validateCampaignDates(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null) {
             throw new PromotionValidationException("Thời gian bắt đầu và kết thúc không được để trống!");

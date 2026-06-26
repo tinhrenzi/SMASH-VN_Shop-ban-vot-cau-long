@@ -42,6 +42,9 @@ public class AdminKhuyenMaiServiceTest {
     @Autowired
     private PhieuGiamGiaRepository phieuGiamGiaRepository;
 
+    @Autowired
+    private SanPhamChiTietRepository sanPhamChiTietRepository;
+
     private TaiKhoan testTaiKhoan;
     private SanPham testSanPham;
     private LocalDateTime startTime;
@@ -395,5 +398,88 @@ public class AdminKhuyenMaiServiceTest {
         assertNotNull(updated);
         assertEquals(newStart, updated.getNgayBatDau());
         assertEquals(newEnd, updated.getNgayKetThuc());
+    }
+
+    @Test
+    void testParseVndCurrency() {
+        // Valid tests
+        assertEquals(new BigDecimal("500000"), adminKhuyenMaiService.parseVndCurrency("500000", "Field", false));
+        assertEquals(new BigDecimal("500000"), adminKhuyenMaiService.parseVndCurrency("500.000", "Field", false));
+        assertEquals(new BigDecimal("1500000"), adminKhuyenMaiService.parseVndCurrency("1,500,000", "Field", false));
+        assertEquals(new BigDecimal("500000"), adminKhuyenMaiService.parseVndCurrency("  500.000  ", "Field", false));
+        assertNull(adminKhuyenMaiService.parseVndCurrency("", "Field", true));
+        assertNull(adminKhuyenMaiService.parseVndCurrency("   ", "Field", true));
+        assertNull(adminKhuyenMaiService.parseVndCurrency(null, "Field", true));
+
+        // Invalid tests
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.parseVndCurrency("", "Field", false);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.parseVndCurrency("-100000", "Field", false);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.parseVndCurrency("abc", "Field", false);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.parseVndCurrency("500,5", "Field", false);
+        });
+    }
+
+    @Test
+    void testFindProductsByPriceRange_InvalidRange() {
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.findProductsByPriceRange(null, BigDecimal.TEN);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.findProductsByPriceRange(BigDecimal.ZERO, BigDecimal.TEN);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.findProductsByPriceRange(new BigDecimal("-10"), BigDecimal.TEN);
+        });
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.findProductsByPriceRange(new BigDecimal("100"), new BigDecimal("50"));
+        });
+        // Test no matched products
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.findProductsByPriceRange(new BigDecimal("999999999"), new BigDecimal("9999999999"));
+        });
+    }
+
+    @Test
+    void testCreateDotGiamGia_PriceRange_Valid() {
+        // Create variant for testSanPham so it matches the price range query
+        SanPhamChiTiet spct = new SanPhamChiTiet();
+        spct.setSanPham(testSanPham);
+        spct.setMauSac("Red");
+        spct.setMucCang("10kg");
+        spct.setTrongLuong("3U");
+        spct.setGiaBan(new BigDecimal("900000"));
+        spct.setSoLuongTon(10);
+        spct.setTrangThai("dang_ban");
+        sanPhamChiTietRepository.save(spct);
+
+        DotGiamGia dgg = adminKhuyenMaiService.createDotGiamGia(
+                "Price Range Sale", startTime, endTime, 15, "Theo Phần Trăm",
+                "PRICE_RANGE", null, new BigDecimal("800000"), new BigDecimal("1000000"),
+                testTaiKhoan.getId(), "127.0.0.1"
+        );
+        assertNotNull(dgg);
+        assertTrue(dgg.getSanPhams().stream().anyMatch(sp -> sp.getId().equals(testSanPham.getId())));
+    }
+
+    @Test
+    void testCreateDotGiamGia_Manual_DiscontinuedProduct() {
+        // Discontinue the test product
+        testSanPham.setTrangThai("ngung_ban");
+        sanPhamRepository.save(testSanPham);
+
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.createDotGiamGia(
+                    "Manual Sale Discontinued", startTime, endTime, 15, "Theo Phần Trăm",
+                    "MANUAL", List.of(testSanPham.getId()), null, null,
+                    testTaiKhoan.getId(), "127.0.0.1"
+            );
+        });
     }
 }
