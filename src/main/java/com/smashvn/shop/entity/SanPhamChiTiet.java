@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,6 +37,30 @@ public class SanPhamChiTiet {
 
     @Column(name = "so_luong_ton", nullable = false)
     private Integer soLuongTon = 0;
+
+    @Column(name = "barcode", length = 100)
+    private String barcode;
+
+    @Column(name = "chat_lieu", length = 50)
+    private String chatLieu;
+
+    @Column(name = "gia_nhap")
+    private BigDecimal giaNhap;
+
+    @Column(name = "kich_thuoc", length = 50)
+    private String kichThuoc;
+
+    @Column(name = "ngay_tao")
+    private LocalDateTime ngayTao = LocalDateTime.now();
+
+    @Column(name = "ngay_cap_nhat")
+    private LocalDateTime ngayCapNhat = LocalDateTime.now();
+
+    @Column(name = "SKU", length = 100)
+    private String sku;
+
+    @Column(name = "trang_thai", length = 50)
+    private String trangThai = "dang_ban";
 
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude

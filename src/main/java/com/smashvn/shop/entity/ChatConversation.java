@@ -28,6 +28,9 @@ public class ChatConversation {
     @Column(name = "ngay_cap_nhat")
     private LocalDateTime ngayCapNhat = LocalDateTime.now();
 
+    @Column(name = "session_id", length = 100)
+    private String sessionId;
+
     @Column(name = "trang_thai", length = 20)
     private String trangThai = "ACTIVE";
 }

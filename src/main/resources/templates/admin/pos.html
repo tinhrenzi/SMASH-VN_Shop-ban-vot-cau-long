@@ -922,9 +922,15 @@
             } else {
                 if (appliedVoucher.donVi === "%") {
                     discount = subtotal * (appliedVoucher.giaTri / 100);
+                    if (appliedVoucher.giaTriGiamToiDa && appliedVoucher.giaTriGiamToiDa > 0) {
+                        if (discount > appliedVoucher.giaTriGiamToiDa) {
+                            discount = appliedVoucher.giaTriGiamToiDa;
+                        }
+                    }
                 } else {
                     discount = appliedVoucher.giaTri;
                 }
+                discount = Math.round(discount);
                 if (discount > subtotal) {
                     discount = subtotal;
                 }
@@ -1025,9 +1031,14 @@
                         maPhieu: data.maPhieu,
                         giaTri: data.giaTri,
                         donVi: data.donVi,
-                        giaTriDonHangToiThieu: data.giaTriDonHangToiThieu
+                        giaTriDonHangToiThieu: data.giaTriDonHangToiThieu,
+                        giaTriGiamToiDa: data.giaTriGiamToiDa
                     };
-                    statusDiv.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Đã áp dụng: Giảm ${data.donVi === '%' ? data.giaTri + '%' : formatVND(data.giaTri)}</span>`;
+                    let msg = `Đã áp dụng: Giảm ${data.donVi === '%' ? data.giaTri + '%' : formatVND(data.giaTri)}`;
+                    if (data.donVi === '%' && data.giaTriGiamToiDa && data.giaTriGiamToiDa > 0) {
+                        msg += ` (Tối đa ${formatVND(data.giaTriGiamToiDa)})`;
+                    }
+                    statusDiv.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> ${msg}</span>`;
                     recalculateTotals();
                 } else {
                     appliedVoucher = null;
@@ -1060,9 +1071,15 @@
         if (appliedVoucher) {
             if (appliedVoucher.donVi === "%") {
                 discount = subtotal * (appliedVoucher.giaTri / 100);
+                if (appliedVoucher.giaTriGiamToiDa && appliedVoucher.giaTriGiamToiDa > 0) {
+                    if (discount > appliedVoucher.giaTriGiamToiDa) {
+                        discount = appliedVoucher.giaTriGiamToiDa;
+                    }
+                }
             } else {
                 discount = appliedVoucher.giaTri;
             }
+            discount = Math.round(discount);
             if (discount > subtotal) discount = subtotal;
         }
         const grandTotal = subtotal - discount;

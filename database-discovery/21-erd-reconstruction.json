@@ -1,0 +1,2495 @@
+[
+  {
+    "table": "Blog",
+    "columns": [
+      "id",
+      "tieu_de",
+      "duong_dan",
+      "tom_tat",
+      "noi_dung",
+      "hinh_anh",
+      "ngay_dang",
+      "author",
+      "danh_muc",
+      "the",
+      "commentsCount",
+      "trang_thai",
+      "da_xoa",
+      "ngay_xoa",
+      "id_tai_khoan",
+      "createdBy",
+      "ngay_tao",
+      "updated_by",
+      "ngay_cap_nhat"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_Blog_TaiKhoan",
+        "childTable": "Blog",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_BLOG_PUBLISH_DATE",
+        "table": "Blog",
+        "columns": [
+          "ngay_dang"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "Blog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "Blog",
+        "childTable": "BlogComment",
+        "relation": "ManyToOne",
+        "fkColumn": "id_blog",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "BlogComment",
+    "columns": [
+      "id",
+      "id_blog",
+      "id_tai_khoan",
+      "noi_dung",
+      "ngay_tao",
+      "createdBy",
+      "da_xoa",
+      "ngay_xoa",
+      "deletedBy",
+      "ly_do_xoa",
+      "id_binh_luan_cha"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_BlogComment_Blog",
+        "childTable": "BlogComment",
+        "fkColumn": "id_blog",
+        "parentTable": "Blog",
+        "referencedColumn": "id",
+        "deleteRule": "CASCADE"
+      },
+      {
+        "constraintName": "FK_BlogComment_TaiKhoan",
+        "childTable": "BlogComment",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_BlogComment_Parent",
+        "childTable": "BlogComment",
+        "fkColumn": "id_binh_luan_cha",
+        "parentTable": "BlogComment",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "Blog",
+        "childTable": "BlogComment",
+        "relation": "ManyToOne",
+        "fkColumn": "id_blog",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "BlogComment",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "BlogComment",
+        "childTable": "BlogComment",
+        "relation": "ManyToOne",
+        "fkColumn": "id_binh_luan_cha",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "ChatConversation",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "tieu_de",
+      "ngay_tao",
+      "ngay_cap_nhat",
+      "session_id",
+      "trang_thai"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_ChatConversation_KhachHang",
+        "childTable": "ChatConversation",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_ChatConversation_Session_Unique",
+        "table": "ChatConversation",
+        "columns": [
+          "session_id"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "IX_ChatConversation_Session_Unique",
+        "table": "ChatConversation",
+        "columns": [
+          "session_id"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "KhachHang",
+        "childTable": "ChatConversation",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "ChatConversation",
+        "childTable": "ChatMessage",
+        "relation": "ManyToOne",
+        "fkColumn": "id_cuoc_tro_chuyen",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "ChatFeedback",
+    "columns": [
+      "id",
+      "id_tin_nhan",
+      "diem_danh_gia",
+      "noi_dung",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_ChatFeedback_Message",
+        "childTable": "ChatFeedback",
+        "fkColumn": "id_tin_nhan",
+        "parentTable": "ChatMessage",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "ChatMessage",
+        "childTable": "ChatFeedback",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tin_nhan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "ChatMessage",
+    "columns": [
+      "id",
+      "id_cuoc_tro_chuyen",
+      "loai_nguoi_gui",
+      "noi_dung",
+      "thoi_gian"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_ChatMessage_Conversation",
+        "childTable": "ChatMessage",
+        "fkColumn": "id_cuoc_tro_chuyen",
+        "parentTable": "ChatConversation",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "ChatMessage",
+        "childTable": "ChatFeedback",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tin_nhan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "ChatConversation",
+        "childTable": "ChatMessage",
+        "relation": "ManyToOne",
+        "fkColumn": "id_cuoc_tro_chuyen",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "CommentModerationKeyword",
+    "columns": [
+      "id",
+      "tu_khoa",
+      "kich_hoat",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": []
+  },
+  {
+    "table": "CommentViolationLog",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "id_danh_gia",
+      "id_san_pham",
+      "noi_dung_goc",
+      "noi_dung_da_loc",
+      "muc_do_vi_pham",
+      "so_lan_vi_pham",
+      "thoi_han_khoa",
+      "ngay_vi_pham",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_CommentViolationLog_DanhGia",
+        "childTable": "CommentViolationLog",
+        "fkColumn": "id_danh_gia",
+        "parentTable": "DanhGia",
+        "referencedColumn": "id",
+        "deleteRule": "SET NULL"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DanhGia",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "DanhGia",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "id_san_pham",
+      "so_sao",
+      "noi_dung",
+      "ngay_tao",
+      "ngay_cap_nhat",
+      "an_binh_luan",
+      "an_hinh_anh",
+      "da_xoa",
+      "ngay_xoa",
+      "id_nguoi_xoa",
+      "id_nguoi_an_binh_luan",
+      "ngay_an_binh_luan",
+      "id_nguoi_hien_binh_luan",
+      "ngay_hien_binh_luan",
+      "id_nguoi_an_hinh_anh",
+      "ngay_an_hinh_anh",
+      "id_nguoi_hien_hinh_anh",
+      "ngay_hien_hinh_anh",
+      "danhSachAnh"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_DanhGia_SanPham",
+        "childTable": "DanhGia",
+        "fkColumn": "id_san_pham",
+        "parentTable": "SanPham",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_KhachHang",
+        "childTable": "DanhGia",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_TaiKhoan_Xoa",
+        "childTable": "DanhGia",
+        "fkColumn": "id_nguoi_xoa",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_TaiKhoan_AnBL",
+        "childTable": "DanhGia",
+        "fkColumn": "id_nguoi_an_binh_luan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_TaiKhoan_HienBL",
+        "childTable": "DanhGia",
+        "fkColumn": "id_nguoi_hien_binh_luan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_TaiKhoan_AnHA",
+        "childTable": "DanhGia",
+        "fkColumn": "id_nguoi_an_hinh_anh",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_DanhGia_TaiKhoan_HienHA",
+        "childTable": "DanhGia",
+        "fkColumn": "id_nguoi_hien_hinh_anh",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "UX_DanhGia_KH_SP_Active",
+        "table": "DanhGia",
+        "columns": [
+          "id_khach_hang",
+          "id_san_pham"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "UX_DanhGia_KH_SP_Active",
+        "table": "DanhGia",
+        "columns": [
+          "id_khach_hang",
+          "id_san_pham"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "DanhGia",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_xoa",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_an_binh_luan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_hien_binh_luan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_an_hinh_anh",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_hien_hinh_anh",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DanhGia",
+        "childTable": "DanhGiaAnh",
+        "relation": "OneToMany",
+        "fkColumn": "id_danh_gia",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "danhGia",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DanhGia",
+        "childTable": "DanhGiaAnh",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "DanhGiaAnh",
+    "columns": [
+      "id",
+      "id_danh_gia",
+      "duong_dan",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_DanhGiaAnh_DanhGia",
+        "childTable": "DanhGiaAnh",
+        "fkColumn": "id_danh_gia",
+        "parentTable": "DanhGia",
+        "referencedColumn": "id",
+        "deleteRule": "CASCADE"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "DanhGia",
+        "childTable": "DanhGiaAnh",
+        "relation": "OneToMany",
+        "fkColumn": "id_danh_gia",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "danhGia",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DanhGia",
+        "childTable": "DanhGiaAnh",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "DanhMuc",
+    "columns": [
+      "id",
+      "ten_danh_muc",
+      "mo_ta",
+      "trang_thai"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "DanhMuc",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_muc",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "DonViVanChuyen",
+    "columns": [
+      "id",
+      "ma_don_vi",
+      "ten_don_vi",
+      "so_hotline",
+      "trang_web",
+      "ma_token",
+      "ma_client",
+      "dia_chi_kho",
+      "phi_noi_dia",
+      "phi_toan_quoc",
+      "phien_ban"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "DonViVanChuyen",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_don_vi_van_chuyen",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "DotGiamGia",
+    "columns": [
+      "id",
+      "ten_chien_dich",
+      "ngay_bat_dau",
+      "ngay_ket_thuc",
+      "phan_tram_giam",
+      "loai_giam_gia",
+      "id_nhan_vien",
+      "kich_hoat",
+      "sanPhams"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_DotGiamGia_NhanVien",
+        "childTable": "DotGiamGia",
+        "fkColumn": "id_nhan_vien",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "NhanVien",
+        "childTable": "DotGiamGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DotGiamGia",
+        "childTable": "java.util.SanPham",
+        "relation": "ManyToMany",
+        "fkColumn": "sanPhams",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "DotGiamGia",
+        "relation": "ManyToMany",
+        "fkColumn": "cacDotGiamGia",
+        "cascade": "None",
+        "fetch": "EAGER",
+        "mappedBy": "sanPhams",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "EditLog",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "ten_bang",
+      "id_ban_ghi",
+      "hanh_dong",
+      "gia_tri_cu",
+      "gia_tri_moi",
+      "thoi_gian",
+      "dia_chi_ip",
+      "ghi_chu",
+      "vai_tro_thuc_hien"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_EditLog_TaiKhoan",
+        "childTable": "EditLog",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "EditLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "GioHang",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "session_id",
+      "ngay_tao",
+      "ngay_cap_nhat"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_GioHang_KhachHang",
+        "childTable": "GioHang",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "KhachHang",
+        "childTable": "GioHang",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "GioHang",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_gio_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "GioHangChiTiet",
+    "columns": [
+      "id",
+      "id_gio_hang",
+      "id_san_pham_chi_tiet",
+      "id_trang_thai",
+      "so_luong",
+      "ngay_them"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_GioHangChiTiet_GioHang",
+        "childTable": "GioHangChiTiet",
+        "fkColumn": "id_gio_hang",
+        "parentTable": "GioHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_GioHangChiTiet_SPCT",
+        "childTable": "GioHangChiTiet",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "parentTable": "SanPhamChiTiet",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_GioHangChiTiet_TrangThai",
+        "childTable": "GioHangChiTiet",
+        "fkColumn": "id_trang_thai",
+        "parentTable": "TrangThaiGioHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "GioHang",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_gio_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TrangThaiGioHang",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_trang_thai",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "HinhAnhSanPham",
+    "columns": [
+      "id",
+      "id_san_pham_chi_tiet",
+      "duong_dan",
+      "mau_sac",
+      "la_anh_chinh"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_HinhAnhSanPham_SPCT",
+        "childTable": "HinhAnhSanPham",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "parentTable": "SanPhamChiTiet",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HinhAnhSanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HinhAnhSanPham",
+        "relation": "OneToMany",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "ALL",
+        "fetch": "EAGER",
+        "mappedBy": "sanPhamChiTiet",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "HoaDon",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "id_nhan_vien",
+      "id_phuong_thuc_thanh_toan",
+      "id_phieu_giam_gia",
+      "id_don_vi_van_chuyen",
+      "id_dia_chi",
+      "ngay_tao",
+      "tong_tien",
+      "trang_thai_don_hang",
+      "trang_thai_thanh_toan",
+      "dia_chi_nhan",
+      "sdt_nhan",
+      "ghi_chu",
+      "ma_giao_dich",
+      "nguoi_xac_nhan_thanh_toan",
+      "thoi_gian_xac_nhan",
+      "ma_don_hang",
+      "phi_van_chuyen",
+      "phuong_thuc_thanh_toan",
+      "trang_thai_thanh_toan",
+      "ma_giao_dich",
+      "phan_hoi_cong_tt",
+      "ngay_thanh_toan",
+      "ma_giao_dich_ung_dung",
+      "ghn_order_code",
+      "ghn_status",
+      "ghn_to_district_id",
+      "ghn_to_ward_code",
+      "trang_thai_hoan_hang",
+      "ngay_xac_nhan_hoan_hang",
+      "id_nhan_vien_xac_nhan",
+      "refundStatus",
+      "refundTime",
+      "id_nhan_vien_xac_nhan_hoan_tien",
+      "so_tien_giam_voucher",
+      "loai_don_hang",
+      "ngay_cap_nhat",
+      "ten_nguoi_nhan",
+      "tong_tien_hang",
+      "ma_giam_gia_ap_dung",
+      "ten_giam_gia_ap_dung",
+      "mo_ta_giam_gia_snapshot"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_HoaDon_KhachHang",
+        "childTable": "HoaDon",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_NhanVien",
+        "childTable": "HoaDon",
+        "fkColumn": "id_nhan_vien",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_PTTT",
+        "childTable": "HoaDon",
+        "fkColumn": "id_phuong_thuc_thanh_toan",
+        "parentTable": "PhuongThucThanhToan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_DVVC",
+        "childTable": "HoaDon",
+        "fkColumn": "id_don_vi_van_chuyen",
+        "parentTable": "DonViVanChuyen",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_DiaChi",
+        "childTable": "HoaDon",
+        "fkColumn": "id_dia_chi",
+        "parentTable": "SoDiaChi",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_PhieuGiamGia",
+        "childTable": "HoaDon",
+        "fkColumn": "id_phieu_giam_gia",
+        "parentTable": "PhieuGiamGia",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_NhanVien_XacNhan",
+        "childTable": "HoaDon",
+        "fkColumn": "id_nhan_vien_xac_nhan",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDon_NhanVien_XacNhanHoanTien",
+        "childTable": "HoaDon",
+        "fkColumn": "id_nhan_vien_xac_nhan_hoan_tien",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_HoaDon_KhachHang_NgayTao",
+        "table": "HoaDon",
+        "columns": [
+          "id_khach_hang",
+          "ngay_tao"
+        ],
+        "unique": false
+      },
+      {
+        "indexName": "IX_HoaDon_LoaiDonHang_NgayTao",
+        "table": "HoaDon",
+        "columns": [
+          "loai_don_hang",
+          "ngay_tao"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "KhachHang",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "PhuongThucThanhToan",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_phuong_thuc_thanh_toan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "PhieuGiamGia",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_phieu_giam_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DonViVanChuyen",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_don_vi_van_chuyen",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SoDiaChi",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_dia_chi",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien_xac_nhan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien_xac_nhan_hoan_tien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "HoaDon",
+        "childTable": "HoaDonChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_hoa_don",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "HoaDon",
+        "childTable": "GiaoDichThanhToan",
+        "relation": "ManyToOne",
+        "fkColumn": "id_hoa_don",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "HoaDonChiTiet",
+    "columns": [
+      "id",
+      "id_hoa_don",
+      "id_san_pham_chi_tiet",
+      "so_luong",
+      "don_gia",
+      "thanh_tien",
+      "gia_niem_yet",
+      "phan_tram_giam",
+      "so_tien_giam_san_pham",
+      "ten_dot_giam_gia",
+      "id_dot_giam_gia",
+      "ten_san_pham_snapshot",
+      "ma_hang_snapshot",
+      "thuoc_tinh_snapshot",
+      "thuong_hieu_snapshot",
+      "danh_muc_snapshot"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_HoaDonChiTiet_HoaDon",
+        "childTable": "HoaDonChiTiet",
+        "fkColumn": "id_hoa_don",
+        "parentTable": "HoaDon",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_HoaDonChiTiet_SPCT",
+        "childTable": "HoaDonChiTiet",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "parentTable": "SanPhamChiTiet",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_HoaDonChiTiet_HoaDon",
+        "table": "HoaDonChiTiet",
+        "columns": [
+          "id_hoa_don"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "HoaDon",
+        "childTable": "HoaDonChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_hoa_don",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HoaDonChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "KhachHang",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "ho_kh",
+      "ten_kh",
+      "so_dien_thoai_kh",
+      "nhan_ban_tin",
+      "la_tai_khoan_noi_bo",
+      "loai_khach_hang",
+      "nguon_tao",
+      "ngay_tao",
+      "ngay_cap_nhat",
+      "soDiaChis",
+      "sanPhamYeuThichs"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_KhachHang_TaiKhoan",
+        "childTable": "KhachHang",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "UX_KhachHang_SoDienThoaiKh",
+        "table": "KhachHang",
+        "columns": [
+          "so_dien_thoai_kh"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "UX_KhachHang_TaiKhoan",
+        "table": "KhachHang",
+        "columns": [
+          "id_tai_khoan"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "UX_KhachHang_SoDienThoaiKh",
+        "table": "KhachHang",
+        "columns": [
+          "so_dien_thoai_kh"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "UX_KhachHang_TaiKhoan",
+        "table": "KhachHang",
+        "columns": [
+          "id_tai_khoan"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "KhachHang",
+        "childTable": "ChatConversation",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "GioHang",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "TaiKhoan",
+        "relation": "OneToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SoDiaChi",
+        "relation": "OneToMany",
+        "fkColumn": "id_khach_hang",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "khachHang",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SanPhamYeuThich",
+        "relation": "OneToMany",
+        "fkColumn": "id_khach_hang",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "khachHang",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SanPhamYeuThich",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SoDiaChi",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "NhanVien",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "ho_ten",
+      "chuc_vu",
+      "so_dien_thoai"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_NhanVien_TaiKhoan",
+        "childTable": "NhanVien",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "UX_NhanVien_SoDienThoai",
+        "table": "NhanVien",
+        "columns": [
+          "so_dien_thoai"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "UX_NhanVien_TaiKhoan",
+        "table": "NhanVien",
+        "columns": [
+          "id_tai_khoan"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "UX_NhanVien_SoDienThoai",
+        "table": "NhanVien",
+        "columns": [
+          "so_dien_thoai"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "UX_NhanVien_TaiKhoan",
+        "table": "NhanVien",
+        "columns": [
+          "id_tai_khoan"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "NhanVien",
+        "childTable": "DotGiamGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien_xac_nhan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien_xac_nhan_hoan_tien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "TaiKhoan",
+        "relation": "OneToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "PhieuGiamGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "GiaoDichThanhToan",
+    "columns": [
+      "id",
+      "ma_giao_dich",
+      "id_hoa_don",
+      "so_tien",
+      "cong_thanh_toan",
+      "trang_thai",
+      "du_lieu_tho",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_GiaoDichThanhToan_HoaDon",
+        "childTable": "GiaoDichThanhToan",
+        "fkColumn": "id_hoa_don",
+        "parentTable": "HoaDon",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_GiaoDichThanhToan_HoaDon",
+        "table": "GiaoDichThanhToan",
+        "columns": [
+          "id_hoa_don"
+        ],
+        "unique": false
+      },
+      {
+        "indexName": "IX_GiaoDichThanhToan_MaGiaoDich",
+        "table": "GiaoDichThanhToan",
+        "columns": [
+          "ma_giao_dich"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "HoaDon",
+        "childTable": "GiaoDichThanhToan",
+        "relation": "ManyToOne",
+        "fkColumn": "id_hoa_don",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "PhieuGiamGia",
+    "columns": [
+      "id",
+      "ma_phieu",
+      "gia_tri",
+      "don_vi",
+      "ngay_bat_dau",
+      "ngay_ket_thuc",
+      "so_luong_con_lai",
+      "loai_giam_gia",
+      "ten_phieu",
+      "trang_thai",
+      "id_nhan_vien",
+      "kich_hoat",
+      "gia_tri_don_hang_toi_thieu",
+      "gia_tri_giam_toi_da"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_PhieuGiamGia_NhanVien",
+        "childTable": "PhieuGiamGia",
+        "fkColumn": "id_nhan_vien",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_PhieuGiamGia_MaPhieu",
+        "table": "PhieuGiamGia",
+        "columns": [
+          "ma_phieu"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "PhieuGiamGia",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_phieu_giam_gia",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "PhieuGiamGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "PhuongThucThanhToan",
+    "columns": [
+      "id",
+      "ma_phuong_thuc",
+      "ten_phuong_thuc"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [
+      {
+        "indexName": "IX_PTTT_Ma_Unique",
+        "table": "PhuongThucThanhToan",
+        "columns": [
+          "ma_phuong_thuc"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "IX_PTTT_Ma_Unique",
+        "table": "PhuongThucThanhToan",
+        "columns": [
+          "ma_phuong_thuc"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "PhuongThucThanhToan",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_phuong_thuc_thanh_toan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "SanPham",
+    "columns": [
+      "id",
+      "id_danh_muc",
+      "id_thuong_hieu",
+      "id_nhan_vien",
+      "ten_san_pham",
+      "trang_thai",
+      "mo_ta",
+      "cacDotGiamGia",
+      "sanPhamChiTiets",
+      "so_danh_gia",
+      "diem_trung_binh",
+      "ngay_tao",
+      "ngay_cap_nhat"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_SanPham_DanhMuc",
+        "childTable": "SanPham",
+        "fkColumn": "id_danh_muc",
+        "parentTable": "DanhMuc",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_SanPham_ThuongHieu",
+        "childTable": "SanPham",
+        "fkColumn": "id_thuong_hieu",
+        "parentTable": "ThuongHieu",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_SanPham_NhanVien",
+        "childTable": "SanPham",
+        "fkColumn": "id_nhan_vien",
+        "parentTable": "NhanVien",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "SanPham",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "DanhMuc",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_danh_muc",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "ThuongHieu",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_thuong_hieu",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nhan_vien",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "DotGiamGia",
+        "relation": "ManyToMany",
+        "fkColumn": "cacDotGiamGia",
+        "cascade": "None",
+        "fetch": "EAGER",
+        "mappedBy": "sanPhams",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamChiTiet",
+        "relation": "OneToMany",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "sanPham",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamYeuThich",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "SanPhamChiTiet",
+    "columns": [
+      "id",
+      "id_san_pham",
+      "mau_sac",
+      "muc_cang",
+      "trong_luong",
+      "gia_ban",
+      "so_luong_ton",
+      "barcode",
+      "chat_lieu",
+      "gia_nhap",
+      "kich_thuoc",
+      "ngay_tao",
+      "ngay_cap_nhat",
+      "SKU",
+      "trang_thai",
+      "hinhAnhSanPhams",
+      "hinhAnhSanPham"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_SanPhamChiTiet_SanPham",
+        "childTable": "SanPhamChiTiet",
+        "fkColumn": "id_san_pham",
+        "parentTable": "SanPham",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_SanPhamChiTiet_SanPham",
+        "table": "SanPhamChiTiet",
+        "columns": [
+          "id_san_pham"
+        ],
+        "unique": false
+      },
+      {
+        "indexName": "IX_SPCT_Barcode_Unique",
+        "table": "SanPhamChiTiet",
+        "columns": [
+          "barcode"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "IX_SPCT_SKU_Unique",
+        "table": "SanPhamChiTiet",
+        "columns": [
+          "SKU"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "IX_SPCT_Barcode_Unique",
+        "table": "SanPhamChiTiet",
+        "columns": [
+          "barcode"
+        ],
+        "unique": true
+      },
+      {
+        "indexName": "IX_SPCT_SKU_Unique",
+        "table": "SanPhamChiTiet",
+        "columns": [
+          "SKU"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HinhAnhSanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HoaDonChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamChiTiet",
+        "relation": "OneToMany",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "sanPham",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPhamChiTiet",
+        "childTable": "HinhAnhSanPham",
+        "relation": "OneToMany",
+        "fkColumn": "id_san_pham_chi_tiet",
+        "cascade": "ALL",
+        "fetch": "EAGER",
+        "mappedBy": "sanPhamChiTiet",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "SanPhamYeuThich",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "id_san_pham",
+      "ngay_them",
+      "khachHangId",
+      "sanPhamId"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_SanPhamYeuThich_KhachHang",
+        "childTable": "SanPhamYeuThich",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      },
+      {
+        "constraintName": "FK_SanPhamYeuThich_SanPham",
+        "childTable": "SanPhamYeuThich",
+        "fkColumn": "id_san_pham",
+        "parentTable": "SanPham",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "UX_SanPhamYeuThich_KH_SP",
+        "table": "SanPhamYeuThich",
+        "columns": [
+          "id_khach_hang",
+          "id_san_pham"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "UX_SanPhamYeuThich_KH_SP",
+        "table": "SanPhamYeuThich",
+        "columns": [
+          "id_khach_hang",
+          "id_san_pham"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SanPhamYeuThich",
+        "relation": "OneToMany",
+        "fkColumn": "id_khach_hang",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "khachHang",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SanPhamYeuThich",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "SanPham",
+        "childTable": "SanPhamYeuThich",
+        "relation": "ManyToOne",
+        "fkColumn": "id_san_pham",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "SoDiaChi",
+    "columns": [
+      "id",
+      "id_khach_hang",
+      "ho_nguoi_nhan",
+      "ten_nguoi_nhan",
+      "sdt_nguoi_nhan",
+      "dia_chi_cu_the",
+      "quoc_gia",
+      "tinh_thanh",
+      "thanh_pho",
+      "maBuuDien",
+      "la_mac_dinh_giao_hang",
+      "la_mac_dinh_thanh_toan",
+      "vi_do",
+      "kinh_do",
+      "province_id",
+      "district_id",
+      "ward_code",
+      "province_name",
+      "district_name",
+      "ward_name"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_SoDiaChi_KhachHang",
+        "childTable": "SoDiaChi",
+        "fkColumn": "id_khach_hang",
+        "parentTable": "KhachHang",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_SoDiaChi_KhachHang",
+        "table": "SoDiaChi",
+        "columns": [
+          "id_khach_hang"
+        ],
+        "unique": false
+      }
+    ],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "SoDiaChi",
+        "childTable": "HoaDon",
+        "relation": "ManyToOne",
+        "fkColumn": "id_dia_chi",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SoDiaChi",
+        "relation": "OneToMany",
+        "fkColumn": "id_khach_hang",
+        "cascade": "ALL",
+        "fetch": "LAZY",
+        "mappedBy": "khachHang",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "SoDiaChi",
+        "relation": "ManyToOne",
+        "fkColumn": "id_khach_hang",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "TaiKhoan",
+    "columns": [
+      "id",
+      "email",
+      "mat_khau",
+      "trang_thai_tai_khoan",
+      "so_lan_mua_thanh_cong",
+      "vai_tro",
+      "trang_thai",
+      "token_xac_thuc_khoa",
+      "so_lan_nhac_nho_vi_pham",
+      "ngay_khoa_binh_luan_den",
+      "ngay_vi_pham_gan_nhat",
+      "laKhachHang",
+      "laNhanVien",
+      "laQuanLy"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "Blog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "BlogComment",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "CommentViolationLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_xoa",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_an_binh_luan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_hien_binh_luan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_an_hinh_anh",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "DanhGia",
+        "relation": "ManyToOne",
+        "fkColumn": "id_nguoi_hien_hinh_anh",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "EditLog",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "KhachHang",
+        "childTable": "TaiKhoan",
+        "relation": "OneToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "NhanVien",
+        "childTable": "TaiKhoan",
+        "relation": "OneToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "ThongBao",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      },
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "MaKhoiPhuc",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "ThongBao",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "tieu_de",
+      "noi_dung",
+      "da_doc",
+      "loai_thong_bao",
+      "ngay_tao"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_ThongBao_TaiKhoan",
+        "childTable": "ThongBao",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "CASCADE"
+      }
+    ],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "ThongBao",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "ThuongHieu",
+    "columns": [
+      "id",
+      "ten_thuong_hieu",
+      "mo_ta",
+      "trang_thai"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "ThuongHieu",
+        "childTable": "SanPham",
+        "relation": "ManyToOne",
+        "fkColumn": "id_thuong_hieu",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "MaKhoiPhuc",
+    "columns": [
+      "id",
+      "id_tai_khoan",
+      "ma_xac_nhan",
+      "loai_xac_nhan",
+      "thoi_gian_het_han",
+      "da_su_dung"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [
+      {
+        "constraintName": "FK_MaKhoiPhuc_TaiKhoan",
+        "childTable": "MaKhoiPhuc",
+        "fkColumn": "id_tai_khoan",
+        "parentTable": "TaiKhoan",
+        "referencedColumn": "id",
+        "deleteRule": "NO ACTION"
+      }
+    ],
+    "indexes": [
+      {
+        "indexName": "IX_MaKhoiPhuc_Token_Unique",
+        "table": "MaKhoiPhuc",
+        "columns": [
+          "token"
+        ],
+        "unique": true
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "indexName": "IX_MaKhoiPhuc_Token_Unique",
+        "table": "MaKhoiPhuc",
+        "columns": [
+          "token"
+        ],
+        "unique": true
+      }
+    ],
+    "relationships": [
+      {
+        "parentTable": "TaiKhoan",
+        "childTable": "MaKhoiPhuc",
+        "relation": "ManyToOne",
+        "fkColumn": "id_tai_khoan",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  },
+  {
+    "table": "TrangThaiGioHang",
+    "columns": [
+      "id",
+      "ten_trang_thai"
+    ],
+    "pk": [
+      "id"
+    ],
+    "fk": [],
+    "indexes": [],
+    "uniqueConstraints": [],
+    "relationships": [
+      {
+        "parentTable": "TrangThaiGioHang",
+        "childTable": "GioHangChiTiet",
+        "relation": "ManyToOne",
+        "fkColumn": "id_trang_thai",
+        "cascade": "None",
+        "fetch": "LAZY",
+        "mappedBy": "",
+        "orphanRemoval": false
+      }
+    ]
+  }
+]

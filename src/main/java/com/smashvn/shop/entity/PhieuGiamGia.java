@@ -87,6 +87,12 @@ public class PhieuGiamGia {
     @Column(name = "loai_giam_gia", nullable = false, length = 100)
     private String loaiGiamGia;
 
+    @Column(name = "ten_phieu", length = 100)
+    private String tenPhieu;
+
+    @Column(name = "trang_thai", length = 50)
+    private String trangThai;
+
     /**
      * Nhân viên đã tạo / cập nhật phiếu này. Dùng để tra cứu lịch sử.
      */

@@ -1,0 +1,20 @@
+{
+  "refundWorkflow": {
+    "initiation": "Online order cancelled",
+    "status": "Transitions to CHO_HOAN_TIEN",
+    "token": "Generated and embedded in metadata (REFUND_TOKEN:uuid)",
+    "approval": "Manager (laQuanLy=true) reviews and clicks approve/reject action link"
+  },
+  "returnWorkflow": {
+    "initiation": "Order marked da_huy",
+    "initialState": "PENDING_RETURN",
+    "returnedState": "RETURNED (Restores variants stock)",
+    "lostDamagedState": "LOST / DAMAGED (No stock restoration)"
+  },
+  "entities": [
+    "HoaDon",
+    "YeuCauHoanHang",
+    "NhanVien",
+    "TaiKhoan"
+  ]
+}

@@ -105,7 +105,8 @@ public class GuestCheckoutSecurityIntegrationTest {
         kh.setTaiKhoan(tk);
         kh.setHoKh("");
         kh.setTenKh("Guest User");
-        kh.setSoDienThoaiKh("0900000000");
+        String uniqueSdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        kh.setSoDienThoaiKh(uniqueSdt);
         kh.setLaTaiKhoanNoiBo(false);
         khachHangRepository.save(kh);
 
@@ -118,7 +119,7 @@ public class GuestCheckoutSecurityIntegrationTest {
         hd.setTrangThaiDonHang("cho_xac_nhan");
         hd.setTongTien(new BigDecimal("500000"));
         hd.setDiaChiNhan("123 Street");
-        hd.setSdtNhan("0900000000");
+        hd.setSdtNhan(kh.getSoDienThoaiKh());
         hd.setMaDonHang("GUEST-ORDER-" + System.nanoTime());
         hd.setDonViVanChuyen(testDvvc);
         hd.setPhuongThucThanhToan(testPttt);

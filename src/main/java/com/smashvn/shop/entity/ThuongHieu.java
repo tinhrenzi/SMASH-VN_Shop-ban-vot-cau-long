@@ -13,4 +13,10 @@ public class ThuongHieu {
 
     @Column(name = "ten_thuong_hieu", nullable = false)
     private String tenThuongHieu;
+
+    @Column(name = "mo_ta", length = 500)
+    private String moTa;
+
+    @Column(name = "trang_thai")
+    private Boolean trangThai = true;
 }

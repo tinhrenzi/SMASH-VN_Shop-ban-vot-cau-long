@@ -1,0 +1,195 @@
+[
+  {
+    "table": "Blog",
+    "indexName": "IX_BLOG_PUBLISH_DATE",
+    "columns": [
+      "ngay_dang"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "ChatConversation",
+    "indexName": "IX_ChatConversation_Session_Unique",
+    "columns": [
+      "session_id"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "DanhGia",
+    "indexName": "UX_DanhGia_KH_SP_Active",
+    "columns": [
+      "id_khach_hang",
+      "id_san_pham"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "flyway_schema_history",
+    "indexName": "flyway_schema_history_s_idx",
+    "columns": [
+      "success"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "GiaoDichThanhToan",
+    "indexName": "IX_GiaoDichThanhToan_HoaDon",
+    "columns": [
+      "id_hoa_don"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "GiaoDichThanhToan",
+    "indexName": "IX_GiaoDichThanhToan_MaGiaoDich",
+    "columns": [
+      "ma_giao_dich"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "HoaDon",
+    "indexName": "IX_HoaDon_KhachHang_NgayTao",
+    "columns": [
+      "id_khach_hang",
+      "ngay_tao"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "HoaDon",
+    "indexName": "IX_HoaDon_LoaiDonHang_NgayTao",
+    "columns": [
+      "loai_don_hang",
+      "ngay_tao"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "HoaDonChiTiet",
+    "indexName": "IX_HoaDonChiTiet_HoaDon",
+    "columns": [
+      "id_hoa_don"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "KhachHang",
+    "indexName": "UX_KhachHang_SoDienThoaiKh",
+    "columns": [
+      "so_dien_thoai_kh"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "KhachHang",
+    "indexName": "UX_KhachHang_TaiKhoan",
+    "columns": [
+      "id_tai_khoan"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "MaKhoiPhuc",
+    "indexName": "IX_MaKhoiPhuc_Token_Unique",
+    "columns": [
+      "token"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "NhanVien",
+    "indexName": "UX_NhanVien_SoDienThoai",
+    "columns": [
+      "so_dien_thoai"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "NhanVien",
+    "indexName": "UX_NhanVien_TaiKhoan",
+    "columns": [
+      "id_tai_khoan"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "PhieuGiamGia",
+    "indexName": "IX_PhieuGiamGia_MaPhieu",
+    "columns": [
+      "ma_phieu"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "PhuongThucThanhToan",
+    "indexName": "IX_PTTT_Ma_Unique",
+    "columns": [
+      "ma_phuong_thuc"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "SanPhamChiTiet",
+    "indexName": "IX_SanPhamChiTiet_SanPham",
+    "columns": [
+      "id_san_pham"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  },
+  {
+    "table": "SanPhamChiTiet",
+    "indexName": "IX_SPCT_Barcode_Unique",
+    "columns": [
+      "barcode"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "SanPhamChiTiet",
+    "indexName": "IX_SPCT_SKU_Unique",
+    "columns": [
+      "SKU"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "SanPhamYeuThich",
+    "indexName": "UX_SanPhamYeuThich_KH_SP",
+    "columns": [
+      "id_khach_hang",
+      "id_san_pham"
+    ],
+    "unique": true,
+    "type": "Clustered"
+  },
+  {
+    "table": "SoDiaChi",
+    "indexName": "IX_SoDiaChi_KhachHang",
+    "columns": [
+      "id_khach_hang"
+    ],
+    "unique": false,
+    "type": "Clustered"
+  }
+]

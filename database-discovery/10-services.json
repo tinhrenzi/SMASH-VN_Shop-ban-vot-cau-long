@@ -1,0 +1,823 @@
+[
+  {
+    "service": "AuditService",
+    "repositories": [
+      "taiKhoanRepository",
+      "EditLogRepository",
+      "editLogRepository",
+      "TaiKhoanRepository"
+    ],
+    "entities": [
+      "EditLog",
+      "TaiKhoan"
+    ],
+    "tablesAffected": [
+      "EditLog",
+      "TaiKhoan"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminBienTheService",
+    "repositories": [
+      "SanPhamRepository",
+      "sanPhamChiTietRepository",
+      "SanPhamChiTietRepository",
+      "sanPhamRepository"
+    ],
+    "entities": [
+      "SanPham",
+      "SanPhamChiTiet",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "SanPham",
+      "SanPhamChiTiet",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminKhuyenMaiService",
+    "repositories": [
+      "NhanVienRepository",
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "dotGiamGiaDAO",
+      "phieuGiamGiaRepository",
+      "sanPhamRepository",
+      "SanPhamRepository",
+      "nhanVienRepository",
+      "PhieuGiamGiaRepository",
+      "DotGiamGiaDAO"
+    ],
+    "entities": [
+      "EditLog",
+      "TaiKhoan",
+      "PhieuGiamGia",
+      "SanPham",
+      "NhanVien",
+      "DotGiamGia"
+    ],
+    "tablesAffected": [
+      "EditLog",
+      "TaiKhoan",
+      "PhieuGiamGia",
+      "SanPham",
+      "NhanVien",
+      "DotGiamGia"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminNhanVienService",
+    "repositories": [
+      "taiKhoanRepository",
+      "NhanVienRepository",
+      "TaiKhoanRepository",
+      "khachHangRepository",
+      "nhanVienRepository",
+      "KhachHangRepository"
+    ],
+    "entities": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminPosService",
+    "repositories": [
+      "SanPhamChiTietRepository",
+      "phieuGiamGiaRepository",
+      "HoaDonRepository",
+      "HoaDonChiTietRepository",
+      "hoaDonChiTietRepository",
+      "donViVanChuyenDAO",
+      "sanPhamChiTietRepository",
+      "KhachHangRepository",
+      "PhuongThucThanhToanDAO",
+      "NhanVienRepository",
+      "TaiKhoanRepository",
+      "hoaDonRepository",
+      "khachHangRepository",
+      "SanPhamRepository",
+      "nhanVienRepository",
+      "PhieuGiamGiaRepository",
+      "taiKhoanRepository",
+      "phuongThucThanhToanDAO",
+      "sanPhamRepository",
+      "DonViVanChuyenDAO"
+    ],
+    "entities": [
+      "DanhMuc",
+      "TaiKhoan",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "PhieuGiamGia",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "ThuongHieu",
+      "NhanVien",
+      "DonViVanChuyen",
+      "DotGiamGia",
+      "KhachHang",
+      "HoaDonChiTiet"
+    ],
+    "tablesAffected": [
+      "DanhMuc",
+      "TaiKhoan",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "PhieuGiamGia",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "ThuongHieu",
+      "NhanVien",
+      "DonViVanChuyen",
+      "DotGiamGia",
+      "KhachHang",
+      "HoaDonChiTiet"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminSanPhamService",
+    "repositories": [
+      "NhanVienRepository",
+      "SanPhamChiTietRepository",
+      "danhMucRepository",
+      "thuongHieuRepository",
+      "DanhMucRepository",
+      "sanPhamRepository",
+      "SanPhamRepository",
+      "nhanVienRepository",
+      "sanPhamChiTietRepository",
+      "ThuongHieuRepository"
+    ],
+    "entities": [
+      "DanhMuc",
+      "TaiKhoan",
+      "SanPhamChiTiet",
+      "SanPham",
+      "ThuongHieu",
+      "NhanVien",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "DanhMuc",
+      "TaiKhoan",
+      "SanPhamChiTiet",
+      "SanPham",
+      "ThuongHieu",
+      "NhanVien",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminShippingService",
+    "repositories": [
+      "taiKhoanRepository",
+      "DonViVanChuyenDAO",
+      "TaiKhoanRepository",
+      "donViVanChuyenDAO"
+    ],
+    "entities": [
+      "DonViVanChuyen",
+      "TaiKhoan"
+    ],
+    "tablesAffected": [
+      "DonViVanChuyen",
+      "TaiKhoan"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "AdminThongKeService",
+    "repositories": [
+      "HoaDonChiTietRepository",
+      "hoaDonRepository",
+      "hoaDonChiTietRepository",
+      "HoaDonRepository"
+    ],
+    "entities": [
+      "HoaDonChiTiet",
+      "HoaDon"
+    ],
+    "tablesAffected": [
+      "HoaDonChiTiet",
+      "HoaDon"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "GhnService",
+    "repositories": [
+      "DonViVanChuyenDAO",
+      "donViVanChuyenDAO",
+      "soDiaChiRepository",
+      "SoDiaChiRepository"
+    ],
+    "entities": [
+      "SoDiaChi",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "SanPham",
+      "DonViVanChuyen",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "SoDiaChi",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "SanPham",
+      "DonViVanChuyen",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "LocationService",
+    "repositories": [],
+    "entities": [],
+    "tablesAffected": [],
+    "transactional": false
+  },
+  {
+    "service": "ShippingFeeCalculator",
+    "repositories": [],
+    "entities": [
+      "DonViVanChuyen"
+    ],
+    "tablesAffected": [
+      "DonViVanChuyen"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "ShippingZoneResolver",
+    "repositories": [],
+    "entities": [],
+    "tablesAffected": [],
+    "transactional": false
+  },
+  {
+    "service": "BlogService",
+    "repositories": [
+      "NhanVienRepository",
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "khachHangRepository",
+      "BlogRepository",
+      "blogCommentRepository",
+      "nhanVienRepository",
+      "BlogCommentRepository",
+      "KhachHangRepository",
+      "blogRepository"
+    ],
+    "entities": [
+      "Blog",
+      "TaiKhoan",
+      "BlogComment",
+      "NhanVien",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "Blog",
+      "TaiKhoan",
+      "BlogComment",
+      "NhanVien",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "CommentModerationService",
+    "repositories": [
+      "CommentModerationKeywordRepository",
+      "keywordRepository"
+    ],
+    "entities": [
+      "CommentModerationKeyword"
+    ],
+    "tablesAffected": [
+      "CommentModerationKeyword"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "ChatService",
+    "repositories": [
+      "ChatMessageRepository",
+      "hoaDonRepository",
+      "chatConversationRepository",
+      "khachHangRepository",
+      "chatFeedbackRepository",
+      "phieuGiamGiaRepository",
+      "sanPhamRepository",
+      "HoaDonRepository",
+      "SanPhamRepository",
+      "chatMessageRepository",
+      "KhachHangRepository",
+      "PhieuGiamGiaRepository",
+      "ChatFeedbackRepository",
+      "ChatConversationRepository"
+    ],
+    "entities": [
+      "ChatFeedback",
+      "DanhGia",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "ChatMessage",
+      "ChatConversation",
+      "PhieuGiamGia",
+      "SanPham",
+      "ThuongHieu",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "ChatFeedback",
+      "DanhGia",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "ChatMessage",
+      "ChatConversation",
+      "PhieuGiamGia",
+      "SanPham",
+      "ThuongHieu",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "FileStorageService",
+    "repositories": [],
+    "entities": [
+      "Blog"
+    ],
+    "tablesAffected": [
+      "Blog"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "GioHangService",
+    "repositories": [
+      "SanPhamChiTietRepository",
+      "GioHangChiTietRepository",
+      "phieuGiamGiaRepository",
+      "HoaDonRepository",
+      "HoaDonChiTietRepository",
+      "hoaDonChiTietRepository",
+      "paymentTransactionRepository",
+      "donViVanChuyenDAO",
+      "GioHangRepository",
+      "sanPhamChiTietRepository",
+      "gioHangRepository",
+      "PaymentTransactionRepository",
+      "gioHangChiTietRepository",
+      "KhachHangRepository",
+      "PhuongThucThanhToanDAO",
+      "trangThaiGioHangRepository",
+      "TaiKhoanRepository",
+      "hoaDonRepository",
+      "khachHangRepository",
+      "soDiaChiRepository",
+      "SoDiaChiRepository",
+      "PhieuGiamGiaRepository",
+      "TrangThaiGioHangRepository",
+      "phuongThucThanhToanDAO",
+      "taiKhoanRepository",
+      "DonViVanChuyenDAO"
+    ],
+    "entities": [
+      "DanhMuc",
+      "HoaDonChiTiet",
+      "GioHang",
+      "HoaDon",
+      "GioHangChiTiet",
+      "SanPhamChiTiet",
+      "SoDiaChi",
+      "TaiKhoan",
+      "TrangThaiGioHang",
+      "PhieuGiamGia",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "ThuongHieu",
+      "PaymentTransaction",
+      "DonViVanChuyen",
+      "DotGiamGia",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "DanhMuc",
+      "HoaDonChiTiet",
+      "GioHang",
+      "HoaDon",
+      "GioHangChiTiet",
+      "SanPhamChiTiet",
+      "SoDiaChi",
+      "TaiKhoan",
+      "TrangThaiGioHang",
+      "GiaoDichThanhToan",
+      "PhieuGiamGia",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "ThuongHieu",
+      "DonViVanChuyen",
+      "DotGiamGia",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "GuestCartService",
+    "repositories": [
+      "TrangThaiGioHangRepository",
+      "trangThaiGioHangRepository",
+      "SanPhamChiTietRepository",
+      "GioHangChiTietRepository",
+      "khachHangRepository",
+      "gioHangRepository",
+      "gioHangChiTietRepository",
+      "KhachHangRepository",
+      "GioHangRepository",
+      "sanPhamChiTietRepository"
+    ],
+    "entities": [
+      "TrangThaiGioHang",
+      "GioHang",
+      "SanPhamChiTiet",
+      "GioHangChiTiet",
+      "SanPham",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "TrangThaiGioHang",
+      "GioHang",
+      "SanPhamChiTiet",
+      "GioHangChiTiet",
+      "SanPham",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "GuestCheckoutService",
+    "repositories": [
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "khachHangRepository",
+      "tokenRepository",
+      "KhachHangRepository",
+      "TokenKhoiPhucRepository"
+    ],
+    "entities": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang",
+      "TokenKhoiPhuc"
+    ],
+    "tablesAffected": [
+      "NhanVien",
+      "MaKhoiPhuc",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "OrderViewService",
+    "repositories": [
+      "NhanVienRepository",
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "SanPhamChiTietRepository",
+      "hoaDonRepository",
+      "khachHangRepository",
+      "EditLogRepository",
+      "sanPhamRepository",
+      "HoaDonRepository",
+      "SanPhamRepository",
+      "HoaDonChiTietRepository",
+      "hoaDonChiTietRepository",
+      "editLogRepository",
+      "nhanVienRepository",
+      "KhachHangRepository",
+      "sanPhamChiTietRepository"
+    ],
+    "entities": [
+      "EditLog",
+      "TaiKhoan",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "NhanVien",
+      "DonViVanChuyen",
+      "HoaDonChiTiet",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "EditLog",
+      "TaiKhoan",
+      "HoaDon",
+      "SanPhamChiTiet",
+      "PhuongThucThanhToan",
+      "SanPham",
+      "NhanVien",
+      "DonViVanChuyen",
+      "HoaDonChiTiet",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "PaymentGatewayService",
+    "repositories": [],
+    "entities": [],
+    "tablesAffected": [],
+    "transactional": false
+  },
+  {
+    "service": "SepayGatewayService",
+    "repositories": [
+      "hoaDonRepository",
+      "SanPhamChiTietRepository",
+      "GioHangChiTietRepository",
+      "HoaDonRepository",
+      "gioHangRepository",
+      "HoaDonChiTietRepository",
+      "hoaDonChiTietRepository",
+      "paymentTransactionRepository",
+      "PaymentTransactionRepository",
+      "gioHangChiTietRepository",
+      "GioHangRepository",
+      "sanPhamChiTietRepository"
+    ],
+    "entities": [
+      "HoaDon",
+      "GioHang",
+      "GioHangChiTiet",
+      "SanPhamChiTiet",
+      "SanPham",
+      "PaymentTransaction",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "HoaDon",
+      "GioHang",
+      "GioHangChiTiet",
+      "SanPhamChiTiet",
+      "GiaoDichThanhToan",
+      "SanPham",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "DanhGiaService",
+    "repositories": [
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "khachHangRepository",
+      "commentViolationLogRepository",
+      "DanhGiaDAO",
+      "ThongBaoRepository",
+      "CommentViolationLogRepository",
+      "sanPhamRepository",
+      "SanPhamRepository",
+      "HoaDonChiTietRepository",
+      "hoaDonChiTietRepository",
+      "danhGiaAnhRepository",
+      "thongBaoRepository",
+      "KhachHangRepository",
+      "DanhGiaAnhRepository",
+      "danhGiaDAO"
+    ],
+    "entities": [
+      "CommentViolationLog",
+      "DanhGia",
+      "TaiKhoan",
+      "HoaDon",
+      "DanhGiaAnh",
+      "SanPham",
+      "ThongBao",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "CommentViolationLog",
+      "DanhGia",
+      "TaiKhoan",
+      "HoaDon",
+      "DanhGiaAnh",
+      "SanPham",
+      "ThongBao",
+      "HoaDonChiTiet",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "DanhMucService",
+    "repositories": [
+      "danhMucRepository",
+      "DanhMucRepository"
+    ],
+    "entities": [
+      "DanhMuc"
+    ],
+    "tablesAffected": [
+      "DanhMuc"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "PricingService",
+    "repositories": [],
+    "entities": [
+      "SanPham",
+      "SanPhamChiTiet"
+    ],
+    "tablesAffected": [
+      "SanPham",
+      "SanPhamChiTiet"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "PricingServiceImpl",
+    "repositories": [],
+    "entities": [
+      "HoaDon",
+      "SanPhamChiTiet",
+      "SanPham",
+      "DotGiamGia",
+      "HoaDonChiTiet"
+    ],
+    "tablesAffected": [
+      "HoaDon",
+      "SanPhamChiTiet",
+      "SanPham",
+      "DotGiamGia",
+      "HoaDonChiTiet"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "SanPhamYeuThichService",
+    "repositories": [
+      "SanPhamChiTietRepository",
+      "khachHangRepository",
+      "sanPhamChiTietRepository",
+      "sanPhamRepository",
+      "SanPhamRepository",
+      "KhachHangRepository",
+      "yeuThichRepository",
+      "SanPhamYeuThichRepository"
+    ],
+    "entities": [
+      "DanhMuc",
+      "TaiKhoan",
+      "SanPhamChiTiet",
+      "SanPhamYeuThich",
+      "SanPham",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "tablesAffected": [
+      "DanhMuc",
+      "TaiKhoan",
+      "SanPhamChiTiet",
+      "SanPhamYeuThich",
+      "SanPham",
+      "KhachHang",
+      "HinhAnhSanPham"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "ThuongHieuService",
+    "repositories": [
+      "thuongHieuRepository",
+      "ThuongHieuRepository"
+    ],
+    "entities": [
+      "ThuongHieu"
+    ],
+    "tablesAffected": [
+      "ThuongHieu"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "UserAddressService",
+    "repositories": [
+      "soDiaChiRepository",
+      "SoDiaChiRepository"
+    ],
+    "entities": [
+      "SoDiaChi",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "SoDiaChi",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "UserDangKyService",
+    "repositories": [
+      "KhachHangRepository",
+      "TaiKhoanRepository",
+      "taiKhoanRepository",
+      "khachHangRepository"
+    ],
+    "entities": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "UserDangNhapService",
+    "repositories": [
+      "KhachHangRepository",
+      "TaiKhoanRepository",
+      "taiKhoanRepository",
+      "khachHangRepository"
+    ],
+    "entities": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "NhanVien",
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "transactional": false
+  },
+  {
+    "service": "UserDashboardService",
+    "repositories": [
+      "KhachHangRepository",
+      "khachHangRepository"
+    ],
+    "entities": [
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "tablesAffected": [
+      "TaiKhoan",
+      "KhachHang"
+    ],
+    "transactional": true
+  },
+  {
+    "service": "UserQuenMatKhauService",
+    "repositories": [
+      "taiKhoanRepository",
+      "TaiKhoanRepository",
+      "tokenRepository",
+      "TokenKhoiPhucRepository"
+    ],
+    "entities": [
+      "TaiKhoan",
+      "TokenKhoiPhuc"
+    ],
+    "tablesAffected": [
+      "TaiKhoan",
+      "MaKhoiPhuc"
+    ],
+    "transactional": true
+  }
+]

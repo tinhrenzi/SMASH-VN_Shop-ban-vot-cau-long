@@ -27,6 +27,9 @@ public class HoaDonChiTiet {
     @Column(name = "don_gia", nullable = false)
     private BigDecimal donGia;
 
+    @Column(name = "thanh_tien")
+    private BigDecimal thanhTien;
+
     @Column(name = "gia_niem_yet")
     private BigDecimal giaNiemYet;
 

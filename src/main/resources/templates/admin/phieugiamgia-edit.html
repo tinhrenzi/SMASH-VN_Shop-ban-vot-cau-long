@@ -45,19 +45,11 @@
                             <form th:action="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${voucher.id})}" method="POST" id="voucherForm">
                                 <div class="row g-4">
                                     <!-- Mã phiếu -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <label for="maPhieu" class="form-label fw-bold">Mã Phiếu Giảm Giá <span class="text-danger">*</span></label>
                                         <input type="text" id="maPhieu" name="maPhieu" th:value="${voucher.maPhieu}" class="form-control font-monospace text-uppercase" placeholder="Ví dụ: WINTERSALE50" required style="letter-spacing: 0.1em;">
                                         <div class="form-text">Mã viết liền không dấu, không khoảng cách, sẽ tự động chuyển thành chữ hoa.</div>
-                                    </div>
-
-                                    <!-- Loại giảm giá -->
-                                    <div class="col-md-6">
-                                        <label for="loaiGiamGia" class="form-label fw-bold">Phân Loại Voucher <span class="text-danger">*</span></label>
-                                        <select id="loaiGiamGia" name="loaiGiamGia" class="form-select" required>
-                                            <option value="Giảm trực tiếp" th:selected="${voucher.loaiGiamGia == 'Giảm trực tiếp'}">Giảm trực tiếp</option>
-                                            <option value="Giảm phần trăm" th:selected="${voucher.loaiGiamGia == 'Giảm phần trăm'}">Giảm phần trăm</option>
-                                        </select>
+                                        <input type="hidden" id="loaiGiamGia" name="loaiGiamGia" th:value="${voucher.loaiGiamGia != null ? voucher.loaiGiamGia : 'Giảm trực tiếp'}" />
                                     </div>
 
                                     <!-- Giá trị giảm -->
@@ -136,7 +128,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const loaiGiamGiaSelect = document.getElementById('loaiGiamGia');
+    const loaiGiamGiaInput = document.getElementById('loaiGiamGia');
     const donViSelect = document.getElementById('donVi');
     const maPhieuInput = document.getElementById('maPhieu');
     const voucherForm = document.getElementById('voucherForm');
@@ -162,26 +154,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Auto-sync Voucher Type and Unit
-    loaiGiamGiaSelect.addEventListener('change', function() {
-        if (this.value === 'Giảm trực tiếp') {
-            donViSelect.value = 'VND';
-        } else if (this.value === 'Giảm phần trăm') {
-            donViSelect.value = '%';
+    function syncLoaiGiamGia() {
+        if (donViSelect.value === 'VND') {
+            loaiGiamGiaInput.value = 'Giảm trực tiếp';
+        } else if (donViSelect.value === '%') {
+            loaiGiamGiaInput.value = 'Giảm phần trăm';
         }
         updateCapVisibility();
-    });
+    }
 
-    donViSelect.addEventListener('change', function() {
-        if (this.value === 'VND') {
-            loaiGiamGiaSelect.value = 'Giảm trực tiếp';
-        } else if (this.value === '%') {
-            loaiGiamGiaSelect.value = 'Giảm phần trăm';
-        }
-        updateCapVisibility();
-    });
+    donViSelect.addEventListener('change', syncLoaiGiamGia);
 
     // Init on page load
-    updateCapVisibility();
+    syncLoaiGiamGia();
 
     // Form submit validation
     voucherForm.addEventListener('submit', function(e) {

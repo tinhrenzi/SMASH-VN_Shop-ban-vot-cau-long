@@ -11,6 +11,9 @@ public class DonViVanChuyen {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "ma_don_vi", length = 50)
+    private String maDonVi;
+
     @Column(name = "ten_don_vi", length = 100)
     private String tenDonVi;
 

@@ -80,7 +80,8 @@ public class PendingOrderDeletionBugTest {
         testKh.setTaiKhoan(testTk);
         testKh.setHoKh("Test");
         testKh.setTenKh("User");
-        testKh.setSoDienThoaiKh("0900000000");
+        String uniqueSdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        testKh.setSoDienThoaiKh(uniqueSdt);
         testKh.setLaTaiKhoanNoiBo(false);
         testKh = khachHangRepository.save(testKh);
     }
@@ -93,7 +94,7 @@ public class PendingOrderDeletionBugTest {
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
         hd.setTongTien(new BigDecimal("500000"));
         hd.setDiaChiNhan("123 Street");
-        hd.setSdtNhan("0900000000");
+        hd.setSdtNhan(testKh.getSoDienThoaiKh());
         hd.setMaDonHang("PENDING-BUG-ORDER-" + System.nanoTime());
         hd.setDonViVanChuyen(testDvvc);
         hd.setPhuongThucThanhToan(testPttt);

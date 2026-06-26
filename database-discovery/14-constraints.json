@@ -1,0 +1,1305 @@
+{
+  "primaryKeys": [
+    {
+      "table": "Blog",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_Blog"
+    },
+    {
+      "table": "BlogComment",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_BlogComment"
+    },
+    {
+      "table": "ChatConversation",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_ChatConversation"
+    },
+    {
+      "table": "ChatFeedback",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_ChatFeedback"
+    },
+    {
+      "table": "ChatMessage",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_ChatMessage"
+    },
+    {
+      "table": "CommentModerationKeyword",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_CommentModerationKeyword"
+    },
+    {
+      "table": "CommentViolationLog",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_CommentViolationLog"
+    },
+    {
+      "table": "DanhGia",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_DanhGia"
+    },
+    {
+      "table": "DanhGiaAnh",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_DanhGiaAnh"
+    },
+    {
+      "table": "DanhMuc",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_DanhMuc"
+    },
+    {
+      "table": "DonViVanChuyen",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_DonViVanChuyen"
+    },
+    {
+      "table": "DotGiamGia",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_DotGiamGia"
+    },
+    {
+      "table": "EditLog",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_EditLog"
+    },
+    {
+      "table": "GioHang",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_GioHang"
+    },
+    {
+      "table": "GioHangChiTiet",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_GioHangChiTiet"
+    },
+    {
+      "table": "HinhAnhSanPham",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_HinhAnhSanPham"
+    },
+    {
+      "table": "HoaDon",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_HoaDon"
+    },
+    {
+      "table": "HoaDonChiTiet",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_HoaDonChiTiet"
+    },
+    {
+      "table": "KhachHang",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_KhachHang"
+    },
+    {
+      "table": "NhanVien",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_NhanVien"
+    },
+    {
+      "table": "GiaoDichThanhToan",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_GiaoDichThanhToan"
+    },
+    {
+      "table": "PhieuGiamGia",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_PhieuGiamGia"
+    },
+    {
+      "table": "PhuongThucThanhToan",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_PhuongThucThanhToan"
+    },
+    {
+      "table": "SanPham",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_SanPham"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_SanPhamChiTiet"
+    },
+    {
+      "table": "SanPhamYeuThich",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_SanPhamYeuThich"
+    },
+    {
+      "table": "SoDiaChi",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_SoDiaChi"
+    },
+    {
+      "table": "TaiKhoan",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_TaiKhoan"
+    },
+    {
+      "table": "ThongBao",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_ThongBao"
+    },
+    {
+      "table": "ThuongHieu",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_ThuongHieu"
+    },
+    {
+      "table": "MaKhoiPhuc",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_MaKhoiPhuc"
+    },
+    {
+      "table": "TrangThaiGioHang",
+      "columns": [
+        "id"
+      ],
+      "constraintName": "PK_TrangThaiGioHang"
+    }
+  ],
+  "foreignKeys": [
+    {
+      "constraintName": "FK_GioHangChiTiet_GioHang",
+      "table": "GioHangChiTiet",
+      "columns": [
+        "id_gio_hang"
+      ],
+      "referencedTable": "GioHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_GioHangChiTiet_SPCT",
+      "table": "GioHangChiTiet",
+      "columns": [
+        "id_san_pham_chi_tiet"
+      ],
+      "referencedTable": "SanPhamChiTiet",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_GioHangChiTiet_TrangThai",
+      "table": "GioHangChiTiet",
+      "columns": [
+        "id_trang_thai"
+      ],
+      "referencedTable": "TrangThaiGioHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_KhachHang",
+      "table": "HoaDon",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_NhanVien",
+      "table": "HoaDon",
+      "columns": [
+        "id_nhan_vien"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_PTTT",
+      "table": "HoaDon",
+      "columns": [
+        "id_phuong_thuc_thanh_toan"
+      ],
+      "referencedTable": "PhuongThucThanhToan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_DVVC",
+      "table": "HoaDon",
+      "columns": [
+        "id_don_vi_van_chuyen"
+      ],
+      "referencedTable": "DonViVanChuyen",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_DiaChi",
+      "table": "HoaDon",
+      "columns": [
+        "id_dia_chi"
+      ],
+      "referencedTable": "SoDiaChi",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_PhieuGiamGia",
+      "table": "HoaDon",
+      "columns": [
+        "id_phieu_giam_gia"
+      ],
+      "referencedTable": "PhieuGiamGia",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_NhanVien_XacNhan",
+      "table": "HoaDon",
+      "columns": [
+        "id_nhan_vien_xac_nhan"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDon_NhanVien_XacNhanHoanTien",
+      "table": "HoaDon",
+      "columns": [
+        "id_nhan_vien_xac_nhan_hoan_tien"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDonChiTiet_HoaDon",
+      "table": "HoaDonChiTiet",
+      "columns": [
+        "id_hoa_don"
+      ],
+      "referencedTable": "HoaDon",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HoaDonChiTiet_SPCT",
+      "table": "HoaDonChiTiet",
+      "columns": [
+        "id_san_pham_chi_tiet"
+      ],
+      "referencedTable": "SanPhamChiTiet",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_TichHopVanChuyen_HoaDon",
+      "table": "TichHopVanChuyen",
+      "columns": [
+        "id_hoa_don"
+      ],
+      "referencedTable": "HoaDon",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_GiaoDichThanhToan_HoaDon",
+      "table": "GiaoDichThanhToan",
+      "columns": [
+        "id_hoa_don"
+      ],
+      "referencedTable": "HoaDon",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_LichSu_HoaDon",
+      "table": "LichSuTrangThaiDonHang",
+      "columns": [
+        "id_hoa_don"
+      ],
+      "referencedTable": "HoaDon",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_SanPham",
+      "table": "DanhGia",
+      "columns": [
+        "id_san_pham"
+      ],
+      "referencedTable": "SanPham",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_KhachHang",
+      "table": "DanhGia",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_TaiKhoan_Xoa",
+      "table": "DanhGia",
+      "columns": [
+        "id_nguoi_xoa"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_TaiKhoan_AnBL",
+      "table": "DanhGia",
+      "columns": [
+        "id_nguoi_an_binh_luan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_TaiKhoan_HienBL",
+      "table": "DanhGia",
+      "columns": [
+        "id_nguoi_hien_binh_luan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_TaiKhoan_AnHA",
+      "table": "DanhGia",
+      "columns": [
+        "id_nguoi_an_hinh_anh"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGia_TaiKhoan_HienHA",
+      "table": "DanhGia",
+      "columns": [
+        "id_nguoi_hien_hinh_anh"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DanhGiaAnh_DanhGia",
+      "table": "DanhGiaAnh",
+      "columns": [
+        "id_danh_gia"
+      ],
+      "referencedTable": "DanhGia",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "CASCADE"
+    },
+    {
+      "constraintName": "FK_Blog_TaiKhoan",
+      "table": "Blog",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_KhachHang_TaiKhoan",
+      "table": "KhachHang",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_BlogComment_Blog",
+      "table": "BlogComment",
+      "columns": [
+        "id_blog"
+      ],
+      "referencedTable": "Blog",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "CASCADE"
+    },
+    {
+      "constraintName": "FK_BlogComment_TaiKhoan",
+      "table": "BlogComment",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_BlogComment_Parent",
+      "table": "BlogComment",
+      "columns": [
+        "id_binh_luan_cha"
+      ],
+      "referencedTable": "BlogComment",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_NhanVien_TaiKhoan",
+      "table": "NhanVien",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_ThongBao_TaiKhoan",
+      "table": "ThongBao",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "CASCADE"
+    },
+    {
+      "constraintName": "FK_CommentViolationLog_DanhGia",
+      "table": "CommentViolationLog",
+      "columns": [
+        "id_danh_gia"
+      ],
+      "referencedTable": "DanhGia",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "SET NULL"
+    },
+    {
+      "constraintName": "FK_SoDiaChi_KhachHang",
+      "table": "SoDiaChi",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_ChatConversation_KhachHang",
+      "table": "ChatConversation",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_ChatMessage_Conversation",
+      "table": "ChatMessage",
+      "columns": [
+        "id_cuoc_tro_chuyen"
+      ],
+      "referencedTable": "ChatConversation",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_ChatFeedback_Message",
+      "table": "ChatFeedback",
+      "columns": [
+        "id_tin_nhan"
+      ],
+      "referencedTable": "ChatMessage",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPham_DanhMuc",
+      "table": "SanPham",
+      "columns": [
+        "id_danh_muc"
+      ],
+      "referencedTable": "DanhMuc",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPham_ThuongHieu",
+      "table": "SanPham",
+      "columns": [
+        "id_thuong_hieu"
+      ],
+      "referencedTable": "ThuongHieu",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPham_NhanVien",
+      "table": "SanPham",
+      "columns": [
+        "id_nhan_vien"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_EditLog_TaiKhoan",
+      "table": "EditLog",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPhamChiTiet_SanPham",
+      "table": "SanPhamChiTiet",
+      "columns": [
+        "id_san_pham"
+      ],
+      "referencedTable": "SanPham",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_HinhAnhSanPham_SPCT",
+      "table": "HinhAnhSanPham",
+      "columns": [
+        "id_san_pham_chi_tiet"
+      ],
+      "referencedTable": "SanPhamChiTiet",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_MaKhoiPhuc_TaiKhoan",
+      "table": "MaKhoiPhuc",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "referencedTable": "TaiKhoan",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPhamYeuThich_KhachHang",
+      "table": "SanPhamYeuThich",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPhamYeuThich_SanPham",
+      "table": "SanPhamYeuThich",
+      "columns": [
+        "id_san_pham"
+      ],
+      "referencedTable": "SanPham",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_PhieuGiamGia_NhanVien",
+      "table": "PhieuGiamGia",
+      "columns": [
+        "id_nhan_vien"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_DotGiamGia_NhanVien",
+      "table": "DotGiamGia",
+      "columns": [
+        "id_nhan_vien"
+      ],
+      "referencedTable": "NhanVien",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPham_DotGiamGia_SP",
+      "table": "SanPham_DotGiamGia",
+      "columns": [
+        "id_san_pham"
+      ],
+      "referencedTable": "SanPham",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_SanPham_DotGiamGia_DGG",
+      "table": "SanPham_DotGiamGia",
+      "columns": [
+        "id_dot_giam_gia"
+      ],
+      "referencedTable": "DotGiamGia",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    },
+    {
+      "constraintName": "FK_GioHang_KhachHang",
+      "table": "GioHang",
+      "columns": [
+        "id_khach_hang"
+      ],
+      "referencedTable": "KhachHang",
+      "referencedColumns": [
+        "id"
+      ],
+      "deleteRule": "NO ACTION"
+    }
+  ],
+  "uniqueConstraints": [
+    {
+      "table": "ChatConversation",
+      "columns": [
+        "session_id"
+      ],
+      "constraintName": "IX_ChatConversation_Session_Unique"
+    },
+    {
+      "table": "DanhGia",
+      "columns": [
+        "id_khach_hang",
+        "id_san_pham"
+      ],
+      "constraintName": "UX_DanhGia_KH_SP_Active"
+    },
+    {
+      "table": "KhachHang",
+      "columns": [
+        "so_dien_thoai_kh"
+      ],
+      "constraintName": "UX_KhachHang_SoDienThoaiKh"
+    },
+    {
+      "table": "KhachHang",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "constraintName": "UX_KhachHang_TaiKhoan"
+    },
+    {
+      "table": "MaKhoiPhuc",
+      "columns": [
+        "token"
+      ],
+      "constraintName": "IX_MaKhoiPhuc_Token_Unique"
+    },
+    {
+      "table": "NhanVien",
+      "columns": [
+        "so_dien_thoai"
+      ],
+      "constraintName": "UX_NhanVien_SoDienThoai"
+    },
+    {
+      "table": "NhanVien",
+      "columns": [
+        "id_tai_khoan"
+      ],
+      "constraintName": "UX_NhanVien_TaiKhoan"
+    },
+    {
+      "table": "PhuongThucThanhToan",
+      "columns": [
+        "ma_phuong_thuc"
+      ],
+      "constraintName": "IX_PTTT_Ma_Unique"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "columns": [
+        "barcode"
+      ],
+      "constraintName": "IX_SPCT_Barcode_Unique"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "columns": [
+        "SKU"
+      ],
+      "constraintName": "IX_SPCT_SKU_Unique"
+    },
+    {
+      "table": "SanPhamYeuThich",
+      "columns": [
+        "id_khach_hang",
+        "id_san_pham"
+      ],
+      "constraintName": "UX_SanPhamYeuThich_KH_SP"
+    }
+  ],
+  "checkConstraints": [
+    {
+      "constraintName": "CK_TaiKhoan",
+      "table": "TaiKhoan",
+      "condition": "[vai_tro]='KH' OR [vai_tro]='NV' OR [vai_tro]='QL'"
+    },
+    {
+      "constraintName": "CK_DanhGia_SoSao",
+      "table": "DanhGia",
+      "condition": "[so_sao]>=(1.0) AND [so_sao]<=(5.0)"
+    },
+    {
+      "constraintName": "CK_Blog_TrangThai",
+      "table": "Blog",
+      "condition": "[trang_thai]='PUBLISHED' OR [trang_thai]='DRAFT'"
+    },
+    {
+      "constraintName": "CK_TaiKhoan_TrangThai_HoatDong",
+      "table": "TaiKhoan",
+      "condition": "[trang_thai]=N'ngung_hoat_dong' OR [trang_thai]=N'tam_khoa' OR [trang_thai]=N'hoat_dong'"
+    },
+    {
+      "constraintName": "CK_PhieuGiamGia",
+      "table": "PhieuGiamGia",
+      "condition": "[don_vi]='VND' OR [don_vi]='%'"
+    },
+    {
+      "constraintName": "CK_TaiKhoan_TrangThaiTaiKhoan_GuestActive",
+      "table": "TaiKhoan",
+      "condition": "[trang_thai_tai_khoan]='ACTIVE' OR [trang_thai_tai_khoan]='GUEST'"
+    },
+    {
+      "constraintName": "CK_TaiKhoan_Counter_NonNegative",
+      "table": "TaiKhoan",
+      "condition": "isnull([so_lan_nhac_nho_vi_pham],(0))>=(0) AND isnull([so_lan_mua_thanh_cong],(0))>=(0)"
+    },
+    {
+      "constraintName": "CK_DanhGia_SoSao_1_5",
+      "table": "DanhGia",
+      "condition": "[so_sao]>=(1) AND [so_sao]<=(5)"
+    },
+    {
+      "constraintName": "CK_PhieuGiamGia_Valid",
+      "table": "PhieuGiamGia",
+      "condition": "([don_vi]='VND' OR [don_vi]='%') AND isnull([gia_tri],(0))>=(0) AND isnull([gia_tri_giam_toi_da],(0))>=(0) AND isnull([gia_tri_don_hang_toi_thieu],(0))>=(0) AND isnull([so_luong_con_lai],(0))>=(0)"
+    },
+    {
+      "constraintName": "CK_DotGiamGia_Valid",
+      "table": "DotGiamGia",
+      "condition": "isnull([phan_tram_giam],(0))>=(0) AND isnull([phan_tram_giam],(0))<=(100) AND ([ngay_bat_dau] IS NULL OR [ngay_ket_thuc] IS NULL OR [ngay_ket_thuc]>=[ngay_bat_dau])"
+    },
+    {
+      "constraintName": "CK_KhachHang_LoaiKhachHang",
+      "table": "KhachHang",
+      "condition": "[loai_khach_hang]='GUEST' OR [loai_khach_hang]='POS' OR [loai_khach_hang]='ONLINE'"
+    },
+    {
+      "constraintName": "CK_KhachHang_NguonTao",
+      "table": "KhachHang",
+      "condition": "[nguon_tao]='ADMIN_CREATE' OR [nguon_tao]='GUEST_CHECKOUT' OR [nguon_tao]='POS_QUICK_CREATE' OR [nguon_tao]='ONLINE_REGISTER'"
+    },
+    {
+      "constraintName": "CK_SanPhamChiTiet_Money_Stock",
+      "table": "SanPhamChiTiet",
+      "condition": "isnull([gia_nhap],(0))>=(0) AND isnull([gia_ban],(0))>=(0) AND isnull([so_luong_ton],(0))>=(0)"
+    },
+    {
+      "constraintName": "CK_HoaDon_LoaiDonHang",
+      "table": "HoaDon",
+      "condition": "[loai_don_hang]='GUEST_CHECKOUT' OR [loai_don_hang]='ONLINE' OR [loai_don_hang]='POS'"
+    },
+    {
+      "constraintName": "CK_HoaDon_Money_NonNegative",
+      "table": "HoaDon",
+      "condition": "isnull([tong_tien_hang],(0))>=(0) AND isnull([so_tien_giam_voucher],(0))>=(0) AND isnull([tong_tien],(0))>=(0) AND isnull([phi_van_chuyen],(0))>=(0) AND isnull([so_tien_giam_gia],(0))>=(0)"
+    }
+  ],
+  "defaultConstraints": [
+    {
+      "table": "Blog",
+      "column": "trang_thai",
+      "value": "'DRAFT'"
+    },
+    {
+      "table": "Blog",
+      "column": "da_xoa",
+      "value": "(0)"
+    },
+    {
+      "table": "Blog",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "Blog",
+      "column": "ngay_cap_nhat",
+      "value": "getdate()"
+    },
+    {
+      "table": "BlogComment",
+      "column": "da_xoa",
+      "value": "(0)"
+    },
+    {
+      "table": "BlogComment",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "ChatConversation",
+      "column": "trang_thai",
+      "value": "'ACTIVE'"
+    },
+    {
+      "table": "ChatConversation",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "ChatFeedback",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "ChatMessage",
+      "column": "thoi_gian",
+      "value": "getdate()"
+    },
+    {
+      "table": "CommentModerationKeyword",
+      "column": "kich_hoat",
+      "value": "(1)"
+    },
+    {
+      "table": "CommentModerationKeyword",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "CommentViolationLog",
+      "column": "ngay_vi_pham",
+      "value": "getdate()"
+    },
+    {
+      "table": "CommentViolationLog",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "DanhGia",
+      "column": "an_binh_luan",
+      "value": "(0)"
+    },
+    {
+      "table": "DanhGia",
+      "column": "an_hinh_anh",
+      "value": "(0)"
+    },
+    {
+      "table": "DanhGia",
+      "column": "da_xoa",
+      "value": "(0)"
+    },
+    {
+      "table": "DanhGia",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "DanhGia",
+      "column": "ngay_cap_nhat",
+      "value": "getdate()"
+    },
+    {
+      "table": "DanhGiaAnh",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "DanhMuc",
+      "column": "trang_thai",
+      "value": "(1)"
+    },
+    {
+      "table": "DonViVanChuyen",
+      "column": "phien_ban",
+      "value": "(0)"
+    },
+    {
+      "table": "DotGiamGia",
+      "column": "trang_thai",
+      "value": "'ACTIVE'"
+    },
+    {
+      "table": "DotGiamGia",
+      "column": "kich_hoat",
+      "value": "(1)"
+    },
+    {
+      "table": "EditLog",
+      "column": "thoi_gian",
+      "value": "getdate()"
+    },
+    {
+      "table": "GiaoDichThanhToan",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "GioHang",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "GioHang",
+      "column": "ngay_cap_nhat",
+      "value": "getdate()"
+    },
+    {
+      "table": "GioHangChiTiet",
+      "column": "ngay_them",
+      "value": "getdate()"
+    },
+    {
+      "table": "HinhAnhSanPham",
+      "column": "la_anh_chinh",
+      "value": "(0)"
+    },
+    {
+      "table": "HoaDon",
+      "column": "trang_thai_don_hang",
+      "value": "N'cho_xac_nhan'"
+    },
+    {
+      "table": "HoaDon",
+      "column": "trang_thai_thanh_toan",
+      "value": "'CHO_THANH_TOAN'"
+    },
+    {
+      "table": "HoaDon",
+      "column": "tong_tien",
+      "value": "(0)"
+    },
+    {
+      "table": "HoaDon",
+      "column": "so_tien_giam_gia",
+      "value": "(0)"
+    },
+    {
+      "table": "HoaDon",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "HoaDon",
+      "column": "phi_van_chuyen",
+      "value": "(0)"
+    },
+    {
+      "table": "KhachHang",
+      "column": "nhan_ban_tin",
+      "value": "(0)"
+    },
+    {
+      "table": "KhachHang",
+      "column": "la_tai_khoan_noi_bo",
+      "value": "(0)"
+    },
+    {
+      "table": "LichSuTrangThaiDonHang",
+      "column": "thoi_gian",
+      "value": "getdate()"
+    },
+    {
+      "table": "MaKhoiPhuc",
+      "column": "da_su_dung",
+      "value": "(0)"
+    },
+    {
+      "table": "PhieuGiamGia",
+      "column": "gia_tri_don_hang_toi_thieu",
+      "value": "(0)"
+    },
+    {
+      "table": "PhieuGiamGia",
+      "column": "so_luong_con_lai",
+      "value": "(0)"
+    },
+    {
+      "table": "PhieuGiamGia",
+      "column": "trang_thai",
+      "value": "'ACTIVE'"
+    },
+    {
+      "table": "PhieuGiamGia",
+      "column": "kich_hoat",
+      "value": "(1)"
+    },
+    {
+      "table": "SanPham",
+      "column": "diem_trung_binh",
+      "value": "(0.0)"
+    },
+    {
+      "table": "SanPham",
+      "column": "so_danh_gia",
+      "value": "(0)"
+    },
+    {
+      "table": "SanPham",
+      "column": "trang_thai",
+      "value": "'dang_ban'"
+    },
+    {
+      "table": "SanPham",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "SanPham",
+      "column": "ngay_cap_nhat",
+      "value": "getdate()"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "column": "gia_nhap",
+      "value": "(0)"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "column": "so_luong_ton",
+      "value": "(0)"
+    },
+    {
+      "table": "SanPhamChiTiet",
+      "column": "trang_thai",
+      "value": "'dang_ban'"
+    },
+    {
+      "table": "SanPhamYeuThich",
+      "column": "ngay_them",
+      "value": "getdate()"
+    },
+    {
+      "table": "SoDiaChi",
+      "column": "la_mac_dinh_giao_hang",
+      "value": "(0)"
+    },
+    {
+      "table": "SoDiaChi",
+      "column": "la_mac_dinh_thanh_toan",
+      "value": "(0)"
+    },
+    {
+      "table": "TaiKhoan",
+      "column": "trang_thai",
+      "value": "N'hoat_dong'"
+    },
+    {
+      "table": "TaiKhoan",
+      "column": "trang_thai_tai_khoan",
+      "value": "'GUEST'"
+    },
+    {
+      "table": "TaiKhoan",
+      "column": "so_lan_nhac_nho_vi_pham",
+      "value": "(0)"
+    },
+    {
+      "table": "TaiKhoan",
+      "column": "so_lan_mua_thanh_cong",
+      "value": "(0)"
+    },
+    {
+      "table": "ThongBao",
+      "column": "da_doc",
+      "value": "(0)"
+    },
+    {
+      "table": "ThongBao",
+      "column": "ngay_tao",
+      "value": "getdate()"
+    },
+    {
+      "table": "ThuongHieu",
+      "column": "trang_thai",
+      "value": "(1)"
+    },
+    {
+      "table": "TichHopVanChuyen",
+      "column": "ngay_cap_nhat",
+      "value": "getdate()"
+    }
+  ]
+}

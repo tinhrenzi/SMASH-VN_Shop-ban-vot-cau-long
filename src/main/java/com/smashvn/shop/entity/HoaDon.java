@@ -34,6 +34,10 @@ public class HoaDon {
     @JoinColumn(name = "id_don_vi_van_chuyen", nullable = false)
     private DonViVanChuyen donViVanChuyen;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_dia_chi")
+    private SoDiaChi diaChi;
+
     @Column(name = "ngay_tao", nullable = false)
     private LocalDateTime ngayTao = LocalDateTime.now();
 
@@ -142,8 +146,20 @@ public class HoaDon {
     @JoinColumn(name = "id_nhan_vien_xac_nhan_hoan_tien")
     private NhanVien refundConfirmedBy;
 
-    @Column(name = "so_tien_giam_gia", nullable = false)
+    @Column(name = "so_tien_giam_voucher")
     private BigDecimal soTienGiamVoucher = BigDecimal.ZERO;
+
+    @Column(name = "loai_don_hang", length = 30)
+    private String loaiDonHang;
+
+    @Column(name = "ngay_cap_nhat")
+    private LocalDateTime ngayCapNhat;
+
+    @Column(name = "ten_nguoi_nhan", length = 100)
+    private String tenNguoiNhan;
+
+    @Column(name = "tong_tien_hang")
+    private BigDecimal tongTienHang = BigDecimal.ZERO;
 
     @Column(name = "ma_giam_gia_ap_dung", length = 50)
     private String maVoucherApDung;
@@ -153,5 +169,39 @@ public class HoaDon {
 
     @Column(name = "mo_ta_giam_gia_snapshot", length = 500)
     private String moTaVoucherSnapshot;
+
+    // Getters overriding Lombok for NULL safety with legacy database records
+    public BigDecimal getSoTienGiamVoucher() {
+        return soTienGiamVoucher == null ? BigDecimal.ZERO : soTienGiamVoucher;
+    }
+
+    public BigDecimal getTongTienHang() {
+        return tongTienHang == null ? BigDecimal.ZERO : tongTienHang;
+    }
+
+    public BigDecimal getTongTien() {
+        return tongTien == null ? BigDecimal.ZERO : tongTien;
+    }
+
+    public BigDecimal getPhiVanChuyen() {
+        return phiVanChuyen == null ? BigDecimal.ZERO : phiVanChuyen;
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeAmounts() {
+        if (this.soTienGiamVoucher == null) {
+            this.soTienGiamVoucher = BigDecimal.ZERO;
+        }
+        if (this.tongTienHang == null) {
+            this.tongTienHang = BigDecimal.ZERO;
+        }
+        if (this.tongTien == null) {
+            this.tongTien = BigDecimal.ZERO;
+        }
+        if (this.phiVanChuyen == null) {
+            this.phiVanChuyen = BigDecimal.ZERO;
+        }
+    }
 }
 

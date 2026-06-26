@@ -20,4 +20,7 @@ public class HinhAnhSanPham {
 
     @Column(name = "mau_sac", length = 50)
     private String mauSac;
+
+    @Column(name = "la_anh_chinh")
+    private Boolean laAnhChinh = false;
 }

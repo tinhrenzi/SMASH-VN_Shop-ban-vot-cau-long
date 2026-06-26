@@ -52,4 +52,22 @@ public class SoDiaChi {
 
     @Column(name = "kinh_do")
     private Double longitude;
+
+    @Column(name = "province_id")
+    private Integer provinceId;
+
+    @Column(name = "district_id")
+    private Integer districtId;
+
+    @Column(name = "ward_code", length = 20)
+    private String wardCode;
+
+    @Column(name = "province_name", length = 100)
+    private String provinceName;
+
+    @Column(name = "district_name", length = 100)
+    private String districtName;
+
+    @Column(name = "ward_name", length = 100)
+    private String wardName;
 }

@@ -32,6 +32,18 @@ public class KhachHang {
     @Column(name = "la_tai_khoan_noi_bo", columnDefinition = "bit not null default 0")
     private boolean laTaiKhoanNoiBo = false;
 
+    @Column(name = "loai_khach_hang", length = 30)
+    private String loaiKhachHang;
+
+    @Column(name = "nguon_tao", length = 50)
+    private String nguonTao;
+
+    @Column(name = "ngay_tao")
+    private java.time.LocalDateTime ngayTao;
+
+    @Column(name = "ngay_cap_nhat")
+    private java.time.LocalDateTime ngayCapNhat;
+
     @OneToMany(mappedBy = "khachHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

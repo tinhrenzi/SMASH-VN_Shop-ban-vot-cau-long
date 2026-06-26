@@ -1,0 +1,22 @@
+{
+  "imageStorage": "FileSystem Local Uploads",
+  "uploadPath": "${APP_UPLOAD_PATH}",
+  "cloudStorage": "None",
+  "databaseFileReferences": [
+    {
+      "entity": "Blog",
+      "column": "hinh_anh",
+      "type": "Relative Reference"
+    },
+    {
+      "entity": "HinhAnhSanPham",
+      "column": "duong_dan",
+      "type": "Relative Reference"
+    },
+    {
+      "entity": "DanhGiaAnh",
+      "column": "duong_dan",
+      "type": "Relative Reference"
+    }
+  ]
+}

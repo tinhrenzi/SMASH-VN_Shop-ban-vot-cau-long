@@ -16,7 +16,7 @@ public class ThongBao {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_tai_khoan", nullable = false)
+    @JoinColumn(name = "id_tai_khoan")
     private TaiKhoan taiKhoan;
 
     @Column(name = "tieu_de", nullable = false)
@@ -27,6 +27,9 @@ public class ThongBao {
 
     @Column(name = "da_doc", nullable = false)
     private Boolean daDoc = false;
+
+    @Column(name = "loai_thong_bao", length = 50)
+    private String loaiThongBao;
 
     @Column(name = "ngay_tao", nullable = false)
     @Builder.Default

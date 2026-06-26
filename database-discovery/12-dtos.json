@@ -1,0 +1,698 @@
+[
+  {
+    "dtoName": "BlogCommentDTO",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "idBlog",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "idTaiKhoan",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "emailTaiKhoan",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "tenHienThi",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "content",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "createdAt",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "deleted",
+        "type": "Boolean",
+        "validationAnnotations": []
+      },
+      {
+        "field": "deletedAt",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "deletedReason",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "deletedByEmail",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "parentCommentId",
+        "type": "Integer",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.Blog"
+  },
+  {
+    "dtoName": "BlogDTO",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "title",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "slug",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "summary",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "content",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "image",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "publishDate",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "author",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "category",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "tags",
+        "type": "List<String>",
+        "validationAnnotations": []
+      },
+      {
+        "field": "commentsCount",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "status",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "deleted",
+        "type": "Boolean",
+        "validationAnnotations": []
+      },
+      {
+        "field": "createdBy",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "createdAt",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "updatedBy",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "updatedAt",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "idNguoiDang",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "emailNguoiDang",
+        "type": "String",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.Blog"
+  },
+  {
+    "dtoName": "ProductSuggestionDto",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "tenSanPham",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "imageUrl",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "giaBan",
+        "type": "BigDecimal",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.SanPham"
+  },
+  {
+    "dtoName": "ChartPointDTO",
+    "fields": [
+      {
+        "field": "year",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "month",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "day",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "hour",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "revenue",
+        "type": "BigDecimal",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "GeneralMetricsDTO",
+    "fields": [],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "OrderStatusCountDTO",
+    "fields": [],
+    "mappedEntity": "com.smashvn.shop.entity.HoaDon"
+  },
+  {
+    "dtoName": "SepayIpnRequest",
+    "fields": [
+      {
+        "field": "transaction",
+        "type": "SepayTransactionDto",
+        "validationAnnotations": [
+          "@JsonAlias({\"transaction\", \"data\"})"
+        ]
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "SepayTransactionDto",
+    "fields": [
+      {
+        "field": "transactionId",
+        "type": "String",
+        "validationAnnotations": [
+          "@JsonAlias({\"id\", \"transactionId\"})"
+        ]
+      },
+      {
+        "field": "transactionDate",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "accountNumber",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "transferAmount",
+        "type": "BigDecimal",
+        "validationAnnotations": []
+      },
+      {
+        "field": "content",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "code",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "referenceCode",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "gateway",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "status",
+        "type": "String",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "TransactionHistoryDTO",
+    "fields": [],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "ZaloPayCallbackDTO",
+    "fields": [
+      {
+        "field": "data",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "mac",
+        "type": "String",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "ZaloPayCreateOrderRequestDTO",
+    "fields": [
+      {
+        "field": "orderId",
+        "type": "Integer",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.HoaDon"
+  },
+  {
+    "dtoName": "ZaloPayResponseDTO",
+    "fields": [
+      {
+        "field": "paymentUrl",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "qrCode",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "appTransId",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "status",
+        "type": "String",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "TopProductDTO",
+    "fields": [],
+    "mappedEntity": "com.smashvn.shop.entity.SanPham"
+  },
+  {
+    "dtoName": "GhnOrderCreateRequestDTO",
+    "fields": [
+      {
+        "field": "payment_type_id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "note",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "required_note",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_phone",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_address",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_ward_name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_district_name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_province_name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_district_id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "from_ward_code",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "to_name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "to_phone",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "to_address",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "to_ward_code",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "to_district_id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "cod_amount",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "weight",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "length",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "width",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "height",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "service_type_id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "items",
+        "type": "java.util.List<GhnItemDTO>",
+        "validationAnnotations": []
+      },
+      {
+        "field": "name",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "code",
+        "type": "String",
+        "validationAnnotations": []
+      },
+      {
+        "field": "quantity",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "price",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "length",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "width",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "height",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "weight",
+        "type": "Integer",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.HoaDon"
+  },
+  {
+    "dtoName": "GhnShipFeeRequestDTO",
+    "fields": [
+      {
+        "field": "serviceTypeId",
+        "type": "Integer",
+        "validationAnnotations": [
+          "@JsonProperty(\"service_type_id\")"
+        ]
+      },
+      {
+        "field": "fromDistrictId",
+        "type": "Integer",
+        "validationAnnotations": [
+          "@JsonProperty(\"from_district_id\")"
+        ]
+      },
+      {
+        "field": "fromWardCode",
+        "type": "String",
+        "validationAnnotations": [
+          "@JsonProperty(\"from_ward_code\")"
+        ]
+      },
+      {
+        "field": "toDistrictId",
+        "type": "Integer",
+        "validationAnnotations": [
+          "@JsonProperty(\"to_district_id\")"
+        ]
+      },
+      {
+        "field": "toWardCode",
+        "type": "String",
+        "validationAnnotations": [
+          "@JsonProperty(\"to_ward_code\")"
+        ]
+      },
+      {
+        "field": "weight",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "length",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "width",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "height",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "insuranceValue",
+        "type": "Integer",
+        "validationAnnotations": [
+          "@JsonProperty(\"insurance_value\")"
+        ]
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.None"
+  },
+  {
+    "dtoName": "UserAddressDto",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Integer",
+        "validationAnnotations": []
+      },
+      {
+        "field": "hoNguoiNhan",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Họ người nhận không được để trống!\")",
+          "@Size(max = 50, message = \"Họ người nhận không được vượt quá 50 ký tự!\")"
+        ]
+      },
+      {
+        "field": "tenNguoiNhan",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Tên người nhận không được để trống!\")",
+          "@Size(max = 50, message = \"Tên người nhận không được vượt quá 50 ký tự!\")"
+        ]
+      },
+      {
+        "field": "sdtNguoiNhan",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Số điện thoại không được để trống!\")",
+          "@Pattern(regexp = \"^(0|\\\\+84)[0-9]{9}$\", message = \"Số điện thoại không đúng định dạng!\")"
+        ]
+      },
+      {
+        "field": "diaChiCuThe",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Địa chỉ cụ thể không được để trống!\")",
+          "@Size(min = 5, max = 255, message = \"Địa chỉ cụ thể phải từ 5 đến 255 ký tự!\")"
+        ]
+      },
+      {
+        "field": "tinhThanh",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Tỉnh/Thành phố không được để trống!\")",
+          "@Size(max = 100, message = \"Tỉnh/Thành phố không được vượt quá 100 ký tự!\")"
+        ]
+      },
+      {
+        "field": "quocGia",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Quốc gia không được để trống!\")",
+          "@Size(max = 100, message = \"Quốc gia không được vượt quá 100 ký tự!\")"
+        ]
+      },
+      {
+        "field": "latitude",
+        "type": "Double",
+        "validationAnnotations": []
+      },
+      {
+        "field": "longitude",
+        "type": "Double",
+        "validationAnnotations": []
+      },
+      {
+        "field": "defaultAddress",
+        "type": "boolean",
+        "validationAnnotations": []
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.SoDiaChi"
+  },
+  {
+    "dtoName": "UserProfileEditDto",
+    "fields": [
+      {
+        "field": "ho",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Họ không được để trống!\")",
+          "@Size(max = 50, message = \"Họ không được vượt quá 50 ký tự!\")"
+        ]
+      },
+      {
+        "field": "ten",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Tên không được để trống!\")",
+          "@Size(max = 50, message = \"Tên không được vượt quá 50 ký tự!\")"
+        ]
+      },
+      {
+        "field": "sdt",
+        "type": "String",
+        "validationAnnotations": [
+          "@NotBlank(message = \"Số điện thoại không được để trống!\")",
+          "@Pattern(regexp = \"^(\\\\+84|0)(3|5|7|8|9)[0-9]{8}$\", message = \"Số điện thoại không đúng định dạng Việt Nam!\")"
+        ]
+      }
+    ],
+    "mappedEntity": "com.smashvn.shop.entity.TaiKhoan"
+  }
+]

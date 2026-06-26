@@ -490,7 +490,7 @@ public class AdminKhuyenMaiService {
         pgg.setNgayKetThuc(end);
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
-        pgg.setLoaiGiamGia(loaiGiamGia);
+        pgg.setLoaiGiamGia("%".equals(donVi) ? "Giảm phần trăm" : "Giảm trực tiếp");
         pgg.setGiaTriGiamToiDa(resolvedCap);
         pgg.setNhanVien(nv);
         pgg.setActive(true);
@@ -559,7 +559,7 @@ public class AdminKhuyenMaiService {
         pgg.setNgayKetThuc(end);
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
-        pgg.setLoaiGiamGia(loaiGiamGia);
+        pgg.setLoaiGiamGia("%".equals(donVi) ? "Giảm phần trăm" : "Giảm trực tiếp");
         pgg.setGiaTriGiamToiDa(resolvedCap);
         pgg.setActive(true);
 
@@ -668,17 +668,6 @@ public class AdminKhuyenMaiService {
         }
         if (!"%".equals(donVi) && !"VND".equals(donVi)) {
             throw new PromotionValidationException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VND'.");
-        }
-        if (!"Giảm trực tiếp".equals(loaiGiamGia) && !"Giảm phần trăm".equals(loaiGiamGia)) {
-            throw new PromotionValidationException("Phân loại voucher không hợp lệ! Chỉ cho phép 'Giảm trực tiếp' hoặc 'Giảm phần trăm'.");
-        }
-
-        // Đảm bảo đơn vị và loại nhất quán với nhau
-        if ("%".equals(donVi) && !"Giảm phần trăm".equals(loaiGiamGia)) {
-            throw new PromotionValidationException("Đơn vị '%' và loại giảm giá phải là 'Giảm phần trăm'!");
-        }
-        if ("VND".equals(donVi) && !"Giảm trực tiếp".equals(loaiGiamGia)) {
-            throw new PromotionValidationException("Đơn vị 'VND' và loại giảm giá phải là 'Giảm trực tiếp'!");
         }
 
         // Validate giá trị giảm theo từng loại đơn vị

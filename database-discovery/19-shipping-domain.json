@@ -1,0 +1,20 @@
+{
+  "carrier": "GHN (Giao Hang Nhanh)",
+  "integration": "GhnService.java via external API client",
+  "statuses": [
+    "ready_to_pick",
+    "picking",
+    "delivering",
+    "delivered",
+    "cancel"
+  ],
+  "tracking": "TichHopVanChuyen.ghn_status (synchronized via GHN Webhook callback)",
+  "lifecycle": [
+    "Customer selects shipping / pays order",
+    "Admin confirms order and registers with GHN API",
+    "GHN returns tracking code (saved in TichHopVanChuyen.ghn_order_code)",
+    "GHN pick-up courier retrieves package (status transitions to delivering)",
+    "GHN courier delivers package (status transitions to delivered)",
+    "Internal order status marked as da_giao"
+  ]
+}

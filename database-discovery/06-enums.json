@@ -1,0 +1,158 @@
+[
+  {
+    "enum": "com.smashvn.shop.entity.AccountStatus",
+    "values": [
+      "GUEST",
+      "ACTIVE"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [
+        "com.smashvn.shop.entity.TaiKhoan"
+      ],
+      "dtos": [],
+      "services": [
+        "GuestCheckoutService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.BlogStatus",
+    "values": [
+      "DRAFT",
+      "PUBLISHED"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [
+        "com.smashvn.shop.entity.Blog"
+      ],
+      "dtos": [],
+      "services": [
+        "BlogService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.OrderStatus",
+    "values": [
+      "CHO_THANH_TOAN",
+      "CHO_XAC_NHAN",
+      "DA_XAC_NHAN",
+      "DANG_GIAO",
+      "DANG_LAY_HANG",
+      "DA_GIAO",
+      "DA_HUY",
+      "STOCK_CONFLICT"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [],
+      "dtos": [
+        "OrderStatusCountDTO"
+      ],
+      "services": [
+        "GioHangService",
+        "SepayGatewayService",
+        "AdminPosService",
+        "OrderViewService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.PaymentMethod",
+    "values": [
+      "COD",
+      "SEPAY",
+      "ZALOPAY"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [],
+      "dtos": [],
+      "services": [
+        "GioHangService",
+        "GhnService",
+        "AdminThongKeService",
+        "OrderViewService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.PaymentStatus",
+    "values": [
+      "PENDING",
+      "PAID",
+      "FAILED",
+      "REFUNDED",
+      "PAID_RECEIVED_AFTER_CANCEL",
+      "AMOUNT_MISMATCH"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [],
+      "dtos": [],
+      "services": [
+        "SepayGatewayService",
+        "AdminThongKeService",
+        "OrderViewService",
+        "GioHangService",
+        "GhnService",
+        "AdminPosService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.RefundStatus",
+    "values": [
+      "PENDING",
+      "COMPLETED"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [
+        "com.smashvn.shop.entity.HoaDon"
+      ],
+      "dtos": [],
+      "services": [
+        "AdminThongKeService",
+        "OrderViewService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.ReturnStatus",
+    "values": [
+      "PENDING_RETURN",
+      "RETURNED",
+      "LOST",
+      "DAMAGED"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [
+        "com.smashvn.shop.entity.HoaDon"
+      ],
+      "dtos": [],
+      "services": [
+        "OrderViewService"
+      ]
+    }
+  },
+  {
+    "enum": "com.smashvn.shop.entity.ShippingZone",
+    "values": [
+      "LOCAL",
+      "NATIONWIDE"
+    ],
+    "databaseRepresentation": "STRING",
+    "usedBy": {
+      "entities": [],
+      "dtos": [],
+      "services": [
+        "ShippingZoneResolver",
+        "ShippingFeeCalculator"
+      ]
+    }
+  }
+]

@@ -3,6 +3,7 @@ package com.smashvn.shop.entity;
 
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -92,4 +93,10 @@ public class SanPham {
 
     @Column(name = "diem_trung_binh", nullable = false)
     private Double diemTrungBinh = 0.0;
+
+    @Column(name = "ngay_tao")
+    private LocalDateTime ngayTao = LocalDateTime.now();
+
+    @Column(name = "ngay_cap_nhat")
+    private LocalDateTime ngayCapNhat = LocalDateTime.now();
 }
