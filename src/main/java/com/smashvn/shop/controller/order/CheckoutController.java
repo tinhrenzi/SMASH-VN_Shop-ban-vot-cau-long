@@ -26,6 +26,7 @@ import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SoDiaChiRepository;
+import com.smashvn.shop.util.PhoneUtils;
 import com.smashvn.shop.util.VoucherCalculator;
 import com.smashvn.shop.service.product.PricingService;
 import java.time.LocalDateTime;
@@ -283,7 +284,13 @@ public class CheckoutController {
                 long endAccount = System.currentTimeMillis();
                 log.error("[GuestCheckout] Create inactive account: {}ms - FAILED. Exception: {}", (endAccount - startAccount), e.getMessage(), e);
                 response.put("trangThai", "loi");
-                response.put("message", e.getMessage());
+                if (isPhoneUniqueConstraintViolation(e)) {
+                    response.put("message", "Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.");
+                } else if (e instanceof org.springframework.dao.DataIntegrityViolationException || isDatabaseException(e)) {
+                    response.put("message", "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
+                } else {
+                    response.put("message", e.getMessage());
+                }
                 return ResponseEntity.ok(response);
             }
         } else {
@@ -315,6 +322,12 @@ public class CheckoutController {
             if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
                 response.put("trangThai", "loi");
                 response.put("message", "Địa chỉ nhận hàng không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+            // Mandatory check for GHN IDs on new address checkout
+            if (ghnProvinceId == null || ghnToDistrictId == null || ghnToWardCode == null || ghnToWardCode.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã để sử dụng địa chỉ nhận hàng.");
                 return ResponseEntity.ok(response);
             }
         }
@@ -449,6 +462,12 @@ public class CheckoutController {
                         newAddress.setThanhPho(thanhPhoVal);
                         newAddress.setQuocGia("Việt Nam");
                         newAddress.setMaBuuDien("700000");
+                        newAddress.setProvinceId(ghnProvinceId);
+                        newAddress.setDistrictId(ghnToDistrictId);
+                        newAddress.setWardCode(ghnToWardCode);
+                        newAddress.setProvinceName(tinhThanhVal);
+                        newAddress.setDistrictName(thanhPhoVal);
+                        newAddress.setWardName(phuongXaText != null ? phuongXaText.trim() : null);
                         
                         if (setAsDefault) {
                             newAddress.setDefaultShipping(true);
@@ -540,7 +559,13 @@ public class CheckoutController {
             long endPipeline = System.currentTimeMillis();
             log.error("[GuestCheckout] Guest checkout pipeline failed in {}ms. Exception: {}", (endPipeline - startPipeline), e.getMessage(), e);
             response.put("trangThai", "loi");
-            response.put("message", e.getMessage());
+            if (isPhoneUniqueConstraintViolation(e)) {
+                response.put("message", "Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.");
+            } else if (e instanceof org.springframework.dao.DataIntegrityViolationException || isDatabaseException(e)) {
+                response.put("message", "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
+            } else {
+                response.put("message", e.getMessage());
+            }
             return ResponseEntity.ok(response);
         }
     }
@@ -817,5 +842,32 @@ public class CheckoutController {
         public boolean isExpired() {
             return java.time.Instant.now().isAfter(expiresAt);
         }
+    }
+
+    private boolean isPhoneUniqueConstraintViolation(Throwable e) {
+        if (e == null) return false;
+        Throwable current = e;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null && msg.contains("UX_KhachHang_SoDienThoaiKh")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean isDatabaseException(Throwable e) {
+        if (e == null) return false;
+        Throwable current = e;
+        while (current != null) {
+            if (current instanceof org.springframework.dao.DataAccessException ||
+                current instanceof java.sql.SQLException ||
+                current instanceof org.hibernate.JDBCException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

@@ -7,6 +7,7 @@ import com.smashvn.shop.entity.TokenKhoiPhuc;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
+import com.smashvn.shop.util.PhoneUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,10 +59,54 @@ public class GuestCheckoutService {
             throw new IllegalArgumentException("Email không được để trống");
         }
 
+        // Normalize phone number
+        String normalizedPhone = PhoneUtils.normalize(soDienThoai);
+        if (!normalizedPhone.isEmpty()) {
+            if (!PhoneUtils.isValid(normalizedPhone)) {
+                throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09).");
+            }
+        }
+
         TaiKhoan existingTk = taiKhoanRepository.findByEmail(trimmedEmail);
         if (existingTk != null) {
             log.info("[GUEST_CHECKOUT] Linked order with existing guest account: {}", trimmedEmail);
+            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(existingTk.getId());
+            if (kh != null) {
+                if (!normalizedPhone.isEmpty()) {
+                    KhachHang otherKh = khachHangRepository.findBySoDienThoaiKh(normalizedPhone);
+                    if (otherKh != null && !otherKh.getId().equals(kh.getId())) {
+                        throw new IllegalArgumentException("Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.");
+                    }
+                    kh.setSoDienThoaiKh(normalizedPhone);
+                }
+                
+                // Update name if provided
+                if (hoTen != null && !hoTen.trim().isEmpty()) {
+                    String name = hoTen.trim();
+                    String ho = "Khách";
+                    String ten = "Vãng Lai";
+                    int lastSpace = name.lastIndexOf(' ');
+                    if (lastSpace >= 0) {
+                        ho = name.substring(0, lastSpace).trim();
+                        ten = name.substring(lastSpace + 1).trim();
+                    } else {
+                        ho = "";
+                        ten = name;
+                    }
+                    kh.setHoKh(ho);
+                    kh.setTenKh(ten);
+                }
+                khachHangRepository.save(kh);
+            }
             return existingTk;
+        }
+
+        // Check duplicate phone conflict for new registration against all customers
+        if (!normalizedPhone.isEmpty()) {
+            KhachHang otherKh = khachHangRepository.findBySoDienThoaiKh(normalizedPhone);
+            if (otherKh != null) {
+                throw new IllegalArgumentException("Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.");
+            }
         }
 
         TaiKhoan tk = new TaiKhoan();
@@ -95,7 +140,7 @@ public class GuestCheckoutService {
         kh.setTaiKhoan(savedTk);
         kh.setHoKh(ho);
         kh.setTenKh(ten);
-        kh.setSoDienThoaiKh(soDienThoai != null ? soDienThoai.trim() : "");
+        kh.setSoDienThoaiKh(normalizedPhone);
         kh.setNhanBanTin(false);
 
         khachHangRepository.save(kh);

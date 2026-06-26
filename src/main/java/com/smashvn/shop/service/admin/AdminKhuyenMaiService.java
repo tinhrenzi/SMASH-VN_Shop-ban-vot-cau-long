@@ -1,7 +1,4 @@
 package com.smashvn.shop.service.admin;
-import com.smashvn.shop.service.AuditService;
-import com.smashvn.shop.exception.PromotionValidationException;
-import com.smashvn.shop.util.PromotionValidationConstants;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,7 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -21,23 +17,31 @@ import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.PromotionValidationException;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.util.PromotionValidationConstants;
 
 import lombok.RequiredArgsConstructor;
 
 /**
  * Service xử lý toàn bộ nghiệp vụ QUẢN LÝ KHUYẾN MÃI của admin.
  *
- * <p>Bao gồm hai nhóm chức năng chính:</p>
+ * <p>
+ * Bao gồm hai nhóm chức năng chính:</p>
  * <ol>
- *   <li><b>Đợt giảm giá (Campaign)</b> – áp dụng trực tiếp lên sản phẩm theo % niêm yết.</li>
- *   <li><b>Phiếu giảm giá (Voucher)</b> – khách nhập mã tại trang thanh toán.</li>
+ * <li><b>Đợt giảm giá (Campaign)</b> – áp dụng trực tiếp lên sản phẩm theo %
+ * niêm yết.</li>
+ * <li><b>Phiếu giảm giá (Voucher)</b> – khách nhập mã tại trang thanh
+ * toán.</li>
  * </ol>
  *
- * <p>Mỗi thao tác thêm/sửa/xóa đều ghi {@code EditLog} (audit trail) để truy vết sau này.</p>
+ * <p>
+ * Mỗi thao tác thêm/sửa/xóa đều ghi {@code EditLog} (audit trail) để truy vết
+ * sau này.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -50,16 +54,17 @@ public class AdminKhuyenMaiService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final AuditService auditService;
 
-    /** Định dạng ngày giờ dùng trong audit log và thông báo lỗi. */
+    /**
+     * Định dạng ngày giờ dùng trong audit log và thông báo lỗi.
+     */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ==========================================
     // ĐỢT GIẢM GIÁ (CAMPAIGN) – CÁC PHƯƠNG THỨC
     // ==========================================
-
     /**
-     * Lấy toàn bộ danh sách đợt giảm giá (kể cả đã vô hiệu hóa).
-     * Dùng để hiển thị bảng quản lý tại trang admin.
+     * Lấy toàn bộ danh sách đợt giảm giá (kể cả đã vô hiệu hóa). Dùng để hiển
+     * thị bảng quản lý tại trang admin.
      *
      * @return danh sách tất cả {@link DotGiamGia}.
      */
@@ -84,25 +89,29 @@ public class AdminKhuyenMaiService {
     /**
      * Tạo mới một đợt giảm giá.
      *
-     * <p>Luồng xử lý:</p>
+     * <p>
+     * Luồng xử lý:</p>
      * <ol>
-     *   <li>Validate tên chiến dịch (không trống, 2–100 ký tự, sanitize XSS).</li>
-     *   <li>Validate loại giảm giá (chỉ "Theo Phần Trăm" hoặc "Theo Khoảng").</li>
-     *   <li>Validate ngày bắt đầu phải trước ngày kết thúc.</li>
-     *   <li>Validate % giảm hợp lệ (1–MAX_CAMPAIGN_DISCOUNT_PERCENT).</li>
-     *   <li>Kiểm tra phải chọn ít nhất 1 sản phẩm.</li>
-     *   <li>Kiểm tra không được chồng lên đợt giảm giá khác cùng sản phẩm cùng thời gian.</li>
-     *   <li>Lưu vào DB và ghi audit log.</li>
+     * <li>Validate tên chiến dịch (không trống, 2–100 ký tự, sanitize
+     * XSS).</li>
+     * <li>Validate loại giảm giá (chỉ "Theo Phần Trăm" hoặc "Theo
+     * Khoảng").</li>
+     * <li>Validate ngày bắt đầu phải trước ngày kết thúc.</li>
+     * <li>Validate % giảm hợp lệ (1–MAX_CAMPAIGN_DISCOUNT_PERCENT).</li>
+     * <li>Kiểm tra phải chọn ít nhất 1 sản phẩm.</li>
+     * <li>Kiểm tra không được chồng lên đợt giảm giá khác cùng sản phẩm cùng
+     * thời gian.</li>
+     * <li>Lưu vào DB và ghi audit log.</li>
      * </ol>
      *
-     * @param tenChienDich      tên chiến dịch giảm giá.
-     * @param start             thời điểm bắt đầu.
-     * @param end               thời điểm kết thúc.
-     * @param phanTramGiam      % giảm giá.
-     * @param loaiGiamGia       loại giảm giá ("Theo Phần Trăm" / "Theo Khoảng").
-     * @param productIds        danh sách ID sản phẩm được áp dụng.
-     * @param actingTaiKhoanId  ID tài khoản admin đang thực hiện (để ghi log).
-     * @param ipAddress         IP thực hiện yêu cầu (để ghi log).
+     * @param tenChienDich tên chiến dịch giảm giá.
+     * @param start thời điểm bắt đầu.
+     * @param end thời điểm kết thúc.
+     * @param phanTramGiam % giảm giá.
+     * @param loaiGiamGia loại giảm giá ("Theo Phần Trăm" / "Theo Khoảng").
+     * @param productIds danh sách ID sản phẩm được áp dụng.
+     * @param actingTaiKhoanId ID tài khoản admin đang thực hiện (để ghi log).
+     * @param ipAddress IP thực hiện yêu cầu (để ghi log).
      * @return đợt giảm giá vừa được tạo.
      * @throws PromotionValidationException nếu dữ liệu không hợp lệ.
      */
@@ -174,19 +183,21 @@ public class AdminKhuyenMaiService {
     /**
      * Cập nhật thông tin một đợt giảm giá đã tồn tại.
      *
-     * <p>Khi lưu thành công, đợt giảm giá tự động được kích hoạt lại ({@code active = true})
-     * dù trước đó có thể đã bị vô hiệu hóa. Đồng thời đồng bộ quan hệ ManyToMany
-     * hai chiều với {@link SanPham} để tránh dữ liệu không nhất quán.</p>
+     * <p>
+     * Khi lưu thành công, đợt giảm giá tự động được kích hoạt lại
+     * ({@code active = true}) dù trước đó có thể đã bị vô hiệu hóa. Đồng thời
+     * đồng bộ quan hệ ManyToMany hai chiều với {@link SanPham} để tránh dữ liệu
+     * không nhất quán.</p>
      *
-     * @param id               ID đợt giảm giá cần sửa.
-     * @param tenChienDich     tên mới của chiến dịch.
-     * @param start            ngày bắt đầu mới.
-     * @param end              ngày kết thúc mới.
-     * @param phanTramGiam     % giảm giá mới.
-     * @param loaiGiamGia      loại giảm giá mới.
-     * @param productIds       danh sách sản phẩm mới.
+     * @param id ID đợt giảm giá cần sửa.
+     * @param tenChienDich tên mới của chiến dịch.
+     * @param start ngày bắt đầu mới.
+     * @param end ngày kết thúc mới.
+     * @param phanTramGiam % giảm giá mới.
+     * @param loaiGiamGia loại giảm giá mới.
+     * @param productIds danh sách sản phẩm mới.
      * @param actingTaiKhoanId ID tài khoản admin thực hiện.
-     * @param ipAddress        IP thực hiện yêu cầu.
+     * @param ipAddress IP thực hiện yêu cầu.
      * @return đợt giảm giá sau khi cập nhật.
      */
     @Transactional
@@ -265,13 +276,14 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Vô hiệu hóa thủ công một đợt giảm giá (soft disable).
-     * Đặt {@code active = false}, đợt giảm giá sẽ không còn hiển thị trên trang sản phẩm.
-     * Dữ liệu KHÔNG bị xóa khỏi DB, có thể kích hoạt lại bằng cách lưu lại form sửa.
+     * Vô hiệu hóa thủ công một đợt giảm giá (soft disable). Đặt
+     * {@code active = false}, đợt giảm giá sẽ không còn hiển thị trên trang sản
+     * phẩm. Dữ liệu KHÔNG bị xóa khỏi DB, có thể kích hoạt lại bằng cách lưu
+     * lại form sửa.
      *
-     * @param id               ID đợt giảm giá cần vô hiệu hóa.
+     * @param id ID đợt giảm giá cần vô hiệu hóa.
      * @param actingTaiKhoanId ID tài khoản admin thực hiện.
-     * @param ipAddress        IP thực hiện yêu cầu.
+     * @param ipAddress IP thực hiện yêu cầu.
      */
     @Transactional
     public void deactivateDotGiamGia(Integer id, Integer actingTaiKhoanId, String ipAddress) {
@@ -286,14 +298,14 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Xóa logic (soft delete) một đợt giảm giá.
-     * Về kỹ thuật giống {@link #deactivateDotGiamGia} – chỉ đặt {@code active = false}.
-     * Hệ thống không xóa cứng để bảo toàn lịch sử đơn hàng đã dùng đợt giảm này.
-     * Audit log ghi hành động là "DELETE" để phân biệt với deactivate thông thường.
+     * Xóa logic (soft delete) một đợt giảm giá. Về kỹ thuật giống
+     * {@link #deactivateDotGiamGia} – chỉ đặt {@code active = false}. Hệ thống
+     * không xóa cứng để bảo toàn lịch sử đơn hàng đã dùng đợt giảm này. Audit
+     * log ghi hành động là "DELETE" để phân biệt với deactivate thông thường.
      *
-     * @param id               ID đợt giảm giá cần xóa.
+     * @param id ID đợt giảm giá cần xóa.
      * @param actingTaiKhoanId ID tài khoản admin thực hiện.
-     * @param ipAddress        IP thực hiện yêu cầu.
+     * @param ipAddress IP thực hiện yêu cầu.
      */
     @Transactional
     public void deleteDotGiamGia(Integer id, Integer actingTaiKhoanId, String ipAddress) {
@@ -308,12 +320,12 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Kiểm tra tính hợp lệ của khoảng thời gian đợt giảm giá.
-     * Ngày bắt đầu phải có mặt, ngày kết thúc phải có mặt,
-     * và ngày bắt đầu phải TRƯỚC ngày kết thúc (không cho bằng nhau).
+     * Kiểm tra tính hợp lệ của khoảng thời gian đợt giảm giá. Ngày bắt đầu phải
+     * có mặt, ngày kết thúc phải có mặt, và ngày bắt đầu phải TRƯỚC ngày kết
+     * thúc (không cho bằng nhau).
      *
      * @param start ngày bắt đầu.
-     * @param end   ngày kết thúc.
+     * @param end ngày kết thúc.
      * @throws PromotionValidationException nếu thời gian không hợp lệ.
      */
     private void validateCampaignDates(LocalDateTime start, LocalDateTime end) {
@@ -326,19 +338,22 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Kiểm tra xem các sản phẩm được chọn có đang trong một đợt giảm giá
-     * ĐANG HOẠT ĐỘNG nào khác trong khoảng thời gian [start, end] không.
+     * Kiểm tra xem các sản phẩm được chọn có đang trong một đợt giảm giá ĐANG
+     * HOẠT ĐỘNG nào khác trong khoảng thời gian [start, end] không.
      *
-     * <p>Mục đích: ngăn tình trạng một sản phẩm bị áp dụng hai đợt giảm giá
-     * chồng nhau cùng lúc, gây ra kết quả giá không xác định.</p>
+     * <p>
+     * Mục đích: ngăn tình trạng một sản phẩm bị áp dụng hai đợt giảm giá chồng
+     * nhau cùng lúc, gây ra kết quả giá không xác định.</p>
      *
-     * <p>Điều kiện chồng chéo (overlap): {@code campaignStart < end && campaignEnd > start}.</p>
+     * <p>
+     * Điều kiện chồng chéo (overlap):
+     * {@code campaignStart < end && campaignEnd > start}.</p>
      *
-     * @param productIds         danh sách ID sản phẩm cần kiểm tra.
-     * @param start              ngày bắt đầu của đợt mới/đang sửa.
-     * @param end                ngày kết thúc của đợt mới/đang sửa.
-     * @param excludeCampaignId  ID đợt đang được chỉnh sửa (để bỏ qua chính nó),
-     *                           truyền {@code null} khi tạo mới.
+     * @param productIds danh sách ID sản phẩm cần kiểm tra.
+     * @param start ngày bắt đầu của đợt mới/đang sửa.
+     * @param end ngày kết thúc của đợt mới/đang sửa.
+     * @param excludeCampaignId ID đợt đang được chỉnh sửa (để bỏ qua chính nó),
+     * truyền {@code null} khi tạo mới.
      * @throws PromotionValidationException nếu phát hiện sản phẩm bị chồng đợt.
      */
     public void checkCampaignOverlaps(List<Integer> productIds, LocalDateTime start, LocalDateTime end, Integer excludeCampaignId) {
@@ -383,7 +398,8 @@ public class AdminKhuyenMaiService {
 
     /**
      * Định dạng trạng thái của đợt giảm giá thành chuỗi để lưu vào audit log.
-     * Bao gồm: tên, loại, % giảm, ngày bắt đầu, ngày kết thúc, số SP, trạng thái active.
+     * Bao gồm: tên, loại, % giảm, ngày bắt đầu, ngày kết thúc, số SP, trạng
+     * thái active.
      *
      * @param dgg đợt giảm giá cần format.
      * @return chuỗi mô tả trạng thái.
@@ -403,7 +419,6 @@ public class AdminKhuyenMaiService {
     // ==========================================
     // PHIẾU GIẢM GIÁ (VOUCHER) – CÁC PHƯƠNG THỨC
     // ==========================================
-
     /**
      * Lấy toàn bộ danh sách phiếu giảm giá (kể cả đã vô hiệu hóa).
      *
@@ -430,26 +445,28 @@ public class AdminKhuyenMaiService {
     /**
      * Tạo mới một phiếu giảm giá.
      *
-     * <p>Luồng xử lý:</p>
+     * <p>
+     * Luồng xử lý:</p>
      * <ol>
-     *   <li>Chuyển mã phiếu sang CHỮ IN HOA.</li>
-     *   <li>Validate toàn bộ trường qua {@link #validateVoucherInputs}.</li>
-     *   <li>Kiểm tra không trùng mã với phiếu đã có trong hệ thống.</li>
-     *   <li>Với voucher VND: bắt buộc {@code giaTriGiamToiDa = null} (không áp dụng cap).</li>
-     *   <li>Lưu phiếu và ghi audit log.</li>
+     * <li>Chuyển mã phiếu sang CHỮ IN HOA.</li>
+     * <li>Validate toàn bộ trường qua {@link #validateVoucherInputs}.</li>
+     * <li>Kiểm tra không trùng mã với phiếu đã có trong hệ thống.</li>
+     * <li>Với voucher VND: bắt buộc {@code giaTriGiamToiDa = null} (không áp
+     * dụng cap).</li>
+     * <li>Lưu phiếu và ghi audit log.</li>
      * </ol>
      *
-     * @param maPhieu                 mã phiếu (chuyển thành in hoa tự động).
-     * @param giaTri                  giá trị giảm (% hoặc VNĐ tùy {@code donVi}).
-     * @param donVi                   đơn vị: "%" hoặc "VND".
-     * @param start                   ngày bắt đầu hiệu lực.
-     * @param end                     ngày hết hạn.
-     * @param soLuongConLai           số lượng phiếu phát hành (phải > 0).
-     * @param giaTriDonHangToiThieu   giá trị đơn tối thiểu (0 = không yêu cầu).
-     * @param loaiGiamGia             "Giảm trực tiếp" hoặc "Giảm phần trăm".
-     * @param giaTriGiamToiDa         trần giảm (chỉ dùng khi {@code donVi = "%"}).
-     * @param actingTaiKhoanId        ID tài khoản admin thực hiện.
-     * @param ipAddress               IP thực hiện yêu cầu.
+     * @param maPhieu mã phiếu (chuyển thành in hoa tự động).
+     * @param giaTri giá trị giảm (% hoặc VNĐ tùy {@code donVi}).
+     * @param donVi đơn vị: "%" hoặc "VND".
+     * @param start ngày bắt đầu hiệu lực.
+     * @param end ngày hết hạn.
+     * @param soLuongConLai số lượng phiếu phát hành (phải > 0).
+     * @param giaTriDonHangToiThieu giá trị đơn tối thiểu (0 = không yêu cầu).
+     * @param loaiGiamGia "Giảm trực tiếp" hoặc "Giảm phần trăm".
+     * @param giaTriGiamToiDa trần giảm (chỉ dùng khi {@code donVi = "%"}).
+     * @param actingTaiKhoanId ID tài khoản admin thực hiện.
+     * @param ipAddress IP thực hiện yêu cầu.
      * @return phiếu giảm giá vừa tạo.
      * @throws PromotionValidationException nếu dữ liệu không hợp lệ.
      */
@@ -478,19 +495,22 @@ public class AdminKhuyenMaiService {
             throw new PromotionValidationException("Tài khoản đang thực hiện không có thông tin nhân viên!");
         }
 
+        String normalizedDonVi = donVi.trim();
+        String normalizedLoaiGiamGia = loaiGiamGia == null ? null : loaiGiamGia.trim();
+
         // Với voucher VND (giảm trực tiếp): trần cap không áp dụng → set null
-        BigDecimal resolvedCap = "%".equals(donVi) ? giaTriGiamToiDa : null;
+        BigDecimal resolvedCap = "%".equals(normalizedDonVi) ? giaTriGiamToiDa : null;
 
         // 3. Tạo và lưu entity
         PhieuGiamGia pgg = new PhieuGiamGia();
         pgg.setMaPhieu(uppercaseCode);
         pgg.setGiaTri(giaTri);
-        pgg.setDonVi(donVi);
+        pgg.setDonVi(normalizedDonVi);
         pgg.setNgayBatDau(start);
         pgg.setNgayKetThuc(end);
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
-        pgg.setLoaiGiamGia("%".equals(donVi) ? "Giảm phần trăm" : "Giảm trực tiếp");
+        pgg.setLoaiGiamGia(normalizedLoaiGiamGia);
         pgg.setGiaTriGiamToiDa(resolvedCap);
         pgg.setNhanVien(nv);
         pgg.setActive(true);
@@ -507,21 +527,23 @@ public class AdminKhuyenMaiService {
     /**
      * Cập nhật thông tin phiếu giảm giá đã tồn tại.
      *
-     * <p>Khi lưu thành công, phiếu tự động được kích hoạt lại ({@code active = true}).
-     * Cho phép số lượng = 0 khi sửa (admin muốn ngừng nhận thêm mà không xóa phiếu).</p>
+     * <p>
+     * Khi lưu thành công, phiếu tự động được kích hoạt lại
+     * ({@code active = true}). Cho phép số lượng = 0 khi sửa (admin muốn ngừng
+     * nhận thêm mà không xóa phiếu).</p>
      *
-     * @param id                     ID phiếu cần sửa.
-     * @param maPhieu                mã phiếu mới.
-     * @param giaTri                 giá trị giảm mới.
-     * @param donVi                  đơn vị mới.
-     * @param start                  ngày bắt đầu mới.
-     * @param end                    ngày hết hạn mới.
-     * @param soLuongConLai          số lượng mới (có thể = 0 khi sửa).
-     * @param giaTriDonHangToiThieu  giá trị đơn tối thiểu mới.
-     * @param loaiGiamGia            loại mới.
-     * @param giaTriGiamToiDa        trần giảm mới.
-     * @param actingTaiKhoanId       ID tài khoản admin thực hiện.
-     * @param ipAddress              IP thực hiện yêu cầu.
+     * @param id ID phiếu cần sửa.
+     * @param maPhieu mã phiếu mới.
+     * @param giaTri giá trị giảm mới.
+     * @param donVi đơn vị mới.
+     * @param start ngày bắt đầu mới.
+     * @param end ngày hết hạn mới.
+     * @param soLuongConLai số lượng mới (có thể = 0 khi sửa).
+     * @param giaTriDonHangToiThieu giá trị đơn tối thiểu mới.
+     * @param loaiGiamGia loại mới.
+     * @param giaTriGiamToiDa trần giảm mới.
+     * @param actingTaiKhoanId ID tài khoản admin thực hiện.
+     * @param ipAddress IP thực hiện yêu cầu.
      * @return phiếu giảm giá sau khi cập nhật.
      */
     @Transactional
@@ -548,18 +570,21 @@ public class AdminKhuyenMaiService {
         // Chụp trạng thái cũ để ghi audit log
         String oldState = formatVoucherState(pgg);
 
+        String normalizedDonVi = donVi.trim();
+        String normalizedLoaiGiamGia = loaiGiamGia == null ? null : loaiGiamGia.trim();
+
         // Voucher VND không có cap
-        BigDecimal resolvedCap = "%".equals(donVi) ? giaTriGiamToiDa : null;
+        BigDecimal resolvedCap = "%".equals(normalizedDonVi) ? giaTriGiamToiDa : null;
 
         // Cập nhật và lưu – tự động kích hoạt lại phiếu
         pgg.setMaPhieu(uppercaseCode);
         pgg.setGiaTri(giaTri);
-        pgg.setDonVi(donVi);
+        pgg.setDonVi(normalizedDonVi);
         pgg.setNgayBatDau(start);
         pgg.setNgayKetThuc(end);
         pgg.setSoLuongConLai(soLuongConLai);
         pgg.setGiaTriDonHangToiThieu(giaTriDonHangToiThieu == null ? BigDecimal.ZERO : giaTriDonHangToiThieu);
-        pgg.setLoaiGiamGia("%".equals(donVi) ? "Giảm phần trăm" : "Giảm trực tiếp");
+        pgg.setLoaiGiamGia(normalizedLoaiGiamGia);
         pgg.setGiaTriGiamToiDa(resolvedCap);
         pgg.setActive(true);
 
@@ -572,12 +597,12 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Vô hiệu hóa thủ công một phiếu giảm giá ({@code active = false}).
-     * Phiếu vẫn còn trong DB nhưng khách không thể dùng dù còn hạn và còn số lượng.
+     * Vô hiệu hóa thủ công một phiếu giảm giá ({@code active = false}). Phiếu
+     * vẫn còn trong DB nhưng khách không thể dùng dù còn hạn và còn số lượng.
      *
-     * @param id               ID phiếu cần vô hiệu hóa.
+     * @param id ID phiếu cần vô hiệu hóa.
      * @param actingTaiKhoanId ID tài khoản admin thực hiện.
-     * @param ipAddress        IP thực hiện yêu cầu.
+     * @param ipAddress IP thực hiện yêu cầu.
      */
     @Transactional
     public void deactivatePhieuGiamGia(Integer id, Integer actingTaiKhoanId, String ipAddress) {
@@ -592,13 +617,14 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Xóa logic (soft delete) một phiếu giảm giá.
-     * Giống {@link #deactivatePhieuGiamGia} về kỹ thuật, nhưng audit log ghi "DELETE".
-     * Hệ thống không xóa cứng để bảo toàn lịch sử đơn hàng đã dùng phiếu này.
+     * Xóa logic (soft delete) một phiếu giảm giá. Giống
+     * {@link #deactivatePhieuGiamGia} về kỹ thuật, nhưng audit log ghi
+     * "DELETE". Hệ thống không xóa cứng để bảo toàn lịch sử đơn hàng đã dùng
+     * phiếu này.
      *
-     * @param id               ID phiếu cần xóa.
+     * @param id ID phiếu cần xóa.
      * @param actingTaiKhoanId ID tài khoản admin thực hiện.
-     * @param ipAddress        IP thực hiện yêu cầu.
+     * @param ipAddress IP thực hiện yêu cầu.
      */
     @Transactional
     public void deletePhieuGiamGia(Integer id, Integer actingTaiKhoanId, String ipAddress) {
@@ -613,10 +639,11 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Kiểm tra một {@link BigDecimal} có phải số thập phân không (scale > 0 sau khi bỏ số 0 thừa).
-     * Voucher chỉ nhận số nguyên (không có phần lẻ) để đơn giản hóa tính toán tiền VNĐ.
+     * Kiểm tra một {@link BigDecimal} có phải số thập phân không (scale > 0 sau
+     * khi bỏ số 0 thừa). Voucher chỉ nhận số nguyên (không có phần lẻ) để đơn
+     * giản hóa tính toán tiền VNĐ.
      *
-     * @param bd           giá trị cần kiểm tra.
+     * @param bd giá trị cần kiểm tra.
      * @param errorMessage thông báo lỗi nếu là số thập phân.
      * @throws PromotionValidationException nếu giá trị có phần thập phân.
      */
@@ -629,29 +656,33 @@ public class AdminKhuyenMaiService {
     /**
      * Validate toàn bộ đầu vào khi tạo mới hoặc cập nhật phiếu giảm giá.
      *
-     * <p>Kiểm tra các ràng buộc sau (theo thứ tự):</p>
+     * <p>
+     * Kiểm tra các ràng buộc sau (theo thứ tự):</p>
      * <ol>
-     *   <li>Mã phiếu: không trống, chỉ gồm [A-Z0-9_], độ dài 2–50.</li>
-     *   <li>Đơn vị: chỉ nhận "%" hoặc "VND".</li>
-     *   <li>Loại giảm: chỉ nhận "Giảm trực tiếp" hoặc "Giảm phần trăm".</li>
-     *   <li>Đơn vị và loại phải nhất quán (% ↔ Giảm phần trăm, VND ↔ Giảm trực tiếp).</li>
-     *   <li>Giá trị giảm: không âm, không thập phân, trong giới hạn cho phép.</li>
-     *   <li>Ngày: bắt buộc, ngày bắt đầu phải trước kết thúc.</li>
-     *   <li>Số lượng: khi tạo mới phải > 0; khi sửa cho phép = 0.</li>
-     *   <li>Giá trị đơn tối thiểu: không âm, không thập phân.</li>
-     *   <li>Trần giảm (cap): bắt buộc khi voucher %, không được có khi voucher VND.</li>
+     * <li>Mã phiếu: không trống, chỉ gồm [A-Z0-9_], độ dài 2–50.</li>
+     * <li>Đơn vị: chỉ nhận "%" hoặc "VND".</li>
+     * <li>Loại giảm: chỉ nhận "Giảm trực tiếp" hoặc "Giảm phần trăm".</li>
+     * <li>Đơn vị và loại phải nhất quán (% ↔ Giảm phần trăm, VND ↔ Giảm trực
+     * tiếp).</li>
+     * <li>Giá trị giảm: không âm, không thập phân, trong giới hạn cho
+     * phép.</li>
+     * <li>Ngày: bắt buộc, ngày bắt đầu phải trước kết thúc.</li>
+     * <li>Số lượng: khi tạo mới phải > 0; khi sửa cho phép = 0.</li>
+     * <li>Giá trị đơn tối thiểu: không âm, không thập phân.</li>
+     * <li>Trần giảm (cap): bắt buộc khi voucher %, không được có khi voucher
+     * VND.</li>
      * </ol>
      *
-     * @param maPhieu                mã phiếu đã được in hoa.
-     * @param giaTri                 giá trị giảm.
-     * @param donVi                  đơn vị ("%" hoặc "VND").
-     * @param start                  ngày bắt đầu.
-     * @param end                    ngày kết thúc.
-     * @param soLuongConLai          số lượng phiếu.
-     * @param giaTriDonHangToiThieu  giá trị đơn hàng tối thiểu.
-     * @param loaiGiamGia            phân loại voucher.
-     * @param giaTriGiamToiDa        trần giảm (chỉ dùng khi %).
-     * @param isUpdate               {@code true} nếu đang sửa (số lượng = 0 được chấp nhận).
+     * @param maPhieu mã phiếu đã được in hoa.
+     * @param giaTri giá trị giảm.
+     * @param donVi đơn vị ("%" hoặc "VND").
+     * @param start ngày bắt đầu.
+     * @param end ngày kết thúc.
+     * @param soLuongConLai số lượng phiếu.
+     * @param giaTriDonHangToiThieu giá trị đơn hàng tối thiểu.
+     * @param loaiGiamGia phân loại voucher.
+     * @param giaTriGiamToiDa trần giảm (chỉ dùng khi %).
+     * @param isUpdate {@code true} nếu đang sửa (số lượng = 0 được chấp nhận).
      */
     private void validateVoucherInputs(String maPhieu, BigDecimal giaTri, String donVi,
             LocalDateTime start, LocalDateTime end, Integer soLuongConLai,
@@ -666,15 +697,26 @@ public class AdminKhuyenMaiService {
         if (donVi == null || donVi.trim().isEmpty()) {
             throw new PromotionValidationException("Đơn vị giảm giá không được để trống!");
         }
-        if (!"%".equals(donVi) && !"VND".equals(donVi)) {
+        String normalizedDonVi = donVi.trim();
+        if (!"%".equals(normalizedDonVi) && !"VND".equals(normalizedDonVi)) {
             throw new PromotionValidationException("Đơn vị giảm giá không hợp lệ! Chỉ cho phép '%' hoặc 'VND'.");
+        }
+
+        if (loaiGiamGia == null || loaiGiamGia.trim().isEmpty()) {
+            throw new PromotionValidationException("Loại giảm giá không được để trống!");
+        }
+        String normalizedLoaiGiamGia = loaiGiamGia.trim();
+        boolean isPercentVoucher = "%".equals(normalizedDonVi);
+        boolean isPercentType = "Giảm phần trăm".equals(normalizedLoaiGiamGia);
+        if (isPercentVoucher != isPercentType) {
+            throw new PromotionValidationException("Đơn vị giảm giá và loại giảm giá không nhất quán!");
         }
 
         // Validate giá trị giảm theo từng loại đơn vị
         if (giaTri == null) {
             throw new PromotionValidationException("Giá trị giảm giá không được để trống!");
         }
-        if ("%".equals(donVi)) {
+        if (isPercentVoucher) {
             checkNotDecimal(giaTri, "Giá trị giảm % phải là số nguyên, không được là số thập phân!");
             if (giaTri.compareTo(BigDecimal.ZERO) < 0) {
                 throw new PromotionValidationException("Giá trị giảm % không được là số âm!");
@@ -736,7 +778,7 @@ public class AdminKhuyenMaiService {
         }
 
         // Validate trần giảm (cap): bắt buộc với voucher %, không dùng với voucher VND
-        if ("%".equals(donVi)) {
+        if (isPercentVoucher) {
             if (giaTriGiamToiDa == null) {
                 throw new PromotionValidationException("Giá trị giảm tối đa là bắt buộc đối với voucher giảm theo phần trăm!");
             }
@@ -759,8 +801,9 @@ public class AdminKhuyenMaiService {
     }
 
     /**
-     * Định dạng trạng thái phiếu giảm giá thành chuỗi để lưu vào audit log.
-     * Bao gồm: mã, giá trị, đơn vị, hạn dùng, tối thiểu, tối đa, số lượng, trạng thái active.
+     * Định dạng trạng thái phiếu giảm giá thành chuỗi để lưu vào audit log. Bao
+     * gồm: mã, giá trị, đơn vị, hạn dùng, tối thiểu, tối đa, số lượng, trạng
+     * thái active.
      *
      * @param pgg phiếu cần format.
      * @return chuỗi mô tả trạng thái.
@@ -782,21 +825,23 @@ public class AdminKhuyenMaiService {
     // ==========================================
     // GHI AUDIT LOG (DÙNG CHUNG)
     // ==========================================
-
     /**
      * Ghi một bản ghi vào EditLog (audit trail) thông qua {@link AuditService}.
      *
-     * <p>Mỗi thao tác tạo/sửa/xóa khuyến mãi đều gọi method này để lưu lại:
-     * ai làm, làm gì, trên bản ghi nào, từ trạng thái nào sang trạng thái nào, từ IP nào.</p>
+     * <p>
+     * Mỗi thao tác tạo/sửa/xóa khuyến mãi đều gọi method này để lưu lại: ai
+     * làm, làm gì, trên bản ghi nào, từ trạng thái nào sang trạng thái nào, từ
+     * IP nào.</p>
      *
      * @param actingTaiKhoanId ID tài khoản thực hiện hành động.
-     * @param tenBang          tên bảng bị tác động ("DotGiamGia" hoặc "PhieuGiamGia").
-     * @param idBanGhi         ID bản ghi bị tác động.
-     * @param hanhDong         hành động: "INSERT", "UPDATE" hoặc "DELETE".
-     * @param giaTriCu         chuỗi mô tả trạng thái trước khi sửa (null khi INSERT).
-     * @param giaTriMoi        chuỗi mô tả trạng thái sau khi sửa.
-     * @param ipAddress        địa chỉ IP của người thực hiện.
-     * @param ghiChu           ghi chú bổ sung (ví dụ: "Tạo mới đợt giảm giá: Flash Sale").
+     * @param tenBang tên bảng bị tác động ("DotGiamGia" hoặc "PhieuGiamGia").
+     * @param idBanGhi ID bản ghi bị tác động.
+     * @param hanhDong hành động: "INSERT", "UPDATE" hoặc "DELETE".
+     * @param giaTriCu chuỗi mô tả trạng thái trước khi sửa (null khi INSERT).
+     * @param giaTriMoi chuỗi mô tả trạng thái sau khi sửa.
+     * @param ipAddress địa chỉ IP của người thực hiện.
+     * @param ghiChu ghi chú bổ sung (ví dụ: "Tạo mới đợt giảm giá: Flash
+     * Sale").
      */
     private void writeEditLog(Integer actingTaiKhoanId, String tenBang, Long idBanGhi, String hanhDong,
             String giaTriCu, String giaTriMoi, String ipAddress, String ghiChu) {

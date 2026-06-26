@@ -544,6 +544,14 @@ public class GhnService {
     public GhnAddressMapping resolveGhnAddress(SoDiaChi dc) {
         if (dc == null) return null;
 
+        // Bypass fuzzy matching only when all GHN fields are fully present and valid
+        if (dc.getProvinceId() != null && dc.getDistrictId() != null && 
+            dc.getWardCode() != null && !dc.getWardCode().trim().isEmpty()) {
+            log.info("Using pre-saved GHN address mapping for address ID {}: provinceId={}, districtId={}, wardCode={}",
+                     dc.getId(), dc.getProvinceId(), dc.getDistrictId(), dc.getWardCode());
+            return new GhnAddressMapping(dc.getProvinceId(), dc.getDistrictId(), dc.getWardCode().trim());
+        }
+
         String userProvince = dc.getTinhThanh();
         String userDistrict = dc.getDiaChiCuThe();
         String userWard = dc.getDiaChiCuThe();
@@ -764,6 +772,22 @@ public class GhnService {
         log.debug("GHN Ward matched: {} -> {}",
                 userWard,
                 (String) matchedWard.get("WardName"));
+
+        // Backfill GHN IDs to SoDiaChi to avoid future fuzzy match/API calls
+        if (dc.getId() != null) {
+            dc.setProvinceId(provinceId);
+            dc.setDistrictId(districtId);
+            dc.setWardCode(wardCode);
+            dc.setProvinceName(matchedProvince != null && matchedProvince.get("ProvinceName") != null ? matchedProvince.get("ProvinceName").toString() : null);
+            dc.setDistrictName(matchedDistrict != null && matchedDistrict.get("DistrictName") != null ? matchedDistrict.get("DistrictName").toString() : null);
+            dc.setWardName(matchedWard != null && matchedWard.get("WardName") != null ? matchedWard.get("WardName").toString() : null);
+            try {
+                soDiaChiRepository.save(dc);
+                log.info("[GHN_BACKFILL] Successfully backfilled GHN IDs to SoDiaChi ID {}", dc.getId());
+            } catch (Exception e) {
+                log.warn("[GHN_BACKFILL] Failed to backfill GHN IDs for SoDiaChi ID {}: {}", dc.getId(), e.getMessage());
+            }
+        }
 
         return new GhnAddressMapping(provinceId, districtId, wardCode);
     }

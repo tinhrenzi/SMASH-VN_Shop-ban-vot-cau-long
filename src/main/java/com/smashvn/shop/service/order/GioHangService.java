@@ -41,6 +41,7 @@ import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.util.PhoneUtils;
 import java.time.LocalDateTime;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -367,11 +368,12 @@ public class GioHangService {
                 throw new IllegalArgumentException("Họ và tên người nhận phải từ 2 đến 100 ký tự.");
             }
 
+            finalSdtNhan = PhoneUtils.normalize(finalSdtNhan);
             if (finalSdtNhan == null || finalSdtNhan.isEmpty()) {
                 throw new IllegalArgumentException("Số điện thoại không được để trống.");
             }
-            if (!finalSdtNhan.matches("^(\\+84|0)(3|5|7|8|9)[0-9]{8}$")) {
-                throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84).");
+            if (!PhoneUtils.isValid(finalSdtNhan)) {
+                throw new IllegalArgumentException("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09).");
             }
 
             if (finalDiaChiNhan == null || finalDiaChiNhan.isEmpty()) {

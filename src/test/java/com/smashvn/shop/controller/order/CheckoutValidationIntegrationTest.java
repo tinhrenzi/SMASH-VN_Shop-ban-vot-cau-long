@@ -279,10 +279,13 @@ public class CheckoutValidationIntegrationTest {
                 .param("sdtNhan", "0123456789") // Invalid prefix
                 .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
-                .param("phuongThucThanhToan", "COD"))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("loi"))
-                .andExpect(jsonPath("$.message").value("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84)."));
+                .andExpect(jsonPath("$.message").value("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09)."));
 
         // Non-numeric phone number
         mockMvc.perform(post("/checkout/submit")
@@ -292,10 +295,13 @@ public class CheckoutValidationIntegrationTest {
                 .param("sdtNhan", "091abc3456") // Invalid characters
                 .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
-                .param("phuongThucThanhToan", "COD"))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("loi"))
-                .andExpect(jsonPath("$.message").value("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 0 hoặc +84)."));
+                .andExpect(jsonPath("$.message").value("Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09)."));
     }
 
     @Test
@@ -309,7 +315,10 @@ public class CheckoutValidationIntegrationTest {
                     .param("sdtNhan", phone)
                     .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                     .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
-                    .param("phuongThucThanhToan", "COD"))
+                    .param("phuongThucThanhToan", "COD")
+                    .param("ghnProvinceId", "201")
+                    .param("ghnToDistrictId", "1454")
+                    .param("ghnToWardCode", "1A0807"))
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.trangThai").value("ok"))
@@ -339,7 +348,10 @@ public class CheckoutValidationIntegrationTest {
                 .param("sdtNhan", "0912345678")
                 .param("diaChiNhan", "Số 12 Phố Huế, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
-                .param("phuongThucThanhToan", "COD"))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"))
@@ -367,6 +379,9 @@ public class CheckoutValidationIntegrationTest {
                 .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
                 .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
                 .param("ghiChu", note499))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"));
@@ -389,6 +404,9 @@ public class CheckoutValidationIntegrationTest {
                 .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
                 .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
                 .param("ghiChu", note500))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"));
@@ -403,6 +421,9 @@ public class CheckoutValidationIntegrationTest {
                 .param("diaChiNhan", "Số 1 Đường ABC, Hà Nội")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
                 .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
                 .param("ghiChu", note501))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("loi"))
@@ -423,6 +444,9 @@ public class CheckoutValidationIntegrationTest {
                 .param("diaChiNhan", xssAddress)
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
                 .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
                 .param("ghiChu", xssNote))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -546,7 +570,8 @@ public class CheckoutValidationIntegrationTest {
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId())) // GHTK
                 .param("phuongThucThanhToan", "COD")
                 .param("ghnToDistrictId", "999999") // Non-local district
-                .param("ghnProvinceId", "201")) // Pretending to be Hanoi
+                .param("ghnProvinceId", "201")
+                .param("ghnToWardCode", "1A0807")) // Pretending to be Hanoi
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"))
                 .andReturn();
@@ -652,7 +677,8 @@ public class CheckoutValidationIntegrationTest {
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
                 .param("phuongThucThanhToan", "COD")
                 .param("ghnToDistrictId", "1454")
-                .param("ghnProvinceId", "201"))
+                .param("ghnProvinceId", "201")
+                .param("ghnToWardCode", "1A0807"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"))
                 .andReturn();
@@ -823,6 +849,7 @@ public class CheckoutValidationIntegrationTest {
                 .param("phuongThucThanhToan", "COD")
                 .param("ghnToDistrictId", "1454")
                 .param("ghnProvinceId", "201")
+                .param("ghnToWardCode", "1A0807")
                 .param("voucherCode", "TESTPROMO"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("ok"))
@@ -924,5 +951,164 @@ public class CheckoutValidationIntegrationTest {
         com.smashvn.shop.service.api.ShippingZoneResolver zoneResolver = webApplicationContext.getBean(com.smashvn.shop.service.api.ShippingZoneResolver.class);
         com.smashvn.shop.entity.ShippingZone zone = zoneResolver.resolveZone(mapping.getDistrictId(), confusedAddress.getDiaChiCuThe());
         assertEquals(com.smashvn.shop.entity.ShippingZone.LOCAL, zone);
+    }
+
+    @Test
+    void testSubmitCheckout_NewAddress_WithAllGhnIds() throws Exception {
+        // Validate checkout with new address containing all GHN IDs successfully saves provinceId, districtId, and wardCode to database
+        MvcResult result = mockMvc.perform(post("/checkout/submit")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .requestAttr("_csrf", csrfToken)
+                .param("hoTenNhan", "Nguyễn Văn A")
+                .param("sdtNhan", "0912345678")
+                .param("diaChiNhan", "123 Đường Láng")
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
+                .param("tinhThanhText", "Hà Nội")
+                .param("thanhPhoText", "Quận Đống Đa")
+                .param("phuongXaText", "Phường Láng Thượng")
+                .param("diaChiCuThe", "123 Đường Láng")
+                .param("saveAddress", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andReturn();
+
+        String responseString = result.getResponse().getContentAsString();
+        Map<String, Object> respMap = objectMapper.readValue(responseString, Map.class);
+        Integer orderId = (Integer) respMap.get("orderId");
+
+        // Verify SoDiaChi record was saved with proper GHN fields
+        List<SoDiaChi> savedAddresses = soDiaChiRepository.findByKhachHang_Id(testKhachHang.getId());
+        boolean foundSavedWithGhn = false;
+        for (SoDiaChi dc : savedAddresses) {
+            if ("123 Đường Láng".equals(dc.getDiaChiCuThe()) &&
+                Integer.valueOf(201).equals(dc.getProvinceId()) &&
+                Integer.valueOf(1454).equals(dc.getDistrictId()) &&
+                "1A0807".equals(dc.getWardCode())) {
+                foundSavedWithGhn = true;
+                break;
+            }
+        }
+        assertTrue(foundSavedWithGhn, "Should save the new address with all GHN IDs populated");
+    }
+
+    @Test
+    void testSubmitCheckout_NewAddress_MissingGhnIds() throws Exception {
+        // Missing ghnProvinceId, districtId or wardCode should fail validation
+        mockMvc.perform(post("/checkout/submit")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .requestAttr("_csrf", csrfToken)
+                .param("hoTenNhan", "Nguyễn Văn A")
+                .param("sdtNhan", "0912345678")
+                .param("diaChiNhan", "123 Đường Láng")
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "") // empty
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã để sử dụng địa chỉ nhận hàng."));
+    }
+
+    @Test
+    void testResolveGhnAddress_BypassesApiWhenIdsPresent() {
+        SoDiaChi addressWithIds = new SoDiaChi();
+        addressWithIds.setKhachHang(testKhachHang);
+        addressWithIds.setHoNguoiNhan("Tester");
+        addressWithIds.setTenNguoiNhan("Bypass");
+        addressWithIds.setSdtNguoiNhan("0912345678");
+        addressWithIds.setDiaChiCuThe("Some Street");
+        addressWithIds.setTinhThanh("InvalidProvinceToTriggerFailureIfFuzzyMatches");
+        addressWithIds.setThanhPho("InvalidDistrict");
+        addressWithIds.setQuocGia("Việt Nam");
+        addressWithIds.setProvinceId(201);
+        addressWithIds.setDistrictId(1454);
+        addressWithIds.setWardCode("1A0807");
+
+        com.smashvn.shop.service.api.GhnService ghnService = webApplicationContext.getBean(com.smashvn.shop.service.api.GhnService.class);
+        com.smashvn.shop.service.api.GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(addressWithIds);
+
+        // Should return the IDs directly without failing due to invalid names
+        assertNotNull(mapping);
+        assertEquals(201, mapping.getProvinceId());
+        assertEquals(1454, mapping.getDistrictId());
+        assertEquals("1A0807", mapping.getWardCode());
+    }
+
+    @Test
+    void testGuestCheckout_DuplicateExistingCustomerPhone() throws Exception {
+        // Create an existing active customer with phone 0911222333
+        TaiKhoan otherUser = new TaiKhoan();
+        otherUser.setEmail("active_user@gmail.com");
+        otherUser.setMatKhau("testpass123");
+        otherUser.setVaiTro("KH");
+        otherUser.setTrangThai("hoat_dong");
+        otherUser.setLaKhachHang(true);
+        otherUser = taiKhoanRepository.save(otherUser);
+
+        KhachHang otherKh = new KhachHang();
+        otherKh.setTaiKhoan(otherUser);
+        otherKh.setHoKh("Active");
+        otherKh.setTenKh("User");
+        otherKh.setSoDienThoaiKh("0911222333");
+        khachHangRepository.save(otherKh);
+
+        // Guest checkout with different email but duplicate phone (formatted with symbols)
+        mockMvc.perform(post("/checkout/submit")
+                .requestAttr("_csrf", csrfToken)
+                .param("email", "new_guest@gmail.com")
+                .param("hoTenNhan", "Guest User")
+                .param("sdtNhan", "+84 911-222.333") // matches normalized 0911222333
+                .param("diaChiNhan", "Hà Nội")
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác."));
+    }
+
+    @Test
+    void testPhoneNormalization() {
+        assertEquals("0911222333", com.smashvn.shop.util.PhoneUtils.normalize("+84911222333"));
+        assertEquals("0911222333", com.smashvn.shop.util.PhoneUtils.normalize("0911 222 333"));
+        assertEquals("0911222333", com.smashvn.shop.util.PhoneUtils.normalize("0911-222-333"));
+        assertEquals("0911222333", com.smashvn.shop.util.PhoneUtils.normalize("0911.222.333"));
+        
+        assertTrue(com.smashvn.shop.util.PhoneUtils.isValid("0911222333"));
+        assertTrue(com.smashvn.shop.util.PhoneUtils.isValid("0355444555"));
+        assertFalse(com.smashvn.shop.util.PhoneUtils.isValid("123456789"));
+        assertFalse(com.smashvn.shop.util.PhoneUtils.isValid("0123456789"));
+    }
+
+    @Test
+    void testSubmitCheckout_DatabaseExceptionFallback() throws Exception {
+        // Trigger a database exception (string truncation on SoDiaChi.ten_nguoi_nhan)
+        // and verify it returns a general system error message
+        mockMvc.perform(post("/checkout/submit")
+                .sessionAttr("idNguoiDung", testUser.getId())
+                .requestAttr("_csrf", csrfToken)
+                .param("hoTenNhan", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") // 60 chars, exceeding nvarchar(50)
+                .param("sdtNhan", "0912345678")
+                .param("diaChiNhan", "123 Đường Láng")
+                .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
+                .param("phuongThucThanhToan", "COD")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1454")
+                .param("ghnToWardCode", "1A0807")
+                .param("tinhThanhText", "Hà Nội")
+                .param("thanhPhoText", "Quận Đống Đa")
+                .param("phuongXaText", "Phường Láng Thượng")
+                .param("diaChiCuThe", "123 Đường Láng")
+                .param("saveAddress", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("loi"))
+                .andExpect(jsonPath("$.message").value("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
     }
 }
