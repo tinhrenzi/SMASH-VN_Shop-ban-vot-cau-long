@@ -861,7 +861,7 @@
                     background: linear-gradient(135deg, #15171c, #2a2e3d);
                 }
                 .brand-slide {
-                    height: 110px !important;
+                    height: 120px !important;
                 }
                 .brand-slide a {
                     display: flex !important;
@@ -869,7 +869,7 @@
                     align-items: center;
                     justify-content: center;
                     gap: 10px !important;
-                    height: 110px !important;
+                    height: 120px !important;
                     padding: 15px 10px !important;
                     background: #ffffff !important;
                     border: 1px solid rgba(21, 23, 28, 0.08) !important;
@@ -1005,21 +1005,24 @@
                                 <div class="brand-slide" th:each="brand : ${brands}">
                                     <a th:href="@{/shop(brandId=${brand.id})}">
                                         <!-- Logo Container (Fixed height to keep logos vertically aligned) -->
-                                        <div style="height: 40px; display: flex; align-items: center; justify-content: center; width: 100%;">
+                                        <div style="height: 60px; display: flex; align-items: center; justify-content: center; width: 100%;">
                                             <!-- YONEX -->
-                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'YONEX'}" th:src="@{/images/brand/yonex.png}" alt="YONEX" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'YONEX'}" th:src="@{/images/brand/yonex.png}" alt="YONEX" style="max-height: 56px; max-width: 120px; object-fit: contain;">
                                             
                                             <!-- VICTOR -->
-                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'VICTOR'}" th:src="@{/images/brand/victor.png}" alt="VICTOR" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'VICTOR'}" th:src="@{/images/brand/victor.png}" alt="VICTOR" style="max-height: 56px; max-width: 120px; object-fit: contain;">
                                             
                                             <!-- LINING -->
-                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'LINING' || brand.tenThuongHieu.toUpperCase() == 'LI-NING'}" th:src="@{/images/brand/lining.png}" alt="LINING" style="max-height: 30px; max-width: 100px; object-fit: contain;">
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'LINING' || brand.tenThuongHieu.toUpperCase() == 'LI-NING'}" th:src="@{/images/brand/lining.png}" alt="LINING" style="max-height: 46px; max-width: 120px; object-fit: contain;">
                                             
                                             <!-- KAWASAKI -->
-                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'KAWASAKI'}" th:src="@{/images/brand/kawasaki.png}" alt="KAWASAKI" style="max-height: 35px; max-width: 100px; object-fit: contain;">
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'KAWASAKI'}" th:src="@{/images/brand/kawasaki.png}" alt="KAWASAKI" style="max-height: 56px; max-width: 120px; object-fit: contain;">
+                                            
+                                            <!-- MIZUNO -->
+                                            <img th:if="${brand.tenThuongHieu.toUpperCase() == 'MIZUNO'}" th:src="@{/images/brand/mizuno.png}" alt="MIZUNO" style="max-height: 50px; max-width: 120px; object-fit: contain;">
                                             
                                             <!-- Fallback Logo circle for other brands -->
-                                            <div th:if="${brand.tenThuongHieu.toUpperCase() != 'YONEX' && brand.tenThuongHieu.toUpperCase() != 'VICTOR' && brand.tenThuongHieu.toUpperCase() != 'LINING' && brand.tenThuongHieu.toUpperCase() != 'LI-NING' && brand.tenThuongHieu.toUpperCase() != 'KAWASAKI'}" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #15171c, #2a2e3d); color: #ff4500; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 1.5px solid rgba(255, 69, 0, 0.2);">
+                                            <div th:if="${brand.tenThuongHieu.toUpperCase() != 'YONEX' && brand.tenThuongHieu.toUpperCase() != 'VICTOR' && brand.tenThuongHieu.toUpperCase() != 'LINING' && brand.tenThuongHieu.toUpperCase() != 'LI-NING' && brand.tenThuongHieu.toUpperCase() != 'KAWASAKI' && brand.tenThuongHieu.toUpperCase() != 'MIZUNO'}" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #15171c, #2a2e3d); color: #ff4500; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1.5px solid rgba(255, 69, 0, 0.2);">
                                                 <span th:text="${brand.tenThuongHieu != null && !brand.tenThuongHieu.isEmpty() ? brand.tenThuongHieu.substring(0, 1).toUpperCase() : ''}">B</span>
                                             </div>
                                         </div>

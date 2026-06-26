@@ -473,6 +473,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE name = 'UQ_MaKhoiPhuc_Token' AND pare
     ALTER TABLE MaKhoiPhuc DROP CONSTRAINT UQ_MaKhoiPhuc_Token;
 
 ALTER TABLE MaKhoiPhuc ALTER COLUMN token VARCHAR(255) NULL;
+ALTER TABLE MaKhoiPhuc ALTER COLUMN ngay_het_han DATETIME NULL;
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_MaKhoiPhuc_Token_Unique' AND object_id = OBJECT_ID('MaKhoiPhuc'))
     CREATE UNIQUE NONCLUSTERED INDEX IX_MaKhoiPhuc_Token_Unique ON MaKhoiPhuc(token) WHERE token IS NOT NULL;

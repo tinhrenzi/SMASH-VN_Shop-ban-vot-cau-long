@@ -10,6 +10,7 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.repository.SoDiaChiRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
@@ -32,6 +33,7 @@ public class GhnService {
     private final GhnConfig ghnConfig;
     private final RestTemplate restTemplate;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
+    private final SoDiaChiRepository soDiaChiRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private String resolvedShopId = null;
 
@@ -334,7 +336,30 @@ public class GhnService {
             req.setFrom_ward_code(ghnConfig.getFromWardCode());
         }
 
-        req.setTo_name(hoaDon.getSdtNhan());
+        String receiverName = null;
+        if (hoaDon.getKhachHang() != null) {
+            try {
+                List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                if (addresses != null) {
+                    for (SoDiaChi sdc : addresses) {
+                        if (sdc.getSdtNguoiNhan() != null && sdc.getSdtNguoiNhan().trim().equals(hoaDon.getSdtNhan().trim())) {
+                            receiverName = (sdc.getHoNguoiNhan() + " " + sdc.getTenNguoiNhan()).trim();
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to lookup receiver name from SoDiaChi: {}", e.getMessage());
+            }
+            if (receiverName == null || receiverName.isEmpty()) {
+                receiverName = (hoaDon.getKhachHang().getHoKh() + " " + hoaDon.getKhachHang().getTenKh()).trim();
+            }
+        }
+        if (receiverName == null || receiverName.isEmpty()) {
+            receiverName = "Khách hàng";
+        }
+
+        req.setTo_name(receiverName);
         req.setTo_phone(hoaDon.getSdtNhan());
         req.setTo_address(hoaDon.getDiaChiNhan());
         req.setTo_district_id(toDistrictId);

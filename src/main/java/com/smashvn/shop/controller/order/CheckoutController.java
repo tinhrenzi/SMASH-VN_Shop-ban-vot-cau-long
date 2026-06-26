@@ -173,7 +173,12 @@ public class CheckoutController {
             details.put("quocGia", dc.getQuocGia());
             details.put("latitude", dc.getLatitude());
             details.put("longitude", dc.getLongitude());
-            details.put("diaChi", dc.getDiaChiCuThe() + ", " + dc.getTinhThanh() + ", " + dc.getQuocGia());
+            String fullAddress = dc.getDiaChiCuThe();
+            if (dc.getThanhPho() != null && !dc.getThanhPho().trim().isEmpty() && !dc.getThanhPho().equalsIgnoreCase(dc.getTinhThanh())) {
+                fullAddress += ", " + dc.getThanhPho();
+            }
+            fullAddress += ", " + dc.getTinhThanh() + ", " + dc.getQuocGia();
+            details.put("diaChi", fullAddress);
             addressMap.put(dc.getId(), details);
         }
 

@@ -320,29 +320,29 @@
                                             <input class="input-text input-text--primary-style" type="text" id="sdtNhan" name="sdtNhan" required placeholder="Nhập số điện thoại..." maxlength="12">
                                             <div class="invalid-feedback" id="sdtNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                         </div>
-                                        <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="diaChiNhan">ĐỊA CHỈ NHẬN HÀNG *</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Số nhà, tên đường, xã/phường, quận/huyện, tỉnh/thành..." maxlength="255">
-                                            <div class="invalid-feedback" id="diaChiNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
-                                        </div>
                                         <!-- GHN Address Dropdowns -->
                                         <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="ghnProvinceId">TỈNH/THÀNH PHỐ (GHN)</label>
+                                            <label class="gl-label" for="ghnProvinceId">TỈNH/THÀNH PHỐ *</label>
                                             <select class="select-box select-box--primary-style" id="ghnProvinceId">
                                                 <option value="">-- Chọn tỉnh/thành (tuỳ chọn) --</option>
                                             </select>
                                         </div>
                                         <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="ghnDistrictId">QUẬN/HUYỆN (GHN)</label>
+                                            <label class="gl-label" for="ghnDistrictId">QUẬN/HUYỆN *</label>
                                             <select class="select-box select-box--primary-style" id="ghnDistrictId" name="ghnToDistrictId" disabled>
                                                 <option value="">-- Chọn quận/huyện --</option>
                                             </select>
                                         </div>
                                         <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="ghnWardCode">PHƯỜNG/XÃ (GHN)</label>
+                                            <label class="gl-label" for="ghnWardCode">PHƯỜNG/XÃ *</label>
                                             <select class="select-box select-box--primary-style" id="ghnWardCode" name="ghnToWardCode" disabled>
                                                 <option value="">-- Chọn phường/xã --</option>
                                             </select>
+                                        </div>
+                                        <div class="u-s-m-b-15">
+                                            <label class="gl-label" for="diaChiNhan">ĐỊA CHỈ CỤ THỂ (Số nhà, tên đường) *</label>
+                                            <input class="input-text input-text--primary-style" type="text" id="diaChiNhan" name="diaChiNhan" required placeholder="Ví dụ: Số 12, ngõ 34, đường Lê Lợi..." maxlength="255">
+                                            <div class="invalid-feedback" id="diaChiNhan-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                         </div>
                                         <!-- Active Account Address Saving Checkbox -->
                                         <div class="u-s-m-b-15" th:if="${session.idNguoiDung != null and !isGuest}">
@@ -955,7 +955,7 @@
                     const details = addressMap[addressId];
                     $('#hoTenNhan').val(details.hoTen);
                     $('#sdtNhan').val(details.sdt);
-                    $('#diaChiNhan').val(details.diaChi).trigger('change');
+                    $('#diaChiNhan').val(details.diaChiCuThe || details.diaChi).trigger('change');
                     
                     targetProvinceToMatch = details.tinhThanh;
                     targetAddressToMatch = details.diaChi;
@@ -1164,13 +1164,13 @@
                 const carrierText = $('#idDonViVanChuyen option:selected').text().toUpperCase();
                 const isGhn = carrierText.includes('GIAO HÀNG NHANH') || carrierText.includes('GHN');
                 if (isGhn) {
-                    $('label[for="ghnProvinceId"]').html('TỈNH/THÀNH PHỐ (GHN) <span style="color:red">*</span>');
-                    $('label[for="ghnDistrictId"]').html('QUẬN/HUYỆN (GHN) <span style="color:red">*</span>');
-                    $('label[for="ghnWardCode"]').html('PHƯỜNG/XÃ (GHN) <span style="color:red">*</span>');
+                    $('label[for="ghnProvinceId"]').html('TỈNH/THÀNH PHỐ <span style="color:red">*</span>');
+                    $('label[for="ghnDistrictId"]').html('QUẬN/HUYỆN <span style="color:red">*</span>');
+                    $('label[for="ghnWardCode"]').html('PHƯỜNG/XÃ <span style="color:red">*</span>');
                 } else {
-                    $('label[for="ghnProvinceId"]').text('TỈNH/THÀNH PHỐ (GHN)');
-                    $('label[for="ghnDistrictId"]').text('QUẬN/HUYỆN (GHN)');
-                    $('label[for="ghnWardCode"]').text('PHƯỜNG/XÃ (GHN)');
+                    $('label[for="ghnProvinceId"]').text('TỈNH/THÀNH PHỐ');
+                    $('label[for="ghnDistrictId"]').text('QUẬN/HUYỆN');
+                    $('label[for="ghnWardCode"]').text('PHƯỜNG/XÃ');
                 }
             });
 
@@ -1226,12 +1226,12 @@
                 const val = $('#diaChiNhan').val().trim();
                 const $error = $('#diaChiNhan-error');
                 if (!val) {
-                    $error.text('Địa chỉ nhận hàng không được để trống.').show();
+                    $error.text('Địa chỉ cụ thể không được để trống.').show();
                     $('#diaChiNhan').css('border-color', '#ef4444');
                     return false;
                 }
                 if (val.length < 5 || val.length > 255) {
-                    $error.text('Địa chỉ nhận hàng phải từ 5 đến 255 ký tự.').show();
+                    $error.text('Địa chỉ cụ thể phải từ 5 đến 255 ký tự.').show();
                     $('#diaChiNhan').css('border-color', '#ef4444');
                     return false;
                 }

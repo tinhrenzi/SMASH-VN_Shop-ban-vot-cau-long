@@ -316,7 +316,7 @@ public class BlogService {
     }
 
     private BlogDTO convertToDTO(Blog blog) {
-        List<String> tagList = Collections.emptyList();
+        List<String> tagList = new java.util.ArrayList<>();
         if (blog.getTags() != null && !blog.getTags().trim().isEmpty()) {
             tagList = Arrays.stream(blog.getTags().split(","))
                     .map(String::trim)

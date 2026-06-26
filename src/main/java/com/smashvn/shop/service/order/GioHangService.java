@@ -346,7 +346,12 @@ public class GioHangService {
 
             finalHoTenNhan = soDiaChi.getHoNguoiNhan() + " " + soDiaChi.getTenNguoiNhan();
             finalSdtNhan = soDiaChi.getSdtNguoiNhan();
-            finalDiaChiNhan = soDiaChi.getDiaChiCuThe() + ", " + soDiaChi.getTinhThanh() + ", " + soDiaChi.getQuocGia();
+            String fullAddress = soDiaChi.getDiaChiCuThe();
+            if (soDiaChi.getThanhPho() != null && !soDiaChi.getThanhPho().trim().isEmpty() && !soDiaChi.getThanhPho().equalsIgnoreCase(soDiaChi.getTinhThanh())) {
+                fullAddress += ", " + soDiaChi.getThanhPho();
+            }
+            fullAddress += ", " + soDiaChi.getTinhThanh() + ", " + soDiaChi.getQuocGia();
+            finalDiaChiNhan = fullAddress;
             finalDistrictId = mapping.getDistrictId();
             finalWardCode = mapping.getWardCode();
             finalProvinceId = mapping.getProvinceId();

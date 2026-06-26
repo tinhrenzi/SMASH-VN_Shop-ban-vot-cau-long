@@ -77,10 +77,24 @@ public class GuestCheckoutService {
 
         TaiKhoan savedTk = taiKhoanRepository.save(tk);
 
+        String ho = "Khách";
+        String ten = "Vãng Lai";
+        if (hoTen != null && !hoTen.trim().isEmpty()) {
+            String name = hoTen.trim();
+            int lastSpace = name.lastIndexOf(' ');
+            if (lastSpace >= 0) {
+                ho = name.substring(0, lastSpace).trim();
+                ten = name.substring(lastSpace + 1).trim();
+            } else {
+                ho = "";
+                ten = name;
+            }
+        }
+
         KhachHang kh = new KhachHang();
         kh.setTaiKhoan(savedTk);
-        kh.setHoKh("");
-        kh.setTenKh(hoTen != null ? hoTen.trim() : "Khách vãng lai");
+        kh.setHoKh(ho);
+        kh.setTenKh(ten);
         kh.setSoDienThoaiKh(soDienThoai != null ? soDienThoai.trim() : "");
         kh.setNhanBanTin(false);
 
