@@ -1,0 +1,5 @@
+{
+  "summary":  "T-SQL script to synchronize missing Lining products, variants, and images from DBSM1 to SMDB_FINAL.",
+  "updatedAt":  "2026-06-29T10:54:51.422250400Z",
+  "userFacing":  true
+}

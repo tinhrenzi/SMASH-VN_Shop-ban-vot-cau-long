@@ -35,6 +35,7 @@ import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.TokenKhoiPhucRepository;
 import com.smashvn.shop.service.order.GuestCheckoutService;
 import com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess;
 
@@ -50,6 +51,8 @@ public class GuestCheckoutSecurityIntegrationTest {
     private KhachHangRepository khachHangRepository;
     @Autowired
     private HoaDonRepository hoaDonRepository;
+    @Autowired
+    private TokenKhoiPhucRepository tokenRepository;
     @Autowired
     private com.smashvn.shop.dao.DonViVanChuyenDAO donViVanChuyenDAO;
     @Autowired
@@ -86,6 +89,24 @@ public class GuestCheckoutSecurityIntegrationTest {
         } else {
             testPttt = ptts.get(0);
         }
+    }
+
+    @Test
+    void testGuestActivationTokenCreatedSynchronously() {
+        String email = "guest-token-" + System.nanoTime() + "@example.com";
+        String phone = "09" + String.format("%08d", (int) (System.nanoTime() % 100000000));
+
+        GuestCheckoutService.GuestRegisterResult result =
+                guestCheckoutService.autoRegisterGuest("Guest Token", phone, email);
+
+        assertNotNull(result.getTaiKhoan());
+        assertNotNull(result.getToken());
+
+        com.smashvn.shop.entity.TokenKhoiPhuc token = tokenRepository.findByMaXacNhan(result.getToken());
+        assertNotNull(token);
+        assertEquals(result.getTaiKhoan().getId(), token.getTaiKhoan().getId());
+        assertEquals("EMAIL", token.getLoaiXacNhan());
+        assertFalse(token.isDaSuDung());
     }
 
     private TaiKhoan createGuestAccount(String email) {
@@ -131,6 +152,21 @@ public class GuestCheckoutSecurityIntegrationTest {
         // Assert that a guest checkout session does NOT have idNguoiDung (Anonymous) and cannot access /user/dashboard
         MockHttpSession guestSession = new MockHttpSession();
         guestSession.setAttribute("guestCheckoutEmail", "guest@example.com");
+
+        mockMvc.perform(get("/user/dashboard").session(guestSession).requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dang-nhap"));
+    }
+
+    @Test
+    void testGuestAccountSessionCannotAccessDashboard() throws Exception {
+        String email = "guest-dashboard-" + System.nanoTime() + "@example.com";
+        TaiKhoan tk = createGuestAccount(email);
+
+        MockHttpSession guestSession = new MockHttpSession();
+        guestSession.setAttribute("idNguoiDung", tk.getId());
+        guestSession.setAttribute("guestCheckoutEmail", email);
+        guestSession.setAttribute("vaiTro", "KH");
 
         mockMvc.perform(get("/user/dashboard").session(guestSession).requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
@@ -210,6 +246,7 @@ public class GuestCheckoutSecurityIntegrationTest {
         TaiKhoan tk = createGuestAccount(email);
 
         MockHttpSession guestSession = new MockHttpSession();
+        guestSession.setAttribute("idNguoiDung", tk.getId());
         guestSession.setAttribute("guestCheckoutEmail", email);
 
         MvcResult result = mockMvc.perform(post("/checkout/api/set-password")
@@ -235,6 +272,25 @@ public class GuestCheckoutSecurityIntegrationTest {
         // Verify status in DB is active
         TaiKhoan updatedTk = taiKhoanRepository.findById(tk.getId()).orElseThrow();
         assertEquals(AccountStatus.ACTIVE, updatedTk.getTrangThaiTaiKhoan());
+    }
+
+    @Test
+    void testAnonymousCannotUpgradeGuestByEmail() throws Exception {
+        String email = "guest-attack-" + System.nanoTime() + "@example.com";
+        TaiKhoan tk = createGuestAccount(email);
+
+        MvcResult result = mockMvc.perform(post("/checkout/api/set-password")
+                .param("email", email)
+                .param("password", "strongpassword123")
+                .requestAttr("_csrf", csrfToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString().contains("\"success\":false"));
+
+        TaiKhoan unchangedTk = taiKhoanRepository.findById(tk.getId()).orElseThrow();
+        assertEquals(AccountStatus.GUEST, unchangedTk.getTrangThaiTaiKhoan());
+        assertNull(unchangedTk.getMatKhau());
     }
 
     @Test

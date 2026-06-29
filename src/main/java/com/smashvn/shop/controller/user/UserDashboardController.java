@@ -6,22 +6,28 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.smashvn.shop.dto.user.UserProfileEditDto;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.entity.ThongBao;
+import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import com.smashvn.shop.repository.ThongBaoRepository;
 import com.smashvn.shop.service.order.OrderViewService;
 import com.smashvn.shop.service.user.UserDashboardService;
-import com.smashvn.shop.dto.user.UserProfileEditDto;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import com.smashvn.shop.repository.ThongBaoRepository;
-import com.smashvn.shop.repository.HoaDonRepository;
-import com.smashvn.shop.entity.ThongBao;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.BindingResult;
 
 @Controller
 @RequestMapping("/user")
@@ -40,7 +46,11 @@ public class UserDashboardController {
         if (idTaiKhoan == null) {
             return null;
         }
-        return dashboardService.layThongTinKhachHang(idTaiKhoan);
+        KhachHang kh = dashboardService.layThongTinKhachHang(idTaiKhoan);
+        if (kh == null || kh.getTaiKhoan() == null || kh.getTaiKhoan().getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE) {
+            return null;
+        }
+        return kh;
     }
 
     private String checkRoleAndRedirect(HttpSession session) {
@@ -57,7 +67,9 @@ public class UserDashboardController {
     @GetMapping("/dashboard")
     public String hienThiDashboard(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -102,7 +114,9 @@ public class UserDashboardController {
     @GetMapping("/profile")
     public String hienThiHoSo(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -125,7 +139,9 @@ public class UserDashboardController {
     @GetMapping("/profile/edit")
     public String hienThiSuaHoSo(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -142,16 +158,19 @@ public class UserDashboardController {
             BindingResult bindingResult,
             Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        Integer idTaiKhoan = kh.getTaiKhoan().getId();
 
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
-            KhachHang kh = getLoggedInCustomer(session);
-            if (kh == null) {
-                return "redirect:/user/dang-nhap";
-            }
             kh.setHoKh(profileDto.getHo());
             kh.setTenKh(profileDto.getTen());
             kh.setSoDienThoaiKh(profileDto.getSdt());
@@ -164,10 +183,6 @@ public class UserDashboardController {
             dashboardService.capNhatHoSo(idTaiKhoan, profileDto);
             return "redirect:/user/profile?capNhatThanhCong";
         } catch (IllegalArgumentException e) {
-            KhachHang kh = getLoggedInCustomer(session);
-            if (kh == null) {
-                return "redirect:/user/dang-nhap";
-            }
             kh.setHoKh(profileDto.getHo());
             kh.setTenKh(profileDto.getTen());
             kh.setSoDienThoaiKh(profileDto.getSdt());
@@ -180,7 +195,9 @@ public class UserDashboardController {
     @GetMapping("/my-order")
     public String hienThiMyOrders(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -204,7 +221,9 @@ public class UserDashboardController {
     @GetMapping("/cancellation")
     public String hienThiCancellation(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -227,7 +246,9 @@ public class UserDashboardController {
     @GetMapping("/payment-option")
     public String hienThiPaymentOption(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -250,7 +271,9 @@ public class UserDashboardController {
     @GetMapping("/track-order")
     public String hienThiTrackOrder(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -275,7 +298,9 @@ public class UserDashboardController {
             @RequestParam(value = "id", required = false) Integer paramId,
             HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         Integer targetId = (pathId != null) ? pathId : paramId;
         if (targetId == null) {
@@ -291,26 +316,36 @@ public class UserDashboardController {
         if (kh == null) {
             // Guest check
             String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
-            List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses = 
-                    (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
-            
+            Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
+            java.util.List<?> allowedAccessesRaw = (allowedAccessesAttr instanceof java.util.List<?>)
+                    ? (java.util.List<?>) allowedAccessesAttr : null;
+
             boolean isAllowed = false;
-            if (guestEmail != null && allowedAccesses != null) {
+            if (guestEmail != null && allowedAccessesRaw != null) {
                 synchronized (session) {
-                    allowedAccesses.removeIf(com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess::isExpired);
-                    for (com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access : allowedAccesses) {
-                        if (access.getOrderId().equals(targetId)) {
-                            isAllowed = true;
-                            break;
+                    java.util.Iterator<?> iterator = allowedAccessesRaw.iterator();
+                    while (iterator.hasNext()) {
+                        Object item = iterator.next();
+                        if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access
+                                && access.isExpired()) {
+                            iterator.remove();
+                        }
+                    }
+                    for (Object item : allowedAccessesRaw) {
+                        if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
+                            if (access.getOrderId().equals(targetId)) {
+                                isAllowed = true;
+                                break;
+                            }
                         }
                     }
                 }
             }
-            
+
             if (!isAllowed) {
                 return "redirect:/user/dang-nhap";
             }
-            
+
             // Cross-email validation to prevent IDOR
             java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findById(targetId);
             if (hdOpt.isEmpty()) {
@@ -322,7 +357,7 @@ public class UserDashboardController {
             if (orderEmail == null || !orderEmail.equalsIgnoreCase(guestEmail)) {
                 return "redirect:/user/dang-nhap";
             }
-            
+
             kh = hd.getKhachHang();
             isGuestView = true;
         }
@@ -355,14 +390,14 @@ public class UserDashboardController {
             HttpSession session,
             jakarta.servlet.http.HttpServletRequest request) {
         java.util.Map<String, Object> response = new java.util.HashMap<>();
-        
+
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
             response.put("success", false);
             response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
             return org.springframework.http.ResponseEntity.ok(response);
         }
-        
+
         String ipAddress = request.getRemoteAddr();
         try {
             boolean success = orderViewService.huyDonHang(idHoaDon, kh.getId(), ipAddress, lyDoHuy);
@@ -384,7 +419,9 @@ public class UserDashboardController {
     @GetMapping("/notifications")
     public String hienThiThongBao(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
-        if (redirect != null) return redirect;
+        if (redirect != null) {
+            return redirect;
+        }
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
@@ -413,7 +450,7 @@ public class UserDashboardController {
         if (kh == null) {
             return "redirect:/user/dang-nhap";
         }
-        
+
         thongBaoRepository.findById(id).ifPresent(tb -> {
             if (tb.getTaiKhoan().getId().equals(kh.getTaiKhoan().getId())) {
                 tb.setDaDoc(true);

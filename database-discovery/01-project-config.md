@@ -4,7 +4,7 @@ This document details the configuration metadata of the current persistence laye
 
 ## Architecture settings
 
-* **Java Version:** JDK 25
+* **Java Version:** Java 21 (`pom.xml` sets `<java.version>21</java.version>`)
 * **Spring Boot Version:** 4.0.6
 * **Hibernate Version:** 6.x
 * **Flyway Migration:** Enabled (`spring-boot-starter-flyway`)
@@ -14,7 +14,7 @@ This document details the configuration metadata of the current persistence laye
 ## Datasource configuration
 
 * **Driver:** `com.microsoft.sqlserver.jdbc.SQLServerDriver`
-* **URL:** `jdbc:sqlserver://localhost:1433;databaseName=BadmintonShopDB3;encrypt=true;trustServerCertificate=true;` (Default fallback)
+* **URL:** `jdbc:sqlserver://localhost:1433;databaseName=DBSM1;encrypt=true;trustServerCertificate=true;` (Default fallback from `application.properties`)
 * **Username:** `${DB_USERNAME}`
 * **Password:** `${DB_PASSWORD}`
 * **Flyway Baseline Version:** 1

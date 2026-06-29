@@ -1,9 +1,11 @@
 package com.smashvn.shop.controller.order;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,31 +21,27 @@ import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.GioHangChiTiet;
 import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.PaymentMethod;
+import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SoDiaChi;
-import com.smashvn.shop.service.order.GioHangService;
-import com.smashvn.shop.service.user.UserAddressService;
-import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
-import com.smashvn.shop.repository.SoDiaChiRepository;
-import com.smashvn.shop.util.PhoneUtils;
-import com.smashvn.shop.util.VoucherCalculator;
-import com.smashvn.shop.service.product.PricingService;
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-
-import com.smashvn.shop.service.order.GuestCartService;
-import com.smashvn.shop.service.order.GuestCheckoutService;
-import com.smashvn.shop.service.user.UserDangNhapService;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
-import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.entity.PaymentMethod;
+import com.smashvn.shop.service.order.GioHangService;
+import com.smashvn.shop.service.order.GuestCartService;
+import com.smashvn.shop.service.order.GuestCheckoutService;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.user.UserAddressService;
+import com.smashvn.shop.service.user.UserDangNhapService;
+import com.smashvn.shop.util.VoucherCalculator;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Controller
@@ -70,18 +68,21 @@ public class CheckoutController {
     @GetMapping({"/checkout", "/checkout.html"})
     public String viewCheckout(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+
         List<GioHangChiTiet> danhSachChiTiet = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
 
-        if (idNguoiDung == null) {
+        if (!activeAccount) {
             List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
             if (guestItems.isEmpty()) {
                 return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
             }
             for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
                 com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
-                if (spct == null) continue;
+                if (spct == null) {
+                    continue;
+                }
 
                 GioHangChiTiet detail = new GioHangChiTiet();
                 detail.setId(spct.getId());
@@ -142,7 +143,9 @@ public class CheckoutController {
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll().stream()
                 .filter(dv -> {
-                    if (dv.getTenDonVi() == null) return false;
+                    if (dv.getTenDonVi() == null) {
+                        return false;
+                    }
                     String tenLower = dv.getTenDonVi().toLowerCase();
                     return !tenLower.contains("quầy")
                             && !tenLower.contains("quay")
@@ -156,7 +159,7 @@ public class CheckoutController {
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
         boolean hasDefaultAddress = false;
-        if (idNguoiDung != null) {
+        if (activeAccount) {
             com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
             Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
             listDiaChi = userAddressService.layDanhSachDiaChi(idKhachHang);
@@ -210,15 +213,22 @@ public class CheckoutController {
         model.addAttribute("sepayMemoPrefix", sepayConfig.getMemoPrefix());
 
         boolean isGuest = true;
-        if (idNguoiDung != null) {
-            TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
-            if (tk != null && tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST) {
-                isGuest = false;
-            }
+        if (activeAccount) {
+            isGuest = false;
         }
         model.addAttribute("isGuest", isGuest);
 
         return "checkout";
+    }
+
+    private boolean isActiveAccount(Integer idNguoiDung) {
+        if (idNguoiDung == null) {
+            return false;
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        return tk != null
+                && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 
     @PostMapping("/checkout/submit")
@@ -246,7 +256,9 @@ public class CheckoutController {
 
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean startedAsAnonymousGuest = (idNguoiDung == null);
         String emailStatus = "NEW";
+        String activationToken = null;
 
         long startPipeline = System.currentTimeMillis();
         log.info("[GuestCheckout] Starting guest checkout pipeline execution.");
@@ -257,7 +269,7 @@ public class CheckoutController {
                 response.put("message", "Email không được để trống.");
                 return ResponseEntity.ok(response);
             }
-            
+
             emailStatus = guestCheckoutService.checkEmailStatus(email);
             if ("ACTIVE".equals(emailStatus)) {
                 response.put("trangThai", "yeucaudangnhap");
@@ -271,11 +283,13 @@ public class CheckoutController {
 
             long startAccount = System.currentTimeMillis();
             try {
-                TaiKhoan tk = guestCheckoutService.autoRegisterGuest(hoTenNhan, sdtNhan, email);
+                com.smashvn.shop.service.order.GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest(hoTenNhan, sdtNhan, email);
+                TaiKhoan tk = regResult.getTaiKhoan();
+                activationToken = regResult.getToken();
                 com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
-                
+
                 guestCartService.transferGuestCartToDb(session, kh.getId());
-                
+
                 request.changeSessionId();
                 session = request.getSession(true);
 
@@ -370,13 +384,13 @@ public class CheckoutController {
             HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
-            
+
             // Save address to SoDiaChi if applicable (after order is successfully created)
             if (idDiaChiLuu == null && khachHang != null) {
                 TaiKhoan currentTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
                 boolean shouldSave = false;
                 boolean setAsDefault = false;
-                
+
                 if (currentTk != null) {
                     if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
                         // Guest account: automatically save
@@ -396,13 +410,13 @@ public class CheckoutController {
                         }
                     }
                 }
-                
+
                 if (shouldSave) {
                     String tinhThanhVal = tinhThanhText != null ? tinhThanhText.trim() : "";
                     String thanhPhoVal = thanhPhoText != null ? thanhPhoText.trim() : "";
                     String diaChiCuTheVal = diaChiCuTheParam != null ? diaChiCuTheParam.trim() : "";
                     String sdtVal = sdtNhan != null ? sdtNhan.trim() : "";
-                    
+
                     if (tinhThanhVal.isEmpty() || tinhThanhVal.contains("--")) {
                         if (diaChiNhan != null && !diaChiNhan.trim().isEmpty()) {
                             String[] parts = diaChiNhan.split(",");
@@ -411,7 +425,9 @@ public class CheckoutController {
                                 thanhPhoVal = parts[parts.length - 2].trim();
                                 StringBuilder sb = new StringBuilder();
                                 for (int i = 0; i < parts.length - 2; i++) {
-                                    if (i > 0) sb.append(", ");
+                                    if (i > 0) {
+                                        sb.append(", ");
+                                    }
                                     sb.append(parts[i].trim());
                                 }
                                 diaChiCuTheVal = sb.toString();
@@ -426,7 +442,7 @@ public class CheckoutController {
                             }
                         }
                     }
-                    
+
                     // Check duplicate
                     boolean exists = false;
                     List<SoDiaChi> existingAddresses = soDiaChiRepository.findByKhachHang_Id(khachHang.getId());
@@ -435,20 +451,20 @@ public class CheckoutController {
                         String existingTinhThanh = dc.getTinhThanh() != null ? dc.getTinhThanh().trim() : "";
                         String existingThanhPho = dc.getThanhPho() != null ? dc.getThanhPho().trim() : "";
                         String existingSdt = dc.getSdtNguoiNhan() != null ? dc.getSdtNguoiNhan().trim() : "";
-                        
-                        if (existingDiaChiCuThe.equalsIgnoreCase(diaChiCuTheVal) &&
-                            existingTinhThanh.equalsIgnoreCase(tinhThanhVal) &&
-                            existingThanhPho.equalsIgnoreCase(thanhPhoVal) &&
-                            existingSdt.equalsIgnoreCase(sdtVal)) {
+
+                        if (existingDiaChiCuThe.equalsIgnoreCase(diaChiCuTheVal)
+                                && existingTinhThanh.equalsIgnoreCase(tinhThanhVal)
+                                && existingThanhPho.equalsIgnoreCase(thanhPhoVal)
+                                && existingSdt.equalsIgnoreCase(sdtVal)) {
                             exists = true;
                             break;
                         }
                     }
-                    
+
                     if (!exists) {
                         SoDiaChi newAddress = new SoDiaChi();
                         newAddress.setKhachHang(khachHang);
-                        
+
                         // Split name
                         String ho = "Khách";
                         String ten = "Vãng Lai";
@@ -477,7 +493,7 @@ public class CheckoutController {
                         newAddress.setProvinceName(tinhThanhVal);
                         newAddress.setDistrictName(thanhPhoVal);
                         newAddress.setWardName(phuongXaText != null ? phuongXaText.trim() : null);
-                        
+
                         if (setAsDefault) {
                             newAddress.setDefaultShipping(true);
                             newAddress.setDefaultBilling(true);
@@ -485,7 +501,7 @@ public class CheckoutController {
                             newAddress.setDefaultShipping(false);
                             newAddress.setDefaultBilling(false);
                         }
-                        
+
                         soDiaChiRepository.save(newAddress);
                         log.info("[GuestCheckout] Saved new address to SoDiaChi for customer id: {}, isDefault: {}", khachHang.getId(), setAsDefault);
                     } else {
@@ -494,9 +510,11 @@ public class CheckoutController {
                 }
             }
 
-            // If this is a guest checkout (meaning they are not logged in as a registered user),
-            // grant temporary access to this specific order ID in their session for 30 minutes.
-            if (session.getAttribute("idNguoiDung") == null) {
+            TaiKhoan checkoutTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            boolean isGuestCheckout = checkoutTk != null && checkoutTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST;
+
+            // Guest checkout may create a GUEST account in-session; grant access only to the new order.
+            if (startedAsAnonymousGuest || isGuestCheckout) {
                 synchronized (session) {
                     List<GuestOrderAccess> allowedAccesses = (List<GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
                     if (allowedAccesses == null) {
@@ -506,19 +524,19 @@ public class CheckoutController {
                     session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
                 }
             }
-            
+
             guestCheckoutService.incrementPurchaseCount(idNguoiDung);
-            
-            TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+
+            TaiKhoan tk = (checkoutTk != null) ? checkoutTk : taiKhoanRepository.findById(idNguoiDung).orElse(null);
             if (tk != null) {
                 response.put("isGuest", tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST);
                 response.put("soLanMuaThanhCong", tk.getSoLanMuaThanhCong());
-                
+
                 if ("NEW".equals(emailStatus)) {
                     long startEmail = System.currentTimeMillis();
                     try {
                         String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-                        guestCheckoutService.sendOrderAndAccountNotification(tk, appUrl);
+                        guestCheckoutService.sendOrderAndAccountNotification(tk.getEmail(), activationToken, appUrl);
                         long endEmail = System.currentTimeMillis();
                         log.info("[GuestCheckout] Send notification email triggered: {}ms - SUCCESS (Asynchronous)", (endEmail - startEmail));
                     } catch (Exception e) {
@@ -534,14 +552,14 @@ public class CheckoutController {
             // Payment initialization & validation
             long startPayment = System.currentTimeMillis();
             if ("SePay".equalsIgnoreCase(phuongThucThanhToan)) {
-                if (hd.getMaDonHang() == null || hd.getMaDonHang().isEmpty() ||
-                    hd.getTongTien() == null || hd.getTongTien().compareTo(BigDecimal.ZERO) <= 0 ||
-                    !PaymentMethod.SEPAY.getValue().equalsIgnoreCase(hd.getPaymentMethod())) {
-                    
+                if (hd.getMaDonHang() == null || hd.getMaDonHang().isEmpty()
+                        || hd.getTongTien() == null || hd.getTongTien().compareTo(BigDecimal.ZERO) <= 0
+                        || !PaymentMethod.SEPAY.getValue().equalsIgnoreCase(hd.getPaymentMethod())) {
+
                     long endPayment = System.currentTimeMillis();
-                    log.error("[GuestCheckout] Create payment request: {}ms - FAILED (Validation error: maDonHang={}, amount={}, method={})", 
-                              (endPayment - startPayment), hd.getMaDonHang(), hd.getTongTien(), hd.getPaymentMethod());
-                    
+                    log.error("[GuestCheckout] Create payment request: {}ms - FAILED (Validation error: maDonHang={}, amount={}, method={})",
+                            (endPayment - startPayment), hd.getMaDonHang(), hd.getTongTien(), hd.getPaymentMethod());
+
                     Map<String, Object> errorMap = new HashMap<>();
                     errorMap.put("status", "error");
                     errorMap.put("trangThai", "loi");
@@ -730,6 +748,12 @@ public class CheckoutController {
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+        if (activeAccount) {
+            response.put("success", false);
+            response.put("message", "Phien khach vang lai khong hop le. Vui long dung lien ket thiet lap mat khau trong email.");
+            return ResponseEntity.ok(response);
+        }
         if (idNguoiDung == null) {
             String sessionEmail = (String) session.getAttribute("guestCheckoutEmail");
             String targetEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : sessionEmail;
@@ -739,41 +763,55 @@ public class CheckoutController {
                 response.put("message", "Chưa đăng nhập và không xác định được email đặt hàng.");
                 return ResponseEntity.ok(response);
             }
-            
+
             TaiKhoan tk = taiKhoanRepository.findByEmail(targetEmail.trim());
             if (tk == null) {
                 response.put("success", false);
                 response.put("message", "Không tìm thấy tài khoản");
                 return ResponseEntity.ok(response);
             }
-            
+
             if (tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST) {
                 response.put("success", false);
                 response.put("message", "Tài khoản đã được kích hoạt trước đó, vui lòng đăng nhập bằng mật khẩu");
                 return ResponseEntity.ok(response);
             }
-            
+
             idNguoiDung = tk.getId();
+        }
+
+        TaiKhoan sessionTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        String sessionEmail = (String) session.getAttribute("guestCheckoutEmail");
+        if (sessionTk == null
+                || sessionTk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST
+                || sessionEmail == null
+                || !sessionEmail.equalsIgnoreCase(sessionTk.getEmail())
+                || (email != null && !email.trim().isEmpty() && !email.trim().equalsIgnoreCase(sessionTk.getEmail()))) {
+            response.put("success", false);
+            response.put("message", "Phien khach vang lai khong hop le hoac khong khop email dat hang.");
+            return ResponseEntity.ok(response);
         }
 
         try {
             guestCheckoutService.setPasswordForGuest(idNguoiDung, password);
-            
+
             // Success! Rotate Session ID to prevent session fixation
             TaiKhoan activatedTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
-            
+
             // Invalidate the old guest session completely (clears guestCheckoutEmail, allowedGuestOrderAccesses)
+            session.removeAttribute("guestCheckoutEmail");
+            session.removeAttribute("allowedGuestOrderAccesses");
             session.invalidate();
-            
+
             // Create a brand new authenticated session
             HttpSession newSession = request.getSession(true);
-            
+
             if (activatedTk != null) {
                 newSession.setAttribute("nguoiDungDangNhap", activatedTk.getEmail());
                 newSession.setAttribute("idNguoiDung", activatedTk.getId());
                 newSession.setAttribute("vaiTro", "KH");
                 newSession.setAttribute("laKhachHang", true);
-                
+
                 com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(activatedTk.getId());
                 if (kh != null) {
                     newSession.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
@@ -831,6 +869,7 @@ public class CheckoutController {
     }
 
     public static class GuestOrderAccess implements java.io.Serializable {
+
         private static final long serialVersionUID = 1L;
         private final Integer orderId;
         private final java.time.Instant expiresAt;
@@ -854,7 +893,9 @@ public class CheckoutController {
     }
 
     private boolean isPhoneUniqueConstraintViolation(Throwable e) {
-        if (e == null) return false;
+        if (e == null) {
+            return false;
+        }
         Throwable current = e;
         while (current != null) {
             String msg = current.getMessage();
@@ -867,12 +908,14 @@ public class CheckoutController {
     }
 
     private boolean isDatabaseException(Throwable e) {
-        if (e == null) return false;
+        if (e == null) {
+            return false;
+        }
         Throwable current = e;
         while (current != null) {
-            if (current instanceof org.springframework.dao.DataAccessException ||
-                current instanceof java.sql.SQLException ||
-                current instanceof org.hibernate.JDBCException) {
+            if (current instanceof org.springframework.dao.DataAccessException
+                    || current instanceof java.sql.SQLException
+                    || current instanceof org.hibernate.JDBCException) {
                 return true;
             }
             current = current.getCause();

@@ -12,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.product.SanPhamYeuThichService;
 
 @Controller
@@ -21,12 +22,13 @@ public class SanPhamYeuThichController {
 
     private final SanPhamYeuThichService yeuThichService;
     private final SanPhamYeuThichRepository yeuThichRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     // 1. Hiển thị trang Wishlist
     @GetMapping
     public String hienThiWishlist(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) return "redirect:/user/dang-nhap";
+        if (!isActiveAccount(idNguoiDung)) return "redirect:/user/dang-nhap";
 
         model.addAttribute("listWishlist", yeuThichService.layDanhSachWishlist(idNguoiDung));
         return "wishlist"; 
@@ -38,9 +40,9 @@ public class SanPhamYeuThichController {
     public ResponseEntity<Map<String, Object>> themVaoWishlist(@RequestParam("idSanPham") Integer idSanPham, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         Map<String, Object> result = new HashMap<>();
-        if (idNguoiDung == null) {
+        if (!isActiveAccount(idNguoiDung)) {
             result.put("status", "chuadangnhap");
-            return ResponseEntity.ok(result);
+            return ResponseEntity.status(401).body(result);
         }
 
         String kq = yeuThichService.themVaoWishlist(idNguoiDung, idSanPham);
@@ -54,7 +56,7 @@ public class SanPhamYeuThichController {
     @GetMapping("/xoa/{id}")
     public String xoaSanPham(@PathVariable("id") Integer idSanPham, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung != null) {
+        if (isActiveAccount(idNguoiDung)) {
             yeuThichService.xoaSanPham(idNguoiDung, idSanPham);
         }
         return "redirect:/wishlist";
@@ -64,7 +66,7 @@ public class SanPhamYeuThichController {
     @GetMapping("/xoa-tat-ca")
     public String xoaTatCa(HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung != null) {
+        if (isActiveAccount(idNguoiDung)) {
             yeuThichService.xoaTatCa(idNguoiDung);
         }
         return "redirect:/wishlist";
@@ -76,9 +78,9 @@ public class SanPhamYeuThichController {
         Map<String, String> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         
-        if (idNguoiDung == null) {
+        if (!isActiveAccount(idNguoiDung)) {
             response.put("trangThai", "chuadangnhap");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(401).body(response);
         }
         
         try {
@@ -88,5 +90,15 @@ public class SanPhamYeuThichController {
             response.put("trangThai", "loi");
         }
         return ResponseEntity.ok(response);
+    }
+
+    private boolean isActiveAccount(Integer idNguoiDung) {
+        if (idNguoiDung == null) {
+            return false;
+        }
+        com.smashvn.shop.entity.TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        return tk != null
+                && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 }

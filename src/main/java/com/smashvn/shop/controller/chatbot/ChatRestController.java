@@ -105,9 +105,21 @@ public class ChatRestController {
         return kh;
     }
 
+    private Integer getActiveUserId(HttpSession session) {
+        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        if (idTaiKhoan == null) {
+            return null;
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan).orElse(null);
+        if (tk == null || tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE) {
+            return null;
+        }
+        return idTaiKhoan;
+    }
+
     @GetMapping("/history")
     public ResponseEntity<?> getChatHistory(HttpSession session) {
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = getActiveUserId(session);
         if (idTaiKhoan == null) {
             // Khách chưa đăng nhập: Trả về tin nhắn chào mừng mặc định của khách vãng lai
             MessageResponse welcome = new MessageResponse(
@@ -164,7 +176,7 @@ public class ChatRestController {
             return ResponseEntity.badRequest().body("Nội dung tin nhắn không được vượt quá 2000 ký tự!");
         }
 
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = getActiveUserId(session);
 
         if (idTaiKhoan == null) {
             // Khách vãng lai: Xử lý in-memory trực tiếp bằng AI nhưng không lưu database
@@ -208,7 +220,7 @@ public class ChatRestController {
             return ResponseEntity.badRequest().body("Mã tin nhắn không được để trống!");
         }
 
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = getActiveUserId(session);
         if (idTaiKhoan == null || payload.getMessageId() == 0L) {
             // Khách vãng lai hoặc tin nhắn ảo: Chỉ trả về OK
             return ResponseEntity.ok("Cảm ơn đóng góp của bạn!");

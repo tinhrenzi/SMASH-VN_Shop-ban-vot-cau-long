@@ -44,11 +44,11 @@ public class RoleSwitchController {
 
         // 2. Fetch and validate account ownership
         TaiKhoan tk = taiKhoanRepository.findById(userId).orElse(null);
-        if (tk == null || (!"hoat_dong".equals(tk.getTrangThai()) && !"cho_khoa".equals(tk.getTrangThai()))) {
-            log.warn("[SECURITY_EVENT] FAILED_ROLE_SWITCH: Account ID {} not found or inactive", userId);
+        if (tk == null || (!"hoat_dong".equals(tk.getTrangThai()) && !"cho_khoa".equals(tk.getTrangThai())) || tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE) {
+            log.warn("[SECURITY_EVENT] FAILED_ROLE_SWITCH: Account ID {} not found, inactive, or not fully registered", userId);
             session.invalidate();
             SecurityContextHolder.clearContext();
-            return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Tài khoản không tồn tại hoặc đã bị khóa!", java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Tài khoản không hợp lệ, không tồn tại hoặc đã bị khóa!", java.nio.charset.StandardCharsets.UTF_8);
         }
 
         // 3. Validate role ownership

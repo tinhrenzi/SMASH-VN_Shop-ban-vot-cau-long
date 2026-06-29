@@ -6,6 +6,8 @@ import com.smashvn.shop.entity.GioHangChiTiet;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.AccountStatus;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
@@ -109,6 +111,13 @@ public class CheckoutControllerTest {
         when(khachHangRepository.findByTaiKhoan_Id(123)).thenReturn(kh);
 
         when(session.getAttribute("idNguoiDung")).thenReturn(123);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(123);
+        tk.setEmail("active@example.com");
+        tk.setVaiTro("KH");
+        tk.setTrangThai("hoat_dong");
+        tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+        when(taiKhoanRepository.findById(123)).thenReturn(java.util.Optional.of(tk));
 
         mockCartItems = new ArrayList<>();
         GioHangChiTiet item = new GioHangChiTiet();
@@ -225,5 +234,44 @@ public class CheckoutControllerTest {
 
         Map<?, ?> details2 = (Map<?, ?>) addressMap.get("11");
         assertEquals("Tran Binh", details2.get("hoTen"));
+    }
+
+    @Test
+    void guestCheckoutPageDoesNotLoadSavedAddresses() {
+        Integer guestAccountId = 456;
+        when(session.getAttribute("idNguoiDung")).thenReturn(guestAccountId);
+
+        TaiKhoan guest = new TaiKhoan();
+        guest.setId(guestAccountId);
+        guest.setEmail("guest@example.com");
+        guest.setVaiTro("KH");
+        guest.setTrangThai("hoat_dong");
+        guest.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        when(taiKhoanRepository.findById(guestAccountId)).thenReturn(java.util.Optional.of(guest));
+
+        com.smashvn.shop.service.order.GuestCartService.GuestCartItem guestItem =
+                new com.smashvn.shop.service.order.GuestCartService.GuestCartItem(99, 1);
+        when(guestCartService.getGuestCartItems(session)).thenReturn(java.util.List.of(guestItem));
+
+        SanPham sp = new SanPham();
+        sp.setTenSanPham("Guest Product");
+        sp.setTrangThai("dang_ban");
+        SanPhamChiTiet spct = new SanPhamChiTiet();
+        spct.setId(99);
+        spct.setSoLuongTon(5);
+        spct.setGiaBan(new BigDecimal("120000"));
+        spct.setSanPham(sp);
+        when(sanPhamChiTietRepository.findById(99)).thenReturn(java.util.Optional.of(spct));
+
+        Model model = new ConcurrentModel();
+        String view = checkoutController.viewCheckout(session, model);
+
+        assertEquals("checkout", view);
+        assertEquals(true, model.getAttribute("isGuest"));
+        assertTrue(((List<?>) model.getAttribute("listDiaChi")).isEmpty());
+        assertEquals("{}", model.getAttribute("addressMapJson"));
+        verify(userAddressService, never()).layDanhSachDiaChi(anyInt());
+        verify(gioHangService, never()).layDanhSachSanPhamTrongGio(guestAccountId);
+        verify(gioHangService, never()).cleanPendingOrders(guestAccountId);
     }
 }

@@ -1,10 +1,12 @@
 package com.smashvn.shop.controller.api;
 
 import com.smashvn.shop.config.GhnConfig;
+import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.order.OrderViewService;
 import jakarta.servlet.http.HttpSession;
@@ -37,6 +39,7 @@ public class GhnRestController {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final OrderViewService orderViewService;
     private final GhnConfig ghnConfig;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     /** Lấy danh sách tỉnh/thành phố */
     @GetMapping("/provinces")
@@ -130,10 +133,38 @@ public class GhnRestController {
     public ResponseEntity<?> trackByOrderId(@PathVariable Integer orderId, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("status", "error", "message", "Chua dang nhap"));
+        }
+
+        var taiKhoan = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        if (taiKhoan == null
+                || taiKhoan.getTrangThaiTaiKhoan() != AccountStatus.ACTIVE
+                || !"KH".equals(taiKhoan.getVaiTro())
+                || !"hoat_dong".equalsIgnoreCase(taiKhoan.getTrangThai())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("status", "error", "message", "Chua dang nhap"));
+        }
+
+        HoaDon requestedOrder = hoaDonRepository.findById(orderId).orElse(null);
+        if (requestedOrder == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "error", "message", "Khong tim thay don hang"));
+        }
+
+        Integer ownerAccountId = requestedOrder.getKhachHang() != null && requestedOrder.getKhachHang().getTaiKhoan() != null
+                ? requestedOrder.getKhachHang().getTaiKhoan().getId()
+                : null;
+        if (!idNguoiDung.equals(ownerAccountId)) {
+            log.warn("GHN trackByOrderId ownership denied: user #{} tried order #{}", idNguoiDung, orderId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("status", "error", "message", "Khong co quyen truy cap"));
+        }
+        if (idNguoiDung == null) {
             return ResponseEntity.ok(Map.of("status", "error", "message", "Chưa đăng nhập"));
         }
         try {
-            HoaDon hd = hoaDonRepository.findById(orderId).orElse(null);
+            HoaDon hd = requestedOrder;
             if (hd == null) {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy đơn hàng"));
             }

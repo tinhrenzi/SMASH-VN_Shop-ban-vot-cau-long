@@ -41,7 +41,14 @@ public class UserAddressController {
 
     private KhachHang getLoggedInCustomer(HttpSession session) {
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
-        return (idTaiKhoan != null) ? dashboardService.layThongTinKhachHang(idTaiKhoan) : null;
+        if (idTaiKhoan == null) {
+            return null;
+        }
+        KhachHang kh = dashboardService.layThongTinKhachHang(idTaiKhoan);
+        if (kh == null || kh.getTaiKhoan() == null || kh.getTaiKhoan().getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE) {
+            return null;
+        }
+        return kh;
     }
 
     private String checkRoleAndRedirect(HttpSession session) {

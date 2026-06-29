@@ -83,6 +83,12 @@ public class OrderPricingIntegrationTest {
     private PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired
+    private TokenKhoiPhucRepository tokenRepository;
+
+    @Autowired
+    private EditLogRepository editLogRepository;
+
+    @Autowired
     private GioHangChiTietRepository gioHangChiTietRepository;
 
     @Autowired
@@ -118,7 +124,7 @@ public class OrderPricingIntegrationTest {
         // Clean up any stray temp test users/customers from previous interrupted runs
         try {
             List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
-                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("temp_r_"))
+                    .filter(tk -> tk.getEmail() != null && (tk.getEmail().startsWith("temp_r_") || tk.getEmail().contains("tester_pricing_")))
                     .toList();
             for (TaiKhoan tk : strayUsers) {
                 KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
@@ -138,6 +144,9 @@ public class OrderPricingIntegrationTest {
                     }
                     khachHangRepository.delete(kh);
                 }
+                // Delete account-owned records first to avoid FK constraints
+                deleteEditLogsForAccount(tk.getId());
+                tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(tk.getId()));
                 taiKhoanRepository.delete(tk);
             }
         } catch (Exception e) {
@@ -587,6 +596,9 @@ public class OrderPricingIntegrationTest {
             }
             for (Integer userId : tempUserIds) {
                 try {
+                    deleteEditLogsForAccount(userId);
+                    tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(userId));
+                    tokenRepository.flush();
                     taiKhoanRepository.deleteById(userId);
                 } catch (Exception e) {}
             }
@@ -617,6 +629,7 @@ public class OrderPricingIntegrationTest {
                 try {
                     dotGiamGiaDAO.deleteById(testDgg.getId());
                     dotGiamGiaDAO.flush();
+                    testDgg = null;
                 } catch (Exception e) {
                     System.err.println("Error deleting testDgg in finally: " + e.getMessage());
                 }
@@ -631,6 +644,7 @@ public class OrderPricingIntegrationTest {
                 try {
                     sanPhamRepository.deleteById(testSpct.getSanPham().getId());
                     sanPhamRepository.flush();
+                    testSpct = null;
                 } catch (Exception e) {
                     System.err.println("Error deleting SanPham in finally: " + e.getMessage());
                 }
@@ -639,14 +653,19 @@ public class OrderPricingIntegrationTest {
                 try {
                     khachHangRepository.deleteById(testKhachHang.getId());
                     khachHangRepository.flush();
+                    testKhachHang = null;
                 } catch (Exception e) {
                     System.err.println("Error deleting testKhachHang in finally: " + e.getMessage());
                 }
             }
             if (testUser != null) {
                 try {
+                    deleteEditLogsForAccount(testUser.getId());
+                    tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(testUser.getId()));
+                    tokenRepository.flush();
                     taiKhoanRepository.deleteById(testUser.getId());
                     taiKhoanRepository.flush();
+                    testUser = null;
                 } catch (Exception e) {
                     System.err.println("Error deleting testUser in finally: " + e.getMessage());
                 }
@@ -675,6 +694,9 @@ public class OrderPricingIntegrationTest {
         // Clean up test admin users
         for (Integer adminId : adminUserIdsToClean) {
             try {
+                deleteEditLogsForAccount(adminId);
+                tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(adminId));
+                tokenRepository.flush();
                 taiKhoanRepository.deleteById(adminId);
                 taiKhoanRepository.flush();
             } catch (Exception e) {}
@@ -728,6 +750,13 @@ public class OrderPricingIntegrationTest {
         }
         try {
             if (testKhachHang != null) {
+                // Delete cart first
+                GioHang gh = gioHangRepository.findByKhachHang_Id(testKhachHang.getId());
+                if (gh != null) {
+                    gioHangChiTietRepository.deleteAll(gioHangChiTietRepository.findByGioHang_Id(gh.getId()));
+                    gioHangRepository.delete(gh);
+                    gioHangRepository.flush();
+                }
                 khachHangRepository.deleteById(testKhachHang.getId());
                 khachHangRepository.flush();
             }
@@ -736,6 +765,10 @@ public class OrderPricingIntegrationTest {
         }
         try {
             if (testUser != null) {
+                // Delete account-owned records first to avoid FK constraints
+                deleteEditLogsForAccount(testUser.getId());
+                tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(testUser.getId()));
+                tokenRepository.flush();
                 taiKhoanRepository.deleteById(testUser.getId());
                 taiKhoanRepository.flush();
             }
@@ -752,12 +785,23 @@ public class OrderPricingIntegrationTest {
                     nhanVienRepository.delete(nv);
                     nhanVienRepository.flush();
                 }
+                deleteEditLogsForAccount(tk.getId());
+                tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(tk.getId()));
+                tokenRepository.flush();
                 taiKhoanRepository.delete(tk);
                 taiKhoanRepository.flush();
             }
         } catch (Exception e) {
             System.err.println("Error deleting strayStaff in tearDown: " + e.getMessage());
         }
+    }
+
+    private void deleteEditLogsForAccount(Integer accountId) {
+        if (accountId == null) {
+            return;
+        }
+        editLogRepository.deleteAll(editLogRepository.findByTaiKhoan_Id(accountId));
+        editLogRepository.flush();
     }
 }
 

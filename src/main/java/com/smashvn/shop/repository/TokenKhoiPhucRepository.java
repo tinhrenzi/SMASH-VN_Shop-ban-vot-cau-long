@@ -7,4 +7,5 @@ import com.smashvn.shop.entity.TokenKhoiPhuc;
 public interface TokenKhoiPhucRepository extends JpaRepository<TokenKhoiPhuc, Integer> {
 
     TokenKhoiPhuc findByMaXacNhan(String maXacNhan);
+    java.util.List<TokenKhoiPhuc> findByTaiKhoan_Id(Integer id);
 }

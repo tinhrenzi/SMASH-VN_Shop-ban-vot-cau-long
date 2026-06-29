@@ -52,8 +52,26 @@ public class GuestCheckoutService {
         }
     }
 
+    public static class GuestRegisterResult {
+        private final TaiKhoan taiKhoan;
+        private final String token;
+
+        public GuestRegisterResult(TaiKhoan taiKhoan, String token) {
+            this.taiKhoan = taiKhoan;
+            this.token = token;
+        }
+
+        public TaiKhoan getTaiKhoan() {
+            return taiKhoan;
+        }
+
+        public String getToken() {
+            return token;
+        }
+    }
+
     @Transactional
-    public TaiKhoan autoRegisterGuest(String hoTen, String soDienThoai, String email) {
+    public GuestRegisterResult autoRegisterGuest(String hoTen, String soDienThoai, String email) {
         String trimmedEmail = (email != null) ? email.trim() : "";
         if (trimmedEmail.isEmpty()) {
             throw new IllegalArgumentException("Email không được để trống");
@@ -98,7 +116,7 @@ public class GuestCheckoutService {
                 }
                 khachHangRepository.save(kh);
             }
-            return existingTk;
+            return new GuestRegisterResult(existingTk, null);
         }
 
         // Check duplicate phone conflict for new registration against all customers
@@ -144,9 +162,20 @@ public class GuestCheckoutService {
         kh.setNhanBanTin(false);
 
         khachHangRepository.save(kh);
-        log.info("[GUEST_CHECKOUT] Auto-registered GUEST account: {}", trimmedEmail);
+        
+        // Generate and save token synchronously in the same transaction
+        String token = UUID.randomUUID().toString();
+        TokenKhoiPhuc tkp = new TokenKhoiPhuc();
+        tkp.setTaiKhoan(savedTk);
+        tkp.setMaXacNhan(token);
+        tkp.setLoaiXacNhan("EMAIL");
+        tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30)); // 30 days validation limit
+        tkp.setDaSuDung(false);
+        tokenRepository.save(tkp);
 
-        return savedTk;
+        log.info("[GUEST_CHECKOUT] Auto-registered GUEST account & generated token: {}", trimmedEmail);
+
+        return new GuestRegisterResult(savedTk, token);
     }
 
     @Transactional
@@ -159,27 +188,25 @@ public class GuestCheckoutService {
     }
 
     @org.springframework.scheduling.annotation.Async
-    @Transactional
-    public void sendOrderAndAccountNotification(TaiKhoan tk, String appUrl) {
+    public void sendOrderAndAccountNotification(String recipientEmail, String token, String appUrl) {
         long startEmailThread = System.currentTimeMillis();
         log.info("[EmailService] Starting asynchronous email sending process.");
         
-        // Tạo token kích hoạt/thiết lập mật khẩu
-        String token = UUID.randomUUID().toString();
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            log.warn("[EmailService] Recipient email is null or empty, skipping email notification.");
+            return;
+        }
 
-        TokenKhoiPhuc tkp = new TokenKhoiPhuc();
-        tkp.setTaiKhoan(tk);
-        tkp.setMaXacNhan(token);
-        tkp.setLoaiXacNhan("EMAIL");
-        tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30)); // 30 days validation limit
-        tkp.setDaSuDung(false);
-        tokenRepository.save(tkp);
+        if (token == null || token.trim().isEmpty()) {
+            log.warn("[EmailService] Activation token is null or empty, skipping email notification.");
+            return;
+        }
 
         String activationUrl = appUrl + "/user/thiet-lap-mat-khau?token=" + token;
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(tk.getEmail());
+            message.setTo(recipientEmail);
             message.setSubject("Xác nhận đặt hàng thành công và kích hoạt tài khoản - Smash VN");
             message.setText("Chào bạn,\n\n" +
                     "Cảm ơn bạn đã đặt hàng tại Smash VN. Đơn hàng của bạn đã được ghi nhận thành công trên hệ thống.\n\n" +
@@ -190,10 +217,10 @@ public class GuestCheckoutService {
 
             mailSender.send(message);
             long endEmailThread = System.currentTimeMillis();
-            log.info("[EmailService] Email sent successfully in {}ms to {}", (endEmailThread - startEmailThread), tk.getEmail());
+            log.info("[EmailService] Email sent successfully in {}ms to {}", (endEmailThread - startEmailThread), recipientEmail);
         } catch (Exception e) {
             long endEmailThread = System.currentTimeMillis();
-            log.error("[EmailService] Failed to send email in {}ms to {}. Exception: {}", (endEmailThread - startEmailThread), tk.getEmail(), e.getMessage(), e);
+            log.error("[EmailService] Failed to send email in {}ms to {}. Exception: {}", (endEmailThread - startEmailThread), recipientEmail, e.getMessage(), e);
             // Do not fail order checkout if mail sending fails
         }
     }

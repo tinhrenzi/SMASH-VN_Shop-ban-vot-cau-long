@@ -17,6 +17,7 @@ import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 
 @Controller
 @RequestMapping("/gio-hang")
@@ -27,6 +28,7 @@ public class GioHangController {
     private final PricingService pricingService;
     private final GuestCartService guestCartService;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     // HÀM 1: THÊM VÀO GIỎ (Dùng cho AJAX)
     @PostMapping("/them")
@@ -38,6 +40,7 @@ public class GioHangController {
         
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
 
         if (soLuong == null) {
             return ResponseEntity.status(400).body("Số lượng sản phẩm không được để trống.");
@@ -46,7 +49,7 @@ public class GioHangController {
             return ResponseEntity.status(400).body("Sản phẩm không hợp lệ.");
         }
         
-        if (idNguoiDung == null) {
+        if (!activeAccount) {
             try {
                 guestCartService.addToGuestCart(session, idSanPhamChiTiet, soLuong);
                 com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
@@ -80,8 +83,9 @@ public class GioHangController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> layDuLieuMiniCart(HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
         
-        if (idNguoiDung == null) {
+        if (!activeAccount) {
             Map<String, Object> response = guestCartService.layDuLieuMiniCart(session);
             return ResponseEntity.ok(response);
         }
@@ -95,11 +99,12 @@ public class GioHangController {
     @GetMapping
     public String hienThiGioHang(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
         
         List<GioHangChiTiet> danhSachChiTiet = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
 
-        if (idNguoiDung == null) {
+        if (!activeAccount) {
             List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
             for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
                 com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
@@ -147,9 +152,10 @@ public class GioHangController {
 	    public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
 	        Map<String, String> response = new HashMap<>();
 	        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            boolean activeAccount = isActiveAccount(idNguoiDung);
 	        
 	        try {
-	            if (idNguoiDung == null) {
+	            if (!activeAccount) {
 	                guestCartService.removeFromGuestCart(session, idChiTiet);
 	            } else {
 	                gioHangService.xoaSanPhamKhoiGio(idChiTiet, idNguoiDung);
@@ -169,6 +175,7 @@ public class GioHangController {
                                                  @RequestParam(value = "soLuong", required = false) Integer soLuong,
                                                  HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
         
         if (soLuong == null) {
             return ResponseEntity.status(400).body("Số lượng sản phẩm không được để trống.");
@@ -178,7 +185,7 @@ public class GioHangController {
         }
 
         try {
-            if (idNguoiDung == null) {
+            if (!activeAccount) {
                 guestCartService.updateGuestCartQuantity(session, idChiTiet, soLuong);
             } else {
                 gioHangService.capNhatSoLuong(idChiTiet, soLuong, idNguoiDung);
@@ -187,5 +194,15 @@ public class GioHangController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
+    }
+
+    private boolean isActiveAccount(Integer idNguoiDung) {
+        if (idNguoiDung == null) {
+            return false;
+        }
+        com.smashvn.shop.entity.TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        return tk != null
+                && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 }

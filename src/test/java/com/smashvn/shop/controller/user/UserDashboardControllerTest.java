@@ -59,6 +59,14 @@ public class UserDashboardControllerTest {
     void testXuLySuaHoSo_Success() {
         UserProfileEditDto dto = new UserProfileEditDto("Nguyen", "Van A", "0912345678");
         when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        
+        KhachHang kh = new KhachHang();
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        tk.setEmail("test@gmail.com");
+        kh.setTaiKhoan(tk);
+        when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
+
         when(bindingResult.hasErrors()).thenReturn(false);
 
         Model model = new ConcurrentModel();
@@ -79,6 +87,7 @@ public class UserDashboardControllerTest {
 
         KhachHang kh = new KhachHang();
         TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
         tk.setEmail("test@gmail.com");
         kh.setTaiKhoan(tk);
         when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
@@ -95,15 +104,17 @@ public class UserDashboardControllerTest {
     void testXuLySuaHoSo_ServiceException() {
         UserProfileEditDto dto = new UserProfileEditDto("Nguyen", "Van A", "0912345678");
         when(session.getAttribute("idNguoiDung")).thenReturn(1);
-        when(bindingResult.hasErrors()).thenReturn(false);
-        doThrow(new IllegalArgumentException("Số điện thoại này đã được đăng ký bởi tài khoản khác!"))
-                .when(dashboardService).capNhatHoSo(1, dto);
-
+        
         KhachHang kh = new KhachHang();
         TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
         tk.setEmail("test@gmail.com");
         kh.setTaiKhoan(tk);
         when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        doThrow(new IllegalArgumentException("Số điện thoại này đã được đăng ký bởi tài khoản khác!"))
+                .when(dashboardService).capNhatHoSo(1, dto);
 
         Model model = new ConcurrentModel();
         String view = controller.xuLySuaHoSo(session, dto, bindingResult, model);

@@ -2661,7 +2661,7 @@
                         <div class="lifecycle-content">
                             <h3>3. Đồng Bộ Hóa CSDL &amp; Migration Tự Động</h3>
                             <p>
-                                Ứng dụng kết nối tới MySQL/PostgreSQL thông qua cấu hình Spring Datasource. Công cụ <strong style="color: var(--text-main);">Flyway Migration</strong> tự động quét thư mục <code style="color: var(--color-warning);">db/migration/</code> để thực thi các file SQL nâng cấp phiên bản CSDL (V1.1 -> V1.18). Đồng thời, <strong style="color: var(--text-main);">PlaintextPasswordMigrator</strong> kiểm tra nếu có tài khoản nào cũ trong bảng <code style="color: var(--text-main);">tai_khoan</code> chưa băm mật khẩu thì tự động mã hóa BCrypt một lần. Lớp <strong style="color: var(--text-main);">EmployeeMigrationRunner</strong> thực thi để migrate dữ liệu nhân viên sang định dạng chuẩn.
+                                Ứng dụng kết nối tới Microsoft SQL Server thông qua cấu hình Spring Datasource trong <code style="color: var(--color-warning);">application.properties</code>. Công cụ <strong style="color: var(--text-main);">Flyway Migration</strong> được bật với module <code style="color: var(--color-warning);">flyway-sqlserver</code> và Hibernate đang chạy ở chế độ <code style="color: var(--color-warning);">ddl-auto=validate</code>. Đồng thời, <strong style="color: var(--text-main);">PlaintextPasswordMigrator</strong> kiểm tra nếu có tài khoản cũ chưa băm mật khẩu thì tự động mã hóa BCrypt một lần. Lớp <strong style="color: var(--text-main);">EmployeeMigrationRunner</strong> thực thi để migrate dữ liệu nhân viên sang định dạng chuẩn.
                             </p>
                             <div class="files-grid">
                                 <span class="badge-layer layer-config">Flyway</span>
@@ -2713,7 +2713,7 @@
     <section class="db-hero">
         <div>
             <span class="eyebrow">DATABASE DOCUMENTATION</span>
-            <h2>SMDB3 Database Flow Map</h2>
+            <h2>DBSM1 Database Flow Map</h2>
             <p>Bản đồ truy vết dữ liệu từ Project Structure xuống Repository &rarr; Entity &rarr; Table &rarr; Column.</p>
         </div>
         <div class="hero-badges">
@@ -2721,7 +2721,7 @@
             <span class="badge info">Manual Transfer Active</span>
             <span class="badge warning">COD Active</span>
             <span class="badge danger">ZaloPay Deprecated</span>
-            <span class="badge current">SMDB3 Current Database</span>
+            <span class="badge current">DBSM1 Current Database</span>
         </div>
     </section>
 
@@ -2806,7 +2806,7 @@
         <!-- LEFT COLUMN: Sticky Index -->
         <div class="db-index">
             <h4 style="font-family: var(--font-header); font-size: 1.05rem; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                🗂️ CSDL SMDB3 Index
+                🗂️ CSDL DBSM1 Index
             </h4>
             <div class="db-index-list">
                 <a href="#sec-catalog" class="db-index-link">
@@ -5792,7 +5792,7 @@
                 {
                     name: "pom.xml",
                     type: "file",
-                    desc: "Maven Build Configuration. Định nghĩa toàn bộ dependencies bao gồm Spring Boot, Thymeleaf, Spring Security, Flyway, MySQL Connector, Jsoup, Apache Tika và ZaloPay SDK.",
+                    desc: "Maven Build Configuration. Định nghĩa toàn bộ dependencies bao gồm Spring Boot, Thymeleaf, Spring Security, Flyway SQL Server, Microsoft SQL Server JDBC, Jsoup và Apache Tika.",
                     layer: "config"
                 },
                 {
