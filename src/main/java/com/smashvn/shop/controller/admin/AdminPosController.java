@@ -48,8 +48,6 @@ public class AdminPosController {
     // ─── Trang chính POS ────────────────────────────────────────────────────────
     @GetMapping
     public String viewPos(Model model, HttpSession session) {
-        model.addAttribute("customers", adminPosService.searchCustomers(""));
-        model.addAttribute("variants", adminPosService.searchActiveVariants("", -1, -1));
         model.addAttribute("categories", danhMucRepository.findAll());
         model.addAttribute("brands", thuongHieuRepository.findAll());
         // Thông tin ngân hàng SePay để hiển thị trong modal chuyển khoản POS
@@ -72,19 +70,19 @@ public class AdminPosController {
             // Dùng PriceSnapshot duy nhất để lấy giá thực sau DotGiamGia
             PriceSnapshot snap = pricingService.buildPriceSnapshot(v);
             map.put("id", v.getId());
-            map.put("tenSanPham", v.getSanPham().getTenSanPham());
-            map.put("mauSac", v.getMauSac());
-            map.put("trongLuong", v.getTrongLuong());
-            map.put("mucCang", v.getMucCang());
+            map.put("tenSanPham", v.getSanPham() != null && v.getSanPham().getTenSanPham() != null ? v.getSanPham().getTenSanPham() : "Sản phẩm");
+            map.put("mauSac", v.getMauSac() != null ? v.getMauSac() : "N/A");
+            map.put("trongLuong", v.getTrongLuong() != null ? v.getTrongLuong() : "N/A");
+            map.put("mucCang", v.getMucCang() != null ? v.getMucCang() : "N/A");
             // Giá bán thực sau khi áp dụng đợt giảm giá (nếu có)
-            map.put("giaBan", snap.giaBanSauGiam());
+            map.put("giaBan", snap.giaBanSauGiam() != null ? snap.giaBanSauGiam() : BigDecimal.ZERO);
             // Giá niêm yết gốc để gạch ngang trên UI
-            map.put("giaNiemYet", snap.giaNiemYet());
+            map.put("giaNiemYet", snap.giaNiemYet() != null ? snap.giaNiemYet() : BigDecimal.ZERO);
             // % giảm (0 nếu không có đợt giảm)
-            map.put("phanTramGiam", snap.phanTramGiam());
+            map.put("phanTramGiam", snap.phanTramGiam() != null ? snap.phanTramGiam() : BigDecimal.ZERO);
             // Tên chiến dịch (null nếu không có)
             map.put("tenDotGiamGia", snap.tenDotGiamGia());
-            map.put("soLuongTon", v.getSoLuongTon());
+            map.put("soLuongTon", v.getSoLuongTon() != null ? v.getSoLuongTon() : 0);
             map.put("hinhAnh", v.getHinhAnhSanPham() != null ? v.getHinhAnhSanPham() : "product9.jpg");
             return map;
         }).toList();
@@ -98,9 +96,11 @@ public class AdminPosController {
         List<Map<String, Object>> results = adminPosService.searchCustomers(query).stream().map(c -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
-            map.put("hoTen", c.getHoKh() + " " + c.getTenKh());
-            map.put("sdt", c.getSoDienThoaiKh());
-            map.put("email", c.getTaiKhoan().getEmail());
+            String ho = c.getHoKh() != null ? c.getHoKh() : "";
+            String ten = c.getTenKh() != null ? c.getTenKh() : "";
+            map.put("hoTen", (ho + " " + ten).trim());
+            map.put("sdt", c.getSoDienThoaiKh() != null ? c.getSoDienThoaiKh() : "");
+            map.put("email", c.getTaiKhoan() != null && c.getTaiKhoan().getEmail() != null ? c.getTaiKhoan().getEmail() : "");
             return map;
         }).toList();
         return ResponseEntity.ok(results);

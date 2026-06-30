@@ -55,7 +55,7 @@
                                     <!-- Giá trị giảm -->
                                     <div class="col-md-4">
                                         <label for="giaTri" class="form-label fw-bold">Giá Trị Giảm <span class="text-danger">*</span></label>
-                                        <input type="number" id="giaTri" name="giaTri" th:value="${voucher.giaTri}" class="form-control" placeholder="Nhập số tiền hoặc %" min="1" step="any" required>
+                                        <input type="number" id="giaTri" name="giaTri" th:value="${voucher.giaTri != null ? voucher.giaTri.stripTrailingZeros().toPlainString() : ''}" class="form-control" placeholder="Nhập số tiền hoặc %" min="1" step="1" required>
                                     </div>
 
                                     <!-- Đơn vị -->
@@ -77,7 +77,7 @@
                                     <div class="col-md-6">
                                         <label for="giaTriDonHangToiThieu" class="form-label fw-bold">Giá Trị Đơn Hàng Tối Thiểu <span class="text-danger">*</span></label>
                                         <div class="input-group">
-                                            <input type="number" id="giaTriDonHangToiThieu" name="giaTriDonHangToiThieu" th:value="${voucher.getGiaTriDonHangToiThieu()}" class="form-control" min="0" required>
+                                            <input type="number" id="giaTriDonHangToiThieu" name="giaTriDonHangToiThieu" th:value="${voucher.getGiaTriDonHangToiThieu() != null ? voucher.getGiaTriDonHangToiThieu().stripTrailingZeros().toPlainString() : 0}" class="form-control" min="0" step="1" required>
                                             <span class="input-group-text bg-light">VNĐ</span>
                                         </div>
                                         <div class="form-text text-muted">Voucher chỉ áp dụng khi đơn hàng đạt hạn mức này (0 = không giới hạn).</div>
@@ -91,7 +91,7 @@
                                         </label>
                                         <div class="input-group">
                                             <input type="number" id="giaTriGiamToiDa" name="giaTriGiamToiDa"
-                                                   th:value="${voucher.giaTriGiamToiDa}"
+                                                   th:value="${voucher.giaTriGiamToiDa != null ? voucher.giaTriGiamToiDa.stripTrailingZeros().toPlainString() : ''}"
                                                    class="form-control" min="1000" step="1000"
                                                    placeholder="Để trống = không giới hạn">
                                             <span class="input-group-text bg-light">VNĐ</span>
@@ -134,6 +134,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const voucherForm = document.getElementById('voucherForm');
     const capGroup = document.getElementById('capGroup');
     const capInput = document.getElementById('giaTriGiamToiDa');
+    const moneyInputs = [
+        document.getElementById('giaTri'),
+        document.getElementById('giaTriDonHangToiThieu'),
+        capInput
+    ];
+
+    function normalizeWholeNumberInput(input) {
+        if (!input || input.value === '') {
+            return;
+        }
+        const rawValue = input.value.trim();
+        const normalized = rawValue.replace(',', '.');
+        if (/^-?\d+(\.0+)?$/.test(normalized)) {
+            input.value = normalized.split('.')[0];
+        }
+    }
+
+    moneyInputs.forEach(function(input) {
+        normalizeWholeNumberInput(input);
+        input.addEventListener('blur', function() {
+            normalizeWholeNumberInput(input);
+        });
+    });
 
     // Auto-uppercase for voucher code and restrict characters
     maPhieuInput.addEventListener('input', function() {
@@ -170,6 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submit validation
     voucherForm.addEventListener('submit', function(e) {
+        moneyInputs.forEach(normalizeWholeNumberInput);
+
         const maPhieu = maPhieuInput.value.trim();
         const donVi = donViSelect.value;
         const ngayBatDauStr = document.getElementById('ngayBatDau').value;

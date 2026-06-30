@@ -5,6 +5,7 @@ import com.smashvn.shop.service.AuditService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -58,7 +59,10 @@ public class AdminPosService {
     public List<SanPhamChiTiet> searchActiveVariants(String query, Integer idDanhMuc, Integer idThuongHieu) {
         List<SanPhamChiTiet> all = sanPhamChiTietRepository.findAll();
         return all.stream()
+                .filter(Objects::nonNull)
+                .filter(v -> v.getSanPham() != null)
                 .filter(v -> "dang_ban".equals(v.getSanPham().getTrangThai()))
+                .filter(v -> v.getTrangThai() == null || "dang_ban".equals(v.getTrangThai()))
                 .filter(v -> idDanhMuc == null || idDanhMuc == -1 || (v.getSanPham().getDanhMuc() != null && v.getSanPham().getDanhMuc().getId().equals(idDanhMuc)))
                 .filter(v -> idThuongHieu == null || idThuongHieu == -1 || (v.getSanPham().getThuongHieu() != null && v.getSanPham().getThuongHieu().getId().equals(idThuongHieu)))
                 .filter(v -> {
@@ -66,12 +70,12 @@ public class AdminPosService {
                         return true;
                     }
                     String lowerQuery = query.toLowerCase().trim();
-                    return v.getSanPham().getTenSanPham().toLowerCase().contains(lowerQuery)
-                            || v.getMauSac().toLowerCase().contains(lowerQuery)
-                            || v.getTrongLuong().toLowerCase().contains(lowerQuery)
-                            || v.getMucCang().toLowerCase().contains(lowerQuery)
-                            || (v.getSanPham().getDanhMuc() != null && v.getSanPham().getDanhMuc().getTenDanhMuc().toLowerCase().contains(lowerQuery))
-                            || (v.getSanPham().getThuongHieu() != null && v.getSanPham().getThuongHieu().getTenThuongHieu().toLowerCase().contains(lowerQuery));
+                    return containsIgnoreCase(v.getSanPham().getTenSanPham(), lowerQuery)
+                            || containsIgnoreCase(v.getMauSac(), lowerQuery)
+                            || containsIgnoreCase(v.getTrongLuong(), lowerQuery)
+                            || containsIgnoreCase(v.getMucCang(), lowerQuery)
+                            || (v.getSanPham().getDanhMuc() != null && containsIgnoreCase(v.getSanPham().getDanhMuc().getTenDanhMuc(), lowerQuery))
+                            || (v.getSanPham().getThuongHieu() != null && containsIgnoreCase(v.getSanPham().getThuongHieu().getTenThuongHieu(), lowerQuery));
                 })
                 .collect(Collectors.toList());
     }
@@ -83,7 +87,9 @@ public class AdminPosService {
     public List<KhachHang> searchCustomers(String query) {
         List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
                 .stream()
-                .filter(c -> !"guest@smashvn.com".equals(c.getTaiKhoan().getEmail()))
+                .filter(Objects::nonNull)
+                .filter(c -> c.getTaiKhoan() != null)
+                .filter(c -> !"guest@smashvn.com".equalsIgnoreCase(nullToEmpty(c.getTaiKhoan().getEmail())))
                 .collect(Collectors.toList());
 
         if (query == null || query.trim().isEmpty()) {
@@ -91,11 +97,19 @@ public class AdminPosService {
         }
         String lowerQuery = query.toLowerCase().trim();
         return customers.stream()
-                .filter(c -> c.getHoKh().toLowerCase().contains(lowerQuery)
-                || c.getTenKh().toLowerCase().contains(lowerQuery)
-                || c.getSoDienThoaiKh().contains(lowerQuery)
-                || c.getTaiKhoan().getEmail().toLowerCase().contains(lowerQuery))
+                .filter(c -> containsIgnoreCase(c.getHoKh(), lowerQuery)
+                || containsIgnoreCase(c.getTenKh(), lowerQuery)
+                || containsIgnoreCase(c.getSoDienThoaiKh(), lowerQuery)
+                || containsIgnoreCase(c.getTaiKhoan().getEmail(), lowerQuery))
                 .collect(Collectors.toList());
+    }
+
+    private boolean containsIgnoreCase(String value, String lowerQuery) {
+        return value != null && value.toLowerCase().contains(lowerQuery);
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     // Lấy thông tin voucher và xác thực

@@ -637,7 +637,15 @@ public class AdminKhuyenMaiController {
             return null;
         }
         String trimmed = valueStr.trim();
-        // Từ chối số thập phân (VNĐ không dùng số lẻ)
+        // Browser có thể gửi BigDecimal nguyên dưới dạng 199999.00/199999,00.
+        // Chấp nhận phần thập phân toàn số 0, nhưng vẫn từ chối số lẻ thật sự.
+        if (trimmed.contains(".") || trimmed.contains(",")) {
+            if (!trimmed.matches("-?\\d+[\\.,]0{1,2}")) {
+                throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
+            }
+            trimmed = trimmed.replace(',', '.').split("\\.")[0];
+        }
+
         if (trimmed.contains(".") || trimmed.contains(",")) {
             throw new PromotionValidationException(fieldName + " phải là số nguyên, không được là số thập phân!");
         }
