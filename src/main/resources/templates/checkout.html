@@ -322,6 +322,18 @@
                                         </div>
                                         <!-- GHN Address Dropdowns -->
                                         <div class="u-s-m-b-15">
+                                            <label class="gl-label" for="quickAddressInput">
+                                                NHẬP NHANH ĐỊA CHỈ (TỰ ĐỘNG ĐIỀN TỈNH/HUYỆN/XÃ)
+                                            </label>
+                                            <input class="input-text input-text--primary-style"
+                                                   type="text"
+                                                   id="quickAddressInput"
+                                                   placeholder="Ví dụ: Số 12 ngõ 34 đường Lê Lợi, Dịch Vọng, Cầu Giấy, Hà Nội..."
+                                                   autocomplete="street-address">
+                                            <div id="quickAddressFeedback"
+                                                 style="font-size: 13px; margin-top: 5px; font-weight: 600; color: #64748b;"></div>
+                                        </div>
+                                        <div class="u-s-m-b-15">
                                             <label class="gl-label" for="ghnProvinceId">TỈNH/THÀNH PHỐ *</label>
                                             <select class="select-box select-box--primary-style" id="ghnProvinceId">
                                                 <option value="">-- Chọn tỉnh/thành (tuỳ chọn) --</option>
@@ -624,6 +636,8 @@
         let targetProvinceToMatch = null;
         let targetAddressToMatch = null;
         let isGhnLoadingMasterData = false;
+        let quickAddressParseSeq = 0;
+        let diaChiNhanTouchedByUser = false;
 
         function cleanString(str) {
             if (!str) return '';
@@ -636,6 +650,187 @@
                 .replace(/[^a-z0-9\s]/g, ' ') // replace punctuation with spaces
                 .replace(/\s+/g, ' ') // replace multiple spaces with single space
                 .trim();
+        }
+
+        function stripAccents(str) {
+            return (str || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd');
+        }
+
+        function normalizeQuickAddressText(str) {
+            return stripAccents(str)
+                .toLowerCase()
+                .replace(/\btp\.?\s*hcm\b/g, 'ho chi minh')
+                .replace(/\btphcm\b/g, 'ho chi minh')
+                .replace(/\bhcm\b/g, 'ho chi minh')
+                .replace(/\bsai\s+gon\b/g, 'ho chi minh')
+                .replace(/\bsg\b/g, 'ho chi minh')
+                .replace(/\bhn\b/g, 'ha noi')
+                .replace(/\bq\.?\s*(\d+)\b/g, 'quan $1')
+                .replace(/\bp\.?\s*(\d+)\b/g, 'phuong $1')
+                .replace(/\bp\.?\s+([a-z])/g, 'phuong $1')
+                .replace(/[,\s]+/g, ' ')
+                .replace(/[\/\-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function normalizeNameForCompare(name, type, keepPrefix) {
+            let normalized = normalizeQuickAddressText(name);
+            if (keepPrefix) return normalized;
+            if (type === 'province') {
+                return normalized.replace(/^(tinh|thanh pho|tp)\s+/, '').trim();
+            }
+            if (type === 'district') {
+                return normalized.replace(/^(quan|huyen|thi xa|thanh pho|tp)\s+/, '').trim();
+            }
+            if (type === 'ward') {
+                return normalized.replace(/^(phuong|xa|thi tran)\s+/, '').trim();
+            }
+            return normalized;
+        }
+
+        function splitQuickAddressSegments(rawAddress) {
+            return (rawAddress || '')
+                .split(',')
+                .map(function(part) { return part.trim(); })
+                .filter(Boolean);
+        }
+
+        function isExactOrPhraseMatch(candidate, optionName, optionShortName) {
+            if (!candidate || !optionName) return false;
+            if (candidate === optionName) return true;
+            if (optionShortName && candidate === optionShortName) return true;
+
+            const optionIsNumeric = /^\d+$/.test(optionShortName || optionName);
+            if (optionIsNumeric) {
+                return candidate === optionName;
+            }
+
+            return candidate.includes(optionName)
+                || (optionShortName && optionShortName.length >= 3 && candidate.includes(optionShortName));
+        }
+
+        function findMatchingOption($select, segments, fullAddress, type) {
+            const candidates = [];
+            for (let i = segments.length - 1; i >= 0; i--) {
+                candidates.push({ text: normalizeQuickAddressText(segments[i]), index: i });
+            }
+            candidates.push({ text: normalizeQuickAddressText(fullAddress), index: null });
+
+            const options = [];
+            $select.find('option').each(function() {
+                const val = $(this).val();
+                if (!val) return;
+                const text = $(this).text();
+                options.push({
+                    val: val,
+                    label: text,
+                    name: normalizeNameForCompare(text, type, true),
+                    shortName: normalizeNameForCompare(text, type, false)
+                });
+            });
+
+            options.sort(function(a, b) {
+                return b.shortName.length - a.shortName.length;
+            });
+
+            for (const candidate of candidates) {
+                for (const option of options) {
+                    if (isExactOrPhraseMatch(candidate.text, option.name, option.shortName)) {
+                        return {
+                            value: option.val,
+                            label: option.label,
+                            segmentIndex: candidate.index
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function cleanSpecificAddress(value) {
+            return (value || '')
+                .replace(/[,\-\/\s]+$/g, '')
+                .replace(/^[,\-\/\s]+/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function setQuickAddressFeedback(message, color) {
+            $('#quickAddressFeedback').text(message || '').css('color', color || '#64748b');
+        }
+
+        async function parseQuickAddress(rawAddress) {
+            const seq = ++quickAddressParseSeq;
+            const address = (rawAddress || '').trim();
+
+            if (!address) {
+                setQuickAddressFeedback('', '#64748b');
+                return;
+            }
+
+            const segments = splitQuickAddressSegments(address);
+            if (segments.length === 0) {
+                setQuickAddressFeedback('Không nhận diện được địa chỉ, vui lòng chọn thủ công', '#64748b');
+                return;
+            }
+
+            if (typeof window.apiLoadProvinces === 'function') {
+                await window.apiLoadProvinces();
+                if (seq !== quickAddressParseSeq) return;
+            }
+
+            const provinceMatch = findMatchingOption($('#ghnProvinceId'), segments, address, 'province');
+            if (!provinceMatch) {
+                setQuickAddressFeedback('Không nhận diện được địa chỉ, vui lòng chọn thủ công', '#64748b');
+                return;
+            }
+
+            isGhnLoadingMasterData = true;
+            $('#ghnProvinceId').val(provinceMatch.value);
+            await window.apiLoadDistricts(provinceMatch.value);
+            if (seq !== quickAddressParseSeq) return;
+
+            const districtMatch = findMatchingOption($('#ghnDistrictId'), segments, address, 'district');
+            if (!districtMatch) {
+                isGhnLoadingMasterData = false;
+                setQuickAddressFeedback('Đã nhận diện tỉnh/thành, vui lòng chọn thêm quận/huyện hoặc phường/xã', '#d97706');
+                if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+                return;
+            }
+
+            $('#ghnDistrictId').val(districtMatch.value);
+            await window.apiLoadWards(districtMatch.value);
+            if (seq !== quickAddressParseSeq) return;
+
+            const wardMatch = findMatchingOption($('#ghnWardCode'), segments, address, 'ward');
+            if (wardMatch) {
+                $('#ghnWardCode').val(wardMatch.value).trigger('change');
+            } else {
+                $('#ghnWardCode').val('').trigger('change');
+            }
+
+            const recognizedIndexes = [provinceMatch.segmentIndex, districtMatch.segmentIndex, wardMatch ? wardMatch.segmentIndex : null]
+                .filter(function(index) { return index !== null && index !== undefined; });
+            const firstRecognizedIndex = recognizedIndexes.length ? Math.min.apply(Math, recognizedIndexes) : -1;
+
+            if (firstRecognizedIndex > 0 && (!diaChiNhanTouchedByUser || !$('#diaChiNhan').val().trim())) {
+                const specificAddress = cleanSpecificAddress(segments.slice(0, firstRecognizedIndex).join(', '));
+                if (specificAddress) {
+                    $('#diaChiNhan').val(specificAddress).trigger('change');
+                }
+            }
+
+            isGhnLoadingMasterData = false;
+            if (wardMatch) {
+                setQuickAddressFeedback('Đã tự nhận diện: ' + provinceMatch.label + ' / ' + districtMatch.label + ' / ' + wardMatch.label, '#16a34a');
+            } else {
+                setQuickAddressFeedback('Đã nhận diện tỉnh/thành và quận/huyện, vui lòng chọn thêm phường/xã', '#d97706');
+                if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+            }
         }
 
         function matchAndSelectProvince(tinhThanhStr, fullAddressStr) {
@@ -987,6 +1182,22 @@
             $('#ghnProvinceId, #ghnDistrictId, #ghnWardCode').on('mousedown keydown', function() {
                 targetProvinceToMatch = null;
                 targetAddressToMatch = null;
+                quickAddressParseSeq++;
+            });
+
+            let quickAddressDebounceTimeout = null;
+            $('#quickAddressInput').on('input', function() {
+                clearTimeout(quickAddressDebounceTimeout);
+                diaChiNhanTouchedByUser = false;
+                const value = $(this).val();
+                if (!value.trim()) {
+                    quickAddressParseSeq++;
+                    setQuickAddressFeedback('', '#64748b');
+                    return;
+                }
+                quickAddressDebounceTimeout = setTimeout(function() {
+                    parseQuickAddress(value);
+                }, 500);
             });
 
             $('.payment-card').on('click', function() {
@@ -1157,6 +1368,7 @@
                     }
                 });
             }
+            window.calculateShippingFee = calculateShippingFee;
 
             $('#idDonViVanChuyen').on('change', function() {
                 calculateShippingFee();
@@ -1177,6 +1389,10 @@
             $('#diaChiNhan').on('input change', function() {
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(calculateShippingFee, 300);
+            });
+
+            $('#diaChiNhan').on('input', function() {
+                diaChiNhanTouchedByUser = true;
             });
 
             $('#ghnProvinceId, #ghnDistrictId, #ghnWardCode').on('change', function() {
@@ -1610,27 +1826,91 @@
 
     <!-- GHN Address Dropdowns Script -->
     <script th:inline="none">
+        let ghnProvinceLoadPromise = null;
+
+        window.apiLoadProvinces = function() {
+            const $sel = $('#ghnProvinceId');
+            if ($sel.find('option').length > 1) {
+                return $.Deferred().resolve().promise();
+            }
+            if (ghnProvinceLoadPromise) {
+                return ghnProvinceLoadPromise;
+            }
+            const request = $.ajax({
+                url: '/api/ghn/provinces',
+                type: 'GET'
+            });
+            ghnProvinceLoadPromise = request.then(function(resp) {
+                if (resp.status === 'ok' && resp.data) {
+                    resp.data.sort(function(a, b) {
+                        return (a.ProvinceName || '').localeCompare(b.ProvinceName || '', 'vi');
+                    }).forEach(function(p) {
+                        $sel.append($('<option>').val(p.ProvinceID).text(p.ProvinceName));
+                    });
+                }
+            }, function() {
+                console.warn('[GHN] Không thể tải danh sách tỉnh/thành');
+            });
+            request.always(function() {
+                ghnProvinceLoadPromise = null;
+            });
+            return ghnProvinceLoadPromise;
+        };
+
+        window.apiLoadDistricts = function(provinceId) {
+            const $distSel = $('#ghnDistrictId');
+            const $wardSel = $('#ghnWardCode');
+
+            $distSel.html('<option value="">-- Chọn quận/huyện --</option>').prop('disabled', true);
+            $wardSel.html('<option value="">-- Chọn phường/xã --</option>').prop('disabled', true);
+
+            if (!provinceId) {
+                return $.Deferred().resolve().promise();
+            }
+
+            return $.ajax({
+                url: '/api/ghn/districts?provinceId=' + provinceId,
+                type: 'GET'
+            }).then(function(resp) {
+                if (resp.status === 'ok' && resp.data) {
+                    resp.data.forEach(function(d) {
+                        $distSel.append($('<option>').val(d.DistrictID).text(d.DistrictName));
+                    });
+                    $distSel.prop('disabled', false);
+                }
+            }, function() {
+                console.warn('[GHN] Không thể tải danh sách quận/huyện');
+            });
+        };
+
+        window.apiLoadWards = function(districtId) {
+            const $wardSel = $('#ghnWardCode');
+            $wardSel.html('<option value="">-- Chọn phường/xã --</option>').prop('disabled', true);
+
+            if (!districtId) {
+                return $.Deferred().resolve().promise();
+            }
+
+            return $.ajax({
+                url: '/api/ghn/wards?districtId=' + districtId,
+                type: 'GET'
+            }).then(function(resp) {
+                if (resp.status === 'ok' && resp.data) {
+                    resp.data.forEach(function(w) {
+                        $wardSel.append($('<option>').val(w.WardCode).text(w.WardName));
+                    });
+                    $wardSel.prop('disabled', false);
+                }
+            }, function() {
+                console.warn('[GHN] Không thể tải danh sách phường/xã');
+            });
+        };
+
         $(document).ready(function() {
             // ── Load danh sách tỉnh/thành từ GHN ────────────────────────────────────
-            $.ajax({
-                url: '/api/ghn/provinces',
-                type: 'GET',
-                success: function(resp) {
-                    if (resp.status === 'ok' && resp.data) {
-                        const $sel = $('#ghnProvinceId');
-                        resp.data.sort(function(a, b) {
-                            return (a.ProvinceName || '').localeCompare(b.ProvinceName || '', 'vi');
-                        }).forEach(function(p) {
-                            $sel.append($('<option>').val(p.ProvinceID).text(p.ProvinceName));
-                        });
-
-                        if (targetAddressToMatch) {
-                            matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
-                        }
-                    }
-                },
-                error: function() {
-                    console.warn('[GHN] Không thể tải danh sách tỉnh/thành');
+            window.apiLoadProvinces().then(function() {
+                if (targetAddressToMatch) {
+                    matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
                 }
             });
 
