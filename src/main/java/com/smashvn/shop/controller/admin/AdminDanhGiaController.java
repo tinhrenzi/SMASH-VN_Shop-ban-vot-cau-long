@@ -1,5 +1,6 @@
 package com.smashvn.shop.controller.admin;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
@@ -138,6 +139,10 @@ public class AdminDanhGiaController {
         }
 
         List<CommentViolationLog> listViPham = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        if (listViPham == null) {
+            listViPham = Collections.emptyList();
+        }
+
         model.addAttribute("listViPham", listViPham);
         return "admin/vipham-list"; // Trỏ đến vipham-list.html
     }
@@ -187,8 +192,10 @@ public class AdminDanhGiaController {
         try {
             TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản!"));
-            String oldVal = tk.getSoLanNhacNhoViPham().toString();
+            int soLanViPhamHienTai = tk.getSoLanNhacNhoViPham() != null ? tk.getSoLanNhacNhoViPham() : 0;
+            String oldVal = String.valueOf(soLanViPhamHienTai);
             tk.setSoLanNhacNhoViPham(0);
+            tk.setNgayViPhamGanNhat(null);
             taiKhoanRepository.save(tk);
 
             // Ghi log audit

@@ -51,7 +51,7 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="page-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Quản Lý Vi Phạm Bình Luận</h2>
-                <span class="badge bg-danger px-3 py-2" th:text="${listViPham.size()} + ' Lượt vi phạm ghi nhận'"></span>
+                <span class="badge bg-danger px-3 py-2" th:text="${listViPham != null ? listViPham.size() : 0} + ' Lượt vi phạm ghi nhận'"></span>
             </div>
 
             <div class="card border-0 shadow-sm">
@@ -79,47 +79,51 @@
                                 <tr th:each="vp : ${listViPham}">
                                     <td class="fw-bold" th:text="'VP' + ${vp.id}">VP1</td>
                                     <td>
-                                        <div class="fw-semibold" th:text="${vp.taiKhoan.email}">user@example.com</div>
+                                        <div class="fw-semibold" th:text="${vp.taiKhoan != null ? vp.taiKhoan.email : 'Không rõ tài khoản'}">user@example.com</div>
                                         <!-- Hiển thị tình trạng khóa hiện tại của tài khoản -->
-                                        <div th:if="${vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}">
+                                        <div th:if="${vp.taiKhoan != null and vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}">
                                             <span class="badge bg-danger mt-1">Đang bị khóa bình luận</span>
                                         </div>
                                     </td>
                                     <td>
-                                        <a th:href="@{'/san-pham/' + ${vp.sanPham.id}}" target="_blank" th:text="${vp.sanPham.tenSanPham}" class="text-primary fw-semibold">Sản phẩm</a>
+                                        <a th:if="${vp.sanPham != null}" th:href="@{'/san-pham/' + ${vp.sanPham.id}}" target="_blank" th:text="${vp.sanPham.tenSanPham}" class="text-primary fw-semibold">Sản phẩm</a>
+                                        <span th:if="${vp.sanPham == null}" class="text-muted">Sản phẩm không còn tồn tại</span>
                                     </td>
-                                    <td class="text-muted" th:text="${vp.noiDungGoc}">Nội dung gốc</td>
-                                    <td class="fw-semibold" th:text="${vp.noiDungDaLoc}">Nội dung đã lọc</td>
+                                    <td class="text-muted" th:text="${vp.noiDungGoc != null ? vp.noiDungGoc : '(trống)'}">Nội dung gốc</td>
+                                    <td class="fw-semibold" th:text="${vp.noiDungDaLoc != null ? vp.noiDungDaLoc : '(không có)'}">Nội dung đã lọc</td>
                                     <td>
-                                        <span th:class="'severity-badge severity-' + ${vp.mucDoViPham}" th:text="${vp.mucDoViPham}">LOW</span>
+                                        <span th:class="'severity-badge severity-' + ${vp.mucDoViPham != null ? vp.mucDoViPham : 'LOW'}" th:text="${vp.mucDoViPham != null ? vp.mucDoViPham : 'UNKNOWN'}">LOW</span>
                                     </td>
-                                    <td class="text-center" th:text="${vp.soLanViPham}">1</td>
+                                    <td class="text-center" th:text="${vp.soLanViPham != null ? vp.soLanViPham : 0}">1</td>
                                     <td>
-                                        <span class="fw-bold text-danger" th:text="${vp.thoiHanKhoa}">3 giờ</span>
+                                        <span class="fw-bold text-danger" th:text="${vp.thoiHanKhoa != null ? vp.thoiHanKhoa : 'Không khóa'}">3 giờ</span>
                                     </td>
-                                    <td th:text="${#temporals.format(vp.ngayViPham, 'dd/MM/yyyy HH:mm')}">16/06/2026 14:00</td>
+                                    <td th:text="${vp.ngayViPham != null ? #temporals.format(vp.ngayViPham, 'dd/MM/yyyy HH:mm') : 'Không rõ'}">16/06/2026 14:00</td>
                                     <td>
                                         <div class="d-flex flex-column gap-1">
                                             <!-- Nút gỡ khóa bình luận thủ công -->
-                                            <form th:if="${vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}" 
+                                            <form th:if="${vp.taiKhoan != null and vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}" 
                                                   th:action="@{'/admin/danh-gia/vi-pham/go-khoa/' + ${vp.taiKhoan.id}}" method="post"
                                                   onsubmit="return confirm('Bạn có chắc chắn muốn mở khóa tính năng bình luận cho tài khoản này sớm hơn thời hạn?');">
+                                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-success w-100">
                                                     <i class="fas fa-unlock me-1"></i>Mở Khóa
                                                 </button>
                                             </form>
                                             <!-- Nút reset số lần vi phạm -->
-                                            <form th:if="${vp.taiKhoan.soLanNhacNhoViPham > 0}" 
+                                            <form th:if="${vp.taiKhoan != null and vp.taiKhoan.soLanNhacNhoViPham != null and vp.taiKhoan.soLanNhacNhoViPham > 0}" 
                                                   th:action="@{'/admin/danh-gia/vi-pham/reset-vi-pham/' + ${vp.taiKhoan.id}}" method="post"
                                                   onsubmit="return confirm('Bạn có chắc chắn muốn reset bộ đếm vi phạm về 0 cho tài khoản này?');">
+                                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-warning w-100">
                                                     <i class="fas fa-redo me-1"></i>Reset Vi Phạm
                                                 </button>
                                             </form>
+                                            <span th:if="${vp.taiKhoan == null}" class="text-muted small">Không thể thao tác</span>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr th:if="${listViPham.isEmpty()}">
+                                <tr th:if="${listViPham == null or listViPham.isEmpty()}">
                                     <td colspan="10" class="text-center text-muted py-4">Chưa ghi nhận lượt vi phạm bình luận nào.</td>
                                 </tr>
                             </tbody>
