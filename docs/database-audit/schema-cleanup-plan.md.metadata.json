@@ -1,5 +1,0 @@
-{
-  "summary":  "Updated database schema cleanup plan for SMDB_FINAL database, noting role flag deprecations, rollback strategies, and the comprehensive test checklist.",
-  "updatedAt":  "2026-06-29T10:37:01.597294500Z",
-  "userFacing":  true
-}

@@ -1,5 +1,0 @@
-{
-  "summary":  "Updated T-SQL schema cleanup script for SMDB_FINAL target with transactions and dry-run safety.",
-  "updatedAt":  "2026-06-29T10:36:54.887172100Z",
-  "userFacing":  true
-}
