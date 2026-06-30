@@ -153,7 +153,11 @@ public class CheckoutController {
                             && !tenLower.contains("cho")
                             && !tenLower.contains("mua")
                             && !tenLower.contains("tại")
-                            && !tenLower.contains("tai");
+                            && !tenLower.contains("tai")
+                            && !tenLower.contains("tiết kiệm")
+                            && !tenLower.contains("tiet kiem")
+                            && !tenLower.contains("tietkiem")
+                            && !tenLower.contains("ghtk");
                 })
                 .collect(java.util.stream.Collectors.toList());
 
@@ -547,6 +551,24 @@ public class CheckoutController {
             } else {
                 response.put("isGuest", false);
                 response.put("soLanMuaThanhCong", 0);
+            }
+
+            // Trigger order confirmation email
+            String userEmail = null;
+            if (tk != null) {
+                userEmail = tk.getEmail();
+            } else if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+                userEmail = hd.getKhachHang().getTaiKhoan().getEmail();
+            } else if (email != null && !email.trim().isEmpty()) {
+                userEmail = email.trim();
+            }
+            if (userEmail != null && !userEmail.trim().isEmpty()) {
+                try {
+                    String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                    guestCheckoutService.sendOrderConfirmationEmail(userEmail, hd, appUrl);
+                } catch (Exception e) {
+                    log.error("Failed to trigger order confirmation email", e);
+                }
             }
 
             // Payment initialization & validation

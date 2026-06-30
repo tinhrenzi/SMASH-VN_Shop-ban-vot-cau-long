@@ -45,7 +45,12 @@
                                 <!--====== Danh sách ======-->
                                 <ul class="ah-list ah-list--design1 ah-list--link-color-secondary">
                                     <li class="has-dropdown" data-tooltip="tooltip" data-placement="left" title="Tài khoản">
-									    <a><i class="far fa-user-circle"></i></a>
+									    <a>
+									        <span style="position: relative; display: inline-block;">
+									            <i class="far fa-user-circle"></i>
+									            <span th:if="${session.idNguoiDung != null and session.activeRole != 'QL' and session.activeRole != 'NV' and unreadNotificationCount > 0}" style="position: absolute; top: 0px; right: -2px; width: 8px; height: 8px; background-color: #ff0000; border-radius: 50%; display: inline-block; border: 1.5px solid white; z-index: 10;"></span>
+									        </span>
+									    </a>
 									    <span class="js-menu-toggle"></span>
 									    <ul style="width:220px">
 									        
@@ -63,8 +68,13 @@
 									                    <span>Tài khoản</span></a>
 									            </li>
 									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV'}">
-									                <a th:href="@{/user/notifications}"><i class="fas fa-bell u-s-m-r-6"></i>
-									                    <span>Thông báo</span></a>
+									                <a th:href="@{/user/notifications}" style="display: flex; align-items: center;">
+									                    <span style="position: relative; display: inline-flex; align-items: center;">
+									                        <i class="fas fa-bell u-s-m-r-6"></i>
+									                        <span th:if="${unreadNotificationCount > 0}" style="position: absolute; top: -2px; right: 2px; width: 8px; height: 8px; background-color: #ff0000; border-radius: 50%; display: inline-block; border: 1.5px solid white;"></span>
+									                    </span>
+									                    <span>Thông báo</span>
+									                </a>
 									            </li>
 									            
 									            <!-- Chuyển vai trò nếu có nhiều vai trò -->

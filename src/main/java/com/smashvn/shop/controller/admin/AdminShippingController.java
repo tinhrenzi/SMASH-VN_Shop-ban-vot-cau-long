@@ -62,9 +62,16 @@ public class AdminShippingController {
             list = adminShippingService.getAllCarriers();
         }
 
+        List<DonViVanChuyen> filteredList = list.stream()
+                .filter(dv -> dv.getTenDonVi() != null && 
+                        !dv.getTenDonVi().toUpperCase().contains("TIẾT KIỆM") &&
+                        !dv.getTenDonVi().toUpperCase().contains("TIET KIEM") &&
+                        !dv.getTenDonVi().toUpperCase().contains("GHTK"))
+                .collect(java.util.stream.Collectors.toList());
+
         model.addAttribute("isManager", isManager);
         model.addAttribute("ghn", ghn);
-        model.addAttribute("danhSachDonVi", list);
+        model.addAttribute("danhSachDonVi", filteredList);
         return "admin/shipping-config";
     }
 

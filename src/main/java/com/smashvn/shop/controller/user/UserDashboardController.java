@@ -277,7 +277,11 @@ public class UserDashboardController {
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
-            return "redirect:/user/dang-nhap";
+            model.addAttribute("kh", null);
+            model.addAttribute("orderPlaced", 0);
+            model.addAttribute("cancelOrders", 0);
+            model.addAttribute("wishlist", 0);
+            return "dash-track-order";
         }
 
         model.addAttribute("kh", kh);
@@ -293,19 +297,113 @@ public class UserDashboardController {
         return "dash-track-order";
     }
 
+    @PostMapping("/track-order/submit")
+    public String submitTrackOrder(
+            @RequestParam("orderId") String orderIdStr,
+            @RequestParam(value = "contactInfo", required = false) String contactInfo,
+            HttpSession session,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+
+        if (orderIdStr == null || orderIdStr.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("loi", "Mã đơn hàng không được để trống.");
+            return "redirect:/user/track-order";
+        }
+
+        // Try lookup by maDonHang
+        java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findByMaDonHang(orderIdStr.trim());
+        if (hdOpt.isEmpty()) {
+            String normalized = orderIdStr.trim().replace("-", "").replace("_", "");
+            hdOpt = hoaDonRepository.findByMaDonHangOrNormalized(orderIdStr.trim(), normalized);
+        }
+        if (hdOpt.isEmpty() && orderIdStr.trim().matches("\\d+")) {
+            hdOpt = hoaDonRepository.findById(Integer.parseInt(orderIdStr.trim()));
+        }
+
+        if (hdOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("loi", "Không tìm thấy đơn hàng tương ứng với mã cung cấp.");
+            return "redirect:/user/track-order";
+        }
+
+        com.smashvn.shop.entity.HoaDon hd = hdOpt.get();
+        KhachHang loggedInKh = getLoggedInCustomer(session);
+
+        if (loggedInKh != null) {
+            // Logged in user: verify if the order belongs to them
+            if (hd.getKhachHang() == null || !hd.getKhachHang().getId().equals(loggedInKh.getId())) {
+                redirectAttributes.addFlashAttribute("loi", "Bạn không có quyền xem đơn hàng này.");
+                return "redirect:/user/track-order";
+            }
+        } else {
+            // Guest user: verify that contactInfo matches the order's email or phone number
+            if (contactInfo == null || contactInfo.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("loi", "Email hoặc số điện thoại là bắt buộc đối với khách vãng lai.");
+                return "redirect:/user/track-order";
+            }
+
+            String searchVal = contactInfo.trim().toLowerCase();
+            String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
+                    ? hd.getKhachHang().getTaiKhoan().getEmail() : "";
+            String orderPhone = hd.getSdtNhan() != null ? hd.getSdtNhan() : "";
+
+            boolean matchesEmail = !orderEmail.isEmpty() && orderEmail.toLowerCase().equals(searchVal);
+            boolean matchesPhone = !orderPhone.isEmpty() && (orderPhone.equals(searchVal) || com.smashvn.shop.util.PhoneUtils.normalize(orderPhone).equals(com.smashvn.shop.util.PhoneUtils.normalize(searchVal)));
+
+            if (!matchesEmail && !matchesPhone) {
+                redirectAttributes.addFlashAttribute("loi", "Thông tin email hoặc số điện thoại không khớp với đơn hàng.");
+                return "redirect:/user/track-order";
+            }
+
+            // Successfully validated: grant guest access in session
+            synchronized (session) {
+                List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses =
+                        (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
+                if (allowedAccesses == null) {
+                    allowedAccesses = new java.util.ArrayList<>();
+                }
+                allowedAccesses.add(new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(hd.getId(), java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
+                session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
+                if (!orderEmail.isEmpty()) {
+                    session.setAttribute("guestCheckoutEmail", orderEmail);
+                }
+            }
+        }
+
+        // Redirect to detail page
+        return "redirect:/user/manage-order/" + hd.getId();
+    }
+
     @GetMapping({"/manage-order/{id}", "/manage-order"})
-    public String hienThiManageOrder(@PathVariable(value = "id", required = false) Integer pathId,
-            @RequestParam(value = "id", required = false) Integer paramId,
+    public String hienThiManageOrder(@PathVariable(value = "id", required = false) String pathId,
+            @RequestParam(value = "id", required = false) String paramId,
             HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) {
             return redirect;
         }
 
-        Integer targetId = (pathId != null) ? pathId : paramId;
-        if (targetId == null) {
+        String targetStr = (pathId != null) ? pathId : paramId;
+        if (targetStr == null || targetStr.trim().isEmpty()) {
             return "redirect:/user/my-order";
         }
+
+        // Try lookup by maDonHang first
+        java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findByMaDonHang(targetStr.trim());
+        if (hdOpt.isEmpty()) {
+            // Try normalized maDonHang
+            String normalized = targetStr.trim().replace("-", "").replace("_", "");
+            hdOpt = hoaDonRepository.findByMaDonHangOrNormalized(targetStr.trim(), normalized);
+        }
+        if (hdOpt.isEmpty() && targetStr.trim().matches("\\d+")) {
+            // Fallback: try by numeric ID
+            hdOpt = hoaDonRepository.findById(Integer.parseInt(targetStr.trim()));
+        }
+
+        if (hdOpt.isEmpty()) {
+            return "redirect:/user/my-order?loi=donhangkhongton";
+        }
+
+        com.smashvn.shop.entity.HoaDon hd = hdOpt.get();
+        Integer targetId = hd.getId();
 
         KhachHang kh = getLoggedInCustomer(session);
         boolean isGuestView = false;
@@ -347,11 +445,6 @@ public class UserDashboardController {
             }
 
             // Cross-email validation to prevent IDOR
-            java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findById(targetId);
-            if (hdOpt.isEmpty()) {
-                return "redirect:/user/my-order?loi=donhangkhongton";
-            }
-            com.smashvn.shop.entity.HoaDon hd = hdOpt.get();
             String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
                     ? hd.getKhachHang().getTaiKhoan().getEmail() : null;
             if (orderEmail == null || !orderEmail.equalsIgnoreCase(guestEmail)) {

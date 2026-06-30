@@ -29,6 +29,7 @@ import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.ReturnStatus;
 import com.smashvn.shop.entity.RefundStatus;
+import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
@@ -55,6 +56,7 @@ public class OrderViewService {
     private final com.smashvn.shop.repository.EditLogRepository editLogRepository;
     private final JavaMailSender mailSender;
     private final NhanVienRepository nhanVienRepository;
+    private final com.smashvn.shop.repository.ThongBaoRepository thongBaoRepository;
 
     @Value("${app.admin.emails}")
     private String adminEmailsConfig;
@@ -203,6 +205,7 @@ public class OrderViewService {
         map.put("ghiChu", hd.getGhiChu());
         map.put("paymentMethod", hd.getPaymentMethod());
         map.put("maDonHang", hd.getMaDonHang());
+        map.put("ghnOrderCode", hd.getGhnOrderCode());
 
         map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO);
         map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");
@@ -516,6 +519,29 @@ public class OrderViewService {
         hd.setTrangThaiDonHang(newStatus);
         hd = hoaDonRepository.save(hd);
 
+        // Generate notification for customer
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+            try {
+                String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
+                String labelCu = getStatusLabel(currentStatus);
+                String labelMoi = getStatusLabel(newStatus);
+                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].", 
+                        maDon, labelCu, labelMoi);
+                
+                ThongBao thongBao = ThongBao.builder()
+                        .taiKhoan(hd.getKhachHang().getTaiKhoan())
+                        .tieuDe("Cập nhật trạng thái đơn hàng " + maDon)
+                        .noiDung(msgContent)
+                        .daDoc(false)
+                        .loaiThongBao("don_hang")
+                        .ngayTao(LocalDateTime.now())
+                        .build();
+                thongBaoRepository.save(thongBao);
+            } catch (Exception e) {
+                System.err.println("Lỗi tạo thông báo trạng thái đơn hàng cho khách: " + e.getMessage());
+            }
+        }
+
         if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus) && "CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
             String standardizedReason = "Không cung cấp lý do";
             if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
@@ -688,6 +714,29 @@ public class OrderViewService {
 
         hd.setTrangThaiDonHang(newStatus);
         hd = hoaDonRepository.save(hd);
+
+        // Generate notification for customer from GHN Webhook update
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+            try {
+                String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
+                String labelCu = getStatusLabel(currentStatus);
+                String labelMoi = getStatusLabel(newStatus);
+                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s] (Tự động cập nhật qua vận chuyển GHN).", 
+                        maDon, labelCu, labelMoi);
+                
+                ThongBao thongBao = ThongBao.builder()
+                        .taiKhoan(hd.getKhachHang().getTaiKhoan())
+                        .tieuDe("Cập nhật trạng thái giao hàng " + maDon)
+                        .noiDung(msgContent)
+                        .daDoc(false)
+                        .loaiThongBao("don_hang")
+                        .ngayTao(LocalDateTime.now())
+                        .build();
+                thongBaoRepository.save(thongBao);
+            } catch (Exception e) {
+                System.err.println("Lỗi tạo thông báo trạng thái giao hàng GHN cho khách: " + e.getMessage());
+            }
+        }
 
         // Gửi email nếu hủy đơn và trạng thái là chờ hoàn tiền
         if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus) && "CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
@@ -1163,6 +1212,29 @@ public class OrderViewService {
         }
 
         hoaDonRepository.save(hd);
+
+        // Generate notification for customer on return status update
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+            try {
+                String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
+                String labelCu = currentReturnStatus != null ? currentReturnStatus.getLabel() : "Chưa có";
+                String labelMoi = newReturnStatus.getLabel();
+                String msgContent = String.format("Đơn hàng hoàn trả %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].", 
+                        maDon, labelCu, labelMoi);
+                
+                ThongBao thongBao = ThongBao.builder()
+                        .taiKhoan(hd.getKhachHang().getTaiKhoan())
+                        .tieuDe("Cập nhật trạng thái hoàn hàng " + maDon)
+                        .noiDung(msgContent)
+                        .daDoc(false)
+                        .loaiThongBao("don_hang")
+                        .ngayTao(LocalDateTime.now())
+                        .build();
+                thongBaoRepository.save(thongBao);
+            } catch (Exception e) {
+                System.err.println("Lỗi tạo thông báo trạng thái hoàn hàng cho khách: " + e.getMessage());
+            }
+        }
 
         // 6. Log Audit
         String logNote = String.format("[WAREHOUSE_RETURN_%s] Xác nhận trạng thái hoàn hàng: %s. %s", 

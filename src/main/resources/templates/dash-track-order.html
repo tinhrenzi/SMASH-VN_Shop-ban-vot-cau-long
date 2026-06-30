@@ -69,7 +69,7 @@
                     <div class="dash">
                         <div class="container">
                             <div class="row">
-                                <div class="col-lg-3 col-md-12">
+                                <div th:if="${kh != null}" class="col-lg-3 col-md-12">
                                     <!--====== Dashboard Features ======-->
                                     <div class="dash__box dash__box--bg-white dash__box--shadow u-s-m-b-30">
                                         <div class="dash__pad-1">
@@ -131,18 +131,36 @@
                                     </div>
                                     <!--====== End - Dashboard Features ======-->
                                 </div>
-                                <div class="col-lg-9 col-md-12">
+                                <div th:class="${kh != null ? 'col-lg-9 col-md-12' : 'col-lg-8 col-md-12 offset-lg-2'}">
                                     <div class="dash__box dash__box--shadow dash__box--radius dash__box--bg-white">
                                         <div class="dash__pad-2">
                                             <h1 class="dash__h1 u-s-m-b-14">Theo Dõi Đơn Hàng</h1>
                                             <span class="dash__text u-s-m-b-30">Để theo dõi đơn hàng, vui lòng nhập Mã đơn hàng của bạn vào ô dưới đây và nhấn nút "Theo dõi".</span>
-                                            <form class="dash-track-order" th:action="@{/user/manage-order}" method="get">
+                                            
+                                            <!-- Alert error message -->
+                                            <div th:if="${loi != null}" class="alert alert-danger u-s-m-b-30" role="alert" style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 12px 20px; border-radius: 8px; font-weight: 500;">
+                                                <i class="fas fa-exclamation-circle u-s-m-r-8"></i>
+                                                <span th:text="${loi}"></span>
+                                            </div>
+
+                                            <form class="dash-track-order" th:action="@{/user/track-order/submit}" method="post">
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                
                                                 <div class="gl-inline">
-                                                    <div class="u-s-m-b-30">
+                                                    <div class="u-s-m-b-20" style="flex: 1;">
                                                         <label class="gl-label" for="order-id">Mã Đơn Hàng *</label>
-                                                        <input class="input-text input-text--primary-style" name="id" type="text" id="order-id" required placeholder="Xem mã trong email hoặc hóa đơn">
+                                                        <input class="input-text input-text--primary-style" name="orderId" type="text" id="order-id" required placeholder="Xem mã trong email hoặc hóa đơn (Ví dụ: SMASH-1001)">
                                                     </div>
                                                 </div>
+
+                                                <!-- Verification contact info for Guest users -->
+                                                <div th:if="${kh == null}" class="gl-inline">
+                                                    <div class="u-s-m-b-30" style="flex: 1;">
+                                                        <label class="gl-label" for="contact-info">Email hoặc Số điện thoại đặt hàng *</label>
+                                                        <input class="input-text input-text--primary-style" name="contactInfo" type="text" id="contact-info" required placeholder="Nhập email hoặc số điện thoại dùng khi đặt hàng">
+                                                    </div>
+                                                </div>
+
                                                 <button class="btn btn--e-brand-b-2" type="submit">THEO DÕI</button>
                                             </form>
                                         </div>

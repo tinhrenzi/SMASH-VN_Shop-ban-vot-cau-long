@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -277,5 +279,109 @@ public class GuestCheckoutService {
 
         tkp.setDaSuDung(true);
         tokenRepository.save(tkp);
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void sendOrderConfirmationEmail(String recipientEmail, com.smashvn.shop.entity.HoaDon hd, String appUrl) {
+        long startEmailThread = System.currentTimeMillis();
+        log.info("[EmailService] Starting asynchronous order confirmation email sending process.");
+        
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            log.warn("[EmailService] Recipient email is null or empty, skipping order confirmation email.");
+            return;
+        }
+
+        String maDonHang = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
+        
+        // Skip real emails in test environment
+        if (maDonHang.startsWith("TEST-")) {
+            log.info("[TEST] Skipping sending order confirmation email for test order: {}", maDonHang);
+            return;
+        }
+
+        String tenNguoiNhan = hd.getTenNguoiNhan() != null ? hd.getTenNguoiNhan() : "Quý khách";
+        String sdt = hd.getSdtNhan() != null ? hd.getSdtNhan() : "N/A";
+        String diaChi = hd.getDiaChiNhan() != null ? hd.getDiaChiNhan() : "N/A";
+        String phuongThuc = hd.getPaymentMethod() != null ? hd.getPaymentMethod() : (hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan().getTenPhuongThuc() : "N/A");
+        String formattedTongTien = hd.getTongTien() != null ? String.format("%,.0f", hd.getTongTien()) : "0";
+        String trackingUrl = appUrl + "/user/track-order?id=" + maDonHang;
+
+        String htmlMsg = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <meta charset=\"utf-8\">" +
+                "    <title>Xác nhận đặt hàng thành công</title>" +
+                "</head>" +
+                "<body style=\"margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Inter', system-ui, -apple-system, sans-serif;\">" +
+                "    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" width=\"100%\" style=\"max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e9ecef;\">" +
+                "        <tr>" +
+                "            <td style=\"padding: 32px 40px; background-color: #e02424; text-align: center;\">" +
+                "                <h2 style=\"margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">SMASH VN</h2>" +
+                "                <p style=\"margin: 4px 0 0 0; color: #fecaca; font-size: 14px;\">Cảm ơn bạn đã mua sắm tại cửa hàng của chúng tôi!</p>" +
+                "            </td>" +
+                "        </tr>" +
+                "        <tr>" +
+                "            <td style=\"padding: 40px;\">" +
+                "                <p style=\"margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: 600;\">Xin chào " + tenNguoiNhan + ",</p>" +
+                "                <p style=\"margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;\">" +
+                "                    Đơn hàng của bạn đã được ghi nhận thành công. Dưới đây là thông tin chi tiết đơn hàng của bạn:" +
+                "                </p>" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background-color: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 32px; border: 1px solid #f3f4f6;\">" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; width: 160px; font-size: 15px;\">Mã đơn hàng:</td>" +
+                "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px; font-weight: 700; color: #e02424;\">" + maDonHang + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; font-size: 15px;\">Số điện thoại:</td>" +
+                "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px;\">" + sdt + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; font-size: 15px;\">Địa chỉ nhận hàng:</td>" +
+                "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px; line-height: 1.4;\">" + diaChi + "</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; font-size: 15px;\">Thanh toán:</td>" +
+                "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px;\">" + phuongThuc + "</td>" +
+                "                    </tr>" +
+                "                    <tr style=\"border-top: 1px solid #e5e7eb;\">" +
+                "                        <td style=\"padding: 16px 0 8px 0; color: #111827; font-weight: 700; font-size: 16px;\">Tổng thanh toán:</td>" +
+                "                        <td style=\"padding: 16px 0 8px 0; color: #e02424; font-size: 18px; font-weight: 700;\">" + formattedTongTien + " đ</td>" +
+                "                    </tr>" +
+                "                </table>" +
+                "                <p style=\"margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;\">" +
+                "                    Bạn có thể sử dụng mã đơn hàng trên để theo dõi hành trình giao nhận hàng trực tiếp tại trang web của chúng tôi bằng nút bên dưới:" +
+                "                </p>" +
+                "                <div style=\"text-align: center; margin-bottom: 30px;\">" +
+                "                    <a href=\"" + trackingUrl + "\" style=\"display: inline-block; padding: 14px 30px; background-color: #e02424; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(224, 36, 36, 0.2);\">" +
+                "                        Theo Dõi Đơn Hàng" +
+                "                    </a>" +
+                "                </div>" +
+                "                <p style=\"margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;\">" +
+                "                    Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ hotline bộ phận CSKH của chúng tôi để được giải đáp sớm nhất." +
+                "                </p>" +
+                "            </td>" +
+                "        </tr>" +
+                "        <tr>" +
+                "            <td style=\"padding: 24px; background-color: #f9fafb; text-align: center; border-top: 1px solid #f3f4f6;\">" +
+                "                <p style=\"margin: 0; color: #9ca3af; font-size: 12px;\">Hệ thống Cửa hàng Smash VN &copy; 2026</p>" +
+                "            </td>" +
+                "        </tr>" +
+                "    </table>" +
+                "</body>" +
+                "</html>";
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(recipientEmail);
+            helper.setSubject("[Smash VN] Xác nhận đặt hàng thành công - Đơn hàng " + maDonHang);
+            helper.setText(htmlMsg, true);
+            mailSender.send(message);
+            long endEmailThread = System.currentTimeMillis();
+            log.info("[EmailService] Order confirmation email sent successfully in {}ms to {}", (endEmailThread - startEmailThread), recipientEmail);
+        } catch (Exception e) {
+            long endEmailThread = System.currentTimeMillis();
+            log.error("[EmailService] Failed to send order confirmation email in {}ms to {}. Exception: {}", (endEmailThread - startEmailThread), recipientEmail, e.getMessage(), e);
+        }
     }
 }
