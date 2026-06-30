@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.service.admin.AdminNhanVienService;
@@ -25,6 +26,47 @@ import java.util.Map;
 public class AdminNhanVienController {
 
     private final AdminNhanVienService adminNhanVienService;
+
+    private String friendlyErrorMessage(Exception ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "";
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause.getMessage() != null) {
+                message += " " + cause.getMessage();
+            }
+            cause = cause.getCause();
+        }
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("ux_nhanvien_sodienthoai")
+                || lowerMessage.contains("so_dien_thoai")
+                || lowerMessage.contains("sodienthoai")) {
+            return "Số điện thoại nhân viên đã tồn tại. Vui lòng nhập số khác.";
+        }
+        if (lowerMessage.contains("uk_email")
+                || lowerMessage.contains("duplicate key")
+                && lowerMessage.contains("email")) {
+            return "Email đã được sử dụng.";
+        }
+        if (lowerMessage.contains("uk_tendangnhap")
+                || lowerMessage.contains("ten_dang_nhap")
+                || lowerMessage.contains("tendangnhap")) {
+            return "Tên đăng nhập đã tồn tại.";
+        }
+        if (lowerMessage.contains("id_tai_khoan")
+                || lowerMessage.contains("tai_khoan")
+                || lowerMessage.contains("taikhoan")) {
+            return "Tài khoản nhân viên đã tồn tại.";
+        }
+        if (lowerMessage.contains("cannot insert duplicate key")
+                || lowerMessage.contains("duplicate key")
+                || lowerMessage.contains("constraint")
+                || lowerMessage.contains("hibernate")
+                || lowerMessage.contains("sql")) {
+            return "Dữ liệu đã tồn tại hoặc không hợp lệ. Vui lòng kiểm tra lại thông tin.";
+        }
+        return message.isBlank() ? "Không thể lưu nhân viên. Vui lòng kiểm tra lại thông tin." : ex.getMessage();
+    }
 
     @GetMapping
     public String hienThiDanhSach(
@@ -59,7 +101,9 @@ public class AdminNhanVienController {
             adminNhanVienService.createNhanVien(email, matKhau, hoTenNv, chucVu, soDienThoaiNv, vaiTro, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/nhan-vien?themThanhCong";
         } catch (Exception e) {
-            model.addAttribute("loi", e.getMessage());
+            String errorMessage = friendlyErrorMessage(e);
+            model.addAttribute("error", errorMessage);
+            model.addAttribute("loi", errorMessage);
             model.addAttribute("email", email);
             model.addAttribute("hoTenNv", hoTenNv);
             model.addAttribute("chucVu", chucVu);
@@ -70,13 +114,14 @@ public class AdminNhanVienController {
     }
 
     @GetMapping("/sua/{id}")
-    public String hienThiFormSua(@PathVariable("id") Integer id, Model model) {
+    public String hienThiFormSua(@PathVariable("id") Integer id, Model model, RedirectAttributes redirectAttributes) {
         try {
             NhanVien nv = adminNhanVienService.findById(id);
             model.addAttribute("nv", nv);
             return "admin/nhanvien-edit";
         } catch (Exception e) {
-            return "redirect:/admin/nhan-vien?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            redirectAttributes.addFlashAttribute("error", friendlyErrorMessage(e));
+            return "redirect:/admin/nhan-vien";
         }
     }
 
@@ -102,8 +147,19 @@ public class AdminNhanVienController {
             return "redirect:/admin/nhan-vien?suaThanhCong";
         } catch (Exception e) {
             NhanVien nv = adminNhanVienService.findById(id);
+            nv.setHoTenNv(hoTenNv);
+            nv.setChucVu(chucVu);
+            nv.setSoDienThoaiNv(soDienThoaiNv);
+            if (nv.getTaiKhoan() != null) {
+                nv.getTaiKhoan().setLaKhachHang(Boolean.TRUE.equals(laKhachHang));
+                nv.getTaiKhoan().setLaNhanVien(Boolean.TRUE.equals(laNhanVien));
+                nv.getTaiKhoan().setLaQuanLy(Boolean.TRUE.equals(laQuanLy));
+                nv.getTaiKhoan().setTrangThai(trangThai);
+            }
+            String errorMessage = friendlyErrorMessage(e);
             model.addAttribute("nv", nv);
-            model.addAttribute("loi", e.getMessage());
+            model.addAttribute("error", errorMessage);
+            model.addAttribute("loi", errorMessage);
             return "admin/nhanvien-edit";
         }
     }
@@ -126,7 +182,7 @@ public class AdminNhanVienController {
             adminNhanVienService.toggleStatus(id, actingTaiKhoanId, ipAddress, appUrl);
             return "redirect:/admin/nhan-vien?toggleThanhCong";
         } catch (Exception e) {
-            return "redirect:/admin/nhan-vien?loi=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/admin/nhan-vien?loi=" + java.net.URLEncoder.encode(friendlyErrorMessage(e), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 

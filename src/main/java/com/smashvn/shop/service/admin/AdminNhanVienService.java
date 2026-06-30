@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,12 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AdminNhanVienService {
+
+    private static final String EMPLOYEE_PHONE_REGEX = "^(03|05|07|08|09)\\d{8}$";
+    private static final String MSG_DUPLICATE_EMPLOYEE_PHONE = "Số điện thoại nhân viên đã tồn tại. Vui lòng nhập số khác.";
+    private static final String MSG_DUPLICATE_EMAIL = "Email đã được sử dụng.";
+    private static final String MSG_DUPLICATE_USERNAME = "Tên đăng nhập đã tồn tại.";
+    private static final String MSG_DUPLICATE_EMPLOYEE_ACCOUNT = "Tài khoản nhân viên đã tồn tại.";
 
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
@@ -78,6 +85,69 @@ public class AdminNhanVienService {
                 tk.getTrangThai());
     }
 
+    private String mapDataIntegrityMessage(Exception ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "";
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause.getMessage() != null) {
+                message += " " + cause.getMessage();
+            }
+            cause = cause.getCause();
+        }
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("ux_nhanvien_sodienthoai")
+                || lowerMessage.contains("so_dien_thoai")
+                || lowerMessage.contains("sodienthoai")) {
+            return MSG_DUPLICATE_EMPLOYEE_PHONE;
+        }
+        if (lowerMessage.contains("uk_email")
+                || lowerMessage.contains("email")
+                || lowerMessage.contains("tai_khoan.email")) {
+            return MSG_DUPLICATE_EMAIL;
+        }
+        if (lowerMessage.contains("uk_tendangnhap")
+                || lowerMessage.contains("ten_dang_nhap")
+                || lowerMessage.contains("tendangnhap")) {
+            return MSG_DUPLICATE_USERNAME;
+        }
+        if (lowerMessage.contains("id_tai_khoan")
+                || lowerMessage.contains("tai_khoan")
+                || lowerMessage.contains("taikhoan")) {
+            return MSG_DUPLICATE_EMPLOYEE_ACCOUNT;
+        }
+        if (lowerMessage.contains("duplicate")
+                || lowerMessage.contains("unique")
+                || lowerMessage.contains("constraint")) {
+            return "Dữ liệu đã tồn tại. Vui lòng kiểm tra lại thông tin vừa nhập.";
+        }
+        return "Không thể lưu nhân viên. Vui lòng kiểm tra lại thông tin.";
+    }
+
+    private TaiKhoan saveTaiKhoan(TaiKhoan taiKhoan) {
+        try {
+            return taiKhoanRepository.saveAndFlush(taiKhoan);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(mapDataIntegrityMessage(ex), ex);
+        }
+    }
+
+    private NhanVien saveNhanVien(NhanVien nhanVien) {
+        try {
+            return nhanVienRepository.saveAndFlush(nhanVien);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(mapDataIntegrityMessage(ex), ex);
+        }
+    }
+
+    private KhachHang saveKhachHang(KhachHang khachHang) {
+        try {
+            return khachHangRepository.saveAndFlush(khachHang);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(mapDataIntegrityMessage(ex), ex);
+        }
+    }
+
     @Transactional
     public void createNhanVien(String email, String matKhau, String hoTenNv, String chucVu, String soDienThoaiNv, String vaiTro, Integer actingTaiKhoanId, String ipAddress) {
         String trimmedEmail = (email == null) ? "" : email.trim();
@@ -126,19 +196,23 @@ public class AdminNhanVienService {
         if (trimmedPhone.isEmpty()) {
             throw new RuntimeException("Số điện thoại không được để trống!");
         }
-        if (!trimmedPhone.matches(com.smashvn.shop.util.ValidationUtils.PHONE_REGEX)) {
-            throw new RuntimeException("Số điện thoại không đúng định dạng!");
+        if (!trimmedPhone.matches(EMPLOYEE_PHONE_REGEX)) {
+            throw new RuntimeException("Số điện thoại không đúng định dạng Việt Nam. Vui lòng nhập số bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số.");
         }
 
         if (!"NV".equals(vaiTro) && !"QL".equals(vaiTro)) {
             throw new RuntimeException("Vai trò không hợp lệ!");
         }
 
+        if (nhanVienRepository.existsBySoDienThoai(trimmedPhone)) {
+            throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_PHONE);
+        }
+
         // 1. Kiểm tra Email tồn tại
         if (taiKhoanRepository.existsByEmail(sanitizedEmail)) {
             TaiKhoan existingTk = taiKhoanRepository.findByEmail(sanitizedEmail);
             if (Boolean.TRUE.equals(existingTk.getLaNhanVien()) || Boolean.TRUE.equals(existingTk.getLaQuanLy())) {
-                throw new RuntimeException("Email này đã được sử dụng bởi một nhân viên/quản lý khác!");
+                throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_ACCOUNT);
             }
 
             // Nâng quyền tài khoản khách hàng thành nhân viên
@@ -146,7 +220,7 @@ public class AdminNhanVienService {
             existingTk.setLaNhanVien(true);
             existingTk.setLaQuanLy("QL".equals(vaiTro));
             existingTk.setVaiTro(vaiTro);
-            existingTk = taiKhoanRepository.save(existingTk);
+            existingTk = saveTaiKhoan(existingTk);
 
             // Tạo NhanVien
             NhanVien nv = new NhanVien();
@@ -154,7 +228,7 @@ public class AdminNhanVienService {
             nv.setHoTenNv(sanitizedName);
             nv.setChucVu(sanitizedChucVu);
             nv.setSoDienThoaiNv(trimmedPhone);
-            nv = nhanVienRepository.save(nv);
+            nv = saveNhanVien(nv);
 
             // Lưu Audit Logs
             TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
@@ -173,7 +247,7 @@ public class AdminNhanVienService {
         tk.setLaKhachHang(true); // new employees also have customer role by default
         tk.setLaNhanVien("NV".equals(vaiTro) || "QL".equals(vaiTro));
         tk.setLaQuanLy("QL".equals(vaiTro));
-        tk = taiKhoanRepository.save(tk);
+        tk = saveTaiKhoan(tk);
 
         // 3. Tạo NhanVien
         NhanVien nv = new NhanVien();
@@ -181,7 +255,7 @@ public class AdminNhanVienService {
         nv.setHoTenNv(sanitizedName);
         nv.setChucVu(sanitizedChucVu);
         nv.setSoDienThoaiNv(trimmedPhone);
-        nv = nhanVienRepository.save(nv);
+        nv = saveNhanVien(nv);
 
         // --- NEW: Tạo KhachHang ---
         KhachHang kh = new KhachHang();
@@ -192,7 +266,7 @@ public class AdminNhanVienService {
         kh.setSoDienThoaiKh(trimmedPhone);
         kh.setNhanBanTin(false);
         kh.setLaTaiKhoanNoiBo(true); // Internal account flag
-        kh = khachHangRepository.save(kh);
+        kh = saveKhachHang(kh);
 
         // 4. Lưu Audit Logs
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
@@ -229,8 +303,8 @@ public class AdminNhanVienService {
         if (trimmedPhone.isEmpty()) {
             throw new RuntimeException("Số điện thoại không được để trống!");
         }
-        if (!trimmedPhone.matches(com.smashvn.shop.util.ValidationUtils.PHONE_REGEX)) {
-            throw new RuntimeException("Số điện thoại không đúng định dạng!");
+        if (!trimmedPhone.matches(EMPLOYEE_PHONE_REGEX)) {
+            throw new RuntimeException("Số điện thoại không đúng định dạng Việt Nam. Vui lòng nhập số bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số.");
         }
 
         if (trangThai == null || (!"hoat_dong".equals(trangThai) && !"cho_khoa".equals(trangThai) && !"bi_khoa".equals(trangThai))) {
@@ -246,6 +320,10 @@ public class AdminNhanVienService {
 
         NhanVien nv = findById(id);
         TaiKhoan tk = nv.getTaiKhoan();
+
+        if (nhanVienRepository.existsBySoDienThoaiNvAndIdNot(trimmedPhone, id)) {
+            throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_PHONE);
+        }
 
         if (laKhachHang == null) {
             laKhachHang = false;
@@ -268,7 +346,7 @@ public class AdminNhanVienService {
         nv.setHoTenNv(sanitizedName);
         nv.setChucVu(sanitizedChucVu);
         nv.setSoDienThoaiNv(trimmedPhone);
-        nhanVienRepository.save(nv);
+        saveNhanVien(nv);
 
         // Update the linked KhachHang profile if it exists
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
@@ -277,7 +355,7 @@ public class AdminNhanVienService {
             kh.setHoKh(nameParts[0]);
             kh.setTenKh(nameParts[1]);
             kh.setSoDienThoaiKh(trimmedPhone);
-            khachHangRepository.save(kh);
+            saveKhachHang(kh);
         }
 
         // Cập nhật các cờ vai trò
@@ -298,7 +376,7 @@ public class AdminNhanVienService {
         if (newPassword != null && !newPassword.trim().isEmpty()) {
             tk.setMatKhau(BCrypt.hashpw(newPassword.trim(), BCrypt.gensalt()));
         }
-        taiKhoanRepository.save(tk);
+        saveTaiKhoan(tk);
 
         // Soft deactivation via role flags is handled, NhanVien profile remains in database.
         // 3. Lưu Audit Log

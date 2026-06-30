@@ -14,6 +14,11 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
 
     NhanVien findByTaiKhoanId(Integer idTaiKhoan);
 
+    @Query("SELECT COUNT(nv) > 0 FROM NhanVien nv WHERE nv.soDienThoaiNv = :soDienThoai")
+    boolean existsBySoDienThoai(@Param("soDienThoai") String soDienThoai);
+
+    boolean existsBySoDienThoaiNvAndIdNot(String soDienThoaiNv, Integer id);
+
     @Query("SELECT nv FROM NhanVien nv WHERE nv.taiKhoan.trangThai = 'cho_khoa'")
     List<NhanVien> findPendingLockEmployees();
 }
