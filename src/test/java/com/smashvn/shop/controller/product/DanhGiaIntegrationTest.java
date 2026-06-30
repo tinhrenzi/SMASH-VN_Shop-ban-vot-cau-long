@@ -82,6 +82,12 @@ public class DanhGiaIntegrationTest {
     @Autowired
     private CommentViolationLogRepository commentViolationLogRepository;
 
+    @Autowired
+    private CommentModerationKeywordRepository commentModerationKeywordRepository;
+
+    @Autowired
+    private com.smashvn.shop.service.blog.CommentModerationService commentModerationService;
+
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private org.springframework.mail.javamail.JavaMailSender mailSender;
 
@@ -697,6 +703,192 @@ public class DanhGiaIntegrationTest {
         TaiKhoan updatedUser = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
         assertTrue(updatedUser.getSoLanNhacNhoViPham() >= 1);
         assertNotNull(updatedUser.getNgayKhoaBinhLuanDen());
+    }
+
+    @Test
+    public void testCommentViolation_CustomModerationKeywords() throws Exception {
+        createOrder("da_giao");
+
+        // 1. Inactive keyword check
+        CommentModerationKeyword kw1 = CommentModerationKeyword.builder()
+                .keyword("spamkeyword")
+                .active(false)
+                .build();
+        commentModerationKeywordRepository.save(kw1);
+        commentModerationService.clearKeywordCache();
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "5")
+                        .param("comment", "Bình luận chứa spamkeyword bình thường")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        // Verify violation count did not increase (still 0)
+        TaiKhoan user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(0, user.getSoLanNhacNhoViPham());
+
+        // Backdate the review to bypass 30s check
+        DanhGia dg = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg);
+
+        // 2. Active custom keyword check (triggers MEDIUM severity)
+        CommentModerationKeyword kw2 = CommentModerationKeyword.builder()
+                .keyword("tệ hại")
+                .active(true)
+                .build();
+        commentModerationKeywordRepository.save(kw2);
+        commentModerationService.clearKeywordCache();
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "3")
+                        .param("comment", "Sản phẩm tệ hại lắm nha")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        // Verify violation count increased to 1, and log created with MEDIUM severity
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(1, user.getSoLanNhacNhoViPham());
+        
+        List<CommentViolationLog> logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertFalse(logs.isEmpty());
+        assertEquals("MEDIUM", logs.get(0).getMucDoViPham());
+        assertEquals("Sản phẩm tệ hại lắm nha", logs.get(0).getNoiDungGoc());
+        assertEquals("Sản phẩm *** lắm nha", logs.get(0).getNoiDungDaLoc());
+
+        // Reset ban/violation count and backdate for next test
+        user.setNgayKhoaBinhLuanDen(null);
+        taiKhoanRepository.saveAndFlush(user);
+        DanhGia dg2 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg2.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg2.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg2);
+
+        // 3. Regex special characters check (c++, a+b, test.com)
+        CommentModerationKeyword kw3 = CommentModerationKeyword.builder()
+                .keyword("c++")
+                .active(true)
+                .build();
+        commentModerationKeywordRepository.save(kw3);
+        commentModerationService.clearKeywordCache();
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "4")
+                        .param("comment", "Học lập trình c++ rất tốt")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(2, user.getSoLanNhacNhoViPham()); // Incremented to 2
+        
+        logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertEquals("MEDIUM", logs.get(0).getMucDoViPham());
+        assertEquals("Học lập trình c++ rất tốt", logs.get(0).getNoiDungGoc());
+        assertEquals("Học lập trình *** rất tốt", logs.get(0).getNoiDungDaLoc());
+
+        user.setNgayKhoaBinhLuanDen(null);
+        taiKhoanRepository.saveAndFlush(user);
+        DanhGia dg3 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg3.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg3.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg3);
+
+        // 4. Obfuscation boundary check (đ.m, Đ.M, đ m)
+        CommentModerationKeyword kw4 = CommentModerationKeyword.builder()
+                .keyword("dm")
+                .active(true)
+                .build();
+        commentModerationKeywordRepository.save(kw4);
+        commentModerationService.clearKeywordCache();
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "2")
+                        .param("comment", "Cái đồ đ.m này")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(3, user.getSoLanNhacNhoViPham()); // Incremented to 3
+        
+        logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertEquals("HIGH", logs.get(0).getMucDoViPham()); // HIGH because 'đ.m' is a hardcoded HIGH pattern
+        assertEquals("Cái đồ đ.m này", logs.get(0).getNoiDungGoc());
+
+        user.setNgayKhoaBinhLuanDen(null);
+        taiKhoanRepository.saveAndFlush(user);
+        DanhGia dg4 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg4.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg4.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg4);
+
+        // 4b. Non-hardcoded custom keyword obfuscation check
+        // "tệ hại" matches "tệ.hại"
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "2")
+                        .param("comment", "Thật là tệ.hại")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(4, user.getSoLanNhacNhoViPham()); // Incremented to 4
+        
+        logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertEquals("MEDIUM", logs.get(0).getMucDoViPham()); // MEDIUM because it is custom keyword only
+        assertEquals("Thật là tệ.hại", logs.get(0).getNoiDungGoc());
+        assertEquals("Thật là tệ.hại", logs.get(0).getNoiDungDaLoc()); // Obfuscated keyword not replaced, but correctly detected
+
+        user.setNgayKhoaBinhLuanDen(null);
+        taiKhoanRepository.saveAndFlush(user);
+        DanhGia dg4b = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg4b.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg4b.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg4b);
+
+        // 5. Short keyword check (should ignore length < 2)
+        CommentModerationKeyword kw5 = CommentModerationKeyword.builder()
+                .keyword("x")
+                .active(true)
+                .build();
+        commentModerationKeywordRepository.save(kw5);
+        commentModerationService.clearKeywordCache();
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "5")
+                        .param("comment", "Bình luận chứa chữ x bình thường")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(4, user.getSoLanNhacNhoViPham()); // Still 4, ignored keyword 'x'
+
+        // 6. Conflict check: match both hardcoded HIGH and custom MEDIUM -> HIGH wins
+        user.setSoLanNhacNhoViPham(0);
+        taiKhoanRepository.saveAndFlush(user);
+        DanhGia dg5 = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).get(0);
+        dg5.setNgayDanhGia(LocalDateTime.now().minusSeconds(35));
+        dg5.setNgayCapNhat(LocalDateTime.now().minusSeconds(35));
+        danhGiaDAO.saveAndFlush(dg5);
+
+        mockMvc.perform(multipart("/san-pham/" + activeProduct.getId() + "/danh-gia")
+                        .param("rating", "1")
+                        .param("comment", "đm tệ hại")
+                        .sessionAttr("idNguoiDung", testUser.getId()))
+                .andExpect(status().is3xxRedirection());
+
+        user = taiKhoanRepository.findById(testUser.getId()).orElseThrow();
+        assertEquals(1, user.getSoLanNhacNhoViPham());
+        
+        logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
+        assertEquals("HIGH", logs.get(0).getMucDoViPham()); // HIGH severity wins over MEDIUM
+
+        // Clean up keywords we created to avoid affecting other tests
+        commentModerationKeywordRepository.delete(kw1);
+        commentModerationKeywordRepository.delete(kw2);
+        commentModerationKeywordRepository.delete(kw3);
+        commentModerationKeywordRepository.delete(kw4);
+        commentModerationKeywordRepository.delete(kw5);
+        commentModerationService.clearKeywordCache();
     }
 
     @org.junit.jupiter.api.AfterEach

@@ -28,6 +28,7 @@ import com.smashvn.shop.repository.CommentViolationLogRepository;
 import com.smashvn.shop.service.common.FileStorageService;
 import com.smashvn.shop.util.ProfanityFilter;
 import com.smashvn.shop.util.SeverityLevel;
+import com.smashvn.shop.service.blog.CommentModerationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class DanhGiaService {
     private final CommentViolationLogRepository commentViolationLogRepository;
     private final FileStorageService fileStorageService;
     private final ProfanityFilter profanityFilter;
+    private final CommentModerationService commentModerationService;
     private final org.springframework.mail.javamail.JavaMailSender mailSender;
 
     @org.springframework.beans.factory.annotation.Value("${app.admin.emails}")
@@ -187,9 +189,10 @@ public class DanhGiaService {
         }
 
         // 5. Phân tích tục tĩu
-        SeverityLevel severity = profanityFilter.getSeverity(binhLuan);
+        java.util.List<String> customKeywords = commentModerationService.getActiveRawKeywords();
+        SeverityLevel severity = profanityFilter.getSeverity(binhLuan, customKeywords);
         boolean isViolation = (severity != SeverityLevel.NONE);
-        String filteredComment = profanityFilter.filter(binhLuan);
+        String filteredComment = profanityFilter.filter(binhLuan, customKeywords);
 
         boolean autoHide = false;
         String textThoiHan = "";
