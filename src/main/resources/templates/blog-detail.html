@@ -46,7 +46,7 @@
       "headline": /*[[${blog.title}]]*/ "Tiêu đề bài viết",
       "image": /*[[${#strings.startsWith(blog.image, '/uploads/') ? 'https://smashvn.com' + blog.image : 'https://smashvn.com/images/blog/' + blog.image}]]*/ "",
       "genre": /*[[${blog.category}]]*/ "Category",
-      "keywords": /*[[${blog.tags != null and !blog.tags.isEmpty() ? #strings.join(blog.tags, ',') : ''}]]*/ "Tags",
+      "keywords": /*[[${blog.tags != null and !blog.tags.isEmpty() ? T(java.lang.String).join(',', blog.tags) : ''}]]*/ "Tags",
       "publisher": {
         "@type": "Organization",
         "name": "Smash VN",
