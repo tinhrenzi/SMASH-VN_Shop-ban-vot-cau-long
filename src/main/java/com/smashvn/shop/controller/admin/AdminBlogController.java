@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.List;
 
 @Controller
-@RequestMapping("/admin/blog")
+@RequestMapping({"/admin/blog", "/admin/blogs"})
 @RequiredArgsConstructor
 @Slf4j
 public class AdminBlogController {
@@ -105,7 +105,7 @@ public class AdminBlogController {
         }
     }
 
-    @GetMapping("/edit/{id}")
+    @GetMapping({"/edit/{id}", "/sua/{id}"})
     public String showEditForm(@PathVariable("id") Integer id, Model model) {
         try {
             BlogDTO blog = blogService.getAdminBlogById(id);
@@ -117,7 +117,7 @@ public class AdminBlogController {
         }
     }
 
-    @PostMapping("/edit/{id}")
+    @PostMapping({"/edit/{id}", "/sua/{id}"})
     public String processEdit(
             @PathVariable("id") Integer id,
             @ModelAttribute("blog") BlogDTO blogDTO,
