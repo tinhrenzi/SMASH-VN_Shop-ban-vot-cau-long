@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bán Hàng Tại Quầy (POS) - SmashVN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
     <style>
         html, body {
-            height: 100vh !important;
-            overflow: hidden !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: visible !important;
         }
         .pos-layout-container, .pos-layout-row {
-            height: 100vh !important;
-            overflow: hidden !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: visible !important;
         }
 
         /* Fix sidebar: luôn cố định, không bị kéo theo scroll của content */
@@ -31,24 +33,25 @@
         }
         .sidebar::-webkit-scrollbar { display: none; }
 
-        /* Fix main-content: lùi sang phải đúng độ rộng sidebar */
+        /* Fix main-content: Adapt to Top Navigation layout with natural height */
         .main-content {
-            margin-left: 16.6667% !important;
-            width: 83.3333% !important;
-            max-width: 83.3333% !important;
-            height: 100vh !important;
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
             min-height: 100vh !important;
             display: flex;
             flex-direction: column;
-            padding: 15px 30px 15px 30px !important;
-            overflow: hidden;
+            padding: 0 !important;
+            overflow: visible !important;
             flex: none !important;
         }
 
         /* Row không được scroll ngang */
         .container-fluid > .row {
-            height: 100vh;
-            overflow: hidden;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: visible !important;
             flex-wrap: nowrap;
         }
 
@@ -57,6 +60,11 @@
             gap: 20px;
             flex: 1;
             min-height: 0;
+            height: auto !important;
+            max-height: none !important;
+            padding: 10px 20px 40px 20px;
+            box-sizing: border-box;
+            overflow: visible !important;
         }
         .pos-left {
             flex: 1.3;
@@ -66,7 +74,9 @@
             border-radius: 16px;
             border: 1px solid rgba(21, 23, 28, 0.08);
             padding: 20px;
-            overflow: hidden;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
         }
         .pos-right {
             flex: 1;
@@ -74,11 +84,13 @@
             border-radius: 16px;
             border: 1px solid rgba(21, 23, 28, 0.08);
             padding: 20px;
-            overflow-y: auto;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
         }
         .product-grid {
             flex: 1;
-            overflow-y: auto;
+            overflow: visible !important;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
             gap: 12px;
@@ -360,14 +372,16 @@
         <div th:replace="~{admin/layout/sidebar :: sidebar('pos')}"></div>
 
         <!-- Main Content -->
-        <main class="col-md-10 main-content">
+        <main class="col-md-10 main-content pos-main-content">
             <!-- Header layout dùng chung -->
             <div th:replace="~{admin/layout/header :: header}"></div>
 
             <!-- Page Title -->
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                <h2 class="page-title"><i class="fas fa-cash-register" style="color: var(--brand-accent);"></i> Bán Hàng Tại Quầy (POS)</h2>
-                <div class="text-muted fw-bold">Nhân viên: <span class="text-primary" th:text="${session.tenHienThi != null ? session.tenHienThi : 'Nhân viên hệ thống'}">Staff</span></div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2" style="padding: 10px 20px 0 20px;">
+                <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-cash-register" style="color: var(--brand-accent);"></i> Bán Hàng Tại Quầy (POS)
+                </h4>
+                <div class="text-muted fw-bold small">Nhân viên: <span class="text-primary" th:text="${session.tenHienThi != null ? session.tenHienThi : 'Nhân viên hệ thống'}">Staff</span></div>
             </div>
 
             <!-- Main POS Container -->
@@ -411,6 +425,30 @@
                     <!-- Products Grid -->
                     <div id="productGrid" class="product-grid">
                         <!-- Sẽ render bằng JS -->
+                    </div>
+
+                    <!-- Pagination bar -->
+                    <div id="posPagination" style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; width: 100%;">
+                        <!-- Left: Page Size Selector -->
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:13px; color:#555; white-space:nowrap; font-weight: 500;">Hiển thị:</span>
+                            <select id="posPageSizeSelect" class="toolbar-select" style="border: 1px solid #ccc !important; border-radius: 4px; padding: 2px 6px !important; background-color: #fff !important;">
+                                <option value="12">12</option>
+                                <option value="24">24</option>
+                                <option value="36">36</option>
+                                <option value="48">48</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Center: Pagination List -->
+                        <ul class="shop-p__pagination" id="posPaginationList" style="margin: 0;">
+                            <!-- JS will render pagination here -->
+                        </ul>
+                        
+                        <!-- Right: Page Info -->
+                        <p class="pagination-info" id="posPaginationInfo" style="margin: 0; font-size: 13px; color: #555;">
+                            <!-- JS will render info here -->
+                        </p>
                     </div>
                 </div>
 
@@ -638,6 +676,8 @@
 <script th:inline="javascript">
     // Global POS state variables
     let allVariants = [];
+    let posCurrentPage = 0;
+    let posPageSize = 12;
     let cart = [];
     let selectedCustomer = null; // null represents Default Guest
     let appliedVoucher = null;
@@ -694,6 +734,16 @@
         document.getElementById("productSearchInput").addEventListener("input", function(e) {
             refreshProducts();
         });
+
+        // Listen for page size selection
+        const posPageSizeSelect = document.getElementById("posPageSizeSelect");
+        if (posPageSizeSelect) {
+            posPageSizeSelect.addEventListener("change", function(e) {
+                posPageSize = parseInt(e.target.value);
+                posCurrentPage = 0;
+                renderProductGrid();
+            });
+        }
     });
 
     // Refresh products catalog from AJAX
@@ -716,6 +766,7 @@
         if (grid) {
             grid.innerHTML = `<div class="text-center text-muted py-5" style="grid-column: 1 / -1;"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><p class="mb-0">Đang tải sản phẩm...</p></div>`;
         }
+        posCurrentPage = 0; // Reset page to 0 on new search/filter
         fetch(`/admin/pos/search-products?q=${encodeURIComponent(query)}&danhMucId=${categoryId}&thuongHieuId=${brandId}`)
             .then(res => {
                 if (!res.ok) {
@@ -743,10 +794,20 @@
         
         if (allVariants.length === 0) {
             grid.innerHTML = `<div class="text-center text-muted py-5" style="grid-column: 1 / -1;"><i class="fas fa-search fa-2x mb-2"></i><p class="mb-0">Không tìm thấy sản phẩm phù hợp.</p></div>`;
+            const pag = document.getElementById("posPagination");
+            if (pag) pag.style.display = "none";
             return;
         }
 
-        allVariants.forEach((v, idx) => {
+        const pag = document.getElementById("posPagination");
+        if (pag) pag.style.display = "flex";
+
+        const start = posCurrentPage * posPageSize;
+        const end = Math.min(start + posPageSize, allVariants.length);
+        const paginatedVariants = allVariants.slice(start, end);
+
+        paginatedVariants.forEach((v, indexInPage) => {
+            const idx = start + indexInPage;
             const card = document.createElement("div");
             card.className = "product-card";
             card.style.position = "relative";
@@ -809,6 +870,88 @@
             });
             grid.appendChild(card);
         });
+
+        renderPaginationControls();
+    }
+
+    // Render customer-styled pagination controls
+    function renderPaginationControls() {
+        const totalElements = allVariants.length;
+        const totalPages = Math.ceil(totalElements / posPageSize);
+
+        // Update page size select value
+        const sizeSelect = document.getElementById("posPageSizeSelect");
+        if (sizeSelect) {
+            sizeSelect.value = posPageSize;
+        }
+
+        // Render page list
+        const listContainer = document.getElementById("posPaginationList");
+        listContainer.innerHTML = "";
+
+        if (totalPages > 1) {
+            // Prev
+            const prevLi = document.createElement("li");
+            if (posCurrentPage === 0) {
+                prevLi.style.display = "none";
+            }
+            const prevA = document.createElement("a");
+            prevA.innerHTML = `<i class="fas fa-angle-left"></i>`;
+            prevA.onclick = () => {
+                if (posCurrentPage > 0) {
+                    posCurrentPage--;
+                    renderProductGrid();
+                    const gridTop = document.getElementById("productGrid").offsetTop;
+                    window.scrollTo({ top: gridTop - 120, behavior: 'smooth' });
+                }
+            };
+            prevLi.appendChild(prevA);
+            listContainer.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 0; i < totalPages; i++) {
+                const li = document.createElement("li");
+                if (i === posCurrentPage) {
+                    li.className = "is-active";
+                }
+                const a = document.createElement("a");
+                a.textContent = i + 1;
+                a.onclick = () => {
+                    if (posCurrentPage !== i) {
+                        posCurrentPage = i;
+                        renderProductGrid();
+                        const gridTop = document.getElementById("productGrid").offsetTop;
+                        window.scrollTo({ top: gridTop - 120, behavior: 'smooth' });
+                    }
+                };
+                li.appendChild(a);
+                listContainer.appendChild(li);
+            }
+
+            // Next
+            const nextLi = document.createElement("li");
+            if (posCurrentPage >= totalPages - 1) {
+                nextLi.style.display = "none";
+            }
+            const nextA = document.createElement("a");
+            nextA.innerHTML = `<i class="fas fa-angle-right"></i>`;
+            nextA.onclick = () => {
+                if (posCurrentPage < totalPages - 1) {
+                    posCurrentPage++;
+                    renderProductGrid();
+                    const gridTop = document.getElementById("productGrid").offsetTop;
+                    window.scrollTo({ top: gridTop - 120, behavior: 'smooth' });
+                }
+            };
+            nextLi.appendChild(nextA);
+            listContainer.appendChild(nextLi);
+        }
+
+        // Pagination info label
+        const infoLabel = document.getElementById("posPaginationInfo");
+        if (infoLabel) {
+            infoLabel.textContent = `Trang ${posCurrentPage + 1} / ${totalPages || 1} (${totalElements} sản phẩm)`;
+        }
     }
 
     // Add item to cart
