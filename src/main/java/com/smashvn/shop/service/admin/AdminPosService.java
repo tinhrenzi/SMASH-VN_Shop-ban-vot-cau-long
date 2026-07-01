@@ -5,7 +5,6 @@ import com.smashvn.shop.service.AuditService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -55,29 +54,22 @@ public class AdminPosService {
     private final SanPhamRepository sanPhamRepository;
     private final PricingService pricingService;
 
+    private boolean isDangBan(String trangThai) {
+        if (trangThai == null || trangThai.isBlank()) {
+            return true;
+        }
+        String normalized = trangThai.trim().toLowerCase();
+        return !"ngung_kinh_doanh".equals(normalized)
+                && !"ngung_ban".equals(normalized)
+                && !"inactive".equals(normalized)
+                && !"disabled".equals(normalized);
+    }
+
     // Tìm kiếm biến thể sản phẩm đang bán kèm lọc danh mục & thương hiệu
+    @Transactional(readOnly = true)
     public List<SanPhamChiTiet> searchActiveVariants(String query, Integer idDanhMuc, Integer idThuongHieu) {
-        List<SanPhamChiTiet> all = sanPhamChiTietRepository.findAll();
-        return all.stream()
-                .filter(Objects::nonNull)
-                .filter(v -> v.getSanPham() != null)
-                .filter(v -> "dang_ban".equals(v.getSanPham().getTrangThai()))
-                .filter(v -> v.getTrangThai() == null || "dang_ban".equals(v.getTrangThai()))
-                .filter(v -> idDanhMuc == null || idDanhMuc == -1 || (v.getSanPham().getDanhMuc() != null && v.getSanPham().getDanhMuc().getId().equals(idDanhMuc)))
-                .filter(v -> idThuongHieu == null || idThuongHieu == -1 || (v.getSanPham().getThuongHieu() != null && v.getSanPham().getThuongHieu().getId().equals(idThuongHieu)))
-                .filter(v -> {
-                    if (query == null || query.trim().isEmpty()) {
-                        return true;
-                    }
-                    String lowerQuery = query.toLowerCase().trim();
-                    return containsIgnoreCase(v.getSanPham().getTenSanPham(), lowerQuery)
-                            || containsIgnoreCase(v.getMauSac(), lowerQuery)
-                            || containsIgnoreCase(v.getTrongLuong(), lowerQuery)
-                            || containsIgnoreCase(v.getMucCang(), lowerQuery)
-                            || (v.getSanPham().getDanhMuc() != null && containsIgnoreCase(v.getSanPham().getDanhMuc().getTenDanhMuc(), lowerQuery))
-                            || (v.getSanPham().getThuongHieu() != null && containsIgnoreCase(v.getSanPham().getThuongHieu().getTenThuongHieu(), lowerQuery));
-                })
-                .collect(Collectors.toList());
+        String keyword = query == null ? "" : query.trim();
+        return sanPhamChiTietRepository.searchActiveVariantsForPos(keyword, idDanhMuc, idThuongHieu);
     }
 
     /**
@@ -87,7 +79,7 @@ public class AdminPosService {
     public List<KhachHang> searchCustomers(String query) {
         List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
                 .stream()
-                .filter(Objects::nonNull)
+                .filter(java.util.Objects::nonNull)
                 .filter(c -> c.getTaiKhoan() != null)
                 .filter(c -> !"guest@smashvn.com".equalsIgnoreCase(nullToEmpty(c.getTaiKhoan().getEmail())))
                 .collect(Collectors.toList());
@@ -257,7 +249,7 @@ public class AdminPosService {
             SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(item.idSanPhamChiTiet)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể sản phẩm ID: " + item.idSanPhamChiTiet));
 
-            if (!"dang_ban".equals(spct.getSanPham().getTrangThai())) {
+            if (!isDangBan(spct.getSanPham().getTrangThai())) {
                 throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + "' hiện đã ngưng kinh doanh!");
             }
 

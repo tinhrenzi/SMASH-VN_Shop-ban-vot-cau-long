@@ -68,7 +68,13 @@ public class AdminPosController {
         List<Map<String, Object>> results = adminPosService.searchActiveVariants(query, danhMucId, thuongHieuId).stream().map(v -> {
             Map<String, Object> map = new HashMap<>();
             // Dùng PriceSnapshot duy nhất để lấy giá thực sau DotGiamGia
-            PriceSnapshot snap = pricingService.buildPriceSnapshot(v);
+            PriceSnapshot snap;
+            try {
+                snap = pricingService.buildPriceSnapshot(v);
+            } catch (Exception ex) {
+                BigDecimal giaGoc = v.getGiaBan() != null ? v.getGiaBan() : BigDecimal.ZERO;
+                snap = new PriceSnapshot(giaGoc, giaGoc, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
+            }
             map.put("id", v.getId());
             map.put("tenSanPham", v.getSanPham() != null && v.getSanPham().getTenSanPham() != null ? v.getSanPham().getTenSanPham() : "Sản phẩm");
             map.put("mauSac", v.getMauSac() != null ? v.getMauSac() : "N/A");
