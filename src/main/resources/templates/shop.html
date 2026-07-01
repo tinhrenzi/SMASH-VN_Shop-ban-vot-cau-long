@@ -735,12 +735,14 @@
                                              th:if="${product.sanPhamChiTiets != null and !product.sanPhamChiTiets.isEmpty()}"
                                              th:data-rating="${product.diemTrungBinh != null ? product.diemTrungBinh : 0.0}">
                                             <div class="product-m">
-                                                <div class="product-m__thumb">
-                                                    <a class="aspect aspect--bg-grey aspect--square u-d-block"
-                                                       th:href="@{/san-pham/{id}(id=${product.id})}">
+                                                <div class="product-m__thumb" style="background-color: #ffffff !important; border-radius: 12px; overflow: hidden; border: 1px solid #f1f5f9;">
+                                                    <a class="aspect aspect--bg-white aspect--square u-d-block"
+                                                       th:href="@{/san-pham/{id}(id=${product.id})}"
+                                                       style="background-color: #ffffff !important;">
                                                         <img class="aspect__img"
                                                              th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}"
-                                                             alt="">
+                                                             alt=""
+                                                             style="object-fit: contain; padding: 12px; background-color: #ffffff !important;">
                                                     </a>
                                                     <!-- Badge giảm giá -->
                                                     <div th:if="${product.activeGiamGiaPhanTram > 0}" class="shopee-discount-badge" th:text="'-' + ${product.activeGiamGiaPhanTram} + '%'"></div>

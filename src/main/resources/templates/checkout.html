@@ -387,23 +387,31 @@
                                 <div class="col-lg-6 col-md-12 col-sm-12">
                                     <h2 class="checkout-f__h1">TÓM TẮT ĐƠN HÀNG</h2>
                                     <div class="f-cart__pad-box u-s-m-b-30" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px;">
-                                        <div class="table-responsive u-s-m-b-20" style="max-height: 250px; overflow-y: auto;">
-                                            <table class="table" style="font-size: 13px;">
+                                        <div class="table-responsive u-s-m-b-20" style="max-height: 280px; overflow-y: auto;">
+                                            <table class="table" style="font-size: 13px; width: 100%; border-collapse: collapse; margin-bottom: 0;">
                                                 <thead>
                                                     <tr>
-                                                        <th>Sản phẩm</th>
-                                                        <th class="text-right">Tạm tính</th>
+                                                        <th style="text-align: left; padding-left: 0; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; width: 75%;">Sản phẩm</th>
+                                                        <th style="text-align: right; padding-right: 0; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; width: 25%;">Tạm tính</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <tr th:each="item : ${danhSachCart}">
-                                                        <td>
-                                                            <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Tên Vợt</span>
-                                                            <strong th:text="' x ' + ${item.soLuong}">x 1</strong>
-                                                            <br>
-                                                            <small class="text-muted" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}"></small>
+                                                        <td style="text-align: left; padding-left: 0; vertical-align: middle; border-bottom: 1px solid #f1f5f9; padding: 12px 0;">
+                                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                                <div style="width: 50px; height: 50px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f8fafc;">
+                                                                    <img th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.hinhAnhSanPham}}" alt="Ảnh sản phẩm" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                                                </div>
+                                                                <div>
+                                                                    <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}" style="font-weight: 600; color: #1e293b; display: block; line-height: 1.4;">Tên Vợt</span>
+                                                                    <div style="margin-top: 2px;">
+                                                                        <small class="text-muted" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}"></small>
+                                                                        <strong th:text="' x ' + ${item.soLuong}" style="color: #64748b; font-size: 12px; margin-left: 4px;">x 1</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </td>
-                                                        <td class="text-right" th:text="${#numbers.formatDecimal(item.sanPhamChiTiet.giaBan * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                                        <td style="text-align: right; padding-right: 0; vertical-align: middle; font-weight: 600; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding: 12px 0;" th:text="${#numbers.formatDecimal(item.sanPhamChiTiet.giaBan * item.soLuong, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
                                                     </tr>
                                                 </tbody>
                                             </table>

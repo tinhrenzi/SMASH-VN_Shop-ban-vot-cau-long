@@ -63,13 +63,17 @@
         .detail-product-img {
             width: 70px !important;
             height: 70px !important;
-            object-fit: cover !important;
+            object-fit: contain !important;
+            padding: 4px;
+            background-color: #ffffff !important;
             border-radius: 8px;
+            border: 1px solid #f1f5f9;
             cursor: pointer;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
         }
         .detail-product-img:hover {
             opacity: 0.85;
+            transform: scale(1.05);
         }
 
         /* Fix modal table header background and text visibility */

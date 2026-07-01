@@ -80,16 +80,30 @@
                                     <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${sp.id}">#1</td>
                                     
                                     <td>
-                                        <div class="fw-bold text-primary mb-2 product-name-cell" th:text="${sp.tenSanPham}">Vợt Yonex</div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <span class="tag-badge">
-                                                <i class="fas fa-folder"></i>
-                                                <span th:text="${sp.danhMuc.tenDanhMuc}">Vợt</span>
-                                            </span>
-                                            <span class="tag-badge">
-                                                <i class="fas fa-copyright"></i>
-                                                <span th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</span>
-                                            </span>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div style="width: 48px; height: 48px; flex-shrink: 0; border: 1px solid #f1f5f9; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                                                <img th:if="${sp.sanPhamChiTiets != null and !sp.sanPhamChiTiets.isEmpty()}"
+                                                     th:src="@{'/uploads/product/' + ${sp.sanPhamChiTiets[0].hinhAnhSanPham}}"
+                                                     alt="Ảnh SP"
+                                                     style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 2px; background-color: #ffffff;">
+                                                <img th:if="${sp.sanPhamChiTiets == null or sp.sanPhamChiTiets.isEmpty()}"
+                                                     th:src="@{/images/default.jpg}"
+                                                     alt="Ảnh SP"
+                                                     style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 2px; background-color: #ffffff;">
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-primary mb-1 product-name-cell" th:text="${sp.tenSanPham}">Vợt Yonex</div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <span class="tag-badge">
+                                                        <i class="fas fa-folder"></i>
+                                                        <span th:text="${sp.danhMuc.tenDanhMuc}">Vợt</span>
+                                                    </span>
+                                                    <span class="tag-badge">
+                                                        <i class="fas fa-copyright"></i>
+                                                        <span th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</span>
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     
