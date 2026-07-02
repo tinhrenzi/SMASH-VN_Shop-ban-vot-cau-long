@@ -7,6 +7,8 @@ import com.smashvn.shop.entity.TokenKhoiPhuc;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.util.PhoneUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,7 @@ public class GuestCheckoutService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final KhachHangRepository khachHangRepository;
     private final TokenKhoiPhucRepository tokenRepository;
+    private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final JavaMailSender mailSender;
 
     public String checkEmailStatus(String email) {
@@ -306,6 +311,62 @@ public class GuestCheckoutService {
         String formattedTongTien = hd.getTongTien() != null ? String.format("%,.0f", hd.getTongTien()) : "0";
         String trackingUrl = appUrl + "/user/track-order?id=" + maDonHang;
 
+        // Query product list for invoice email
+        List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
+        StringBuilder itemsHtml = new StringBuilder();
+        BigDecimal tamTinh = BigDecimal.ZERO;
+        if (items != null) {
+            for (HoaDonChiTiet ct : items) {
+                String tenSp = ct.getTenSanPhamSnapshot() != null ? ct.getTenSanPhamSnapshot() : (ct.getSanPhamChiTiet() != null && ct.getSanPhamChiTiet().getSanPham() != null ? ct.getSanPhamChiTiet().getSanPham().getTenSanPham() : "N/A");
+                String thuocTinh = ct.getThuocTinhSnapshot() != null ? ct.getThuocTinhSnapshot() : (ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getMauSac() : "N/A");
+                int sl = ct.getSoLuong();
+                BigDecimal donGia = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
+                BigDecimal thanhTien = donGia.multiply(new BigDecimal(sl));
+                tamTinh = tamTinh.add(thanhTien);
+                
+                String imgName = "product9.jpg";
+                if (ct.getSanPhamChiTiet() != null && ct.getSanPhamChiTiet().getHinhAnhSanPham() != null && !ct.getSanPhamChiTiet().getHinhAnhSanPham().isEmpty()) {
+                    imgName = ct.getSanPhamChiTiet().getHinhAnhSanPham();
+                }
+                String imgUrl = appUrl + "/uploads/product/" + imgName;
+
+                itemsHtml.append("<tr style=\"border-bottom: 1px solid #f3f4f6;\">")
+                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: center; width: 60px;\">")
+                    .append("    <img src=\"").append(imgUrl).append("\" alt=\"product\" style=\"width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;\" onerror=\"this.style.display='none';\">")
+                    .append("  </td>")
+                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: left;\">")
+                    .append("    <strong style=\"color: #1f2937; font-size: 14px;\">").append(tenSp).append("</strong><br>")
+                    .append("    <span style=\"color: #6b7280; font-size: 12px;\">").append(thuocTinh).append("</span>")
+                    .append("  </td>")
+                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: center; color: #4b5563; font-size: 14px;\">")
+                    .append(sl)
+                    .append("  </td>")
+                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: right; color: #4b5563; font-size: 14px;\">")
+                    .append(String.format("%,.0f", donGia)).append(" đ")
+                    .append("  </td>")
+                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: right; color: #111827; font-weight: 600; font-size: 14px;\">")
+                    .append(String.format("%,.0f", thanhTien)).append(" đ")
+                    .append("  </td>")
+                    .append("</tr>");
+            }
+        }
+
+        BigDecimal phiShip = hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : BigDecimal.ZERO;
+        BigDecimal voucherGiam = hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO;
+
+        String detailsHtml = "";
+        if (hd.getMaGiaoDich() != null && !hd.getMaGiaoDich().isEmpty()) {
+            detailsHtml += "                    <tr>" +
+                    "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; width: 160px; font-size: 15px;\">Mã giao dịch:</td>" +
+                    "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px;\">" + hd.getMaGiaoDich() + "</td>" +
+                    "                    </tr>";
+        } else if (hd.getTransactionId() != null && !hd.getTransactionId().isEmpty()) {
+            detailsHtml += "                    <tr>" +
+                    "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; width: 160px; font-size: 15px;\">Transaction ID:</td>" +
+                    "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px;\">" + hd.getTransactionId() + "</td>" +
+                    "                    </tr>";
+        }
+
         String htmlMsg = "<!DOCTYPE html>" +
                 "<html>" +
                 "<head>" +
@@ -313,7 +374,7 @@ public class GuestCheckoutService {
                 "    <title>Xác nhận đặt hàng thành công</title>" +
                 "</head>" +
                 "<body style=\"margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Inter', system-ui, -apple-system, sans-serif;\">" +
-                "    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" width=\"100%\" style=\"max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e9ecef;\">" +
+                "    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" width=\"100%\" style=\"max-width: 650px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e9ecef;\">" +
                 "        <tr>" +
                 "            <td style=\"padding: 32px 40px; background-color: #e02424; text-align: center;\">" +
                 "                <h2 style=\"margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">SMASH VN</h2>" +
@@ -324,12 +385,12 @@ public class GuestCheckoutService {
                 "            <td style=\"padding: 40px;\">" +
                 "                <p style=\"margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: 600;\">Xin chào " + tenNguoiNhan + ",</p>" +
                 "                <p style=\"margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;\">" +
-                "                    Đơn hàng của bạn đã được ghi nhận thành công. Dưới đây là thông tin chi tiết đơn hàng của bạn:" +
+                "                    Đơn hàng của bạn đã được ghi nhận thành công. Dưới đây là thông tin chi tiết hóa đơn đơn hàng của bạn:" +
                 "                </p>" +
-                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background-color: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 32px; border: 1px solid #f3f4f6;\">" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background-color: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #f3f4f6;\">" +
                 "                    <tr>" +
                 "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; width: 160px; font-size: 15px;\">Mã đơn hàng:</td>" +
-                "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px; font-weight: 700; color: #e02424;\">" + maDonHang + "</td>" +
+                "                        <td style=\"padding: 8px 0; color: #e02424; font-size: 15px; font-weight: 700;\">" + maDonHang + "</td>" +
                 "                    </tr>" +
                 "                    <tr>" +
                 "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; font-size: 15px;\">Số điện thoại:</td>" +
@@ -343,12 +404,43 @@ public class GuestCheckoutService {
                 "                        <td style=\"padding: 8px 0; color: #374151; font-weight: 600; font-size: 15px;\">Thanh toán:</td>" +
                 "                        <td style=\"padding: 8px 0; color: #111827; font-size: 15px;\">" + phuongThuc + "</td>" +
                 "                    </tr>" +
-                "                    <tr style=\"border-top: 1px solid #e5e7eb;\">" +
-                "                        <td style=\"padding: 16px 0 8px 0; color: #111827; font-weight: 700; font-size: 16px;\">Tổng thanh toán:</td>" +
-                "                        <td style=\"padding: 16px 0 8px 0; color: #e02424; font-size: 18px; font-weight: 700;\">" + formattedTongTien + " đ</td>" +
+                detailsHtml +
+                "                </table>" +
+                "                <h3 style=\"color: #111827; font-size: 16px; font-weight: 700; margin-bottom: 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px;\">CHI TIẾT SẢN PHẨM</h3>" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"border-collapse: collapse; margin-bottom: 24px;\">" +
+                "                    <thead>" +
+                "                        <tr style=\"background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;\">" +
+                "                            <th style=\"padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #374151; width: 60px;\">Ảnh</th>" +
+                "                            <th style=\"padding: 8px; text-align: left; font-size: 12px; font-weight: 600; color: #374151;\">Sản phẩm</th>" +
+                "                            <th style=\"padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #374151; width: 40px;\">SL</th>" +
+                "                            <th style=\"padding: 8px; text-align: right; font-size: 12px; font-weight: 600; color: #374151; width: 90px;\">Đơn giá</th>" +
+                "                            <th style=\"padding: 8px; text-align: right; font-size: 12px; font-weight: 600; color: #374151; width: 100px;\">Thành tiền</th>" +
+                "                        </tr>" +
+                "                    </thead>" +
+                "                    <tbody>" +
+                itemsHtml.toString() +
+                "                    </tbody>" +
+                "                </table>" +
+                "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"right\" width=\"300px\" style=\"margin-bottom: 30px; font-size: 14px;\">" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #4b5563;\">Tạm tính:</td>" +
+                "                        <td style=\"padding: 6px 0; text-align: right; color: #111827; font-weight: 600;\">" + String.format("%,.0f", tamTinh) + " đ</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #4b5563;\">Phí vận chuyển:</td>" +
+                "                        <td style=\"padding: 6px 0; text-align: right; color: #111827; font-weight: 600;\">" + String.format("%,.0f", phiShip) + " đ</td>" +
+                "                    </tr>" +
+                "                    <tr>" +
+                "                        <td style=\"padding: 6px 0; color: #4b5563;\">Voucher giảm giá:</td>" +
+                "                        <td style=\"padding: 6px 0; text-align: right; color: #10b981; font-weight: 600;\">-" + String.format("%,.0f", voucherGiam) + " đ</td>" +
+                "                    </tr>" +
+                "                    <tr style=\"border-top: 2px solid #e5e7eb;\">" +
+                "                        <td style=\"padding: 12px 0; color: #111827; font-weight: 700; font-size: 16px;\">Tổng thanh toán:</td>" +
+                "                        <td style=\"padding: 12px 0; text-align: right; color: #e02424; font-size: 18px; font-weight: 700;\">" + formattedTongTien + " đ</td>" +
                 "                    </tr>" +
                 "                </table>" +
-                "                <p style=\"margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;\">" +
+                "                <div style=\"clear: both;\"></div>" +
+                "                <p style=\"margin: 20px 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;\">" +
                 "                    Bạn có thể sử dụng mã đơn hàng trên để theo dõi hành trình giao nhận hàng trực tiếp tại trang web của chúng tôi bằng nút bên dưới:" +
                 "                </p>" +
                 "                <div style=\"text-align: center; margin-bottom: 30px;\">" +

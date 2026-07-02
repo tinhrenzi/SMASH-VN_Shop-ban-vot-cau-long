@@ -2,7 +2,9 @@ package com.smashvn.shop.controller.user;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import com.smashvn.shop.entity.HoaDon;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -551,5 +553,60 @@ public class UserDashboardController {
             }
         });
         return "redirect:/user/notifications";
+    }
+
+    @GetMapping("/user/order/invoice/{id}")
+    public String viewInvoice(@PathVariable("id") Integer id, HttpSession session, Model model) {
+        String redirect = checkRoleAndRedirect(session);
+        if (redirect != null) {
+            return redirect;
+        }
+
+        Optional<HoaDon> hdOpt = hoaDonRepository.findById(id);
+        if (hdOpt.isEmpty()) {
+            return "redirect:/user/my-order?loi=donhangkhongton";
+        }
+
+        HoaDon hd = hdOpt.get();
+        KhachHang kh = getLoggedInCustomer(session);
+
+        boolean isAllowed = false;
+        if (kh != null) {
+            if (hd.getKhachHang() != null && hd.getKhachHang().getId().equals(kh.getId())) {
+                isAllowed = true;
+            }
+        } else {
+            String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
+            Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
+            java.util.List<?> allowedAccessesRaw = (allowedAccessesAttr instanceof java.util.List<?>)
+                    ? (java.util.List<?>) allowedAccessesAttr : null;
+
+            if (guestEmail != null && allowedAccessesRaw != null) {
+                for (Object item : allowedAccessesRaw) {
+                    if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
+                        if (access.getOrderId().equals(id) && !access.isExpired()) {
+                            isAllowed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!isAllowed) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        try {
+            Map<String, Object> details = orderViewService.layChiTietOrder(id, hd.getKhachHang().getId());
+            if (details == null) {
+                return "redirect:/user/my-order?loi=donhangkhongton";
+            }
+            model.addAllAttributes(details);
+            return "invoice-print";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "redirect:/user/my-order?loi=loihethong";
+        }
     }
 }

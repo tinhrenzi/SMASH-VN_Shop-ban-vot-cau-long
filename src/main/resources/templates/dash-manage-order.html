@@ -425,6 +425,11 @@
                                                 <div class="order-meta-group">
                                                     <div class="manage-o__text-2 u-c-secondary" th:text="'Mã đơn hàng: ' + ${order.maDonHang}">Mã đơn hàng: DHSVN...</div>
                                                     <div class="manage-o__text u-c-silver" th:text="'Đặt ngày ' + ${#temporals.format(order.ngayDat, 'dd/MM/yyyy HH:mm:ss')}">Đặt ngày 26 Oct 2016 09:08:37</div>
+                                                    <div style="margin-top: 6px;">
+                                                         <a th:href="@{/user/order/invoice/{id}(id=${order.id})}" target="_blank" class="btn btn-sm" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border: 1px solid #e02424; color: #e02424; background: transparent; cursor: pointer;">
+                                                             <i class="fas fa-print"></i> Xem &amp; In hóa đơn
+                                                         </a>
+                                                     </div>
                                                 </div>
                                                 <div class="order-status-group">
                                                     <div>

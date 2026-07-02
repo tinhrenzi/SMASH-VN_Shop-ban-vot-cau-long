@@ -122,4 +122,71 @@ public class UserDashboardControllerTest {
         assertEquals("dash-edit-profile", view);
         assertEquals("Số điện thoại này đã được đăng ký bởi tài khoản khác!", model.getAttribute("loi"));
     }
+
+    @Test
+    void testViewInvoice_Success() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        
+        KhachHang kh = new KhachHang();
+        kh.setId(10);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        kh.setTaiKhoan(tk);
+        
+        when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
+
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(100);
+        hd.setKhachHang(kh);
+        
+        when(hoaDonRepository.findById(100)).thenReturn(java.util.Optional.of(hd));
+        
+        java.util.Map<String, Object> mockDetails = new java.util.HashMap<>();
+        mockDetails.put("order", hd);
+        when(orderViewService.layChiTietOrder(100, 10)).thenReturn(mockDetails);
+
+        Model model = new ConcurrentModel();
+        String view = controller.viewInvoice(100, session, model);
+
+        assertEquals("invoice-print", view);
+        assertNotNull(model.getAttribute("order"));
+    }
+
+    @Test
+    void testViewInvoice_AccessDenied() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        
+        KhachHang kh = new KhachHang();
+        kh.setId(10);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        kh.setTaiKhoan(tk);
+        
+        when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
+
+        KhachHang otherKh = new KhachHang();
+        otherKh.setId(99);
+
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(100);
+        hd.setKhachHang(otherKh);
+        
+        when(hoaDonRepository.findById(100)).thenReturn(java.util.Optional.of(hd));
+
+        Model model = new ConcurrentModel();
+        String view = controller.viewInvoice(100, session, model);
+
+        assertEquals("redirect:/user/dang-nhap", view);
+    }
+
+    @Test
+    void testViewInvoice_NotFound() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(hoaDonRepository.findById(100)).thenReturn(java.util.Optional.empty());
+
+        Model model = new ConcurrentModel();
+        String view = controller.viewInvoice(100, session, model);
+
+        assertEquals("redirect:/user/my-order?loi=donhangkhongton", view);
+    }
 }
