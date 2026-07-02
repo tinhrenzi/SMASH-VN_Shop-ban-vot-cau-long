@@ -59,6 +59,9 @@ public class OrderCreationTenNguoiNhanTest {
     @Autowired
     private DonViVanChuyenDAO donViVanChuyenDAO;
 
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
+
     private TaiKhoan testUser;
     private KhachHang testKhachHang;
     private SanPhamChiTiet testSpct;
@@ -67,6 +70,10 @@ public class OrderCreationTenNguoiNhanTest {
 
     @BeforeEach
     void setUp() {
+        // Clear shipping cache
+        if (cacheManager != null && cacheManager.getCache("shipping-carriers") != null) {
+            cacheManager.getCache("shipping-carriers").clear();
+        }
         // Seed test user
         testUser = new TaiKhoan();
         testUser.setEmail("order_recipient_tester@gmail.com");

@@ -235,7 +235,12 @@ public class AdminPosService {
             dvvc = allDvvc.stream()
                     .filter(d -> d.getTenDonVi().toLowerCase().contains("quầy") || d.getTenDonVi().toLowerCase().contains("chỗ"))
                     .findFirst()
-                    .orElse(allDvvc.get(0));
+                    .orElseGet(() -> {
+                        DonViVanChuyen defaultDvvc = new DonViVanChuyen();
+                        defaultDvvc.setTenDonVi("Mua tại quầy");
+                        defaultDvvc.setHotline("000000");
+                        return donViVanChuyenDAO.save(defaultDvvc);
+                    });
         }
 
         // 5. Khóa và kiểm tra tồn kho các sản phẩm chi tiết bằng Pessimistic Write
