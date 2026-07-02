@@ -17,6 +17,7 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.util.RacketSpecUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class AdminBienTheService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final HoaDonChiTietRepository hoaDonChiTietRepository;
 
     @Value("${app.upload.path}")
     private String uploadPathConfig;
@@ -80,7 +82,14 @@ public class AdminBienTheService {
     // 3. Xóa biến thể
     @Transactional
     public void xoaBienThe(Integer idBienThe) {
+        if (hoaDonChiTietRepository.existsBySanPhamChiTiet_Id(idBienThe)) {
+            throw new IllegalStateException("Không thể xóa biến thể này vì đã có khách hàng đặt mua biến thể này trong đơn hàng!");
+        }
         sanPhamChiTietRepository.deleteById(idBienThe);
+    }
+
+    public java.util.Set<Integer> layDanhSachBienTheDaDatHang(Integer idSanPham) {
+        return new java.util.HashSet<>(hoaDonChiTietRepository.findOrderedVariantIdsBySanPhamId(idSanPham));
     }
 
     // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa

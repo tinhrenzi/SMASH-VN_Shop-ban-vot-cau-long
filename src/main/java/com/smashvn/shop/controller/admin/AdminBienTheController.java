@@ -29,6 +29,7 @@ public class AdminBienTheController {
         
         // Lấy danh sách các biến thể của sản phẩm này
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(idSanPham));
+        model.addAttribute("orderedVariantIds", adminBienTheService.layDanhSachBienTheDaDatHang(idSanPham));
         
         return "admin/bienthe-list"; // Trả về file giao diện
     }
@@ -65,6 +66,9 @@ public class AdminBienTheController {
         try {
             adminBienTheService.xoaBienThe(idBienThe);
             redirectAttributes.addFlashAttribute("success", "Đã xóa biến thể thành công!");
+            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
         } catch (Exception e) {
             // Lỗi xảy ra nếu biến thể này đang nằm trong Giỏ hàng hoặc Hóa đơn của khách

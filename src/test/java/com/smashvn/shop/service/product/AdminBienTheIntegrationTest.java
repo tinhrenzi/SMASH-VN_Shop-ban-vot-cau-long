@@ -6,6 +6,8 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
@@ -61,6 +63,21 @@ public class AdminBienTheIntegrationTest {
 
     @Autowired
     private TaiKhoanRepository taiKhoanRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.HoaDonRepository hoaDonRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
+
+    @Autowired
+    private com.smashvn.shop.dao.DonViVanChuyenDAO donViVanChuyenDAO;
+
+    @Autowired
+    private com.smashvn.shop.dao.PhuongThucThanhToanDAO phuongThucThanhToanDAO;
 
     @Value("${app.upload.path}")
     private String uploadPathConfig;
@@ -494,5 +511,134 @@ public class AdminBienTheIntegrationTest {
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Màu sắc không được vượt quá 50 ký tự."));
+    }
+
+    // 15. SUCCESS & ERROR: Deletion of variant with and without orders
+    @Test
+    void testDeleteVariant_OrderedVariantCannotBeDeleted() throws Exception {
+        // 1. Create a variant
+        byte[] imgBytes = createValidImageBytes();
+        MockMultipartFile file = new MockMultipartFile("fileAnh", "test.png", "image/png", imgBytes);
+
+        mockMvc.perform(multipart("/admin/san-pham/{idSP}/bien-the/them", spId)
+                        .file(file)
+                        .param("giaBan", "1500000")
+                        .param("soLuongTon", "10")
+                        .param("mauSac", "Red")
+                        .param("trongLuong", "4U")
+                        .param("mucCang", "11kg")
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection());
+
+        List<SanPhamChiTiet> list = sanPhamChiTietRepository.findBySanPham_Id(spId);
+        assertFalse(list.isEmpty());
+        SanPhamChiTiet bt = list.get(0);
+
+        // 2. Create an order and order detail referencing this variant
+        // Get or seed customer
+        com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseGet(() -> {
+            com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
+            tk.setEmail("test_customer_" + java.util.UUID.randomUUID().toString().substring(0, 8) + "@test.com");
+            tk.setMatKhau("password");
+            tk.setVaiTro("KH");
+            tk.setTrangThai("hoat_dong");
+            tk = taiKhoanRepository.save(tk);
+
+            com.smashvn.shop.entity.KhachHang newKh = new com.smashvn.shop.entity.KhachHang();
+            newKh.setTaiKhoan(tk);
+            newKh.setTenKh("Test Customer");
+            newKh.setSoDienThoaiKh("0987654321");
+            return khachHangRepository.save(newKh);
+        });
+
+        // Get or seed shipping carrier
+        com.smashvn.shop.entity.DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream().findFirst().orElseGet(() -> {
+            com.smashvn.shop.entity.DonViVanChuyen newDvvc = new com.smashvn.shop.entity.DonViVanChuyen();
+            newDvvc.setTenDonVi("GHN");
+            newDvvc.setMaDonVi("GHN");
+            newDvvc.setPhiLocal(new BigDecimal("30000"));
+            newDvvc.setPhiNationwide(new BigDecimal("40000"));
+            return donViVanChuyenDAO.save(newDvvc);
+        });
+
+        // Get or seed payment method
+        com.smashvn.shop.entity.PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElseGet(() -> {
+            com.smashvn.shop.entity.PhuongThucThanhToan newPttt = new com.smashvn.shop.entity.PhuongThucThanhToan();
+            newPttt.setTenPhuongThuc("COD");
+            newPttt.setMaPhuongThuc("COD");
+            return phuongThucThanhToanDAO.save(newPttt);
+        });
+
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setMaDonHang("HD_TEST_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        hd.setTrangThaiDonHang("pending");
+        hd.setTongTien(new BigDecimal("1500000"));
+        hd.setDiaChiNhan("123 Ha Noi");
+        hd.setSdtNhan("0987654321");
+        hd.setNgayTao(java.time.LocalDateTime.now());
+        hd = hoaDonRepository.save(hd);
+
+        HoaDonChiTiet hdct = new HoaDonChiTiet();
+        hdct.setHoaDon(hd);
+        hdct.setSanPhamChiTiet(bt);
+        hdct.setSoLuong(1);
+        hdct.setDonGia(new BigDecimal("1500000"));
+        hdct.setThanhTien(new BigDecimal("1500000"));
+        hdct.setGiaNiemYet(new BigDecimal("1500000"));
+        hdct.setPhanTramGiam(BigDecimal.ZERO);
+        hdct.setSoTienGiamSanPham(BigDecimal.ZERO);
+        hoaDonChiTietRepository.save(hdct);
+
+        // 3. Attempt to delete variant - should fail and redirect with error
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/xoa/{idBT}", spId, bt.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("error", "Không thể xóa biến thể này vì đã có khách hàng đặt mua biến thể này trong đơn hàng!"));
+
+        // Verify variant still exists
+        assertTrue(sanPhamChiTietRepository.findById(bt.getId()).isPresent());
+
+        // 4. Try deleting a variant that is NOT ordered - should succeed
+        // Let's create another variant
+        MockMultipartFile file2 = new MockMultipartFile("fileAnh", "test2.png", "image/png", imgBytes);
+        mockMvc.perform(multipart("/admin/san-pham/{idSP}/bien-the/them", spId)
+                        .file(file2)
+                        .param("giaBan", "1600000")
+                        .param("soLuongTon", "15")
+                        .param("mauSac", "Blue")
+                        .param("trongLuong", "3U")
+                        .param("mucCang", "12kg")
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection());
+
+        List<SanPhamChiTiet> list2 = sanPhamChiTietRepository.findBySanPham_Id(spId);
+        SanPhamChiTiet bt2 = list2.stream().filter(x -> x.getMauSac().equals("Blue")).findFirst().orElseThrow();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/xoa/{idBT}", spId, bt2.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("success", "Đã xóa biến thể thành công!"));
+
+        // Verify variant 2 is deleted
+        assertFalse(sanPhamChiTietRepository.findById(bt2.getId()).isPresent());
+
+        // Clean up physical file for first variant
+        Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
+        Path productUploadPath = rootUploadPath.resolve("product").normalize();
+        Path savedFile = productUploadPath.resolve(bt.getHinhAnhSanPham());
+        if (Files.exists(savedFile)) {
+            Files.delete(savedFile);
+        }
     }
 }

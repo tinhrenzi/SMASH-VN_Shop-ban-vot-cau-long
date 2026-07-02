@@ -123,8 +123,12 @@
                                            class="btn btn-sm btn-warning" title="Sửa Biến Thể">
                                             <i class="fas fa-edit"></i> Sửa
                                         </a>
-                                        
-                                        <a th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" 
+                                        <span th:if="${orderedVariantIds.contains(bt.id)}" class="d-inline-block" data-bs-toggle="tooltip" title="Không thể xóa biến thể này vì đã có khách hàng đặt mua trong đơn hàng">
+                                            <button class="btn btn-sm btn-danger ms-1" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                                <i class="fas fa-trash-alt"></i> Xóa
+                                            </button>
+                                        </span>
+                                        <a th:unless="${orderedVariantIds.contains(bt.id)}" th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" 
                                            class="btn btn-sm btn-danger ms-1" title="Xóa Biến Thể"
                                            onclick="return confirm('Xóa phân loại này?');">
                                             <i class="fas fa-trash-alt"></i> Xóa
@@ -228,6 +232,12 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             return;
         }
+    });
+
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
     });
 });
 </script>

@@ -131,7 +131,7 @@ public class AdminSanPhamService {
     public void themSanPhamVaBienThe(
             String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa,
             BigDecimal giaBan, Integer soLuongTon, MultipartFile fileAnh,
-            List<String> mauSacs, List<String> trongLuongs, List<String> mucCangs,
+            List<String> mauSacs, List<String> trongLuongs, String minTension, String maxTension,
             Map<String, MultipartFile> variantImageMap,
             Map<String, BigDecimal> variantPriceMap,
             Map<String, Integer> variantQuantityMap,
@@ -175,23 +175,22 @@ public class AdminSanPhamService {
 
             // 2. Validate và lọc các thuộc tính checkbox
             if (mauSacs == null || mauSacs.isEmpty()
-                    || trongLuongs == null || trongLuongs.isEmpty()
-                    || mucCangs == null || mucCangs.isEmpty()) {
-                throw new RuntimeException("Vui lòng chọn ít nhất một màu sắc, một trọng lượng và một mức căng!");
+                    || trongLuongs == null || trongLuongs.isEmpty()) {
+                throw new RuntimeException("Vui lòng chọn ít nhất một màu sắc và một trọng lượng!");
+            }
+            if (minTension == null || minTension.trim().isEmpty()
+                    || maxTension == null || maxTension.trim().isEmpty()) {
+                throw new RuntimeException("Vui lòng điền khoảng sức căng hợp lệ!");
+            }
+
+            String formattedTension = RacketSpecUtils.formatTensionRange(minTension, maxTension);
+            if (formattedTension == null) {
+                throw new RuntimeException("Sức căng không đúng định dạng!");
             }
 
             Set<String> uniqueMauSacs = new LinkedHashSet<>(mauSacs);
             Set<String> uniqueTrongLuongs = new LinkedHashSet<>(trongLuongs);
-            Set<String> uniqueMucCangs = new LinkedHashSet<>();
-            for (String mucCang : mucCangs) {
-                String normalizedMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
-                if (normalizedMucCang != null) {
-                    uniqueMucCangs.add(normalizedMucCang);
-                }
-            }
-            if (uniqueMucCangs.isEmpty()) {
-                throw new RuntimeException("Vui lòng chọn ít nhất một mức căng hợp lệ!");
-            }
+            Set<String> uniqueMucCangs = Set.of(formattedTension);
 
             // 3. Giới hạn số lượng biến thể tối đa (Variant Generation Limit)
             int totalVariants = uniqueMauSacs.size() * uniqueTrongLuongs.size() * uniqueMucCangs.size();

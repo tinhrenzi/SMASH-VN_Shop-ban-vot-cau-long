@@ -43,4 +43,10 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
            "AND hdct.sanPhamChiTiet.sanPham.id = :sanPhamId " +
            "AND LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh')")
     boolean hasPurchasedProduct(@Param("taiKhoanId") Integer taiKhoanId, @Param("sanPhamId") Integer sanPhamId);
+
+    boolean existsBySanPhamChiTiet_Id(Integer idBienThe);
+
+    @Query("SELECT DISTINCT hdct.sanPhamChiTiet.id FROM HoaDonChiTiet hdct " +
+           "WHERE hdct.sanPhamChiTiet.sanPham.id = :sanPhamId")
+    List<Integer> findOrderedVariantIdsBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
 }

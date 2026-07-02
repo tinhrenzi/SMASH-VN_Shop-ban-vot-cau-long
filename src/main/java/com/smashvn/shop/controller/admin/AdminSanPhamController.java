@@ -67,7 +67,8 @@ public class AdminSanPhamController {
             @RequestParam("fileAnh") MultipartFile fileAnh,
             @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
             @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
-            @RequestParam(value = "mucCangs", required = false) List<String> mucCangs,
+            @RequestParam(value = "minTension", required = false) String minTension,
+            @RequestParam(value = "maxTension", required = false) String maxTension,
             org.springframework.web.multipart.MultipartHttpServletRequest request,
             HttpSession session,
             Model model) {
@@ -109,7 +110,7 @@ public class AdminSanPhamController {
             adminSanPhamService.themSanPhamVaBienThe(
                     tenSanPham, idDanhMuc, idThuongHieu, moTa,
                     defaultGia, defaultKho, fileAnh,
-                    mauSacs, trongLuongs, mucCangs,
+                    mauSacs, trongLuongs, minTension, maxTension,
                     variantImageMap,
                     variantPriceMap,
                     variantQuantityMap,
@@ -128,7 +129,8 @@ public class AdminSanPhamController {
             model.addAttribute("soLuongTon", soLuongTon);
             model.addAttribute("selectedMauSacs", mauSacs);
             model.addAttribute("selectedTrongLuongs", trongLuongs);
-            model.addAttribute("selectedMucCangs", mucCangs);
+            model.addAttribute("minTension", minTension);
+            model.addAttribute("maxTension", maxTension);
 
             // Re-populate lists
             model.addAttribute("listDanhMuc", danhMucRepository.findAll());

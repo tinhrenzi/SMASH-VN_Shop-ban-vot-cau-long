@@ -40,4 +40,42 @@ public final class RacketSpecUtils {
         BigDecimal rounded = value.setScale(1, RoundingMode.HALF_UP).stripTrailingZeros();
         return rounded.toPlainString() + " lbs";
     }
+
+    public static String formatTensionRange(String minTension, String maxTension) {
+        if (minTension == null || minTension.trim().isEmpty()) {
+            return null;
+        }
+        if (maxTension == null || maxTension.trim().isEmpty()) {
+            return null;
+        }
+
+        String minInput = minTension.trim();
+        if (minInput.matches("^[0-9]+(?:[\\.,][0-9]+)?$")) {
+            minInput += " lbs";
+        }
+        String maxInput = maxTension.trim();
+        if (maxInput.matches("^[0-9]+(?:[\\.,][0-9]+)?$")) {
+            maxInput += " lbs";
+        }
+
+        String normMin = normalizeStringTensionToLbs(minInput);
+        String normMax = normalizeStringTensionToLbs(maxInput);
+        if (normMin == null || normMax == null) {
+            return null;
+        }
+
+        String valMin = normMin.replace(" lbs", "").trim();
+        String valMax = normMax.replace(" lbs", "").trim();
+
+        try {
+            BigDecimal minVal = new BigDecimal(valMin);
+            BigDecimal maxVal = new BigDecimal(valMax);
+            if (minVal.compareTo(maxVal) > 0) {
+                throw new IllegalArgumentException("Sức căng tối thiểu không được lớn hơn sức căng tối đa.");
+            }
+            return minVal.stripTrailingZeros().toPlainString() + " - " + maxVal.stripTrailingZeros().toPlainString() + " lbs";
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Mức căng tối thiểu và tối đa phải là số hợp lệ.");
+        }
+    }
 }
