@@ -91,7 +91,7 @@ public class SepayGatewayService implements PaymentGatewayService {
         }
 
         // 3.3 Validate that the order's paymentStatus is not already PAID
-        if (PaymentStatus.PAID.getValue().equals(order.getPaymentStatus())) {
+        if (isOrderAlreadyPaid(order)) {
             log.info("SePay IPN: Order {} already paid. Returning success.", orderCode);
             return createSuccessResponse("Already processed");
         }
@@ -311,6 +311,11 @@ public class SepayGatewayService implements PaymentGatewayService {
         }
         
         return null;
+    }
+
+    private boolean isOrderAlreadyPaid(HoaDon order) {
+        return order != null
+                && "DA_THANH_TOAN".equalsIgnoreCase(order.getTrangThaiThanhToan());
     }
 
     private String maskAccountNumber(String acc) {

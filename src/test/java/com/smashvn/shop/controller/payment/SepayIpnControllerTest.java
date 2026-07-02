@@ -438,6 +438,11 @@ public class SepayIpnControllerTest {
         hd.setMaDonHang(orderCode);
         hd.setTongTien(totalAmount);
         hd.setPaymentStatus(paymentStatus);
+        if ("paid".equalsIgnoreCase(paymentStatus)) {
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        } else {
+            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+        }
         hd.setTrangThaiDonHang(orderStatus);
 
         KhachHang kh = new KhachHang();

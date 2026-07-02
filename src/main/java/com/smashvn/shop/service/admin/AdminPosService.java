@@ -366,6 +366,14 @@ public class AdminPosService {
         hd.setSdtNhan(khachHang.getSoDienThoaiKh() != null && !khachHang.getSoDienThoaiKh().trim().isEmpty()
                 ? khachHang.getSoDienThoaiKh()
                 : "0000000000");
+        hd.setTenNguoiNhan(
+            khachHang != null
+                    && khachHang.getTenKh() != null
+                    && !khachHang.getTenKh().trim().isEmpty()
+                    && !"Lẻ".equalsIgnoreCase(khachHang.getTenKh().trim())
+                ? khachHang.getTenKh().trim()
+                : "Khách lẻ"
+        );
         hd.setGhiChu(sanitizedGhiChu);
         hd.setMaGiaoDich(sanitizedGiaoDich);
 

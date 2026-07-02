@@ -452,7 +452,7 @@ public class AdminKhuyenMaiServiceTest {
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setSanPham(testSanPham);
         spct.setMauSac("Red");
-        spct.setMucCang("10kg");
+        spct.setMucCang("22 lbs");
         spct.setTrongLuong("3U");
         spct.setGiaBan(new BigDecimal("900000"));
         spct.setSoLuongTon(10);

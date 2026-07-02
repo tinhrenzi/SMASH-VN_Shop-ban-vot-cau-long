@@ -35,7 +35,7 @@ public class AdminSanPhamController {
     // Các thuộc tính thuộc phân loại vợt cầu lông
     private final List<String> listMauSacConfig = List.of("Đỏ", "Xanh dương", "Đen", "Trắng", "Vàng", "Cam");
     private final List<String> listTrongLuongConfig = List.of("3U", "4U", "5U");
-    private final List<String> listMucCangConfig = List.of("10.5 kg", "11.0 kg", "11.5 kg", "12.0 kg", "12.5 kg");
+    private final List<String> listMucCangConfig = List.of("23 lbs", "24 lbs", "25 lbs", "26 lbs", "28 lbs");
 
     @GetMapping
     public String hienThiDanhSach(Model model) {

@@ -28,6 +28,7 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.util.RacketSpecUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -181,7 +182,16 @@ public class AdminSanPhamService {
 
             Set<String> uniqueMauSacs = new LinkedHashSet<>(mauSacs);
             Set<String> uniqueTrongLuongs = new LinkedHashSet<>(trongLuongs);
-            Set<String> uniqueMucCangs = new LinkedHashSet<>(mucCangs);
+            Set<String> uniqueMucCangs = new LinkedHashSet<>();
+            for (String mucCang : mucCangs) {
+                String normalizedMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
+                if (normalizedMucCang != null) {
+                    uniqueMucCangs.add(normalizedMucCang);
+                }
+            }
+            if (uniqueMucCangs.isEmpty()) {
+                throw new RuntimeException("Vui lòng chọn ít nhất một mức căng hợp lệ!");
+            }
 
             // 3. Giới hạn số lượng biến thể tối đa (Variant Generation Limit)
             int totalVariants = uniqueMauSacs.size() * uniqueTrongLuongs.size() * uniqueMucCangs.size();

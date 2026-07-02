@@ -17,6 +17,7 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.util.RacketSpecUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class AdminBienTheService {
         // Trim and validate input values
         String cleanMauSac = mauSac != null ? mauSac.trim() : null;
         String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = mucCang != null ? mucCang.trim() : null;
+        String cleanMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
 
@@ -99,7 +100,7 @@ public class AdminBienTheService {
         // Trim and validate input values
         String cleanMauSac = mauSac != null ? mauSac.trim() : null;
         String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = mucCang != null ? mucCang.trim() : null;
+        String cleanMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
 

@@ -526,6 +526,13 @@ public class GioHangService {
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
         hd.setDiaChiNhan(finalDiaChiNhan);
         hd.setSdtNhan(finalSdtNhan);
+        
+        String resolvedTenNguoiNhan = "Quý khách";
+        if (finalHoTenNhan != null && !finalHoTenNhan.trim().isEmpty()) {
+            resolvedTenNguoiNhan = finalHoTenNhan.trim();
+        }
+        hd.setTenNguoiNhan(resolvedTenNguoiNhan);
+        
         hd.setGhiChu(cleanGhiChu);
         hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 

@@ -165,7 +165,7 @@ public class AdminBienTheIntegrationTest {
         assertEquals(10, saved.getSoLuongTon());
         assertEquals("Đỏ", saved.getMauSac());
         assertEquals("4U", saved.getTrongLuong());
-        assertEquals("11kg", saved.getMucCang());
+        assertEquals("24.3 lbs", saved.getMucCang());
         assertNotNull(saved.getHinhAnhSanPham());
         assertTrue(saved.getHinhAnhSanPham().endsWith(".png"));
     }
@@ -461,7 +461,7 @@ public class AdminBienTheIntegrationTest {
         assertEquals(15, updated.getSoLuongTon());
         assertEquals("Yellow", updated.getMauSac());
         assertEquals("4U", updated.getTrongLuong());
-        assertEquals("12kg", updated.getMucCang());
+        assertEquals("26.5 lbs", updated.getMucCang());
         // Verify image remained unchanged
         assertEquals(oldImage, updated.getHinhAnhSanPham());
 
