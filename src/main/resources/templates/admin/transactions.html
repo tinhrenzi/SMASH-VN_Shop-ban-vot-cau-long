@@ -84,7 +84,8 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th style="width: 60px;" class="text-center">STT</th>
+                                    <th>Mã TX</th>
                                     <th>Mã GD (Gateway)</th>
                                     <th>Mã Đơn Hàng</th>
                                     <th>Số Tiền Nhận</th>
@@ -95,7 +96,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="tx : ${danhSachGiaoDich}">
+                                <tr th:each="tx, iterStat : ${danhSachGiaoDich}">
+                                    <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td th:text="${tx.id}">1</td>
                                     <td class="fw-bold text-dark" th:text="${tx.transactionId}">TX123</td>
                                     <td>
@@ -124,7 +126,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachGiaoDich.isEmpty()}">
-                                    <td colspan="8" class="text-center text-muted py-4">Không tìm thấy giao dịch nào khớp với bộ lọc.</td>
+                                    <td colspan="9" class="text-center text-muted py-4">Không tìm thấy giao dịch nào khớp với bộ lọc.</td>
                                 </tr>
                             </tbody>
                         </table>

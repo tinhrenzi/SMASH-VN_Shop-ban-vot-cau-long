@@ -11,126 +11,134 @@
              th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
              style="display:none;"></div>
         
-        <div class="admin-header-container">
-            <!-- Top Row: Logo, Search Bar, Actions -->
-            <div class="header-top-row">
-                <a class="admin-logo" th:href="@{/admin/all}">
-                    <img th:src="@{/images/logo/logo-1.png}" alt="SMASH-VN Logo">
-                </a>
-                
-                <!-- Search Bar (Matches client input & placeholder) -->
-                <div class="admin-search-bar">
-                    <input type="text" id="adminGlobalSearch" placeholder="Tìm vợt, giày, phụ kiện...">
-                    <button class="search-btn" type="button"><i class="fas fa-search"></i></button>
-                </div>
-                
-                <!-- Top-Right Action Icons (Matches profile and home icon from customer layout) -->
-                <div class="header-top-right-icons">
-                    <!-- Profile User Circle Dropdown -->
-                    <div class="dropdown d-inline-block">
-                        <a href="javascript:void(0)" class="top-icon-link dropdown-toggle" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Tài khoản">
-                            <i class="far fa-user-circle"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px; min-width: 220px; font-family: 'Open Sans', sans-serif;">
-                            <li class="dropdown-header text-uppercase fw-bold pb-2" style="font-size: 0.72rem; color: #888;">
-                                <i class="fas fa-user-shield me-1"></i> <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}"></span>
-                            </li>
-                            <!-- Switch role if multiple exist -->
-                            <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">
-                                <th:block th:if="${roleCount > 1}">
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li class="dropdown-header text-uppercase fw-bold pb-1" style="font-size: 0.65rem; color: #888;">Vai trò đăng nhập:</li>
-                                    <li th:if="${session.laKhachHang}">
-                                        <a th:href="@{/switch-role(role='KH')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
-                                            <span>Khách hàng</span>
-                                            <i th:if="${session.activeRole == 'KH'}" class="fas fa-check text-success"></i>
-                                        </a>
-                                    </li>
-                                    <li th:if="${session.laNhanVien}">
-                                        <a th:href="@{/switch-role(role='NV')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
-                                            <span>Nhân viên</span>
-                                            <i th:if="${session.activeRole == 'NV'}" class="fas fa-check text-success"></i>
-                                        </a>
-                                    </li>
-                                    <li th:if="${session.laQuanLy}">
-                                        <a th:href="@{/switch-role(role='QL')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
-                                            <span>Quản trị viên</span>
-                                            <i th:if="${session.activeRole == 'QL'}" class="fas fa-check text-success"></i>
-                                        </a>
-                                    </li>
+        <!-- Top Row Wrapper (Spans 100% viewport width) -->
+        <div class="admin-header-top-section">
+            <div class="admin-header-container" style="padding-bottom: 8px;">
+                <!-- Top Row: Logo, Search Bar, Actions -->
+                <div class="header-top-row">
+                    <a class="admin-logo" th:href="@{/admin/all}">
+                        <img th:src="@{/images/logo/logo-1.png}" alt="SMASH-VN Logo">
+                    </a>
+                    
+                    <!-- Search Bar (Matches client input & placeholder) -->
+                    <div class="admin-search-bar">
+                        <input type="text" id="adminGlobalSearch" placeholder="Tìm vợt, giày, phụ kiện...">
+                        <button class="search-btn" type="button"><i class="fas fa-search"></i></button>
+                    </div>
+                    
+                    <!-- Top-Right Action Icons (Matches profile and home icon from customer layout) -->
+                    <div class="header-top-right-icons">
+                        <!-- Profile User Circle Dropdown -->
+                        <div class="dropdown d-inline-block">
+                            <a href="javascript:void(0)" class="top-icon-link dropdown-toggle" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Tài khoản">
+                                <i class="far fa-user-circle"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px; min-width: 220px; font-family: 'Open Sans', sans-serif;">
+                                <li class="dropdown-header text-uppercase fw-bold pb-2" style="font-size: 0.72rem; color: #888;">
+                                    <i class="fas fa-user-shield me-1"></i> <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}"></span>
+                                </li>
+                                <!-- Switch role if multiple exist -->
+                                <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">
+                                    <th:block th:if="${roleCount > 1}">
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li class="dropdown-header text-uppercase fw-bold pb-1" style="font-size: 0.65rem; color: #888;">Vai trò đăng nhập:</li>
+                                        <li th:if="${session.laKhachHang}">
+                                            <a th:href="@{/switch-role(role='KH')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                                <span>Khách hàng</span>
+                                                <i th:if="${session.activeRole == 'KH'}" class="fas fa-check text-success"></i>
+                                            </a>
+                                        </li>
+                                        <li th:if="${session.laNhanVien}">
+                                            <a th:href="@{/switch-role(role='NV')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                                <span>Nhân viên</span>
+                                                <i th:if="${session.activeRole == 'NV'}" class="fas fa-check text-success"></i>
+                                            </a>
+                                        </li>
+                                        <li th:if="${session.laQuanLy}">
+                                            <a th:href="@{/switch-role(role='QL')}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                                <span>Quản trị viên</span>
+                                                <i th:if="${session.activeRole == 'QL'}" class="fas fa-check text-success"></i>
+                                            </a>
+                                        </li>
+                                    </th:block>
                                 </th:block>
-                            </th:block>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                        </ul>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Bottom Row: Navigation Menu Bar -->
-            <div class="header-nav-row">
-                <!-- Left column: Menu M button -->
-                <div class="header-nav-left">
-                    <th:block th:if="${session.activeRole == 'QL'}">
-                        <!-- Dropdown 1 (Logo chữ M sẽ là dropdown1) - Square accent red block -->
-                        <div class="dropdown d-inline-block">
-                            <button class="btn dropdown-toggle logo-m-btn" type="button" id="dropdownMenu1" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                                M
-                            </button>
-                            <ul class="dropdown-menu shadow border-0 logo-m-dropdown" aria-labelledby="dropdownMenu1">
-                                <li><a class="dropdown-item" th:href="@{/admin/san-pham}"><i class="fas fa-box"></i> Sản phẩm</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/danh-muc}"><i class="fas fa-folder-open"></i> Danh mục & hãng</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/don-hang}"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/pos}"><i class="fas fa-cash-register"></i> Bán hàng tại quầy (pos)</a></li>
-                                
-                                <!-- Dropdown 2 (Bình luận & đánh giá) inside Dropdown 1 -->
-                                <li class="dropdown-submenu">
-                                    <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0)"><i class="fas fa-comments"></i> Bình luận & đánh giá</a>
-                                    <ul class="dropdown-menu shadow border-0 logo-m-submenu">
-                                        <li><a class="dropdown-item" th:href="@{/admin/danh-gia}"><i class="fas fa-star"></i> Đánh giá</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/admin/moderation/keywords}"><i class="fas fa-filter"></i> Từ khóa cấm</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/admin/danh-gia/vi-pham}"><i class="fas fa-exclamation-triangle"></i> Bình luận vi phạm</a></li>
-                                    </ul>
-                                </li>
-                                
-                                <li><a class="dropdown-item" th:href="@{/admin/blog}"><i class="fas fa-newspaper"></i> Bài viết</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/shipping-config}"><i class="fas fa-truck"></i> Cấu hình GHN</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/khuyen-mai}"><i class="fas fa-percent"></i> Khuyến mãi</a></li>
-                            </ul>
-                        </div>
-                    </th:block>
-                </div>
-                
-                <!-- Center column: Navigation Tabs (Centred) -->
-                <div class="header-nav-center">
-                    <!-- If activeRole is QL (Manager) -->
-                    <th:block th:if="${session.activeRole == 'QL'}">
-                        <ul class="admin-nav-tabs">
-                            <li><a th:href="@{/admin/all}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'tongquan' ? 'active' : ''}">Tổng quan</a></li>
-                            <li><a th:href="@{/admin/nhan-vien}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'nhanvien' ? 'active' : ''}">Nhân viên</a></li>
-                            <li><a th:href="@{/admin/khach-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'khachhang' ? 'active' : ''}">Khách hàng</a></li>
-                            <li><a th:href="@{/admin/thong-ke}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'thongke' ? 'active' : ''}">Thống kê</a></li>
-                        </ul>
-                    </th:block>
+        </div>
+        
+        <!-- Bottom Row Wrapper (Spans 100% viewport width) -->
+        <div class="admin-header-bottom-section">
+            <div class="admin-header-container" style="padding-top: 8px; padding-bottom: 8px;">
+                <!-- Bottom Row: Navigation Menu Bar -->
+                <div class="header-nav-row">
+                    <!-- Left column: Menu M button -->
+                    <div class="header-nav-left">
+                        <th:block th:if="${session.activeRole == 'QL'}">
+                            <!-- Dropdown 1 (Logo chữ M sẽ là dropdown1) - Square accent red block -->
+                            <div class="dropdown d-inline-block">
+                                <button class="btn dropdown-toggle logo-m-btn" type="button" id="dropdownMenu1" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                    M
+                                </button>
+                                <ul class="dropdown-menu shadow border-0 logo-m-dropdown" aria-labelledby="dropdownMenu1">
+                                    <li><a class="dropdown-item" th:href="@{/admin/san-pham}"><i class="fas fa-box"></i> Sản phẩm</a></li>
+                                    <li><a class="dropdown-item" th:href="@{/admin/danh-muc}"><i class="fas fa-folder-open"></i> Danh mục & hãng</a></li>
+                                    <li><a class="dropdown-item" th:href="@{/admin/don-hang}"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
+                                    <li><a class="dropdown-item" th:href="@{/admin/pos}"><i class="fas fa-cash-register"></i> Bán hàng tại quầy (pos)</a></li>
+                                    
+                                    <!-- Dropdown 2 (Bình luận & đánh giá) inside Dropdown 1 -->
+                                    <li class="dropdown-submenu">
+                                        <a class="dropdown-item dropdown-toggle submenu-toggle" href="javascript:void(0)"><i class="fas fa-comments"></i> Bình luận & đánh giá</a>
+                                        <ul class="dropdown-menu shadow border-0 logo-m-submenu">
+                                            <li><a class="dropdown-item" th:href="@{/admin/danh-gia}"><i class="fas fa-star"></i> Đánh giá</a></li>
+                                            <li><a class="dropdown-item" th:href="@{/admin/moderation/keywords}"><i class="fas fa-filter"></i> Từ khóa cấm</a></li>
+                                            <li><a class="dropdown-item" th:href="@{/admin/danh-gia/vi-pham}"><i class="fas fa-exclamation-triangle"></i> Bình luận vi phạm</a></li>
+                                        </ul>
+                                    </li>
+                                    
+                                    <li><a class="dropdown-item" th:href="@{/admin/blog}"><i class="fas fa-newspaper"></i> Bài viết</a></li>
+                                    <li><a class="dropdown-item" th:href="@{/admin/shipping-config}"><i class="fas fa-truck"></i> Cấu hình GHN</a></li>
+                                    <li><a class="dropdown-item" th:href="@{/admin/khuyen-mai}"><i class="fas fa-percent"></i> Khuyến mãi</a></li>
+                                </ul>
+                            </div>
+                        </th:block>
+                    </div>
                     
-                    <!-- If activeRole is NV (Employee) -->
-                    <th:block th:if="${session.activeRole == 'NV'}">
-                        <ul class="admin-nav-tabs">
-                            <li><a th:href="@{/admin/pos}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'pos' ? 'active' : ''}">Bán tại quầy</a></li>
-                            <li><a th:href="@{/admin/khach-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'khachhang' ? 'active' : ''}">Khách hàng</a></li>
-                            <li><a th:href="@{/admin/don-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'donhang' ? 'active' : ''}">Đơn hàng</a></li>
-                            <li><a th:href="@{/admin/danh-gia}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'danhgia' ? 'active' : ''}">Đánh giá</a></li>
-                            <li><a th:href="@{/admin/danh-gia/vi-pham}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'viphambinhluan' ? 'active' : ''}">Bình luận</a></li>
-                            <li><a th:href="@{/admin/blog}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'blog' ? 'active' : ''}">Bài viết & blog</a></li>
-                        </ul>
-                    </th:block>
-                </div>
-                
-                <!-- Right column: Home Icon (Matches customer bottom right home icon) -->
-                <div class="header-nav-right">
-                    <a th:href="@{/}" class="nav-home-link" title="Trở về trang chủ">
-                        <i class="fas fa-home u-c-brand"></i>
-                    </a>
+                    <!-- Center column: Navigation Tabs (Centred) -->
+                    <div class="header-nav-center">
+                        <!-- If activeRole is QL (Manager) -->
+                        <th:block th:if="${session.activeRole == 'QL'}">
+                            <ul class="admin-nav-tabs">
+                                <li><a th:href="@{/admin/all}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'tongquan' ? 'active' : ''}">Tổng quan</a></li>
+                                <li><a th:href="@{/admin/nhan-vien}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'nhanvien' ? 'active' : ''}">Nhân viên</a></li>
+                                <li><a th:href="@{/admin/khach-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'khachhang' ? 'active' : ''}">Khách hàng</a></li>
+                                <li><a th:href="@{/admin/thong-ke}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'thongke' ? 'active' : ''}">Thống kê</a></li>
+                            </ul>
+                        </th:block>
+                        
+                        <!-- If activeRole is NV (Employee) -->
+                        <th:block th:if="${session.activeRole == 'NV'}">
+                            <ul class="admin-nav-tabs">
+                                <li><a th:href="@{/admin/pos}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'pos' ? 'active' : ''}">Bán tại quầy</a></li>
+                                <li><a th:href="@{/admin/khach-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'khachhang' ? 'active' : ''}">Khách hàng</a></li>
+                                <li><a th:href="@{/admin/don-hang}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'donhang' ? 'active' : ''}">Đơn hàng</a></li>
+                                <li><a th:href="@{/admin/danh-gia}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'danhgia' ? 'active' : ''}">Đánh giá</a></li>
+                                <li><a th:href="@{/admin/danh-gia/vi-pham}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'viphambinhluan' ? 'active' : ''}">Bình luận</a></li>
+                                <li><a th:href="@{/admin/blog}" class="nav-tab-item" th:classappend="${#vars.activeTab == 'blog' ? 'active' : ''}">Bài viết & blog</a></li>
+                            </ul>
+                        </th:block>
+                    </div>
+                    
+                    <!-- Right column: Home Icon (Matches customer bottom right home icon) -->
+                    <div class="header-nav-right">
+                        <a th:href="@{/}" class="nav-home-link" title="Trở về trang chủ">
+                            <i class="fas fa-home u-c-brand"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

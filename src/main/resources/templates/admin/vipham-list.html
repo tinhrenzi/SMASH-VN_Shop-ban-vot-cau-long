@@ -63,6 +63,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã VP</th>
                                     <th>Khách Hàng (Email)</th>
                                     <th>Sản Phẩm</th>
@@ -76,7 +77,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="vp : ${listViPham}">
+                                <tr th:each="vp, iterStat : ${listViPham}">
+                                    <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold" th:text="'VP' + ${vp.id}">VP1</td>
                                     <td>
                                         <div class="fw-semibold" th:text="${vp.taiKhoan != null ? vp.taiKhoan.email : 'Không rõ tài khoản'}">user@example.com</div>
@@ -124,7 +126,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${listViPham == null or listViPham.isEmpty()}">
-                                    <td colspan="10" class="text-center text-muted py-4">Chưa ghi nhận lượt vi phạm bình luận nào.</td>
+                                    <td colspan="11" class="text-center text-muted py-4">Chưa ghi nhận lượt vi phạm bình luận nào.</td>
                                 </tr>
                             </tbody>
                         </table>

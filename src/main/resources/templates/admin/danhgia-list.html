@@ -126,6 +126,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã ĐG</th>
                                     <th>Sản Phẩm</th>
                                     <th>Khách Hàng</th>
@@ -138,7 +139,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="dg : ${listDanhGia}">
+                                <tr th:each="dg, iterStat : ${listDanhGia}">
+                                    <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <!-- Mã ĐG & Xóa mềm status -->
                                     <td class="fw-bold text-dark">
                                         <span th:text="'ĐG' + ${dg.id}">ĐG1</span>
@@ -277,7 +279,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${listDanhGia.isEmpty()}">
-                                    <td colspan="9" class="text-center text-muted py-4">Chưa có đánh giá nào từ khách hàng.</td>
+                                    <td colspan="10" class="text-center text-muted py-4">Chưa có đánh giá nào từ khách hàng.</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -104,7 +104,8 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th style="width: 60px;" class="text-center">STT</th>
+                                    <th>Mã BV</th>
                                     <th>Ảnh</th>
                                     <th>Tiêu Đề</th>
                                     <th>Danh Mục</th>
@@ -115,7 +116,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="blog : ${blogsPage.content}" th:style="${blog.deleted ? 'background-color: #ffe6e6;' : ''}">
+                                <tr th:each="blog, iterStat : ${blogsPage.content}" th:style="${blog.deleted ? 'background-color: #ffe6e6;' : ''}">
+                                    <td class="text-center" th:text="${blogsPage.number * blogsPage.size + iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'#' + ${blog.id}">#1</td>
                                     <td>
                                         <img th:if="${blog.image != null}" 
@@ -169,7 +171,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${blogsPage.content.isEmpty()}">
-                                    <td colspan="8" class="text-center text-muted py-4">Không tìm thấy bài viết nào phù hợp.</td>
+                                    <td colspan="9" class="text-center text-muted py-4">Không tìm thấy bài viết nào phù hợp.</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -79,6 +79,18 @@ public class AdminController {
         java.util.List<com.smashvn.shop.entity.HoaDon> orders = hoaDonRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
         model.addAttribute("danhSachDonHang", orders);
 
+        java.util.List<com.smashvn.shop.entity.HoaDon> onlineOrders = new java.util.ArrayList<>();
+        java.util.List<com.smashvn.shop.entity.HoaDon> posOrders = new java.util.ArrayList<>();
+        for (com.smashvn.shop.entity.HoaDon hd : orders) {
+            if (hd.getMaDonHang() != null && hd.getMaDonHang().startsWith("HDSVN")) {
+                posOrders.add(hd);
+            } else {
+                onlineOrders.add(hd);
+            }
+        }
+        model.addAttribute("danhSachDonHangOnline", onlineOrders);
+        model.addAttribute("danhSachDonHangPos", posOrders);
+
         java.util.Map<Integer, String> currentStatusLabels = new java.util.HashMap<>();
         java.util.Map<Integer, String> nextStatusLabels = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.HoaDon hd : orders) {

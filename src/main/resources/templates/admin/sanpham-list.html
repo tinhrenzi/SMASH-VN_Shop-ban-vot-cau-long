@@ -64,7 +64,8 @@
                         <table class="table table-hover align-middle mb-0" id="productTable">
                             <thead>
                                 <tr>
-                                    <th style="width: 80px;">ID</th>
+                                    <th style="width: 60px;" class="text-center">STT</th>
+                                    <th style="width: 80px;">Mã SP</th>
                                     <th>Sản Phẩm</th>
                                     <th style="width: 180px;">Tổng Số Lượng</th>
                                     <th style="width: 150px;">Trạng thái</th>
@@ -72,11 +73,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="sp : ${danhSachSanPham}"
+                                <tr th:each="sp, iterStat : ${danhSachSanPham}"
                                     th:data-category="${sp.danhMuc.tenDanhMuc}"
                                     th:data-brand="${sp.thuongHieu.tenThuongHieu}"
                                     th:data-status="${sp.trangThai == null ? 'dang_ban' : sp.trangThai}">
                                     
+                                    <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${sp.id}">#1</td>
                                     
                                     <td>
@@ -157,7 +159,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachSanPham.isEmpty()}">
-                                    <td colspan="5" class="text-center text-muted py-4">Chưa có sản phẩm nào trong kho.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có sản phẩm nào trong kho.</td>
                                 </tr>
                             </tbody>
                         </table>

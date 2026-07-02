@@ -43,6 +43,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã KH</th>
                                     <th>Họ Tên</th>
                                     <th>Email Tài Khoản</th>
@@ -52,7 +53,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="kh : ${danhSachKhachHang}">
+                                <tr th:each="kh, iterStat : ${danhSachKhachHang}">
+                                    <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
                                     <td class="fw-bold text-primary" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
                                     <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan.email}">john@gmail.com</td>
@@ -67,7 +69,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">
-                                    <td colspan="6" class="text-center text-muted py-4">Chưa có khách hàng nào đăng ký hệ thống.</td>
+                                    <td colspan="7" class="text-center text-muted py-4">Chưa có khách hàng nào đăng ký hệ thống.</td>
                                 </tr>
                             </tbody>
                         </table>

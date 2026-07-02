@@ -54,13 +54,15 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 80px;">ID</th>
+                                        <th style="width: 60px;" class="text-center">STT</th>
+                                        <th style="width: 80px;">Mã DM</th>
                                         <th>Tên Danh Mục</th>
                                         <th class="text-center" style="width: 140px;">Hành Động</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyDanhMuc">
-                                    <tr th:each="dm : ${listDanhMuc}" th:attr="data-id=${dm.id}">
+                                    <tr th:each="dm, iterStat : ${listDanhMuc}" th:attr="data-id=${dm.id}">
+                                        <td class="text-center" th:text="${iterStat.count}">1</td>
                                         <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${dm.id}">#1</td>
                                         <td class="fw-semibold text-secondary dm-name" th:text="${dm.tenDanhMuc}">Vot Cau Long</td>
                                         <td class="text-center text-nowrap">
@@ -76,7 +78,7 @@
                                             </form>
                                         </td>
                                     </tr>
-                                    <tr th:if="${listDanhMuc.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chưa có danh mục nào.</td></tr>
+                                    <tr th:if="${listDanhMuc.isEmpty()}"><td colspan="4" class="text-center text-muted py-4">Chưa có danh mục nào.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -109,13 +111,15 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 80px;">ID</th>
+                                        <th style="width: 60px;" class="text-center">STT</th>
+                                        <th style="width: 80px;">Mã TH</th>
                                         <th>Tên Hãng / Thương Hiệu</th>
                                         <th class="text-center" style="width: 140px;">Hành Động</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyThuongHieu">
-                                    <tr th:each="th : ${listThuongHieu}" th:attr="data-id=${th.id}">
+                                    <tr th:each="th, iterStat : ${listThuongHieu}" th:attr="data-id=${th.id}">
+                                        <td class="text-center" th:text="${iterStat.count}">1</td>
                                         <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${th.id}">#1</td>
                                         <td class="fw-semibold text-secondary th-name" th:text="${th.tenThuongHieu}">Yonex</td>
                                         <td class="text-center text-nowrap">
@@ -131,7 +135,7 @@
                                             </form>
                                         </td>
                                     </tr>
-                                    <tr th:if="${listThuongHieu.isEmpty()}"><td colspan="3" class="text-center text-muted py-4">Chưa có thương hiệu nào.</td></tr>
+                                    <tr th:if="${listThuongHieu.isEmpty()}"><td colspan="4" class="text-center text-muted py-4">Chưa có thương hiệu nào.</td></tr>
                                 </tbody>
                             </table>
                         </div>

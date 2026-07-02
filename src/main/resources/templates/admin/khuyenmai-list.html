@@ -83,20 +83,22 @@
                     <div class="table-responsive p-0 shadow-none border-0">
                         <table class="table table-hover mb-0 align-middle">
                             <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tên Chiến Dịch</th>
-                                    <th>% Giảm</th>
-                                    <th>Thời Gian Hoạt Động</th>
-                                    <th>Loại Giảm</th>
-                                    <th>Trạng Thái</th>
-                                    <th>Nhân Viên Tạo</th>
-                                    <th class="text-center">Hành Động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="dgg : ${danhSachDotGiamGia}">
-                                    <td class="fw-bold text-dark" th:text="'#' + ${dgg.id}">#1</td>
+                                 <tr>
+                                     <th style="width: 60px;" class="text-center">STT</th>
+                                     <th>Mã ĐGG</th>
+                                     <th>Tên Chiến Dịch</th>
+                                     <th>% Giảm</th>
+                                     <th>Thời Gian Hoạt Động</th>
+                                     <th>Loại Giảm</th>
+                                     <th>Trạng Thái</th>
+                                     <th>Nhân Viên Tạo</th>
+                                     <th class="text-center">Hành Động</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <tr th:each="dgg, iterStat : ${danhSachDotGiamGia}">
+                                     <td class="text-center" th:text="${iterStat.count}">1</td>
+                                     <td class="fw-bold text-dark" th:text="'#' + ${dgg.id}">#1</td>
                                     <td>
                                         <div class="fw-bold text-primary" th:text="${dgg.tenChienDich}">Mừng hè rực rỡ</div>
                                         <small class="text-muted" th:text="'Áp dụng cho ' + ${dgg.sanPhams.size()} + ' sản phẩm'"></small>
@@ -132,9 +134,9 @@
                                         </form>
                                     </td>
                                 </tr>
-                                <tr th:if="${danhSachDotGiamGia.isEmpty()}">
-                                    <td colspan="8" class="text-center text-muted py-4">Chưa có chiến dịch đợt giảm giá nào.</td>
-                                </tr>
+                                 <tr th:if="${danhSachDotGiamGia.isEmpty()}">
+                                     <td colspan="9" class="text-center text-muted py-4">Chưa có chiến dịch đợt giảm giá nào.</td>
+                                 </tr>
                             </tbody>
                         </table>
                     </div>
@@ -151,23 +153,25 @@
                     <div class="table-responsive p-0 shadow-none border-0">
                         <table class="table table-hover mb-0 align-middle">
                             <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Mã Phiếu</th>
-                                    <th>Giá Trị</th>
-                                    <th>Đơn Vị</th>
-                                    <th>Còn Lại</th>
-                                    <th>Hạn Mức Tối Thiểu</th>
-                                    <th>Thời Gian Sử Dụng</th>
-                                    <th>Loại Giảm</th>
-                                    <th>Trạng Trạng Thái</th>
-                                    <th>Nhân Viên Tạo</th>
-                                    <th class="text-center">Hành Động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="pgg : ${danhSachPhieuGiamGia}">
-                                    <td class="fw-bold text-dark" th:text="'#' + ${pgg.id}">#1</td>
+                                 <tr>
+                                     <th style="width: 60px;" class="text-center">STT</th>
+                                     <th>Mã PGG</th>
+                                     <th>Mã Phiếu</th>
+                                     <th>Giá Trị</th>
+                                     <th>Đơn Vị</th>
+                                     <th>Còn Lại</th>
+                                     <th>Hạn Mức Tối Thiểu</th>
+                                     <th>Thời Gian Sử Dụng</th>
+                                     <th>Loại Giảm</th>
+                                     <th>Trạng Trạng Thái</th>
+                                     <th>Nhân Viên Tạo</th>
+                                     <th class="text-center">Hành Động</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <tr th:each="pgg, iterStat : ${danhSachPhieuGiamGia}">
+                                     <td class="text-center" th:text="${iterStat.count}">1</td>
+                                     <td class="fw-bold text-dark" th:text="'#' + ${pgg.id}">#1</td>
                                     <td>
                                         <span class="badge bg-warning text-dark font-monospace fs-6" th:text="${pgg.maPhieu}">SUMMER26</span>
                                     </td>
@@ -207,9 +211,9 @@
                                         </form>
                                     </td>
                                 </tr>
-                                <tr th:if="${danhSachPhieuGiamGia.isEmpty()}">
-                                    <td colspan="11" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
-                                </tr>
+                                 <tr th:if="${danhSachPhieuGiamGia.isEmpty()}">
+                                     <td colspan="12" class="text-center text-muted py-4">Chưa có phiếu giảm giá nào được tạo.</td>
+                                 </tr>
                             </tbody>
                         </table>
                     </div>

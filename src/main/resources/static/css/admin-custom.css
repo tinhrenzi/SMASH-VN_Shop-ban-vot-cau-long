@@ -709,6 +709,16 @@ body {
     z-index: 1020;
 }
 
+/* Full-width wrappers for top and bottom header rows */
+.admin-header-top-section {
+    width: 100%;
+    border-bottom: 1px solid #f1f5f9; /* Full width edge-to-edge separator */
+}
+
+.admin-header-bottom-section {
+    width: 100%;
+}
+
 .admin-header-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -731,7 +741,7 @@ body {
 }
 
 .admin-logo img {
-    height: 60px;
+    height: 66px; /* Increased from 60px to 80px to match client size */
     object-fit: contain;
     transition: transform 0.2s ease;
 }
@@ -743,7 +753,7 @@ body {
 .admin-search-bar {
     display: flex;
     align-items: center;
-    max-width: 440px;
+    max-width: 380px; /* Decreased from 440px to 380px to be more compact */
     width: 100%;
     position: relative;
     border-radius: 30px;
@@ -829,9 +839,6 @@ body {
 }
 
 .header-nav-row {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -930,12 +937,12 @@ body {
 }
 
 .logo-m-dropdown .dropdown-item:hover {
-    background-color: rgba(255, 69, 0, 0.05) !important;
+    background-color: transparent !important;
     color: var(--brand-accent) !important;
 }
 
 .logo-m-dropdown .dropdown-item:hover i {
-    color: var(--brand-accent);
+    color: var(--brand-accent) !important;
 }
 
 /* Submenu structure */
@@ -979,9 +986,9 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 12px; /* Set to 12px matching client header tab size */
     color: var(--brand-primary);
     text-decoration: none;
     transition: color 0.2s ease;
@@ -1161,5 +1168,34 @@ body {
     background-color: rgba(255, 69, 0, 0.05);
     text-decoration: none;
 }
+
+/* Card Header Bootstrap Nav Tabs Customization */
+.card-header .nav-tabs {
+    border-bottom: none;
+}
+
+.card-header .nav-tabs .nav-link {
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: none;
+    border-bottom: 3px solid transparent !important;
+    background: transparent !important;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.card-header .nav-tabs .nav-link:hover {
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.card-header .nav-tabs .nav-link.active {
+    color: var(--brand-accent, #ff4500) !important;
+    background-color: transparent !important;
+    border-color: var(--brand-accent, #ff4500) !important;
+    font-weight: 700;
+}
+
 
 
