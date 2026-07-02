@@ -423,7 +423,7 @@
                                         <div class="dash__pad-2">
                                             <div class="order-header-section">
                                                 <div class="order-meta-group">
-                                                    <div class="manage-o__text-2 u-c-secondary" th:text="'Đơn hàng #' + ${order.id}">Đơn hàng #305423126</div>
+                                                    <div class="manage-o__text-2 u-c-secondary" th:text="'Mã đơn hàng: ' + ${order.maDonHang}">Mã đơn hàng: DHSVN...</div>
                                                     <div class="manage-o__text u-c-silver" th:text="'Đặt ngày ' + ${#temporals.format(order.ngayDat, 'dd/MM/yyyy HH:mm:ss')}">Đặt ngày 26 Oct 2016 09:08:37</div>
                                                 </div>
                                                 <div class="order-status-group">
@@ -736,7 +736,21 @@
                                                         <div class="manage-o__text-2" style="font-weight: 700; color: #e53935 !important;"
                                                              th:text="${#numbers.formatDecimal(order.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">46.000 đ</div>
                                                     </div>
-                                                    <span class="dash__text-2" th:text="${order.phuongThucThanhToan}">Paid by Cash on Delivery</span>
+                                                    <div class="mt-3 pt-3 border-top" style="font-size: 13px; line-height: 1.6;">
+                                                        <div class="fw-bold text-dark mb-2"><i class="fas fa-credit-card me-1 text-danger"></i>Thông tin thanh toán</div>
+                                                        <div><strong>Mã đơn hàng:</strong> <span th:text="${order.maDonHang}">DHSVN...</span></div>
+                                                        <div th:if="${order.maGiaoDich != null and !#strings.isEmpty(order.maGiaoDich)}">
+                                                            <strong>Mã giao dịch thanh toán:</strong> <span th:text="${order.maGiaoDich}">SIM_...</span>
+                                                        </div>
+                                                        <div th:if="${order.transactionId != null and !#strings.isEmpty(order.transactionId)}">
+                                                            <strong>Transaction ID:</strong> <span th:text="${order.transactionId}">SIM_...</span>
+                                                        </div>
+                                                        <div><strong>Phương thức thanh toán:</strong> <span th:text="${order.phuongThucThanhToan}">COD</span></div>
+                                                        <div>
+                                                            <strong>Trạng thái thanh toán:</strong> 
+                                                            <span class="badge" th:classappend="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'Đã thanh toán' : 'Chờ thanh toán'}">Chờ thanh toán</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

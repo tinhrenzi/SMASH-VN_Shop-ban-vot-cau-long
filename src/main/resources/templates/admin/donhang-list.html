@@ -656,6 +656,8 @@ function openOrderDetailModal(orderId) {
                 return;
             }
 
+            document.getElementById('modal-order-id').innerText = '#' + orderId + ' (' + (data.maDonHang || 'N/A') + ')';
+
             let itemsHtml = '';
             let subtotal = 0;
             (data.items || []).forEach(item => {
@@ -726,21 +728,7 @@ function openOrderDetailModal(orderId) {
                         <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin thanh toán</h6>
                         <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${data.paymentMethod || 'N/A'}</p>
                         <p class="mb-1"><strong>Trạng thái thanh toán:</strong> <span class="badge ${data.paymentStatus === 'DA_THANH_TOAN' ? 'bg-success' : data.paymentStatus === 'CHO_HOAN_TIEN' || data.paymentStatus === 'REFUNDED' ? 'bg-danger' : 'bg-warning text-dark'}">${data.paymentStatus || 'N/A'}</span></p>
-                        <div class="mt-2 p-2 border rounded bg-light" style="font-size: 12px;">
-                            <label class="form-label fw-bold mb-1" style="font-size: 11px; color: #c0392b;"><i class="fas fa-tools me-1"></i>Sửa trạng thái thanh toán (thủ công):</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <select id="manualPaymentStatusSelect-${data.id}" class="form-select form-select-sm" style="max-width: 200px;">
-                                    <option value="CHO_THANH_TOAN" ${data.paymentStatus === 'CHO_THANH_TOAN' ? 'selected' : ''}>CHO_THANH_TOAN</option>
-                                    <option value="DA_THANH_TOAN" ${data.paymentStatus === 'DA_THANH_TOAN' ? 'selected' : ''}>DA_THANH_TOAN</option>
-                                    <option value="CHO_HOAN_TIEN" ${data.paymentStatus === 'CHO_HOAN_TIEN' ? 'selected' : ''}>CHO_HOAN_TIEN</option>
-                                    <option value="REFUNDED" ${data.paymentStatus === 'REFUNDED' ? 'selected' : ''}>REFUNDED</option>
-                                    <option value="THAT_BAI" ${data.paymentStatus === 'THAT_BAI' ? 'selected' : ''}>THAT_BAI</option>
-                                </select>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updatePaymentStatus(${data.id}, '${csrfToken}')">
-                                    <i class="fas fa-save me-1"></i>Lưu
-                                </button>
-                            </div>
-                        </div>
+
                         ${data.maGiaoDich ? `<p class="mb-1"><strong>Mã giao dịch:</strong> <code class="text-dark">${data.maGiaoDich}</code></p>` : ''}
                         ${data.thoiGianThanhToan ? `<p class="mb-1"><strong>Thời gian thanh toán:</strong> ${data.thoiGianThanhToan}</p>` : ''}
                         ${data.transactionId ? `<p class="mb-1"><strong>Transaction ID:</strong> <code class="text-dark">${data.transactionId}</code></p>` : ''}
@@ -1029,43 +1017,7 @@ function openOrderDetailModal(orderId) {
         });
 }
 
-window.updatePaymentStatus = function(orderId, csrfToken) {
-    const select = document.getElementById('manualPaymentStatusSelect-' + orderId);
-    if (!select) return;
-    const newStatus = select.value;
-    Swal.fire({
-        title: 'Xác nhận sửa thanh toán',
-        html: `Bạn có chắc muốn đổi trạng thái thanh toán thành <strong>${newStatus}</strong>?<br><small class="text-muted">Chỉ thực hiện khi có lỗi hệ thống thanh toán.</small>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#c0392b',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Xác nhận',
-        cancelButtonText: 'Hủy'
-    }).then(result => {
-        if (!result.isConfirmed) return;
-        const params = new URLSearchParams();
-        params.append('idHoaDon', orderId);
-        params.append('trangThaiThanhToan', newStatus);
-        params.append('_csrf', csrfToken);
-        fetch('/admin/don-hang/update-payment-status', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params.toString()
-        })
-        .then(r => r.json())
-        .then(resp => {
-            if (resp.success) {
-                Swal.fire({ icon: 'success', title: 'Thành công', text: resp.message, timer: 2000, showConfirmButton: false })
-                    .then(() => { bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide(); location.reload(); });
-            } else {
-                Swal.fire({ icon: 'error', title: 'Lỗi', text: resp.message || 'Không thể cập nhật trạng thái.' });
-            }
-        })
-        .catch(() => Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối máy chủ.' }));
-    });
-};
+
 
 function showPayloadModal(btn) {
     const id = btn.getAttribute('data-id');

@@ -207,7 +207,7 @@
                                                     <tbody>
                                                         <tr th:each="order, iterStat : ${orders}">
                                                             <td>
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="'#' + ${iterStat.count}">#1</span>
+                                                                <span class="manage-o__text-2 u-c-secondary" th:text="${order.maDonHang != null ? order.maDonHang : '#' + order.id}">DHSVN...</span>
                                                             </td>
                                                             <td>
                                                                 <span class="manage-o__text u-c-silver" th:text="${order.date}">26 Oct 2016 09:08:37</span>

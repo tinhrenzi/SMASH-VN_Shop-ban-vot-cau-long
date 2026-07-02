@@ -205,6 +205,8 @@ public class OrderViewService {
         map.put("ghiChu", hd.getGhiChu());
         map.put("paymentMethod", hd.getPaymentMethod());
         map.put("maDonHang", hd.getMaDonHang());
+        map.put("maGiaoDich", hd.getMaGiaoDich());
+        map.put("transactionId", hd.getTransactionId());
         map.put("ghnOrderCode", hd.getGhnOrderCode());
 
         map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO);
