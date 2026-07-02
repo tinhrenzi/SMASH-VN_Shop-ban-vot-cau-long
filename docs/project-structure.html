@@ -2333,15 +2333,15 @@
                     <div class="stat-label">Files (Tệp tin)</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-num">30</div>
+                    <div class="stat-num" id="stat-controllers">30</div>
                     <div class="stat-label">Controllers (Bộ điều khiển)</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-num">25</div>
+                    <div class="stat-num" id="stat-services">25</div>
                     <div class="stat-label">Services (Dịch vụ)</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-num">24</div>
+                    <div class="stat-num" id="stat-repos">24</div>
                     <div class="stat-label">Repos & DAOs (Kho lưu trữ & DAO)</div>
                 </div>
             </div>
@@ -5802,6 +5802,18 @@
                     layer: "default"
                 },
                 {
+                    name: "sync_smdb_final.sql",
+                    type: "file",
+                    desc: "Tệp mã nguồn SQL đồng bộ cơ sở dữ liệu hoàn chỉnh cho dự án.",
+                    layer: "config"
+                },
+                {
+                    name: "PROJECT_STRUCTURE_AND_WORKFLOW.md",
+                    type: "file",
+                    desc: "Tài liệu đặc tả sơ đồ cấu trúc thư mục dự án và luồng hoạt động chi tiết của các chức năng chính dưới dạng Mermaid.",
+                    layer: "default"
+                },
+                {
                     name: "src",
                     type: "dir",
                     desc: "Thư mục chứa mã nguồn của dự án.",
@@ -5884,6 +5896,14 @@
                                                             ]
                                                         },
                                                         {
+                                                            name: "advice",
+                                                            type: "dir",
+                                                            desc: "Các bộ tư vấn Controller (Controller Advice) dùng chung.",
+                                                            children: [
+                                                                { name: "GlobalNotificationAdvice.java", type: "file", desc: "Tự động thêm thông tin thông báo (Notification) toàn cục cho các trang giao diện.", layer: "controller", calls: ["ThongBaoRepository.java"] }
+                                                            ]
+                                                        },
+                                                        {
                                                             name: "blog",
                                                             type: "dir",
                                                             desc: "Hiển thị tin tức và bài viết cho khách hàng.",
@@ -5939,6 +5959,12 @@
                                                                 { name: "UserDashboardController.java", type: "file", desc: "Hiển thị trang quản lý tài khoản cá nhân khách hàng.", layer: "controller", calls: ["UserDashboardService.java"] },
                                                                 { name: "RoleSwitchController.java", type: "file", desc: "Chuyển đổi vai trò nhanh phục vụ kiểm thử phân quyền.", layer: "controller" }
                                                             ]
+                                                        },
+                                                        {
+                                                            name: "session_usages.txt",
+                                                            type: "file",
+                                                            desc: "Tệp tin ghi nhận tất cả vị trí truy cập HttpSession trong mã nguồn các Controller.",
+                                                            layer: "default"
                                                         }
                                                     ]
                                                 },
@@ -8779,6 +8805,37 @@
             document.getElementById('dash-critical-risk').innerText = criticalRisk;
             document.getElementById('dash-high-risk').innerText = highRisk;
             document.getElementById('dash-mission-critical').innerText = missionCritical;
+
+            // Dynamically calculate projectTree stats
+            let fileCount = 0;
+            let controllerCount = 0;
+            let serviceCount = 0;
+            let repoCount = 0;
+            
+            function traverse(node) {
+                if (node.type === 'file') {
+                    fileCount++;
+                    if (node.layer === 'controller') controllerCount++;
+                    else if (node.layer === 'service') serviceCount++;
+                    else if (node.layer === 'repository') repoCount++;
+                }
+                if (node.children) {
+                    node.children.forEach(traverse);
+                }
+            }
+            traverse(projectTree);
+            
+            const statFilesEl = document.getElementById('stat-files');
+            if (statFilesEl) statFilesEl.innerText = fileCount;
+            
+            const statControllersEl = document.getElementById('stat-controllers');
+            if (statControllersEl) statControllersEl.innerText = controllerCount;
+            
+            const statServicesEl = document.getElementById('stat-services');
+            if (statServicesEl) statServicesEl.innerText = serviceCount;
+            
+            const statReposEl = document.getElementById('stat-repos');
+            if (statReposEl) statReposEl.innerText = repoCount;
         }
 
         function handleFlowSearch() {
