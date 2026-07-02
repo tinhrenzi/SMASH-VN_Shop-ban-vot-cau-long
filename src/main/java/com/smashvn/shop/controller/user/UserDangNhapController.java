@@ -22,6 +22,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Locale;
+
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -56,15 +58,16 @@ public class UserDangNhapController {
             Model model) {
         String ip = request.getRemoteAddr();
 
-        // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
-        if (loginRateLimiter.isBlocked(ip)) {
-            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
-            return "signin";
-        }
-
         // Sanitize và Trim inputs
         String sanitizedEmail = sanitizeInput(email);
         String trimmedEmail = (sanitizedEmail != null) ? sanitizedEmail.trim() : "";
+        String loginLimitKey = buildLoginLimitKey(trimmedEmail);
+
+        // 1. Kiểm tra giới hạn số lần thử theo tài khoản, không khóa theo trình duyệt/IP
+        if (!loginLimitKey.isEmpty() && loginRateLimiter.isBlocked(loginLimitKey)) {
+            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
+            return "signin";
+        }
 
         // Sơ bộ validation tại controller
         boolean invalidInput = false;
@@ -76,7 +79,9 @@ public class UserDangNhapController {
         }
 
         if (invalidInput) {
-            loginRateLimiter.loginFailed(ip);
+            if (!loginLimitKey.isEmpty()) {
+                loginRateLimiter.loginFailed(loginLimitKey);
+            }
             log.warn("[SECURITY_EVENT] INVALID_LOGIN_INPUT: IP: {}, Email: {}", ip, trimmedEmail);
             model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
             return "signin";
@@ -87,14 +92,14 @@ public class UserDangNhapController {
 
             // Chỉ cho phép KH
             if (!Boolean.TRUE.equals(tkDangNhap.getLaKhachHang())) {
-                loginRateLimiter.loginFailed(ip);
+                loginRateLimiter.loginFailed(loginLimitKey);
                 log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", trimmedEmail, ip);
                 model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
                 return "signin";
             }
 
             // Đăng nhập thành công -> Reset bộ đếm rate limiter
-            loginRateLimiter.loginSucceeded(ip);
+            loginRateLimiter.loginSucceeded(loginLimitKey);
 
             // 2. Chống Session Fixation
             request.changeSessionId();
@@ -121,14 +126,14 @@ public class UserDangNhapController {
 
         } catch (AccountNotFoundException e) {
             // Đăng nhập thất bại do email chưa đăng ký -> Đưa ra luồng riêng
-            loginRateLimiter.loginFailed(ip);
+            loginRateLimiter.loginFailed(loginLimitKey);
             log.warn("[SECURITY_EVENT] UNREGISTERED_EMAIL_LOGIN: Email: {}, IP: {}", trimmedEmail, ip);
             model.addAttribute("emailChuaDangKy", true);
             model.addAttribute("emailNhap", trimmedEmail);
             return "signin";
         } catch (RuntimeException e) {
             // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
-            loginRateLimiter.loginFailed(ip);
+            loginRateLimiter.loginFailed(loginLimitKey);
             log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", trimmedEmail, ip, e.getMessage());
 
             // Luôn trả về thông báo lỗi chung
@@ -141,6 +146,10 @@ public class UserDangNhapController {
         if (input == null) return null;
         // Loại bỏ thẻ HTML/Script cơ bản để tránh XSS/injection thô sơ
         return input.replaceAll("<[^>]*>", "");
+    }
+
+    private String buildLoginLimitKey(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
     // Thêm luôn chức năng Đăng xuất cho tiện
