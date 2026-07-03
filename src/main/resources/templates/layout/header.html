@@ -1,4 +1,9 @@
         <header class="header--style-1">
+            <style>
+                .gl-inline {
+                    align-items: flex-start !important;
+                }
+            </style>
             <div id="csrf-token-holder" 
                  th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 
                  th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
