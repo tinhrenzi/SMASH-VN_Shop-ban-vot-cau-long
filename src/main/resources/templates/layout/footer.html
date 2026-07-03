@@ -132,7 +132,7 @@
                         <div class="col-lg-5 col-md-12">
                             <div class="outer-footer__content">
                                 <span class="outer-footer__content-title" style="color: #fff; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 20px;">ĐĂNG KÝ NHẬN ƯU ĐÃI</span>
-                                <form class="newsletter" onsubmit="event.preventDefault(); showToast('Thành công', 'Đăng ký nhận ưu đãi thành công!', 'success');">
+                                <form class="newsletter" id="newsletter-subscribe-form">
                                     <span class="newsletter__text" style="color: #a0a0a0; font-size: 0.82rem; line-height: 1.6; display: block; margin-bottom: 15px;">Nhận thông tin về khuyến mãi, sản phẩm mới và các ưu đãi đặc biệt từ SMASH VN.</span>
                                     
                                     <div class="newsletter__group" style="display: flex; gap: 0; width: 100%; max-width: 320px; margin-bottom: 15px;">
@@ -900,6 +900,69 @@
                             buttons.forEach(b => b.disabled = false); // Re-enable on failure
                         });
                     };
+                });
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const newsletterForm = document.getElementById("newsletter-subscribe-form");
+                    if (newsletterForm) {
+                        newsletterForm.addEventListener("submit", function(e) {
+                            e.preventDefault();
+                            
+                            const emailInput = document.getElementById("newsletter");
+                            const submitBtn = newsletterForm.querySelector(".newsletter__btn");
+                            const genderRadio = newsletterForm.querySelector('input[name="gender"]:checked');
+                            
+                            if (!emailInput || !submitBtn) return;
+                            
+                            const email = emailInput.value.trim();
+                            const gender = genderRadio ? genderRadio.value : null;
+                            
+                            // Disable fields
+                            emailInput.disabled = true;
+                            submitBtn.disabled = true;
+                            const originalBtnText = submitBtn.innerText;
+                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG GỬI...';
+                            
+                            fetch("/api/newsletter/subscribe", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ email: email, gioiTinh: gender })
+                            })
+                            .then(response => {
+                                return response.json().then(data => ({
+                                    status: response.status,
+                                    ok: response.ok,
+                                    body: data
+                                }));
+                            })
+                            .then(res => {
+                                // Re-enable fields
+                                emailInput.disabled = false;
+                                submitBtn.disabled = false;
+                                submitBtn.innerText = originalBtnText;
+                                
+                                if (res.ok && res.body.success) {
+                                    showToast("Thành công", res.body.message || "Đăng ký nhận ưu đãi thành công!", "success");
+                                    emailInput.value = "";
+                                    if (genderRadio) {
+                                        genderRadio.checked = false;
+                                    }
+                                } else {
+                                    showToast("Thông báo", res.body.message || "Có lỗi xảy ra, vui lòng thử lại.", "warning");
+                                }
+                            })
+                            .catch(err => {
+                                emailInput.disabled = false;
+                                submitBtn.disabled = false;
+                                submitBtn.innerText = originalBtnText;
+                                console.error("Newsletter error:", err);
+                                showToast("Lỗi", "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.", "error");
+                            });
+                        });
+                    }
                 });
             </script>
     </footer>

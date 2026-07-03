@@ -10,6 +10,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.entity.DotGiamGia;
@@ -23,6 +25,7 @@ import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.service.NewsletterService;
 import com.smashvn.shop.util.ApDungKieu;
 import com.smashvn.shop.util.PromotionValidationConstants;
 
@@ -54,6 +57,7 @@ public class AdminKhuyenMaiService {
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final AuditService auditService;
+    private final NewsletterService newsletterService;
 
     /**
      * Định dạng ngày giờ dùng trong audit log và thông báo lỗi.
@@ -147,8 +151,8 @@ public class AdminKhuyenMaiService {
         validateCampaignDates(start, end);
 
         // 4. Validation % giảm
-        if (phanTramGiam == null || phanTramGiam < 0) {
-            throw new PromotionValidationException("Phần trăm giảm giá không được âm!");
+        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
+            throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
 
         // 5. Resolve danh sách sản phẩm theo kiểu áp dụng
@@ -201,6 +205,29 @@ public class AdminKhuyenMaiService {
         writeEditLog(actingTaiKhoanId, "DotGiamGia", saved.getId().longValue(), "INSERT",
                 null, formatCampaignState(saved), ipAddress, "Tạo mới đợt giảm giá: " + sanitizedTen);
 
+        if (saved.getActive() != null && saved.getActive()) {
+            try {
+                if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            try {
+                                newsletterService.sendPromotionEmailAsync(saved.getId());
+                            } catch (Exception e) {
+                                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
+                                        .error("[Newsletter] Error triggering promotion email after commit for campaign: {}", saved.getId(), e);
+                            }
+                        }
+                    });
+                } else {
+                    newsletterService.sendPromotionEmailAsync(saved.getId());
+                }
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
+                        .error("[Newsletter] Error setting up promotion email notification for campaign: {}", saved.getId(), e);
+            }
+        }
+
         return saved;
     }
 
@@ -241,8 +268,8 @@ public class AdminKhuyenMaiService {
         }
 
         validateCampaignDates(start, end);
-        if (phanTramGiam == null || phanTramGiam < 0) {
-            throw new PromotionValidationException("Phần trăm giảm giá không được âm!");
+        if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
+            throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
         if (productIds == null || productIds.isEmpty()) {
             throw new PromotionValidationException("Vui lòng chọn ít nhất một sản phẩm để áp dụng đợt giảm giá!");
@@ -375,34 +402,29 @@ public class AdminKhuyenMaiService {
             }
             throw new PromotionValidationException(fieldName + " không được để trống!");
         }
+
         String trimmed = valueStr.trim();
+
         // Bắt đầu bằng dấu "-" → số âm
         if (trimmed.startsWith("-")) {
             throw new PromotionValidationException(fieldName + " không được là số âm!");
         }
-        // Validate format: chỉ chấp nhận số không âm
-        if (trimmed.startsWith("-")) {
-            throw new PromotionValidationException(fieldName + " không được âm!");
-        }
 
-        String normalized = trimmed.replace(".", "").replace(",", "");
-
-        if (!normalized.matches("\\d+")) {
+        // Validate format: chỉ chấp nhận số nguyên hoặc dạng phân cách hàng nghìn
+        if (!trimmed.matches("\\d+") && !trimmed.matches("\\d{1,3}([.,]\\d{3})+")) {
             throw new PromotionValidationException(
-                    fieldName + " phải là số VNĐ hợp lệ!"
+                fieldName + " phải là số nguyên VNĐ hợp lệ. Ví dụ: 500000 hoặc 500.000!"
             );
         }
-        BigDecimal val;
+
+        // Chuẩn hóa: bỏ dấu phân cách hàng nghìn
+        String normalized = trimmed.replace(".", "").replace(",", "");
+
         try {
-            val = new BigDecimal(normalized);
+            return new BigDecimal(normalized);
         } catch (NumberFormatException e) {
             throw new PromotionValidationException(fieldName + " phải là số hợp lệ!");
         }
-        if (val.compareTo(BigDecimal.ZERO) < 0) {
-            // guard: không bao giờ xảy ra sau regex, nhưng giữ lại cho an toàn
-            throw new PromotionValidationException(fieldName + " không được là số âm!");
-        }
-        return val;
     }
 
     /**
@@ -634,6 +656,29 @@ public class AdminKhuyenMaiService {
         writeEditLog(actingTaiKhoanId, "PhieuGiamGia", saved.getId().longValue(), "INSERT",
                 null, formatVoucherState(saved), ipAddress, "Tạo mới voucher: " + uppercaseCode);
 
+        if (saved.getActive() != null && saved.getActive()) {
+            try {
+                if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            try {
+                                newsletterService.sendVoucherEmailAsync(saved.getId());
+                            } catch (Exception e) {
+                                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
+                                        .error("[Newsletter] Error triggering voucher email after commit for voucher: {}", saved.getId(), e);
+                            }
+                        }
+                    });
+                } else {
+                    newsletterService.sendVoucherEmailAsync(saved.getId());
+                }
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
+                        .error("[Newsletter] Error setting up voucher email notification for voucher: {}", saved.getId(), e);
+            }
+        }
+
         return saved;
     }
 
@@ -855,7 +900,7 @@ public class AdminKhuyenMaiService {
 
         // Validate ngày
         if (start == null || end == null) {
-            throw new PromotionValidationException("Hạn sử dụng (ngày bắt đầu và kết thúc) không được để trống!");
+            throw new PromotionValidationException("Ngày bắt đầu và ngày kết thúc không được để trống!");
         }
         if (start.isAfter(end) || start.isEqual(end)) {
             throw new PromotionValidationException("Ngày bắt đầu phải trước ngày kết thúc!");
