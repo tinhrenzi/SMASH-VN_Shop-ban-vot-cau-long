@@ -932,11 +932,20 @@
                                 body: JSON.stringify({ email: email, gioiTinh: gender })
                             })
                             .then(response => {
-                                return response.json().then(data => ({
-                                    status: response.status,
-                                    ok: response.ok,
-                                    body: data
-                                }));
+                                const contentType = response.headers.get("content-type");
+                                if (contentType && contentType.includes("application/json")) {
+                                    return response.json().then(data => ({
+                                        status: response.status,
+                                        ok: response.ok,
+                                        body: data
+                                    }));
+                                } else {
+                                    return response.text().then(text => ({
+                                        status: response.status,
+                                        ok: false,
+                                        body: { success: false, message: "Lỗi phản hồi từ máy chủ." }
+                                    }));
+                                }
                             })
                             .then(res => {
                                 // Re-enable fields
