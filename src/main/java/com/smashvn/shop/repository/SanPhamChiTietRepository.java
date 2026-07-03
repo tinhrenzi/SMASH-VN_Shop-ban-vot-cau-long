@@ -15,11 +15,20 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     List<SanPhamChiTiet> findTop8ByOrderByIdDesc();
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 
+    @Query("""
+            SELECT spct
+            FROM SanPhamChiTiet spct
+            WHERE spct.sanPham.id = :sanPhamId
+              AND (spct.trangThai IS NULL OR TRIM(spct.trangThai) = '' OR spct.trangThai = 'dang_ban')
+            ORDER BY spct.id ASC
+            """)
+    List<SanPhamChiTiet> findActiveBySanPham_Id(@Param("sanPhamId") Integer sanPhamId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
     Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
 
-    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != ''")
+    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != '' AND (s.trangThai IS NULL OR TRIM(s.trangThai) = '' OR s.trangThai = 'dang_ban')")
     List<String> findDistinctTrongLuong();
 
     @Query("""

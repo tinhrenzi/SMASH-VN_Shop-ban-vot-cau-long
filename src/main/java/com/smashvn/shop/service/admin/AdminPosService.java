@@ -254,8 +254,8 @@ public class AdminPosService {
             SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(item.idSanPhamChiTiet)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể sản phẩm ID: " + item.idSanPhamChiTiet));
 
-            if (!isDangBan(spct.getSanPham().getTrangThai())) {
-                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + "' hiện đã ngưng kinh doanh!");
+            if (!isDangBan(spct.getSanPham().getTrangThai()) || !isDangBan(spct.getTrangThai())) {
+                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + "' hoặc phân loại này hiện đã ngưng kinh doanh!");
             }
 
             if (spct.getSoLuongTon() < item.soLuong) {
@@ -304,7 +304,7 @@ public class AdminPosService {
                 sb.append(" | Trọng lượng: ").append(spct.getTrongLuong());
             }
             if (spct.getMucCang() != null && !spct.getMucCang().trim().isEmpty()) {
-                sb.append(" | Mức căng: ").append(spct.getMucCang());
+                sb.append(" | Sức căng khuyến nghị: ").append(spct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(sb.toString());
 

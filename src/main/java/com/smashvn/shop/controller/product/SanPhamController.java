@@ -48,11 +48,11 @@ public class SanPhamController {
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
         
-        if ("ngung_ban".equals(sanPham.getTrangThai())) {
+        if ("ngung_ban".equals(sanPham.getTrangThai()) || "ngung_kinh_doanh".equals(sanPham.getTrangThai())) {
             return "redirect:/shop?loi=" + java.net.URLEncoder.encode("Sản phẩm này đã ngừng kinh doanh tại cửa hàng!", java.nio.charset.StandardCharsets.UTF_8);
         }
         
-        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
+        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findActiveBySanPham_Id(id);
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
 
         // 1. Lấy danh sách Màu Sắc không trùng lặp
@@ -65,6 +65,11 @@ public class SanPhamController {
                 .map(SanPhamChiTiet::getTrongLuong)
                 .collect(java.util.stream.Collectors.toSet());
 
+        java.util.Set<String> listMucCang = danhSachChiTiet.stream()
+                .map(SanPhamChiTiet::getMucCang)
+                .filter(value -> value != null && !value.trim().isEmpty())
+                .collect(java.util.stream.Collectors.toSet());
+
         // 3. Tạo một list "gọn nhẹ" (Map) chỉ chứa đúng các thông tin JS cần thiết để tránh lỗi đệ quy
         int phanTram = sanPham.getActiveGiamGiaPhanTram();
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
@@ -72,6 +77,7 @@ public class SanPhamController {
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
+            map.put("mucCang", ct.getMucCang());
             map.put("giaBan", ct.getGiaBan());
             map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));
             map.put("phanTramGiam", phanTram);
@@ -90,7 +96,7 @@ public class SanPhamController {
         }
 
         // Tích hợp dữ liệu Đánh giá
-        boolean sanPhamKhaDung = sanPham.getTrangThai() != null && "dang_ban".equals(sanPham.getTrangThai());
+        boolean sanPhamKhaDung = sanPham.getTrangThai() == null || "dang_ban".equals(sanPham.getTrangThai());
         boolean daMuaHang = false;
         boolean daDanhGia = false;
         DanhGia oldDanhGia = null;
@@ -116,6 +122,7 @@ public class SanPhamController {
 
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
+        model.addAttribute("listMucCang", listMucCang);
         model.addAttribute("sp", sanPham);
         model.addAttribute("listChiTiet", danhSachChiTiet);
         model.addAttribute("anhDaiDien", anhDaiDien);
@@ -180,21 +187,26 @@ public class SanPhamController {
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
                 
-        if ("ngung_ban".equals(sanPham.getTrangThai())) {
+        if ("ngung_ban".equals(sanPham.getTrangThai()) || "ngung_kinh_doanh".equals(sanPham.getTrangThai())) {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Sản phẩm này đã ngừng kinh doanh!");
         }
                 
-        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
+        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findActiveBySanPham_Id(id);
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
 
         java.util.Set<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).collect(java.util.stream.Collectors.toSet());
         java.util.Set<String> listKichThuoc = danhSachChiTiet.stream().map(SanPhamChiTiet::getTrongLuong).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<String> listMucCang = danhSachChiTiet.stream()
+                .map(SanPhamChiTiet::getMucCang)
+                .filter(value -> value != null && !value.trim().isEmpty())
+                .collect(java.util.stream.Collectors.toSet());
         int phanTram = sanPham.getActiveGiamGiaPhanTram();
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
+            map.put("mucCang", ct.getMucCang());
             map.put("giaBan", ct.getGiaBan());
             map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));
             map.put("phanTramGiam", phanTram);
@@ -217,6 +229,7 @@ public class SanPhamController {
         model.addAttribute("anhDaiDien", anhDaiDien);
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
+        model.addAttribute("listMucCang", listMucCang);
         model.addAttribute("listBienTheJS", listBienTheJS);
         model.addAttribute("inWishlist", inWishlist);
         model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));

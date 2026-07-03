@@ -68,8 +68,8 @@
                                 <input type="text" name="trongLuong" class="form-control" th:value="${bt.trongLuong}" required maxlength="50">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Mức căng (Vợt)</label>
-                                <input type="text" name="mucCang" class="form-control" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 24 lbs">
+                                <label class="form-label">Sức căng khuyến nghị</label>
+                                <input type="text" name="mucCang" class="form-control" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 20 - 28 lbs hoặc 9.0 - 12.5 kg">
                             </div>
                         </div>
 
@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (mucCangInput && mucCangInput.value.trim().length > 50) {
-            alert("Mức căng không được vượt quá 50 ký tự!");
+            alert("Sức căng khuyến nghị không được vượt quá 50 ký tự!");
             e.preventDefault();
             return;
         }

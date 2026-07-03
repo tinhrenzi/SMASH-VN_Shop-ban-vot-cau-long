@@ -29,7 +29,6 @@ public class AdminBienTheController {
         
         // Lấy danh sách các biến thể của sản phẩm này
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(idSanPham));
-        model.addAttribute("orderedVariantIds", adminBienTheService.layDanhSachBienTheDaDatHang(idSanPham));
         
         return "admin/bienthe-list"; // Trả về file giao diện
     }
@@ -58,23 +57,32 @@ public class AdminBienTheController {
         }
     }
 
-    // 3. Xóa một biến thể (Xóa cứng)
+    // 3. Ẩn một biến thể khỏi khách hàng (xóa mềm)
     @GetMapping("/xoa/{idBienThe}")
     public String xuLyXoaBienThe(@PathVariable("idSanPham") Integer idSanPham, 
                                  @PathVariable("idBienThe") Integer idBienThe,
                                  RedirectAttributes redirectAttributes) {
         try {
             adminBienTheService.xoaBienThe(idBienThe);
-            redirectAttributes.addFlashAttribute("success", "Đã xóa biến thể thành công!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
-        } catch (IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!");
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
         } catch (Exception e) {
-            // Lỗi xảy ra nếu biến thể này đang nằm trong Giỏ hàng hoặc Hóa đơn của khách
-            redirectAttributes.addFlashAttribute("error", "Không thể xóa! Sản phẩm này đang có trong giỏ hàng hoặc hóa đơn của khách.");
+            redirectAttributes.addFlashAttribute("error", "Không thể ẩn biến thể này.");
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
         }
+    }
+
+    @GetMapping("/mo-ban-lai/{idBienThe}")
+    public String xuLyMoBanLaiBienThe(@PathVariable("idSanPham") Integer idSanPham,
+                                      @PathVariable("idBienThe") Integer idBienThe,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            adminBienTheService.moBanLaiBienThe(idBienThe);
+            redirectAttributes.addFlashAttribute("success", "Đã mở bán lại biến thể thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể mở bán lại biến thể này.");
+        }
+        return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
     }
     
     // 4. Hiển thị Form Sửa Biến Thể

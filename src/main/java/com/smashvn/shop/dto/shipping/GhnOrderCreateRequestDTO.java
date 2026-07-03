@@ -25,6 +25,7 @@ public class GhnOrderCreateRequestDTO {
     private Integer length = 70;
     private Integer width = 30;
     private Integer height = 10;
+    private Integer service_id;
     private Integer service_type_id = 2;
     private java.util.List<GhnItemDTO> items;
 

@@ -65,6 +65,17 @@ public class CheckoutController {
     private final SoDiaChiRepository soDiaChiRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private boolean isDangBan(String trangThai) {
+        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
+    }
+
+    private boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
+        return spct != null
+                && spct.getSanPham() != null
+                && isDangBan(spct.getSanPham().getTrangThai())
+                && isDangBan(spct.getTrangThai());
+    }
+
     @GetMapping({"/checkout", "/checkout.html"})
     public String viewCheckout(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
@@ -91,10 +102,9 @@ public class CheckoutController {
 
                 SanPham sp = spct.getSanPham();
                 int tonKho = spct.getSoLuongTon();
-                String trangThai = sp.getTrangThai();
 
-                if (!"dang_ban".equals(trangThai)) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+                if (!isSanPhamChiTietDangBan(spct)) {
+                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
                 }
                 if (tonKho <= 0) {
                     return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
@@ -122,13 +132,12 @@ public class CheckoutController {
                 }
                 SanPham sp = item.getSanPhamChiTiet().getSanPham();
                 int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-                String trangThai = sp.getTrangThai();
 
                 if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
                     return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm trong giỏ hàng không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
                 }
-                if (!"dang_ban".equals(trangThai)) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+                if (!isSanPhamChiTietDangBan(item.getSanPhamChiTiet())) {
+                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
                 }
                 if (tonKho <= 0) {
                     return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);

@@ -39,6 +39,7 @@ public class GhnService {
 
     private static final String API_FEE = "/shiip/public-api/v2/shipping-order/fee";
     private static final String API_CREATE = "/shiip/public-api/v2/shipping-order/create";
+    private static final String API_AVAILABLE_SERVICES = "/shiip/public-api/v2/shipping-order/available-services";
     private static final String API_DETAIL = "/shiip/public-api/v2/shipping-order/detail";
     private static final String API_DISTRICT = "/shiip/public-api/master-data/district";
     private static final String API_WARD = "/shiip/public-api/master-data/ward";
@@ -212,15 +213,18 @@ public class GhnService {
      */
     public BigDecimal calculateShipFee(Integer toDistrictId, String toWardCode, Integer insuranceValue) {
         try {
+            GhnServiceInfo serviceInfo = resolveAvailableService(getGhnShopId(), ghnConfig.getFromDistrictId(), toDistrictId);
             GhnShipFeeRequestDTO req = new GhnShipFeeRequestDTO();
             req.setFromDistrictId(ghnConfig.getFromDistrictId());
             req.setFromWardCode(ghnConfig.getFromWardCode());
             req.setToDistrictId(toDistrictId);
             req.setToWardCode(toWardCode);
             req.setInsuranceValue(insuranceValue);
+            req.setServiceId(serviceInfo.getServiceId());
+            req.setServiceTypeId(serviceInfo.getServiceTypeId());
 
             String url = ghnConfig.getBaseUrl() + API_FEE;
-            HttpEntity<GhnShipFeeRequestDTO> request = new HttpEntity<>(req, buildSimpleHeaders());
+            HttpEntity<GhnShipFeeRequestDTO> request = new HttpEntity<>(req, buildHeaders());
 
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
             Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
@@ -239,6 +243,75 @@ public class GhnService {
         }
         // Fallback: 30,000đ
         return new BigDecimal("30000");
+    }
+
+    @SuppressWarnings("unchecked")
+    private GhnServiceInfo resolveAvailableService(String shopId, Integer fromDistrictId, Integer toDistrictId) {
+        if (fromDistrictId == null || toDistrictId == null) {
+            throw new IllegalArgumentException("Thiếu quận/huyện gửi hoặc nhận để kiểm tra dịch vụ GHN.");
+        }
+
+        try {
+            Map<String, Object> body = Map.of(
+                    "shop_id", Integer.valueOf(shopId),
+                    "from_district", fromDistrictId,
+                    "to_district", toDistrictId
+            );
+            String url = ghnConfig.getBaseUrl() + API_AVAILABLE_SERVICES;
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildSimpleHeaders());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+            Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+            Integer code = response.get("code") instanceof Number ? ((Number) response.get("code")).intValue() : null;
+            if (code != null && code == 200) {
+                List<Map<String, Object>> services = (List<Map<String, Object>>) response.get("data");
+                if (services != null && !services.isEmpty()) {
+                    Map<String, Object> selected = services.stream()
+                            .filter(s -> intValue(s.get("service_type_id")) != null && intValue(s.get("service_type_id")) == 2)
+                            .findFirst()
+                            .orElse(services.get(0));
+                    Integer serviceId = intValue(selected.get("service_id"));
+                    Integer serviceTypeId = intValue(selected.get("service_type_id"));
+                    if (serviceId != null || serviceTypeId != null) {
+                        log.debug("GHN service selected for route {} -> {}: service_id={}, service_type_id={}",
+                                fromDistrictId, toDistrictId, serviceId, serviceTypeId);
+                        return new GhnServiceInfo(serviceId, serviceTypeId != null ? serviceTypeId : 2);
+                    }
+                }
+            }
+
+            String msg = response.get("message") != null ? response.get("message").toString() : "Không có dịch vụ khả dụng";
+            throw new IllegalArgumentException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String msg = e.getResponseBodyAsString();
+            try {
+                Map<String, Object> response = objectMapper.readValue(msg, new TypeReference<>() {});
+                if (response.get("message") != null) {
+                    msg = response.get("message").toString();
+                }
+            } catch (Exception ignored) {
+                // Keep raw response body.
+            }
+            throw new IllegalArgumentException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+        } catch (Exception e) {
+            log.warn("GHN available-services lookup failed for shop {}, route {} -> {}: {}", shopId, fromDistrictId, toDistrictId, e.getMessage());
+            return new GhnServiceInfo(null, 2);
+        }
+    }
+
+    private Integer intValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value != null) {
+            try {
+                return Integer.valueOf(value.toString());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -364,6 +437,9 @@ public class GhnService {
         req.setTo_address(hoaDon.getDiaChiNhan());
         req.setTo_district_id(toDistrictId);
         req.setTo_ward_code(toWardCode);
+        GhnServiceInfo serviceInfo = resolveAvailableService(shopId, req.getFrom_district_id(), toDistrictId);
+        req.setService_id(serviceInfo.getServiceId());
+        req.setService_type_id(serviceInfo.getServiceTypeId());
 
         // COD amount = 0 nếu đã thanh toán online
         boolean isOnlinePaid = "PAID".equals(hoaDon.getPaymentStatus()) || "ZaloPay".equalsIgnoreCase(hoaDon.getPaymentMethod());
@@ -510,6 +586,13 @@ public class GhnService {
             log.error("GHN getWards error: {}", e.getMessage());
         }
         return List.of();
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class GhnServiceInfo {
+        private Integer serviceId;
+        private Integer serviceTypeId;
     }
 
     @Data

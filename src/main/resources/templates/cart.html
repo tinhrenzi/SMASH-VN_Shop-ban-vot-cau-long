@@ -62,7 +62,9 @@
                                         <tbody>
                                             <tr th:each="item : ${danhSachCart}" 
 											    th:with="hetHang=${item.sanPhamChiTiet.soLuongTon == 0}, 
-											             ngungBan=${item.sanPhamChiTiet.sanPham.trangThai == 'ngung_kinh_doanh'},
+											             ngungBanSanPham=${item.sanPhamChiTiet.sanPham.trangThai == 'ngung_kinh_doanh' or item.sanPhamChiTiet.sanPham.trangThai == 'ngung_ban'},
+											             ngungBanBienThe=${item.sanPhamChiTiet.trangThai == 'ngung_kinh_doanh' or item.sanPhamChiTiet.trangThai == 'ngung_ban'},
+											             ngungBan=${ngungBanSanPham or ngungBanBienThe},
 											             khongHopLe=${hetHang or ngungBan}"
 											    th:classappend="${khongHopLe} ? 'opacity-50 bg-light' : ''">
 											    
@@ -78,7 +80,7 @@
 											                <span class="table-p__category" th:if="${item.sanPhamChiTiet.sanPham.danhMuc != null}">
 											                    <a th:href="@{#}" th:text="${item.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc}">Danh Mục</a>
 											                </span>
-											                <div class="cart-product__variants u-s-m-t-8" th:if="${(item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()) or (item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty())}">
+											                <div class="cart-product__variants u-s-m-t-8" th:if="${(item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()) or (item.sanPhamChiTiet.trongLuong != null and !item.sanPhamChiTiet.trongLuong.trim().isEmpty()) or (item.sanPhamChiTiet.mucCang != null and !item.sanPhamChiTiet.mucCang.trim().isEmpty())}">
 											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.mauSac != null and !item.sanPhamChiTiet.mauSac.trim().isEmpty()}">
 											                        <i class="fas fa-palette"></i>
 											                        <span class="badge-label">Màu sắc:</span>
@@ -89,10 +91,15 @@
 											                        <span class="badge-label">Size:</span>
 											                        <strong th:text="${item.sanPhamChiTiet.trongLuong}">Size</strong>
 											                    </span>
+											                    <span class="cart-variant-badge" th:if="${item.sanPhamChiTiet.mucCang != null and !item.sanPhamChiTiet.mucCang.trim().isEmpty()}">
+											                        <i class="fas fa-gauge-high"></i>
+											                        <span class="badge-label">Sức căng khuyến nghị:</span>
+											                        <strong th:text="${item.sanPhamChiTiet.mucCang}">20 - 28 lbs</strong>
+											                    </span>
 											                </div>
 											                
 											                <div th:if="${ngungBan}" class="text-danger fw-bold u-s-m-t-8">
-											                    <i class="fas fa-exclamation-circle"></i> Sản phẩm đã ngừng kinh doanh
+											                    <i class="fas fa-exclamation-circle"></i> Sản phẩm hoặc phân loại đã ngừng kinh doanh
 											                </div>
 											                <div th:if="${hetHang and !ngungBan}" class="text-warning fw-bold u-s-m-t-8">
 											                    <i class="fas fa-exclamation-circle"></i> Phân loại này tạm hết hàng

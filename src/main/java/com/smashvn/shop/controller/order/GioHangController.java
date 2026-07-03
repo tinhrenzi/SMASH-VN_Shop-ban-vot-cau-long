@@ -30,6 +30,17 @@ public class GioHangController {
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TaiKhoanRepository taiKhoanRepository;
 
+    private boolean isDangBan(String trangThai) {
+        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
+    }
+
+    private boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
+        return spct != null
+                && spct.getSanPham() != null
+                && isDangBan(spct.getSanPham().getTrangThai())
+                && isDangBan(spct.getTrangThai());
+    }
+
     // HÀM 1: THÊM VÀO GIỎ (Dùng cho AJAX)
     @PostMapping("/them")
     @ResponseBody
@@ -117,9 +128,7 @@ public class GioHangController {
 
                 SanPham sp = spct.getSanPham();
                 int tonKho = spct.getSoLuongTon();
-                String trangThai = sp.getTrangThai();
-
-                boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+                boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(spct) && item.getSoLuong() != null && item.getSoLuong() > 0;
                 if (hopLe) {
                     BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
                     tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
@@ -131,9 +140,7 @@ public class GioHangController {
             for (GioHangChiTiet item : danhSachChiTiet) {
                 SanPham sp = item.getSanPhamChiTiet().getSanPham();
                 int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-                String trangThai = sp.getTrangThai();
-
-                boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+                boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(item.getSanPhamChiTiet()) && item.getSoLuong() != null && item.getSoLuong() > 0;
                 if (hopLe) {
                     BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
                     tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));

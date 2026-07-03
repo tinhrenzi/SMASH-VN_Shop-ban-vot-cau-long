@@ -26,7 +26,7 @@ public class SanPhamChiTiet {
     @Column(name = "mau_sac", nullable = false, length = 50, columnDefinition = "NVARCHAR(50)")
     private String mauSac;
 
-    @Column(name = "muc_cang", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(name = "muc_cang", length = 50, columnDefinition = "NVARCHAR(50)")
     private String mucCang;
 
     @Column(name = "trong_luong", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")

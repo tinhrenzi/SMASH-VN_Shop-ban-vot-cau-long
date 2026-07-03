@@ -33,6 +33,17 @@ public class GuestCartService {
     private final TrangThaiGioHangRepository trangThaiGioHangRepository;
     private final PricingService pricingService;
 
+    private boolean isDangBan(String trangThai) {
+        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
+    }
+
+    private boolean isSanPhamChiTietDangBan(SanPhamChiTiet spct) {
+        return spct != null
+                && spct.getSanPham() != null
+                && isDangBan(spct.getSanPham().getTrangThai())
+                && isDangBan(spct.getTrangThai());
+    }
+
     public static class GuestCartItem implements Serializable {
         private static final long serialVersionUID = 1L;
         private Integer idSanPhamChiTiet;
@@ -84,6 +95,9 @@ public class GuestCartService {
 
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+        if (!isSanPhamChiTietDangBan(spct)) {
+            throw new RuntimeException("Phân loại sản phẩm này đã ngừng bán!");
+        }
 
         List<GuestCartItem> cart = getGuestCartItems(session);
         GuestCartItem existingItem = null;
@@ -129,6 +143,9 @@ public class GuestCartService {
 
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+        if (!isSanPhamChiTietDangBan(spct)) {
+            throw new RuntimeException("Phân loại sản phẩm này đã ngừng bán!");
+        }
 
         if (spct.getSoLuongTon() < soLuongMoi) {
             throw new RuntimeException("Số lượng tồn kho không đủ! Chỉ còn " + spct.getSoLuongTon() + " sản phẩm.");
@@ -176,9 +193,7 @@ public class GuestCartService {
 
             SanPham sp = spct.getSanPham();
             int tonKho = spct.getSoLuongTon();
-            String trangThai = sp.getTrangThai();
-
-            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+            boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(spct) && item.getSoLuong() != null && item.getSoLuong() > 0;
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(spct);
 
             if (hopLe) {
@@ -237,6 +252,9 @@ public class GuestCartService {
             // Khóa dòng sản phẩm bằng Pessimistic Write Lock để chống race condition
             SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(item.getIdSanPhamChiTiet())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại: ID " + item.getIdSanPhamChiTiet()));
+            if (!isSanPhamChiTietDangBan(lockedSpct)) {
+                throw new RuntimeException("Phân loại sản phẩm '" + lockedSpct.getSanPham().getTenSanPham() + "' đã ngừng bán!");
+            }
 
             GioHangChiTiet chiTiet = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(gioHang.getId(), item.getIdSanPhamChiTiet());
 

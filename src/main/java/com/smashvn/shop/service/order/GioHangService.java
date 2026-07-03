@@ -77,6 +77,17 @@ public class GioHangService {
     private final PricingService pricingService;
     private final TaiKhoanRepository taiKhoanRepository;
 
+    private boolean isDangBan(String trangThai) {
+        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
+    }
+
+    private boolean isSanPhamChiTietDangBan(SanPhamChiTiet spct) {
+        return spct != null
+                && spct.getSanPham() != null
+                && isDangBan(spct.getSanPham().getTrangThai())
+                && isDangBan(spct.getTrangThai());
+    }
+
     private KhachHang getOrCreateKhachHang(Integer idTaiKhoan) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
@@ -121,8 +132,8 @@ public class GioHangService {
         SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
-        if (spct.getSanPham() == null || "ngung_ban".equals(spct.getSanPham().getTrangThai())) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Sản phẩm này đã ngừng bán!");
+        if (!isSanPhamChiTietDangBan(spct)) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Phân loại sản phẩm này đã ngừng bán!");
         }
 
         // --- BÀI TOÁN VALIDATE TỒN KHO THỰC TẾ ---
@@ -196,9 +207,7 @@ public class GioHangService {
         for (GioHangChiTiet item : danhSach) {
             SanPham sp = item.getSanPhamChiTiet().getSanPham();
             int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-            String trangThai = sp.getTrangThai();
-
-            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+            boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(item.getSanPhamChiTiet()) && item.getSoLuong() != null && item.getSoLuong() > 0;
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(item.getSanPhamChiTiet());
 
             if (hopLe) {
@@ -420,10 +429,9 @@ public class GioHangService {
 
             SanPham sp = lockedSpct.getSanPham();
             int tonKho = lockedSpct.getSoLuongTon();
-            String trangThai = sp.getTrangThai();
-            boolean hopLe = item.getSoLuong() != null && item.getSoLuong() > 0 && tonKho >= item.getSoLuong() && (trangThai == null || "dang_ban".equals(trangThai));
+            boolean hopLe = item.getSoLuong() != null && item.getSoLuong() > 0 && tonKho >= item.getSoLuong() && isSanPhamChiTietDangBan(lockedSpct);
             if (!hopLe) {
-                throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc đã ngưng kinh doanh!");
+                throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc phân loại đã ngưng kinh doanh!");
             }
             BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(lockedSpct);
             tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
@@ -590,7 +598,7 @@ public class GioHangService {
                 sb.append(" | Trọng lượng: ").append(lockedSpct.getTrongLuong());
             }
             if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().trim().isEmpty()) {
-                sb.append(" | Mức căng: ").append(lockedSpct.getMucCang());
+                sb.append(" | Sức căng khuyến nghị: ").append(lockedSpct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(sb.toString());
             

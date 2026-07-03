@@ -852,7 +852,7 @@
                         <img src="${imgUrl}" alt="${v.tenSanPham}" onerror="this.src='/images/preloader.png'" loading="lazy">
                     </div>
                     <div class="product-name" title="${v.tenSanPham}">${v.tenSanPham}</div>
-                    <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · ${v.mucCang}</div>
+                    <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | Sức căng khuyến nghị: ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · Sức căng khuyến nghị: ${v.mucCang}</div>
                     ${saleNameHtml}
                     ${originalPriceHtml}
                     <div class="product-price mb-1">${formatVND(v.giaBan)}</div>
@@ -1025,7 +1025,7 @@
                 <img src="${imgUrl}" alt="${item.tenSanPham}" onerror="this.src='/images/preloader.png'">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.tenSanPham}</div>
-                    <div class="product-attr">${item.mauSac} | ${item.trongLuong} | ${item.mucCang}</div>
+                    <div class="product-attr">${item.mauSac} | ${item.trongLuong} | Sức căng khuyến nghị: ${item.mucCang}</div>
                     ${cartDiscountHtml}
                     <div class="cart-item-price">${formatVND(item.giaBan)}</div>
                 </div>

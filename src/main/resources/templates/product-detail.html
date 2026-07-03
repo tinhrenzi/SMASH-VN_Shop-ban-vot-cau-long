@@ -276,6 +276,15 @@
                                                                 </td>
                                                             </tr>
                                                             <tr>
+                                                                <td>Sức căng khuyến nghị</td>
+                                                                <td>
+                                                                    <th:block th:if="${listMucCang != null and !listMucCang.isEmpty()}">
+                                                                        <span th:each="cang, iterStat : ${listMucCang}"><span th:text="${cang}"></span><span th:if="${!iterStat.last}">, </span></span>
+                                                                    </th:block>
+                                                                    <span th:if="${listMucCang == null or listMucCang.isEmpty()}">Chưa có thông tin</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
                                                                 <td>Đối tượng sử dụng</td>
                                                                 <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
                                                             </tr>

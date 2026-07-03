@@ -17,7 +17,6 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
-import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.util.RacketSpecUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,9 @@ public class AdminBienTheService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
-    private final HoaDonChiTietRepository hoaDonChiTietRepository;
+
+    private static final String TRANG_THAI_DANG_BAN = "dang_ban";
+    private static final String TRANG_THAI_NGUNG_KINH_DOANH = "ngung_kinh_doanh";
 
     @Value("${app.upload.path}")
     private String uploadPathConfig;
@@ -51,7 +52,7 @@ public class AdminBienTheService {
         // Trim and validate input values
         String cleanMauSac = mauSac != null ? mauSac.trim() : null;
         String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
+        String cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
 
@@ -61,7 +62,7 @@ public class AdminBienTheService {
                         && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
                         && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
         if (exists) {
-            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và mức căng này đã tồn tại!");
+            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và sức căng khuyến nghị này đã tồn tại!");
         }
 
         // Save image securely (required on creation)
@@ -74,22 +75,27 @@ public class AdminBienTheService {
         spct.setMauSac(cleanMauSac);
         spct.setTrongLuong(cleanTrongLuong);
         spct.setMucCang(cleanMucCang);
+        spct.setTrangThai(TRANG_THAI_DANG_BAN);
         spct.setHinhAnhSanPham(secureFileName);
 
         sanPhamChiTietRepository.save(spct);
     }
 
-    // 3. Xóa biến thể
+    // 3. Ẩn biến thể khỏi khách hàng (xóa mềm)
     @Transactional
     public void xoaBienThe(Integer idBienThe) {
-        if (hoaDonChiTietRepository.existsBySanPhamChiTiet_Id(idBienThe)) {
-            throw new IllegalStateException("Không thể xóa biến thể này vì đã có khách hàng đặt mua biến thể này trong đơn hàng!");
-        }
-        sanPhamChiTietRepository.deleteById(idBienThe);
+        SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể này"));
+        spct.setTrangThai(TRANG_THAI_NGUNG_KINH_DOANH);
+        sanPhamChiTietRepository.save(spct);
     }
 
-    public java.util.Set<Integer> layDanhSachBienTheDaDatHang(Integer idSanPham) {
-        return new java.util.HashSet<>(hoaDonChiTietRepository.findOrderedVariantIdsBySanPhamId(idSanPham));
+    @Transactional
+    public void moBanLaiBienThe(Integer idBienThe) {
+        SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể này"));
+        spct.setTrangThai(TRANG_THAI_DANG_BAN);
+        sanPhamChiTietRepository.save(spct);
     }
 
     // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa
@@ -109,7 +115,7 @@ public class AdminBienTheService {
         // Trim and validate input values
         String cleanMauSac = mauSac != null ? mauSac.trim() : null;
         String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = RacketSpecUtils.normalizeStringTensionToLbs(mucCang);
+        String cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
 
         validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
 
@@ -120,7 +126,7 @@ public class AdminBienTheService {
                         && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
                         && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
         if (exists) {
-            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và mức căng này đã tồn tại!");
+            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và sức căng khuyến nghị này đã tồn tại!");
         }
 
         spct.setGiaBan(giaBan);
@@ -172,7 +178,7 @@ public class AdminBienTheService {
             throw new IllegalArgumentException("Trọng lượng / Size không được vượt quá 50 ký tự.");
         }
         if (mucCang != null && mucCang.length() > 50) {
-            throw new IllegalArgumentException("Mức căng không được vượt quá 50 ký tự.");
+            throw new IllegalArgumentException("Sức căng khuyến nghị không được vượt quá 50 ký tự.");
         }
     }
 

@@ -2,6 +2,7 @@ package com.smashvn.shop.controller.api;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SearchApiController {
     private final SanPhamRepository sanPhamRepository;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final DanhMucRepository danhMucRepository;
     private final ThuongHieuRepository thuongHieuRepository;
 
@@ -45,8 +47,9 @@ public class SearchApiController {
             map.put("tenSanPham", sp.getTenSanPham());
             map.put("thuongHieu", sp.getThuongHieu() != null ? sp.getThuongHieu().getTenThuongHieu() : "");
             map.put("danhMuc", sp.getDanhMuc() != null ? sp.getDanhMuc().getTenDanhMuc() : "");
-            if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
-                var first = sp.getSanPhamChiTiets().get(0);
+            var activeVariants = sanPhamChiTietRepository.findActiveBySanPham_Id(sp.getId());
+            if (!activeVariants.isEmpty()) {
+                var first = activeVariants.get(0);
                 map.put("hinhAnh", first.getHinhAnhSanPham());
                 map.put("giaBan", first.getGiaBan());
                 map.put("giaSauGiam", sp.getGiaSauGiam(first.getGiaBan()));
@@ -90,8 +93,9 @@ public class SearchApiController {
                 map.put("tenSanPham", sp.getTenSanPham());
                 map.put("thuongHieu", sp.getThuongHieu() != null ? sp.getThuongHieu().getTenThuongHieu() : "");
                 map.put("danhMuc", sp.getDanhMuc() != null ? sp.getDanhMuc().getTenDanhMuc() : "");
-                if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
-                    var first = sp.getSanPhamChiTiets().get(0);
+                var activeVariants = sanPhamChiTietRepository.findActiveBySanPham_Id(sp.getId());
+                if (!activeVariants.isEmpty()) {
+                    var first = activeVariants.get(0);
                     map.put("hinhAnh", first.getHinhAnhSanPham());
                     map.put("giaBan", first.getGiaBan());
                     map.put("giaSauGiam", sp.getGiaSauGiam(first.getGiaBan()));

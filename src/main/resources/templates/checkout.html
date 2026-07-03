@@ -405,7 +405,11 @@
                                                                 <div>
                                                                     <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}" style="font-weight: 600; color: #1e293b; display: block; line-height: 1.4;">Tên Vợt</span>
                                                                     <div style="margin-top: 2px;">
-                                                                        <small class="text-muted" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}"></small>
+                                                                        <small class="text-muted">
+                                                                            <span th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">Đỏ | 4U</span>
+                                                                            <span th:if="${item.sanPhamChiTiet.mucCang != null and !#strings.isEmpty(item.sanPhamChiTiet.mucCang)}"
+                                                                                  th:text="' | Sức căng khuyến nghị: ' + ${item.sanPhamChiTiet.mucCang}"> | Sức căng khuyến nghị: 20 - 28 lbs</span>
+                                                                        </small>
                                                                         <strong th:text="' x ' + ${item.soLuong}" style="color: #64748b; font-size: 12px; margin-left: 4px;">x 1</strong>
                                                                     </div>
                                                                 </div>

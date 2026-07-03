@@ -6,28 +6,32 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RacketSpecUtilsTest {
 
     @Test
-    void testFormatTensionRange_SuccessLbs() {
-        String result = RacketSpecUtils.formatTensionRange("20", "28");
+    void sanitizeRecommendedTension_keepsLbsRange() {
+        String result = RacketSpecUtils.sanitizeRecommendedTension(" 20 - 28 lbs ");
         assertEquals("20 - 28 lbs", result);
     }
 
     @Test
-    void testFormatTensionRange_SuccessKgToLbs() {
-        String result = RacketSpecUtils.formatTensionRange("9 kg", "12.5 kg");
-        assertEquals("19.8 - 27.6 lbs", result);
+    void sanitizeRecommendedTension_keepsKgRange() {
+        String result = RacketSpecUtils.sanitizeRecommendedTension("9.0 - 12.5 kg");
+        assertEquals("9.0 - 12.5 kg", result);
     }
 
     @Test
-    void testFormatTensionRange_MinGreaterThanMax_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            RacketSpecUtils.formatTensionRange("28", "20");
-        });
+    void sanitizeRecommendedTension_allowsBlank() {
+        assertEquals("", RacketSpecUtils.sanitizeRecommendedTension("   "));
+        assertEquals("", RacketSpecUtils.sanitizeRecommendedTension(null));
     }
 
     @Test
-    void testFormatTensionRange_InvalidTension_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            RacketSpecUtils.formatTensionRange("abc", "28");
-        });
+    void sanitizeRecommendedTension_rejectsDangerousCharacters() {
+        assertThrows(IllegalArgumentException.class,
+                () -> RacketSpecUtils.sanitizeRecommendedTension("<script>"));
+    }
+
+    @Test
+    void sanitizeRecommendedTension_rejectsTooLongValue() {
+        assertThrows(IllegalArgumentException.class,
+                () -> RacketSpecUtils.sanitizeRecommendedTension("a".repeat(51)));
     }
 }

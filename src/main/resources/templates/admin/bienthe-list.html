@@ -75,8 +75,8 @@
                                 <input type="text" name="trongLuong" class="form-control" required maxlength="50" placeholder="VD: 3U / 4U / Size 42">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Mức căng (Vợt)</label>
-                                <input type="text" name="mucCang" class="form-control" maxlength="50" placeholder="VD: 24 lbs (Trống nếu là Giày)">
+                                <label class="form-label">Sức căng khuyến nghị</label>
+                                <input type="text" name="mucCang" class="form-control" maxlength="50" placeholder="VD: 20 - 28 lbs hoặc 9.0 - 12.5 kg">
                             </div>
                         </div>
                         <button type="submit" class="btn btn-success px-4 shadow-sm"><i class="fas fa-save"></i> LƯU BIẾN THỂ NÀY</button>
@@ -86,7 +86,7 @@
 
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-dark text-white fw-bold py-3">
-                    <h5 class="mb-0 text-white"><i class="fas fa-list me-2 text-brand"></i>Các Phân Loại Biến Thể Đang Kinh Doanh</h5>
+                    <h5 class="mb-0 text-white"><i class="fas fa-list me-2 text-brand"></i>Các Phân Loại Biến Thể</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive border-0 shadow-none">
@@ -99,11 +99,12 @@
                                     <th>Thông số (Màu - Size - Căng)</th>
                                     <th>Giá Bán</th>
                                     <th>Tồn Kho</th>
+                                    <th>Trạng Thái</th>
                                     <th class="text-center">Hành Động</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="bt, iterStat : ${danhSachBienThe}">
+                                <tr th:each="bt, iterStat : ${danhSachBienThe}" th:classappend="${bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban'} ? 'table-secondary' : ''">
                                      <td class="text-center" th:text="${iterStat.count}">1</td>
                                      <td class="text-muted fw-bold" style="font-family: monospace; font-size: 0.9rem;" th:text="'#' + ${bt.id}">#1</td>
                                      <td class="text-center">
@@ -112,31 +113,40 @@
                                      </td>
                                     <td>
                                         <strong class="text-primary fs-6" th:text="${bt.mauSac}">Đỏ</strong><br>
-                                        <small class="text-muted fw-semibold" th:text="'Trọng lượng: ' + ${bt.trongLuong} + ' | Mức căng: ' + ${bt.mucCang}">Size</small>
+                                        <small class="text-muted fw-semibold">
+                                            <span th:text="'Trọng lượng: ' + ${bt.trongLuong}">Trọng lượng: 4U</span>
+                                            <span th:if="${bt.mucCang != null and !#strings.isEmpty(bt.mucCang)}" th:text="' | Sức căng khuyến nghị: ' + ${bt.mucCang}"> | Sức căng khuyến nghị: 20 - 28 lbs</span>
+                                        </small>
                                     </td>
                                     <td class="text-danger fw-bold fs-6" th:text="${#numbers.formatDecimal(bt.giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá</td>
                                     <td>
                                         <span class="badge bg-info text-dark fw-bold" th:text="${bt.soLuongTon} + ' chiếc'">10</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban'}" class="badge bg-success py-2 px-3">Đang bán</span>
+                                        <span th:if="${bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban'}" class="badge bg-danger py-2 px-3">Đã ẩn</span>
                                     </td>
                                     <td class="text-center">
                                         <a th:href="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" 
                                            class="btn btn-sm btn-warning" title="Sửa Biến Thể">
                                             <i class="fas fa-edit"></i> Sửa
                                         </a>
-                                        <span th:if="${orderedVariantIds.contains(bt.id)}" class="d-inline-block" data-bs-toggle="tooltip" title="Không thể xóa biến thể này vì đã có khách hàng đặt mua trong đơn hàng">
-                                            <button class="btn btn-sm btn-danger ms-1" disabled style="opacity: 0.6; cursor: not-allowed;">
-                                                <i class="fas fa-trash-alt"></i> Xóa
-                                            </button>
-                                        </span>
-                                        <a th:unless="${orderedVariantIds.contains(bt.id)}" th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" 
-                                           class="btn btn-sm btn-danger ms-1" title="Xóa Biến Thể"
-                                           onclick="return confirm('Xóa phân loại này?');">
-                                            <i class="fas fa-trash-alt"></i> Xóa
+                                        <a th:if="${bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban'}"
+                                           th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
+                                           class="btn btn-sm btn-danger ms-1" title="Ẩn Biến Thể"
+                                           onclick="return confirm('Ẩn phân loại này khỏi khách hàng? Admin vẫn có thể mở bán lại sau.');">
+                                            <i class="fas fa-eye-slash"></i> Ẩn
+                                        </a>
+                                        <a th:if="${bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban'}"
+                                           th:href="@{/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
+                                           class="btn btn-sm btn-success ms-1" title="Mở Bán Lại"
+                                           onclick="return confirm('Mở bán lại phân loại này?');">
+                                            <i class="fas fa-undo"></i> Mở lại
                                         </a>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachBienThe.isEmpty()}">
-                                    <td colspan="7" class="text-center text-muted py-4">Chưa có phân loại nào cho sản phẩm này. Hãy thêm ở form phía trên.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Chưa có phân loại nào cho sản phẩm này. Hãy thêm ở form phía trên.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -228,7 +238,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (mucCangInput && mucCangInput.value.trim().length > 50) {
-            alert("Mức căng không được vượt quá 50 ký tự!");
+            alert("Sức căng khuyến nghị không được vượt quá 50 ký tự!");
             e.preventDefault();
             return;
         }

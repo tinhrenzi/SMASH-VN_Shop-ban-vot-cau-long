@@ -167,7 +167,7 @@ public class AdminBienTheIntegrationTest {
                         .param("soLuongTon", "10")
                         .param("mauSac", "Đỏ")
                         .param("trongLuong", "4U")
-                        .param("mucCang", "11kg")
+                        .param("mucCang", "20 - 28 lbs")
                         .sessionAttr("vaiTro", "QL")
                         .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
@@ -182,7 +182,7 @@ public class AdminBienTheIntegrationTest {
         assertEquals(10, saved.getSoLuongTon());
         assertEquals("Đỏ", saved.getMauSac());
         assertEquals("4U", saved.getTrongLuong());
-        assertEquals("24.3 lbs", saved.getMucCang());
+        assertEquals("20 - 28 lbs", saved.getMucCang());
         assertNotNull(saved.getHinhAnhSanPham());
         assertTrue(saved.getHinhAnhSanPham().endsWith(".png"));
     }
@@ -466,7 +466,7 @@ public class AdminBienTheIntegrationTest {
                         .param("soLuongTon", "15")
                         .param("mauSac", "Yellow")
                         .param("trongLuong", "4U")
-                        .param("mucCang", "12kg")
+                        .param("mucCang", "9.0 - 12.5 kg")
                         .sessionAttr("vaiTro", "QL")
                         .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
@@ -478,7 +478,7 @@ public class AdminBienTheIntegrationTest {
         assertEquals(15, updated.getSoLuongTon());
         assertEquals("Yellow", updated.getMauSac());
         assertEquals("4U", updated.getTrongLuong());
-        assertEquals("26.5 lbs", updated.getMucCang());
+        assertEquals("9.0 - 12.5 kg", updated.getMucCang());
         // Verify image remained unchanged
         assertEquals(oldImage, updated.getHinhAnhSanPham());
 
@@ -513,9 +513,9 @@ public class AdminBienTheIntegrationTest {
                 .andExpect(flash().attribute("error", "Màu sắc không được vượt quá 50 ký tự."));
     }
 
-    // 15. SUCCESS & ERROR: Deletion of variant with and without orders
+    // 15. SUCCESS: Hiding and reopening variants keeps records for order history
     @Test
-    void testDeleteVariant_OrderedVariantCannotBeDeleted() throws Exception {
+    void testHideVariant_OrderedVariantIsSoftDeletedAndCanBeReopened() throws Exception {
         // 1. Create a variant
         byte[] imgBytes = createValidImageBytes();
         MockMultipartFile file = new MockMultipartFile("fileAnh", "test.png", "image/png", imgBytes);
@@ -594,18 +594,28 @@ public class AdminBienTheIntegrationTest {
         hdct.setSoTienGiamSanPham(BigDecimal.ZERO);
         hoaDonChiTietRepository.save(hdct);
 
-        // 3. Attempt to delete variant - should fail and redirect with error
+        // 3. Hide ordered variant - should keep database record and only change status
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/xoa/{idBT}", spId, bt.getId())
                         .sessionAttr("vaiTro", "QL")
                         .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Không thể xóa biến thể này vì đã có khách hàng đặt mua biến thể này trong đơn hàng!"));
+                .andExpect(flash().attribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!"));
 
-        // Verify variant still exists
-        assertTrue(sanPhamChiTietRepository.findById(bt.getId()).isPresent());
+        SanPhamChiTiet hiddenOrderedVariant = sanPhamChiTietRepository.findById(bt.getId()).orElseThrow();
+        assertEquals("ngung_kinh_doanh", hiddenOrderedVariant.getTrangThai());
 
-        // 4. Try deleting a variant that is NOT ordered - should succeed
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}", spId, bt.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("laQuanLy", true)
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("success", "Đã mở bán lại biến thể thành công!"));
+
+        SanPhamChiTiet reopenedOrderedVariant = sanPhamChiTietRepository.findById(bt.getId()).orElseThrow();
+        assertEquals("dang_ban", reopenedOrderedVariant.getTrangThai());
+
+        // 4. Hide a variant that is NOT ordered - should also keep the record
         // Let's create another variant
         MockMultipartFile file2 = new MockMultipartFile("fileAnh", "test2.png", "image/png", imgBytes);
         mockMvc.perform(multipart("/admin/san-pham/{idSP}/bien-the/them", spId)
@@ -628,10 +638,10 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("success", "Đã xóa biến thể thành công!"));
+                .andExpect(flash().attribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!"));
 
-        // Verify variant 2 is deleted
-        assertFalse(sanPhamChiTietRepository.findById(bt2.getId()).isPresent());
+        SanPhamChiTiet hiddenVariant = sanPhamChiTietRepository.findById(bt2.getId()).orElseThrow();
+        assertEquals("ngung_kinh_doanh", hiddenVariant.getTrangThai());
 
         // Clean up physical file for first variant
         Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
@@ -639,6 +649,10 @@ public class AdminBienTheIntegrationTest {
         Path savedFile = productUploadPath.resolve(bt.getHinhAnhSanPham());
         if (Files.exists(savedFile)) {
             Files.delete(savedFile);
+        }
+        Path savedFile2 = productUploadPath.resolve(bt2.getHinhAnhSanPham());
+        if (Files.exists(savedFile2)) {
+            Files.delete(savedFile2);
         }
     }
 }

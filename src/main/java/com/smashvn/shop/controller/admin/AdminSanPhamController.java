@@ -35,7 +35,6 @@ public class AdminSanPhamController {
     // Các thuộc tính thuộc phân loại vợt cầu lông
     private final List<String> listMauSacConfig = List.of("Đỏ", "Xanh dương", "Đen", "Trắng", "Vàng", "Cam");
     private final List<String> listTrongLuongConfig = List.of("3U", "4U", "5U");
-    private final List<String> listMucCangConfig = List.of("23 lbs", "24 lbs", "25 lbs", "26 lbs", "28 lbs");
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
@@ -51,8 +50,6 @@ public class AdminSanPhamController {
         // Đổ động thuộc tính ra Model phục vụ checkbox
         model.addAttribute("listMauSac", listMauSacConfig);
         model.addAttribute("listTrongLuong", listTrongLuongConfig);
-        model.addAttribute("listMucCang", listMucCangConfig);
-
         return "admin/sanpham-add";
     }
 
@@ -67,8 +64,7 @@ public class AdminSanPhamController {
             @RequestParam("fileAnh") MultipartFile fileAnh,
             @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
             @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
-            @RequestParam(value = "minTension", required = false) String minTension,
-            @RequestParam(value = "maxTension", required = false) String maxTension,
+            @RequestParam(value = "mucCang", required = false) String mucCang,
             org.springframework.web.multipart.MultipartHttpServletRequest request,
             HttpSession session,
             Model model) {
@@ -110,7 +106,7 @@ public class AdminSanPhamController {
             adminSanPhamService.themSanPhamVaBienThe(
                     tenSanPham, idDanhMuc, idThuongHieu, moTa,
                     defaultGia, defaultKho, fileAnh,
-                    mauSacs, trongLuongs, minTension, maxTension,
+                    mauSacs, trongLuongs, mucCang,
                     variantImageMap,
                     variantPriceMap,
                     variantQuantityMap,
@@ -129,15 +125,13 @@ public class AdminSanPhamController {
             model.addAttribute("soLuongTon", soLuongTon);
             model.addAttribute("selectedMauSacs", mauSacs);
             model.addAttribute("selectedTrongLuongs", trongLuongs);
-            model.addAttribute("minTension", minTension);
-            model.addAttribute("maxTension", maxTension);
+            model.addAttribute("mucCang", mucCang);
 
             // Re-populate lists
             model.addAttribute("listDanhMuc", danhMucRepository.findAll());
             model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
             model.addAttribute("listMauSac", listMauSacConfig);
             model.addAttribute("listTrongLuong", listTrongLuongConfig);
-            model.addAttribute("listMucCang", listMucCangConfig);
 
             return "admin/sanpham-add";
         }

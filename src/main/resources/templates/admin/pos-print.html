@@ -182,7 +182,11 @@
                 <tr th:each="item : ${items}">
                     <td>
                         <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Vợt Yonex</span><br>
-                        <span class="item-details" th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">3U | Đỏ</span>
+                        <span class="item-details">
+                            <span th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">Đỏ | 3U</span>
+                            <span th:if="${item.sanPhamChiTiet.mucCang != null and !#strings.isEmpty(item.sanPhamChiTiet.mucCang)}"
+                                  th:text="' | Sức căng khuyến nghị: ' + ${item.sanPhamChiTiet.mucCang}"> | Sức căng khuyến nghị: 20 - 28 lbs</span>
+                        </span>
                     </td>
                     <td style="text-align: center; white-space: nowrap;" th:text="${item.soLuong}">1</td>
                     <td style="text-align: right; white-space: nowrap;" th:text="${#numbers.formatDecimal(item.donGia.multiply(new java.math.BigDecimal(item.soLuong)), 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000.000 đ</td>

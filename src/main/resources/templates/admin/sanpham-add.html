@@ -122,22 +122,19 @@
                                 </div>
                             </div>
 
-                            <!-- Mức căng -->
+                            <!-- Sức căng khuyến nghị -->
                             <div class="col-md-4">
                                 <div class="checkbox-card-premium shadow-sm">
-                                    <h6>Sức Căng (Vợt Cầu Lông)</h6>
+                                    <h6>Sức Căng Khuyến Nghị</h6>
                                     <div class="mt-3">
-                                        <label class="form-label small fw-bold text-secondary mb-1">Sức căng tối thiểu</label>
-                                        <div class="input-group input-group-sm mb-3">
-                                            <input type="text" class="form-control" name="minTension" id="minTension" th:value="${minTension != null ? minTension : '20'}" placeholder="Ví dụ: 20 hoặc 9kg">
-                                            <span class="input-group-text">lbs / kg</span>
-                                        </div>
-                                        
-                                        <label class="form-label small fw-bold text-secondary mb-1">Sức căng tối đa</label>
-                                        <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control" name="maxTension" id="maxTension" th:value="${maxTension != null ? maxTension : '28'}" placeholder="Ví dụ: 28 hoặc 12.5kg">
-                                            <span class="input-group-text">lbs / kg</span>
-                                        </div>
+                                        <label class="form-label small fw-bold text-secondary mb-1">Sức căng khuyến nghị</label>
+                                        <input type="text"
+                                               class="form-control form-control-sm"
+                                               name="mucCang"
+                                               id="mucCang"
+                                               th:value="${mucCang}"
+                                               maxlength="50"
+                                               placeholder="VD: 20 - 28 lbs hoặc 9.0 - 12.5 kg">
                                     </div>
                                 </div>
                             </div>
@@ -154,7 +151,7 @@
                                             <tr>
                                                 <th>Màu Sắc</th>
                                                 <th>Trọng Lượng</th>
-                                                <th>Sức Căng</th>
+                                                <th>Sức Căng Khuyến Nghị</th>
                                                 <th style="width: 180px;">Giá Bán (VNĐ) *</th>
                                                 <th style="width: 120px;">Số Lượng Kho *</th>
                                                 <th>Ảnh Biến Thể (Tùy chọn)</th>
@@ -201,23 +198,15 @@
             const checkedMaus = Array.from(document.querySelectorAll(".mau-cb:checked")).map(cb => cb.value);
             const checkedTrongs = Array.from(document.querySelectorAll(".trong-cb:checked")).map(cb => cb.value);
             
-            const minTensionInput = document.getElementById("minTension");
-            const maxTensionInput = document.getElementById("maxTension");
-            const minTensionVal = minTensionInput ? minTensionInput.value.trim() : "";
-            const maxTensionVal = maxTensionInput ? maxTensionInput.value.trim() : "";
-            
-            const checkedCangs = [];
-            if (minTensionVal && maxTensionVal) {
-                let cleanMin = minTensionVal.replace(/(lbs|lb|kg|kgs)/gi, "").trim();
-                let cleanMax = maxTensionVal.replace(/(lbs|lb|kg|kgs)/gi, "").trim();
-                checkedCangs.push(cleanMin + " - " + cleanMax + " lbs");
-            }
+            const mucCangInput = document.getElementById("mucCang");
+            const mucCangVal = mucCangInput ? mucCangInput.value.trim().replace(/\s+/g, " ") : "";
+            const checkedCangs = [mucCangVal];
 
             // Xóa rỗng tbody cũ
             previewTbody.innerHTML = "";
 
-            if (checkedMaus.length === 0 || checkedTrongs.length === 0 || checkedCangs.length === 0) {
-                previewCount.textContent = "Vui lòng chọn ít nhất 1 Màu sắc, 1 Trọng lượng/Size và điền khoảng Sức căng để xem trước.";
+            if (checkedMaus.length === 0 || checkedTrongs.length === 0) {
+                previewCount.textContent = "Vui lòng chọn ít nhất 1 Màu sắc và 1 Trọng lượng/Size để xem trước.";
                 previewCount.className = "fw-bold mb-2 text-warning";
                 btnSubmit.disabled = false;
                 limitWarning.classList.add("d-none");
@@ -264,7 +253,7 @@
                         tr.appendChild(tdTrong);
 
                         let tdCang = document.createElement("td");
-                        tdCang.innerHTML = `<span>${cang}</span>`;
+                        tdCang.innerHTML = `<span>${cang || "Chưa cập nhật"}</span>`;
                         tr.appendChild(tdCang);
 
                         // Price column
@@ -344,15 +333,10 @@
                 cb.addEventListener("change", updatePreview);
             });
 
-            const minTensionInput = document.getElementById("minTension");
-            const maxTensionInput = document.getElementById("maxTension");
-            if (minTensionInput) {
-                minTensionInput.removeEventListener("input", updatePreview);
-                minTensionInput.addEventListener("input", updatePreview);
-            }
-            if (maxTensionInput) {
-                maxTensionInput.removeEventListener("input", updatePreview);
-                maxTensionInput.addEventListener("input", updatePreview);
+            const mucCangInput = document.getElementById("mucCang");
+            if (mucCangInput) {
+                mucCangInput.removeEventListener("input", updatePreview);
+                mucCangInput.addEventListener("input", updatePreview);
             }
         }
 
@@ -381,12 +365,6 @@
             name = 'trongLuongs';
             cbClass = 'trong-cb';
             labelPrefix = 'trong_';
-        } else if (type === 'tension') {
-            inputId = 'newTensionInput';
-            containerId = 'mucCangContainer';
-            name = 'mucCangs';
-            cbClass = 'cang-cb';
-            labelPrefix = 'cang_';
         }
 
         const input = document.getElementById(inputId);

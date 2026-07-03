@@ -51,6 +51,7 @@ public class SanPham {
             return 0;
         }
         return sanPhamChiTiets.stream()
+                .filter(spct -> spct.getTrangThai() == null || spct.getTrangThai().isBlank() || "dang_ban".equals(spct.getTrangThai()))
                 .mapToInt(spct -> spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
                 .sum();
     }
