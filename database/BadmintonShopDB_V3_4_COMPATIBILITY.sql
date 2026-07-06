@@ -750,7 +750,7 @@ SELECT id, N'Nhân viên bán hàng', N'Nhân viên bán hàng', N'Sales Staff',
 GO
 
 INSERT INTO dbo.KhachHang(id_tai_khoan, ho_kh, ten_kh, so_dien_thoai_kh, nhan_ban_tin, loai_khach_hang, nguon_tao, ho_ten_kh)
-SELECT id, N'Khách', N'Hàng mẫu', '0911222333', 1, 'REGISTERED', 'SEED', N'Khách Hàng mẫu' FROM dbo.TaiKhoan WHERE email = 'customer@smash.vn';
+SELECT id, N'Khách', N'Hàng mẫu', '0911222999', 1, 'REGISTERED', 'SEED', N'Khách Hàng mẫu' FROM dbo.TaiKhoan WHERE email = 'customer@smash.vn';
 GO
 
 INSERT INTO dbo.DanhMuc(ten_danh_muc, mo_ta, trang_thai)
@@ -795,12 +795,12 @@ VALUES
 ('COD', N'Thanh toán khi nhận hàng'),
 ('SEPAY', N'Chuyển khoản SePay'),
 ('VNPAY', N'Thanh toán VNPay'),
-('CASH', N'Tiền mặt tại quầy');
+('CASH', N'Tiền mặt');
 GO
 
 INSERT INTO dbo.DonViVanChuyen(ma_don_vi, ten_don_vi, so_hotline, trang_web, ma_token, ma_client, dia_chi_kho, phi_noi_dia, phi_toan_quoc)
 VALUES
-('GHN', N'Giao Hàng Nhanh', '1900636677', 'https://ghn.vn', 'ENV:GHN_TOKEN', 'ENV:GHN_CLIENT_ID', N'Kho SMASH VN', 25000, 35000),
+('GHN', N'Giao Hàng Nhanh', '1900636677', 'https://ghn.vn', NULL, NULL, N'Kho SMASH VN', 25000, 35000),
 ('PICKUP', N'Nhận tại cửa hàng', NULL, NULL, NULL, NULL, N'Cửa hàng SMASH VN', 0, 0);
 GO
 
@@ -831,11 +831,11 @@ GO
 
 INSERT INTO dbo.SoDiaChi(id_khach_hang, ho_nguoi_nhan, ten_nguoi_nhan, sdt_nguoi_nhan, dia_chi_cu_the, tinh_thanh, quoc_gia, thanh_pho, vi_do, kinh_do, province_id, district_id, ward_code, province_name, district_name, ward_name, la_mac_dinh_giao_hang, la_mac_dinh_thanh_toan, ho_va_ten_nguoi_nhan)
 SELECT kh.id, kh.ho_kh, kh.ten_kh, kh.so_dien_thoai_kh, N'123 Nguyễn Trãi', N'Hà Nội', N'Việt Nam', N'Hà Nội', NULL, NULL, 201, 3440, '13010', N'Hà Nội', N'Thanh Xuân', N'Phường Thượng Đình', 1, 1, N'Khách Hàng mẫu'
-FROM dbo.KhachHang kh WHERE kh.so_dien_thoai_kh = '0911222333';
+FROM dbo.KhachHang kh WHERE kh.so_dien_thoai_kh = '0911222999';
 GO
 
 INSERT INTO dbo.GioHang(id_khach_hang, session_id)
-SELECT id, 'seed-session-customer' FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222333';
+SELECT id, 'seed-session-customer' FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222999';
 GO
 
 INSERT INTO dbo.GioHangChiTiet(id_gio_hang, id_san_pham_chi_tiet, id_trang_thai, so_luong)
@@ -848,7 +848,7 @@ WHERE gh.session_id = 'seed-session-customer'
   AND tt.ma_trang_thai = 'ACTIVE';
 GO
 
-DECLARE @CustomerId INT = (SELECT id FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222333');
+DECLARE @CustomerId INT = (SELECT id FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222999');
 DECLARE @StaffId INT = (SELECT id FROM dbo.NhanVien WHERE so_dien_thoai = '0900000002');
 DECLARE @PaymentId INT = (SELECT id FROM dbo.PhuongThucThanhToan WHERE ma_phuong_thuc = 'COD');
 DECLARE @ShipId INT = (SELECT id FROM dbo.DonViVanChuyen WHERE ma_don_vi = 'GHN');
@@ -857,7 +857,7 @@ DECLARE @VoucherId INT = (SELECT id FROM dbo.PhieuGiamGia WHERE ma_phieu = 'SMAS
 DECLARE @Price DECIMAL(18,2) = (SELECT gia_ban FROM dbo.SanPhamChiTiet WHERE SKU = 'SM-YON-AX88D-4U-G5');
 
 INSERT INTO dbo.HoaDon(ma_don_hang, id_khach_hang, id_nhan_vien, id_phuong_thuc_thanh_toan, id_don_vi_van_chuyen, id_dia_chi, id_phieu_giam_gia, trang_thai_don_hang, trang_thai_thanh_toan, tong_tien, tong_tien_hang, so_tien_giam_gia, so_tien_giam_voucher, phi_van_chuyen, ten_nguoi_nhan, sdt_nhan, dia_chi_nhan, phuong_thuc_thanh_toan, loai_don_hang, ma_giam_gia_ap_dung, ten_giam_gia_ap_dung, mo_ta_giam_gia_snapshot, tien_hang)
-VALUES ('HD-SEED-000001', @CustomerId, @StaffId, @PaymentId, @ShipId, @AddressId, @VoucherId, N'da_giao', 'DA_THANH_TOAN', @Price - (@Price * 0.10) - 50000 + 25000, @Price, @Price * 0.10, 50000, 25000, N'Khách Hàng mẫu', '0911222333', N'123 Nguyễn Trãi, Thanh Xuân, Hà Nội', 'COD', 'ONLINE', 'SMASH50K', 'Giảm 50K đơn từ 1 triệu', 'VND 50000', @Price);
+VALUES ('HD-SEED-000001', @CustomerId, @StaffId, @PaymentId, @ShipId, @AddressId, @VoucherId, N'da_giao', 'DA_THANH_TOAN', @Price - (@Price * 0.10) - 50000 + 25000, @Price, @Price * 0.10, 50000, 25000, N'Khách Hàng mẫu', '0911222999', N'123 Nguyễn Trãi, Thanh Xuân, Hà Nội', 'COD', 'ONLINE', 'SMASH50K', 'Giảm 50K đơn từ 1 triệu', 'VND 50000', @Price);
 GO
 
 INSERT INTO dbo.HoaDonChiTiet(id_hoa_don, id_san_pham_chi_tiet, so_luong, don_gia, thanh_tien, gia_niem_yet, phan_tram_giam, so_tien_giam_san_pham, ten_dot_giam_gia, id_dot_giam_gia, ten_san_pham_snapshot, ma_hang_snapshot, thuoc_tinh_snapshot, thuong_hieu_snapshot, danh_muc_snapshot, gia_goc, gia_sau_giam, sku_snapshot)
@@ -880,7 +880,7 @@ GO
 INSERT INTO dbo.DanhGia(id_khach_hang, id_san_pham, so_sao, noi_dung)
 SELECT kh.id, sp.id, 5.0, N'Sản phẩm mẫu tốt, dùng để seed dữ liệu.'
 FROM dbo.KhachHang kh CROSS JOIN dbo.SanPham sp
-WHERE kh.so_dien_thoai_kh = '0911222333' AND sp.ten_san_pham = N'Yonex Astrox 88D Pro';
+WHERE kh.so_dien_thoai_kh = '0911222999' AND sp.ten_san_pham = N'Yonex Astrox 88D Pro';
 GO
 
 INSERT INTO dbo.Blog(id_tai_khoan, tieu_de, duong_dan, tom_tat, noi_dung, danh_muc, the, trang_thai, da_xoa, ngay_dang, updated_by)
@@ -890,15 +890,11 @@ GO
 
 INSERT INTO dbo.ChatConversation(id_khach_hang, tieu_de, trang_thai)
 SELECT id, N'Tư vấn sản phẩm mẫu', 'OPEN'
-FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222333';
+FROM dbo.KhachHang WHERE so_dien_thoai_kh = '0911222999';
 GO
 
 INSERT INTO dbo.ChatMessage(id_cuoc_tro_chuyen, loai_nguoi_gui, noi_dung)
 SELECT id, 'USER', N'Tôi muốn tư vấn chọn vợt.' FROM dbo.ChatConversation WHERE tieu_de = N'Tư vấn sản phẩm mẫu';
-GO
-
-INSERT INTO dbo.CommentModerationKeyword(tu_khoa)
-VALUES (N'dm'), (N'đm'), (N'cmm'), (N'lừa đảo'), (N'fake');
 GO
 
 INSERT INTO dbo.NewsletterSubscriber(email, token_huy, ngay_dang_ky, trang_thai)
@@ -908,7 +904,7 @@ GO
 INSERT INTO dbo.SanPhamYeuThich(id_khach_hang, id_san_pham)
 SELECT kh.id, sp.id
 FROM dbo.KhachHang kh CROSS JOIN dbo.SanPham sp
-WHERE kh.so_dien_thoai_kh = '0911222333' AND sp.ten_san_pham = N'Yonex Astrox 88D Pro';
+WHERE kh.so_dien_thoai_kh = '0911222999' AND sp.ten_san_pham = N'Yonex Astrox 88D Pro';
 GO
 
 /*===============================================================================
