@@ -1,7 +1,0 @@
-[
-  {
-    "repository": "HoaDonRepository",
-    "method": "void deleteOrderStatusHistoryByOrderId(@Param(\"orderId\") Integer orderId);",
-    "query": "DELETE FROM LichSuTrangThaiDonHang WHERE id_hoa_don = :orderId"
-  }
-]
