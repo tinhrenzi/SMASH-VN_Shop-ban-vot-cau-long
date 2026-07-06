@@ -939,6 +939,7 @@
                                 body: JSON.stringify({ email: email, gioiTinh: gender })
                             })
                             .then(response => {
+<<<<<<< HEAD
                                 return response.text().then(text => {
                                     let data = {};
                                     try {
@@ -952,6 +953,22 @@
                                         body: data
                                     };
                                 });
+=======
+                                const contentType = response.headers.get("content-type");
+                                if (contentType && contentType.includes("application/json")) {
+                                    return response.json().then(data => ({
+                                        status: response.status,
+                                        ok: response.ok,
+                                        body: data
+                                    }));
+                                } else {
+                                    return response.text().then(text => ({
+                                        status: response.status,
+                                        ok: false,
+                                        body: { success: false, message: "Lỗi phản hồi từ máy chủ." }
+                                    }));
+                                }
+>>>>>>> fcc4d77aac26d9357bb32be0e470b3b80e9e5678
                             })
                             .then(res => {
                                 // Re-enable fields

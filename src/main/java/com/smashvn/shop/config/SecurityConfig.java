@@ -18,7 +18,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 // Kích hoạt lại bảo mật CSRF
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/user/dang-xuat", "/admin/dang-xuat", "/api/payment/zalopay/callback", "/api/payment/sepay/ipn", "/api/ghn/webhook", "/api/chat/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/user/dang-xuat",
+                        "/admin/dang-xuat",
+                        "/api/payment/zalopay/callback",
+                        "/api/payment/sepay/ipn",
+                        "/api/ghn/webhook",
+                        "/api/chat/**",
+                        "/api/newsletter/subscribe"
+                ))
                 // Cấu hình các Header bảo mật nâng cao
                 .headers(headers -> {
                     headers.frameOptions(frame -> frame.sameOrigin());
