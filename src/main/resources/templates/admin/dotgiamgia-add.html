@@ -99,7 +99,7 @@
                                     <div class="col-md-12">
                                         <label for="phanTramGiam" class="form-label fw-bold">Phần Trăm Giảm (%) <span class="text-danger">*</span></label>
                                         <input type="number" id="phanTramGiam" name="phanTramGiam" th:value="${phanTramGiam}" class="form-control" placeholder="Nhập số nguyên từ 1 đến 40" min="1" max="40" step="1" required>
-                                        <div class="helper-text">Nhập số nguyên từ 1 đến 40.</div>
+                                        <div class="form-text text-danger fw-bold"><i class="fas fa-info-circle me-1"></i> Bắt buộc từ 1% đến tối đa 40% (Giới hạn hệ thống). Chỉ nhập số nguyên thô (không chấm, không phẩy).</div>
                                     </div>
                                     <!-- Hidden input loaiGiamGia mặc định là Theo Phần Trăm -->
                                     <input type="hidden" name="loaiGiamGia" value="Theo Phần Trăm">

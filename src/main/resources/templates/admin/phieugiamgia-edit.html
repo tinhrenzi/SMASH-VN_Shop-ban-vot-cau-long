@@ -56,6 +56,7 @@
                                     <div class="col-md-4">
                                         <label for="giaTri" class="form-label fw-bold">Giá Trị Giảm <span class="text-danger">*</span></label>
                                         <input type="number" id="giaTri" name="giaTri" th:value="${voucher.giaTri != null ? voucher.giaTri.stripTrailingZeros().toPlainString() : ''}" class="form-control" placeholder="Nhập số tiền hoặc %" min="1" step="1" required>
+                                        <div class="form-text text-danger fw-bold" id="giaTriHelper"><i class="fas fa-info-circle me-1"></i> Chọn đơn vị để xem giới hạn giá trị.</div>
                                     </div>
 
                                     <!-- Đơn vị -->
@@ -178,10 +179,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-sync Voucher Type and Unit
     function syncLoaiGiamGia() {
+        const giaTriHelper = document.getElementById('giaTriHelper');
         if (donViSelect.value === 'VND') {
             loaiGiamGiaInput.value = 'Giảm trực tiếp';
+            if (giaTriHelper) {
+                giaTriHelper.innerHTML = '<i class="fas fa-info-circle me-1"></i> Đối với VNĐ: từ 1,000 VNĐ đến tối đa 100,000,000 VNĐ. Chỉ nhập số nguyên thô (không chấm, không phẩy).';
+            }
         } else if (donViSelect.value === '%') {
             loaiGiamGiaInput.value = 'Giảm phần trăm';
+            if (giaTriHelper) {
+                giaTriHelper.innerHTML = '<i class="fas fa-info-circle me-1"></i> Đối với %: từ 1% đến tối đa 100%. Chỉ nhập số nguyên thô (không chấm, không phẩy).';
+            }
         }
         updateCapVisibility();
     }
