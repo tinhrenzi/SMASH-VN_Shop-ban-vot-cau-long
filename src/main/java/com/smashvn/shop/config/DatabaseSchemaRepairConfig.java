@@ -134,6 +134,24 @@ public class DatabaseSchemaRepairConfig {
                 );
 
                 log.info("[STARTUP_DB_REPAIR] HoaDon table schema checks completed.");
+
+                // Check and create NewsletterSubscriber table if missing
+                log.info("[STARTUP_DB_REPAIR] Checking NewsletterSubscriber table schema...");
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('NewsletterSubscriber') AND type in ('U')) "
+                        + "BEGIN "
+                        + "    CREATE TABLE NewsletterSubscriber ( "
+                        + "        id INT IDENTITY(1,1) PRIMARY KEY, "
+                        + "        email NVARCHAR(255) NOT NULL UNIQUE, "
+                        + "        gioi_tinh NVARCHAR(10) NULL, "
+                        + "        ngay_dang_ky DATETIME NOT NULL DEFAULT GETDATE(), "
+                        + "        ngay_huy DATETIME NULL, "
+                        + "        trang_thai NVARCHAR(50) NOT NULL DEFAULT 'hoat_dong', "
+                        + "        token_huy NVARCHAR(100) NOT NULL UNIQUE "
+                        + "    ); "
+                        + "END"
+                );
+                log.info("[STARTUP_DB_REPAIR] NewsletterSubscriber table schema checks completed.");
             } catch (SQLException e) {
                 log.error("[STARTUP_DB_REPAIR] Error during programmatic schema updates: {}", e.getMessage(), e);
             }

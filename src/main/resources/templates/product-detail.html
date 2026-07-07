@@ -54,7 +54,7 @@
                                      <li class="has-separator">
                                          <a th:href="@{/index.html}">Trang chủ</a></li>
                                      <li class="has-separator">
-                                         <a th:href="@{/index.html}">Vợt Cầu Lông</a></li>
+                                          <a th:href="@{/shop(categoryId=${sp.danhMuc.id})}" th:text="${sp.danhMuc != null ? sp.danhMuc.tenDanhMuc : 'Sản phẩm'}">Danh mục</a></li>
                                      <li class="is-marked">
                                          <a href="javascript:void(0)" th:text="${sp.tenSanPham}">Chi tiết sản phẩm</a></li>
                                  </ul>
