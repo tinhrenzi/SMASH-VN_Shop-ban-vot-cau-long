@@ -6,7 +6,7 @@ Bản báo cáo này cung cấp thông tin chi tiết về việc đồng bộ t
 
 ## 1. Kết Quả Kiểm Nghiệm Thực Tế (Health Check & Test Suite)
 
-Chúng tôi đã thực hiện chạy thực tế bộ kiểm thử tích hợp của dự án (`.\mvnw.cmd clean test`) đối với cơ sở dữ liệu `SMDB_FINAL_V3_TEST` được khởi tạo bằng cấu trúc **V3.4 Compatibility**.
+Chúng tôi đã thực hiện chạy thực tế bộ kiểm thử tích hợp của dự án (`.\mvnw.cmd clean test`) đối với cơ sở dữ liệu `BadmintonShopDB` được khởi tạo bằng cấu trúc **V3.4 Compatibility**.
 
 * **Tổng số test case chạy**: `325`
 * **Số lượng test case thành công**: `325` (Đạt tỷ lệ **100%**)

@@ -2,35 +2,54 @@
 ================================================================================
  SMASH VN - CLEAN DATABASE SCHEMA V3.4 (COMPATIBILITY MODE)
  Target DBMS : Microsoft SQL Server 2019/2022+
- Database    : SMDB_FINAL_V3_TEST
+ Database    : BadmintonShopDB
  Purpose     : Rebuild database based on BadmintonShopDB_CLEAN_FIXED_ANNOTATED.sql
                while keeping all columns required by current JPA/Hibernate entities.
 
- WARNING     : SAFE TEST VERSION. This script DROPS and RECREATES database [SMDB_FINAL_V3_TEST], not [SMDB_FINAL].
+ WARNING     : SAFE TEST VERSION. This script DROPS and RECREATES database [BadmintonShopDB], not [SMDB_FINAL].
 ================================================================================
 */
 
-USE [master];
+USE [BadmintonShopDB];
 GO
 
-IF DB_ID(N'SMDB_FINAL_V3_TEST') IS NOT NULL
+-- Safely add missing compatibility columns to existing TaiKhoan table if it exists
+IF OBJECT_ID('dbo.TaiKhoan', 'U') IS NOT NULL
 BEGIN
-    ALTER DATABASE [SMDB_FINAL_V3_TEST] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE [SMDB_FINAL_V3_TEST];
+    IF COL_LENGTH('dbo.TaiKhoan', 'token_xac_thuc_khoa') IS NULL
+        ALTER TABLE dbo.TaiKhoan ADD token_xac_thuc_khoa VARCHAR(100) NULL;
+
+    IF COL_LENGTH('dbo.TaiKhoan', 'ngay_khoa_binh_luan_den') IS NULL
+        ALTER TABLE dbo.TaiKhoan ADD ngay_khoa_binh_luan_den DATETIME2(0) NULL;
+
+    IF COL_LENGTH('dbo.TaiKhoan', 'thoi_han_mo_khoa') IS NULL
+        ALTER TABLE dbo.TaiKhoan ADD thoi_han_mo_khoa DATETIME NULL;
+
+    IF COL_LENGTH('dbo.TaiKhoan', 'ma_xac_thuc_khoa') IS NULL
+        ALTER TABLE dbo.TaiKhoan ADD ma_xac_thuc_khoa NVARCHAR(100) NULL;
+
+    IF COL_LENGTH('dbo.TaiKhoan', 'trang_thai') IS NULL
+        ALTER TABLE dbo.TaiKhoan ADD trang_thai NVARCHAR(50) NOT NULL CONSTRAINT DF_TaiKhoan_TrangThai DEFAULT (N'hoat_dong');
 END
 GO
 
-CREATE DATABASE [SMDB_FINAL_V3_TEST];
-GO
+-- Drop views if exist
+IF OBJECT_ID('dbo.v_SanPhamDangBan', 'V') IS NOT NULL DROP VIEW dbo.v_SanPhamDangBan;
+IF OBJECT_ID('dbo.v_DoanhThuNgay', 'V') IS NOT NULL DROP VIEW dbo.v_DoanhThuNgay;
 
-ALTER DATABASE [SMDB_FINAL_V3_TEST] SET AUTO_CLOSE OFF;
-ALTER DATABASE [SMDB_FINAL_V3_TEST] SET AUTO_SHRINK OFF;
-ALTER DATABASE [SMDB_FINAL_V3_TEST] SET READ_COMMITTED_SNAPSHOT ON;
-ALTER DATABASE [SMDB_FINAL_V3_TEST] SET ALLOW_SNAPSHOT_ISOLATION ON;
-ALTER DATABASE [SMDB_FINAL_V3_TEST] SET QUERY_STORE = ON;
-GO
+-- Dynamically drop all foreign keys to avoid drop table conflicts
+DECLARE @DropFkSql NVARCHAR(MAX) = N'';
+SELECT @DropFkSql += 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + 
+                     ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+FROM sys.foreign_keys;
+EXEC sp_executesql @DropFkSql;
 
-USE [SMDB_FINAL_V3_TEST];
+-- Dynamically drop all tables except TaiKhoan to preserve user accounts data
+DECLARE @DropTablesSql NVARCHAR(MAX) = N'';
+SELECT @DropTablesSql += 'DROP TABLE ' + QUOTENAME(SCHEMA_NAME(schema_id)) + '.' + QUOTENAME(name) + ';' + CHAR(13)
+FROM sys.tables
+WHERE name <> 'TaiKhoan';
+EXEC sp_executesql @DropTablesSql;
 GO
 
 SET ANSI_NULLS ON;
@@ -44,31 +63,34 @@ GO
   01. ACCOUNT / PEOPLE
 ===============================================================================*/
 
-CREATE TABLE dbo.TaiKhoan (
-    id                         INT IDENTITY(1,1) NOT NULL,
-    email                      VARCHAR(255) NOT NULL,
-    mat_khau                   NVARCHAR(255) NULL,
-    trang_thai_tai_khoan       VARCHAR(20) NOT NULL CONSTRAINT DF_TaiKhoan_TrangThaiTaiKhoan DEFAULT ('ACTIVE'),
-    so_lan_mua_thanh_cong      INT NOT NULL CONSTRAINT DF_TaiKhoan_MuaThanhCong DEFAULT (0),
-    vai_tro                    VARCHAR(10) NOT NULL CONSTRAINT DF_TaiKhoan_VaiTro DEFAULT ('KH'),
-    trang_thai                 NVARCHAR(50) NOT NULL CONSTRAINT DF_TaiKhoan_TrangThai DEFAULT (N'hoat_dong'),
-    token_xac_thuc_khoa        VARCHAR(100) NULL, -- compatibility column
-    so_lan_nhac_nho_vi_pham    INT NOT NULL CONSTRAINT DF_TaiKhoan_NhacNho DEFAULT (0),
-    ngay_khoa_binh_luan_den    DATETIME2(0) NULL, -- compatibility column
-    ngay_vi_pham_gan_nhat      DATETIME2(0) NULL,
-    ngay_tao                   DATETIME2(0) NOT NULL CONSTRAINT DF_TaiKhoan_NgayTao DEFAULT (SYSDATETIME()),
-    ngay_cap_nhat              DATETIME2(0) NOT NULL CONSTRAINT DF_TaiKhoan_NgayCapNhat DEFAULT (SYSDATETIME()),
-    -- New columns from annotated DDL
-    thoi_han_mo_khoa           DATETIME NULL,
-    ma_xac_thuc_khoa           NVARCHAR(100) NULL,
-    CONSTRAINT PK_TaiKhoan PRIMARY KEY CLUSTERED (id),
-    CONSTRAINT UQ_TaiKhoan_Email UNIQUE (email),
-    CONSTRAINT CK_TaiKhoan_Email CHECK (email LIKE '%_@_%._%'),
-    CONSTRAINT CK_TaiKhoan_VaiTro CHECK (vai_tro IN ('KH','NV','QL','CUSTOMER','STAFF','MANAGER','ADMIN')),
-    CONSTRAINT CK_TaiKhoan_TrangThai CHECK (trang_thai IN (N'hoat_dong', N'cho_khoa')),
-    CONSTRAINT CK_TaiKhoan_TrangThaiTaiKhoan CHECK (trang_thai_tai_khoan IN ('ACTIVE','GUEST','LOCKED','DISABLED')),
-    CONSTRAINT CK_TaiKhoan_Counter CHECK (so_lan_mua_thanh_cong >= 0 AND so_lan_nhac_nho_vi_pham >= 0)
-);
+IF OBJECT_ID('dbo.TaiKhoan', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TaiKhoan (
+        id                         INT IDENTITY(1,1) NOT NULL,
+        email                      VARCHAR(255) NOT NULL,
+        mat_khau                   NVARCHAR(255) NULL,
+        trang_thai_tai_khoan       VARCHAR(20) NOT NULL CONSTRAINT DF_TaiKhoan_TrangThaiTaiKhoan DEFAULT ('ACTIVE'),
+        so_lan_mua_thanh_cong      INT NOT NULL CONSTRAINT DF_TaiKhoan_MuaThanhCong DEFAULT (0),
+        vai_tro                    VARCHAR(10) NOT NULL CONSTRAINT DF_TaiKhoan_VaiTro DEFAULT ('KH'),
+        trang_thai                 NVARCHAR(50) NOT NULL CONSTRAINT DF_TaiKhoan_TrangThai DEFAULT (N'hoat_dong'),
+        token_xac_thuc_khoa        VARCHAR(100) NULL, -- compatibility column
+        so_lan_nhac_nho_vi_pham    INT NOT NULL CONSTRAINT DF_TaiKhoan_NhacNho DEFAULT (0),
+        ngay_khoa_binh_luan_den    DATETIME2(0) NULL, -- compatibility column
+        ngay_vi_pham_gan_nhat      DATETIME2(0) NULL,
+        ngay_tao                   DATETIME2(0) NOT NULL CONSTRAINT DF_TaiKhoan_NgayTao DEFAULT (SYSDATETIME()),
+        ngay_cap_nhat              DATETIME2(0) NOT NULL CONSTRAINT DF_TaiKhoan_NgayCapNhat DEFAULT (SYSDATETIME()),
+        -- New columns from annotated DDL
+        thoi_han_mo_khoa           DATETIME NULL,
+        ma_xac_thuc_khoa           NVARCHAR(100) NULL,
+        CONSTRAINT PK_TaiKhoan PRIMARY KEY CLUSTERED (id),
+        CONSTRAINT UQ_TaiKhoan_Email UNIQUE (email),
+        CONSTRAINT CK_TaiKhoan_Email CHECK (email LIKE '%_@_%._%'),
+        CONSTRAINT CK_TaiKhoan_VaiTro CHECK (vai_tro IN ('KH','NV','QL','CUSTOMER','STAFF','MANAGER','ADMIN')),
+        CONSTRAINT CK_TaiKhoan_TrangThai CHECK (trang_thai IN (N'hoat_dong', N'cho_khoa')),
+        CONSTRAINT CK_TaiKhoan_TrangThaiTaiKhoan CHECK (trang_thai_tai_khoan IN ('ACTIVE','GUEST','LOCKED','DISABLED')),
+        CONSTRAINT CK_TaiKhoan_Counter CHECK (so_lan_mua_thanh_cong >= 0 AND so_lan_nhac_nho_vi_pham >= 0)
+    );
+END;
 GO
 
 CREATE TABLE dbo.KhachHang (
@@ -736,21 +758,27 @@ GO
   08. SEED DATA FOR TESTING
 ===============================================================================*/
 
+-- INSERT INTO dbo.TaiKhoan commented out because user already added accounts
+/*
 INSERT INTO dbo.TaiKhoan(email, mat_khau, vai_tro, trang_thai_tai_khoan, trang_thai)
 VALUES
 ('admin@smash.vn', N'$2a$10$7qNfP49H3X2hKk1zU/yY7.2qHlJ78vKxI1wGZ3K0vQ9n2h8gXgRKi', 'QL', 'ACTIVE', N'hoat_dong'),
 ('staff@smash.vn', N'$2a$10$7qNfP49H3X2hKk1zU/yY7.2qHlJ78vKxI1wGZ3K0vQ9n2h8gXgRKi', 'NV', 'ACTIVE', N'hoat_dong'),
 ('customer@smash.vn', N'$2a$10$7qNfP49H3X2hKk1zU/yY7.2qHlJ78vKxI1wGZ3K0vQ9n2h8gXgRKi', 'KH', 'ACTIVE', N'hoat_dong');
 GO
+*/
 
 INSERT INTO dbo.NhanVien(id_tai_khoan, ho_ten, ho_ten_nv, chuc_vu, so_dien_thoai)
-SELECT id, N'Quản trị SMASH VN', N'Quản trị SMASH VN', N'Administrator', '0900000001' FROM dbo.TaiKhoan WHERE email = 'admin@smash.vn'
+SELECT id, N'Quản trị SMASH VN', N'Quản trị SMASH VN', N'Administrator', '0900000001' FROM dbo.TaiKhoan WHERE id = (SELECT TOP 1 id FROM dbo.TaiKhoan WHERE vai_tro = 'QL' ORDER BY id)
 UNION ALL
-SELECT id, N'Nhân viên bán hàng', N'Nhân viên bán hàng', N'Sales Staff', '0900000002' FROM dbo.TaiKhoan WHERE email = 'staff@smash.vn';
+SELECT id, N'Nhân viên bán hàng', N'Nhân viên bán hàng', N'Sales Staff', '0900000002' FROM dbo.TaiKhoan WHERE id = (SELECT TOP 1 id FROM dbo.TaiKhoan WHERE vai_tro = 'NV' ORDER BY id);
 GO
 
 INSERT INTO dbo.KhachHang(id_tai_khoan, ho_kh, ten_kh, so_dien_thoai_kh, nhan_ban_tin, loai_khach_hang, nguon_tao, ho_ten_kh)
-SELECT id, N'Khách', N'Hàng mẫu', '0911222999', 1, 'REGISTERED', 'SEED', N'Khách Hàng mẫu' FROM dbo.TaiKhoan WHERE email = 'customer@smash.vn';
+SELECT COALESCE(
+    (SELECT TOP 1 id FROM dbo.TaiKhoan WHERE vai_tro = 'KH' ORDER BY id),
+    (SELECT TOP 1 id FROM dbo.TaiKhoan ORDER BY id)
+), N'Khách', N'Hàng mẫu', '0911222999', 1, 'REGISTERED', 'SEED', N'Khách Hàng mẫu';
 GO
 
 INSERT INTO dbo.DanhMuc(ten_danh_muc, mo_ta, trang_thai)
@@ -883,9 +911,9 @@ FROM dbo.KhachHang kh CROSS JOIN dbo.SanPham sp
 WHERE kh.so_dien_thoai_kh = '0911222999' AND sp.ten_san_pham = N'Yonex Astrox 88D Pro';
 GO
 
-INSERT INTO dbo.Blog(id_tai_khoan, tieu_de, duong_dan, tom_tat, noi_dung, danh_muc, the, trang_thai, da_xoa, ngay_dang, updated_by)
-SELECT tk.id, N'Hướng dẫn chọn vợt cầu lông cho người mới', 'huong-dan-chon-vot-cau-long', N'Các tiêu chí cơ bản khi chọn vợt.', 'Seed blog content', N'Hướng dẫn', N'vợt,cầu lông', 'PUBLISHED', 0, CAST(SYSDATETIME() AS DATE), 'seed'
-FROM dbo.TaiKhoan tk WHERE tk.email = 'admin@smash.vn';
+INSERT INTO dbo.Blog(id_tai_khoan, tieu_de, duong_dan, tom_tat, noi_dung, hinh_anh, danh_muc, the, trang_thai, da_xoa, ngay_dang, updated_by)
+SELECT tk.id, N'Hướng dẫn chọn vợt cầu lông cho người mới', 'huong-dan-chon-vot-cau-long', N'Các tiêu chí cơ bản khi chọn vợt.', 'Seed blog content', '', N'Hướng dẫn', N'vợt,cầu lông', 'PUBLISHED', 0, CAST(SYSDATETIME() AS DATE), 'seed'
+FROM dbo.TaiKhoan tk WHERE tk.id = (SELECT TOP 1 id FROM dbo.TaiKhoan WHERE vai_tro = 'QL' ORDER BY id);
 GO
 
 INSERT INTO dbo.ChatConversation(id_khach_hang, tieu_de, trang_thai)
