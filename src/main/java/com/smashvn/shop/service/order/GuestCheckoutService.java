@@ -318,7 +318,7 @@ public class GuestCheckoutService {
         if (items != null) {
             for (HoaDonChiTiet ct : items) {
                 String tenSp = ct.getTenSanPhamSnapshot() != null ? ct.getTenSanPhamSnapshot() : (ct.getSanPhamChiTiet() != null && ct.getSanPhamChiTiet().getSanPham() != null ? ct.getSanPhamChiTiet().getSanPham().getTenSanPham() : "N/A");
-                String thuocTinh = ct.getThuocTinhSnapshot() != null ? ct.getThuocTinhSnapshot() : (ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getMauSac() : "N/A");
+                String thuocTinh = (ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getMauSac() : "N/A");
                 int sl = ct.getSoLuong();
                 BigDecimal donGia = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
                 BigDecimal thanhTien = donGia.multiply(new BigDecimal(sl));

@@ -1,12 +1,19 @@
 package com.smashvn.shop.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.Data;
 
 @Entity
 @Table(name = "DonViVanChuyen")
 @Data
 public class DonViVanChuyen {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -20,7 +27,7 @@ public class DonViVanChuyen {
     @Column(name = "so_hotline", length = 20)
     private String hotline;
 
-    @Column(name = "trang_web", length = 100)
+    @Column(name = "web_url", length = 100)
     private String website;
 
     @Column(name = "ma_token", length = 255)

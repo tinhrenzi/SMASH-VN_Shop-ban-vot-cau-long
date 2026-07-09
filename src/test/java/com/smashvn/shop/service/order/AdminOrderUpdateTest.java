@@ -50,6 +50,18 @@ public class AdminOrderUpdateTest {
     private DonViVanChuyenDAO donViVanChuyenDAO;
 
     @Autowired
+    private SanPhamRepository sanPhamRepository;
+
+    @Autowired
+    private DanhMucRepository danhMucRepository;
+
+    @Autowired
+    private ThuongHieuRepository thuongHieuRepository;
+
+    @Autowired
+    private NhanVienRepository nhanVienRepository;
+
+    @Autowired
     private jakarta.persistence.EntityManager entityManager;
 
     private TaiKhoan adminUser;
@@ -93,6 +105,7 @@ public class AdminOrderUpdateTest {
             newKh.setTenKh("Customer");
             newKh.setSoDienThoaiKh("0912345678");
             newKh.setLaTaiKhoanNoiBo(false);
+            newKh.setTaiKhoan(customerUser);
             testKhachHang = khachHangRepository.save(newKh);
         } else {
             testKhachHang = khs.get(0);
@@ -130,12 +143,44 @@ public class AdminOrderUpdateTest {
             testDvvc = dvvcs.get(0);
         }
 
-        // Fetch / Create variant
-        List<SanPhamChiTiet> spcts = entityManager.createQuery(
-                "SELECT spct FROM SanPhamChiTiet spct JOIN FETCH spct.sanPham sp",
-                SanPhamChiTiet.class).getResultList();
-        assertFalse(spcts.isEmpty(), "SanPhamChiTiet table must not be empty for integration tests");
-        testSpct = spcts.get(0);
+        // Seed or fetch NhanVien
+        TaiKhoan nvUser = new TaiKhoan();
+        nvUser.setEmail("staff-nv-" + System.nanoTime() + "@smashvn.com");
+        nvUser.setMatKhau("123");
+        nvUser.setVaiTro("NV");
+        nvUser.setLaNhanVien(true);
+        nvUser = taiKhoanRepository.save(nvUser);
+        NhanVien nv = new NhanVien();
+        nv.setTaiKhoan(nvUser);
+        nv.setHoTenNv("Test Staff");
+        nv.setChucVu("Nhân viên");
+        nv.setSoDienThoaiNv("0999888777");
+        nv = nhanVienRepository.save(nv);
+
+        // Seed or fetch DanhMuc / ThuongHieu / SanPham / SanPhamChiTiet
+        DanhMuc dm = danhMucRepository.findAll().stream().findFirst().orElseGet(() -> {
+            DanhMuc d = new DanhMuc();
+            d.setTenDanhMuc("Mặc định");
+            return danhMucRepository.save(d);
+        });
+        ThuongHieu th = thuongHieuRepository.findAll().stream().findFirst().orElseGet(() -> {
+            ThuongHieu t = new ThuongHieu();
+            t.setTenThuongHieu("Mặc định");
+            return thuongHieuRepository.save(t);
+        });
+        SanPham sp = new SanPham();
+        sp.setTenSanPham("Vợt Test Admin " + System.nanoTime());
+        sp.setDanhMuc(dm);
+        sp.setThuongHieu(th);
+        sp.setTrangThai("dang_ban");
+        sp.setNhanVien(nv);
+        sp = sanPhamRepository.save(sp);
+        testSpct = new SanPhamChiTiet();
+        testSpct.setSanPham(sp);
+        testSpct.setMauSac("Đen");
+        testSpct.setSoLuongTon(100);
+        testSpct.setGiaBan(BigDecimal.valueOf(500000));
+        testSpct = sanPhamChiTietRepository.save(testSpct);
     }
 
     private HoaDon createTestOrder(String status, String paymentMethod, String paymentStatus, PhuongThucThanhToan pttt, int qty) {
@@ -588,11 +633,11 @@ public class AdminOrderUpdateTest {
         
         // Call webhook with lost twice
         orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
-        int logCount1 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId())).size();
+        int logCount1 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId()).size();
         
         // Second call
         orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
-        int logCount2 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId())).size();
+        int logCount2 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId()).size();
         
         // Log count should not increase
         assertEquals(logCount1, logCount2);
@@ -612,7 +657,7 @@ public class AdminOrderUpdateTest {
         });
         
         // Check that a WARNING log was generated
-        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId()));
+        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId());
         boolean hasWarning = logs.stream().anyMatch(log -> log.getGhiChu() != null && log.getGhiChu().contains("[WARNING]"));
         assertTrue(hasWarning);
     }
@@ -637,7 +682,7 @@ public class AdminOrderUpdateTest {
         assertEquals(initialStock + 2, spctReturned.getSoLuongTon()); // Restored
         
         // Verify detailed audit log contents
-        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Long.valueOf(hd.getId()));
+        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId());
         EditLog returnLog = logs.stream()
                 .filter(l -> l.getGhiChu() != null && l.getGhiChu().contains("[WAREHOUSE_RETURN_RETURNED]"))
                 .findFirst().orElse(null);

@@ -113,10 +113,9 @@ public class GuestCheckoutSecurityIntegrationTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setEmail(email);
         tk.setMatKhau(null);
-        tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
-        tk.setSoLanMuaThanhCong(1);
         tk.setVaiTro("KH");
-        tk.setTrangThai("hoat_dong");
+        // Set GUEST status AFTER setTrangThai to avoid the else→ACTIVE overwrite
+        tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
         tk.setLaKhachHang(true);
         tk.setLaNhanVien(false);
         tk.setLaQuanLy(false);

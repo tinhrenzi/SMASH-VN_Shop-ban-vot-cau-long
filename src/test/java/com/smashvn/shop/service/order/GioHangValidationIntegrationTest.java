@@ -424,9 +424,8 @@ public class GioHangValidationIntegrationTest {
         // Verify that the KhachHang profile was automatically created and links to this user
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(noProfileUser.getId());
         assertNotNull(kh);
-        assertEquals("noprofile_tester", kh.getTenKh());
-        assertEquals("", kh.getHoKh());
+        assertEquals("noprofile_tester", kh.getHoTenKh());
         assertEquals("", kh.getSoDienThoaiKh());
-        assertTrue(kh.isLaTaiKhoanNoiBo()); // QL is an internal account
+        assertTrue("QL".equals(kh.getTaiKhoan().getVaiTro())); // QL is an internal account
     }
 }

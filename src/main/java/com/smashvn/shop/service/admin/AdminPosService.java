@@ -277,11 +277,8 @@ public class AdminPosService {
             hdct.setSanPhamChiTiet(spct);
             hdct.setSoLuong(item.soLuong);
             hdct.setDonGia(sellingPrice);
-            hdct.setGiaNiemYet(priceSnapshot.giaNiemYet());
-            hdct.setPhanTramGiam(priceSnapshot.phanTramGiam());
-            hdct.setSoTienGiamSanPham(priceSnapshot.soTienGiamSanPham());
-            hdct.setTenDotGiamGia(priceSnapshot.tenDotGiamGia());
-            hdct.setIdDotGiamGia(priceSnapshot.idDotGiamGia());
+            hdct.setGiaGoc(priceSnapshot.giaNiemYet());
+            hdct.setGiaSauGiam(sellingPrice);
             hdct.setTenSanPhamSnapshot(spct.getSanPham().getTenSanPham());
 
             // SKU Snapshot
@@ -296,27 +293,25 @@ public class AdminPosService {
                 sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
             }
             hdct.setSkuSnapshot(sku);
+            hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
 
-            // Variant attribute snapshot
-            StringBuilder sb = new StringBuilder();
-            sb.append("Màu sắc: ").append(spct.getMauSac() != null ? spct.getMauSac() : "N/A");
-            if (spct.getTrongLuong() != null && !spct.getTrongLuong().trim().isEmpty()) {
-                sb.append(" | Trọng lượng: ").append(spct.getTrongLuong());
+            // Freeze variant attributes at time of purchase
+            StringBuilder thuocTinhSb = new StringBuilder();
+            if (spct.getMauSac() != null && !spct.getMauSac().isBlank()) {
+                thuocTinhSb.append("Màu sắc: ").append(spct.getMauSac());
             }
-            if (spct.getMucCang() != null && !spct.getMucCang().trim().isEmpty()) {
-                sb.append(" | Sức căng khuyến nghị: ").append(spct.getMucCang());
+            if (spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank()) {
+                if (thuocTinhSb.length() > 0) thuocTinhSb.append(", ");
+                thuocTinhSb.append("Trọng lượng: ").append(spct.getTrongLuong());
             }
-            hdct.setThuocTinhSnapshot(sb.toString());
-
-            // Brand & Category
-            if (spct.getSanPham().getThuongHieu() != null) {
-                hdct.setThuongHieuSnapshot(spct.getSanPham().getThuongHieu().getTenThuongHieu());
+            if (spct.getMucCang() != null && !spct.getMucCang().isBlank()) {
+                if (thuocTinhSb.length() > 0) thuocTinhSb.append(", ");
+                thuocTinhSb.append("Mức cảng: ").append(spct.getMucCang());
             }
-            if (spct.getSanPham().getDanhMuc() != null) {
-                hdct.setDanhMucSnapshot(spct.getSanPham().getDanhMuc().getTenDanhMuc());
-            }
+            hdct.setThuocTinhSnapshot(thuocTinhSb.toString());
 
             listCt.add(hdct);
+
         }
 
         // 6. Xử lý Voucher và Khóa Pessimistic Write voucher

@@ -15,9 +15,6 @@ public class GioHang {
     @JoinColumn(name = "id_khach_hang")
     private KhachHang khachHang;
 
-    @Column(name = "session_id", length = 100)
-    private String sessionId;
-
     @Column(name = "ngay_tao")
     private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
 

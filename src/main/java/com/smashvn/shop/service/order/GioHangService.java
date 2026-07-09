@@ -1,53 +1,53 @@
 package com.smashvn.shop.service.order;
-import com.smashvn.shop.service.api.GhnService;
-import com.smashvn.shop.service.api.ShippingFeeCalculator;
-import com.smashvn.shop.service.admin.AdminShippingService;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
+import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
+import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.GioHang;
 import com.smashvn.shop.entity.GioHangChiTiet;
-import com.smashvn.shop.entity.KhachHang;
-import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.entity.SanPhamChiTiet;
-import com.smashvn.shop.entity.TrangThaiGioHang;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
-import com.smashvn.shop.entity.PhuongThucThanhToan;
-import com.smashvn.shop.entity.DonViVanChuyen;
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.PaymentMethod;
 import com.smashvn.shop.entity.PaymentStatus;
 import com.smashvn.shop.entity.PaymentTransaction;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.TrangThaiGioHang;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.GioHangRepository;
-import com.smashvn.shop.repository.KhachHangRepository;
-import com.smashvn.shop.repository.SanPhamChiTietRepository;
-import com.smashvn.shop.repository.TrangThaiGioHangRepository;
-import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
+import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
-import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
-import com.smashvn.shop.entity.SoDiaChi;
-import com.smashvn.shop.entity.PhieuGiamGia;
-import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
-import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
-import com.smashvn.shop.dao.DonViVanChuyenDAO;
-import com.smashvn.shop.util.PhoneUtils;
-import java.time.LocalDateTime;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
-import com.smashvn.shop.util.VoucherCalculator;
-import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.repository.TrangThaiGioHangRepository;
+import com.smashvn.shop.service.admin.AdminShippingService;
+import com.smashvn.shop.service.api.GhnService;
+import com.smashvn.shop.service.api.ShippingFeeCalculator;
 import com.smashvn.shop.service.product.PriceSnapshot;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.util.PhoneUtils;
+import com.smashvn.shop.util.VoucherCalculator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -167,7 +167,7 @@ public class GioHangService {
 
             TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
                     .orElseGet(() -> trangThaiGioHangRepository.findAll().stream().findFirst()
-                            .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1")));
+                    .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1")));
             chiTiet.setTrangThai(trangThai);
         }
 
@@ -300,9 +300,9 @@ public class GioHangService {
         List<HoaDon> existingOrders = hoaDonRepository.findByKhachHang_Id(kh.getId());
         java.time.LocalDateTime fifteenMinutesAgo = java.time.LocalDateTime.now().minusMinutes(15);
         for (HoaDon oldOrder : existingOrders) {
-            if ("cho_thanh_toan".equals(oldOrder.getTrangThaiDonHang()) && 
-                "pending".equalsIgnoreCase(oldOrder.getPaymentStatus())) {
-                
+            if ("cho_thanh_toan".equals(oldOrder.getTrangThaiDonHang())
+                    && "pending".equalsIgnoreCase(oldOrder.getPaymentStatus())) {
+
                 // Only clean up orders that have expired (created more than 15 minutes ago)
                 if (oldOrder.getNgayTao() != null && oldOrder.getNgayTao().isBefore(fifteenMinutesAgo)) {
                     List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(oldOrder.getId());
@@ -321,9 +321,9 @@ public class GioHangService {
 
     @org.springframework.transaction.annotation.Transactional
     public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
-                              Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
-                              Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
-                              Integer idDiaChiLuu, String voucherCode) {
+            Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
+            Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+            Integer idDiaChiLuu, String voucherCode) {
         String cleanGhiChu = sanitizeInput(ghiChu);
         if (cleanGhiChu != null && cleanGhiChu.length() > 500) {
             log.warn("[SECURITY_ALERT] Invalid note length for user: {}", idTaiKhoan);
@@ -356,7 +356,7 @@ public class GioHangService {
                     soDiaChi.setWardCode(ghnToWardCode.trim());
                     soDiaChiRepository.save(soDiaChi);
                     log.info("Auto-healed saved address ID {} with GHN IDs: provinceId={}, districtId={}, wardCode={}",
-                             soDiaChi.getId(), ghnProvinceId, ghnToDistrictId, ghnToWardCode);
+                            soDiaChi.getId(), ghnProvinceId, ghnToDistrictId, ghnToWardCode);
                 }
             }
 
@@ -507,7 +507,7 @@ public class GioHangService {
         hd.setTongTien(totalAmount);
         hd.setPhiVanChuyen(phiShip);
         hd.setPhieuGiamGia(appliedVoucher);
-        
+
         hd.setSoTienGiamVoucher(giamGia);
         if (appliedVoucher != null) {
             hd.setMaVoucherApDung(appliedVoucher.getMaPhieu());
@@ -517,12 +517,12 @@ public class GioHangService {
         } else {
             hd.setSoTienGiamVoucher(BigDecimal.ZERO);
         }
-        
+
         // Generate secure maDonHang: DHSVN + YYYYMMDDHHMMSS + - + 6 UUID characters
         String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         hd.setMaDonHang("DHSVN" + dateStr + "-" + uuidStr);
-        
+
         if ("COD".equalsIgnoreCase(ptttName)) {
             hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
             hd.setPaymentMethod(PaymentMethod.COD.getValue()); // "cod"
@@ -530,17 +530,17 @@ public class GioHangService {
             hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
             hd.setPaymentMethod(PaymentMethod.SEPAY.getValue()); // "sepay"
         }
-        
+
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
         hd.setDiaChiNhan(finalDiaChiNhan);
         hd.setSdtNhan(finalSdtNhan);
-        
+
         String resolvedTenNguoiNhan = "Quý khách";
         if (finalHoTenNhan != null && !finalHoTenNhan.trim().isEmpty()) {
             resolvedTenNguoiNhan = finalHoTenNhan.trim();
         }
         hd.setTenNguoiNhan(resolvedTenNguoiNhan);
-        
+
         hd.setGhiChu(cleanGhiChu);
         hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
 
@@ -572,14 +572,11 @@ public class GioHangService {
             hdct.setSanPhamChiTiet(lockedSpct);
             hdct.setSoLuong(item.getSoLuong());
             hdct.setDonGia(priceSnapshot.giaBanSauGiam());
-            hdct.setGiaNiemYet(priceSnapshot.giaNiemYet());
-            hdct.setPhanTramGiam(priceSnapshot.phanTramGiam());
-            hdct.setSoTienGiamSanPham(priceSnapshot.soTienGiamSanPham());
-            hdct.setTenDotGiamGia(priceSnapshot.tenDotGiamGia());
-            hdct.setIdDotGiamGia(priceSnapshot.idDotGiamGia());
-            
+            hdct.setGiaGoc(priceSnapshot.giaNiemYet());
+            hdct.setGiaSauGiam(priceSnapshot.giaBanSauGiam());
+
             hdct.setTenSanPhamSnapshot(lockedSpct.getSanPham().getTenSanPham());
-            
+
             String sku = null;
             try {
                 java.lang.reflect.Method getSkuMethod = lockedSpct.getClass().getMethod("getSku");
@@ -591,23 +588,22 @@ public class GioHangService {
                 sku = "SKU-" + lockedSpct.getSanPham().getId() + "-" + lockedSpct.getId();
             }
             hdct.setSkuSnapshot(sku);
-            
-            StringBuilder sb = new StringBuilder();
-            sb.append("Màu sắc: ").append(lockedSpct.getMauSac() != null ? lockedSpct.getMauSac() : "N/A");
-            if (lockedSpct.getTrongLuong() != null && !lockedSpct.getTrongLuong().trim().isEmpty()) {
-                sb.append(" | Trọng lượng: ").append(lockedSpct.getTrongLuong());
+            hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
+
+            // Freeze variant attributes as a display string at time of purchase
+            StringBuilder thuocTinh = new StringBuilder();
+            if (lockedSpct.getMauSac() != null && !lockedSpct.getMauSac().isBlank()) {
+                thuocTinh.append("Màu sắc: ").append(lockedSpct.getMauSac());
             }
-            if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().trim().isEmpty()) {
-                sb.append(" | Sức căng khuyến nghị: ").append(lockedSpct.getMucCang());
+            if (lockedSpct.getTrongLuong() != null && !lockedSpct.getTrongLuong().isBlank()) {
+                if (thuocTinh.length() > 0) thuocTinh.append(", ");
+                thuocTinh.append("Trọng lượng: ").append(lockedSpct.getTrongLuong());
             }
-            hdct.setThuocTinhSnapshot(sb.toString());
-            
-            if (lockedSpct.getSanPham().getThuongHieu() != null) {
-                hdct.setThuongHieuSnapshot(lockedSpct.getSanPham().getThuongHieu().getTenThuongHieu());
+            if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().isBlank()) {
+                if (thuocTinh.length() > 0) thuocTinh.append(", ");
+                thuocTinh.append("Mức cảng: ").append(lockedSpct.getMucCang());
             }
-            if (lockedSpct.getSanPham().getDanhMuc() != null) {
-                hdct.setDanhMucSnapshot(lockedSpct.getSanPham().getDanhMuc().getTenDanhMuc());
-            }
+            hdct.setThuocTinhSnapshot(thuocTinh.toString());
 
             hoaDonChiTietRepository.save(hdct);
         }
@@ -639,8 +635,11 @@ public class GioHangService {
 
         return hd;
     }
+
     private String sanitizeInput(String input) {
-        if (input == null) return null;
+        if (input == null) {
+            return null;
+        }
         return Jsoup.clean(input, Safelist.none()).trim();
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.entity.DanhGia;
-import com.smashvn.shop.entity.DanhGiaAnh;
+import com.smashvn.shop.entity.HinhAnhDanhGia;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
@@ -284,7 +284,7 @@ public class DanhGiaService {
 
                 if (hasNewUpload) {
                     // Xóa ảnh cũ trên đĩa vật lý
-                    for (DanhGiaAnh oldAnh : dg.getDanhSachAnh()) {
+                    for (HinhAnhDanhGia oldAnh : dg.getDanhSachAnh()) {
                         fileStorageService.deleteImage(oldAnh.getDuongDan(), "reviews");
                     }
                     // Dọn danh sách trong DB
@@ -293,9 +293,9 @@ public class DanhGiaService {
                     // Tải ảnh mới lên
                     uploadedFileNames = fileStorageService.saveReviewImages(files);
                     for (String name : uploadedFileNames) {
-                        DanhGiaAnh anh = DanhGiaAnh.builder()
+                        HinhAnhDanhGia anh = HinhAnhDanhGia.builder()
                                 .danhGia(dg)
-                                .duongDan(name)
+                                .urlHinhAnh(name)
                                 .ngayTao(LocalDateTime.now())
                                 .build();
                         dg.getDanhSachAnh().add(anh);
@@ -318,8 +318,8 @@ public class DanhGiaService {
                         .binhLuan(filteredComment)
                         .ngayDanhGia(LocalDateTime.now())
                         .daXoa(false)
-                        .anBinhLuan(autoHide)
-                        .anHinhAnh(false)
+                        .binhLuanAn(autoHide)
+                        .hinhAnhAn(false)
                         .build();
 
                 // Lưu ảnh đính kèm nếu có
@@ -336,9 +336,9 @@ public class DanhGiaService {
                 if (hasUpload) {
                     uploadedFileNames = fileStorageService.saveReviewImages(files);
                     for (String name : uploadedFileNames) {
-                        DanhGiaAnh anh = DanhGiaAnh.builder()
+                        HinhAnhDanhGia anh = HinhAnhDanhGia.builder()
                                 .danhGia(dg)
-                                .duongDan(name)
+                                .urlHinhAnh(name)
                                 .ngayTao(LocalDateTime.now())
                                 .build();
                         dg.getDanhSachAnh().add(anh);

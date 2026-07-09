@@ -10,8 +10,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.entity.DotGiamGia;
@@ -413,7 +413,7 @@ public class AdminKhuyenMaiService {
         // Validate format: chỉ chấp nhận số nguyên hoặc dạng phân cách hàng nghìn
         if (!trimmed.matches("\\d+") && !trimmed.matches("\\d{1,3}([.,]\\d{3})+")) {
             throw new PromotionValidationException(
-                fieldName + " phải là số nguyên VNĐ hợp lệ. Ví dụ: 500000 hoặc 500.000!"
+                    fieldName + " phải là số nguyên VNĐ hợp lệ. Ví dụ: 500000 hoặc 500.000!"
             );
         }
 

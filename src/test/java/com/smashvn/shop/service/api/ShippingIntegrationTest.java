@@ -102,26 +102,19 @@ public class ShippingIntegrationTest {
 
     @Test
     void testHistoricalOrderDisplayIntegrity() {
-        // Create an order
+        // Seed / fetch required data
+        KhachHang kh = seedKhachHang();
+        PhuongThucThanhToan pttt = seedPhuongThucThanhToan();
+        DonViVanChuyen dvvc = seedDonViVanChuyen();
+
         HoaDon hd = new HoaDon();
-        
-        List<KhachHang> khs = khachHangRepository.findAll();
-        assertFalse(khs.isEmpty(), "KhachHang table must not be empty for this test");
-        hd.setKhachHang(khs.get(0));
-
-        List<PhuongThucThanhToan> ptts = phuongThucThanhToanDAO.findAll();
-        assertFalse(ptts.isEmpty(), "PhuongThucThanhToan table must not be empty for this test");
-        hd.setPhuongThucThanhToan(ptts.get(0));
-
-        List<DonViVanChuyen> dvvcs = donViVanChuyenDAO.findAll();
-        assertFalse(dvvcs.isEmpty(), "DonViVanChuyen table must not be empty for this test");
-        hd.setDonViVanChuyen(dvvcs.get(0));
-
+        hd.setKhachHang(kh);
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setDonViVanChuyen(dvvc);
         hd.setDiaChiNhan("Hà Nội");
         hd.setSdtNhan("0912345678");
         hd.setTongTien(new BigDecimal("1000000"));
-        hd.setMaDonHang("TEST-HIST-FEE-" + System.nanoTime());
-        
+
         // Persist shipping fee as 22000
         BigDecimal persistedFee = BigDecimal.valueOf(22000);
         hd.setPhiVanChuyen(persistedFee);
@@ -257,21 +250,18 @@ public class ShippingIntegrationTest {
     @Test
     void testHistoricalOrderFeeUnaffected() {
         // Create an order with fee 22000
+        KhachHang kh = seedKhachHang();
+        PhuongThucThanhToan pttt = seedPhuongThucThanhToan();
+        DonViVanChuyen carrier = seedDonViVanChuyen();
+
         HoaDon hd = new HoaDon();
-        List<KhachHang> khs = khachHangRepository.findAll();
-        hd.setKhachHang(khs.get(0));
-        List<PhuongThucThanhToan> ptts = phuongThucThanhToanDAO.findAll();
-        hd.setPhuongThucThanhToan(ptts.get(0));
-        
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        DonViVanChuyen carrier = carriers.get(0);
+        hd.setKhachHang(kh);
+        hd.setPhuongThucThanhToan(pttt);
         hd.setDonViVanChuyen(carrier);
-        
         hd.setDiaChiNhan("Thái Nguyên");
         hd.setSdtNhan("0912345678");
         hd.setTongTien(BigDecimal.valueOf(100000));
         hd.setPhiVanChuyen(BigDecimal.valueOf(22000));
-        hd.setMaDonHang("TEST-HIST-FEE-UNAF-" + System.nanoTime());
         hd = hoaDonRepository.save(hd);
 
         // Update carrier fee to 99000 in database
@@ -288,5 +278,42 @@ public class ShippingIntegrationTest {
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertNotNull(reloaded);
         assertEquals(0, BigDecimal.valueOf(22000).compareTo(reloaded.getPhiVanChuyen()));
+    }
+    // ── Seeding helpers ──────────────────────────────────────────────────────
+
+    private KhachHang seedKhachHang() {
+        List<KhachHang> khs = khachHangRepository.findAll();
+        if (!khs.isEmpty()) return khs.get(0);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setEmail("ship-kh-" + System.nanoTime() + "@test.com");
+        tk.setMatKhau("123");
+        tk.setVaiTro("KH");
+        tk.setLaKhachHang(true);
+        tk = taiKhoanRepository.save(tk);
+        KhachHang kh = new KhachHang();
+        kh.setTaiKhoan(tk);
+        kh.setHoKh("Ship");
+        kh.setTenKh("Test");
+        kh.setSoDienThoaiKh("0900000001");
+        return khachHangRepository.save(kh);
+    }
+
+    private PhuongThucThanhToan seedPhuongThucThanhToan() {
+        List<PhuongThucThanhToan> ptts = phuongThucThanhToanDAO.findAll();
+        if (!ptts.isEmpty()) return ptts.get(0);
+        PhuongThucThanhToan p = new PhuongThucThanhToan();
+        p.setTenPhuongThuc("COD");
+        return phuongThucThanhToanDAO.save(p);
+    }
+
+    private DonViVanChuyen seedDonViVanChuyen() {
+        List<DonViVanChuyen> dvvcs = donViVanChuyenDAO.findAll();
+        if (!dvvcs.isEmpty()) return dvvcs.get(0);
+        DonViVanChuyen d = new DonViVanChuyen();
+        d.setTenDonVi("GHTK Test");
+        d.setHotline("19001234");
+        d.setPhiLocal(BigDecimal.valueOf(22000));
+        d.setPhiNationwide(BigDecimal.valueOf(30000));
+        return donViVanChuyenDAO.save(d);
     }
 }

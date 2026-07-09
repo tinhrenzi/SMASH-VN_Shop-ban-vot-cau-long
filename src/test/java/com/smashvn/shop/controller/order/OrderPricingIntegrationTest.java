@@ -443,12 +443,11 @@ public class OrderPricingIntegrationTest {
         HoaDonChiTiet posDetail = hoaDonChiTietRepository.findByHoaDon_Id(posOrder.getId()).get(0);
 
         // Verify pricing snapshots are identical
-        assertEquals(onlineDetail.getGiaNiemYet(), posDetail.getGiaNiemYet());
+        assertEquals(onlineDetail.getGiaGoc(), posDetail.getGiaGoc());
+        assertEquals(onlineDetail.getGiaSauGiam(), posDetail.getGiaSauGiam());
         assertEquals(onlineDetail.getDonGia(), posDetail.getDonGia());
-        assertEquals(onlineDetail.getPhanTramGiam(), posDetail.getPhanTramGiam());
-        assertEquals(onlineDetail.getSoTienGiamSanPham(), posDetail.getSoTienGiamSanPham());
-        assertEquals(onlineDetail.getTenDotGiamGia(), posDetail.getTenDotGiamGia());
-        assertEquals(onlineDetail.getIdDotGiamGia(), posDetail.getIdDotGiamGia());
+        assertEquals(onlineDetail.getTenSanPhamSnapshot(), posDetail.getTenSanPhamSnapshot());
+        assertEquals(onlineDetail.getSkuSnapshot(), posDetail.getSkuSnapshot());
     }
 
     @Test

@@ -5,10 +5,12 @@ import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,9 @@ public class AdminControllerRenderTest {
 
     @Autowired
     private PhuongThucThanhToanDAO phuongThucThanhToanDAO;
+
+    @Autowired
+    private NhanVienRepository nhanVienRepository;
 
     @Test
     public void testDonHangRender() throws Exception {
@@ -167,6 +172,14 @@ public class AdminControllerRenderTest {
         hd.setTrangThaiDonHang("da_giao");
         hd.setDonViVanChuyen(dvvc);
         hd.setPhuongThucThanhToan(pttt);
+        NhanVien nv = new NhanVien();
+        nv.setTaiKhoan(staff);
+        nv.setHoTenNv("Staff Tester");
+        nv.setChucVu("Nhân viên");
+        nv.setSoDienThoaiNv("0111222333");
+        nv = nhanVienRepository.save(nv);
+
+        hd.setNhanVien(nv);
         hd.setKhachHang(kh);
         hd = hoaDonRepository.save(hd);
 
@@ -176,7 +189,7 @@ public class AdminControllerRenderTest {
                 .sessionAttr("vaiTro", "NV"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(hd.getId()))
-                .andExpect(jsonPath("$.maDonHang").value("HDSVN20260619-T100"))
+                .andExpect(jsonPath("$.maDonHang").value(hd.getMaDonHang()))
                 .andExpect(jsonPath("$.nguoiXacNhan").value("Staff Tester"))
                 .andExpect(jsonPath("$.thoiGianXacNhan").isNotEmpty());
     }

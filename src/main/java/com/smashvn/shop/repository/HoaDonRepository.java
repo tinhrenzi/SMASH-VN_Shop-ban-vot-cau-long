@@ -15,34 +15,49 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
     List<HoaDon> findByKhachHang_IdOrderByIdDesc(Integer idKhachHang);
 
-    java.util.Optional<HoaDon> findByAppTransId(String appTransId);
-
-    java.util.Optional<HoaDon> findByMaDonHang(String maDonHang);
-
     java.util.Optional<HoaDon> findByGhnOrderCode(String ghnOrderCode);
 
-    @Query("SELECT hd FROM HoaDon hd WHERE hd.maDonHang = :maDonHang OR REPLACE(REPLACE(hd.maDonHang, '-', ''), '_', '') = :normalizedMaDonHang")
-    java.util.Optional<HoaDon> findByMaDonHangOrNormalized(
-            @Param("maDonHang") String maDonHang,
-            @Param("normalizedMaDonHang") String normalizedMaDonHang);
+    default java.util.Optional<HoaDon> findByMaDonHang(String maDonHang) {
+        Integer id = parseIdFromMaDonHang(maDonHang);
+        return id != null ? findById(id) : java.util.Optional.empty();
+    }
 
-    @Query("SELECT hd FROM HoaDon hd WHERE hd.paymentMethod = 'ZaloPay' AND hd.paymentStatus = 'PENDING' AND hd.ngayTao < :cutoff")
+    default java.util.Optional<HoaDon> findByMaDonHangOrNormalized(String maDonHang, String normalizedMaDonHang) {
+        Integer id = parseIdFromMaDonHang(maDonHang != null ? maDonHang : normalizedMaDonHang);
+        return id != null ? findById(id) : java.util.Optional.empty();
+    }
+
+    static Integer parseIdFromMaDonHang(String code) {
+        if (code == null) return null;
+        try {
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
+            java.util.regex.Matcher matcher = pattern.matcher(code.trim());
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group());
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return null;
+    }
+
+    @Query("SELECT hd FROM HoaDon hd WHERE (hd.phuongThucThanhToan.maPhuongThuc = 'zalopay' OR hd.phuongThucThanhToan.tenPhuongThuc = 'ZaloPay') AND hd.trangThaiThanhToan = 'PENDING' AND hd.ngayTao < :cutoff")
     List<HoaDon> findPendingZaloPayOrdersOlderThan(@Param("cutoff") LocalDateTime cutoff);
 
     @Query("SELECT hd.id, "
-            + "hd.khachHang.hoKh, "
-            + "hd.khachHang.tenKh, "
+            + "hd.khachHang.hoTenKh, "
+            + "null, "
             + "hd.ngayTao, "
-            + "hd.paymentMethod, "
+            + "null, "
             + "hd.phuongThucThanhToan.tenPhuongThuc, "
-            + "hd.paymentStatus, "
+            + "null, "
             + "hd.trangThaiThanhToan, "
             + "hd.trangThaiDonHang, "
-            + "hd.transactionId, "
-            + "hd.appTransId, "
-            + "hd.maGiaoDich, "
+            + "null, "
+            + "null, "
+            + "null, "
             + "hd.tongTien, "
-            + "hd.refundStatus "
+            + "null "
             + "FROM HoaDon hd "
             + "LEFT JOIN hd.khachHang "
             + "LEFT JOIN hd.phuongThucThanhToan "
@@ -56,26 +71,26 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     Long countNewCustomers(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT hd.id, "
-            + "hd.khachHang.hoKh, "
-            + "hd.khachHang.tenKh, "
+            + "hd.khachHang.hoTenKh, "
+            + "null, "
             + "hd.ngayTao, "
-            + "hd.paymentMethod, "
+            + "null, "
             + "hd.phuongThucThanhToan.tenPhuongThuc, "
-            + "hd.paymentStatus, "
+            + "null, "
             + "hd.trangThaiThanhToan, "
             + "hd.trangThaiDonHang, "
-            + "hd.transactionId, "
-            + "hd.appTransId, "
-            + "hd.maGiaoDich, "
+            + "null, "
+            + "null, "
+            + "null, "
             + "hd.tongTien "
             + "FROM HoaDon hd "
             + "LEFT JOIN hd.khachHang "
             + "LEFT JOIN hd.phuongThucThanhToan "
-            + "WHERE (LOWER(hd.paymentStatus) = 'paid' OR hd.trangThaiThanhToan = 'DA_THANH_TOAN' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR LOWER(hd.paymentStatus) = 'refunded' OR hd.trangThaiThanhToan = 'REFUNDED' OR (LOWER(hd.paymentStatus) = 'cancelled' AND hd.paidAt IS NOT NULL) OR hd.trangThaiDonHang IN ('da_giao', 'hoan_thanh')) AND hd.ngayTao BETWEEN :start AND :end "
+            + "WHERE (LOWER(hd.trangThaiThanhToan) = 'paid' OR hd.trangThaiThanhToan = 'DA_THANH_TOAN' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR LOWER(hd.trangThaiThanhToan) = 'refunded' OR hd.trangThaiThanhToan = 'REFUNDED' OR (LOWER(hd.trangThaiThanhToan) = 'cancelled' AND hd.ngayThanhToan IS NOT NULL) OR hd.trangThaiDonHang IN ('da_giao', 'hoan_thanh')) AND hd.ngayTao BETWEEN :start AND :end "
             + "ORDER BY hd.ngayTao DESC")
     List<Object[]> findRawTransactionsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT COUNT(DISTINCT hd.id) FROM HoaDon hd WHERE (LOWER(hd.paymentStatus) = 'paid' OR hd.trangThaiThanhToan = 'DA_THANH_TOAN' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR LOWER(hd.paymentStatus) = 'refunded' OR hd.trangThaiThanhToan = 'REFUNDED' OR (LOWER(hd.paymentStatus) = 'cancelled' AND hd.paidAt IS NOT NULL) OR hd.trangThaiDonHang IN ('da_giao', 'hoan_thanh')) AND hd.ngayTao BETWEEN :start AND :end")
+    @Query("SELECT COUNT(DISTINCT hd.id) FROM HoaDon hd WHERE (LOWER(hd.trangThaiThanhToan) = 'paid' OR hd.trangThaiThanhToan = 'DA_THANH_TOAN' OR hd.trangThaiThanhToan = 'CHO_HOAN_TIEN' OR LOWER(hd.trangThaiThanhToan) = 'refunded' OR hd.trangThaiThanhToan = 'REFUNDED' OR (LOWER(hd.trangThaiThanhToan) = 'cancelled' AND hd.ngayThanhToan IS NOT NULL) OR hd.trangThaiDonHang IN ('da_giao', 'hoan_thanh')) AND hd.ngayTao BETWEEN :start AND :end")
     Long countTransactionsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @org.springframework.data.jpa.repository.Modifying

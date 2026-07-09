@@ -11,7 +11,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "SanPhamChiTiet", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"id_san_pham", "mau_sac", "trong_luong", "muc_cang"})
+    @UniqueConstraint(columnNames = {"id_san_pham", "mau_sac", "trong_luong", "suc_cang"})
 })
 @Data
 public class SanPhamChiTiet {
@@ -26,8 +26,8 @@ public class SanPhamChiTiet {
     @Column(name = "mau_sac", nullable = false, length = 50, columnDefinition = "NVARCHAR(50)")
     private String mauSac;
 
-    @Column(name = "muc_cang", length = 50, columnDefinition = "NVARCHAR(50)")
-    private String mucCang;
+    @Column(name = "suc_cang", length = 50, columnDefinition = "NVARCHAR(50)")
+    private String sucCang;
 
     @Column(name = "trong_luong", nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private String trongLuong;
@@ -37,9 +37,6 @@ public class SanPhamChiTiet {
 
     @Column(name = "so_luong_ton", nullable = false)
     private Integer soLuongTon = 0;
-
-    @Column(name = "barcode", length = 100)
-    private String barcode;
 
     @Column(name = "chat_lieu", length = 50)
     private String chatLieu;
@@ -56,11 +53,8 @@ public class SanPhamChiTiet {
     @Column(name = "ngay_cap_nhat")
     private LocalDateTime ngayCapNhat = LocalDateTime.now();
 
-    @Column(name = "SKU", length = 100)
-    private String sku;
-
-    @Column(name = "trang_thai", length = 50)
-    private String trangThai = "dang_ban";
+    @Column(name = "trang_thai", nullable = false)
+    private Boolean trangThaiValue = true;
 
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
@@ -91,5 +85,35 @@ public class SanPhamChiTiet {
             hasp.setMauSac(this.mauSac);
             this.hinhAnhSanPhams.add(hasp);
         }
+    }
+
+    public String getMucCang() {
+        return sucCang;
+    }
+
+    public void setMucCang(String mucCang) {
+        this.sucCang = mucCang;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThaiValue = !"ngung_ban".equalsIgnoreCase(String.valueOf(trangThai))
+                && !"ngung_kinh_doanh".equalsIgnoreCase(String.valueOf(trangThai))
+                && !"false".equalsIgnoreCase(String.valueOf(trangThai));
+    }
+
+    public String getTrangThai() {
+        return Boolean.FALSE.equals(trangThaiValue) ? "ngung_kinh_doanh" : "dang_ban";
+    }
+
+    public Boolean getTrangThaiValue() {
+        return trangThaiValue;
+    }
+
+    public void setTrangThaiValue(Boolean trangThaiValue) {
+        this.trangThaiValue = trangThaiValue;
+    }
+
+    public boolean isDangBan() {
+        return !Boolean.FALSE.equals(trangThaiValue);
     }
 }

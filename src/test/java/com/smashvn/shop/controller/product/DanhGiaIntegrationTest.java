@@ -529,9 +529,9 @@ public class DanhGiaIntegrationTest {
                 .andExpect(flash().attribute("successMsg", "Đã ẩn nội dung bình luận thành công."));
 
         DanhGia updatedDg = danhGiaDAO.findById(dg.getId()).orElseThrow();
-        assertTrue(updatedDg.getAnBinhLuan());
-        assertFalse(updatedDg.getAnHinhAnh()); // Independent image is still visible
-        assertEquals(testAdmin.getId(), updatedDg.getNguoiAnBinhLuan().getId());
+        assertTrue(updatedDg.getBinhLuanAn());
+        assertFalse(updatedDg.getHinhAnhAn()); // Independent image is still visible
+        assertEquals(testAdmin.getId(), updatedDg.getNhanVien().getId());
         assertNotNull(updatedDg.getNgayAnBinhLuan());
 
         // Rating Stats cache should NOT be updated by moderation action
@@ -546,9 +546,9 @@ public class DanhGiaIntegrationTest {
                 .andExpect(flash().attribute("successMsg", "Đã ẩn hình ảnh đánh giá thành công."));
 
         updatedDg = danhGiaDAO.findById(dg.getId()).orElseThrow();
-        assertTrue(updatedDg.getAnBinhLuan());
-        assertTrue(updatedDg.getAnHinhAnh());
-        assertEquals(testAdmin.getId(), updatedDg.getNguoiAnHinhAnh().getId());
+        assertTrue(updatedDg.getBinhLuanAn());
+        assertTrue(updatedDg.getHinhAnhAn());
+        assertEquals(testAdmin.getId(), updatedDg.getNhanVien().getId());
         assertNotNull(updatedDg.getNgayAnHinhAnh());
     }
 

@@ -25,6 +25,6 @@ public class GioHangChiTiet {
 	@Column(name = "so_luong", nullable = false)
 	private Integer soLuong;
 
-	@Column(name = "ngay_them")
-	private java.time.LocalDateTime ngayThem = java.time.LocalDateTime.now();
+	@Column(name = "ngay_tao")
+	private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
 }

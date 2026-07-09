@@ -137,6 +137,7 @@ class GhnRestControllerTest {
     void inactiveCustomerCannotTrackAnyOrder() throws Exception {
         TaiKhoan inactive = activeCustomer(4);
         inactive.setTrangThai("khoa");
+        inactive.setTrangThaiTaiKhoan(AccountStatus.LOCKED);
         when(taiKhoanRepository.findById(4)).thenReturn(Optional.of(inactive));
 
         mockMvc.perform(get("/api/ghn/track/order/10").sessionAttr("idNguoiDung", 4))

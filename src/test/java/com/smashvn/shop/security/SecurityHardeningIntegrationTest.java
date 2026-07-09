@@ -27,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
-import com.smashvn.shop.entity.ChatConversation;
-import com.smashvn.shop.entity.ChatMessage;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.HoaDon;
@@ -39,8 +37,6 @@ import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThuongHieu;
-import com.smashvn.shop.repository.ChatConversationRepository;
-import com.smashvn.shop.repository.ChatMessageRepository;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
@@ -73,10 +69,7 @@ public class SecurityHardeningIntegrationTest {
     private ThuongHieuRepository thuongHieuRepository;
     @Autowired
     private PhieuGiamGiaRepository phieuGiamGiaRepository;
-    @Autowired
-    private ChatConversationRepository chatConversationRepository;
-    @Autowired
-    private ChatMessageRepository chatMessageRepository;
+
     @Autowired
     private HoaDonRepository hoaDonRepository;
     @Autowired
@@ -380,58 +373,7 @@ public class SecurityHardeningIntegrationTest {
         assertTrue(e.getMessage().contains("vượt quá 500"), "Expected cancel reason length error but got: " + e.getMessage());
     }
 
-    @Test
-    void testChatMessageBoundary_2000Chars() throws Exception {
-        String msg2000 = repeat('a', 2000);
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("idNguoiDung", customerTk.getId());
 
-        mockMvc.perform(post("/api/chat/send")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"content\":\"" + msg2000 + "\"}")
-                .session(session))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testChatMessageBoundary_2001Chars() throws Exception {
-        String msg2001 = repeat('a', 2001);
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("idNguoiDung", customerTk.getId());
-
-        mockMvc.perform(post("/api/chat/send")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"content\":\"" + msg2001 + "\"}")
-                .session(session))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("không được vượt quá 2000 ký tự")));
-    }
-
-    @Test
-    void testChat_NoKhachHangProfile_AutoCreation() throws Exception {
-        // managerTk has no KhachHang profile initially
-        org.junit.jupiter.api.Assertions.assertNull(khachHangRepository.findByTaiKhoan_Id(managerTk.getId()));
-
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("idNguoiDung", managerTk.getId());
-
-        // Perform request to /api/chat/history, which should auto-create the KhachHang profile
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/chat/history")
-                .session(session))
-                .andExpect(status().isOk());
-
-        // Verify that the KhachHang profile was indeed automatically created
-        KhachHang profile = khachHangRepository.findByTaiKhoan_Id(managerTk.getId());
-        org.junit.jupiter.api.Assertions.assertNotNull(profile);
-        org.junit.jupiter.api.Assertions.assertTrue(profile.isLaTaiKhoanNoiBo());
-
-        // Now perform a message send, it should also work perfectly
-        mockMvc.perform(post("/api/chat/send")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"content\":\"Xin chào\"}")
-                .session(session))
-                .andExpect(status().isOk());
-    }
 
     // ================================================================
     // AUTHORIZATION TESTS
@@ -549,75 +491,7 @@ public class SecurityHardeningIntegrationTest {
                 .andExpect(flash().attribute("errorMsg", org.hamcrest.Matchers.containsString("Chỉ Quản lý mới được chỉnh sửa cấu hình kết nối")));
     }
 
-    // ================================================================
-    // BOLA TESTS
-    // ================================================================
-    @Test
-    void testChatFeedbackBOLA_SuccessOnOwnMessage() throws Exception {
-        ChatConversation conv = new ChatConversation();
-        conv.setKhachHang(customerKh);
-        conv.setTieuDe("Conversation Test");
-        conv.setTrangThai("ACTIVE");
-        conv = chatConversationRepository.save(conv);
 
-        ChatMessage msg = new ChatMessage();
-        msg.setConversation(conv);
-        msg.setSenderType("BOT");
-        msg.setNoiDung("Hello user!");
-        msg.setThoiGian(LocalDateTime.now());
-        msg = chatMessageRepository.save(msg);
-
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("idNguoiDung", customerTk.getId());
-
-        mockMvc.perform(post("/api/chat/feedback")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"messageId\":" + msg.getId() + ",\"positive\":true,\"note\":\"Very helpful!\"}")
-                .session(session))
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Cập nhật đánh giá thành công")));
-    }
-
-    @Test
-    void testChatFeedbackBOLA_ForbiddenOnOtherUserMessage() throws Exception {
-        TaiKhoan otherTk = new TaiKhoan();
-        otherTk.setEmail("other-customer-" + System.nanoTime() + "@smashvn.com");
-        otherTk.setMatKhau("password123");
-        otherTk.setVaiTro("KH");
-        otherTk.setLaKhachHang(true);
-        otherTk = taiKhoanRepository.save(otherTk);
-
-        KhachHang otherKh = new KhachHang();
-        otherKh.setTaiKhoan(otherTk);
-        otherKh.setHoKh("Other");
-        otherKh.setTenKh("User");
-        otherKh.setSoDienThoaiKh("0987654324");
-        otherKh.setLaTaiKhoanNoiBo(false);
-        otherKh = khachHangRepository.save(otherKh);
-
-        ChatConversation otherConv = new ChatConversation();
-        otherConv.setKhachHang(otherKh);
-        otherConv.setTieuDe("Other Conversation");
-        otherConv.setTrangThai("ACTIVE");
-        otherConv = chatConversationRepository.save(otherConv);
-
-        ChatMessage otherMsg = new ChatMessage();
-        otherMsg.setConversation(otherConv);
-        otherMsg.setSenderType("BOT");
-        otherMsg.setNoiDung("Hello other user!");
-        otherMsg.setThoiGian(LocalDateTime.now());
-        otherMsg = chatMessageRepository.save(otherMsg);
-
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("idNguoiDung", customerTk.getId());
-
-        mockMvc.perform(post("/api/chat/feedback")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"messageId\":" + otherMsg.getId() + ",\"positive\":true,\"note\":\"Hacking feedback\"}")
-                .session(session))
-                .andExpect(status().isForbidden())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Bạn không có quyền đánh giá tin nhắn này!")));
-    }
 
     // ================================================================
     // VOUCHER TESTS

@@ -22,11 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * REST Controller nội bộ cung cấp các API GHN cho frontend:
- *  - GET  /api/ghn/districts?provinceId=   → danh sách quận/huyện
- *  - GET  /api/ghn/wards?districtId=       → danh sách phường/xã
- *  - POST /api/ghn/fee                     → tính phí ship
- *  - GET  /api/ghn/track/{orderCode}       → tra cứu trạng thái vận đơn
+ * REST Controller nội bộ cung cấp các API GHN cho frontend: - GET
+ * /api/ghn/districts?provinceId= → danh sách quận/huyện - GET
+ * /api/ghn/wards?districtId= → danh sách phường/xã - POST /api/ghn/fee → tính
+ * phí ship - GET /api/ghn/track/{orderCode} → tra cứu trạng thái vận đơn
  */
 @RestController
 @RequestMapping("/api/ghn")
@@ -41,7 +40,9 @@ public class GhnRestController {
     private final GhnConfig ghnConfig;
     private final TaiKhoanRepository taiKhoanRepository;
 
-    /** Lấy danh sách tỉnh/thành phố */
+    /**
+     * Lấy danh sách tỉnh/thành phố
+     */
     @GetMapping("/provinces")
     public ResponseEntity<?> getProvinces() {
         try {
@@ -55,7 +56,9 @@ public class GhnRestController {
         }
     }
 
-    /** Lấy danh sách quận/huyện theo tỉnh */
+    /**
+     * Lấy danh sách quận/huyện theo tỉnh
+     */
     @GetMapping("/districts")
     public ResponseEntity<?> getDistricts(@RequestParam Integer provinceId) {
         try {
@@ -69,7 +72,9 @@ public class GhnRestController {
         }
     }
 
-    /** Lấy danh sách phường/xã theo quận/huyện */
+    /**
+     * Lấy danh sách phường/xã theo quận/huyện
+     */
     @GetMapping("/wards")
     public ResponseEntity<?> getWards(@RequestParam Integer districtId) {
         try {
@@ -83,7 +88,9 @@ public class GhnRestController {
         }
     }
 
-    /** Tính phí ship */
+    /**
+     * Tính phí ship
+     */
     @PostMapping("/fee")
     public ResponseEntity<?> calculateFee(@RequestBody Map<String, Object> body) {
         try {
@@ -109,7 +116,9 @@ public class GhnRestController {
         }
     }
 
-    /** Tra cứu trạng thái vận đơn GHN */
+    /**
+     * Tra cứu trạng thái vận đơn GHN
+     */
     @GetMapping("/track/{orderCode}")
     public ResponseEntity<?> trackOrder(@PathVariable String orderCode, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
@@ -128,7 +137,9 @@ public class GhnRestController {
         }
     }
 
-    /** Tra cứu vận đơn theo ID đơn hàng (dành cho user) */
+    /**
+     * Tra cứu vận đơn theo ID đơn hàng (dành cho user)
+     */
     @GetMapping("/track/order/{orderId}")
     public ResponseEntity<?> trackByOrderId(@PathVariable Integer orderId, HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
@@ -187,9 +198,10 @@ public class GhnRestController {
             return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
         }
     }
+
     /**
-     * [ADMIN] Push thủ công đơn hàng lên GHN
-     * POST /api/ghn/admin/push/{orderId}?toDistrictId=X&toWardCode=Y
+     * [ADMIN] Push thủ công đơn hàng lên GHN POST
+     * /api/ghn/admin/push/{orderId}?toDistrictId=X&toWardCode=Y
      *
      * Dùng để tạo đơn vận chuyển GHN cho đơn hàng cũ (chưa có ghn_order_code)
      * hoặc khi cần retry sau lỗi.
@@ -255,8 +267,7 @@ public class GhnRestController {
     }
 
     /**
-     * Webhook nhận cập nhật trạng thái đơn hàng từ GHN
-     * POST /api/ghn/webhook
+     * Webhook nhận cập nhật trạng thái đơn hàng từ GHN POST /api/ghn/webhook
      */
     @PostMapping("/webhook")
     public ResponseEntity<?> ghnWebhook(
@@ -270,7 +281,7 @@ public class GhnRestController {
         try {
             String orderCode = (String) payload.get("OrderCode");
             String status = (String) payload.get("Status");
-            
+
             if (orderCode == null || status == null) {
                 return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Missing OrderCode or Status"));
             }
@@ -344,4 +355,3 @@ public class GhnRestController {
         }
     }
 }
-

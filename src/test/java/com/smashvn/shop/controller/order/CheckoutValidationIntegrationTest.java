@@ -1088,13 +1088,15 @@ public class CheckoutValidationIntegrationTest {
     }
 
     @Test
-    void testSubmitCheckout_DatabaseExceptionFallback() throws Exception {
-        // Trigger a database exception (string truncation on SoDiaChi.ten_nguoi_nhan)
-        // and verify it returns a general system error message
+    void testSubmitCheckout_RecipientNameTooLongValidation() throws Exception {
+        // The controller validates hoTenNhan length (2-100 chars) before reaching the DB layer.
+        // A 110-char name exceeds the allowed 100-char max and returns a specific validation message.
+        // This also implicitly tests that the ho_va_ten_nguoi_nhan DB column (nvarchar(100))
+        // is consistent with the controller validation constraint.
         mockMvc.perform(post("/checkout/submit")
                 .sessionAttr("idNguoiDung", testUser.getId())
                 .requestAttr("_csrf", csrfToken)
-                .param("hoTenNhan", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") // 60 chars, exceeding nvarchar(50)
+                .param("hoTenNhan", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") // 110 chars, exceeding the 2-100 char validation constraint
                 .param("sdtNhan", "0912345678")
                 .param("diaChiNhan", "123 Đường Láng")
                 .param("idDonViVanChuyen", String.valueOf(testDvvc.getId()))
@@ -1109,7 +1111,7 @@ public class CheckoutValidationIntegrationTest {
                 .param("saveAddress", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trangThai").value("loi"))
-                .andExpect(jsonPath("$.message").value("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
+                .andExpect(jsonPath("$.message").value("Họ và tên người nhận phải từ 2 đến 100 ký tự."));
     }
 
     @Test

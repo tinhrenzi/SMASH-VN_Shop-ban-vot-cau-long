@@ -69,7 +69,6 @@ public class NewsletterServiceImpl implements NewsletterService {
             } else {
                 // Reactivate
                 subscriber.setTrangThai("hoat_dong");
-                subscriber.setGioiTinh(gioiTinh);
                 subscriber.setNgayDangKy(LocalDateTime.now());
                 subscriber.setNgayHuy(null);
                 subscriber.setTokenHuy(UUID.randomUUID().toString());
@@ -81,7 +80,6 @@ public class NewsletterServiceImpl implements NewsletterService {
             // Create new
             NewsletterSubscriber subscriber = new NewsletterSubscriber();
             subscriber.setEmail(normalizedEmail);
-            subscriber.setGioiTinh(gioiTinh);
             subscriber.setNgayDangKy(LocalDateTime.now());
             subscriber.setTrangThai("hoat_dong");
             subscriber.setTokenHuy(UUID.randomUUID().toString());

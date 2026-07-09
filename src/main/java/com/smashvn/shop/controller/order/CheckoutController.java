@@ -700,7 +700,9 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
         }
 
-        if (tamTinh.compareTo(voucher.getGiaTriDonHangToiThieu()) < 0) {
+        BigDecimal minOrder = voucher.getGiaTriDonHangToiThieu();
+        if (minOrder != null && minOrder.compareTo(BigDecimal.ZERO) > 0
+                && tamTinh.compareTo(minOrder) < 0) {
             java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
             response.put("trangThai", "loi");
             response.put("message", "Hạn mức tối thiểu để sử dụng mã này là " + df.format(voucher.getGiaTriDonHangToiThieu()) + " đ (Đơn của bạn: " + df.format(tamTinh) + " đ).");

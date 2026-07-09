@@ -497,15 +497,15 @@ public class AdminController {
                 }
                 if (tenSP == null) tenSP = "";
 
-                String thuocTinh = item.getThuocTinhSnapshot();
-                if (thuocTinh == null || thuocTinh.isBlank()) {
-                    if (item.getSanPhamChiTiet() != null) {
-                        thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
-                    }
+                String thuocTinh = "";
+                if (item.getThuocTinhSnapshot() != null && !item.getThuocTinhSnapshot().isBlank()) {
+                    thuocTinh = item.getThuocTinhSnapshot();
+                } else if (item.getSanPhamChiTiet() != null) {
+                    thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
                 }
-                if (thuocTinh == null) thuocTinh = "";
 
-                java.math.BigDecimal giaNiemYet = item.getGiaNiemYet();
+
+                java.math.BigDecimal giaNiemYet = item.getGiaGoc();
                 if (giaNiemYet == null) {
                     if (item.getSanPhamChiTiet() != null) {
                         giaNiemYet = item.getSanPhamChiTiet().getGiaBan();
@@ -514,9 +514,20 @@ public class AdminController {
                 if (giaNiemYet == null) giaNiemYet = java.math.BigDecimal.ZERO;
 
                 java.math.BigDecimal donGia = item.getDonGia() != null ? item.getDonGia() : java.math.BigDecimal.ZERO;
-                java.math.BigDecimal phanTramGiam = item.getPhanTramGiam() != null ? item.getPhanTramGiam() : java.math.BigDecimal.ZERO;
-                java.math.BigDecimal soTienGiamSanPham = item.getSoTienGiamSanPham() != null ? item.getSoTienGiamSanPham() : java.math.BigDecimal.ZERO;
-                String tenDotGiamGia = item.getTenDotGiamGia() != null ? item.getTenDotGiamGia() : "";
+                java.math.BigDecimal soTienGiamSanPham = giaNiemYet.subtract(donGia);
+                if (soTienGiamSanPham.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                    soTienGiamSanPham = java.math.BigDecimal.ZERO;
+                }
+                java.math.BigDecimal phanTramGiam = java.math.BigDecimal.ZERO;
+                if (giaNiemYet.compareTo(java.math.BigDecimal.ZERO) > 0 && soTienGiamSanPham.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    try {
+                        phanTramGiam = soTienGiamSanPham.multiply(java.math.BigDecimal.valueOf(100))
+                                .divide(giaNiemYet, 0, java.math.RoundingMode.HALF_UP);
+                    } catch (Exception e) {
+                        phanTramGiam = java.math.BigDecimal.ZERO;
+                    }
+                }
+                String tenDotGiamGia = item.getTenDotGiamGiaSnapshot() != null ? item.getTenDotGiamGiaSnapshot() : "";
                 String skuSnapshot = item.getSkuSnapshot() != null ? item.getSkuSnapshot() : "";
 
                 String hinhAnh = "";

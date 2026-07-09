@@ -46,6 +46,18 @@ public class RevenueStatisticsIntegrationTest {
     private SanPhamChiTietRepository sanPhamChiTietRepository;
 
     @Autowired
+    private SanPhamRepository sanPhamRepository;
+
+    @Autowired
+    private DanhMucRepository danhMucRepository;
+
+    @Autowired
+    private ThuongHieuRepository thuongHieuRepository;
+
+    @Autowired
+    private NhanVienRepository nhanVienRepository;
+
+    @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
     @Autowired
@@ -62,11 +74,19 @@ public class RevenueStatisticsIntegrationTest {
         // Find / Create customer
         List<KhachHang> khs = khachHangRepository.findAll();
         if (khs.isEmpty()) {
+            TaiKhoan customerUser = new TaiKhoan();
+            customerUser.setEmail("customer-stats-test-" + System.nanoTime() + "@smashvn.com");
+            customerUser.setMatKhau("123");
+            customerUser.setVaiTro("KH");
+            customerUser.setLaKhachHang(true);
+            customerUser = taiKhoanRepository.save(customerUser);
+
             KhachHang newKh = new KhachHang();
             newKh.setHoKh("Test");
             newKh.setTenKh("Customer");
             newKh.setSoDienThoaiKh("0912345678");
             newKh.setLaTaiKhoanNoiBo(false);
+            newKh.setTaiKhoan(customerUser);
             testKhachHang = khachHangRepository.save(newKh);
         } else {
             testKhachHang = khs.get(0);
@@ -104,12 +124,44 @@ public class RevenueStatisticsIntegrationTest {
             testDvvc = dvvcs.get(0);
         }
 
-        // Fetch / Create variant
-        List<SanPhamChiTiet> spcts = entityManager.createQuery(
-                "SELECT spct FROM SanPhamChiTiet spct JOIN FETCH spct.sanPham sp",
-                SanPhamChiTiet.class).getResultList();
-        assertFalse(spcts.isEmpty(), "SanPhamChiTiet table must not be empty for integration tests");
-        testSpct = spcts.get(0);
+        // Seed NhanVien for product
+        TaiKhoan nvUser = new TaiKhoan();
+        nvUser.setEmail("staff-stats-" + System.nanoTime() + "@smashvn.com");
+        nvUser.setMatKhau("123");
+        nvUser.setVaiTro("NV");
+        nvUser.setLaNhanVien(true);
+        nvUser = taiKhoanRepository.save(nvUser);
+        NhanVien nv = new NhanVien();
+        nv.setTaiKhoan(nvUser);
+        nv.setHoTenNv("Stats Staff");
+        nv.setChucVu("Nhân viên");
+        nv.setSoDienThoaiNv("0888999111");
+        nv = nhanVienRepository.save(nv);
+
+        // Seed DanhMuc / ThuongHieu / SanPham / SanPhamChiTiet
+        DanhMuc dm = danhMucRepository.findAll().stream().findFirst().orElseGet(() -> {
+            DanhMuc d = new DanhMuc();
+            d.setTenDanhMuc("Mặc định");
+            return danhMucRepository.save(d);
+        });
+        ThuongHieu th = thuongHieuRepository.findAll().stream().findFirst().orElseGet(() -> {
+            ThuongHieu t = new ThuongHieu();
+            t.setTenThuongHieu("Mặc định");
+            return thuongHieuRepository.save(t);
+        });
+        SanPham sp = new SanPham();
+        sp.setTenSanPham("Vợt Stats " + System.nanoTime());
+        sp.setDanhMuc(dm);
+        sp.setThuongHieu(th);
+        sp.setTrangThai("dang_ban");
+        sp.setNhanVien(nv);
+        sp = sanPhamRepository.save(sp);
+        testSpct = new SanPhamChiTiet();
+        testSpct.setSanPham(sp);
+        testSpct.setMauSac("Đen");
+        testSpct.setSoLuongTon(50);
+        testSpct.setGiaBan(BigDecimal.valueOf(300000));
+        testSpct = sanPhamChiTietRepository.save(testSpct);
 
         // Clear statistics cache to ensure clean test environment
         if (cacheManager != null && cacheManager.getCache("thongke") != null) {

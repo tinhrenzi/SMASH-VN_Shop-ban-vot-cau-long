@@ -60,6 +60,9 @@ public class OrderCreationTenNguoiNhanTest {
     private DonViVanChuyenDAO donViVanChuyenDAO;
 
     @Autowired
+    private TrangThaiGioHangRepository trangThaiGioHangRepository;
+
+    @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
     private TaiKhoan testUser;
@@ -104,23 +107,6 @@ public class OrderCreationTenNguoiNhanTest {
             return thuongHieuRepository.save(newTh);
         });
 
-        // Seed a test product
-        SanPham sp = new SanPham();
-        sp.setTenSanPham("Vợt Test Recipient");
-        sp.setDanhMuc(dm);
-        sp.setThuongHieu(th);
-        sp.setTrangThai("dang_ban");
-        sp = sanPhamRepository.save(sp);
-
-        testSpct = new SanPhamChiTiet();
-        testSpct.setSanPham(sp);
-        testSpct.setMauSac("Trắng");
-        testSpct.setMucCang("24 lbs");
-        testSpct.setTrongLuong("4U");
-        testSpct.setSoLuongTon(100);
-        testSpct.setGiaBan(new BigDecimal("1000000"));
-        testSpct = sanPhamChiTietRepository.save(testSpct);
-
         // Seed NhanVien
         TaiKhoan nvUser = new TaiKhoan();
         nvUser.setEmail("staff_tester_pos@gmail.com");
@@ -137,6 +123,24 @@ public class OrderCreationTenNguoiNhanTest {
         testNhanVien.setSoDienThoaiNv("0912345679");
         testNhanVien = nhanVienRepository.save(testNhanVien);
 
+        // Seed a test product
+        SanPham sp = new SanPham();
+        sp.setTenSanPham("Vợt Test Recipient");
+        sp.setDanhMuc(dm);
+        sp.setThuongHieu(th);
+        sp.setTrangThai("dang_ban");
+        sp.setNhanVien(testNhanVien);
+        sp = sanPhamRepository.save(sp);
+
+        testSpct = new SanPhamChiTiet();
+        testSpct.setSanPham(sp);
+        testSpct.setMauSac("Trắng");
+        testSpct.setMucCang("24 lbs");
+        testSpct.setTrongLuong("4U");
+        testSpct.setSoLuongTon(100);
+        testSpct.setGiaBan(new BigDecimal("1000000"));
+        testSpct = sanPhamChiTietRepository.save(testSpct);
+
         // Seed DonViVanChuyen
         testDvvc = new DonViVanChuyen();
         testDvvc.setTenDonVi("Đơn vị vận chuyển Test");
@@ -150,10 +154,17 @@ public class OrderCreationTenNguoiNhanTest {
         cart.setKhachHang(testKhachHang);
         cart = gioHangRepository.save(cart);
 
+        TrangThaiGioHang tt = trangThaiGioHangRepository.findById(1).orElseGet(() -> {
+            TrangThaiGioHang newTt = new TrangThaiGioHang();
+            newTt.setTenTrangThai("ACTIVE");
+            return trangThaiGioHangRepository.save(newTt);
+        });
+
         GioHangChiTiet cartItem = new GioHangChiTiet();
         cartItem.setGioHang(cart);
         cartItem.setSanPhamChiTiet(testSpct);
         cartItem.setSoLuong(2);
+        cartItem.setTrangThai(tt);
         gioHangChiTietRepository.save(cartItem);
     }
 

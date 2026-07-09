@@ -31,10 +31,18 @@ public class SanPham {
     @Column(name = "ten_san_pham", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String tenSanPham;
     
- // Thêm vào bên trong class SanPham
-    @Column(name = "trang_thai", length = 50)
-    private String trangThai = "dang_ban"; // Mặc định khi tạo mới là đang bán
-    
+    @Column(name = "trang_thai", nullable = false)
+    private Boolean trangThaiValue = true;
+
+    public String getTrangThai() {
+        return Boolean.FALSE.equals(trangThaiValue) ? "ngung_kinh_doanh" : "dang_ban";
+    }
+
+    public void setTrangThai(String status) {
+        this.trangThaiValue = !"ngung_ban".equalsIgnoreCase(String.valueOf(status))
+                && !"ngung_kinh_doanh".equalsIgnoreCase(String.valueOf(status))
+                && !"false".equalsIgnoreCase(String.valueOf(status));
+    }
     @Column(name = "mo_ta", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String moTa;
 
@@ -89,7 +97,7 @@ public class SanPham {
                 .orElse("2027/01/01 00:00:00");
     }
 
-    @Column(name = "so_danh_gia", nullable = false)
+    @Column(name = "so_luot_danh_gia", nullable = false)
     private Integer soDanhGia = 0;
 
     @Column(name = "diem_trung_binh", nullable = false)

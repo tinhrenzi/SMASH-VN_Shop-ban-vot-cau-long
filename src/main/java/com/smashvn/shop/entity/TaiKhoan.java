@@ -29,20 +29,23 @@ public class TaiKhoan {
     @Column(name = "vai_tro", nullable = false, length = 10)
     private String vaiTro;
 
-    @Column(name = "trang_thai", nullable = false, length = 50)
-    private String trangThai = "hoat_dong";
-
-    @Column(name = "token_xac_thuc_khoa", length = 100)
-    private String tokenXacThucKhoa;
+    @Column(name = "ma_xac_thuc_khoa", length = 100)
+    private String maXacThucKhoa;
 
     @Column(name = "so_lan_nhac_nho_vi_pham", nullable = false)
     private Integer soLanNhacNhoViPham = 0;
 
-    @Column(name = "ngay_khoa_binh_luan_den")
-    private java.time.LocalDateTime ngayKhoaBinhLuanDen;
+    @Column(name = "thoi_han_mo_khoa")
+    private java.time.LocalDateTime thoiHanMoKhoa;
 
     @Column(name = "ngay_vi_pham_gan_nhat")
     private java.time.LocalDateTime ngayViPhamGanNhat;
+
+    @Column(name = "ngay_tao", nullable = false, updatable = false)
+    private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
+
+    @Column(name = "ngay_cap_nhat")
+    private java.time.LocalDateTime ngayCapNhat;
 
     @Transient
     private Boolean laKhachHang = false;
@@ -58,5 +61,46 @@ public class TaiKhoan {
         this.laKhachHang = "KH".equals(this.vaiTro) || "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
         this.laNhanVien = "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
         this.laQuanLy = "QL".equals(this.vaiTro);
+    }
+
+    public String getTrangThai() {
+        if (trangThaiTaiKhoan == AccountStatus.PENDING_LOCK) {
+            return "cho_khoa";
+        }
+        if (trangThaiTaiKhoan == AccountStatus.LOCKED) {
+            return "bi_khoa";
+        }
+        if (trangThaiTaiKhoan == AccountStatus.GUEST) {
+            return "khach_vang_lai";
+        }
+        return "hoat_dong";
+    }
+
+    public void setTrangThai(String trangThai) {
+        if ("cho_khoa".equals(trangThai)) {
+            this.trangThaiTaiKhoan = AccountStatus.PENDING_LOCK;
+        } else if ("bi_khoa".equals(trangThai)) {
+            this.trangThaiTaiKhoan = AccountStatus.LOCKED;
+        } else if ("khach_vang_lai".equals(trangThai) || "guest".equalsIgnoreCase(String.valueOf(trangThai))) {
+            this.trangThaiTaiKhoan = AccountStatus.GUEST;
+        } else {
+            this.trangThaiTaiKhoan = AccountStatus.ACTIVE;
+        }
+    }
+
+    public String getTokenXacThucKhoa() {
+        return maXacThucKhoa;
+    }
+
+    public void setTokenXacThucKhoa(String tokenXacThucKhoa) {
+        this.maXacThucKhoa = tokenXacThucKhoa;
+    }
+
+    public java.time.LocalDateTime getNgayKhoaBinhLuanDen() {
+        return thoiHanMoKhoa;
+    }
+
+    public void setNgayKhoaBinhLuanDen(java.time.LocalDateTime ngayKhoaBinhLuanDen) {
+        this.thoiHanMoKhoa = ngayKhoaBinhLuanDen;
     }
 }

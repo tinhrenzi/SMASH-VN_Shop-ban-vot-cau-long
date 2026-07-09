@@ -19,7 +19,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             SELECT spct
             FROM SanPhamChiTiet spct
             WHERE spct.sanPham.id = :sanPhamId
-              AND (spct.trangThai IS NULL OR TRIM(spct.trangThai) = '' OR spct.trangThai = 'dang_ban')
+              AND spct.trangThaiValue = true
             ORDER BY spct.id ASC
             """)
     List<SanPhamChiTiet> findActiveBySanPham_Id(@Param("sanPhamId") Integer sanPhamId);
@@ -28,7 +28,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
     Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
 
-    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != '' AND (s.trangThai IS NULL OR TRIM(s.trangThai) = '' OR s.trangThai = 'dang_ban')")
+    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != '' AND s.trangThaiValue = true")
     List<String> findDistinctTrongLuong();
 
     @Query("""
@@ -39,8 +39,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH sp.thuongHieu th
             LEFT JOIN FETCH sp.cacDotGiamGia dgg
             LEFT JOIN FETCH spct.hinhAnhSanPhams imgs
-            WHERE (sp.trangThai IS NULL OR TRIM(sp.trangThai) = '' OR sp.trangThai NOT IN ('ngung_kinh_doanh', 'ngung_ban'))
-              AND (spct.trangThai IS NULL OR TRIM(spct.trangThai) = '' OR spct.trangThai NOT IN ('ngung_kinh_doanh', 'ngung_ban'))
+            WHERE sp.trangThaiValue = true
+              AND spct.trangThaiValue = true
               AND (:idDanhMuc IS NULL OR :idDanhMuc = -1 OR dm.id = :idDanhMuc)
               AND (:idThuongHieu IS NULL OR :idThuongHieu = -1 OR th.id = :idThuongHieu)
               AND (
@@ -48,7 +48,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
                     LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(spct.mauSac, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(spct.trongLuong, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                    LOWER(COALESCE(spct.mucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(dm.tenDanhMuc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(th.tenThuongHieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                   )

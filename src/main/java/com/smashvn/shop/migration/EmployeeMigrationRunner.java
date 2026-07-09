@@ -1,5 +1,14 @@
 package com.smashvn.shop.migration;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.smashvn.shop.entity.EditLog;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
@@ -11,15 +20,8 @@ import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.service.admin.AdminNhanVienService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @Profile("migration")
@@ -43,7 +45,7 @@ public class EmployeeMigrationRunner implements CommandLineRunner {
         }
 
         List<TaiKhoan> employees = taiKhoanRepository.findByVaiTroIn(Arrays.asList("QL", "NV"));
-        
+
         int migrated = 0;
         int skipped = 0;
         TaiKhoan firstEmployee = null;
@@ -64,8 +66,8 @@ public class EmployeeMigrationRunner implements CommandLineRunner {
 
                 KhachHang kh = new KhachHang();
                 kh.setTaiKhoan(tk);
-                kh.setHoKh(nameParts[0]);
-                kh.setTenKh(nameParts[1]);
+                kh.setHo(nameParts[0]);
+                kh.setTen(nameParts[1]);
                 kh.setSoDienThoaiKh(sdt);
                 kh.setNhanBanTin(false);
                 kh.setLaTaiKhoanNoiBo(true); // Internal account flag
@@ -91,7 +93,7 @@ public class EmployeeMigrationRunner implements CommandLineRunner {
             EditLog log = new EditLog();
             log.setTaiKhoan(firstEmployee); // Use first available employee account as non-null link
             log.setTenBang("KhachHang");
-            log.setIdBanGhi(0L); // System-level
+            log.setIdBanGhi(0); // System-level
             log.setHanhDong("INSERT");
             log.setGiaTriCu(null);
             log.setGiaTriMoi(String.format("Migrated: %d, Skipped: %d", migrated, skipped));

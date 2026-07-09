@@ -588,10 +588,8 @@ public class AdminBienTheIntegrationTest {
         hdct.setSanPhamChiTiet(bt);
         hdct.setSoLuong(1);
         hdct.setDonGia(new BigDecimal("1500000"));
-        hdct.setThanhTien(new BigDecimal("1500000"));
-        hdct.setGiaNiemYet(new BigDecimal("1500000"));
-        hdct.setPhanTramGiam(BigDecimal.ZERO);
-        hdct.setSoTienGiamSanPham(BigDecimal.ZERO);
+        hdct.setGiaGoc(new BigDecimal("1500000"));
+        hdct.setGiaSauGiam(new BigDecimal("1500000"));
         hoaDonChiTietRepository.save(hdct);
 
         // 3. Hide ordered variant - should keep database record and only change status

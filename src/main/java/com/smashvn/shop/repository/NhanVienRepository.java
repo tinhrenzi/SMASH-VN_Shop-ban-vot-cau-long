@@ -19,6 +19,6 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
 
     boolean existsBySoDienThoaiNvAndIdNot(String soDienThoaiNv, Integer id);
 
-    @Query("SELECT nv FROM NhanVien nv WHERE nv.taiKhoan.trangThai = 'cho_khoa'")
+    @Query("SELECT nv FROM NhanVien nv WHERE nv.taiKhoan.trangThaiTaiKhoan = com.smashvn.shop.entity.AccountStatus.PENDING_LOCK")
     List<NhanVien> findPendingLockEmployees();
 }

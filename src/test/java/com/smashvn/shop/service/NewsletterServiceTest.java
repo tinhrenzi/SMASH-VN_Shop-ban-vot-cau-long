@@ -86,7 +86,6 @@ public class NewsletterServiceTest {
 
         assertEquals("hoat_dong", subscriber.getTrangThai());
         assertNull(subscriber.getNgayHuy());
-        assertEquals("female", subscriber.getGioiTinh());
         assertNotNull(subscriber.getTokenHuy());
 
         verify(subscriberRepository, times(1)).save(subscriber);
