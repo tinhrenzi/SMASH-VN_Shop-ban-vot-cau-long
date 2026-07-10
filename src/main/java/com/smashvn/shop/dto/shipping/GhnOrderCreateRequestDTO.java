@@ -21,6 +21,7 @@ public class GhnOrderCreateRequestDTO {
     private String to_ward_code;
     private Integer to_district_id;
     private Integer cod_amount;
+    private Integer insurance_value;
     private Integer weight = 500;
     private Integer length = 70;
     private Integer width = 30;

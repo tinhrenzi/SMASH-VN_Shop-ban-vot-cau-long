@@ -444,14 +444,24 @@ public class GhnService {
         // COD amount = 0 nếu đã thanh toán online
         boolean isOnlinePaid = "PAID".equals(hoaDon.getPaymentStatus()) || "ZaloPay".equalsIgnoreCase(hoaDon.getPaymentMethod());
         req.setCod_amount(isOnlinePaid ? 0 : hoaDon.getTongTien().intValue());
+        req.setInsurance_value(hoaDon.getTongTien().intValue());
 
         req.setNote(hoaDon.getGhiChu() != null ? hoaDon.getGhiChu() : "");
+
+        // Tính toán tổng số lượng và thiết lập kích thước/trọng lượng động cho gói hàng
+        int totalQty = items.stream().mapToInt(HoaDonChiTiet::getSoLuong).sum();
+        req.setWeight(totalQty * 500); // 500g mỗi vợt (kèm bao và hộp đóng gói)
+        req.setHeight(Math.min(150, 10 + (totalQty - 1) * 2)); // Tăng chiều cao hộp khi gửi nhiều cây vợt
 
         // Build items
         List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
         for (HoaDonChiTiet ct : items) {
             GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
-            item.setName(ct.getSanPhamChiTiet().getSanPham().getTenSanPham());
+            // Đính kèm thông số trọng lượng (3U/4U) và màu sắc để phân biệt phân loại rõ ràng khi đẩy lên GHN
+            String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() 
+                    + " [" + ct.getSanPhamChiTiet().getTrongLuong() 
+                    + " - " + ct.getSanPhamChiTiet().getMauSac() + "]";
+            item.setName(detailName);
             item.setCode("SP-" + ct.getSanPhamChiTiet().getId());
             item.setQuantity(ct.getSoLuong());
             item.setPrice(ct.getDonGia().intValue());
