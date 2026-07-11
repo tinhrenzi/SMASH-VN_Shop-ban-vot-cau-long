@@ -939,21 +939,6 @@
                                 body: JSON.stringify({ email: email, gioiTinh: gender })
                             })
                             .then(response => {
-<<<<<<< HEAD
-                                return response.text().then(text => {
-                                    let data = {};
-                                    try {
-                                        data = text ? JSON.parse(text) : {};
-                                    } catch (err) {
-                                        data = { message: response.ok ? "" : "Yêu cầu bị từ chối. Vui lòng tải lại trang và thử lại." };
-                                    }
-                                    return {
-                                        status: response.status,
-                                        ok: response.ok,
-                                        body: data
-                                    };
-                                });
-=======
                                 const contentType = response.headers.get("content-type");
                                 if (contentType && contentType.includes("application/json")) {
                                     return response.json().then(data => ({
@@ -968,7 +953,6 @@
                                         body: { success: false, message: "Lỗi phản hồi từ máy chủ." }
                                     }));
                                 }
->>>>>>> fcc4d77aac26d9357bb32be0e470b3b80e9e5678
                             })
                             .then(res => {
                                 // Re-enable fields

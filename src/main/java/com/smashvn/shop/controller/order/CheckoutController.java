@@ -392,136 +392,146 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
         }
 
-        try {
-            long startOrder = System.currentTimeMillis();
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
-            long endOrder = System.currentTimeMillis();
-            log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
+        Integer resolvedDiaChiLuuId = idDiaChiLuu;
 
-            // Save address to SoDiaChi if applicable (after order is successfully created)
-            if (idDiaChiLuu == null && khachHang != null) {
-                TaiKhoan currentTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
-                boolean shouldSave = false;
-                boolean setAsDefault = false;
+        // Save address to SoDiaChi first if applicable (so we can pass the ID to createOrder)
+        if (idDiaChiLuu == null && khachHang != null) {
+            TaiKhoan currentTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            boolean shouldSave = false;
+            boolean setAsDefault = false;
 
-                if (currentTk != null) {
-                    if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
-                        // Guest account: automatically save
-                        shouldSave = true;
-                        long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
-                        if (existingCount == 0) {
-                            setAsDefault = true;
-                        }
-                    } else {
-                        // Active account: save if saveAddress checkbox is checked
-                        if (saveAddress != null && saveAddress) {
-                            shouldSave = true;
-                            long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
-                            if (existingCount == 0) {
-                                setAsDefault = true;
-                            }
-                        }
+            if (currentTk != null) {
+                if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
+                    // Guest account: automatically save
+                    shouldSave = true;
+                    long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                    if (existingCount == 0) {
+                        setAsDefault = true;
                     }
-                }
-
-                if (shouldSave) {
-                    String tinhThanhVal = tinhThanhText != null ? tinhThanhText.trim() : "";
-                    String thanhPhoVal = thanhPhoText != null ? thanhPhoText.trim() : "";
-                    String diaChiCuTheVal = diaChiCuTheParam != null ? diaChiCuTheParam.trim() : "";
-                    String sdtVal = sdtNhan != null ? sdtNhan.trim() : "";
-
-                    if (tinhThanhVal.isEmpty() || tinhThanhVal.contains("--")) {
-                        if (diaChiNhan != null && !diaChiNhan.trim().isEmpty()) {
-                            String[] parts = diaChiNhan.split(",");
-                            if (parts.length >= 3) {
-                                tinhThanhVal = parts[parts.length - 1].trim();
-                                thanhPhoVal = parts[parts.length - 2].trim();
-                                StringBuilder sb = new StringBuilder();
-                                for (int i = 0; i < parts.length - 2; i++) {
-                                    if (i > 0) {
-                                        sb.append(", ");
-                                    }
-                                    sb.append(parts[i].trim());
-                                }
-                                diaChiCuTheVal = sb.toString();
-                            } else if (parts.length == 2) {
-                                tinhThanhVal = parts[1].trim();
-                                thanhPhoVal = parts[1].trim();
-                                diaChiCuTheVal = parts[0].trim();
-                            } else {
-                                tinhThanhVal = diaChiNhan.trim();
-                                thanhPhoVal = diaChiNhan.trim();
-                                diaChiCuTheVal = diaChiNhan.trim();
-                            }
-                        }
-                    }
-
-                    // Check duplicate
-                    boolean exists = false;
-                    List<SoDiaChi> existingAddresses = soDiaChiRepository.findByKhachHang_Id(khachHang.getId());
-                    for (SoDiaChi dc : existingAddresses) {
-                        String existingDiaChiCuThe = dc.getDiaChiCuThe() != null ? dc.getDiaChiCuThe().trim() : "";
-                        String existingTinhThanh = dc.getTinhThanh() != null ? dc.getTinhThanh().trim() : "";
-                        String existingThanhPho = dc.getThanhPho() != null ? dc.getThanhPho().trim() : "";
-                        String existingSdt = dc.getSdtNguoiNhan() != null ? dc.getSdtNguoiNhan().trim() : "";
-
-                        if (existingDiaChiCuThe.equalsIgnoreCase(diaChiCuTheVal)
-                                && existingTinhThanh.equalsIgnoreCase(tinhThanhVal)
-                                && existingThanhPho.equalsIgnoreCase(thanhPhoVal)
-                                && existingSdt.equalsIgnoreCase(sdtVal)) {
-                            exists = true;
-                            break;
-                        }
-                    }
-
-                    if (!exists) {
-                        SoDiaChi newAddress = new SoDiaChi();
-                        newAddress.setKhachHang(khachHang);
-
-                        // Split name
-                        String ho = "Khách";
-                        String ten = "Vãng Lai";
-                        if (hoTenNhan != null && !hoTenNhan.trim().isEmpty()) {
-                            String name = hoTenNhan.trim();
-                            int lastSpace = name.lastIndexOf(' ');
-                            if (lastSpace >= 0) {
-                                ho = name.substring(0, lastSpace).trim();
-                                ten = name.substring(lastSpace + 1).trim();
-                            } else {
-                                ho = "";
-                                ten = name;
-                            }
-                        }
-                        newAddress.setHoNguoiNhan(ho);
-                        newAddress.setTenNguoiNhan(ten);
-                        newAddress.setSdtNguoiNhan(sdtVal);
-                        newAddress.setDiaChiCuThe(diaChiCuTheVal);
-                        newAddress.setTinhThanh(tinhThanhVal);
-                        newAddress.setThanhPho(thanhPhoVal);
-                        newAddress.setQuocGia("Việt Nam");
-                        newAddress.setMaBuuDien("700000");
-                        newAddress.setProvinceId(ghnProvinceId);
-                        newAddress.setDistrictId(ghnToDistrictId);
-                        newAddress.setWardCode(ghnToWardCode);
-                        newAddress.setProvinceName(tinhThanhVal);
-                        newAddress.setDistrictName(thanhPhoVal);
-                        newAddress.setWardName(phuongXaText != null ? phuongXaText.trim() : null);
-
-                        if (setAsDefault) {
-                            newAddress.setDefaultShipping(true);
-                            newAddress.setDefaultBilling(true);
-                        } else {
-                            newAddress.setDefaultShipping(false);
-                            newAddress.setDefaultBilling(false);
-                        }
-
-                        soDiaChiRepository.save(newAddress);
-                        log.info("[GuestCheckout] Saved new address to SoDiaChi for customer id: {}, isDefault: {}", khachHang.getId(), setAsDefault);
-                    } else {
-                        log.info("[GuestCheckout] Address already exists in SoDiaChi for customer id: {}, skipped saving.", khachHang.getId());
+                } else {
+                    // Registered user: always save to store GHN district/ward mappings
+                    shouldSave = true;
+                    long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                    if (existingCount == 0) {
+                        setAsDefault = true;
                     }
                 }
             }
+
+            if (shouldSave) {
+                String tinhThanhVal = tinhThanhText != null ? tinhThanhText.trim() : "";
+                String thanhPhoVal = thanhPhoText != null ? thanhPhoText.trim() : "";
+                String diaChiCuTheVal = diaChiCuTheParam != null ? diaChiCuTheParam.trim() : "";
+                String sdtVal = sdtNhan != null ? sdtNhan.trim() : "";
+
+                if (tinhThanhVal.isEmpty() || tinhThanhVal.contains("--")) {
+                    if (diaChiNhan != null && !diaChiNhan.trim().isEmpty()) {
+                        String[] parts = diaChiNhan.split(",");
+                        if (parts.length >= 3) {
+                            tinhThanhVal = parts[parts.length - 1].trim();
+                            thanhPhoVal = parts[parts.length - 2].trim();
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < parts.length - 2; i++) {
+                                if (i > 0) {
+                                    sb.append(", ");
+                                }
+                                sb.append(parts[i].trim());
+                            }
+                            diaChiCuTheVal = sb.toString();
+                        } else if (parts.length == 2) {
+                            tinhThanhVal = parts[1].trim();
+                            thanhPhoVal = parts[1].trim();
+                            diaChiCuTheVal = parts[0].trim();
+                        } else {
+                            tinhThanhVal = diaChiNhan.trim();
+                            thanhPhoVal = diaChiNhan.trim();
+                            diaChiCuTheVal = diaChiNhan.trim();
+                        }
+                    }
+                }
+
+                // Check duplicate
+                SoDiaChi existingAddress = null;
+                List<SoDiaChi> existingAddresses = soDiaChiRepository.findByKhachHang_Id(khachHang.getId());
+                for (SoDiaChi dc : existingAddresses) {
+                    String existingDiaChiCuThe = dc.getDiaChiCuThe() != null ? dc.getDiaChiCuThe().trim() : "";
+                    String existingTinhThanh = dc.getTinhThanh() != null ? dc.getTinhThanh().trim() : "";
+                    String existingThanhPho = dc.getThanhPho() != null ? dc.getThanhPho().trim() : "";
+                    String existingSdt = dc.getSdtNguoiNhan() != null ? dc.getSdtNguoiNhan().trim() : "";
+
+                    if (existingDiaChiCuThe.equalsIgnoreCase(diaChiCuTheVal)
+                            && existingTinhThanh.equalsIgnoreCase(tinhThanhVal)
+                            && existingThanhPho.equalsIgnoreCase(thanhPhoVal)
+                            && existingSdt.equalsIgnoreCase(sdtVal)) {
+                        existingAddress = dc;
+                        break;
+                    }
+                }
+
+                if (existingAddress == null) {
+                    SoDiaChi newAddress = new SoDiaChi();
+                    newAddress.setKhachHang(khachHang);
+
+                    // Split name
+                    String ho = "Khách";
+                    String ten = "Vãng Lai";
+                    if (hoTenNhan != null && !hoTenNhan.trim().isEmpty()) {
+                        String name = hoTenNhan.trim();
+                        int lastSpace = name.lastIndexOf(' ');
+                        if (lastSpace >= 0) {
+                            ho = name.substring(0, lastSpace).trim();
+                            ten = name.substring(lastSpace + 1).trim();
+                        } else {
+                            ho = "";
+                            ten = name;
+                        }
+                    }
+                    newAddress.setHoNguoiNhan(ho);
+                    newAddress.setTenNguoiNhan(ten);
+                    newAddress.setSdtNguoiNhan(sdtVal);
+                    newAddress.setDiaChiCuThe(diaChiCuTheVal);
+                    newAddress.setTinhThanh(tinhThanhVal);
+                    newAddress.setThanhPho(thanhPhoVal);
+                    newAddress.setQuocGia("Việt Nam");
+                    newAddress.setMaBuuDien("700000");
+                    newAddress.setProvinceId(ghnProvinceId);
+                    newAddress.setDistrictId(ghnToDistrictId);
+                    newAddress.setWardCode(ghnToWardCode);
+                    newAddress.setProvinceName(tinhThanhVal);
+                    newAddress.setDistrictName(thanhPhoVal);
+                    newAddress.setWardName(phuongXaText != null ? phuongXaText.trim() : null);
+
+                    if (setAsDefault) {
+                        newAddress.setDefaultShipping(true);
+                        newAddress.setDefaultBilling(true);
+                    } else {
+                        newAddress.setDefaultShipping(false);
+                        newAddress.setDefaultBilling(false);
+                    }
+
+                    newAddress = soDiaChiRepository.save(newAddress);
+                    resolvedDiaChiLuuId = newAddress.getId();
+                    log.info("[Checkout] Saved new address to SoDiaChi: id={}, isDefault={}", newAddress.getId(), setAsDefault);
+                } else {
+                    // Update existing address with GHN IDs if they are missing
+                    if (existingAddress.getProvinceId() == null || existingAddress.getDistrictId() == null || existingAddress.getWardCode() == null) {
+                        existingAddress.setProvinceId(ghnProvinceId);
+                        existingAddress.setDistrictId(ghnToDistrictId);
+                        existingAddress.setWardCode(ghnToWardCode);
+                        soDiaChiRepository.save(existingAddress);
+                        log.info("[Checkout] Updated existing address ID {} with GHN details.", existingAddress.getId());
+                    }
+                    resolvedDiaChiLuuId = existingAddress.getId();
+                    log.info("[Checkout] Address already exists in SoDiaChi: id={}, skipped saving.", resolvedDiaChiLuuId);
+                }
+            }
+        }
+
+        try {
+            long startOrder = System.currentTimeMillis();
+            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, resolvedDiaChiLuuId, voucherCode);
+            long endOrder = System.currentTimeMillis();
+            log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
 
             TaiKhoan checkoutTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
             boolean isGuestCheckout = checkoutTk != null && checkoutTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST;

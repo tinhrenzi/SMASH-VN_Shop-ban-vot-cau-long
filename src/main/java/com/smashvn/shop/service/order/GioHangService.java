@@ -339,10 +339,13 @@ public class GioHangService {
         String finalWardCode = ghnToWardCode;
         Integer finalProvinceId = ghnProvinceId;
 
+        SoDiaChi finalDiaChi = null;
+
         if (idDiaChiLuu != null) {
             // Reload & validate inside same transaction
             SoDiaChi soDiaChi = soDiaChiRepository.findById(idDiaChiLuu)
                     .orElseThrow(() -> new IllegalArgumentException("Địa chỉ đã lưu không tồn tại."));
+            finalDiaChi = soDiaChi;
             if (!soDiaChi.getKhachHang().getId().equals(kh.getId())) {
                 log.warn("[SECURITY_ALERT] Customer ID {} attempted to use unauthorized address ID {}", kh.getId(), idDiaChiLuu);
                 throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền sử dụng địa chỉ này.");
@@ -498,11 +501,11 @@ public class GioHangService {
                     return phuongThucThanhToanDAO.save(newP);
                 });
 
-        // Create HoaDon
         HoaDon hd = new HoaDon();
         hd.setKhachHang(kh);
         hd.setPhuongThucThanhToan(pttt);
         hd.setDonViVanChuyen(dvvc);
+        hd.setDiaChi(finalDiaChi);
         hd.setNgayTao(LocalDateTime.now());
         hd.setTongTien(totalAmount);
         hd.setPhiVanChuyen(phiShip);

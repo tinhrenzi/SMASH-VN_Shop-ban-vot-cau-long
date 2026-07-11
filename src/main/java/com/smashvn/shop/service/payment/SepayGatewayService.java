@@ -218,8 +218,14 @@ public class SepayGatewayService implements PaymentGatewayService {
                     || order.getDonViVanChuyen().getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH"));
         if (isGhn && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
             try {
+                Integer districtId = order.getGhnToDistrictId();
+                String wardCode = order.getGhnToWardCode();
+                if ((districtId == null || wardCode == null || wardCode.isBlank()) && order.getDiaChi() != null) {
+                    districtId = order.getDiaChi().getDistrictId();
+                    wardCode = order.getDiaChi().getWardCode();
+                }
                 String ghnCode = ghnService.createShippingOrder(
-                        order, orderItems, order.getGhnToDistrictId(), order.getGhnToWardCode());
+                        order, orderItems, districtId, wardCode);
                 if (ghnCode != null) {
                     order.setGhnOrderCode(ghnCode);
                     order.setGhnStatus("ready_to_pick");

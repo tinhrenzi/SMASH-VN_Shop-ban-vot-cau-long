@@ -555,7 +555,7 @@ public class UserDashboardController {
         return "redirect:/user/notifications";
     }
 
-    @GetMapping("/user/order/invoice/{id}")
+    @GetMapping("/order/invoice/{id}")
     public String viewInvoice(@PathVariable("id") Integer id, HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) {
