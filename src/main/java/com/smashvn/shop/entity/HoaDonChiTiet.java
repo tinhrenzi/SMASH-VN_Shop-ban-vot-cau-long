@@ -47,4 +47,24 @@ public class HoaDonChiTiet {
 
     @Column(name = "ngay_tao", nullable = false)
     private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
+
+    public String getTenDotGiamGia() {
+        return tenDotGiamGiaSnapshot;
+    }
+
+    public BigDecimal getGiaNiemYet() {
+        return giaGoc;
+    }
+
+    public Integer getPhanTramGiam() {
+        if (giaGoc == null || donGia == null || giaGoc.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0;
+        }
+        if (giaGoc.compareTo(donGia) <= 0) {
+            return 0;
+        }
+        BigDecimal traceDiff = giaGoc.subtract(donGia);
+        BigDecimal percent = traceDiff.multiply(new BigDecimal("100")).divide(giaGoc, 0, java.math.RoundingMode.HALF_UP);
+        return percent.intValue();
+    }
 }

@@ -1550,6 +1550,14 @@ function checkAndApplyVariant(container) {
       return !isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
   }
 
+  // Helper to check if a string is a valid province/city name
+  function isValidProvinceName(name) {
+      if (!name) return false;
+      const lower = name.toLowerCase();
+      const invalidKeywords = ["phường", "xã", "quận", "huyện", "thị xã", "thị trấn", "đường", "ngõ", "ngách", "hẻm", "ấp", "thôn", "tổ", "kiệt"];
+      return !invalidKeywords.some(keyword => lower.includes(keyword));
+  }
+
   // Parser: Smart Vietnam Administrative Mapping (Requirement 3)
   function parseNominatimAddress(data) {
       const address = data.address || {};
@@ -1558,14 +1566,26 @@ function checkAndApplyVariant(container) {
           displayParts = data.display_name.split(',').map(p => p.trim());
       }
 
-      // Province mapping
-      let province = address.city || address.province || address.state || address.county || "";
+      // Province mapping: filter out ward/district names
+      let province = "";
+      const provinceCandidates = [address.province, address.state, address.city, address.county];
+      for (let c of provinceCandidates) {
+          if (c && c.trim() && isValidProvinceName(c)) {
+              province = c.trim();
+              break;
+          }
+      }
       
       // District mapping
-      let district = address.city_district || address.county || address.district || "";
+      let district = address.city_district || address.district || address.county || "";
+      if (address.city && address.city.trim() && address.city.trim() !== province) {
+          if (!district) {
+              district = address.city.trim();
+          }
+      }
       
       // Ward / Commune mapping
-      let ward = address.suburb || address.neighbourhood || address.quarter || address.village || "";
+      let ward = address.suburb || address.neighbourhood || address.quarter || address.village || address.town || "";
 
       // Road mapping
       let road = address.road || address.street || address.footway || address.path || address.pedestrian || "";
@@ -1590,7 +1610,7 @@ function checkAndApplyVariant(container) {
       let building = localDetails.join(' ');
 
       let diaChiCuThe = "";
-      let tinhThanh = province.trim();
+      let tinhThanh = province;
       let quocGia = address.country || "Việt Nam";
 
       // Build structured diaChiCuThe
@@ -1621,10 +1641,24 @@ function checkAndApplyVariant(container) {
               let penIdx = displayParts.length - 2;
               let penValue = displayParts[penIdx];
               if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
-                  if (!tinhThanh) tinhThanh = displayParts[penIdx - 1];
+                  if (!tinhThanh) {
+                      for (let i = penIdx - 1; i >= 0; i--) {
+                          if (isValidProvinceName(displayParts[i])) {
+                              tinhThanh = displayParts[i];
+                              break;
+                          }
+                      }
+                  }
                   diaChiCuThe = displayParts.slice(0, penIdx - 1).join(', ');
               } else {
-                  if (!tinhThanh) tinhThanh = penValue;
+                  if (!tinhThanh) {
+                      for (let i = penIdx; i >= 0; i--) {
+                          if (isValidProvinceName(displayParts[i])) {
+                              tinhThanh = displayParts[i];
+                              break;
+                          }
+                      }
+                  }
                   diaChiCuThe = displayParts.slice(0, penIdx).join(', ');
               }
           } else {
@@ -1636,9 +1670,19 @@ function checkAndApplyVariant(container) {
           let penIdx = displayParts.length - 2;
           let penValue = displayParts[penIdx];
           if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
-              tinhThanh = displayParts[penIdx - 1];
+              for (let i = penIdx - 1; i >= 0; i--) {
+                  if (isValidProvinceName(displayParts[i])) {
+                      tinhThanh = displayParts[i];
+                      break;
+                  }
+              }
           } else {
-              tinhThanh = penValue;
+              for (let i = penIdx; i >= 0; i--) {
+                  if (isValidProvinceName(displayParts[i])) {
+                      tinhThanh = displayParts[i];
+                      break;
+                  }
+              }
           }
       }
 

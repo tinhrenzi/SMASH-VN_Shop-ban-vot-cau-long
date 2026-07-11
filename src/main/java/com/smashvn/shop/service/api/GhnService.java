@@ -370,6 +370,27 @@ public class GhnService {
 
     public String createShippingOrderOrThrow(HoaDon hoaDon, List<HoaDonChiTiet> items,
                                              Integer toDistrictId, String toWardCode) throws Exception {
+        if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
+            if (hoaDon.getKhachHang() != null) {
+                try {
+                    List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                    if (addresses != null) {
+                        for (SoDiaChi sdc : addresses) {
+                            if (sdc.getSdtNguoiNhan() != null 
+                                    && sdc.getSdtNguoiNhan().trim().equalsIgnoreCase(hoaDon.getSdtNhan().trim())
+                                    && sdc.getGhnDistrictId() != null 
+                                    && sdc.getGhnWardCode() != null) {
+                                toDistrictId = sdc.getGhnDistrictId();
+                                toWardCode = sdc.getGhnWardCode();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to resolve district/ward from SoDiaChi for GHN order: {}", e.getMessage());
+                }
+            }
+        }
         String shopIdStr = getGhnShopId();
         String tokenStr = getGhnToken();
         try {

@@ -177,9 +177,12 @@ public class HoaDon {
 
     public String getPaymentMethod() {
         if (paymentMethod != null) {
-            return paymentMethod;
+            return paymentMethod.toLowerCase();
         }
-        return phuongThucThanhToan != null ? phuongThucThanhToan.getTenPhuongThuc() : null;
+        if (phuongThucThanhToan != null && phuongThucThanhToan.getTenPhuongThuc() != null) {
+            return phuongThucThanhToan.getTenPhuongThuc().toLowerCase();
+        }
+        return null;
     }
 
     public void setPaymentMethod(String paymentMethod) {

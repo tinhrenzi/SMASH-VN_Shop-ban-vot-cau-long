@@ -212,9 +212,11 @@ public class SepayGatewayService implements PaymentGatewayService {
 
         log.info("SePay IPN: Payment successfully applied to order {}", orderCode);
 
-        // Tạo đơn GHN nếu đơn hàng đã có thông tin địa chỉ GHN
-        if (order.getGhnToDistrictId() != null && order.getGhnToWardCode() != null
-                && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
+        // Tạo đơn GHN nếu đơn vị vận chuyển là GHN và chưa tạo mã vận đơn
+        boolean isGhn = order.getDonViVanChuyen() != null 
+                && (order.getDonViVanChuyen().getTenDonVi().toUpperCase().contains("GHN") 
+                    || order.getDonViVanChuyen().getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH"));
+        if (isGhn && (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank())) {
             try {
                 String ghnCode = ghnService.createShippingOrder(
                         order, orderItems, order.getGhnToDistrictId(), order.getGhnToWardCode());
