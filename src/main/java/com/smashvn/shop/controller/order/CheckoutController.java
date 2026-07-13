@@ -212,7 +212,7 @@ public class CheckoutController {
         try {
             addressMapJson = objectMapper.writeValueAsString(addressMap);
         } catch (Exception e) {
-            // Ignore/fallback
+            log.error("Failed to serialize address map for checkout", e);
         }
 
         model.addAttribute("danhSachCart", danhSachChiTiet);
@@ -319,7 +319,6 @@ public class CheckoutController {
                 return ResponseEntity.ok(response);
             }
         }
-
 
         if (idNguoiDung == null) {
             if (email == null || email.trim().isEmpty()) {

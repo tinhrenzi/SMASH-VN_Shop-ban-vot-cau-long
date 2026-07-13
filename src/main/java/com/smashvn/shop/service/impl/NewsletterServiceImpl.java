@@ -1,30 +1,30 @@
 package com.smashvn.shop.service.impl;
 
-import com.smashvn.shop.entity.NewsletterSubscriber;
-import com.smashvn.shop.entity.DotGiamGia;
-import com.smashvn.shop.entity.PhieuGiamGia;
-import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.repository.NewsletterSubscriberRepository;
-import com.smashvn.shop.dao.DotGiamGiaDAO;
-import com.smashvn.shop.repository.PhieuGiamGiaRepository;
-import com.smashvn.shop.exception.NewsletterValidationException;
-import com.smashvn.shop.service.NewsletterService;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
-import java.util.List;
-import java.util.Optional;
-import java.util.ArrayList;
+import com.smashvn.shop.dao.DotGiamGiaDAO;
+import com.smashvn.shop.entity.DotGiamGia;
+import com.smashvn.shop.entity.NewsletterSubscriber;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.exception.NewsletterValidationException;
+import com.smashvn.shop.repository.NewsletterSubscriberRepository;
+import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.service.NewsletterService;
+
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -274,97 +274,97 @@ public class NewsletterServiceImpl implements NewsletterService {
     }
 
     private String buildWelcomeHtml(String tokenHuy) {
-        return "<html>" +
-                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
-                "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>" +
-                "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>" +
-                "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>" +
-                "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>" +
-                "    </div>" +
-                "    <div style='padding: 24px;'>" +
-                "      <h3>Chào bạn,</h3>" +
-                "      <p>Cảm ơn bạn đã đăng ký nhận thông tin ưu đãi từ Smash VN. Chúng tôi sẽ gửi tới bạn những thông tin mới nhất về các chương trình khuyến mãi, voucher giảm giá và các sản phẩm cầu lông hot nhất!</p>" +
-                "      <div style='text-align: center; margin: 30px 0;'>" +
-                "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Ghé Cửa Hàng Ngay</a>" +
-                "      </div>" +
-                "      <p>Chúc bạn có những trải nghiệm mua sắm tuyệt vời tại Smash VN!</p>" +
-                "    </div>" +
-                "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>" +
-                "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>" +
-                "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng " +
-                "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>." +
-                "      </p>" +
-                "    </div>" +
-                "  </div>" +
-                "</body>" +
-                "</html>";
+        return "<html>"
+                + "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                + "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>"
+                + "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>"
+                + "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>"
+                + "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>"
+                + "    </div>"
+                + "    <div style='padding: 24px;'>"
+                + "      <h3>Chào bạn,</h3>"
+                + "      <p>Cảm ơn bạn đã đăng ký nhận thông tin ưu đãi từ Smash VN. Chúng tôi sẽ gửi tới bạn những thông tin mới nhất về các chương trình khuyến mãi, voucher giảm giá và các sản phẩm cầu lông hot nhất!</p>"
+                + "      <div style='text-align: center; margin: 30px 0;'>"
+                + "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Ghé Cửa Hàng Ngay</a>"
+                + "      </div>"
+                + "      <p>Chúc bạn có những trải nghiệm mua sắm tuyệt vời tại Smash VN!</p>"
+                + "    </div>"
+                + "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>"
+                + "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>"
+                + "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng "
+                + "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>."
+                + "      </p>"
+                + "    </div>"
+                + "  </div>"
+                + "</body>"
+                + "</html>";
     }
 
     private String buildPromotionHtml(String name, Integer percent, String start, String end, String productListHtml, String tokenHuy) {
-        return "<html>" +
-                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
-                "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>" +
-                "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>" +
-                "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>" +
-                "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>" +
-                "    </div>" +
-                "    <div style='padding: 24px;'>" +
-                "      <h3 style='color: #ff4500;'>SIÊU KHUYẾN MÃI: " + name + "</h3>" +
-                "      <p>Smash VN xin gửi tới bạn chương trình ưu đãi đặc biệt giảm giá lên tới <strong>" + percent + "%</strong> cho các sản phẩm vợt cầu lông và phụ kiện chính hãng.</p>" +
-                "      <div style='background-color: #fff5f2; border-left: 4px solid #ff4500; padding: 12px 15px; margin: 15px 0;'>" +
-                "        <p style='margin: 0;'><strong>Thời gian áp dụng:</strong> Từ " + start + " đến " + end + "</p>" +
-                "      </div>" +
-                "      " + productListHtml +
-                "      <div style='text-align: center; margin: 30px 0;'>" +
-                "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Săn Sale Ngay</a>" +
-                "      </div>" +
-                "    </div>" +
-                "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>" +
-                "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>" +
-                "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng " +
-                "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>." +
-                "      </p>" +
-                "    </div>" +
-                "  </div>" +
-                "</body>" +
-                "</html>";
+        return "<html>"
+                + "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                + "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>"
+                + "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>"
+                + "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>"
+                + "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>"
+                + "    </div>"
+                + "    <div style='padding: 24px;'>"
+                + "      <h3 style='color: #ff4500;'>SIÊU KHUYẾN MÃI: " + name + "</h3>"
+                + "      <p>Smash VN xin gửi tới bạn chương trình ưu đãi đặc biệt giảm giá lên tới <strong>" + percent + "%</strong> cho các sản phẩm vợt cầu lông và phụ kiện chính hãng.</p>"
+                + "      <div style='background-color: #fff5f2; border-left: 4px solid #ff4500; padding: 12px 15px; margin: 15px 0;'>"
+                + "        <p style='margin: 0;'><strong>Thời gian áp dụng:</strong> Từ " + start + " đến " + end + "</p>"
+                + "      </div>"
+                + "      " + productListHtml
+                + "      <div style='text-align: center; margin: 30px 0;'>"
+                + "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Săn Sale Ngay</a>"
+                + "      </div>"
+                + "    </div>"
+                + "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>"
+                + "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>"
+                + "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng "
+                + "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>."
+                + "      </p>"
+                + "    </div>"
+                + "  </div>"
+                + "</body>"
+                + "</html>";
     }
 
     private String buildVoucherHtml(String code, String name, String value, String minOrder, String expiry, String tokenHuy) {
         String nameText = name != null ? name : "Voucher mua sắm";
-        return "<html>" +
-                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
-                "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>" +
-                "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>" +
-                "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>" +
-                "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>" +
-                "    </div>" +
-                "    <div style='padding: 24px;'>" +
-                "      <h3 style='color: #ff4500;'>TẶNG BẠN MÃ GIẢM GIÁ: " + nameText + "</h3>" +
-                "      <p>Cơ hội mua sắm giá hời! Smash VN gửi tặng bạn mã giảm giá đặc quyền dùng để thanh toán đơn hàng:</p>" +
-                "      <div style='text-align: center; margin: 25px 0;'>" +
-                "        <div style='display: inline-block; border: 2px dashed #ff4500; padding: 15px 30px; background-color: #fffaf9; border-radius: 8px;'>" +
-                "          <span style='font-size: 14px; color: #777; display: block;'>MÃ VOUCHER</span>" +
-                "          <strong style='font-size: 26px; color: #ff4500; letter-spacing: 2px;'>" + code + "</strong>" +
-                "          <span style='font-size: 16px; color: #333; display: block; margin-top: 5px;'>Giảm ngay: <strong>" + value + "</strong></span>" +
-                "        </div>" +
-                "      </div>" +
-                "      <div style='background-color: #f9f9f9; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; color: #555;'>" +
-                "        <p style='margin: 0 0 5px 0;'>&bull; Áp dụng cho đơn hàng tối thiểu: <strong>" + minOrder + " VNĐ</strong></p>" +
-                "        <p style='margin: 0;'>&bull; Hạn sử dụng đến: <strong>" + expiry + "</strong></p>" +
-                "      </div>" +
-                "      <div style='text-align: center; margin: 30px 0;'>" +
-                "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Áp Dụng Mã Ngay</a>" +
-                "      </div>" +
-                "    </div>" +
-                "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>" +
-                "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>" +
-                "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng " +
-                "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>." +
-                "      </p>" +
-                "    </div>" +
-                "  </div>" +
-                "</body>" +
-                "</html>";
+        return "<html>"
+                + "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                + "  <div style='max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>"
+                + "    <div style='background-color: #15171c; padding: 20px; text-align: center;'>"
+                + "      <h2 style='color: #ff4500; margin: 0;'>SMASH VN</h2>"
+                + "      <p style='color: #fff; margin: 5px 0 0 0;'>Cửa Hàng Vợt Cầu Lông Chính Hãng</p>"
+                + "    </div>"
+                + "    <div style='padding: 24px;'>"
+                + "      <h3 style='color: #ff4500;'>TẶNG BẠN MÃ GIẢM GIÁ: " + nameText + "</h3>"
+                + "      <p>Cơ hội mua sắm giá hời! Smash VN gửi tặng bạn mã giảm giá đặc quyền dùng để thanh toán đơn hàng:</p>"
+                + "      <div style='text-align: center; margin: 25px 0;'>"
+                + "        <div style='display: inline-block; border: 2px dashed #ff4500; padding: 15px 30px; background-color: #fffaf9; border-radius: 8px;'>"
+                + "          <span style='font-size: 14px; color: #777; display: block;'>MÃ VOUCHER</span>"
+                + "          <strong style='font-size: 26px; color: #ff4500; letter-spacing: 2px;'>" + code + "</strong>"
+                + "          <span style='font-size: 16px; color: #333; display: block; margin-top: 5px;'>Giảm ngay: <strong>" + value + "</strong></span>"
+                + "        </div>"
+                + "      </div>"
+                + "      <div style='background-color: #f9f9f9; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; color: #555;'>"
+                + "        <p style='margin: 0 0 5px 0;'>&bull; Áp dụng cho đơn hàng tối thiểu: <strong>" + minOrder + " VNĐ</strong></p>"
+                + "        <p style='margin: 0;'>&bull; Hạn sử dụng đến: <strong>" + expiry + "</strong></p>"
+                + "      </div>"
+                + "      <div style='text-align: center; margin: 30px 0;'>"
+                + "        <a href='" + BASE_URL + "/shop' style='background-color: #ff4500; color: #fff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; display: inline-block;'>Áp Dụng Mã Ngay</a>"
+                + "      </div>"
+                + "    </div>"
+                + "    <div style='background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee;'>"
+                + "      <p style='margin: 0;'>Hệ thống Cửa hàng Smash VN &copy; 2026</p>"
+                + "      <p style='margin: 5px 0 0 0;'>Nếu bạn không muốn nhận email ưu đãi từ chúng tôi, vui lòng "
+                + "         <a href='" + BASE_URL + "/api/newsletter/unsubscribe?token=" + tokenHuy + "' style='color: #ff4500; text-decoration: underline;'>Hủy nhận tin tại đây</a>."
+                + "      </p>"
+                + "    </div>"
+                + "  </div>"
+                + "</body>"
+                + "</html>";
     }
 }

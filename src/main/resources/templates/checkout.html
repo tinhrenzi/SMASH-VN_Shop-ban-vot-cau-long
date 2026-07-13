@@ -1760,6 +1760,10 @@
 
             function createSePayOrder(orderId, maDonHang, amount) {
                 attempts = 0;
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
 
                 // Build VietQR image URL
                 const sepayAcc = /*[[${sepayBankAccount}]]*/ '';

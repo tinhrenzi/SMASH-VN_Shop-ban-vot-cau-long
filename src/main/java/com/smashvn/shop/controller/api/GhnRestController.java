@@ -1,5 +1,20 @@
 package com.smashvn.shop.controller.api;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.smashvn.shop.config.GhnConfig;
 import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.HoaDon;
@@ -9,17 +24,10 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.order.OrderViewService;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * REST Controller nội bộ cung cấp các API GHN cho frontend: - GET
@@ -171,19 +179,11 @@ public class GhnRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("status", "error", "message", "Khong co quyen truy cap"));
         }
-        if (idNguoiDung == null) {
-            return ResponseEntity.ok(Map.of("status", "error", "message", "Chưa đăng nhập"));
-        }
         try {
-            HoaDon hd = requestedOrder;
-            if (hd == null) {
-                return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy đơn hàng"));
-            }
-
-            String ghnCode = hd.getGhnOrderCode();
+            String ghnCode = requestedOrder.getGhnOrderCode();
             if (ghnCode == null || ghnCode.isBlank()) {
                 return ResponseEntity.ok(Map.of("status", "no_ghn", "message", "Đơn hàng này chưa có mã vận đơn GHN",
-                        "trangThaiDonHang", hd.getTrangThaiDonHang()));
+                        "trangThaiDonHang", requestedOrder.getTrangThaiDonHang()));
             }
 
             Map<String, Object> trackingData = ghnService.trackOrder(ghnCode);
@@ -191,7 +191,7 @@ public class GhnRestController {
             result.put("status", "ok");
             result.put("ghnOrderCode", ghnCode);
             result.put("data", trackingData);
-            result.put("trangThaiDonHang", hd.getTrangThaiDonHang());
+            result.put("trangThaiDonHang", requestedOrder.getTrangThaiDonHang());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("GHN trackByOrderId error: {}", e.getMessage());
@@ -293,8 +293,7 @@ public class GhnRestController {
                 String clientOrderCode = (String) payload.get("ClientOrderCode");
                 if (clientOrderCode != null && !clientOrderCode.isBlank()) {
                     try {
-                        Integer orderId = Integer.parseInt(clientOrderCode);
-                        hd = hoaDonRepository.findById(orderId).orElse(null);
+                        hd = hoaDonRepository.findById(Integer.parseInt(clientOrderCode)).orElse(null);
                     } catch (NumberFormatException e) {
                         // ignore
                     }

@@ -142,14 +142,7 @@ public class SepayIpnController {
             @PathVariable("maDonHang") String maDonHang,
             HttpSession session) {
 
-        // 1. Ownership: Validate session customer ID exists
-        boolean isDebug = sepayConfig.isDebug();
-        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (!isDebug && idNguoiDung == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Unauthorized session. Please login."));
-        }
-
-        // 2. Retrieve order
+        // 1. Retrieve order first so the query can fall back safely for guest orders
         Optional<HoaDon> orderOpt = hoaDonRepository.findByMaDonHang(maDonHang);
         if (!orderOpt.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(createErrorResponse("Order not found."));
@@ -157,35 +150,41 @@ public class SepayIpnController {
 
         HoaDon order = orderOpt.get();
 
-        // 3. Ownership: Validate order owner matches session customer OR user is staff/admin
-        if (!isDebug) {
-            boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
-                    || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
+        // 2. Ownership check: signed-in member needs to match the order owner, while guest orders are allowed to poll by order code.
+        boolean isDebug = sepayConfig.isDebug();
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
+                || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
+        boolean isGuestOrder = order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null;
 
-            if (!isStaff) {
-                if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
-                        || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
-                    log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
-                }
+        if (!isDebug && !isStaff && idNguoiDung == null && !isGuestOrder) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Unauthorized session. Please login."));
+        }
+
+        if (!isDebug && !isStaff && idNguoiDung != null && !isGuestOrder) {
+            if (order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null
+                    || !order.getKhachHang().getTaiKhoan().getId().equals(idNguoiDung)) {
+                log.warn("SePay Query: Ownership validation failed for user #{} trying to query order code {}", idNguoiDung, maDonHang);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse("Access Denied."));
             }
         }
 
-        // 4. Return standardized query API response
+        // 3. Return standardized query API response
         Map<String, Object> resp = new HashMap<>();
         resp.put("success", true);
         resp.put("orderCode", order.getMaDonHang());
-        
+
         String paymentStatus = order.getPaymentStatus();
-        if ("DA_THANH_TOAN".equals(order.getTrangThaiThanhToan()) || "DA_THANH_TOAN".equals(paymentStatus) || "paid".equals(paymentStatus)) {
+        String trangThaiThanhToan = order.getTrangThaiThanhToan();
+        if ("DA_THANH_TOAN".equalsIgnoreCase(trangThaiThanhToan) || "DA_THANH_TOAN".equalsIgnoreCase(paymentStatus) || "paid".equalsIgnoreCase(paymentStatus)) {
             paymentStatus = "paid";
-        } else if ("CHO_THANH_TOAN".equals(order.getTrangThaiThanhToan()) || "CHO_THANH_TOAN".equals(paymentStatus) || "pending".equals(paymentStatus)) {
+        } else if ("CHO_THANH_TOAN".equalsIgnoreCase(trangThaiThanhToan) || "CHO_THANH_TOAN".equalsIgnoreCase(paymentStatus) || "pending".equalsIgnoreCase(paymentStatus) || paymentStatus == null) {
             paymentStatus = "pending";
         }
-        
+
         resp.put("paymentStatus", paymentStatus);
         resp.put("orderStatus", order.getTrangThaiDonHang());
-        resp.put("trangThaiThanhToan", order.getTrangThaiThanhToan());
+        resp.put("trangThaiThanhToan", trangThaiThanhToan);
         return ResponseEntity.ok(resp);
     }
 

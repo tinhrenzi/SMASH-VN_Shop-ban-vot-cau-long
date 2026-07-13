@@ -1,5 +1,4 @@
 package com.smashvn.shop.controller.payment;
-import com.smashvn.shop.service.api.GhnService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -52,6 +51,7 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.service.AuditService;
+import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.payment.SepayGatewayService;
 
 public class SepayIpnControllerTest {
@@ -183,6 +183,24 @@ public class SepayIpnControllerTest {
                 .sessionAttr("idNguoiDung", 123))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void testQueryTransaction_GuestOrderAllowedWithoutSession() throws Exception {
+        HoaDon order = new HoaDon();
+        order.setMaDonHang("DH20260608-A1B2C3");
+        order.setPaymentStatus("pending");
+        order.setTrangThaiDonHang("cho_thanh_toan");
+        order.setTrangThaiThanhToan("CHO_THANH_TOAN");
+
+        when(hoaDonRepository.findByMaDonHang("DH20260608-A1B2C3")).thenReturn(Optional.of(order));
+
+        mockMvc.perform(get("/api/payment/sepay/query/DH20260608-A1B2C3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.orderCode").value("DH20260608-A1B2C3"))
+                .andExpect(jsonPath("$.paymentStatus").value("pending"))
+                .andExpect(jsonPath("$.orderStatus").value("cho_thanh_toan"));
     }
 
     @Test

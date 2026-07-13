@@ -5,28 +5,26 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
-
-import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.entity.ThuongHieu;
+import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.DotGiamGia;
-import com.smashvn.shop.dao.DotGiamGiaDAO;
-import com.smashvn.shop.repository.SanPhamRepository;
-import com.smashvn.shop.repository.SanPhamChiTietRepository;
-import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.blog.BlogService;
 
 import lombok.RequiredArgsConstructor;
@@ -49,8 +47,12 @@ public class HomeController {
         danhSachSanPham.sort((sp1, sp2) -> {
             boolean activeAndInStock1 = ("dang_ban".equals(sp1.getTrangThai()) || sp1.getTrangThai() == null) && sp1.getTongSoLuongTon() > 0;
             boolean activeAndInStock2 = ("dang_ban".equals(sp2.getTrangThai()) || sp2.getTrangThai() == null) && sp2.getTongSoLuongTon() > 0;
-            if (activeAndInStock1 && !activeAndInStock2) return -1;
-            if (!activeAndInStock1 && activeAndInStock2) return 1;
+            if (activeAndInStock1 && !activeAndInStock2) {
+                return -1;
+            }
+            if (!activeAndInStock1 && activeAndInStock2) {
+                return 1;
+            }
             return 0;
         });
 
@@ -79,7 +81,6 @@ public class HomeController {
         List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit4);
 
         // Tìm chiến dịch giảm giá có phần trăm giảm cao nhất đang hoạt động
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         List<DotGiamGia> activeCampaigns = dotGiamGiaDAO.findAll().stream()
                 .filter(dgg -> dgg.getActive() && "ACTIVE".equals(dgg.getDynamicStatus()))
                 .sorted((d1, d2) -> d2.getPhanTramGiam().compareTo(d1.getPhanTramGiam()))
@@ -140,8 +141,8 @@ public class HomeController {
         List<String> normalizedTrongLuong = trongLuong;
         if (normalizedTrongLuong != null) {
             normalizedTrongLuong = normalizedTrongLuong.stream()
-                .filter(s -> s != null && !s.trim().isEmpty())
-                .collect(Collectors.toList());
+                    .filter(s -> s != null && !s.trim().isEmpty())
+                    .collect(Collectors.toList());
             if (normalizedTrongLuong.isEmpty()) {
                 normalizedTrongLuong = null;
             }
@@ -163,7 +164,7 @@ public class HomeController {
 
         // Sử dụng query kết hợp nhiều điều kiện
         Page<SanPham> productPage = sanPhamRepository.findByFilters(
-            sanitizedKeyword, categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
+                sanitizedKeyword, categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
         );
 
         // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
@@ -250,11 +251,10 @@ public class HomeController {
     }
 
     @GetMapping({
-        "/index.html", 
+        "/index.html",
         "/product-detail.html"
     })
     public String redirectLegacyTemplates() {
         return "redirect:/";
     }
 }
-

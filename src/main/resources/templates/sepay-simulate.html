@@ -350,29 +350,72 @@
             }
         });
 
-        // Start polling for payment status
+        // Start polling for payment status with a safe timeout to avoid the page hanging forever
+        let pollInterval = null;
+        let pollAttempts = 0;
+        const MAX_POLL_ATTEMPTS = 120;
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        function showPollingError(message) {
+            stopPolling();
+            $('#overlayTitle').text('Đang chờ xác nhận thanh toán');
+            $('#overlayMsg').text(message);
+            $('#statusOverlay').css('display', 'flex');
+        }
+
         if (orderCode) {
-            const pollInterval = setInterval(function() {
+            stopPolling();
+            pollInterval = setInterval(function() {
+                pollAttempts++;
+                if (pollAttempts > MAX_POLL_ATTEMPTS) {
+                    showPollingError('Chúng tôi vẫn đang chờ xác nhận thanh toán. Bạn có thể kiểm tra lại trong trang đơn hàng.');
+                    return;
+                }
+
                 $.ajax({
-                    url: '/api/payment/sepay/query/' + orderCode,
+                    url: '/api/payment/sepay/query/' + encodeURIComponent(orderCode),
                     type: 'GET',
                     success: function(response) {
-                        if (response.success && response.paymentStatus === 'paid') {
-                            clearInterval(pollInterval);
+                        if (response && response.success && response.paymentStatus === 'paid') {
+                            stopPolling();
                             $('#overlayTitle').text('Thanh toán thành công!');
                             $('#overlayMsg').text('Hệ thống đã nhận được thanh toán. Đang chuyển hướng...');
                             $('#statusOverlay').css('display', 'flex');
                             setTimeout(function() {
                                 window.location.href = '/user/my-order?payment=success';
                             }, 1000);
+                        } else if (response && response.success && response.paymentStatus === 'pending') {
+                            // Continue polling until payment arrives or timeout triggers.
+                        } else {
+                            showPollingError('Không thể xác nhận trạng thái thanh toán. Vui lòng kiểm tra lại trong trang đơn hàng của bạn.');
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Error polling payment status:', error);
+                        console.warn('Error polling payment status:', status, error);
+                        if (xhr && (xhr.status === 401 || xhr.status === 403)) {
+                            showPollingError('Bạn có thể kiểm tra trạng thái thanh toán trực tiếp trong trang đơn hàng.');
+                        }
                     }
                 });
             }, 2000);
         }
+
+        $('#btnSimulateCancel').off('click').on('click', function() {
+            stopPolling();
+            if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng của bạn sẽ ở trạng thái Chờ thanh toán.')) {
+                window.location.href = '/user/my-order';
+            }
+        });
+
+        $(window).on('beforeunload', function() {
+            stopPolling();
+        });
     });
 </script>
 </body>
