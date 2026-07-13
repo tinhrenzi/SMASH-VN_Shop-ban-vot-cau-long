@@ -276,6 +276,51 @@ public class CheckoutController {
         long startPipeline = System.currentTimeMillis();
         log.info("[GuestCheckout] Starting guest checkout pipeline execution.");
 
+        // Sanitize text inputs
+        hoTenNhan = sanitizeInput(hoTenNhan);
+        sdtNhan = sanitizeInput(sdtNhan);
+        diaChiNhan = sanitizeInput(diaChiNhan);
+        ghiChu = sanitizeInput(ghiChu);
+        tinhThanhText = sanitizeInput(tinhThanhText);
+        thanhPhoText = sanitizeInput(thanhPhoText);
+        phuongXaText = sanitizeInput(phuongXaText);
+        diaChiCuTheParam = sanitizeInput(diaChiCuTheParam);
+
+        // Validate inputs if user is not using a saved address
+        if (idDiaChiLuu == null) {
+            // Validate presence first
+            if (hoTenNhan == null || hoTenNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Họ và tên người nhận không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+            if (sdtNhan == null || sdtNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Số điện thoại không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+            if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Địa chỉ nhận hàng không được để trống.");
+                return ResponseEntity.ok(response);
+            }
+
+            // Validate length & format next
+            if (hoTenNhan.trim().length() < 2 || hoTenNhan.trim().length() > 100) {
+                response.put("trangThai", "loi");
+                response.put("message", "Họ và tên người nhận phải từ 2 đến 100 ký tự.");
+                return ResponseEntity.ok(response);
+            }
+
+            String normalizedPhone = com.smashvn.shop.util.PhoneUtils.normalize(sdtNhan);
+            if (!com.smashvn.shop.util.PhoneUtils.isValid(normalizedPhone)) {
+                response.put("trangThai", "loi");
+                response.put("message", "Số điện thoại không đúng định dạng (phải có 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09).");
+                return ResponseEntity.ok(response);
+            }
+        }
+
+
         if (idNguoiDung == null) {
             if (email == null || email.trim().isEmpty()) {
                 response.put("trangThai", "loi");
@@ -345,21 +390,6 @@ public class CheckoutController {
                 return ResponseEntity.ok(response);
             }
         } else {
-            if (hoTenNhan == null || hoTenNhan.trim().isEmpty()) {
-                response.put("trangThai", "loi");
-                response.put("message", "Họ và tên người nhận không được để trống.");
-                return ResponseEntity.ok(response);
-            }
-            if (sdtNhan == null || sdtNhan.trim().isEmpty()) {
-                response.put("trangThai", "loi");
-                response.put("message", "Số điện thoại không được để trống.");
-                return ResponseEntity.ok(response);
-            }
-            if (diaChiNhan == null || diaChiNhan.trim().isEmpty()) {
-                response.put("trangThai", "loi");
-                response.put("message", "Địa chỉ nhận hàng không được để trống.");
-                return ResponseEntity.ok(response);
-            }
             // Mandatory check for GHN IDs on new address checkout
             if (ghnProvinceId == null || ghnToDistrictId == null || ghnToWardCode == null || ghnToWardCode.trim().isEmpty()) {
                 response.put("trangThai", "loi");
@@ -964,5 +994,12 @@ public class CheckoutController {
             current = current.getCause();
         }
         return false;
+    }
+
+    private String sanitizeInput(String input) {
+        if (input == null) {
+            return null;
+        }
+        return org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.none()).trim();
     }
 }

@@ -1,20 +1,29 @@
 package com.smashvn.shop.config;
 
-import com.smashvn.shop.entity.*;
-import com.smashvn.shop.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-
 import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+import org.springframework.boot.CommandLineRunner;
+
+import com.smashvn.shop.entity.DanhMuc;
+import com.smashvn.shop.entity.HinhAnhSanPham;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.ThuongHieu;
+import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.ThuongHieuRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+// @Component
 @RequiredArgsConstructor
 @Slf4j
 public class ProductSeeder implements CommandLineRunner {
@@ -23,109 +32,43 @@ public class ProductSeeder implements CommandLineRunner {
     private final ThuongHieuRepository thuongHieuRepository;
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
-    private final TaiKhoanRepository taiKhoanRepository;
     private final NhanVienRepository nhanVienRepository;
-    private final com.smashvn.shop.dao.DonViVanChuyenDAO donViVanChuyenDAO;
 
     @Override
     public void run(String... args) throws Exception {
         log.info("[SEEDER] Bắt đầu quét thư mục uploads để thêm sản phẩm...");
 
-        // Seed DonViVanChuyen if missing
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        log.info("[SEEDER] Danh sách đơn vị vận chuyển hiện tại trong DB: {}", carriers);
-        
-        boolean hasGhn = carriers.stream().anyMatch(c -> c.getTenDonVi() != null && 
-                (c.getTenDonVi().toUpperCase().contains("GHN") || c.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH")));
-        if (!hasGhn) {
-            DonViVanChuyen ghn = new DonViVanChuyen();
-            ghn.setTenDonVi("Giao Hàng Nhanh (GHN)");
-            ghn.setMaDonVi("GHN");
-            ghn.setHotline("1900 636677");
-            ghn.setWebsite("https://ghn.vn");
-            ghn.setPhiLocal(new BigDecimal("25000"));
-            ghn.setPhiNationwide(new BigDecimal("38000"));
-            donViVanChuyenDAO.save(ghn);
-            log.info("[SEEDER] Đã tự động tạo đơn vị vận chuyển GHN trong DB");
-        }
-
-        boolean hasGhtk = carriers.stream().anyMatch(c -> c.getTenDonVi() != null && 
-                (c.getTenDonVi().toUpperCase().contains("GHTK") || c.getTenDonVi().toUpperCase().contains("GIAO HÀNG TIẾT KIỆM")));
-        if (!hasGhtk) {
-            DonViVanChuyen ghtk = new DonViVanChuyen();
-            ghtk.setTenDonVi("Giao Hàng Tiết Kiệm (GHTK)");
-            ghtk.setMaDonVi("GHTK");
-            ghtk.setHotline("1900 6092");
-            ghtk.setWebsite("https://ghtk.vn");
-            ghtk.setPhiLocal(new BigDecimal("22000"));
-            ghtk.setPhiNationwide(new BigDecimal("30000"));
-            donViVanChuyenDAO.save(ghtk);
-            log.info("[SEEDER] Đã tự động tạo đơn vị vận chuyển GHTK trong DB");
-        }
-
-
-        // 1. Tìm hoặc tạo DanhMuc "Vợt Cầu Lông"
+        // 1. Tìm DanhMuc "Vợt Cầu Lông"
         DanhMuc danhMuc = danhMucRepository.findAll().stream()
                 .filter(dm -> dm.getTenDanhMuc().equalsIgnoreCase("Vợt Cầu Lông") || dm.getTenDanhMuc().equalsIgnoreCase("Vợt"))
                 .findFirst()
-                .orElseGet(() -> {
-                    DanhMuc newDm = new DanhMuc();
-                    newDm.setTenDanhMuc("Vợt Cầu Lông");
-                    newDm.setMoTa("Các loại vợt cầu lông chính hãng");
-                    newDm.setTrangThai(true);
-                    return danhMucRepository.save(newDm);
-                });
+                .orElse(null);
 
-        // 2. Tìm hoặc tạo ThuongHieu "Li-Ning" và "Yonex"
+        // 2. Tìm ThuongHieu "Li-Ning" và "Yonex"
         ThuongHieu lining = thuongHieuRepository.findAll().stream()
                 .filter(th -> th.getTenThuongHieu().equalsIgnoreCase("Li-Ning") || th.getTenThuongHieu().equalsIgnoreCase("Lining"))
                 .findFirst()
-                .orElseGet(() -> {
-                    ThuongHieu th = new ThuongHieu();
-                    th.setTenThuongHieu("Li-Ning");
-                    th.setMoTa("Thương hiệu thể thao hàng đầu Trung Quốc");
-                    th.setTrangThai(true);
-                    return thuongHieuRepository.save(th);
-                });
+                .orElse(null);
 
         ThuongHieu yonex = thuongHieuRepository.findAll().stream()
                 .filter(th -> th.getTenThuongHieu().equalsIgnoreCase("Yonex"))
                 .findFirst()
-                .orElseGet(() -> {
-                    ThuongHieu th = new ThuongHieu();
-                    th.setTenThuongHieu("Yonex");
-                    th.setMoTa("Thương hiệu cầu lông số 1 thế giới đến từ Nhật Bản");
-                    th.setTrangThai(true);
-                    return thuongHieuRepository.save(th);
-                });
+                .orElse(null);
 
-        // 3. Tạo tài khoản quản trị
-        TaiKhoan adminTk = taiKhoanRepository.findByEmail("admin@smashvn.com");
-        if (adminTk == null) {
-            adminTk = new TaiKhoan();
-            adminTk.setEmail("admin@smashvn.com");
-            adminTk.setMatKhau(BCrypt.hashpw("admin123", BCrypt.gensalt()));
-            adminTk.setVaiTro("QL");
-            adminTk.setTrangThai("hoat_dong");
-            adminTk = taiKhoanRepository.save(adminTk);
-            log.info("[SEEDER] Đã tạo tài khoản quản trị: email = admin@smashvn.com, password = admin123");
-        }
+        // 3. Tìm nhân viên hiện có để liên kết với sản phẩm
+        NhanVien staff = nhanVienRepository.findAll().stream()
+                .findFirst()
+                .orElse(null);
 
-        NhanVien adminNv = nhanVienRepository.findByTaiKhoanId(adminTk.getId());
-        if (adminNv == null) {
-            adminNv = new NhanVien();
-            adminNv.setTaiKhoan(adminTk);
-            adminNv.setHoTenNv("Administrator");
-            adminNv.setChucVu("Quản trị viên");
-            adminNv.setSoDienThoaiNv("0123456789");
-            adminNv = nhanVienRepository.save(adminNv);
-            log.info("[SEEDER] Đã tạo nhân viên quản trị gắn với tài khoản admin");
+        if (danhMuc == null || lining == null || yonex == null || staff == null) {
+            log.warn("[SEEDER] Thiếu Danh mục, Thương hiệu hoặc Nhân viên trong DB. Bỏ qua quá trình seed sản phẩm.");
+            return;
         }
 
         // 4. Quét uploads/product/Li-ning
         File liningDir = new File("uploads/product/Li-ning");
         if (liningDir.exists() && liningDir.isDirectory()) {
-            seedFromDirectory(liningDir, "Li-ning", lining, danhMuc, adminNv);
+            seedFromDirectory(liningDir, "Li-ning", lining, danhMuc, staff);
         } else {
             log.warn("[SEEDER] Thư mục Li-ning không tồn tại hoặc không hợp lệ: {}", liningDir.getAbsolutePath());
         }
@@ -133,7 +76,7 @@ public class ProductSeeder implements CommandLineRunner {
         // 5. Quét uploads/product/Yonex
         File yonexDir = new File("uploads/product/Yonex");
         if (yonexDir.exists() && yonexDir.isDirectory()) {
-            seedFromDirectory(yonexDir, "Yonex", yonex, danhMuc, adminNv);
+            seedFromDirectory(yonexDir, "Yonex", yonex, danhMuc, staff);
         } else {
             log.warn("[SEEDER] Thư mục Yonex không tồn tại hoặc không hợp lệ: {}", yonexDir.getAbsolutePath());
         }
@@ -143,13 +86,15 @@ public class ProductSeeder implements CommandLineRunner {
 
     private void seedFromDirectory(File dir, String folderName, ThuongHieu brand, DanhMuc category, NhanVien employee) {
         File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".png") || name.toLowerCase().endsWith(".jpg"));
-        if (files == null) return;
+        if (files == null) {
+            return;
+        }
 
         for (File file : files) {
             String filename = file.getName();
             // Parse name & color from file name (e.g. "AXFORCE 9 AYPT317-2_Đen.png")
             String cleanName = filename.substring(0, filename.lastIndexOf('.')).trim();
-            
+
             // Remove trailing '1', '(1)' or similar
             if (cleanName.endsWith("(1)")) {
                 cleanName = cleanName.substring(0, cleanName.length() - 3).trim();
@@ -209,8 +154,8 @@ public class ProductSeeder implements CommandLineRunner {
         // Check if variant exists
         boolean exists = sanPhamChiTietRepository.findAll().stream()
                 .anyMatch(v -> v.getSanPham().getId().equals(sanPham.getId())
-                        && v.getMauSac().equalsIgnoreCase(color)
-                        && v.getTrongLuong().equalsIgnoreCase(weight));
+                && v.getMauSac().equalsIgnoreCase(color)
+                && v.getTrongLuong().equalsIgnoreCase(weight));
 
         if (!exists) {
             SanPhamChiTiet spct = new SanPhamChiTiet();
