@@ -81,34 +81,7 @@
 									                    <span>Thông báo</span>
 									                </a>
 									            </li>
-									            
-									            <!-- Chuyển vai trò nếu có nhiều vai trò -->
-									            <th:block th:with="roleCount=${((session.laKhachHang != null and session.laKhachHang) ? 1 : 0) + ((session.laNhanVien != null and session.laNhanVien) ? 1 : 0) + ((session.laQuanLy != null and session.laQuanLy) ? 1 : 0)}">
-									                <th:block th:if="${roleCount > 1}">
-									                    <li><hr style="margin: 5px 0; border-top: 1px solid #ddd;"></li>
-									                    <li style="padding: 3px 15px; font-weight: bold; font-size: 11px; color: #888; text-transform: uppercase;">Đăng nhập với vai trò:</li>
-									                    <li th:if="${session.laKhachHang}">
-									                        <a th:href="@{/switch-role(role='KH')}" class="d-flex justify-content-between align-items-center" style="padding: 5px 15px;">
-									                            <span>Khách hàng</span>
-									                            <i th:if="${session.activeRole == 'KH'}" class="fas fa-check text-success" style="margin-left: auto;"></i>
-									                        </a>
-									                    </li>
-									                    <li th:if="${session.laNhanVien}">
-									                        <a th:href="@{/switch-role(role='NV')}" class="d-flex justify-content-between align-items-center" style="padding: 5px 15px;">
-									                            <span>Nhân viên</span>
-									                            <i th:if="${session.activeRole == 'NV'}" class="fas fa-check text-success" style="margin-left: auto;"></i>
-									                        </a>
-									                    </li>
-									                    <li th:if="${session.laQuanLy}">
-									                        <a th:href="@{/switch-role(role='QL')}" class="d-flex justify-content-between align-items-center" style="padding: 5px 15px;">
-									                            <span>Quản trị viên</span>
-									                            <i th:if="${session.activeRole == 'QL'}" class="fas fa-check text-success" style="margin-left: auto;"></i>
-									                        </a>
-									                    </li>
-									                    <li><hr style="margin: 5px 0; border-top: 1px solid #ddd;"></li>
-									                </th:block>
-									            </th:block>
-									            
+
 									            <li>
 									                <a th:href="@{/user/dang-xuat}"><i class="fas fa-lock-open u-s-m-r-6"></i>
 									                    <span>Đăng xuất</span></a>

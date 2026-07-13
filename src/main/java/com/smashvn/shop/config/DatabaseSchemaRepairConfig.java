@@ -134,6 +134,39 @@ public class DatabaseSchemaRepairConfig {
                 );
 
                 log.info("[STARTUP_DB_REPAIR] HoaDon table schema checks completed.");
+
+                log.info("[STARTUP_DB_REPAIR] Checking EditLog table schema...");
+                // Alter id_tai_khoan column to nullable
+                stmt.execute("ALTER TABLE EditLog ALTER COLUMN id_tai_khoan INT NULL;");
+                log.info("[STARTUP_DB_REPAIR] EditLog table schema checks completed.");
+
+                log.info("[STARTUP_DB_REPAIR] Checking HoaDonChiTiet table schema...");
+                // Add ten_dot_giam_gia_snapshot column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HoaDonChiTiet') AND name = 'ten_dot_giam_gia_snapshot') "
+                        + "BEGIN "
+                        + "    ALTER TABLE HoaDonChiTiet ADD ten_dot_giam_gia_snapshot NVARCHAR(255) NULL; "
+                        + "END"
+                );
+                // Add thuoc_tinh_snapshot column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HoaDonChiTiet') AND name = 'thuoc_tinh_snapshot') "
+                        + "BEGIN "
+                        + "    ALTER TABLE HoaDonChiTiet ADD thuoc_tinh_snapshot NVARCHAR(500) NULL; "
+                        + "END"
+                );
+                log.info("[STARTUP_DB_REPAIR] HoaDonChiTiet table schema checks completed.");
+
+                log.info("[STARTUP_DB_REPAIR] Checking PhieuGiamGia table schema...");
+                // Add gia_tri_don_hang_toi_thieu column if missing
+                stmt.execute(
+                        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('PhieuGiamGia') AND name = 'gia_tri_don_hang_toi_thieu') "
+                        + "BEGIN "
+                        + "    ALTER TABLE PhieuGiamGia ADD gia_tri_don_hang_toi_thieu DECIMAL(18,2) NULL; "
+                        + "END"
+                );
+                log.info("[STARTUP_DB_REPAIR] PhieuGiamGia table schema checks completed.");
+
             } catch (SQLException e) {
                 log.error("[STARTUP_DB_REPAIR] Error during programmatic schema updates: {}", e.getMessage(), e);
             }
