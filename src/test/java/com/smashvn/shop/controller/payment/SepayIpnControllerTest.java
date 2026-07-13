@@ -159,7 +159,17 @@ public class SepayIpnControllerTest {
 
     @Test
     void testQueryTransaction_Unauthorized() throws Exception {
-        // Query without session
+        HoaDon order = new HoaDon();
+        order.setMaDonHang("DH20260608-A1B2C3");
+        order.setTrangThaiThanhToan("CHO_THANH_TOAN");
+        KhachHang kh = new KhachHang();
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(999);
+        kh.setTaiKhoan(tk);
+        order.setKhachHang(kh);
+
+        when(hoaDonRepository.findByMaDonHang("DH20260608-A1B2C3")).thenReturn(Optional.of(order));
+
         mockMvc.perform(get("/api/payment/sepay/query/DH20260608-A1B2C3"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false));
