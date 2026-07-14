@@ -144,135 +144,69 @@
 
                                         <span class="mega-text">M</span>
 
-                                        <!--====== Menu chữ M ======-->
+                                         <span class="js-menu-toggle"></span>
+                                         <div class="mega-menu">
+                                             <div class="mega-menu-wrap">
+                                                 <div class="mega-menu-list">
+                                                     <ul>
+                                                         <li th:each="cat, iter : ${globalCategories}" th:classappend="${iter.first} ? 'js-active'">
+                                                             <a th:href="@{/shop(categoryId=${cat.id})}">
+                                                                 <i th:class="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')} ? 'fa-solid fa-table-tennis-paddle-ball' : (${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')} ? 'fas fa-shoe-prints u-s-m-r-6' : 'fas fa-toolbox u-s-m-r-6')"></i>
+                                                                 <span th:text="${cat.tenDanhMuc}">Category Name</span>
+                                                             </a>
+                                                             <span class="js-menu-toggle" th:classappend="${iter.first} ? ' js-toggle-mark' : ''"></span>
+                                                         </li>
+                                                     </ul>
+                                                 </div>
 
-                                        <span class="js-menu-toggle"></span>
-                                        <div class="mega-menu">
-                                            <div class="mega-menu-wrap">
-                                                <div class="mega-menu-list">
-                                                    <ul>
-                                                        <li class="js-active">
-                                                            <a th:href="@{/shop(categoryId=1)}"><i class="fa-solid fa-table-tennis-paddle-ball"></i>
-                                                                <span>Vợt Cầu Lông</span></a>
-                                                            <span class="js-menu-toggle js-toggle-mark"></span>
-                                                        </li>
-                                                        <li>
-                                                            <a th:href="@{/shop(categoryId=2)}"><i class="fas fa-shoe-prints u-s-m-r-6"></i>
-                                                                <span>Giày Cầu Lông</span></a>
-                                                            <span class="js-menu-toggle"></span>
-                                                        </li>
-                                                        <li>
-                                                            <a th:href="@{/shop(categoryId=3)}"><i class="fas fa-toolbox u-s-m-r-6"></i>
-                                                                <span>Phụ Kiện</span></a>
-                                                            <span class="js-menu-toggle"></span>
-                                                        </li>
-                                                    </ul>
-                                                </div>
+                                                 <div th:each="cat, iter : ${globalCategories}" class="mega-menu-content" th:classappend="${iter.first} ? ' js-active' : ''">
+                                                     <div class="row">
+                                                         <div class="col-lg-6 col-md-12">
+                                                             <ul>
+                                                                 <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
+                                                                 <li th:each="brand : ${globalBrands}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},brandId=${brand.id})}" th:text="${cat.tenDanhMuc + ' ' + brand.tenThuongHieu}">Vợt Yonex</a>
+                                                                 </li>
+                                                             </ul>
+                                                         </div>
+                                                         <div class="col-lg-6 col-md-12">
+                                                             <ul>
+                                                                 <li class="mega-list-title"><a href="#">Mức Giá</a></li>
+                                                                 <li th:if="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},maxPrice=1000000)}">Dưới 1 Triệu</a>
+                                                                 </li>
+                                                                 <li th:if="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},minPrice=1000000,maxPrice=2000000)}">1 - 2 Triệu</a>
+                                                                 </li>
+                                                                 <li th:if="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},minPrice=2000000)}">Trên 2 Triệu</a>
+                                                                 </li>
 
-                                                <!--====== Hộp menu tag 1 của chữ M: Vợt Cầu Lông ======-->
-                                                <div class="mega-menu-content js-active">
-                                                    <div class="row">
-                                                        <div class="col-lg-4">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,brandId=1)}">Vợt Yonex</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,brandId=2)}">Vợt Victor</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,brandId=3)}">Vợt Lining</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,brandId=4)}">Vợt Kawasaki</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-4">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Mức Giá</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,maxPrice=1000000)}">Dưới 1 Triệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,minPrice=1000000,maxPrice=2000000)}">1 - 2 Triệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,minPrice=2000000)}">Trên 2 Triệu</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-4">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Trọng Lượng</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='3U')}">3U (Nặng)</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='4U')}">4U (Trung bình)</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=1,trongLuong='5U')}">5U (Nhẹ)</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row u-s-m-t-20">
-                                                        <div class="col-lg-12 mega-image">
-                                                            <div class="mega-banner">
-                                                                <a class="u-d-block" th:href="@{/shop(categoryId=1)}">
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-0.jpg}" alt="Banner Rackets">
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                                 <li th:if="${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},maxPrice=1500000)}">Dưới 1.5 Triệu</a>
+                                                                 </li>
+                                                                 <li th:if="${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id},minPrice=1500000)}">Trên 1.5 Triệu</a>
+                                                                 </li>
 
-                                                <!--====== Hộp menu tag 2 của chữ M: Giày Cầu Lông ======-->
-                                                <div class="mega-menu-content">
-                                                    <div class="row">
-                                                        <div class="col-lg-6">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,brandId=1)}">Giày Yonex</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,brandId=2)}">Giày Victor</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,brandId=3)}">Giày Lining</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,brandId=4)}">Giày Kawasaki</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-6">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Mức Giá</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,maxPrice=1500000)}">Dưới 1.5 Triệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=2,minPrice=1500000)}">Trên 1.5 Triệu</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row u-s-m-t-20">
-                                                        <div class="col-lg-12 mega-image">
-                                                            <div class="mega-banner">
-                                                                <a class="u-d-block" th:href="@{/shop(categoryId=2)}">
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-1.jpg}" alt="Banner Shoes">
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!--====== Hộp menu tag 3 của chữ M: Phụ Kiện ======-->
-                                                <div class="mega-menu-content">
-                                                    <div class="row">
-                                                        <div class="col-lg-6">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Loại Phụ Kiện</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3)}">Quấn cán vợt</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3)}">Bao vợt / Balo</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3)}">Tất cầu lông</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3)}">Căng dây vợt</a></li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-lg-6">
-                                                            <ul>
-                                                                <li class="mega-list-title"><a href="#">Thương Hiệu</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3,brandId=1)}">Phụ kiện Yonex</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3,brandId=2)}">Phụ kiện Victor</a></li>
-                                                                <li><a th:href="@{/shop(categoryId=3,brandId=3)}">Phụ kiện Lining</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row u-s-m-t-20">
-                                                        <div class="col-lg-12 mega-image">
-                                                            <div class="mega-banner">
-                                                                <a class="u-d-block" th:href="@{/shop(categoryId=3)}">
-                                                                    <img class="u-img-fluid u-d-block" th:src="@{/images/banners/banner-mega-2.jpg}" alt="Banner Accessories">
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                                                 <li th:if="${!cat.tenDanhMuc.contains('Vợt') && !cat.tenDanhMuc.contains('vợt') && !cat.tenDanhMuc.contains('Giày') && !cat.tenDanhMuc.contains('giày')}">
+                                                                     <a th:href="@{/shop(categoryId=${cat.id})}">Tất cả</a>
+                                                                 </li>
+                                                             </ul>
+                                                         </div>
+                                                     </div>
+                                                     <div class="row u-s-m-t-20">
+                                                         <div class="col-lg-12 mega-image">
+                                                             <div class="mega-banner">
+                                                                 <a class="u-d-block" th:href="@{/shop(categoryId=${cat.id})}">
+                                                                     <img class="u-img-fluid u-d-block" th:src="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')} ? @{/images/banners/banner-mega-0.jpg} : (${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')} ? @{/images/banners/banner-mega-1.jpg} : @{/images/banners/banner-mega-2.jpg})" alt="Banner">
+                                                                 </a>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
                                     </li>
                                 </ul>
                             </div>

@@ -49,46 +49,12 @@ public class UserDangKyController {
         String sanitizedEmail = sanitizeInput(email);
         String trimmedEmail = (sanitizedEmail != null) ? sanitizedEmail.trim() : "";
 
-        // Validate email format and length
-        if (trimmedEmail.isEmpty()) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Email không được để trống!");
-            return "signup";
-        }
-        if (trimmedEmail.length() > 100) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Email không được vượt quá 100 ký tự!");
-            return "signup";
-        }
-        if (!trimmedEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Định dạng email không hợp lệ!");
-            return "signup";
-        }
-
-        // Validate password strength: 8-30 chars, contains both letter and digit, no spaces
+        // Kiểm tra 2 mật khẩu có khớp nhau không
         if (matKhau == null || matKhau.isEmpty()) {
             registerRateLimiter.registerFailed(ip);
             model.addAttribute("loi", "Mật khẩu không được để trống!");
             return "signup";
         }
-        if (matKhau.length() < 8 || matKhau.length() > 30) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Mật khẩu phải dài từ 8 đến 30 ký tự!");
-            return "signup";
-        }
-        if (matKhau.contains(" ") || matKhau.contains("\t") || matKhau.contains("\n") || matKhau.contains("\r")) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Mật khẩu không được chứa khoảng trắng!");
-            return "signup";
-        }
-        if (!matKhau.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,30}$")) {
-            registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Mật khẩu phải chứa cả chữ và số!");
-            return "signup";
-        }
-
-        // Kiểm tra 2 mật khẩu có khớp nhau không
         if (!matKhau.equals(xacNhanMatKhau)) {
             registerRateLimiter.registerFailed(ip);
             model.addAttribute("loi", "Mật khẩu xác nhận không trùng khớp!");

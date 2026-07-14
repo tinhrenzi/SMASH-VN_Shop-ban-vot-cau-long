@@ -13,7 +13,6 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.repository.KhachHangRepository;
-import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
 
@@ -31,7 +30,6 @@ import java.util.Locale;
 public class UserDangNhapController {
 
     private final UserDangNhapService userDangNhapService;
-    private final NhanVienRepository nhanVienRepository;
     private final KhachHangRepository khachHangRepository;
     private final LoginRateLimiter loginRateLimiter;
 

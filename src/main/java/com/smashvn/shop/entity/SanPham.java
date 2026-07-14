@@ -47,11 +47,13 @@ public class SanPham {
     private String moTa;
 
     @ManyToMany(mappedBy = "sanPhams")
+    @org.hibernate.annotations.BatchSize(size = 30)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<DotGiamGia> cacDotGiamGia;
     
     @OneToMany(mappedBy = "sanPham", fetch = FetchType.LAZY)
+    @org.hibernate.annotations.BatchSize(size = 30)
     private List<SanPhamChiTiet> sanPhamChiTiets;
 
     public int getTongSoLuongTon() {
