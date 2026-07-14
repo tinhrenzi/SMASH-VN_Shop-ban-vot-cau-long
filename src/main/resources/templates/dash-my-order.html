@@ -315,6 +315,85 @@
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             }
+
+            // --- Order filter selector logic ---
+            const sortSelect = document.getElementById("my-order-sort");
+            if (sortSelect) {
+                const tableBody = document.querySelector(".dash__table-2 tbody");
+                if (tableBody) {
+                    const rows = Array.from(tableBody.querySelectorAll("tr:not(.no-orders-row)"));
+                    if (rows.length > 0) {
+                        function parseOrderDate(dateStr) {
+                            const months = {
+                                "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "May": 4, "Jun": 5,
+                                "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
+                            };
+                            const parts = dateStr.trim().split(/\s+/);
+                            if (parts.length < 4) return new Date();
+                            const day = parseInt(parts[0], 10);
+                            const month = months[parts[1]] !== undefined ? months[parts[1]] : 0;
+                            const year = parseInt(parts[2], 10);
+                            const timeParts = parts[3].split(":");
+                            const hour = timeParts[0] ? parseInt(timeParts[0], 10) : 0;
+                            const minute = timeParts[1] ? parseInt(timeParts[1], 10) : 0;
+                            const second = timeParts[2] ? parseInt(timeParts[2], 10) : 0;
+                            return new Date(year, month, day, hour, minute, second);
+                        }
+
+                        sortSelect.addEventListener("change", function () {
+                            const optionValue = sortSelect.value.trim();
+                            const now = new Date();
+
+                            rows.forEach(function (row, index) {
+                                let show = true;
+                                const dateSpan = row.querySelector("td:nth-child(2) span");
+                                const dateStr = dateSpan ? dateSpan.textContent : "";
+                                const orderDate = parseOrderDate(dateStr);
+
+                                if (optionValue === "5 đơn hàng gần nhất") {
+                                    show = index < 5;
+                                } else if (optionValue === "15 ngày gần nhất") {
+                                    const diffTime = Math.abs(now - orderDate);
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    show = diffDays <= 15;
+                                } else if (optionValue === "30 ngày gần nhất") {
+                                    const diffTime = Math.abs(now - orderDate);
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    show = diffDays <= 30;
+                                } else if (optionValue === "6 tháng gần nhất") {
+                                    const diffTime = Math.abs(now - orderDate);
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    show = diffDays <= 180;
+                                } else if (optionValue === "Tất cả đơn hàng") {
+                                    show = true;
+                                }
+
+                                row.style.display = show ? "" : "none";
+                            });
+
+                            const visibleRows = rows.filter(r => r.style.display !== "none");
+                            let noOrdersRow = tableBody.querySelector(".no-orders-row");
+                            if (visibleRows.length === 0) {
+                                if (!noOrdersRow) {
+                                    noOrdersRow = document.createElement("tr");
+                                    noOrdersRow.className = "no-orders-row";
+                                    noOrdersRow.innerHTML = `<td colspan="6" class="text-center text-muted py-4">Không có đơn hàng nào khớp bộ lọc</td>`;
+                                    tableBody.appendChild(noOrdersRow);
+                                } else {
+                                    noOrdersRow.style.display = "";
+                                }
+                            } else {
+                                if (noOrdersRow) {
+                                    noOrdersRow.style.display = "none";
+                                }
+                            }
+                        });
+
+                        // Run once on load to show 5 latest orders by default
+                        sortSelect.dispatchEvent(new Event("change"));
+                    }
+                }
+            }
         });
 
         function hienToast(msg, type) {
