@@ -3,7 +3,6 @@ package com.smashvn.shop.controller.user;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.KhachHangRepository;
-import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +22,7 @@ public class UserDangNhapControllerTest {
     @Mock
     private UserDangNhapService userDangNhapService;
 
-    @Mock
-    private NhanVienRepository nhanVienRepository;
+
 
     @Mock
     private KhachHangRepository khachHangRepository;
@@ -45,7 +43,6 @@ public class UserDangNhapControllerTest {
         MockitoAnnotations.openMocks(this);
         userDangNhapController = new UserDangNhapController(
                 userDangNhapService,
-                nhanVienRepository,
                 khachHangRepository,
                 loginRateLimiter
         );

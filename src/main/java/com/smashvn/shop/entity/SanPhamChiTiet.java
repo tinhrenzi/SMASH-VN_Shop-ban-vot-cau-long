@@ -57,6 +57,7 @@ public class SanPhamChiTiet {
     private Boolean trangThaiValue = true;
 
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 30)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<HinhAnhSanPham> hinhAnhSanPhams = new ArrayList<>();
