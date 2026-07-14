@@ -45,7 +45,6 @@ public class SecurityConfig {
                 .requestMatchers("/admin/blog", "/admin/blog/**", "/admin/blogs", "/admin/blogs/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/moderation/keywords", "/admin/moderation/keywords/**").hasRole("QL")
                 .requestMatchers("/admin/thong-ke", "/admin/thong-ke/**").hasRole("QL")
-                .requestMatchers("/admin/shipping-config", "/admin/shipping-config/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/don-hang", "/admin/don-hang/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/san-pham", "/admin/san-pham/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/danh-muc", "/admin/danh-muc/**").hasAnyRole("QL", "NV")

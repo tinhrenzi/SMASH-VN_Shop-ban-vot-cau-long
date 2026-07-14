@@ -1,6 +1,5 @@
 package com.smashvn.shop.controller.user;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,9 +7,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.smashvn.shop.service.user.UserDangKyService;
 import com.smashvn.shop.security.RegisterRateLimiter;
+import com.smashvn.shop.service.user.UserDangKyService;
+
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/user")
@@ -32,11 +33,11 @@ public class UserDangKyController {
     // Xử lý khi người dùng bấm nút Submit form
     @PostMapping("/dang-ky")
     public String xuLyDangKy(@RequestParam("email") String email,
-                             @RequestParam("matKhau") String matKhau,
-                             @RequestParam("xacNhanMatKhau") String xacNhanMatKhau,
-                             HttpServletRequest request,
-                             Model model) {
-        
+            @RequestParam("matKhau") String matKhau,
+            @RequestParam("xacNhanMatKhau") String xacNhanMatKhau,
+            HttpServletRequest request,
+            Model model) {
+
         String ip = request.getRemoteAddr();
 
         // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
@@ -98,13 +99,13 @@ public class UserDangKyController {
         try {
             // Gọi Service để lưu
             taiKhoanService.dangKy(trimmedEmail, matKhau);
-            
+
             // Thành công -> Reset bộ đếm
             registerRateLimiter.registerSucceeded(ip);
-            
+
             // Nếu thành công, chuyển hướng người dùng sang trang Đăng nhập
-            return "redirect:/user/dang-nhap?thanhcong"; 
-            
+            return "redirect:/user/dang-nhap?thanhcong";
+
         } catch (RuntimeException e) {
             // Thất bại -> Tăng bộ đếm và hiển thị lỗi
             registerRateLimiter.registerFailed(ip);
@@ -114,7 +115,9 @@ public class UserDangKyController {
     }
 
     private String sanitizeInput(String input) {
-        if (input == null) return null;
+        if (input == null) {
+            return null;
+        }
         // Loại bỏ thẻ HTML/Script cơ bản để tránh XSS/injection thô sơ
         return input.replaceAll("<[^>]*>", "");
     }

@@ -62,9 +62,12 @@ public class AdminBlogController {
     }
 
     @GetMapping("/add")
-    public String showAddForm(Model model) {
+    public String showAddForm(
+            @RequestParam(value = "iframe", defaultValue = "false") boolean isIframe,
+            Model model) {
         model.addAttribute("blog", new BlogDTO());
         model.addAttribute("activeTab", "blog");
+        model.addAttribute("isIframe", isIframe);
         return "admin/blog-add";
     }
 
@@ -106,11 +109,15 @@ public class AdminBlogController {
     }
 
     @GetMapping({"/edit/{id}", "/sua/{id}"})
-    public String showEditForm(@PathVariable("id") Integer id, Model model) {
+    public String showEditForm(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "iframe", defaultValue = "false") boolean isIframe,
+            Model model) {
         try {
             BlogDTO blog = blogService.getAdminBlogById(id);
             model.addAttribute("blog", blog);
             model.addAttribute("activeTab", "blog");
+            model.addAttribute("isIframe", isIframe);
             return "admin/blog-edit";
         } catch (Exception e) {
             return "redirect:/admin/blog";

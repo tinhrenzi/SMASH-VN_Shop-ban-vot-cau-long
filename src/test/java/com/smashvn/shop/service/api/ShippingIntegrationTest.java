@@ -1,5 +1,4 @@
 package com.smashvn.shop.service.api;
-import com.smashvn.shop.service.admin.AdminShippingService;
 
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.ShippingZone;
@@ -43,9 +42,6 @@ public class ShippingIntegrationTest {
 
     @Autowired
     private PhuongThucThanhToanDAO phuongThucThanhToanDAO;
-
-    @Autowired
-    private AdminShippingService adminShippingService;
 
     @Autowired
     private TaiKhoanRepository taiKhoanRepository;
@@ -132,122 +128,6 @@ public class ShippingIntegrationTest {
     }
 
     @Test
-    void testNegativeFeeRejected() {
-        // Create acting QL user
-        TaiKhoan manager = new TaiKhoan();
-        manager.setEmail("manager-ship-test-" + System.nanoTime() + "@smashvn.com");
-        manager.setMatKhau("123");
-        manager.setVaiTro("QL");
-        manager.setLaQuanLy(true);
-        manager = taiKhoanRepository.save(manager);
-
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        assertFalse(carriers.isEmpty());
-        DonViVanChuyen carrier = carriers.get(0);
-
-        final Integer cid = carrier.getId();
-        final Long ver = carrier.getVersion();
-        final Integer mid = manager.getId();
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            adminShippingService.updateShippingFee(cid, BigDecimal.valueOf(-1000), BigDecimal.valueOf(30000), ver, mid, "127.0.0.1");
-        });
-    }
-
-    @Test
-    void testNullFeeRejected() {
-        TaiKhoan manager = new TaiKhoan();
-        manager.setEmail("manager-ship-test-" + System.nanoTime() + "@smashvn.com");
-        manager.setMatKhau("123");
-        manager.setVaiTro("QL");
-        manager.setLaQuanLy(true);
-        manager = taiKhoanRepository.save(manager);
-
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        assertFalse(carriers.isEmpty());
-        DonViVanChuyen carrier = carriers.get(0);
-
-        final Integer cid = carrier.getId();
-        final Long ver = carrier.getVersion();
-        final Integer mid = manager.getId();
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            adminShippingService.updateShippingFee(cid, null, BigDecimal.valueOf(30000), ver, mid, "127.0.0.1");
-        });
-    }
-
-    @Test
-    void testServiceAuthorizationEnforced() {
-        // Create NV user (should be rejected)
-        TaiKhoan employee = new TaiKhoan();
-        employee.setEmail("emp-ship-test-" + System.nanoTime() + "@smashvn.com");
-        employee.setMatKhau("123");
-        employee.setVaiTro("NV");
-        employee.setLaNhanVien(true);
-        employee = taiKhoanRepository.save(employee);
-
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        assertFalse(carriers.isEmpty());
-        DonViVanChuyen carrier = carriers.get(0);
-
-        final Integer cid = carrier.getId();
-        final Long ver = carrier.getVersion();
-        final Integer eid = employee.getId();
-
-        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
-            adminShippingService.updateShippingFee(cid, BigDecimal.valueOf(20000), BigDecimal.valueOf(30000), ver, eid, "127.0.0.1");
-        });
-    }
-
-    @Test
-    void testOptimisticLockingConflict() {
-        TaiKhoan manager = new TaiKhoan();
-        manager.setEmail("manager-ship-test-" + System.nanoTime() + "@smashvn.com");
-        manager.setMatKhau("123");
-        manager.setVaiTro("QL");
-        manager.setLaQuanLy(true);
-        manager = taiKhoanRepository.save(manager);
-
-        List<DonViVanChuyen> carriers = donViVanChuyenDAO.findAll();
-        assertFalse(carriers.isEmpty());
-        DonViVanChuyen carrier = carriers.get(0);
-
-        final Integer cid = carrier.getId();
-        final Long correctVer = carrier.getVersion();
-        final Long staleVer = correctVer - 1; // Stale version
-        final Integer mid = manager.getId();
-
-        // Stale update must fail with Optimistic Locking exception
-        assertThrows(org.springframework.orm.ObjectOptimisticLockingFailureException.class, () -> {
-            adminShippingService.updateShippingFee(cid, BigDecimal.valueOf(25000), BigDecimal.valueOf(35000), staleVer, mid, "127.0.0.1");
-        });
-    }
-
-    @Test
-    void testCacheEvictedAfterUpdate() {
-        TaiKhoan manager = new TaiKhoan();
-        manager.setEmail("manager-ship-test-" + System.nanoTime() + "@smashvn.com");
-        manager.setMatKhau("123");
-        manager.setVaiTro("QL");
-        manager.setLaQuanLy(true);
-        manager = taiKhoanRepository.save(manager);
-
-        List<DonViVanChuyen> list1 = adminShippingService.getAllCarriers();
-        assertFalse(list1.isEmpty());
-        DonViVanChuyen carrier = list1.get(0);
-
-        // Update fee
-        BigDecimal newLocal = BigDecimal.valueOf(31415);
-        adminShippingService.updateShippingFee(carrier.getId(), newLocal, BigDecimal.valueOf(40000), carrier.getVersion(), manager.getId(), "127.0.0.1");
-
-        // Next lookup should yield the new fee (cache is evicted and refreshed)
-        List<DonViVanChuyen> list2 = adminShippingService.getAllCarriers();
-        DonViVanChuyen updated = list2.stream().filter(c -> c.getId().equals(carrier.getId())).findFirst().orElse(null);
-        assertNotNull(updated);
-        assertEquals(0, newLocal.compareTo(updated.getPhiLocal()));
-    }
-
-    @Test
     void testHistoricalOrderFeeUnaffected() {
         // Create an order with fee 22000
         KhachHang kh = seedKhachHang();
@@ -263,16 +143,6 @@ public class ShippingIntegrationTest {
         hd.setTongTien(BigDecimal.valueOf(100000));
         hd.setPhiVanChuyen(BigDecimal.valueOf(22000));
         hd = hoaDonRepository.save(hd);
-
-        // Update carrier fee to 99000 in database
-        TaiKhoan manager = new TaiKhoan();
-        manager.setEmail("manager-ship-test-" + System.nanoTime() + "@smashvn.com");
-        manager.setMatKhau("123");
-        manager.setVaiTro("QL");
-        manager.setLaQuanLy(true);
-        manager = taiKhoanRepository.save(manager);
-
-        adminShippingService.updateShippingFee(carrier.getId(), BigDecimal.valueOf(99000), BigDecimal.valueOf(99000), carrier.getVersion(), manager.getId(), "127.0.0.1");
 
         // Reload the order, fee must remain 22000
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElse(null);

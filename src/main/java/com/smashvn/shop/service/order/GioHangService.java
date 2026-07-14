@@ -11,7 +11,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
-import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.GioHang;
@@ -68,7 +67,6 @@ public class GioHangService {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
-    private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final ShippingFeeCalculator shippingFeeCalculator;
     private final AdminShippingService adminShippingService;
     private final GhnService ghnService;
@@ -138,7 +136,9 @@ public class GioHangService {
 
         // --- BÀI TOÁN VALIDATE TỒN KHO THỰC TẾ ---
         // 1. Xem trong giỏ của khách đã có bao nhiêu chiếc này rồi?
-        int soLuongHienCo = (chiTiet != null && chiTiet.getSoLuong() != null) ? chiTiet.getSoLuong() : 0;
+        // Avoid possible NPE from auto-unboxing by capturing Integer first
+        Integer soLuongHienCoObj = (chiTiet != null) ? chiTiet.getSoLuong() : null;
+        int soLuongHienCo = (soLuongHienCoObj != null) ? soLuongHienCoObj : 0;
 
         // 2. Tính tổng số lượng khách sẽ có nếu thêm thành công
         long tongYeuCauLong = (long) soLuongHienCo + soLuong;
@@ -599,11 +599,15 @@ public class GioHangService {
                 thuocTinh.append("Màu sắc: ").append(lockedSpct.getMauSac());
             }
             if (lockedSpct.getTrongLuong() != null && !lockedSpct.getTrongLuong().isBlank()) {
-                if (thuocTinh.length() > 0) thuocTinh.append(", ");
+                if (thuocTinh.length() > 0) {
+                    thuocTinh.append(", ");
+                }
                 thuocTinh.append("Trọng lượng: ").append(lockedSpct.getTrongLuong());
             }
             if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().isBlank()) {
-                if (thuocTinh.length() > 0) thuocTinh.append(", ");
+                if (thuocTinh.length() > 0) {
+                    thuocTinh.append(", ");
+                }
                 thuocTinh.append("Mức cảng: ").append(lockedSpct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(thuocTinh.toString());

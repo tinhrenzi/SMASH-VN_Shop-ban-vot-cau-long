@@ -34,7 +34,6 @@ import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.common.FileStorageService;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -83,17 +83,21 @@
         }
     </script>
 </head>
-<body th:classappend="${param.iframe != null} ? 'iframe-mode' : ''">
+<body th:classappend="${isIframe} ? 'iframe-mode' : ''">
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div th:replace="~{admin/layout/sidebar :: sidebar('blog')}" th:if="${param.iframe == null}"></div>
+        <th:block th:unless="${isIframe}">
+            <div th:replace="~{admin/layout/sidebar :: sidebar('blog')}"></div>
+        </th:block>
 
         <!-- Main Content -->
-        <main th:class="${param.iframe != null} ? 'col-12 main-content' : 'col-md-10 main-content'">
+        <main th:class="${isIframe} ? 'col-12 main-content' : 'col-md-10 main-content'">
             <!-- Header -->
-            <div th:replace="~{admin/layout/header :: header}" th:if="${param.iframe == null}"></div>
+            <th:block th:unless="${isIframe}">
+                <div th:replace="~{admin/layout/header :: header}"></div>
+            </th:block>
 
             <!-- Page Title -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -118,7 +122,7 @@
                     <i class="fas fa-pencil-alt me-2 text-brand"></i>Cập Nhật Thông Tin Bài Viết
                 </div>
                 <div class="card-body p-4">
-                    <form th:object="${blog}" th:action="${param.iframe != null} ? @{/admin/blog/edit/{id}(id=${blog.id}, iframe=true)} : @{/admin/blog/edit/{id}(id=${blog.id})}" method="POST" enctype="multipart/form-data" id="editBlogForm">
+                    <form th:object="${blog}" th:action="${isIframe} ? @{/admin/blog/edit/{id}(id=${blog.id}, iframe=true)} : @{/admin/blog/edit/{id}(id=${blog.id})}" method="POST" enctype="multipart/form-data" id="editBlogForm">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <input type="hidden" th:field="*{id}" />
                         <input type="hidden" th:field="*{image}" />

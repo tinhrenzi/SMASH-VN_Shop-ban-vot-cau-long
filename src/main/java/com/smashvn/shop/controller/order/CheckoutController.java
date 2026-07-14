@@ -568,9 +568,14 @@ public class CheckoutController {
             // Guest checkout may create a GUEST account in-session; grant access only to the new order.
             if (startedAsAnonymousGuest || isGuestCheckout) {
                 synchronized (session) {
-                    List<GuestOrderAccess> allowedAccesses = (List<GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
-                    if (allowedAccesses == null) {
-                        allowedAccesses = new java.util.ArrayList<>();
+                    Object attr = session.getAttribute("allowedGuestOrderAccesses");
+                    List<GuestOrderAccess> allowedAccesses = new java.util.ArrayList<>();
+                    if (attr instanceof java.util.List<?>) {
+                        for (Object o : (java.util.List<?>) attr) {
+                            if (o instanceof GuestOrderAccess) {
+                                allowedAccesses.add((GuestOrderAccess) o);
+                            }
+                        }
                     }
                     allowedAccesses.add(new GuestOrderAccess(hd.getId(), java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
                     session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);

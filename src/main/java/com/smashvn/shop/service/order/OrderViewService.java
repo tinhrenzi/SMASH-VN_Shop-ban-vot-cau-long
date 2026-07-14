@@ -30,10 +30,8 @@ import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
-import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
-import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
 
@@ -46,8 +44,6 @@ public class OrderViewService {
 
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
-    private final SanPhamRepository sanPhamRepository;
-    private final KhachHangRepository khachHangRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final AuditService auditService;
@@ -837,7 +833,7 @@ public class OrderViewService {
     public Map<String, LocalDateTime> getStatusTransitionTimes(Integer idHoaDon) {
         Map<String, LocalDateTime> times = new HashMap<>();
         try {
-            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", Integer.valueOf(idHoaDon));
+            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
             for (com.smashvn.shop.entity.EditLog log : logs) {
                 String giaTriMoi = log.getGiaTriMoi();
                 if (giaTriMoi != null) {

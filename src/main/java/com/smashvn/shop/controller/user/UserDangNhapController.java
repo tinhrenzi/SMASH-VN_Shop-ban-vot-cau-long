@@ -1,5 +1,7 @@
 package com.smashvn.shop.controller.user;
 
+import java.util.Locale;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -13,7 +15,6 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.repository.KhachHangRepository;
-import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
 
@@ -22,8 +23,6 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Locale;
-
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -31,7 +30,6 @@ import java.util.Locale;
 public class UserDangNhapController {
 
     private final UserDangNhapService userDangNhapService;
-    private final NhanVienRepository nhanVienRepository;
     private final KhachHangRepository khachHangRepository;
     private final LoginRateLimiter loginRateLimiter;
 
@@ -49,6 +47,7 @@ public class UserDangNhapController {
         }
         return "signin";
     }
+
     // Xử lý khi bấm nút "Đăng nhập"
     @PostMapping("/dang-nhap")
     public String xuLyDangNhap(@RequestParam("email") String email,
@@ -143,7 +142,9 @@ public class UserDangNhapController {
     }
 
     private String sanitizeInput(String input) {
-        if (input == null) return null;
+        if (input == null) {
+            return null;
+        }
         // Loại bỏ thẻ HTML/Script cơ bản để tránh XSS/injection thô sơ
         return input.replaceAll("<[^>]*>", "");
     }

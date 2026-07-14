@@ -1,7 +1,5 @@
 package com.smashvn.shop.service.admin;
 
-import com.smashvn.shop.service.AuditService;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,11 +15,10 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.NhanVien;
-import com.smashvn.shop.entity.PhieuGiamGia;
-import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.PaymentStatus;
-import com.smashvn.shop.util.VoucherCalculator;
+import com.smashvn.shop.entity.PhieuGiamGia;
+import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
@@ -30,10 +27,11 @@ import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
-import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
-import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.product.PriceSnapshot;
+import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.util.VoucherCalculator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,7 +49,6 @@ public class AdminPosService {
     private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final AuditService auditService;
-    private final SanPhamRepository sanPhamRepository;
     private final PricingService pricingService;
 
     private boolean isDangBan(String trangThai) {
@@ -224,8 +221,8 @@ public class AdminPosService {
         }
 
         // 4. Lấy đơn vị vận chuyển (Bán tại quầy)
-        DonViVanChuyen dvvc = null;
         List<DonViVanChuyen> allDvvc = donViVanChuyenDAO.findAll();
+        DonViVanChuyen dvvc;
         if (allDvvc.isEmpty()) {
             DonViVanChuyen defaultDvvc = new DonViVanChuyen();
             defaultDvvc.setTenDonVi("Mua tại quầy");
@@ -301,11 +298,15 @@ public class AdminPosService {
                 thuocTinhSb.append("Màu sắc: ").append(spct.getMauSac());
             }
             if (spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank()) {
-                if (thuocTinhSb.length() > 0) thuocTinhSb.append(", ");
+                if (thuocTinhSb.length() > 0) {
+                    thuocTinhSb.append(", ");
+                }
                 thuocTinhSb.append("Trọng lượng: ").append(spct.getTrongLuong());
             }
             if (spct.getMucCang() != null && !spct.getMucCang().isBlank()) {
-                if (thuocTinhSb.length() > 0) thuocTinhSb.append(", ");
+                if (thuocTinhSb.length() > 0) {
+                    thuocTinhSb.append(", ");
+                }
                 thuocTinhSb.append("Mức cảng: ").append(spct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(thuocTinhSb.toString());
@@ -367,10 +368,9 @@ public class AdminPosService {
                 ? khachHang.getSoDienThoaiKh()
                 : "0000000000");
         hd.setTenNguoiNhan(
-            khachHang != null
-                    && khachHang.getTenKh() != null
-                    && !khachHang.getTenKh().trim().isEmpty()
-                    && !"Lẻ".equalsIgnoreCase(khachHang.getTenKh().trim())
+                khachHang.getTenKh() != null
+                && !khachHang.getTenKh().trim().isEmpty()
+                && !"Lẻ".equalsIgnoreCase(khachHang.getTenKh().trim())
                 ? khachHang.getTenKh().trim()
                 : "Khách lẻ"
         );

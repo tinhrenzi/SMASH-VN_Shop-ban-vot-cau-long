@@ -48,7 +48,6 @@ import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.admin.AdminKhuyenMaiService;
 import com.smashvn.shop.service.admin.AdminPosService;
 import com.smashvn.shop.service.admin.AdminSanPhamService;
-import com.smashvn.shop.service.admin.AdminShippingService;
 import com.smashvn.shop.service.order.OrderViewService;
 
 @SpringBootTest
@@ -86,9 +85,6 @@ public class SecurityHardeningIntegrationTest {
     private AdminPosService adminPosService;
     @Autowired
     private OrderViewService orderViewService;
-    @Autowired
-    private AdminShippingService adminShippingService;
-
     private MockMvc mockMvc;
     private TaiKhoan managerTk;
     private TaiKhoan staffTk;
@@ -445,53 +441,6 @@ public class SecurityHardeningIntegrationTest {
                 .session(customerSession))
                 .andExpect(flash().attribute("errorMsg", org.hamcrest.Matchers.containsString("Chỉ Quản lý mới có thể phê duyệt")));
     }
-
-    @Test
-    void testUpdateShippingConfig_Authorization() throws Exception {
-        DonViVanChuyen dv = new DonViVanChuyen();
-        dv.setTenDonVi("GHN Test");
-        dv.setWebsite("https://ghn.vn");
-        dv.setHotline("1900");
-        dv = donViVanChuyenDAO.save(dv);
-
-        // Manager allowed
-        MockHttpSession managerSession = new MockHttpSession();
-        managerSession.setAttribute("idNguoiDung", managerTk.getId());
-        mockMvc.perform(post("/admin/shipping-config/save")
-                .param("id", dv.getId().toString())
-                .param("token", "new-token")
-                .param("clientId", "new-client-id")
-                .param("diaChiKho", "Hà Nội, Việt Nam")
-                .session(managerSession))
-                .andExpect(redirectedUrl("/admin/shipping-config"))
-                .andExpect(flash().attribute("successMsg", "Cập nhật kết nối GHN thành công!"));
-
-        // Staff denied
-        MockHttpSession staffSession = new MockHttpSession();
-        staffSession.setAttribute("idNguoiDung", staffTk.getId());
-        mockMvc.perform(post("/admin/shipping-config/save")
-                .param("id", dv.getId().toString())
-                .param("token", "new-token-staff")
-                .param("clientId", "new-client-id-staff")
-                .param("diaChiKho", "Hà Nội, Việt Nam")
-                .session(staffSession))
-                .andExpect(redirectedUrl("/admin/shipping-config"))
-                .andExpect(flash().attribute("errorMsg", org.hamcrest.Matchers.containsString("Chỉ Quản lý mới được chỉnh sửa cấu hình kết nối")));
-
-        // Customer denied
-        MockHttpSession customerSession = new MockHttpSession();
-        customerSession.setAttribute("idNguoiDung", customerTk.getId());
-        mockMvc.perform(post("/admin/shipping-config/save")
-                .param("id", dv.getId().toString())
-                .param("token", "new-token-cust")
-                .param("clientId", "new-client-id-cust")
-                .param("diaChiKho", "Hà Nội, Việt Nam")
-                .session(customerSession))
-                .andExpect(redirectedUrl("/admin/shipping-config"))
-                .andExpect(flash().attribute("errorMsg", org.hamcrest.Matchers.containsString("Chỉ Quản lý mới được chỉnh sửa cấu hình kết nối")));
-    }
-
-
 
     // ================================================================
     // VOUCHER TESTS
