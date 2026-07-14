@@ -76,7 +76,7 @@
                                             <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
                                             <ul class="dash__f-list">
                                                 <li>
-                                                    <a class="dash-active" th:href="@{/user/dashboard}">Quản lý tài khoản</a>
+                                                    <a th:href="@{/user/dashboard}">Quản lý tài khoản</a>
                                                 </li>
                                                 <li>
                                                     <a th:href="@{/user/profile}">Thông tin cá nhân</a>
@@ -91,7 +91,7 @@
                                                     <a th:href="@{/user/my-order}">Đơn hàng</a>
                                                 </li>
                                                 <li>
-                                                    <a th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a>
+                                                    <a class="dash-active" th:href="@{/user/payment-option}">Các tùy chọn thanh toán</a>
                                                 </li>
                                                 <li>
                                                      <a th:href="@{/user/cancellation}">Chính sách hoàn trả hàng</a>
