@@ -75,7 +75,7 @@ public class GioHangValidationIntegrationTest {
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -106,7 +106,7 @@ public class GioHangValidationIntegrationTest {
             nvUser.setMatKhau("testpass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
-            nvUser.setLaNhanVien(true);
+
             nvUser = taiKhoanRepository.save(nvUser);
 
             NhanVien newNv = new NhanVien();
@@ -149,9 +149,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId())))
                 .andExpect(status().isBadRequest())
@@ -163,9 +160,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "-5"))
@@ -178,9 +172,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "0"))
@@ -193,9 +184,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "5"))
@@ -210,9 +198,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "105")) // Stock = 100
@@ -225,9 +210,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", String.valueOf(Integer.MAX_VALUE)))
@@ -245,9 +227,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "990"))
@@ -257,9 +236,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "10"))
@@ -273,9 +249,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "5"))
@@ -289,9 +262,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/cap-nhat")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idChiTiet", String.valueOf(idChiTiet)))
                 .andExpect(status().isBadRequest())
@@ -304,9 +274,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "5"))
@@ -319,9 +286,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/cap-nhat")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idChiTiet", String.valueOf(idChiTiet))
                         .param("soLuong", "-2"))
@@ -335,9 +299,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "5"))
@@ -350,9 +311,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/cap-nhat")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idChiTiet", String.valueOf(idChiTiet))
                         .param("soLuong", "120")) // Stock is 100
@@ -369,9 +327,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "5"))
@@ -384,9 +339,6 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/cap-nhat")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idChiTiet", String.valueOf(idChiTiet))
                         .param("soLuong", "1000")) // Over MAX_CART_QUANTITY
@@ -402,7 +354,7 @@ public class GioHangValidationIntegrationTest {
         noProfileUser.setMatKhau("testpass123");
         noProfileUser.setVaiTro("QL"); // Role manager, typically doesn't have a profile by default
         noProfileUser.setTrangThai("hoat_dong");
-        noProfileUser.setLaKhachHang(true);
+
         noProfileUser = taiKhoanRepository.save(noProfileUser);
 
         // Verify that the profile doesn't exist
@@ -412,9 +364,9 @@ public class GioHangValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", noProfileUser.getId())
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", true)
-                        .sessionAttr("laQuanLy", true)
+                .sessionAttr("vaiTro", "KH")
+                .sessionAttr("vaiTro", "NV")
+                .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "3"))

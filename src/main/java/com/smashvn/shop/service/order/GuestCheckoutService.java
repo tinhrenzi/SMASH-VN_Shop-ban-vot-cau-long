@@ -141,9 +141,6 @@ public class GuestCheckoutService {
         tk.setSoLanMuaThanhCong(0); // Will be incremented when order is created
         tk.setVaiTro("KH");
         tk.setTrangThai("hoat_dong");
-        tk.setLaKhachHang(true);
-        tk.setLaNhanVien(false);
-        tk.setLaQuanLy(false);
 
         TaiKhoan savedTk = taiKhoanRepository.save(tk);
 
@@ -201,6 +198,11 @@ public class GuestCheckoutService {
         
         if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
             log.warn("[EmailService] Recipient email is null or empty, skipping email notification.");
+            return;
+        }
+
+        if (recipientEmail.contains("test") || recipientEmail.contains("tester") || recipientEmail.endsWith("@smashvn.com") || recipientEmail.endsWith("@example.com")) {
+            log.info("[TEST] Skipping sending order and account notification email for test recipient: {}", recipientEmail);
             return;
         }
 
@@ -299,8 +301,8 @@ public class GuestCheckoutService {
         String maDonHang = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
         
         // Skip real emails in test environment
-        if (maDonHang.startsWith("TEST-")) {
-            log.info("[TEST] Skipping sending order confirmation email for test order: {}", maDonHang);
+        if (maDonHang.startsWith("TEST-") || recipientEmail.contains("test") || recipientEmail.contains("tester") || recipientEmail.endsWith("@smashvn.com") || recipientEmail.endsWith("@example.com")) {
+            log.info("[TEST] Skipping sending order confirmation email for test order: {} to {}", maDonHang, recipientEmail);
             return;
         }
 

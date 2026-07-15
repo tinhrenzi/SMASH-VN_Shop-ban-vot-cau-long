@@ -153,8 +153,8 @@ public class SepayIpnController {
         // 2. Ownership check: signed-in member needs to match the order owner, while guest orders are allowed to poll by order code.
         boolean isDebug = sepayConfig.isDebug();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean isStaff = Boolean.TRUE.equals(session.getAttribute("laNhanVien"))
-                || Boolean.TRUE.equals(session.getAttribute("laQuanLy"));
+        String sessionRole = (String) session.getAttribute("vaiTro");
+        boolean isStaff = "NV".equals(sessionRole) || "QL".equals(sessionRole);
         boolean isGuestOrder = order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null;
 
         if (!isDebug && !isStaff && idNguoiDung == null && !isGuestOrder) {

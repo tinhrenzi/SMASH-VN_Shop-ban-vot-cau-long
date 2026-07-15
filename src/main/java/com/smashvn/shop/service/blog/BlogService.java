@@ -372,7 +372,8 @@ public class BlogService {
         if (tk == null) {
             return "Ẩn danh";
         }
-        if (Boolean.TRUE.equals(tk.getLaKhachHang())) {
+        String role = tk.getVaiTro();
+        if ("KH".equals(role)) {
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
             if (kh != null) {
                 String ho = kh.getHoKh() != null ? kh.getHoKh().trim() : "";
@@ -381,12 +382,12 @@ public class BlogService {
                 return !full.isEmpty() ? full : "Khách hàng";
             }
             return "Khách hàng";
-        } else if (Boolean.TRUE.equals(tk.getLaNhanVien()) || Boolean.TRUE.equals(tk.getLaQuanLy())) {
+        } else if ("NV".equals(role) || "QL".equals(role)) {
             NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());
             if (nv != null && nv.getHoTenNv() != null && !nv.getHoTenNv().trim().isEmpty()) {
                 return nv.getHoTenNv().trim();
             }
-            return "QL".equals(tk.getVaiTro()) ? "Quản lý hệ thống" : "Nhân viên hệ thống";
+            return "QL".equals(role) ? "Quản lý hệ thống" : "Nhân viên hệ thống";
         }
         return tk.getEmail();
     }

@@ -158,7 +158,7 @@ public class ShippingIntegrationTest {
         tk.setEmail("ship-kh-" + System.nanoTime() + "@test.com");
         tk.setMatKhau("123");
         tk.setVaiTro("KH");
-        tk.setLaKhachHang(true);
+
         tk = taiKhoanRepository.save(tk);
         KhachHang kh = new KhachHang();
         kh.setTaiKhoan(tk);

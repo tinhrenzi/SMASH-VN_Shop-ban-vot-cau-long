@@ -149,7 +149,7 @@ public class AdminNhanVienService {
     }
 
     @Transactional
-    public void createNhanVien(String email, String matKhau, String hoTenNv, String chucVu, String soDienThoaiNv, String vaiTro, Integer actingTaiKhoanId, String ipAddress) {
+    public void createNhanVien(String email, String matKhau, String hoTenNv, String chucVu, String soDienThoaiNv, Integer actingTaiKhoanId, String ipAddress) {
         String trimmedEmail = (email == null) ? "" : email.trim();
         String sanitizedEmail = org.jsoup.Jsoup.clean(trimmedEmail, org.jsoup.safety.Safelist.none());
 
@@ -200,10 +200,6 @@ public class AdminNhanVienService {
             throw new RuntimeException("Số điện thoại không đúng định dạng Việt Nam. Vui lòng nhập số bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số.");
         }
 
-        if (!"NV".equals(vaiTro) && !"QL".equals(vaiTro)) {
-            throw new RuntimeException("Vai trò không hợp lệ!");
-        }
-
         if (nhanVienRepository.existsBySoDienThoai(trimmedPhone)) {
             throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_PHONE);
         }
@@ -211,15 +207,13 @@ public class AdminNhanVienService {
         // 1. Kiểm tra Email tồn tại
         if (taiKhoanRepository.existsByEmail(sanitizedEmail)) {
             TaiKhoan existingTk = taiKhoanRepository.findByEmail(sanitizedEmail);
-            if (Boolean.TRUE.equals(existingTk.getLaNhanVien()) || Boolean.TRUE.equals(existingTk.getLaQuanLy())) {
+            String existingRole = existingTk.getVaiTro();
+            if ("NV".equals(existingRole) || "QL".equals(existingRole)) {
                 throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_ACCOUNT);
             }
 
             // Nâng quyền tài khoản khách hàng thành nhân viên
-            existingTk.setLaKhachHang(true);
-            existingTk.setLaNhanVien(true);
-            existingTk.setLaQuanLy("QL".equals(vaiTro));
-            existingTk.setVaiTro(vaiTro);
+            existingTk.setVaiTro("NV");
             existingTk = saveTaiKhoan(existingTk);
 
             // Tạo NhanVien
@@ -242,11 +236,8 @@ public class AdminNhanVienService {
         TaiKhoan tk = new TaiKhoan();
         tk.setEmail(sanitizedEmail);
         tk.setMatKhau(BCrypt.hashpw(trimmedPassword, BCrypt.gensalt()));
-        tk.setVaiTro(vaiTro);
+        tk.setVaiTro("NV");
         tk.setTrangThai("hoat_dong");
-        tk.setLaKhachHang(true); // new employees also have customer role by default
-        tk.setLaNhanVien("NV".equals(vaiTro) || "QL".equals(vaiTro));
-        tk.setLaQuanLy("QL".equals(vaiTro));
         tk = saveTaiKhoan(tk);
 
         // 3. Tạo NhanVien
@@ -277,7 +268,7 @@ public class AdminNhanVienService {
     }
 
     @Transactional
-    public void updateNhanVien(Integer id, String hoTenNv, String chucVu, String soDienThoaiNv, Boolean laKhachHang, Boolean laNhanVien, Boolean laQuanLy, String trangThai, String newPassword, Integer actingTaiKhoanId, String ipAddress) {
+    public void updateNhanVien(Integer id, String hoTenNv, String chucVu, String soDienThoaiNv, String trangThai, String newPassword, Integer actingTaiKhoanId, String ipAddress) {
         String trimmedName = (hoTenNv == null) ? "" : hoTenNv.trim();
         String sanitizedName = org.jsoup.Jsoup.clean(trimmedName, org.jsoup.safety.Safelist.none());
 
@@ -325,20 +316,6 @@ public class AdminNhanVienService {
             throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_PHONE);
         }
 
-        if (laKhachHang == null) {
-            laKhachHang = false;
-        }
-        if (laNhanVien == null) {
-            laNhanVien = false;
-        }
-        if (laQuanLy == null) {
-            laQuanLy = false;
-        }
-
-        if (!laKhachHang && !laNhanVien && !laQuanLy) {
-            throw new RuntimeException("Tài khoản phải có ít nhất một vai trò!");
-        }
-
         // 1. Lưu lại trạng thái cũ
         String oldStateStr = formatState(nv, tk);
 
@@ -356,20 +333,6 @@ public class AdminNhanVienService {
             kh.setTenKh(nameParts[1]);
             kh.setSoDienThoaiKh(trimmedPhone);
             saveKhachHang(kh);
-        }
-
-        // Cập nhật các cờ vai trò
-        tk.setLaKhachHang(laKhachHang);
-        tk.setLaNhanVien(laNhanVien);
-        tk.setLaQuanLy(laQuanLy);
-
-        // Cập nhật vai_tro và vai_tro_hien_tai cho tương thích ngược
-        if (laQuanLy) {
-            tk.setVaiTro("QL");
-        } else if (laNhanVien) {
-            tk.setVaiTro("NV");
-        } else {
-            tk.setVaiTro("KH");
         }
 
         tk.setTrangThai(trangThai);

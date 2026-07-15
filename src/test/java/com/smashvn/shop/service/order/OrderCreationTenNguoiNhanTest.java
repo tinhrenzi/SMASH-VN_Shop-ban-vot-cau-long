@@ -83,7 +83,7 @@ public class OrderCreationTenNguoiNhanTest {
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -113,7 +113,7 @@ public class OrderCreationTenNguoiNhanTest {
         nvUser.setMatKhau("testpass123");
         nvUser.setVaiTro("NV");
         nvUser.setTrangThai("hoat_dong");
-        nvUser.setLaNhanVien(true);
+
         nvUser = taiKhoanRepository.save(nvUser);
 
         testNhanVien = new NhanVien();

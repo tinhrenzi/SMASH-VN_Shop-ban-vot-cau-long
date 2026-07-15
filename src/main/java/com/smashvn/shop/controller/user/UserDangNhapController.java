@@ -90,10 +90,11 @@ public class UserDangNhapController {
             TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(trimmedEmail, matKhau);
 
             // Chỉ cho phép KH
-            if (!Boolean.TRUE.equals(tkDangNhap.getLaKhachHang())) {
+            String userRole = tkDangNhap.getVaiTro();
+            if (!"KH".equals(userRole)) {
                 loginRateLimiter.loginFailed(loginLimitKey);
                 log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", trimmedEmail, ip);
-                model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
+                model.addAttribute("loi", "Tài khoản này không được phép đăng nhập tại trang khách hàng.");
                 return "signin";
             }
 
@@ -107,11 +108,8 @@ public class UserDangNhapController {
             // Lưu thông tin vào Session (ví dụ lưu email và id)
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
-            session.setAttribute("vaiTro", "KH");
+            session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
             session.setAttribute("activeRole", "KH");
-            session.setAttribute("laKhachHang", true);
-            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()));
-            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()));
 
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tkDangNhap.getId());
             if (kh != null) {
@@ -174,9 +172,10 @@ public class UserDangNhapController {
             // Xử lý tạo/lấy tài khoản từ DB
             TaiKhoan tk = userDangNhapService.xuLyDangNhapGoogle(email, name);
 
-            if (!Boolean.TRUE.equals(tk.getLaKhachHang())) {
+            String userRole = tk.getVaiTro();
+            if (!"KH".equals(userRole)) {
                 log.warn("[SECURITY_EVENT] UNAUTHORIZED_GOOGLE_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
-                return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Tài khoản không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
+                return "redirect:/user/dang-nhap?loi=" + java.net.URLEncoder.encode("Tài khoản này không được phép đăng nhập tại trang khách hàng.", java.nio.charset.StandardCharsets.UTF_8);
             }
 
             // Chống Session Fixation
@@ -186,11 +185,8 @@ public class UserDangNhapController {
             // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
             session.setAttribute("nguoiDungDangNhap", tk.getEmail());
             session.setAttribute("idNguoiDung", tk.getId());
-            session.setAttribute("vaiTro", "KH");
+            session.setAttribute("vaiTro", tk.getVaiTro());
             session.setAttribute("activeRole", "KH");
-            session.setAttribute("laKhachHang", true);
-            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tk.getLaNhanVien()));
-            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tk.getLaQuanLy()));
 
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
             if (kh != null) {

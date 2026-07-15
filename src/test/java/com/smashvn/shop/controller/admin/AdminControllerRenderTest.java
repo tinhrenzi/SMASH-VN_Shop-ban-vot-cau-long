@@ -62,10 +62,7 @@ public class AdminControllerRenderTest {
         
         mockMvc.perform(get("/admin/don-hang")
                 .requestAttr("_csrf", csrfToken)
-                .sessionAttr("vaiTro", "QL")
-                .sessionAttr("laKhachHang", false)
-                .sessionAttr("laNhanVien", false)
-                .sessionAttr("laQuanLy", true))
+                .sessionAttr("vaiTro", "QL"))
                 .andExpect(status().isOk())
                 .andDo(print());
     }
@@ -84,7 +81,7 @@ public class AdminControllerRenderTest {
         customer.setEmail("customer_test@smashvn.com");
         customer.setMatKhau("pass123");
         customer.setVaiTro("KH");
-        customer.setLaKhachHang(true);
+
         customer = taiKhoanRepository.save(customer);
 
         mockMvc.perform(get("/admin/don-hang/detail-json")
@@ -101,7 +98,7 @@ public class AdminControllerRenderTest {
         staff.setEmail("staff_test@smashvn.com");
         staff.setMatKhau("pass123");
         staff.setVaiTro("NV");
-        staff.setLaNhanVien(true);
+
         staff = taiKhoanRepository.save(staff);
 
         mockMvc.perform(get("/admin/don-hang/detail-json")
@@ -120,7 +117,7 @@ public class AdminControllerRenderTest {
         staff.setEmail("staff_test_ok@smashvn.com");
         staff.setMatKhau("pass123");
         staff.setVaiTro("NV");
-        staff.setLaNhanVien(true);
+
         staff = taiKhoanRepository.save(staff);
 
         // Seed associations

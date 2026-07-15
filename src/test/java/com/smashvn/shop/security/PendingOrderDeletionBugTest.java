@@ -73,7 +73,7 @@ public class PendingOrderDeletionBugTest {
         testTk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
         testTk.setVaiTro("KH");
         testTk.setTrangThai("hoat_dong");
-        testTk.setLaKhachHang(true);
+
         testTk = taiKhoanRepository.save(testTk);
 
         testKh = new KhachHang();

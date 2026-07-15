@@ -58,7 +58,6 @@ class AdminNhanVienServiceTest {
                         "Nguyen Van A",
                         "Nhan vien ban hang",
                         "0357059078",
-                        "NV",
                         1,
                         "127.0.0.1"));
 
@@ -76,7 +75,6 @@ class AdminNhanVienServiceTest {
                         "Nguyen Van A",
                         "Nhan vien ban hang",
                         "012345",
-                        "NV",
                         1,
                         "127.0.0.1"));
 

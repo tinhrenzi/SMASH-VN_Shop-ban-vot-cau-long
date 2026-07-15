@@ -90,7 +90,6 @@ public class AdminNhanVienController {
             @RequestParam("hoTenNv") String hoTenNv,
             @RequestParam("chucVu") String chucVu,
             @RequestParam("soDienThoaiNv") String soDienThoaiNv,
-            @RequestParam("vaiTro") String vaiTro,
             HttpSession session,
             HttpServletRequest request,
             Model model) {
@@ -98,7 +97,7 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.createNhanVien(email, matKhau, hoTenNv, chucVu, soDienThoaiNv, vaiTro, actingTaiKhoanId, ipAddress);
+            adminNhanVienService.createNhanVien(email, matKhau, hoTenNv, chucVu, soDienThoaiNv, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/nhan-vien?themThanhCong";
         } catch (Exception e) {
             String errorMessage = friendlyErrorMessage(e);
@@ -108,7 +107,6 @@ public class AdminNhanVienController {
             model.addAttribute("hoTenNv", hoTenNv);
             model.addAttribute("chucVu", chucVu);
             model.addAttribute("soDienThoaiNv", soDienThoaiNv);
-            model.addAttribute("vaiTro", vaiTro);
             return "admin/nhanvien-add";
         }
     }
@@ -131,9 +129,6 @@ public class AdminNhanVienController {
             @RequestParam("hoTenNv") String hoTenNv,
             @RequestParam("chucVu") String chucVu,
             @RequestParam("soDienThoaiNv") String soDienThoaiNv,
-            @RequestParam(value = "laKhachHang", required = false) Boolean laKhachHang,
-            @RequestParam(value = "laNhanVien", required = false) Boolean laNhanVien,
-            @RequestParam(value = "laQuanLy", required = false) Boolean laQuanLy,
             @RequestParam("trangThai") String trangThai,
             @RequestParam(value = "newPassword", required = false) String newPassword,
             HttpSession session,
@@ -143,7 +138,7 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.updateNhanVien(id, hoTenNv, chucVu, soDienThoaiNv, laKhachHang, laNhanVien, laQuanLy, trangThai, newPassword, actingTaiKhoanId, ipAddress);
+            adminNhanVienService.updateNhanVien(id, hoTenNv, chucVu, soDienThoaiNv, trangThai, newPassword, actingTaiKhoanId, ipAddress);
             return "redirect:/admin/nhan-vien?suaThanhCong";
         } catch (Exception e) {
             NhanVien nv = adminNhanVienService.findById(id);
@@ -151,9 +146,6 @@ public class AdminNhanVienController {
             nv.setChucVu(chucVu);
             nv.setSoDienThoaiNv(soDienThoaiNv);
             if (nv.getTaiKhoan() != null) {
-                nv.getTaiKhoan().setLaKhachHang(Boolean.TRUE.equals(laKhachHang));
-                nv.getTaiKhoan().setLaNhanVien(Boolean.TRUE.equals(laNhanVien));
-                nv.getTaiKhoan().setLaQuanLy(Boolean.TRUE.equals(laQuanLy));
                 nv.getTaiKhoan().setTrangThai(trangThai);
             }
             String errorMessage = friendlyErrorMessage(e);

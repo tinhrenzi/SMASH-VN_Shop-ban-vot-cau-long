@@ -353,7 +353,6 @@ public class CheckoutController {
                 session.setAttribute("nguoiDungDangNhap", tk.getEmail());
                 session.setAttribute("idNguoiDung", tk.getId());
                 session.setAttribute("vaiTro", "KH");
-                session.setAttribute("laKhachHang", true);
                 session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
                 session.setAttribute("guestCheckoutEmail", tk.getEmail());
 
@@ -438,11 +437,13 @@ public class CheckoutController {
                         setAsDefault = true;
                     }
                 } else {
-                    // Registered user: always save to store GHN district/ward mappings
-                    shouldSave = true;
-                    long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
-                    if (existingCount == 0) {
-                        setAsDefault = true;
+                    // Registered user: only save if saveAddress is true
+                    if (Boolean.TRUE.equals(saveAddress)) {
+                        shouldSave = true;
+                        long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                        if (existingCount == 0) {
+                            setAsDefault = true;
+                        }
                     }
                 }
             }
@@ -797,7 +798,6 @@ public class CheckoutController {
             session.setAttribute("nguoiDungDangNhap", tk.getEmail());
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", "KH");
-            session.setAttribute("laKhachHang", true);
 
             com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
             if (kh != null) {
@@ -887,7 +887,6 @@ public class CheckoutController {
                 newSession.setAttribute("nguoiDungDangNhap", activatedTk.getEmail());
                 newSession.setAttribute("idNguoiDung", activatedTk.getId());
                 newSession.setAttribute("vaiTro", "KH");
-                newSession.setAttribute("laKhachHang", true);
 
                 com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(activatedTk.getId());
                 if (kh != null) {

@@ -40,19 +40,14 @@ public class AdminController {
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
-        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByLaNhanVienTrueOrLaQuanLyTrue();
-        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByLaKhachHangTrue();
+        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByVaiTroIn(java.util.List.of("NV", "QL"));
+        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByVaiTro("KH");
         long employeeCount = nhanVienRepository.count();
-
-        long countStaff = nvAccounts.stream().filter(tk -> Boolean.TRUE.equals(tk.getLaNhanVien())).count();
-        long countManager = nvAccounts.stream().filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy())).count();
 
         model.addAttribute("danhSachTaiKhoanNhanVien", nvAccounts);
         model.addAttribute("danhSachTaiKhoanKhachHang", khAccounts);
         model.addAttribute("soLuongNhanVien", employeeCount);
         model.addAttribute("soLuongTaiKhoanNhanVien", nvAccounts.size());
-        model.addAttribute("soLuongTaiKhoanNhanVienOnly", countStaff);
-        model.addAttribute("soLuongTaiKhoanQuanLy", countManager);
         model.addAttribute("soLuongTaiKhoanKhachHang", khAccounts.size());
 
         model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
@@ -176,7 +171,7 @@ public class AdminController {
 
     @GetMapping("/khach-hang")
     public String hienThiDanhSachKhachHang(Model model) {
-        model.addAttribute("danhSachKhachHang", khachHangRepository.findByLaKhachHangTrue());
+        model.addAttribute("danhSachKhachHang", khachHangRepository.findByTaiKhoan_VaiTro("KH"));
         return "admin/khachhang-list";
     }
 
@@ -200,11 +195,6 @@ public class AdminController {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
-        }
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
-            return "redirect:/admin/don-hang";
         }
 
         try {
@@ -231,12 +221,6 @@ public class AdminController {
             return "redirect:/admin/dang-nhap";
         }
 
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
-            return "redirect:/admin/don-hang";
-        }
-
         try {
             orderViewService.moveOrderToNextStatus(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!");
@@ -256,13 +240,6 @@ public class AdminController {
             HttpServletRequest request,
             Model model) {
         try {
-            Integer managerId = taiKhoanRepository.findByLaNhanVienTrueOrLaQuanLyTrue().stream()
-                    .filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy()))
-                    .map(TaiKhoan::getId)
-                    .findFirst().orElse(1);
-
-            orderViewService.approveRefund(id, token, managerId, request.getRemoteAddr());
-
             model.addAttribute("success", true);
             model.addAttribute("title", "Phê Duyệt Hoàn Tiền Thành Công");
             model.addAttribute("message", "Đơn hàng #" + id + " đã được phê duyệt hoàn tiền. Số tiền đã được chính thức trừ khỏi thống kê doanh thu.");
@@ -281,13 +258,6 @@ public class AdminController {
             HttpServletRequest request,
             Model model) {
         try {
-            Integer managerId = taiKhoanRepository.findByLaNhanVienTrueOrLaQuanLyTrue().stream()
-                    .filter(tk -> Boolean.TRUE.equals(tk.getLaQuanLy()))
-                    .map(TaiKhoan::getId)
-                    .findFirst().orElse(1);
-
-            orderViewService.rejectRefund(id, token, managerId, request.getRemoteAddr());
-
             model.addAttribute("success", true);
             model.addAttribute("title", "Từ Chối Hoàn Tiền Thành Công");
             model.addAttribute("message", "Yêu cầu hoàn tiền cho đơn hàng #" + id + " đã bị từ chối. Trạng thái thanh toán được giữ nguyên.");
@@ -310,12 +280,6 @@ public class AdminController {
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này. Chỉ Quản lý mới có thể phê duyệt hoàn tiền.");
-            return "redirect:/admin/don-hang";
-        }
-
         try {
             com.smashvn.shop.entity.HoaDon hd = hoaDonRepository.findById(idHoaDon)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
@@ -349,11 +313,6 @@ public class AdminController {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
-        }
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || !Boolean.TRUE.equals(tk.getLaQuanLy())) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này. Chỉ Quản lý mới có thể từ chối hoàn tiền.");
-            return "redirect:/admin/don-hang";
         }
 
         try {
@@ -389,9 +348,8 @@ public class AdminController {
         if (actingTaiKhoanId == null) {
             return org.springframework.http.ResponseEntity.status(401).build();
         }
-
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
+        String role = (String) session.getAttribute("vaiTro");
+        if (!"QL".equals(role) && !"NV".equals(role)) {
             return org.springframework.http.ResponseEntity.status(403).build();
         }
 
@@ -495,7 +453,9 @@ public class AdminController {
                         tenSP = item.getSanPhamChiTiet().getSanPham().getTenSanPham();
                     }
                 }
-                if (tenSP == null) tenSP = "";
+                if (tenSP == null) {
+                    tenSP = "";
+                }
 
                 String thuocTinh = "";
                 if (item.getThuocTinhSnapshot() != null && !item.getThuocTinhSnapshot().isBlank()) {
@@ -504,14 +464,15 @@ public class AdminController {
                     thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
                 }
 
-
                 java.math.BigDecimal giaNiemYet = item.getGiaGoc();
                 if (giaNiemYet == null) {
                     if (item.getSanPhamChiTiet() != null) {
                         giaNiemYet = item.getSanPhamChiTiet().getGiaBan();
                     }
                 }
-                if (giaNiemYet == null) giaNiemYet = java.math.BigDecimal.ZERO;
+                if (giaNiemYet == null) {
+                    giaNiemYet = java.math.BigDecimal.ZERO;
+                }
 
                 java.math.BigDecimal donGia = item.getDonGia() != null ? item.getDonGia() : java.math.BigDecimal.ZERO;
                 java.math.BigDecimal soTienGiamSanPham = giaNiemYet.subtract(donGia);
@@ -571,11 +532,6 @@ public class AdminController {
         if (actingTaiKhoanId == null) {
             return "redirect:/admin/dang-nhap";
         }
-        TaiKhoan tk = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-        if (tk == null || (!Boolean.TRUE.equals(tk.getLaQuanLy()) && !Boolean.TRUE.equals(tk.getLaNhanVien()))) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
-            return "redirect:/admin/don-hang";
-        }
 
         try {
             orderViewService.updateReturnStatusByAdmin(idHoaDon, trangThaiHoanHang, actingTaiKhoanId, request.getRemoteAddr());
@@ -588,6 +544,5 @@ public class AdminController {
 
         return "redirect:/admin/don-hang";
     }
-
 
 }

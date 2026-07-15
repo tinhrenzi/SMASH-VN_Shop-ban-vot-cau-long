@@ -75,7 +75,7 @@ public class AdminPosIntegrationTest {
         staffUser.setMatKhau("staffpass123");
         staffUser.setVaiTro("NV");
         staffUser.setTrangThai("hoat_dong");
-        staffUser.setLaNhanVien(true);
+
         staffUser = taiKhoanRepository.save(staffUser);
 
         staff = new NhanVien();
@@ -88,8 +88,7 @@ public class AdminPosIntegrationTest {
         session = new MockHttpSession();
         session.setAttribute("idNguoiDung", staffUser.getId());
         session.setAttribute("vaiTro", "NV");
-        session.setAttribute("laNhanVien", true);
-
+        session.setAttribute("vaiTro", "NV");
         // Seed product
         DanhMuc dm = danhMucRepository.findAll().stream().findFirst().orElseGet(() -> {
             DanhMuc newDm = new DanhMuc();

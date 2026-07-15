@@ -116,9 +116,7 @@ public class GuestCheckoutSecurityIntegrationTest {
         tk.setVaiTro("KH");
         // Set GUEST status AFTER setTrangThai to avoid the else→ACTIVE overwrite
         tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
-        tk.setLaKhachHang(true);
-        tk.setLaNhanVien(false);
-        tk.setLaQuanLy(false);
+
         tk = taiKhoanRepository.save(tk);
 
         KhachHang kh = new KhachHang();
@@ -266,7 +264,6 @@ public class GuestCheckoutSecurityIntegrationTest {
         assertEquals(email, returnedSession.getAttribute("nguoiDungDangNhap"));
         assertEquals(tk.getId(), returnedSession.getAttribute("idNguoiDung"));
         assertEquals("KH", returnedSession.getAttribute("vaiTro"));
-        assertEquals(true, returnedSession.getAttribute("laKhachHang"));
 
         // Verify status in DB is active
         TaiKhoan updatedTk = taiKhoanRepository.findById(tk.getId()).orElseThrow();

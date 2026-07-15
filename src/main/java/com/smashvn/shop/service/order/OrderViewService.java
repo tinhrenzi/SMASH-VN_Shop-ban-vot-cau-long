@@ -388,7 +388,8 @@ public class OrderViewService {
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
 
-        if (!Boolean.TRUE.equals(actingUser.getLaQuanLy()) && !Boolean.TRUE.equals(actingUser.getLaNhanVien())) {
+        String role = actingUser.getVaiTro();
+        if (!"NV".equals(role) && !"QL".equals(role)) {
             throw new AccessDeniedException("Bạn không có quyền cập nhật trạng thái đơn hàng.");
         }
 
@@ -468,7 +469,7 @@ public class OrderViewService {
         }
 
         // 8. Payment Method Logic & Cancellation Rules
-        String roleStr = Boolean.TRUE.equals(actingUser.getLaQuanLy()) ? "QUAN_LY" : "NHAN_VIEN";
+        String roleStr = "QL".equals(actingUser.getVaiTro()) ? "QUAN_LY" : "NHAN_VIEN";
         String refundLogNote = "";
 
         if (OrderStatus.DA_XAC_NHAN.getValue().equalsIgnoreCase(newStatus)) {
@@ -1045,6 +1046,15 @@ public class OrderViewService {
 
     @Transactional
     public void approveRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
+        if (actingUserId == null) {
+            throw new AccessDeniedException("Tài khoản người thực hiện không tồn tại.");
+        }
+        TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
+                .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
+        if (!"QL".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
+        }
+
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
 
@@ -1105,6 +1115,15 @@ public class OrderViewService {
 
     @Transactional
     public void rejectRefund(Integer orderId, String token, Integer actingUserId, String clientIp) {
+        if (actingUserId == null) {
+            throw new AccessDeniedException("Tài khoản người thực hiện không tồn tại.");
+        }
+        TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
+                .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
+        if (!"QL".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
+        }
+
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
 
@@ -1167,7 +1186,8 @@ public class OrderViewService {
         }
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
-        if (!Boolean.TRUE.equals(actingUser.getLaQuanLy()) && !Boolean.TRUE.equals(actingUser.getLaNhanVien())) {
+        String role = actingUser.getVaiTro();
+        if (!"NV".equals(role) && !"QL".equals(role)) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
         }
 
@@ -1178,7 +1198,7 @@ public class OrderViewService {
         ReturnStatus currentReturnStatus = hd.getTrangThaiHoanHang();
         ReturnStatus newReturnStatus = ReturnStatus.valueOf(newReturnStatusStr.toUpperCase());
 
-        String roleStr = Boolean.TRUE.equals(actingUser.getLaQuanLy()) ? "QUAN_LY" : "NHAN_VIEN";
+        String roleStr = "QL".equals(actingUser.getVaiTro()) ? "QUAN_LY" : "NHAN_VIEN";
 
         // 3. Validation Of Allowed Return Status Transitions
         // Only allow transition when order is cancelled (da_huy) and return status is PENDING_RETURN

@@ -110,7 +110,7 @@ public class AdminBienTheIntegrationTest {
             tk.setMatKhau("password");
             tk.setVaiTro("NV");
             tk.setTrangThai("hoat_dong");
-            tk.setLaNhanVien(true);
+
             tk = taiKhoanRepository.save(tk);
 
             nv = new NhanVien();
@@ -169,7 +169,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "20 - 28 lbs")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/san-pham/" + spId + "/bien-the"))
@@ -200,7 +199,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Hình ảnh sản phẩm là bắt buộc."));
@@ -220,7 +218,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Giá bán phải lớn hơn 0."));
@@ -240,7 +237,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Số lượng tồn kho phải lớn hơn hoặc bằng 0."));
@@ -260,7 +256,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB."));
@@ -279,7 +274,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
@@ -298,7 +292,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
@@ -317,7 +310,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
@@ -336,7 +328,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Hình ảnh sản phẩm là bắt buộc."));
@@ -355,7 +346,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận."));
@@ -374,7 +364,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận."));
@@ -393,7 +382,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ!"));
@@ -413,7 +401,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("success", "Thêm biến thể mới thành công!"));
@@ -448,7 +435,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "3U")
                         .param("mucCang", "10kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection());
 
@@ -468,7 +454,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "9.0 - 12.5 kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("success", "Cập nhật biến thể thành công!"));
@@ -507,7 +492,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("error", "Màu sắc không được vượt quá 50 ký tự."));
@@ -528,7 +512,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "4U")
                         .param("mucCang", "11kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection());
 
@@ -595,7 +578,6 @@ public class AdminBienTheIntegrationTest {
         // 3. Hide ordered variant - should keep database record and only change status
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/xoa/{idBT}", spId, bt.getId())
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!"));
@@ -605,7 +587,6 @@ public class AdminBienTheIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}", spId, bt.getId())
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("success", "Đã mở bán lại biến thể thành công!"));
@@ -624,7 +605,6 @@ public class AdminBienTheIntegrationTest {
                         .param("trongLuong", "3U")
                         .param("mucCang", "12kg")
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection());
 
@@ -633,7 +613,6 @@ public class AdminBienTheIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/san-pham/{idSP}/bien-the/xoa/{idBT}", spId, bt2.getId())
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!"));

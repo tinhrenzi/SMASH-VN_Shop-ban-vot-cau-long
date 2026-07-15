@@ -71,9 +71,6 @@ public class UserDangNhapService {
             String randomPass = java.util.UUID.randomUUID().toString();
             tk.setMatKhau(BCrypt.hashpw(randomPass, BCrypt.gensalt()));
             tk.setVaiTro("KH");
-            tk.setLaKhachHang(true);
-            tk.setLaNhanVien(false);
-            tk.setLaQuanLy(false);
             tk.setTrangThai("hoat_dong");
             tk = taiKhoanRepository.save(tk);
 

@@ -33,7 +33,7 @@ public class UserDashboardIntegrationTest {
         tk.setMatKhau("testpass123");
         tk.setVaiTro("KH");
         tk.setTrangThai("hoat_dong");
-        tk.setLaKhachHang(true);
+
         tk = taiKhoanRepository.save(tk);
 
         KhachHang kh = new KhachHang();
@@ -68,7 +68,7 @@ public class UserDashboardIntegrationTest {
         tkA.setMatKhau("pass123");
         tkA.setVaiTro("KH");
         tkA.setTrangThai("hoat_dong");
-        tkA.setLaKhachHang(true);
+
         tkA = taiKhoanRepository.save(tkA);
 
         KhachHang khA = new KhachHang();
@@ -84,7 +84,7 @@ public class UserDashboardIntegrationTest {
         tkB.setMatKhau("pass123");
         tkB.setVaiTro("KH");
         tkB.setTrangThai("hoat_dong");
-        tkB.setLaKhachHang(true);
+
         tkB = taiKhoanRepository.save(tkB);
 
         KhachHang khB = new KhachHang();

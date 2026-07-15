@@ -43,9 +43,7 @@ public class UserDangKyServiceTest {
 
         assertNotNull(result);
         assertEquals(email, result.getEmail());
-        assertTrue(result.getLaKhachHang(), "laKhachHang should be true for manually registered customers");
-        assertFalse(result.getLaNhanVien(), "laNhanVien should be false");
-        assertFalse(result.getLaQuanLy(), "laQuanLy should be false");
+
         assertEquals("KH", result.getVaiTro());
         assertEquals("hoat_dong", result.getTrangThai());
 

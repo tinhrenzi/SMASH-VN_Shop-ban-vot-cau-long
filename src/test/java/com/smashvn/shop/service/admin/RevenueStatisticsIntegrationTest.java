@@ -78,7 +78,7 @@ public class RevenueStatisticsIntegrationTest {
             customerUser.setEmail("customer-stats-test-" + System.nanoTime() + "@smashvn.com");
             customerUser.setMatKhau("123");
             customerUser.setVaiTro("KH");
-            customerUser.setLaKhachHang(true);
+
             customerUser = taiKhoanRepository.save(customerUser);
 
             KhachHang newKh = new KhachHang();
@@ -129,7 +129,7 @@ public class RevenueStatisticsIntegrationTest {
         nvUser.setEmail("staff-stats-" + System.nanoTime() + "@smashvn.com");
         nvUser.setMatKhau("123");
         nvUser.setVaiTro("NV");
-        nvUser.setLaNhanVien(true);
+
         nvUser = taiKhoanRepository.save(nvUser);
         NhanVien nv = new NhanVien();
         nv.setTaiKhoan(nvUser);

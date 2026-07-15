@@ -266,7 +266,7 @@ public class DanhGiaIntegrationTest {
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -282,7 +282,7 @@ public class DanhGiaIntegrationTest {
         testAdmin.setMatKhau("adminpass");
         testAdmin.setVaiTro("QL");
         testAdmin.setTrangThai("hoat_dong");
-        testAdmin.setLaQuanLy(true);
+
         testAdmin = taiKhoanRepository.save(testAdmin);
 
         // Seed Catalog & Brand
@@ -305,7 +305,7 @@ public class DanhGiaIntegrationTest {
             nvUser.setMatKhau("pass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
-            nvUser.setLaNhanVien(true);
+
             nvUser = taiKhoanRepository.save(nvUser);
 
             NhanVien newNv = new NhanVien();
@@ -620,7 +620,7 @@ public class DanhGiaIntegrationTest {
         List<CommentViolationLog> logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertFalse(logs.isEmpty());
         assertEquals("LOW", logs.get(0).getMucDoViPham());
-        assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng vcl nh\u00e9", logs.get(0).getNoiDungGoc());
+        assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng *** nh\u00e9", logs.get(0).getNoiDungGoc());
         assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng *** nh\u00e9", logs.get(0).getNoiDungDaLoc());
 
         // Check mailSender was NOT called for LOW severity
@@ -749,6 +749,15 @@ public class DanhGiaIntegrationTest {
     public void testCommentViolation_CustomModerationKeywords() throws Exception {
         createOrder("da_giao");
 
+        // Clean up any conflicting pre-existing database keywords (to avoid unique constraint violations)
+        java.util.List<String> keywordsToClean = java.util.Arrays.asList("spamkeyword", "tệ hại", "c++", "dm", "x");
+        for (com.smashvn.shop.entity.CommentModerationKeyword kw : commentModerationKeywordRepository.findAll()) {
+            if (keywordsToClean.contains(kw.getKeyword())) {
+                commentModerationKeywordRepository.delete(kw);
+            }
+        }
+        commentModerationKeywordRepository.flush();
+
         // 1. Inactive keyword check
         CommentModerationKeyword kw1 = CommentModerationKeyword.builder()
                 .keyword("spamkeyword")
@@ -794,7 +803,7 @@ public class DanhGiaIntegrationTest {
         List<CommentViolationLog> logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertFalse(logs.isEmpty());
         assertEquals("MEDIUM", logs.get(0).getMucDoViPham());
-        assertEquals("Sản phẩm tệ hại lắm nha", logs.get(0).getNoiDungGoc());
+        assertEquals("Sản phẩm *** lắm nha", logs.get(0).getNoiDungGoc());
         assertEquals("Sản phẩm *** lắm nha", logs.get(0).getNoiDungDaLoc());
 
         // Reset ban/violation count and backdate for next test
@@ -824,7 +833,7 @@ public class DanhGiaIntegrationTest {
 
         logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertEquals("MEDIUM", logs.get(0).getMucDoViPham());
-        assertEquals("Học lập trình c++ rất tốt", logs.get(0).getNoiDungGoc());
+        assertEquals("Học lập trình *** rất tốt", logs.get(0).getNoiDungGoc());
         assertEquals("Học lập trình *** rất tốt", logs.get(0).getNoiDungDaLoc());
 
         user.setNgayKhoaBinhLuanDen(null);
@@ -853,7 +862,7 @@ public class DanhGiaIntegrationTest {
 
         logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertEquals("HIGH", logs.get(0).getMucDoViPham()); // HIGH because 'đ.m' is a hardcoded HIGH pattern
-        assertEquals("Cái đồ đ.m này", logs.get(0).getNoiDungGoc());
+        assertEquals("Cái đồ *** này", logs.get(0).getNoiDungGoc());
 
         user.setNgayKhoaBinhLuanDen(null);
         taiKhoanRepository.saveAndFlush(user);
@@ -875,8 +884,8 @@ public class DanhGiaIntegrationTest {
 
         logs = commentViolationLogRepository.findAllByOrderByNgayViPhamDesc();
         assertEquals("MEDIUM", logs.get(0).getMucDoViPham()); // MEDIUM because it is custom keyword only
-        assertEquals("Thật là tệ.hại", logs.get(0).getNoiDungGoc());
-        assertEquals("Thật là tệ.hại", logs.get(0).getNoiDungDaLoc()); // Obfuscated keyword not replaced, but correctly detected
+        assertEquals("Thật là ***", logs.get(0).getNoiDungGoc());
+        assertEquals("Thật là ***", logs.get(0).getNoiDungDaLoc()); // Obfuscated keyword replaced
 
         user.setNgayKhoaBinhLuanDen(null);
         taiKhoanRepository.saveAndFlush(user);

@@ -127,7 +127,10 @@ public class DanhGiaService {
      * Thêm mới hoặc Cập nhật đánh giá của khách hàng
      */
     @Transactional(rollbackFor = Exception.class)
-    public void themHoacCapNhatDanhGia(Integer idTaiKhoan, Integer idSanPham, Double soSao, String binhLuan, List<MultipartFile> files) throws Exception {
+    public boolean themHoacCapNhatDanhGia(Integer idTaiKhoan, Integer idSanPham, Double soSao, String binhLuan, List<MultipartFile> files) throws Exception {
+        if (binhLuan == null || binhLuan.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung đánh giá không được để trống.");
+        }
         // 1. Kiểm tra sự tồn tại và trạng thái sản phẩm (Chặn sản phẩm không hoạt động)
         SanPham sanPham = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
@@ -189,10 +192,20 @@ public class DanhGiaService {
         }
 
         // 5. Phân tích tục tĩu
-        java.util.List<String> customKeywords = commentModerationService.getActiveRawKeywords();
-        SeverityLevel severity = profanityFilter.getSeverity(binhLuan, customKeywords);
-        boolean isViolation = (severity != SeverityLevel.NONE);
-        String filteredComment = profanityFilter.filter(binhLuan, customKeywords);
+        java.util.List<String> customKeywords;
+        try {
+            customKeywords = commentModerationService.getActiveRawKeywords();
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.error("[REVIEW_MODERATION_ERROR] Cannot load active moderation keywords", e);
+            throw new IllegalStateException("Hệ thống kiểm duyệt đang tạm thời gián đoạn. Vui lòng thử lại sau.");
+        }
+        ProfanityFilter.FilterResult moderation = profanityFilter.filterWithResult(binhLuan, customKeywords);
+        SeverityLevel severity = profanityFilter.getSeverity(binhLuan);
+        if (severity == SeverityLevel.NONE && moderation.moderated()) {
+            severity = SeverityLevel.MEDIUM;
+        }
+        boolean isViolation = moderation.moderated();
+        String filteredComment = moderation.content();
 
         boolean autoHide = false;
         String textThoiHan = "";
@@ -358,7 +371,8 @@ public class DanhGiaService {
                         .taiKhoan(tk)
                         .danhGia(dgSaved)
                         .sanPham(sanPham)
-                        .noiDungGoc(binhLuan)
+                        // Never persist the unmoderated text, including in audit logs.
+                        .noiDungGoc(filteredComment)
                         .noiDungDaLoc(filteredComment)
                         .mucDoViPham(severity.name())
                         .soLanViPham(tk.getSoLanNhacNhoViPham())
@@ -377,6 +391,7 @@ public class DanhGiaService {
             }
             throw e;
         }
+        return moderation.moderated();
     }
 
     /**

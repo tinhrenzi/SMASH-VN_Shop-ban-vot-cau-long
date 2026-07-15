@@ -22,10 +22,4 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Integer> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.id = :id")
     java.util.Optional<TaiKhoan> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Integer id);
-
-    @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.vaiTro = 'KH'")
-    java.util.List<TaiKhoan> findByLaKhachHangTrue();
-
-    @org.springframework.data.jpa.repository.Query("SELECT t FROM TaiKhoan t WHERE t.vaiTro = 'NV' OR t.vaiTro = 'QL'")
-    java.util.List<TaiKhoan> findByLaNhanVienTrueOrLaQuanLyTrue();
 }

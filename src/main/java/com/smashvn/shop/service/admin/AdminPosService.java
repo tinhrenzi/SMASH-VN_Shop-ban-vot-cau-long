@@ -74,7 +74,7 @@ public class AdminPosService {
      * true). Loại trừ tài khoản Khách Lẻ nội bộ (guest@smashvn.com).
      */
     public List<KhachHang> searchCustomers(String query) {
-        List<KhachHang> customers = khachHangRepository.findByLaKhachHangTrue()
+        List<KhachHang> customers = khachHangRepository.findByTaiKhoan_VaiTro("KH")
                 .stream()
                 .filter(java.util.Objects::nonNull)
                 .filter(c -> c.getTaiKhoan() != null)

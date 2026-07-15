@@ -1,7 +1,16 @@
 package com.smashvn.shop.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "TaiKhoan")
@@ -9,6 +18,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaiKhoan {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -46,22 +56,6 @@ public class TaiKhoan {
 
     @Column(name = "ngay_cap_nhat")
     private java.time.LocalDateTime ngayCapNhat;
-
-    @Transient
-    private Boolean laKhachHang = false;
-
-    @Transient
-    private Boolean laNhanVien = false;
-
-    @Transient
-    private Boolean laQuanLy = false;
-
-    @PostLoad
-    public void postLoad() {
-        this.laKhachHang = "KH".equals(this.vaiTro) || "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
-        this.laNhanVien = "NV".equals(this.vaiTro) || "QL".equals(this.vaiTro);
-        this.laQuanLy = "QL".equals(this.vaiTro);
-    }
 
     public String getTrangThai() {
         if (trangThaiTaiKhoan == AccountStatus.PENDING_LOCK) {

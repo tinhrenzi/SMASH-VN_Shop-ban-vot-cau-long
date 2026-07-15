@@ -136,7 +136,7 @@ public class CheckoutValidationIntegrationTest {
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -167,7 +167,7 @@ public class CheckoutValidationIntegrationTest {
             nvUser.setMatKhau("testpass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
-            nvUser.setLaNhanVien(true);
+
             nvUser = taiKhoanRepository.save(nvUser);
 
             NhanVien newNv = new NhanVien();
@@ -218,9 +218,6 @@ public class CheckoutValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                 .sessionAttr("idNguoiDung", testUser.getId())
                 .sessionAttr("vaiTro", "KH")
-                .sessionAttr("laKhachHang", true)
-                .sessionAttr("laNhanVien", false)
-                .sessionAttr("laQuanLy", false)
                 .requestAttr("_csrf", csrfToken)
                 .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                 .param("soLuong", "1"))
@@ -594,7 +591,7 @@ public class CheckoutValidationIntegrationTest {
         userB.setMatKhau("testpass123");
         userB.setVaiTro("KH");
         userB.setTrangThai("hoat_dong");
-        userB.setLaKhachHang(true);
+
         userB = taiKhoanRepository.save(userB);
 
         KhachHang khachHangB = new KhachHang();
@@ -1047,7 +1044,7 @@ public class CheckoutValidationIntegrationTest {
         otherUser.setMatKhau("testpass123");
         otherUser.setVaiTro("KH");
         otherUser.setTrangThai("hoat_dong");
-        otherUser.setLaKhachHang(true);
+
         otherUser = taiKhoanRepository.save(otherUser);
 
         KhachHang otherKh = new KhachHang();
@@ -1161,9 +1158,6 @@ public class CheckoutValidationIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                 .sessionAttr("idNguoiDung", testUser.getId())
                 .sessionAttr("vaiTro", "KH")
-                .sessionAttr("laKhachHang", true)
-                .sessionAttr("laNhanVien", false)
-                .sessionAttr("laQuanLy", false)
                 .requestAttr("_csrf", csrfToken)
                 .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                 .param("soLuong", "1"))

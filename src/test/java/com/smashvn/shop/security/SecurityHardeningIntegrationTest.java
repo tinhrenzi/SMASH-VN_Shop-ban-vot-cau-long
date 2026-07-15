@@ -110,8 +110,7 @@ public class SecurityHardeningIntegrationTest {
         managerTk.setEmail(managerEmail);
         managerTk.setMatKhau("password123");
         managerTk.setVaiTro("QL");
-        managerTk.setLaQuanLy(true);
-        managerTk.setLaNhanVien(true);
+
         managerTk.setTrangThai("hoat_dong");
         managerTk = taiKhoanRepository.save(managerTk);
 
@@ -126,8 +125,7 @@ public class SecurityHardeningIntegrationTest {
         staffTk.setEmail(staffEmail);
         staffTk.setMatKhau("password123");
         staffTk.setVaiTro("NV");
-        staffTk.setLaNhanVien(true);
-        staffTk.setLaQuanLy(false);
+
         staffTk.setTrangThai("hoat_dong");
         staffTk = taiKhoanRepository.save(staffTk);
 
@@ -142,7 +140,7 @@ public class SecurityHardeningIntegrationTest {
         customerTk.setEmail(customerEmail);
         customerTk.setMatKhau("password123");
         customerTk.setVaiTro("KH");
-        customerTk.setLaKhachHang(true);
+
         customerTk.setTrangThai("hoat_dong");
         customerTk = taiKhoanRepository.save(customerTk);
 

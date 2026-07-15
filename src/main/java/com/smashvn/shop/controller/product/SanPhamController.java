@@ -172,11 +172,16 @@ public class SanPhamController {
         }
 
         try {
-            danhGiaService.themHoacCapNhatDanhGia(idTaiKhoan, idSanPham, soSao, binhLuan, files);
-            redirectAttributes.addFlashAttribute("successMsg", "Gửi đánh giá sản phẩm thành công!");
+            boolean moderated = danhGiaService.themHoacCapNhatDanhGia(idTaiKhoan, idSanPham, soSao, binhLuan, files);
+            redirectAttributes.addFlashAttribute("successMsg", moderated
+                    ? "Bình luận của bạn đã được đăng. Một số nội dung không phù hợp đã được hệ thống tự động ẩn."
+                    : "Gửi đánh giá sản phẩm thành công!");
         } catch (Exception e) {
             log.error("[REVIEW_SUBMIT_ERROR] Failed to save review: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+            String message = e instanceof IllegalArgumentException || e instanceof IllegalStateException
+                    ? e.getMessage()
+                    : "Không thể gửi đánh giá lúc này. Vui lòng thử lại sau.";
+            redirectAttributes.addFlashAttribute("errorMsg", message);
         }
         return "redirect:/san-pham/" + idSanPham + "#pd-rev";
     }

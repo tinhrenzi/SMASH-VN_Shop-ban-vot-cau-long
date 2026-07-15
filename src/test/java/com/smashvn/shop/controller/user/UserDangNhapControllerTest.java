@@ -68,9 +68,7 @@ public class UserDangNhapControllerTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
         tk.setEmail(email);
-        tk.setLaKhachHang(true);
-        tk.setLaNhanVien(false);
-        tk.setLaQuanLy(false);
+        tk.setVaiTro("KH");
 
         KhachHang kh = new KhachHang();
         kh.setHoKh("Nguyen");
@@ -117,9 +115,7 @@ public class UserDangNhapControllerTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
         tk.setEmail(email);
-        tk.setLaKhachHang(true);
-        tk.setLaNhanVien(false);
-        tk.setLaQuanLy(false);
+        tk.setVaiTro("KH");
 
         when(loginRateLimiter.isBlocked(blockedEmail)).thenReturn(true);
         when(loginRateLimiter.isBlocked(email)).thenReturn(false);
@@ -160,9 +156,7 @@ public class UserDangNhapControllerTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(2);
         tk.setEmail(email);
-        tk.setLaKhachHang(false); // Not a customer account
-        tk.setLaNhanVien(true);
-        tk.setLaQuanLy(true);
+        tk.setVaiTro("NV"); // Not a customer account
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
         when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenReturn(tk);
@@ -171,7 +165,7 @@ public class UserDangNhapControllerTest {
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        assertEquals("Tài khoản này không được phép đăng nhập tại trang khách hàng.", model.getAttribute("loi"));
         verify(loginRateLimiter).loginFailed(accountKey);
     }
 
@@ -232,7 +226,7 @@ public class UserDangNhapControllerTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
         tk.setEmail("customer@gmail.com");
-        tk.setLaKhachHang(true);
+        tk.setVaiTro("KH");
 
         KhachHang kh = new KhachHang();
         kh.setHoKh("Nguyen");
@@ -254,5 +248,71 @@ public class UserDangNhapControllerTest {
         String view = userDangNhapController.xuLyDangXuat(session);
         assertEquals("redirect:/user/dang-nhap", view);
         verify(session).invalidate();
+    }
+
+    @Test
+    void testXuLyDangNhap_NullRole() {
+        String email = "nullrole@gmail.com";
+        String matKhau = "password";
+        String accountKey = "nullrole@gmail.com";
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(3);
+        tk.setEmail(email);
+        tk.setVaiTro(null);
+
+        when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenReturn(tk);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Tài khoản này không được phép đăng nhập tại trang khách hàng.", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(accountKey);
+    }
+
+    @Test
+    void testXuLyDangNhap_EmptyRole() {
+        String email = "emptyrole@gmail.com";
+        String matKhau = "password";
+        String accountKey = "emptyrole@gmail.com";
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(4);
+        tk.setEmail(email);
+        tk.setVaiTro("");
+
+        when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenReturn(tk);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Tài khoản này không được phép đăng nhập tại trang khách hàng.", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(accountKey);
+    }
+
+    @Test
+    void testXuLyDangNhap_InvalidRole() {
+        String email = "invalidrole@gmail.com";
+        String matKhau = "password";
+        String accountKey = "invalidrole@gmail.com";
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(5);
+        tk.setEmail(email);
+        tk.setVaiTro("UNKNOWN_ROLE");
+
+        when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenReturn(tk);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Tài khoản này không được phép đăng nhập tại trang khách hàng.", model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(accountKey);
     }
 }

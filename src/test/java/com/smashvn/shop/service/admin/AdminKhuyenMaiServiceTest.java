@@ -76,7 +76,7 @@ public class AdminKhuyenMaiServiceTest {
             staffTk.setMatKhau("testpass123");
             staffTk.setVaiTro("NV");
             staffTk.setTrangThai("hoat_dong");
-            staffTk.setLaNhanVien(true);
+
             staffTk = taiKhoanRepository.save(staffTk);
 
             NhanVien n = new NhanVien();

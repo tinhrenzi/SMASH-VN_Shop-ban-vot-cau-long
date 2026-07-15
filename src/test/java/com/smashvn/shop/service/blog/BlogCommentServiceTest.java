@@ -74,7 +74,7 @@ public class BlogCommentServiceTest {
         testUser.setMatKhau("password");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         // Create a unique admin user
@@ -83,7 +83,7 @@ public class BlogCommentServiceTest {
         adminUser.setMatKhau("password");
         adminUser.setVaiTro("QL");
         adminUser.setTrangThai("hoat_dong");
-        adminUser.setLaQuanLy(true);
+
         adminUser = taiKhoanRepository.save(adminUser);
     }
 

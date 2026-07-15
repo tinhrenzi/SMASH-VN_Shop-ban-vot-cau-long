@@ -171,7 +171,7 @@ public class OrderPricingIntegrationTest {
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -200,7 +200,7 @@ public class OrderPricingIntegrationTest {
             staffTk.setMatKhau("testpass123");
             staffTk.setVaiTro("NV");
             staffTk.setTrangThai("hoat_dong");
-            staffTk.setLaNhanVien(true);
+
             staffTk = taiKhoanRepository.save(staffTk);
 
             NhanVien n = new NhanVien();
@@ -288,9 +288,6 @@ public class OrderPricingIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "1"))
@@ -299,9 +296,6 @@ public class OrderPricingIntegrationTest {
         MvcResult checkoutResult = mockMvc.perform(post("/checkout/submit")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("hoTenNhan", "Người nhận test")
                         .param("sdtNhan", "0912123456")
@@ -342,7 +336,7 @@ public class OrderPricingIntegrationTest {
         testAdmin.setMatKhau("testpass123");
         testAdmin.setVaiTro("QL");
         testAdmin.setTrangThai("hoat_dong");
-        testAdmin.setLaQuanLy(true);
+
         testAdmin = taiKhoanRepository.save(testAdmin);
         adminUserIdsToClean.add(testAdmin.getId());
 
@@ -357,9 +351,6 @@ public class OrderPricingIntegrationTest {
         MvcResult detailResult = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/admin/don-hang/detail-json")
                         .sessionAttr("idNguoiDung", testAdmin.getId())
                         .sessionAttr("vaiTro", "QL")
-                        .sessionAttr("laQuanLy", true)
-                        .sessionAttr("laKhachHang", false)
-                        .sessionAttr("laNhanVien", false)
                         .sessionAttr(org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext)
                         .param("id", String.valueOf(orderId)))
                 .andExpect(status().isOk())
@@ -389,9 +380,6 @@ public class OrderPricingIntegrationTest {
         mockMvc.perform(post("/gio-hang/them")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
                         .param("soLuong", "1"))
@@ -400,9 +388,6 @@ public class OrderPricingIntegrationTest {
         MvcResult onlineCheckoutResult = mockMvc.perform(post("/checkout/submit")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .requestAttr("_csrf", csrfToken)
                         .param("hoTenNhan", "Người nhận Online")
                         .param("sdtNhan", "0912123456")
@@ -476,8 +461,7 @@ public class OrderPricingIntegrationTest {
                     tempUser.setMatKhau("pass123");
                     tempUser.setVaiTro("KH");
                     tempUser.setTrangThai("hoat_dong");
-                    tempUser.setLaKhachHang(true);
-                    
+
                     synchronized (this) {
                         tempUser = taiKhoanRepository.save(tempUser);
                         tempUserIds.add(tempUser.getId());

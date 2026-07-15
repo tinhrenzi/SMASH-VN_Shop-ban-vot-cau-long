@@ -72,7 +72,8 @@ public class AdminDangNhapController {
             TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(email, matKhau);
 
             // 2. Kiểm tra vai trò: Chỉ cho phép QL và NV
-            if (!Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()) && !Boolean.TRUE.equals(tkDangNhap.getLaQuanLy())) {
+            String userRole = tkDangNhap.getVaiTro();
+            if (!"NV".equals(userRole) && !"QL".equals(userRole)) {
                 loginRateLimiter.loginFailed(ip);
                 log.warn("[SECURITY_EVENT] UNAUTHORIZED_ADMIN_LOGIN_ATTEMPT: Email: {}, IP: {}", email, ip);
                 model.addAttribute("loi", "Tài khoản không có quyền truy cập trang quản trị!");
@@ -87,16 +88,13 @@ public class AdminDangNhapController {
             session = request.getSession(true);
 
             // Default active role for admin login
-            String vaiTro = Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()) ? "QL" : "NV";
+            String vaiTro = "QL".equals(userRole) ? "QL" : "NV";
 
             // Lưu thông tin vào Session
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
-            session.setAttribute("vaiTro", vaiTro);
+            session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
             session.setAttribute("activeRole", vaiTro);
-            session.setAttribute("laKhachHang", Boolean.TRUE.equals(tkDangNhap.getLaKhachHang()));
-            session.setAttribute("laNhanVien", Boolean.TRUE.equals(tkDangNhap.getLaNhanVien()));
-            session.setAttribute("laQuanLy", Boolean.TRUE.equals(tkDangNhap.getLaQuanLy()));
 
             // Tìm tên hiển thị của nhân viên
             NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkDangNhap.getId());
