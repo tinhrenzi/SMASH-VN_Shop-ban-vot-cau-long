@@ -35,6 +35,7 @@ public class AdminNhanVienService {
     private final AuditService auditService;
     private final JavaMailSender mailSender;
     private final KhachHangRepository khachHangRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.emails}")
     private String adminEmailsConfig;
@@ -77,7 +78,7 @@ public class AdminNhanVienService {
         }
         return String.format("id=%s, email=%s, hoTenNv=%s, chucVu=%s, soDienThoaiNv=%s, vaiTro=%s, trangThai=%s",
                 nv.getId() != null ? nv.getId().toString() : "null",
-                com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail()),
+                com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()),
                 nv.getHoTenNv(),
                 nv.getChucVu(),
                 com.smashvn.shop.util.ValidationUtils.maskPhone(nv.getSoDienThoaiNv()),
@@ -205,8 +206,8 @@ public class AdminNhanVienService {
         }
 
         // 1. Kiểm tra Email tồn tại
-        if (taiKhoanRepository.existsByEmail(sanitizedEmail)) {
-            TaiKhoan existingTk = taiKhoanRepository.findByEmail(sanitizedEmail);
+        if (taiKhoanRepository.existsByUsername(sanitizedEmail)) {
+            TaiKhoan existingTk = taiKhoanRepository.findByUsername(sanitizedEmail);
             String existingRole = existingTk.getVaiTro();
             if ("NV".equals(existingRole) || "QL".equals(existingRole)) {
                 throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_ACCOUNT);
@@ -234,8 +235,8 @@ public class AdminNhanVienService {
 
         // 2. Tạo TaiKhoan mới
         TaiKhoan tk = new TaiKhoan();
-        tk.setEmail(sanitizedEmail);
-        tk.setMatKhau(BCrypt.hashpw(trimmedPassword, BCrypt.gensalt()));
+        tk.setUsername(sanitizedEmail);
+        tk.setMatKhau(passwordEncoder.encode(trimmedPassword));
         tk.setVaiTro("NV");
         tk.setTrangThai("hoat_dong");
         tk = saveTaiKhoan(tk);
@@ -337,7 +338,7 @@ public class AdminNhanVienService {
 
         tk.setTrangThai(trangThai);
         if (newPassword != null && !newPassword.trim().isEmpty()) {
-            tk.setMatKhau(BCrypt.hashpw(newPassword.trim(), BCrypt.gensalt()));
+            tk.setMatKhau(passwordEncoder.encode(newPassword.trim()));
         }
         saveTaiKhoan(tk);
 
@@ -345,7 +346,7 @@ public class AdminNhanVienService {
         // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin và vai trò nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail()), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin và vai trò nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
         }
     }
 
@@ -368,7 +369,7 @@ public class AdminNhanVienService {
 
         if ("hoat_dong".equals(oldStatus)) {
             newStatus = "cho_khoa"; // Chờ phê duyệt khóa
-            logMessage = "Yêu cầu khóa tài khoản nhân viên (chờ phê duyệt): " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail());
+            logMessage = "Yêu cầu khóa tài khoản nhân viên (chờ phê duyệt): " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername());
 
             // Tạo token ngẫu nhiên khi status chuyển thành cho_khoa
             String token = java.util.UUID.randomUUID().toString();
@@ -378,12 +379,12 @@ public class AdminNhanVienService {
             guiEmailXacNhanKhoa(nv, tk, token, appUrl);
         } else if ("bi_khoa".equals(oldStatus)) {
             newStatus = "hoat_dong"; // Mở khóa trực tiếp
-            logMessage = "Mở khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail());
+            logMessage = "Mở khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername());
             tk.setTokenXacThucKhoa(null);
         } else {
             // Đang ở trạng thái cho_khoa, bấm lại thì hủy yêu cầu khóa (trở lại hoạt động)
             newStatus = "hoat_dong";
-            logMessage = "Hủy yêu cầu khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail());
+            logMessage = "Hủy yêu cầu khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername());
             tk.setTokenXacThucKhoa(null);
         }
 
@@ -421,7 +422,7 @@ public class AdminNhanVienService {
                         + "Yêu cầu này cũng hiển thị trên bảng điều khiển quản trị (Dashboard).\n"
                         + "Trân trọng,\n"
                         + "Hệ thống Quản trị Smash VN",
-                        nv.getHoTenNv(), tk.getEmail(), nv.getChucVu(), nv.getSoDienThoaiNv(),
+                        nv.getHoTenNv(), tk.getUsername(), nv.getChucVu(), nv.getSoDienThoaiNv(),
                         appUrl, nv.getId(), token,
                         appUrl, nv.getId(), token
                 ));
@@ -469,7 +470,7 @@ public class AdminNhanVienService {
         if (actingUser == null) {
             auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản qua token Email", "SYSTEM_EMAIL");
         } else {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail()), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
         }
     }
 
@@ -513,7 +514,7 @@ public class AdminNhanVienService {
         if (actingUser == null) {
             auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản qua token Email", "SYSTEM_EMAIL");
         } else {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getEmail()), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
         }
     }
 
@@ -536,7 +537,7 @@ public class AdminNhanVienService {
                         + "Tài khoản của nhân viên này vẫn tiếp tục hoạt động bình thường trên hệ thống.\n\n"
                         + "Trân trọng,\n"
                         + "Hệ thống Quản trị Smash VN",
-                        nv.getHoTenNv(), tk.getEmail(), nv.getChucVu()
+                        nv.getHoTenNv(), tk.getUsername(), nv.getChucVu()
                 ));
                 mailSender.send(message);
             } catch (Exception e) {

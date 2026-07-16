@@ -113,7 +113,7 @@ public class CheckoutControllerTest {
         when(session.getAttribute("idNguoiDung")).thenReturn(123);
         TaiKhoan tk = new TaiKhoan();
         tk.setId(123);
-        tk.setEmail("active@example.com");
+        tk.setUsername("active@example.com");
         tk.setVaiTro("KH");
         tk.setTrangThai("hoat_dong");
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
@@ -243,7 +243,7 @@ public class CheckoutControllerTest {
 
         TaiKhoan guest = new TaiKhoan();
         guest.setId(guestAccountId);
-        guest.setEmail("guest@example.com");
+        guest.setUsername("guest@example.com");
         guest.setVaiTro("KH");
         guest.setTrangThai("hoat_dong");
         guest.setTrangThaiTaiKhoan(AccountStatus.GUEST);

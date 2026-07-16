@@ -151,7 +151,7 @@ class GhnRestControllerTest {
     private TaiKhoan activeCustomer(Integer id) {
         TaiKhoan taiKhoan = new TaiKhoan();
         taiKhoan.setId(id);
-        taiKhoan.setEmail("customer" + id + "@example.com");
+        taiKhoan.setUsername("customer" + id + "@example.com");
         taiKhoan.setVaiTro("KH");
         taiKhoan.setTrangThai("hoat_dong");
         taiKhoan.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);

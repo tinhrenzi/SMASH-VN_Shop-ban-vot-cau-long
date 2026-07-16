@@ -67,7 +67,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro("KH");
 
         KhachHang kh = new KhachHang();
@@ -114,7 +114,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro("KH");
 
         when(loginRateLimiter.isBlocked(blockedEmail)).thenReturn(true);
@@ -155,7 +155,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(2);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro("NV"); // Not a customer account
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
@@ -225,7 +225,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail("customer@gmail.com");
+        tk.setUsername("customer@gmail.com");
         tk.setVaiTro("KH");
 
         KhachHang kh = new KhachHang();
@@ -258,7 +258,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(3);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro(null);
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
@@ -280,7 +280,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(4);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro("");
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
@@ -302,7 +302,7 @@ public class UserDangNhapControllerTest {
 
         TaiKhoan tk = new TaiKhoan();
         tk.setId(5);
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setVaiTro("UNKNOWN_ROLE");
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);

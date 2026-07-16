@@ -43,7 +43,7 @@
                 <div class="col-lg-8 mx-auto">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-dark text-white py-3">
-                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-user-edit me-2 text-brand"></i>Sửa Thông Tin Tài Khoản: <span th:text="${nv.taiKhoan.email}" class="text-warning"></span></h5>
+                            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-user-edit me-2 text-brand"></i>Sửa Thông Tin Tài Khoản: <span th:text="${nv.taiKhoan.username}" class="text-warning"></span></h5>
                         </div>
                         <div class="card-body">
                             <form th:action="@{/admin/nhan-vien/sua/{id}(id=${nv.id})}" method="POST" class="row g-4">
@@ -52,7 +52,7 @@
                                 <!-- Email đăng nhập (Read Only) -->
                                 <div class="col-md-6">
                                     <label class="form-label">Email Đăng Nhập</label>
-                                    <input type="email" th:value="${nv.taiKhoan.email}" class="form-control bg-light" disabled>
+                                    <input type="email" th:value="${nv.taiKhoan.username}" class="form-control bg-light" disabled>
                                     <div class="form-text text-muted">Email đăng nhập là duy nhất và không thể thay đổi.</div>
                                 </div>
 

@@ -106,7 +106,7 @@ public class AdminBienTheIntegrationTest {
             nv = nvList.get(0);
         } else {
             TaiKhoan tk = new TaiKhoan();
-            tk.setEmail("staff_test@gmail.com");
+            tk.setUsername("staff_test@gmail.com");
             tk.setMatKhau("password");
             tk.setVaiTro("NV");
             tk.setTrangThai("hoat_dong");
@@ -523,7 +523,7 @@ public class AdminBienTheIntegrationTest {
         // Get or seed customer
         com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseGet(() -> {
             com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
-            tk.setEmail("test_customer_" + java.util.UUID.randomUUID().toString().substring(0, 8) + "@test.com");
+            tk.setUsername("test_customer_" + java.util.UUID.randomUUID().toString().substring(0, 8) + "@test.com");
             tk.setMatKhau("password");
             tk.setVaiTro("KH");
             tk.setTrangThai("hoat_dong");

@@ -34,6 +34,9 @@ class AdminNhanVienServiceTest {
     @Mock
     private KhachHangRepository khachHangRepository;
 
+    @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     private AdminNhanVienService adminNhanVienService;
 
     @BeforeEach
@@ -44,7 +47,8 @@ class AdminNhanVienServiceTest {
                 taiKhoanRepository,
                 auditService,
                 mailSender,
-                khachHangRepository);
+                khachHangRepository,
+                passwordEncoder);
     }
 
     @Test

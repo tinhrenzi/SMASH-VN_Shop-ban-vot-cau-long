@@ -26,6 +26,6 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
     // Tìm khách hàng có vai trò cụ thể trong tài khoản
     List<KhachHang> findByTaiKhoan_VaiTro(String vaiTro);
 
-    java.util.Optional<KhachHang> findByTaiKhoan_Email(String email);
+    java.util.Optional<KhachHang> findByTaiKhoan_Username(String username);
 
 }

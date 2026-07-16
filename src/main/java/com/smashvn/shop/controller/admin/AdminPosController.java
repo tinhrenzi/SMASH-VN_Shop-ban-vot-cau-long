@@ -106,7 +106,7 @@ public class AdminPosController {
             String ten = c.getTenKh() != null ? c.getTenKh() : "";
             map.put("hoTen", (ho + " " + ten).trim());
             map.put("sdt", c.getSoDienThoaiKh() != null ? c.getSoDienThoaiKh() : "");
-            map.put("email", c.getTaiKhoan() != null && c.getTaiKhoan().getEmail() != null ? c.getTaiKhoan().getEmail() : "");
+            map.put("email", c.getTaiKhoan() != null && c.getTaiKhoan().getUsername() != null ? c.getTaiKhoan().getUsername() : "");
             return map;
         }).toList();
         return ResponseEntity.ok(results);
@@ -165,7 +165,7 @@ public class AdminPosController {
             org.springframework.security.core.Authentication auth
                     = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
-                TaiKhoan tk = taiKhoanRepository.findByEmail(auth.getName());
+                TaiKhoan tk = taiKhoanRepository.findByUsername(auth.getName());
                 if (tk != null) {
                     idNguoiDung = tk.getId();
                     session.setAttribute("idNguoiDung", idNguoiDung);

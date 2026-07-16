@@ -63,7 +63,7 @@ public class UserDashboardControllerTest {
         KhachHang kh = new KhachHang();
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail("test@gmail.com");
+        tk.setUsername("test@gmail.com");
         kh.setTaiKhoan(tk);
         when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
 
@@ -88,7 +88,7 @@ public class UserDashboardControllerTest {
         KhachHang kh = new KhachHang();
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail("test@gmail.com");
+        tk.setUsername("test@gmail.com");
         kh.setTaiKhoan(tk);
         when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
 
@@ -108,7 +108,7 @@ public class UserDashboardControllerTest {
         KhachHang kh = new KhachHang();
         TaiKhoan tk = new TaiKhoan();
         tk.setId(1);
-        tk.setEmail("test@gmail.com");
+        tk.setUsername("test@gmail.com");
         kh.setTaiKhoan(tk);
         when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
 

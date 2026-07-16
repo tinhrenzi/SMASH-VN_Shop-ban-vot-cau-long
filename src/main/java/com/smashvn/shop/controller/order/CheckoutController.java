@@ -350,11 +350,11 @@ public class CheckoutController {
                 request.changeSessionId();
                 session = request.getSession(true);
 
-                session.setAttribute("nguoiDungDangNhap", tk.getEmail());
+                session.setAttribute("nguoiDungDangNhap", tk.getUsername());
                 session.setAttribute("idNguoiDung", tk.getId());
                 session.setAttribute("vaiTro", "KH");
                 session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
-                session.setAttribute("guestCheckoutEmail", tk.getEmail());
+                session.setAttribute("guestCheckoutEmail", tk.getUsername());
 
                 idNguoiDung = tk.getId();
                 long endAccount = System.currentTimeMillis();
@@ -594,7 +594,10 @@ public class CheckoutController {
                     long startEmail = System.currentTimeMillis();
                     try {
                         String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-                        guestCheckoutService.sendOrderAndAccountNotification(tk.getEmail(), activationToken, appUrl);
+                        String contactEmail = tk.getUsername();
+                        if (contactEmail != null && contactEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                            guestCheckoutService.sendOrderAndAccountNotification(contactEmail, activationToken, appUrl);
+                        }
                         long endEmail = System.currentTimeMillis();
                         log.info("[GuestCheckout] Send notification email triggered: {}ms - SUCCESS (Asynchronous)", (endEmail - startEmail));
                     } catch (Exception e) {
@@ -609,10 +612,13 @@ public class CheckoutController {
 
             // Trigger order confirmation email
             String userEmail = null;
-            if (tk != null) {
-                userEmail = tk.getEmail();
+            if (tk != null && tk.getUsername() != null && tk.getUsername().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                userEmail = tk.getUsername();
             } else if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
-                userEmail = hd.getKhachHang().getTaiKhoan().getEmail();
+                String un = hd.getKhachHang().getTaiKhoan().getUsername();
+                if (un != null && un.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                    userEmail = un;
+                }
             } else if (email != null && !email.trim().isEmpty()) {
                 userEmail = email.trim();
             }
@@ -795,7 +801,7 @@ public class CheckoutController {
             request.changeSessionId();
             session = request.getSession(true);
 
-            session.setAttribute("nguoiDungDangNhap", tk.getEmail());
+            session.setAttribute("nguoiDungDangNhap", tk.getUsername());
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", "KH");
 
@@ -841,7 +847,7 @@ public class CheckoutController {
                 return ResponseEntity.ok(response);
             }
 
-            TaiKhoan tk = taiKhoanRepository.findByEmail(targetEmail.trim());
+            TaiKhoan tk = taiKhoanRepository.findByUsername(targetEmail.trim());
             if (tk == null) {
                 response.put("success", false);
                 response.put("message", "Không tìm thấy tài khoản");
@@ -862,8 +868,8 @@ public class CheckoutController {
         if (sessionTk == null
                 || sessionTk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST
                 || sessionEmail == null
-                || !sessionEmail.equalsIgnoreCase(sessionTk.getEmail())
-                || (email != null && !email.trim().isEmpty() && !email.trim().equalsIgnoreCase(sessionTk.getEmail()))) {
+                || !sessionEmail.equalsIgnoreCase(sessionTk.getUsername())
+                || (email != null && !email.trim().isEmpty() && !email.trim().equalsIgnoreCase(sessionTk.getUsername()))) {
             response.put("success", false);
             response.put("message", "Phien khach vang lai khong hop le hoac khong khop email dat hang.");
             return ResponseEntity.ok(response);
@@ -884,7 +890,7 @@ public class CheckoutController {
             HttpSession newSession = request.getSession(true);
 
             if (activatedTk != null) {
-                newSession.setAttribute("nguoiDungDangNhap", activatedTk.getEmail());
+                newSession.setAttribute("nguoiDungDangNhap", activatedTk.getUsername());
                 newSession.setAttribute("idNguoiDung", activatedTk.getId());
                 newSession.setAttribute("vaiTro", "KH");
 

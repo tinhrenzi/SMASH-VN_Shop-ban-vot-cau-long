@@ -49,7 +49,7 @@
                             <thead>
                                 <tr class="table-warning">
                                     <th>Nhân Viên</th>
-                                    <th>Email</th>
+                                    <th>Tên đăng nhập</th>
                                     <th>Chức Vụ</th>
                                     <th>Số Điện Thoại</th>
                                     <th class="text-center">Hành Động Phê Duyệt</th>
@@ -58,7 +58,7 @@
                             <tbody>
                                 <tr th:each="nv : ${danhSachChoKhoa}" th:id="'row-nv-' + ${nv.id}">
                                     <td class="fw-bold text-dark" th:text="${nv.hoTenNv}"></td>
-                                    <td class="fw-semibold text-secondary" th:text="${nv.taiKhoan.email}"></td>
+                                    <td class="fw-semibold text-secondary" th:text="${nv.taiKhoan.username}"></td>
                                     <td th:text="${nv.chucVu}"></td>
                                     <td th:text="${nv.soDienThoaiNv}"></td>
                                     <td class="text-center">
@@ -155,7 +155,7 @@
                                     <thead style="position: sticky; top: 0; z-index: 2;">
                                         <tr>
                                             <th>STT</th>
-                                            <th>Email</th>
+                                            <th>Tên đăng nhập</th>
                                             <th>Vai Trò</th>
                                             <th>Trạng Thái</th>
                                         </tr>
@@ -163,7 +163,7 @@
                                     <tbody>
                                         <tr th:each="tk, iterStat : ${danhSachTaiKhoanNhanVien}">
                                             <td th:text="${iterStat.count}"></td>
-                                            <td class="fw-semibold text-secondary" th:text="${tk.email}"></td>
+                                            <td class="fw-semibold text-secondary" th:text="${tk.username}"></td>
                                             <td>
                                                 <span class="badge bg-dark text-white px-2.5 py-1.5" th:text="${tk.vaiTro}"></span>
                                             </td>
@@ -195,14 +195,14 @@
                                     <thead style="position: sticky; top: 0; z-index: 2;">
                                         <tr>
                                             <th>STT</th>
-                                            <th>Email</th>
+                                            <th>Tên đăng nhập</th>
                                             <th>Trạng Thái</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr th:each="tk, iterStat : ${danhSachTaiKhoanKhachHang}">
                                             <td th:text="${iterStat.count}"></td>
-                                            <td class="fw-semibold text-secondary" th:text="${tk.email}"></td>
+                                            <td class="fw-semibold text-secondary" th:text="${tk.username}"></td>
                                             <td>
                                                 <span th:if="${tk.trangThai == 'hoat_dong'}" class="badge bg-success rounded-pill px-2.5 py-1.5">Hoạt động</span>
                                                 <span th:unless="${tk.trangThai == 'hoat_dong'}" class="badge bg-danger rounded-pill px-2.5 py-1.5" th:text="${tk.trangThai}">Khóa</span>

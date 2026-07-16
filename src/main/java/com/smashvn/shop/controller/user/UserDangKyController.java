@@ -23,16 +23,16 @@ public class UserDangKyController {
 
     // Hiển thị form đăng ký (Giao diện)
     @GetMapping("/dang-ky")
-    public String hienThiTrangDangKy(@RequestParam(value = "email", required = false) String email, Model model) {
-        if (email != null) {
-            model.addAttribute("email", email);
+    public String hienThiTrangDangKy(@RequestParam(value = "username", required = false) String username, Model model) {
+        if (username != null) {
+            model.addAttribute("username", username);
         }
         return "signup"; // Sẽ tìm file dang-ky.html trong thư mục templates
     }
 
     // Xử lý khi người dùng bấm nút Submit form
     @PostMapping("/dang-ky")
-    public String xuLyDangKy(@RequestParam("email") String email,
+    public String xuLyDangKy(@RequestParam("username") String username,
             @RequestParam("matKhau") String matKhau,
             @RequestParam("xacNhanMatKhau") String xacNhanMatKhau,
             HttpServletRequest request,
@@ -47,8 +47,8 @@ public class UserDangKyController {
         }
 
         // Sanitize và Trim inputs
-        String sanitizedEmail = sanitizeInput(email);
-        String trimmedEmail = (sanitizedEmail != null) ? sanitizedEmail.trim() : "";
+        String sanitizedUsername = sanitizeInput(username);
+        String trimmedUsername = (sanitizedUsername != null) ? sanitizedUsername.trim() : "";
 
         // Kiểm tra 2 mật khẩu có khớp nhau không
         if (matKhau == null || matKhau.isEmpty()) {
@@ -64,7 +64,7 @@ public class UserDangKyController {
 
         try {
             // Gọi Service để lưu
-            taiKhoanService.dangKy(trimmedEmail, matKhau);
+            taiKhoanService.dangKy(trimmedUsername, matKhau);
 
             // Thành công -> Reset bộ đếm
             registerRateLimiter.registerSucceeded(ip);
@@ -76,6 +76,7 @@ public class UserDangKyController {
             // Thất bại -> Tăng bộ đếm và hiển thị lỗi
             registerRateLimiter.registerFailed(ip);
             model.addAttribute("loi", e.getMessage());
+            model.addAttribute("username", trimmedUsername);
             return "signup";
         }
     }

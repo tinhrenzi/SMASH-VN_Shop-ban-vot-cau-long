@@ -124,7 +124,7 @@ public class OrderPricingIntegrationTest {
         // Clean up any stray temp test users/customers from previous interrupted runs
         try {
             List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
-                    .filter(tk -> tk.getEmail() != null && (tk.getEmail().startsWith("temp_r_") || tk.getEmail().contains("tester_pricing_")))
+                    .filter(tk -> tk.getUsername() != null && (tk.getUsername().startsWith("temp_r_") || tk.getUsername().contains("tester_pricing_")))
                     .toList();
             for (TaiKhoan tk : strayUsers) {
                 KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
@@ -167,7 +167,7 @@ public class OrderPricingIntegrationTest {
 
         // Seed test user
         testUser = new TaiKhoan();
-        testUser.setEmail("tester_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
+        testUser.setUsername("tester_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -196,7 +196,7 @@ public class OrderPricingIntegrationTest {
 
         NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan staffTk = new TaiKhoan();
-            staffTk.setEmail("staff_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
+            staffTk.setUsername("staff_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
             staffTk.setMatKhau("testpass123");
             staffTk.setVaiTro("NV");
             staffTk.setTrangThai("hoat_dong");
@@ -332,7 +332,7 @@ public class OrderPricingIntegrationTest {
 
         // Step 3: Fetch order detail JSON and verify historical fields are intact
         TaiKhoan testAdmin = new TaiKhoan();
-        testAdmin.setEmail("admin_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
+        testAdmin.setUsername("admin_pricing_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
         testAdmin.setMatKhau("testpass123");
         testAdmin.setVaiTro("QL");
         testAdmin.setTrangThai("hoat_dong");
@@ -342,7 +342,7 @@ public class OrderPricingIntegrationTest {
 
         org.springframework.security.core.context.SecurityContext securityContext = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
         org.springframework.security.authentication.UsernamePasswordAuthenticationToken securityAuth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                testAdmin.getEmail(),
+                testAdmin.getUsername(),
                 null,
                 java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_QL"))
         );
@@ -457,7 +457,7 @@ public class OrderPricingIntegrationTest {
                 try {
                     // Seed cart for this temporary user
                     TaiKhoan tempUser = new TaiKhoan();
-                    tempUser.setEmail("temp_r_" + index + "_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
+                    tempUser.setUsername("temp_r_" + index + "_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
                     tempUser.setMatKhau("pass123");
                     tempUser.setVaiTro("KH");
                     tempUser.setTrangThai("hoat_dong");
@@ -760,7 +760,7 @@ public class OrderPricingIntegrationTest {
         }
         try {
             List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
-                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_pricing_"))
+                    .filter(tk -> tk.getUsername() != null && tk.getUsername().startsWith("staff_pricing_"))
                     .toList();
             for (TaiKhoan tk : strayStaff) {
                 NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());

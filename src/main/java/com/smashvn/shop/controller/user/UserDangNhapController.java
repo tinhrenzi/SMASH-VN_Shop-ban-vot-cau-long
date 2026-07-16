@@ -17,6 +17,8 @@ import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
+import com.smashvn.shop.util.LoginIdentifierClassifier;
+import com.smashvn.shop.util.LoginIdentifierClassifier.NormalizedLoginIdentifier;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -50,17 +52,17 @@ public class UserDangNhapController {
 
     // Xử lý khi bấm nút "Đăng nhập"
     @PostMapping("/dang-nhap")
-    public String xuLyDangNhap(@RequestParam("email") String email,
+    public String xuLyDangNhap(@RequestParam("username") String username,
             @RequestParam("matKhau") String matKhau,
             HttpServletRequest request,
-            HttpSession session, // Dùng để lưu phiên đăng nhập
+            HttpSession session,
             Model model) {
         String ip = request.getRemoteAddr();
 
         // Sanitize và Trim inputs
-        String sanitizedEmail = sanitizeInput(email);
-        String trimmedEmail = (sanitizedEmail != null) ? sanitizedEmail.trim() : "";
-        String loginLimitKey = buildLoginLimitKey(trimmedEmail);
+        String sanitizedUsername = sanitizeInput(username);
+        String trimmedUsername = (sanitizedUsername != null) ? sanitizedUsername.trim() : "";
+        String loginLimitKey = buildLoginLimitKey(trimmedUsername);
 
         // 1. Kiểm tra giới hạn số lần thử theo tài khoản, không khóa theo trình duyệt/IP
         if (!loginLimitKey.isEmpty() && loginRateLimiter.isBlocked(loginLimitKey)) {
@@ -68,9 +70,11 @@ public class UserDangNhapController {
             return "signin";
         }
 
-        // Sơ bộ validation tại controller
+        // Sơ bộ validation tại controller bằng classifier dùng chung
         boolean invalidInput = false;
-        if (trimmedEmail.isEmpty() || trimmedEmail.length() > 100 || !trimmedEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+        try {
+            LoginIdentifierClassifier.classifyAndNormalize(trimmedUsername);
+        } catch (IllegalArgumentException e) {
             invalidInput = true;
         }
         if (matKhau == null || matKhau.isEmpty()) {
@@ -81,19 +85,19 @@ public class UserDangNhapController {
             if (!loginLimitKey.isEmpty()) {
                 loginRateLimiter.loginFailed(loginLimitKey);
             }
-            log.warn("[SECURITY_EVENT] INVALID_LOGIN_INPUT: IP: {}, Email: {}", ip, trimmedEmail);
+            log.warn("[SECURITY_EVENT] INVALID_LOGIN_INPUT: IP: {}, Username: {}", ip, trimmedUsername);
             model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
             return "signin";
         }
 
         try {
-            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(trimmedEmail, matKhau);
+            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(trimmedUsername, matKhau);
 
             // Chỉ cho phép KH
             String userRole = tkDangNhap.getVaiTro();
             if (!"KH".equals(userRole)) {
                 loginRateLimiter.loginFailed(loginLimitKey);
-                log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Email: {}, IP: {}", trimmedEmail, ip);
+                log.warn("[SECURITY_EVENT] UNAUTHORIZED_CUSTOMER_LOGIN_ATTEMPT: Username: {}, IP: {}", trimmedUsername, ip);
                 model.addAttribute("loi", "Tài khoản này không được phép đăng nhập tại trang khách hàng.");
                 return "signin";
             }
@@ -105,8 +109,8 @@ public class UserDangNhapController {
             request.changeSessionId();
             session = request.getSession(true);
 
-            // Lưu thông tin vào Session (ví dụ lưu email và id)
-            session.setAttribute("nguoiDungDangNhap", tkDangNhap.getEmail());
+            // Lưu thông tin vào Session (giữ nguyên kiểu dữ liệu String cho nguoiDungDangNhap)
+            session.setAttribute("nguoiDungDangNhap", tkDangNhap.getUsername());
             session.setAttribute("idNguoiDung", tkDangNhap.getId());
             session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
             session.setAttribute("activeRole", "KH");
@@ -122,16 +126,16 @@ public class UserDangNhapController {
             return "redirect:/";
 
         } catch (AccountNotFoundException e) {
-            // Đăng nhập thất bại do email chưa đăng ký -> Đưa ra luồng riêng
+            // Đăng nhập thất bại do username chưa đăng ký -> Đưa ra luồng riêng
             loginRateLimiter.loginFailed(loginLimitKey);
-            log.warn("[SECURITY_EVENT] UNREGISTERED_EMAIL_LOGIN: Email: {}, IP: {}", trimmedEmail, ip);
+            log.warn("[SECURITY_EVENT] UNREGISTERED_USERNAME_LOGIN: Username: {}, IP: {}", trimmedUsername, ip);
             model.addAttribute("emailChuaDangKy", true);
-            model.addAttribute("emailNhap", trimmedEmail);
+            model.addAttribute("emailNhap", trimmedUsername);
             return "signin";
         } catch (RuntimeException e) {
             // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
             loginRateLimiter.loginFailed(loginLimitKey);
-            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Email: {}, IP: {}, Lỗi: {}", trimmedEmail, ip, e.getMessage());
+            log.warn("[SECURITY_EVENT] FAILED_LOGIN: Username: {}, IP: {}, Lỗi: {}", trimmedUsername, ip, e.getMessage());
 
             // Luôn trả về thông báo lỗi chung
             model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
@@ -147,11 +151,11 @@ public class UserDangNhapController {
         return input.replaceAll("<[^>]*>", "");
     }
 
-    private String buildLoginLimitKey(String email) {
-        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    private String buildLoginLimitKey(String username) {
+        return username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
     }
 
-    // Thêm luôn chức năng Đăng xuất cho tiện
+    // Đăng xuất
     @GetMapping("/dang-xuat")
     public String xuLyDangXuat(HttpSession session) {
         if (session != null) {
@@ -183,7 +187,7 @@ public class UserDangNhapController {
             session = request.getSession(true);
 
             // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
-            session.setAttribute("nguoiDungDangNhap", tk.getEmail());
+            session.setAttribute("nguoiDungDangNhap", tk.getUsername());
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", tk.getVaiTro());
             session.setAttribute("activeRole", "KH");

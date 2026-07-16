@@ -107,7 +107,7 @@ public class SecurityHardeningIntegrationTest {
         String customerEmail = "customer-test-" + System.nanoTime() + "@smashvn.com";
 
         managerTk = new TaiKhoan();
-        managerTk.setEmail(managerEmail);
+        managerTk.setUsername(managerEmail);
         managerTk.setMatKhau("password123");
         managerTk.setVaiTro("QL");
 
@@ -122,7 +122,7 @@ public class SecurityHardeningIntegrationTest {
         managerNv = nhanVienRepository.save(managerNv);
 
         staffTk = new TaiKhoan();
-        staffTk.setEmail(staffEmail);
+        staffTk.setUsername(staffEmail);
         staffTk.setMatKhau("password123");
         staffTk.setVaiTro("NV");
 
@@ -137,7 +137,7 @@ public class SecurityHardeningIntegrationTest {
         staffNv = nhanVienRepository.save(staffNv);
 
         customerTk = new TaiKhoan();
-        customerTk.setEmail(customerEmail);
+        customerTk.setUsername(customerEmail);
         customerTk.setMatKhau("password123");
         customerTk.setVaiTro("KH");
 

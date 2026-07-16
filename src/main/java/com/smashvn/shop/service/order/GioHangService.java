@@ -94,8 +94,15 @@ public class GioHangService {
             kh = new KhachHang();
             kh.setTaiKhoan(taiKhoan);
             kh.setHoKh("");
-            String email = taiKhoan.getEmail();
-            String name = (email != null && email.contains("@")) ? email.split("@")[0] : "Người dùng";
+            String username = taiKhoan.getUsername();
+            String name = "Người dùng";
+            if (username != null) {
+                if (username.contains("@")) {
+                    name = username.split("@")[0];
+                } else {
+                    name = username;
+                }
+            }
             kh.setTenKh(name);
             kh.setSoDienThoaiKh("");
             kh.setNhanBanTin(false);

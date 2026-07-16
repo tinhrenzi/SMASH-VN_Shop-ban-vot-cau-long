@@ -75,7 +75,7 @@ public class RevenueStatisticsIntegrationTest {
         List<KhachHang> khs = khachHangRepository.findAll();
         if (khs.isEmpty()) {
             TaiKhoan customerUser = new TaiKhoan();
-            customerUser.setEmail("customer-stats-test-" + System.nanoTime() + "@smashvn.com");
+            customerUser.setUsername("customer-stats-test-" + System.nanoTime() + "@smashvn.com");
             customerUser.setMatKhau("123");
             customerUser.setVaiTro("KH");
 
@@ -126,7 +126,7 @@ public class RevenueStatisticsIntegrationTest {
 
         // Seed NhanVien for product
         TaiKhoan nvUser = new TaiKhoan();
-        nvUser.setEmail("staff-stats-" + System.nanoTime() + "@smashvn.com");
+        nvUser.setUsername("staff-stats-" + System.nanoTime() + "@smashvn.com");
         nvUser.setMatKhau("123");
         nvUser.setVaiTro("NV");
 

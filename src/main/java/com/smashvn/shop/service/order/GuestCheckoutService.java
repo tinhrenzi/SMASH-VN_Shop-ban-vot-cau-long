@@ -36,13 +36,14 @@ public class GuestCheckoutService {
     private final TokenKhoiPhucRepository tokenRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final JavaMailSender mailSender;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public String checkEmailStatus(String email) {
         if (email == null || email.trim().isEmpty()) {
             return "NEW";
         }
         
-        TaiKhoan tk = taiKhoanRepository.findByEmail(email.trim());
+        TaiKhoan tk = taiKhoanRepository.findByUsername(email.trim());
         if (tk == null) {
             return "NEW";
         }
@@ -92,7 +93,7 @@ public class GuestCheckoutService {
             }
         }
 
-        TaiKhoan existingTk = taiKhoanRepository.findByEmail(trimmedEmail);
+        TaiKhoan existingTk = taiKhoanRepository.findByUsername(trimmedEmail);
         if (existingTk != null) {
             log.info("[GUEST_CHECKOUT] Linked order with existing guest account: {}", trimmedEmail);
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(existingTk.getId());
@@ -135,7 +136,7 @@ public class GuestCheckoutService {
         }
 
         TaiKhoan tk = new TaiKhoan();
-        tk.setEmail(trimmedEmail);
+        tk.setUsername(trimmedEmail);
         tk.setMatKhau(null); // No password initially
         tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
         tk.setSoLanMuaThanhCong(0); // Will be incremented when order is created
@@ -258,7 +259,7 @@ public class GuestCheckoutService {
             throw new RuntimeException("Mật khẩu phải chứa cả chữ và số!");
         }
 
-        tk.setMatKhau(BCrypt.hashpw(password, BCrypt.gensalt()));
+        tk.setMatKhau(passwordEncoder.encode(password));
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
         taiKhoanRepository.save(tk);
 

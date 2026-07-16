@@ -79,7 +79,7 @@ public class OrderCreationTenNguoiNhanTest {
         }
         // Seed test user
         testUser = new TaiKhoan();
-        testUser.setEmail("order_recipient_tester@gmail.com");
+        testUser.setUsername("order_recipient_tester@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -109,7 +109,7 @@ public class OrderCreationTenNguoiNhanTest {
 
         // Seed NhanVien
         TaiKhoan nvUser = new TaiKhoan();
-        nvUser.setEmail("staff_tester_pos@gmail.com");
+        nvUser.setUsername("staff_tester_pos@gmail.com");
         nvUser.setMatKhau("testpass123");
         nvUser.setVaiTro("NV");
         nvUser.setTrangThai("hoat_dong");

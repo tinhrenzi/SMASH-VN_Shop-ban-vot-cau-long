@@ -37,7 +37,7 @@ public class PlaintextPasswordMigrator implements CommandLineRunner {
                 tk.setMatKhau(hashed);
                 taiKhoanRepository.save(tk);
                 count++;
-                log.info("[MIGRATION] Đã mã hóa thành công tài khoản email: {}", tk.getEmail());
+                log.info("[MIGRATION] Đã mã hóa thành công tài khoản email: {}", tk.getUsername());
             }
         }
 

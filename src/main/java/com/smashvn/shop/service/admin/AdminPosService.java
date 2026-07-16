@@ -78,7 +78,7 @@ public class AdminPosService {
                 .stream()
                 .filter(java.util.Objects::nonNull)
                 .filter(c -> c.getTaiKhoan() != null)
-                .filter(c -> !"guest@smashvn.com".equalsIgnoreCase(nullToEmpty(c.getTaiKhoan().getEmail())))
+                .filter(c -> !"guest@smashvn.com".equalsIgnoreCase(nullToEmpty(c.getTaiKhoan().getUsername())))
                 .collect(Collectors.toList());
 
         if (query == null || query.trim().isEmpty()) {
@@ -89,7 +89,7 @@ public class AdminPosService {
                 .filter(c -> containsIgnoreCase(c.getHoKh(), lowerQuery)
                 || containsIgnoreCase(c.getTenKh(), lowerQuery)
                 || containsIgnoreCase(c.getSoDienThoaiKh(), lowerQuery)
-                || containsIgnoreCase(c.getTaiKhoan().getEmail(), lowerQuery))
+                || containsIgnoreCase(c.getTaiKhoan().getUsername(), lowerQuery))
                 .collect(Collectors.toList());
     }
 
@@ -176,17 +176,17 @@ public class AdminPosService {
         // 2. Xác định khách hàng (Nếu không có, dùng tài khoản Khách Lẻ mặc định)
         KhachHang khachHang;
         if (idKhachHang == null || idKhachHang == -1) {
-            TaiKhoan guestTk = taiKhoanRepository.findByEmail("guest@smashvn.com");
+            TaiKhoan guestTk = taiKhoanRepository.findByUsername("guest@smashvn.com");
             if (guestTk == null) {
                 TaiKhoan tk = new TaiKhoan();
-                tk.setEmail("guest@smashvn.com");
+                tk.setUsername("guest@smashvn.com");
                 tk.setMatKhau("GUEST_NO_PASSWORD");
                 tk.setVaiTro("KH");
                 tk.setTrangThai("hoat_dong");
                 guestTk = taiKhoanRepository.save(tk);
             }
             final TaiKhoan guestTkFinal = guestTk;
-            khachHang = khachHangRepository.findByTaiKhoan_Email("guest@smashvn.com").orElseGet(() -> {
+            khachHang = khachHangRepository.findByTaiKhoan_Username("guest@smashvn.com").orElseGet(() -> {
                 KhachHang kh = new KhachHang();
                 kh.setTaiKhoan(guestTkFinal);
                 kh.setHoKh("Khách");

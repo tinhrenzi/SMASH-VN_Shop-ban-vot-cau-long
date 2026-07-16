@@ -46,7 +46,7 @@
                                     <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã KH</th>
                                     <th>Họ Tên</th>
-                                    <th>Email Tài Khoản</th>
+                                    <th>Tên đăng nhập</th>
                                     <th>Số Điện Thoại</th>
                                     <th>Nhận Bản Tin</th>
                                     <th>Trạng Thái</th>
@@ -57,7 +57,7 @@
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
                                     <td class="fw-bold text-primary" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
-                                    <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan.email}">john@gmail.com</td>
+                                    <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan.username}">john@gmail.com</td>
                                     <td th:text="${kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
                                     <td>
                                         <span th:if="${kh.nhanBanTin}" class="badge bg-success">Đồng ý</span>

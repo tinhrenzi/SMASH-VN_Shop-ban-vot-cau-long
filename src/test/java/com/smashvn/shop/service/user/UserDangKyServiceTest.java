@@ -21,12 +21,16 @@ public class UserDangKyServiceTest {
     @Mock
     private KhachHangRepository khachHangRepository;
 
+    @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     private UserDangKyService userDangKyService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        userDangKyService = new UserDangKyService(taiKhoanRepository, khachHangRepository);
+        when(passwordEncoder.encode(any(String.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        userDangKyService = new UserDangKyService(taiKhoanRepository, khachHangRepository, passwordEncoder);
     }
 
     @Test
@@ -34,7 +38,7 @@ public class UserDangKyServiceTest {
         String email = "newcustomer@gmail.com";
         String matKhau = "SecurePass123";
 
-        when(taiKhoanRepository.existsByEmail(email)).thenReturn(false);
+        when(taiKhoanRepository.existsByUsername(email)).thenReturn(false);
         
         // Mock save returning the same entity
         when(taiKhoanRepository.save(any(TaiKhoan.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -42,7 +46,7 @@ public class UserDangKyServiceTest {
         TaiKhoan result = userDangKyService.dangKy(email, matKhau);
 
         assertNotNull(result);
-        assertEquals(email, result.getEmail());
+        assertEquals(email, result.getUsername());
 
         assertEquals("KH", result.getVaiTro());
         assertEquals("hoat_dong", result.getTrangThai());
@@ -62,7 +66,7 @@ public class UserDangKyServiceTest {
         String email = "duplicate@gmail.com";
         String matKhau = "SecurePass123";
 
-        when(taiKhoanRepository.existsByEmail(email)).thenReturn(true);
+        when(taiKhoanRepository.existsByUsername(email)).thenReturn(true);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             userDangKyService.dangKy(email, matKhau);

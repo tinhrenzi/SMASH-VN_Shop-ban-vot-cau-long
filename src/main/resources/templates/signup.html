@@ -115,8 +115,8 @@
 										<form class="l-f-o__form" th:action="@{/user/dang-ky}" method="post">
 										    
 										    <div class="u-s-m-b-30">
-										        <label class="gl-label" for="reg-email">E-MAIL *</label>
-										        <input class="input-text input-text--primary-style" type="email" id="reg-email" name="email" th:value="${email}" required placeholder="Nhập E-mail của bạn" maxlength="100" style="border: 2px solid #ccc;">
+										        <label class="gl-label" for="reg-username">E-MAIL HOẶC SỐ ĐIỆN THOẠI *</label>
+										        <input class="input-text input-text--primary-style" type="text" id="reg-username" name="username" th:value="${username}" required placeholder="Nhập E-mail hoặc Số điện thoại" maxlength="100" style="border: 2px solid #ccc;" autocomplete="username">
 										    </div>
 										    
 										    <div class="u-s-m-b-30">

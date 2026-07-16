@@ -58,7 +58,13 @@ public class DanhGiaService {
      * Lấy danh sách đánh giá chưa xóa của một sản phẩm
      */
     public List<DanhGia> layDanhSachDanhGiaTheoSanPham(Integer sanPhamId) {
-        return danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(sanPhamId);
+        return danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(sanPhamId)
+                .stream()
+                .filter(dg -> dg.getBinhLuanAn() == null || !dg.getBinhLuanAn())
+                .filter(dg -> dg.getKhachHang() == null || dg.getKhachHang().getTaiKhoan() == null ||
+                             dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen() == null ||
+                             dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen().isBefore(LocalDateTime.now()))
+                .toList();
     }
 
     /**
@@ -257,7 +263,7 @@ public class DanhGiaService {
             // Send admin email for HIGH and CRITICAL severity
             if (severity == SeverityLevel.HIGH || severity == SeverityLevel.CRITICAL) {
                 String nameKh = kh.getHoKh() + " " + kh.getTenKh();
-                guiEmailCanhBaoAdmin(nameKh, tk.getEmail(), sanPham.getTenSanPham(), binhLuan, filteredComment, severity.name(), violations, textThoiHan, expirationStr);
+                guiEmailCanhBaoAdmin(nameKh, tk.getUsername(), sanPham.getTenSanPham(), binhLuan, filteredComment, severity.name(), violations, textThoiHan, expirationStr);
             }
 
             // CRITICAL severity automatically hides the review
@@ -398,7 +404,7 @@ public class DanhGiaService {
      * Tính toán điểm rating trung bình và tổng số lượng đánh giá để cache vào bảng SanPham
      */
     public void updateProductRatingStats(Integer idSanPham) {
-        List<DanhGia> activeReviews = danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(idSanPham);
+        List<DanhGia> activeReviews = layDanhSachDanhGiaTheoSanPham(idSanPham);
         int soDanhGia = activeReviews.size();
         double diemTrungBinh = activeReviews.stream()
                 .mapToDouble(DanhGia::getSoSao)

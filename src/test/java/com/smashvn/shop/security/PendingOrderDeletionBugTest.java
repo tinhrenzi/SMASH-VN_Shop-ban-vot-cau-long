@@ -68,7 +68,7 @@ public class PendingOrderDeletionBugTest {
 
         String email = "test-pending-bug-" + System.nanoTime() + "@example.com";
         testTk = new TaiKhoan();
-        testTk.setEmail(email);
+        testTk.setUsername(email);
         testTk.setMatKhau("password123");
         testTk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
         testTk.setVaiTro("KH");

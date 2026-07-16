@@ -65,7 +65,7 @@
                                 <tr>
                                     <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã VP</th>
-                                    <th>Khách Hàng (Email)</th>
+                                    <th>Khách Hàng (Tên đăng nhập)</th>
                                     <th>Sản Phẩm</th>
                                     <th>Nội Dung Gốc</th>
                                     <th>Nội Dung Đã Lọc</th>
@@ -81,7 +81,7 @@
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold" th:text="'VP' + ${vp.id}">VP1</td>
                                     <td>
-                                        <div class="fw-semibold" th:text="${vp.taiKhoan != null ? vp.taiKhoan.email : 'Không rõ tài khoản'}">user@example.com</div>
+                                        <div class="fw-semibold" th:text="${vp.taiKhoan != null ? vp.taiKhoan.username : 'Không rõ tài khoản'}">user@example.com</div>
                                         <!-- Hiển thị tình trạng khóa hiện tại của tài khoản -->
                                         <div th:if="${vp.taiKhoan != null and vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}">
                                             <span class="badge bg-danger mt-1">Đang bị khóa bình luận</span>

@@ -344,7 +344,7 @@ public class UserDashboardController {
 
             String searchVal = contactInfo.trim().toLowerCase();
             String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
-                    ? hd.getKhachHang().getTaiKhoan().getEmail() : "";
+                    ? hd.getKhachHang().getTaiKhoan().getUsername() : "";
             String orderPhone = hd.getSdtNhan() != null ? hd.getSdtNhan() : "";
 
             boolean matchesEmail = !orderEmail.isEmpty() && orderEmail.toLowerCase().equals(searchVal);
@@ -448,7 +448,7 @@ public class UserDashboardController {
 
             // Cross-email validation to prevent IDOR
             String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
-                    ? hd.getKhachHang().getTaiKhoan().getEmail() : null;
+                    ? hd.getKhachHang().getTaiKhoan().getUsername() : null;
             if (orderEmail == null || !orderEmail.equalsIgnoreCase(guestEmail)) {
                 return "redirect:/user/dang-nhap";
             }

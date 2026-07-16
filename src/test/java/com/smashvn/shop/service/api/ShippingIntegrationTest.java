@@ -155,7 +155,7 @@ public class ShippingIntegrationTest {
         List<KhachHang> khs = khachHangRepository.findAll();
         if (!khs.isEmpty()) return khs.get(0);
         TaiKhoan tk = new TaiKhoan();
-        tk.setEmail("ship-kh-" + System.nanoTime() + "@test.com");
+        tk.setUsername("ship-kh-" + System.nanoTime() + "@test.com");
         tk.setMatKhau("123");
         tk.setVaiTro("KH");
 

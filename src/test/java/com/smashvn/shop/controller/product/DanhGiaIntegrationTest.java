@@ -155,7 +155,7 @@ public class DanhGiaIntegrationTest {
             for (CommentViolationLog log : logs) {
                 try {
                     if (log.getTaiKhoan() != null) {
-                        String email = log.getTaiKhoan().getEmail();
+                        String email = log.getTaiKhoan().getUsername();
                         if (email != null && (email.startsWith("buyer_") || email.startsWith("admin_"))) {
                             commentViolationLogRepository.delete(log);
                         }
@@ -173,7 +173,7 @@ public class DanhGiaIntegrationTest {
             for (DanhGia dg : reviews) {
                 try {
                     if (dg.getKhachHang() != null && dg.getKhachHang().getTaiKhoan() != null) {
-                        String email = dg.getKhachHang().getTaiKhoan().getEmail();
+                        String email = dg.getKhachHang().getTaiKhoan().getUsername();
                         if (email != null && (email.startsWith("buyer_") || email.startsWith("admin_"))) {
                             danhGiaDAO.delete(dg);
                         }
@@ -188,7 +188,7 @@ public class DanhGiaIntegrationTest {
         // 3. Delete customers and users
         try {
             List<TaiKhoan> strayUsers = taiKhoanRepository.findAll().stream()
-                    .filter(tk -> tk.getEmail() != null && (tk.getEmail().startsWith("buyer_") || tk.getEmail().startsWith("admin_")))
+                    .filter(tk -> tk.getUsername() != null && (tk.getUsername().startsWith("buyer_") || tk.getUsername().startsWith("admin_")))
                     .toList();
             for (TaiKhoan tk : strayUsers) {
                 try {
@@ -262,7 +262,7 @@ public class DanhGiaIntegrationTest {
 
         // Seed customer user
         testUser = new TaiKhoan();
-        testUser.setEmail("buyer_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
+        testUser.setUsername("buyer_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -278,7 +278,7 @@ public class DanhGiaIntegrationTest {
 
         // Seed admin user
         testAdmin = new TaiKhoan();
-        testAdmin.setEmail("admin_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
+        testAdmin.setUsername("admin_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
         testAdmin.setMatKhau("adminpass");
         testAdmin.setVaiTro("QL");
         testAdmin.setTrangThai("hoat_dong");
@@ -301,7 +301,7 @@ public class DanhGiaIntegrationTest {
         // Seed Staff
         NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan nvUser = new TaiKhoan();
-            nvUser.setEmail("staff_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
+            nvUser.setUsername("staff_" + java.util.UUID.randomUUID().toString().substring(0, 5) + "@gmail.com");
             nvUser.setMatKhau("pass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
@@ -622,6 +622,19 @@ public class DanhGiaIntegrationTest {
         assertEquals("LOW", logs.get(0).getMucDoViPham());
         assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng *** nh\u00e9", logs.get(0).getNoiDungGoc());
         assertEquals("S\u1ea3n ph\u1ea9m d\u00f9ng *** nh\u00e9", logs.get(0).getNoiDungDaLoc());
+
+        // Bản ghi vẫn còn cho admin nhưng bị loại hoàn toàn khỏi dữ liệu public
+        assertEquals(1, danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(activeProduct.getId()).size());
+        assertTrue(danhGiaService.layDanhSachDanhGiaTheoSanPham(activeProduct.getId()).isEmpty());
+        SanPham productWithPublicStats = sanPhamRepository.findById(activeProduct.getId()).orElseThrow();
+        assertEquals(0, productWithPublicStats.getSoDanhGia());
+        assertEquals(0.0, productWithPublicStats.getDiemTrungBinh());
+
+        // Log cũ có thể chưa lưu id_danh_gia; vẫn xác định được bằng tài khoản + sản phẩm.
+        CommentViolationLog legacyLog = logs.get(0);
+        legacyLog.setDanhGia(null);
+        commentViolationLogRepository.saveAndFlush(legacyLog);
+        assertTrue(danhGiaService.layDanhSachDanhGiaTheoSanPham(activeProduct.getId()).isEmpty());
 
         // Check mailSender was NOT called for LOW severity
         verify(mailSender, times(0)).send(any(org.springframework.mail.SimpleMailMessage.class));
@@ -1054,7 +1067,7 @@ public class DanhGiaIntegrationTest {
         // 7. Delete stray staff
         try {
             List<TaiKhoan> strayStaff = taiKhoanRepository.findAll().stream()
-                    .filter(tk -> tk.getEmail() != null && tk.getEmail().startsWith("staff_"))
+                    .filter(tk -> tk.getUsername() != null && tk.getUsername().startsWith("staff_"))
                     .toList();
             for (TaiKhoan tk : strayStaff) {
                 NhanVien nv = nhanVienRepository.findByTaiKhoanId(tk.getId());

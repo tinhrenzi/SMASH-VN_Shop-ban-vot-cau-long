@@ -99,4 +99,9 @@ public class SecurityConfig {
         registrationBean.addUrlPatterns("/uploads/*");
         return registrationBean;
     }
+
+    @Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    }
 }

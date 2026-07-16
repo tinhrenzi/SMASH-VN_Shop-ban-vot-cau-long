@@ -78,7 +78,7 @@ public class AdminControllerRenderTest {
     public void testGetOrderDetailJson_ForbiddenForCustomer() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         TaiKhoan customer = new TaiKhoan();
-        customer.setEmail("customer_test@smashvn.com");
+        customer.setUsername("customer_test@smashvn.com");
         customer.setMatKhau("pass123");
         customer.setVaiTro("KH");
 
@@ -95,7 +95,7 @@ public class AdminControllerRenderTest {
     public void testGetOrderDetailJson_NotFound() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         TaiKhoan staff = new TaiKhoan();
-        staff.setEmail("staff_test@smashvn.com");
+        staff.setUsername("staff_test@smashvn.com");
         staff.setMatKhau("pass123");
         staff.setVaiTro("NV");
 
@@ -114,7 +114,7 @@ public class AdminControllerRenderTest {
         
         // Seed staff
         TaiKhoan staff = new TaiKhoan();
-        staff.setEmail("staff_test_ok@smashvn.com");
+        staff.setUsername("staff_test_ok@smashvn.com");
         staff.setMatKhau("pass123");
         staff.setVaiTro("NV");
 
@@ -135,10 +135,10 @@ public class AdminControllerRenderTest {
         });
 
         KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseGet(() -> {
-            TaiKhoan guestTk = taiKhoanRepository.findByEmail("guest@smashvn.com");
+            TaiKhoan guestTk = taiKhoanRepository.findByUsername("guest@smashvn.com");
             if (guestTk == null) {
                 TaiKhoan tk = new TaiKhoan();
-                tk.setEmail("guest@smashvn.com");
+                tk.setUsername("guest@smashvn.com");
                 tk.setMatKhau("pass123");
                 tk.setVaiTro("KH");
                 tk.setTrangThai("hoat_dong");

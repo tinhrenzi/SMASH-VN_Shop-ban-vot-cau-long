@@ -47,7 +47,7 @@ public class UserAddressIntegrationTest {
 
         // Seed customer user
         testUser = new TaiKhoan();
-        testUser.setEmail("address_tester@gmail.com");
+        testUser.setUsername("address_tester@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -217,7 +217,7 @@ public class UserAddressIntegrationTest {
     void testEditAddress_Unauthorized_Rejected() throws Exception {
         // Create another user
         TaiKhoan otherUser = new TaiKhoan();
-        otherUser.setEmail("other@gmail.com");
+        otherUser.setUsername("other@gmail.com");
         otherUser.setMatKhau("pass123");
         otherUser.setVaiTro("KH");
         otherUser.setTrangThai("hoat_dong");

@@ -111,7 +111,7 @@ public class GuestCheckoutSecurityIntegrationTest {
 
     private TaiKhoan createGuestAccount(String email) {
         TaiKhoan tk = new TaiKhoan();
-        tk.setEmail(email);
+        tk.setUsername(email);
         tk.setMatKhau(null);
         tk.setVaiTro("KH");
         // Set GUEST status AFTER setTrangThai to avoid the else→ACTIVE overwrite

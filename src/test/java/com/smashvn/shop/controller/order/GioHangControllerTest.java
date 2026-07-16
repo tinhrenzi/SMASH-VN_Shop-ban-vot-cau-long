@@ -108,7 +108,7 @@ class GioHangControllerTest {
     private TaiKhoan account(Integer id, AccountStatus status, String trangThai) {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(id);
-        tk.setEmail("user" + id + "@example.com");
+        tk.setUsername("user" + id + "@example.com");
         tk.setVaiTro("KH");
         tk.setTrangThai(trangThai);
         tk.setTrangThaiTaiKhoan(status);

@@ -72,7 +72,7 @@ public class AdminKhuyenMaiServiceTest {
         // Find or create staff / employee
         NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan staffTk = new TaiKhoan();
-            staffTk.setEmail("staff_promo_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
+            staffTk.setUsername("staff_promo_" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com");
             staffTk.setMatKhau("testpass123");
             staffTk.setVaiTro("NV");
             staffTk.setTrangThai("hoat_dong");

@@ -132,7 +132,7 @@ public class CheckoutValidationIntegrationTest {
 
         // Seed test user
         testUser = new TaiKhoan();
-        testUser.setEmail("checkout_tester@gmail.com");
+        testUser.setUsername("checkout_tester@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -163,7 +163,7 @@ public class CheckoutValidationIntegrationTest {
         // Retrieve or seed NhanVien
         NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan nvUser = new TaiKhoan();
-            nvUser.setEmail("checkout_staff@gmail.com");
+            nvUser.setUsername("checkout_staff@gmail.com");
             nvUser.setMatKhau("testpass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
@@ -587,7 +587,7 @@ public class CheckoutValidationIntegrationTest {
     void testSavedAddressOwnership() throws Exception {
         // Create user B
         TaiKhoan userB = new TaiKhoan();
-        userB.setEmail("userb_address@gmail.com");
+        userB.setUsername("userb_address@gmail.com");
         userB.setMatKhau("testpass123");
         userB.setVaiTro("KH");
         userB.setTrangThai("hoat_dong");
@@ -1040,7 +1040,7 @@ public class CheckoutValidationIntegrationTest {
     void testGuestCheckout_DuplicateExistingCustomerPhone() throws Exception {
         // Create an existing active customer with phone 0911222333
         TaiKhoan otherUser = new TaiKhoan();
-        otherUser.setEmail("active_user@gmail.com");
+        otherUser.setUsername("active_user@gmail.com");
         otherUser.setMatKhau("testpass123");
         otherUser.setVaiTro("KH");
         otherUser.setTrangThai("hoat_dong");

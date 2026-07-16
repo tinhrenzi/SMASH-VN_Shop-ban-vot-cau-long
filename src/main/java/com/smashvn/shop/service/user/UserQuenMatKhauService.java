@@ -3,43 +3,60 @@ package com.smashvn.shop.service.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.mindrot.jbcrypt.BCrypt;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.TokenKhoiPhuc;
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
+import com.smashvn.shop.util.PhoneUtils;
 
 @Service
 @RequiredArgsConstructor
 public class UserQuenMatKhauService {
 
     private final TaiKhoanRepository taiKhoanRepository;
+    private final KhachHangRepository khachHangRepository;
     private final TokenKhoiPhucRepository tokenRepository;
     private final JavaMailSender mailSender;
+    private final PasswordEncoder passwordEncoder;
 
     // 1. Tạo và gửi Link khôi phục
     @Transactional
-    public void guiYeuCauKhoiPhuc(String email, String appUrl) {
-        email = (email != null) ? email.trim() : null;
+    public void guiYeuCauKhoiPhuc(String inputIdentifier, String appUrl) {
+        if (inputIdentifier == null || inputIdentifier.trim().isEmpty()) {
+            throw new RuntimeException("Tài khoản không được để trống!");
+        }
+        String trimmedIdentifier = inputIdentifier.trim();
 
-        if (email == null || email.isBlank()) {
-            throw new RuntimeException("Email không được để trống!");
-        }
-        if (email.length() > 100) {
-            throw new RuntimeException("Email không được vượt quá 100 ký tự!");
-        }
-        if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-            throw new RuntimeException("Định dạng email không hợp lệ!");
-        }
-
-        TaiKhoan tk = taiKhoanRepository.findByEmail(email);
+        // Find account directly by username
+        TaiKhoan tk = taiKhoanRepository.findByUsername(trimmedIdentifier);
+        
+        // Fallback to check KhachHang.soDienThoaiKh to support legacy data
         if (tk == null) {
-            throw new RuntimeException("Email này không tồn tại trên hệ thống!");
+            String normalizedPhone = PhoneUtils.normalize(trimmedIdentifier);
+            if (PhoneUtils.isValid(normalizedPhone)) {
+                KhachHang kh = khachHangRepository.findBySoDienThoaiKh(normalizedPhone);
+                if (kh != null) {
+                    tk = kh.getTaiKhoan();
+                }
+            }
+        }
+
+        if (tk == null) {
+            throw new RuntimeException("Tài khoản không tồn tại trên hệ thống!");
+        }
+
+        // Check if the username is a valid email
+        String destinationEmail = tk.getUsername();
+        if (!destinationEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            throw new RuntimeException("Tài khoản của bạn đăng ký bằng số điện thoại và không có email khôi phục. Vui lòng liên hệ quản trị viên để được hỗ trợ!");
         }
 
         // Tạo chuỗi Token ngẫu nhiên không trùng lặp
@@ -59,7 +76,7 @@ public class UserQuenMatKhauService {
 
         // Gửi Mail
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
+        message.setTo(destinationEmail);
         message.setSubject("Yêu cầu khôi phục mật khẩu - Smash VN");
         message.setText("Chào bạn,\n\n" +
                 "Bạn vừa yêu cầu khôi phục mật khẩu. Vui lòng click vào đường link bên dưới để đặt lại mật khẩu mới:\n" +
@@ -102,12 +119,12 @@ public class UserQuenMatKhauService {
         if (!matKhauMoi.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,30}$")) {
             throw new RuntimeException("Mật khẩu phải chứa cả chữ và số!");
         }
-        
+
         TaiKhoan tk = tkp.getTaiKhoan();
-        tk.setMatKhau(BCrypt.hashpw(matKhauMoi, BCrypt.gensalt())); // Mã hóa Pass mới
+        tk.setMatKhau(passwordEncoder.encode(matKhauMoi)); // Mã hóa Pass mới
         taiKhoanRepository.save(tk);
 
-        tkp.setDaSuDung(true); // Khóa Token lại
+        tkp.setDaSuDung(true);
         tokenRepository.save(tkp);
     }
 }

@@ -149,7 +149,7 @@
                                         <!-- Audit xóa mềm -->
                                         <div th:if="${dg.daXoa}" class="audit-info audit-info-red mt-1">
                                             <div><i class="fas fa-trash-alt me-1"></i>Đã xóa mềm bởi:</div>
-                                            <div class="fw-bold" th:text="${dg.nguoiXoa != null ? dg.nguoiXoa.email : 'Hệ thống'}">admin</div>
+                                            <div class="fw-bold" th:text="${dg.nguoiXoa != null ? dg.nguoiXoa.username : 'Hệ thống'}">admin</div>
                                             <div th:text="${#temporals.format(dg.ngayXoa, 'dd/MM/yyyy HH:mm')}">16/06/2026</div>
                                         </div>
                                     </td>
@@ -179,12 +179,12 @@
                                             
                                             <!-- Audit ẩn bình luận -->
                                             <div th:if="${dg.nguoiAnBinhLuan != null}" class="audit-info mt-1">
-                                                <div><i class="fas fa-user-edit me-1"></i>Ẩn bởi: <span class="fw-semibold" th:text="${dg.nguoiAnBinhLuan.email}"></span></div>
+                                                <div><i class="fas fa-user-edit me-1"></i>Ẩn bởi: <span class="fw-semibold" th:text="${dg.nguoiAnBinhLuan.username}"></span></div>
                                                 <div th:text="${#temporals.format(dg.ngayAnBinhLuan, 'dd/MM/yyyy HH:mm')}"></div>
                                             </div>
                                             <!-- Audit hiển thị lại bình luận -->
                                             <div th:if="${dg.nguoiHienBinhLuan != null}" class="audit-info audit-info-green mt-1">
-                                                <div><i class="fas fa-user-check me-1"></i>Phục hồi bởi: <span class="fw-semibold" th:text="${dg.nguoiHienBinhLuan.email}"></span></div>
+                                                <div><i class="fas fa-user-check me-1"></i>Phục hồi bởi: <span class="fw-semibold" th:text="${dg.nguoiHienBinhLuan.username}"></span></div>
                                                 <div th:text="${#temporals.format(dg.ngayHienBinhLuan, 'dd/MM/yyyy HH:mm')}"></div>
                                             </div>
                                         </div>
@@ -216,12 +216,12 @@
                                         
                                         <!-- Audit ẩn hình ảnh -->
                                         <div th:if="${dg.nguoiAnHinhAnh != null}" class="audit-info mt-1">
-                                            <div><i class="fas fa-user-edit me-1"></i>Ẩn bởi: <span class="fw-semibold" th:text="${dg.nguoiAnHinhAnh.email}"></span></div>
+                                            <div><i class="fas fa-user-edit me-1"></i>Ẩn bởi: <span class="fw-semibold" th:text="${dg.nguoiAnHinhAnh.username}"></span></div>
                                             <div th:text="${#temporals.format(dg.ngayAnHinhAnh, 'dd/MM/yyyy HH:mm')}"></div>
                                         </div>
                                         <!-- Audit hiển thị lại hình ảnh -->
                                         <div th:if="${dg.nguoiHienHinhAnh != null}" class="audit-info audit-info-green mt-1">
-                                            <div><i class="fas fa-user-check me-1"></i>Phục hồi bởi: <span class="fw-semibold" th:text="${dg.nguoiHienHinhAnh.email}"></span></div>
+                                            <div><i class="fas fa-user-check me-1"></i>Phục hồi bởi: <span class="fw-semibold" th:text="${dg.nguoiHienHinhAnh.username}"></span></div>
                                             <div th:text="${#temporals.format(dg.ngayHienHinhAnh, 'dd/MM/yyyy HH:mm')}"></div>
                                         </div>
                                     </td>

@@ -135,7 +135,7 @@ public class BlogService {
         }
 
         String slug = generateUniqueSlug(cleaned.getTitle(), null);
-        TaiKhoan nguoiDang = taiKhoanRepository.findByEmail(actingUser);
+        TaiKhoan nguoiDang = taiKhoanRepository.findByUsername(actingUser);
 
         Blog blog = Blog.builder()
                 .nguoiDang(nguoiDang)
@@ -341,7 +341,7 @@ public class BlogService {
                 .updatedBy(blog.getUpdatedBy())
                 .updatedAt(blog.getUpdatedAt() != null ? blog.getUpdatedAt().toString() : "")
                 .idNguoiDang(blog.getNguoiDang() != null ? blog.getNguoiDang().getId() : null)
-                .emailNguoiDang(blog.getNguoiDang() != null ? blog.getNguoiDang().getEmail() : null)
+                .emailNguoiDang(blog.getNguoiDang() != null ? blog.getNguoiDang().getUsername() : null)
                 .build();
     }
 
@@ -350,12 +350,12 @@ public class BlogService {
         List<BlogComment> comments = blogCommentRepository.findByBlogIdAndDeletedFalseOrderByCreatedAtDesc(blogId);
         return comments.stream().map(c -> {
             String tenHienThi = getDisplayNameForAccount(c.getTaiKhoan());
-            String deletedByEmail = c.getDeletedBy() != null ? c.getDeletedBy().getEmail() : null;
+            String deletedByEmail = c.getDeletedBy() != null ? c.getDeletedBy().getUsername() : null;
             return BlogCommentDTO.builder()
                     .id(c.getId())
                     .idBlog(c.getBlog().getId())
                     .idTaiKhoan(c.getTaiKhoan().getId())
-                    .emailTaiKhoan(c.getTaiKhoan().getEmail())
+                    .emailTaiKhoan(c.getTaiKhoan().getUsername())
                     .tenHienThi(tenHienThi)
                     .content(c.getContent())
                     .createdAt(c.getCreatedAt() != null ? c.getCreatedAt().toString() : "")
@@ -389,7 +389,7 @@ public class BlogService {
             }
             return "QL".equals(role) ? "Quản lý hệ thống" : "Nhân viên hệ thống";
         }
-        return tk.getEmail();
+        return tk.getUsername();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -399,7 +399,7 @@ public class BlogService {
                 .orElseThrow(() -> new IllegalArgumentException("Bài viết không tồn tại hoặc đã bị ẩn."));
 
         // 2. Verify acting user
-        TaiKhoan tk = taiKhoanRepository.findByEmail(actingEmail);
+        TaiKhoan tk = taiKhoanRepository.findByUsername(actingEmail);
         if (tk == null) {
             throw new IllegalArgumentException("Tài khoản không tồn tại.");
         }
@@ -465,7 +465,7 @@ public class BlogService {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Integer commentId, String actingEmail, String reason) {
-        TaiKhoan actor = taiKhoanRepository.findByEmail(actingEmail);
+        TaiKhoan actor = taiKhoanRepository.findByUsername(actingEmail);
         if (actor == null) {
             throw new IllegalArgumentException("Tài khoản không tồn tại.");
         }

@@ -71,7 +71,7 @@ public class AdminPosIntegrationTest {
 
         // Seed staff user
         staffUser = new TaiKhoan();
-        staffUser.setEmail("pos_staff@gmail.com");
+        staffUser.setUsername("pos_staff@gmail.com");
         staffUser.setMatKhau("staffpass123");
         staffUser.setVaiTro("NV");
         staffUser.setTrangThai("hoat_dong");

@@ -71,7 +71,7 @@ public class GioHangValidationIntegrationTest {
 
         // Seed test user
         testUser = new TaiKhoan();
-        testUser.setEmail("cart_tester@gmail.com");
+        testUser.setUsername("cart_tester@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
@@ -102,7 +102,7 @@ public class GioHangValidationIntegrationTest {
         // Retrieve or seed NhanVien
         NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan nvUser = new TaiKhoan();
-            nvUser.setEmail("staff_tester@gmail.com");
+            nvUser.setUsername("staff_tester@gmail.com");
             nvUser.setMatKhau("testpass123");
             nvUser.setVaiTro("NV");
             nvUser.setTrangThai("hoat_dong");
@@ -350,7 +350,7 @@ public class GioHangValidationIntegrationTest {
     void testThemVaoGio_NoKhachHangProfile() throws Exception {
         // Create a new user account without a KhachHang profile
         TaiKhoan noProfileUser = new TaiKhoan();
-        noProfileUser.setEmail("noprofile_tester@gmail.com");
+        noProfileUser.setUsername("noprofile_tester@gmail.com");
         noProfileUser.setMatKhau("testpass123");
         noProfileUser.setVaiTro("QL"); // Role manager, typically doesn't have a profile by default
         noProfileUser.setTrangThai("hoat_dong");

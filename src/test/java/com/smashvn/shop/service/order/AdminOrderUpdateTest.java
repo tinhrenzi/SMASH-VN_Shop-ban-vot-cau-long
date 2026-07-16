@@ -77,21 +77,21 @@ public class AdminOrderUpdateTest {
     void setUp() {
         // Create accounts
         adminUser = new TaiKhoan();
-        adminUser.setEmail("admin-test-" + System.nanoTime() + "@smashvn.com");
+        adminUser.setUsername("admin-test-" + System.nanoTime() + "@smashvn.com");
         adminUser.setMatKhau("123");
         adminUser.setVaiTro("QL");
 
         adminUser = taiKhoanRepository.save(adminUser);
 
         staffUser = new TaiKhoan();
-        staffUser.setEmail("staff-test-" + System.nanoTime() + "@smashvn.com");
+        staffUser.setUsername("staff-test-" + System.nanoTime() + "@smashvn.com");
         staffUser.setMatKhau("123");
         staffUser.setVaiTro("NV");
 
         staffUser = taiKhoanRepository.save(staffUser);
 
         customerUser = new TaiKhoan();
-        customerUser.setEmail("customer-test-" + System.nanoTime() + "@smashvn.com");
+        customerUser.setUsername("customer-test-" + System.nanoTime() + "@smashvn.com");
         customerUser.setMatKhau("123");
         customerUser.setVaiTro("KH");
 
@@ -145,7 +145,7 @@ public class AdminOrderUpdateTest {
 
         // Seed or fetch NhanVien
         TaiKhoan nvUser = new TaiKhoan();
-        nvUser.setEmail("staff-nv-" + System.nanoTime() + "@smashvn.com");
+        nvUser.setUsername("staff-nv-" + System.nanoTime() + "@smashvn.com");
         nvUser.setMatKhau("123");
         nvUser.setVaiTro("NV");
 
