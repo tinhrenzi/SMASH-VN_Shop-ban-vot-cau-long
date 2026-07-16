@@ -40,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class OrderViewService {
 
     private final HoaDonRepository hoaDonRepository;
@@ -597,6 +598,27 @@ public class OrderViewService {
         String currentStatus = hd.getTrangThaiDonHang();
         String currentPaymentStatus = hd.getPaymentStatus();
         String currentTrangThaiThanhToan = hd.getTrangThaiThanhToan();
+
+        // Ngăn chặn việc đảo ngược trạng thái đơn hàng từ các trạng thái cuối (Terminal States)
+        if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)) {
+            log.info("[GHN_WEBHOOK] Bỏ qua cập nhật trạng thái cho đơn hàng đã HỦY #{}. Trạng thái mục tiêu: {}", idHoaDon, newStatus);
+            if (!Objects.equals(hd.getGhnStatus(), ghnStatus)) {
+                hd.setGhnStatus(ghnStatus);
+                hoaDonRepository.save(hd);
+            }
+            return;
+        }
+
+        if (OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(currentStatus)) {
+            if (!OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(newStatus) && !OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
+                log.info("[GHN_WEBHOOK] Bỏ qua việc đảo ngược trạng thái từ ĐÃ GIAO về active cho đơn #{}. Trạng thái mục tiêu: {}", idHoaDon, newStatus);
+                if (!Objects.equals(hd.getGhnStatus(), ghnStatus)) {
+                    hd.setGhnStatus(ghnStatus);
+                    hoaDonRepository.save(hd);
+                }
+                return;
+            }
+        }
 
         // Determine target return status if transitioning to da_huy (or already da_huy)
         ReturnStatus targetReturnStatus = hd.getTrangThaiHoanHang();
