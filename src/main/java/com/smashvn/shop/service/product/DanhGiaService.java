@@ -10,25 +10,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.smashvn.shop.dao.DanhGiaDAO;
+import com.smashvn.shop.entity.CommentViolationLog;
 import com.smashvn.shop.entity.DanhGia;
 import com.smashvn.shop.entity.HinhAnhDanhGia;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThongBao;
-import com.smashvn.shop.entity.CommentViolationLog;
-import com.smashvn.shop.dao.DanhGiaDAO;
+import com.smashvn.shop.repository.CommentViolationLogRepository;
 import com.smashvn.shop.repository.DanhGiaAnhRepository;
+import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
-import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.ThongBaoRepository;
-import com.smashvn.shop.repository.CommentViolationLogRepository;
+import com.smashvn.shop.service.blog.CommentModerationService;
 import com.smashvn.shop.service.common.FileStorageService;
 import com.smashvn.shop.util.ProfanityFilter;
 import com.smashvn.shop.util.SeverityLevel;
-import com.smashvn.shop.service.blog.CommentModerationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,9 +61,9 @@ public class DanhGiaService {
         return danhGiaDAO.findBySanPham_IdAndDaXoaFalseOrderByNgayDanhGiaDesc(sanPhamId)
                 .stream()
                 .filter(dg -> dg.getBinhLuanAn() == null || !dg.getBinhLuanAn())
-                .filter(dg -> dg.getKhachHang() == null || dg.getKhachHang().getTaiKhoan() == null ||
-                             dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen() == null ||
-                             dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen().isBefore(LocalDateTime.now()))
+                .filter(dg -> dg.getKhachHang() == null || dg.getKhachHang().getTaiKhoan() == null
+                || dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen() == null
+                || dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen().isBefore(LocalDateTime.now()))
                 .toList();
     }
 
@@ -110,16 +110,16 @@ public class DanhGiaService {
                 message.setTo(email.trim());
                 message.setSubject("[Cảnh báo] Bình luận vi phạm nghiêm trọng - Smash VN");
                 message.setText(String.format(
-                        "Chào Admin,\n\n" +
-                        "Hệ thống phát hiện bình luận có mức độ vi phạm %s từ khách hàng:\n" +
-                        "- Người bình luận: %s\n" +
-                        "- Email: %s\n" +
-                        "- Sản phẩm: %s\n" +
-                        "- Nội dung gốc: %s\n" +
-                        "- Nội dung đã lọc: %s\n" +
-                        "- Số lần vi phạm của tài khoản: %d/5\n" +
-                        "- Hình phạt áp dụng: Khóa bình luận %s (Đến: %s)\n\n" +
-                        "Vui lòng truy cập trang quản trị để xử lý nếu cần: http://localhost:8080/admin/danh-gia\n",
+                        "Chào Admin,\n\n"
+                        + "Hệ thống phát hiện bình luận có mức độ vi phạm %s từ khách hàng:\n"
+                        + "- Người bình luận: %s\n"
+                        + "- Email: %s\n"
+                        + "- Sản phẩm: %s\n"
+                        + "- Nội dung gốc: %s\n"
+                        + "- Nội dung đã lọc: %s\n"
+                        + "- Số lần vi phạm của tài khoản: %d/5\n"
+                        + "- Hình phạt áp dụng: Khóa bình luận %s (Đến: %s)\n\n"
+                        + "Vui lòng truy cập trang quản trị để xử lý nếu cần: http://localhost:8080/admin/danh-gia\n",
                         severity, nameKh, emailKh, productName, rawComment, filteredComment, violationCount, banDuration, banExpiration
                 ));
                 mailSender.send(message);
@@ -246,9 +246,9 @@ public class DanhGiaService {
 
             // Create notification for customer
             String thongBaoNoiDung = String.format(
-                    "Đánh giá của bạn tại sản phẩm '%s' chứa từ ngữ không phù hợp và vi phạm tiêu chuẩn cộng đồng của SMASH-VN (Mức độ: %s). " +
-                    "Số lần vi phạm hiện tại: %d/5. " +
-                    "Quyền bình luận của bạn đã bị khóa tạm thời %s đến %s. Vui lòng tuân thủ hướng dẫn cộng đồng.",
+                    "Đánh giá của bạn tại sản phẩm '%s' chứa từ ngữ không phù hợp và vi phạm tiêu chuẩn cộng đồng của SMASH-VN (Mức độ: %s). "
+                    + "Số lần vi phạm hiện tại: %d/5. "
+                    + "Quyền bình luận của bạn đã bị khóa tạm thời %s đến %s. Vui lòng tuân thủ hướng dẫn cộng đồng.",
                     sanPham.getTenSanPham(), severity.name(), violations, textThoiHan, expirationStr
             );
             ThongBao tb = ThongBao.builder()
@@ -282,7 +282,7 @@ public class DanhGiaService {
                 // CASE CHỈNH SỬA / GHI ĐÈ ĐÁNH GIÁ CŨ
                 DanhGia dg = existingOpt.get();
                 boolean starChanged = !dg.getSoSao().equals(soSao);
-                
+
                 dg.setSoSao(soSao);
                 dg.setBinhLuan(filteredComment);
                 dg.setNgayCapNhat(LocalDateTime.now());
@@ -401,7 +401,8 @@ public class DanhGiaService {
     }
 
     /**
-     * Tính toán điểm rating trung bình và tổng số lượng đánh giá để cache vào bảng SanPham
+     * Tính toán điểm rating trung bình và tổng số lượng đánh giá để cache vào
+     * bảng SanPham
      */
     public void updateProductRatingStats(Integer idSanPham) {
         List<DanhGia> activeReviews = layDanhSachDanhGiaTheoSanPham(idSanPham);
