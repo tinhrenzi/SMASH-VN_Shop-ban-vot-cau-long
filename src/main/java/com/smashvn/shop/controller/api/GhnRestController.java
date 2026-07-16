@@ -273,10 +273,9 @@ public class GhnRestController {
     public ResponseEntity<?> ghnWebhook(
             @RequestBody Map<String, Object> payload,
             @RequestParam(value = "token", required = false) String token) {
-        System.out.println("========== GHN WEBHOOK ==========");
-        System.out.println("Đã nhận webhook từ GHN");
-        System.out.println(payload);
-        System.out.println("=================================");
+        log.info("========== GHN WEBHOOK ==========");
+        log.info("Đã nhận webhook từ GHN: {}", payload);
+        log.info("=================================");
 
         if (token == null || !token.equals(ghnConfig.getWebhookToken())) {
             log.warn("[GHN_WEBHOOK] Webhook rejected. Invalid or missing token.");

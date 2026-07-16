@@ -57,15 +57,16 @@
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
                                     <td class="fw-bold text-primary" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
-                                    <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan.username}">john@gmail.com</td>
+                                    <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan?.username ?: 'Khách vãng lai / POS'}">john@gmail.com</td>
                                     <td th:text="${kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
                                     <td>
                                         <span th:if="${kh.nhanBanTin}" class="badge bg-success">Đồng ý</span>
                                         <span th:unless="${kh.nhanBanTin}" class="badge bg-secondary text-muted">Không</span>
                                     </td>
                                     <td>
-                                        <span th:if="${kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-success">Hoạt động</span>
-                                        <span th:unless="${kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-danger">Bị Khóa</span>
+                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-success">Hoạt động</span>
+                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai != 'hoat_dong'}" class="badge bg-danger">Bị Khóa</span>
+                                        <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">

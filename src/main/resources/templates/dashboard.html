@@ -152,7 +152,7 @@
                                                                 <a th:href="@{/user/profile/edit}">Sửa</a>
                                                             </div>
                                                             <span class="dash__text fw-bold" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
-                                                            <span class="dash__text" th:text="${kh.taiKhoan.email}"></span>
+                                                            <span class="dash__text" th:text="${kh.taiKhoan?.username ?: ''}"></span>
                                                             <div class="dash__link dash__link--secondary u-s-m-t-8">
                                                                 <a data-modal="modal" data-modal-id="#dash-newsletter">Đăng ký nhận tin tức mới</a>
                                                             </div>
