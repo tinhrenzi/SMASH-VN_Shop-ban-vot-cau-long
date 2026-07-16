@@ -22,11 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.util.RacketSpecUtils;
 
@@ -41,6 +43,7 @@ public class AdminSanPhamService {
     private final DanhMucRepository danhMucRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final NhanVienRepository nhanVienRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
     private final AuditService auditService;
 
     @Value("${app.upload.path}")
@@ -204,13 +207,45 @@ public class AdminSanPhamService {
             NhanVien creator = null;
             if (idNguoiDung != null) {
                 creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
+                if (creator == null) {
+                    TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+                    if (tk != null && ("QL".equals(tk.getVaiTro()) || "NV".equals(tk.getVaiTro()))) {
+                        creator = new NhanVien();
+                        creator.setTaiKhoan(tk);
+                        String namePrefix = tk.getUsername();
+                        if (namePrefix.contains("@")) {
+                            namePrefix = namePrefix.split("@")[0];
+                        }
+                        creator.setHoTenNv("Quản trị viên " + namePrefix);
+                        creator.setChucVu("QL".equals(tk.getVaiTro()) ? "Quản lý" : "Nhân viên");
+                        creator.setSoDienThoaiNv("0999999999");
+                        creator.setNgayTao(java.time.LocalDateTime.now());
+                        creator = nhanVienRepository.save(creator);
+                    }
+                }
             }
             if (creator == null) {
                 List<NhanVien> listNV = nhanVienRepository.findAll();
                 if (!listNV.isEmpty()) {
                     creator = listNV.get(0);
                 } else {
-                    throw new RuntimeException("Hệ thống chưa có nhân viên nào! Không thể tạo sản phẩm.");
+                    List<TaiKhoan> staffAccounts = taiKhoanRepository.findByVaiTroIn(List.of("QL", "NV"));
+                    if (!staffAccounts.isEmpty()) {
+                        TaiKhoan tk = staffAccounts.get(0);
+                        creator = new NhanVien();
+                        creator.setTaiKhoan(tk);
+                        String namePrefix = tk.getUsername();
+                        if (namePrefix.contains("@")) {
+                            namePrefix = namePrefix.split("@")[0];
+                        }
+                        creator.setHoTenNv("Quản trị viên " + namePrefix);
+                        creator.setChucVu("QL".equals(tk.getVaiTro()) ? "Quản lý" : "Nhân viên");
+                        creator.setSoDienThoaiNv("0999999999");
+                        creator.setNgayTao(java.time.LocalDateTime.now());
+                        creator = nhanVienRepository.save(creator);
+                    } else {
+                        throw new RuntimeException("Hệ thống chưa có nhân viên nào! Không thể tạo sản phẩm.");
+                    }
                 }
             }
             sp.setNhanVien(creator);

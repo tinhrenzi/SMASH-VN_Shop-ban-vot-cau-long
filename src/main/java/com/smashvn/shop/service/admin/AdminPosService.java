@@ -32,6 +32,11 @@ import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.product.PriceSnapshot;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.util.VoucherCalculator;
+import com.smashvn.shop.util.PhoneUtils;
+import com.smashvn.shop.entity.AccountStatus;
+import com.smashvn.shop.dto.user.PosRegisterCustomerRequest;
+import com.smashvn.shop.dto.user.PosCustomerResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +55,8 @@ public class AdminPosService {
     private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final AuditService auditService;
     private final PricingService pricingService;
+    private final PasswordEncoder passwordEncoder;
+
 
     private boolean isDangBan(String trangThai) {
         if (trangThai == null || trangThai.isBlank()) {
@@ -384,12 +391,14 @@ public class AdminPosService {
             hd.setPaymentStatus(PaymentStatus.PENDING.getValue());         // "pending"
             hd.setNguoiXacNhanThanhToan(null);
             hd.setThoiGianXacNhan(null);
+            hd.setPaidAt(null);
         } else {
             hd.setTrangThaiDonHang("da_giao");                             // Bán tại quầy → hoàn thành ngay
             hd.setTrangThaiThanhToan("DA_THANH_TOAN");                     // Nhân viên đã xác nhận
             hd.setPaymentStatus(PaymentStatus.PAID.getValue());            // "paid"
             hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
             hd.setThoiGianXacNhan(LocalDateTime.now());
+            hd.setPaidAt(LocalDateTime.now());
         }
 
         hd.setSoTienGiamVoucher(giamGia);
@@ -441,6 +450,7 @@ public class AdminPosService {
         hd.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue());
         hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
         hd.setThoiGianXacNhan(LocalDateTime.now());
+        hd.setPaidAt(LocalDateTime.now());
         hoaDonRepository.save(hd);
 
         auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
@@ -487,4 +497,77 @@ public class AdminPosService {
                 OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_HUY.getValue(), "127.0.0.1",
                 "Nhân viên hủy đơn hàng chờ thanh toán POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
     }
+
+    @Transactional
+    public PosCustomerResponse registerCustomerAtPos(PosRegisterCustomerRequest request) {
+        if (request == null) {
+            throw new RuntimeException("Dữ liệu yêu cầu không hợp lệ!");
+        }
+        if (request.getHoTen() == null || request.getHoTen().trim().isEmpty()) {
+            throw new RuntimeException("Họ tên không được để trống!");
+        }
+        if (request.getSoDienThoai() == null || request.getSoDienThoai().trim().isEmpty()) {
+            throw new RuntimeException("Số điện thoại không được để trống!");
+        }
+
+        String normalizedPhone = PhoneUtils.normalize(request.getSoDienThoai());
+        if (!PhoneUtils.isValid(normalizedPhone)) {
+            throw new RuntimeException("Số điện thoại không đúng định dạng Việt Nam!");
+        }
+
+        String username = normalizedPhone;
+        String name = request.getHoTen().trim();
+
+        // 1. Kiểm tra nếu KhachHang đã tồn tại theo số điện thoại
+        KhachHang existingKh = khachHangRepository.findBySoDienThoaiKh(normalizedPhone);
+        if (existingKh != null) {
+            return PosCustomerResponse.builder()
+                    .success(true)
+                    .created(false)
+                    .requiresConfirmation(true)
+                    .message("Khách hàng đã tồn tại trong hệ thống.")
+                    .customer(PosCustomerResponse.CustomerDto.builder()
+                            .id(existingKh.getId())
+                            .hoTen(existingKh.getHoTenKh() != null ? existingKh.getHoTenKh() : "")
+                            .sdt(existingKh.getSoDienThoaiKh())
+                            .build())
+                    .build();
+        }
+
+        // 2. Kiểm tra nếu Username (SĐT) đã tồn tại trong bảng TaiKhoan
+        if (taiKhoanRepository.existsByUsername(username)) {
+            throw new RuntimeException("Số điện thoại này đã được sử dụng!");
+        }
+
+        // 3. Tạo mới cả TaiKhoan và KhachHang trong cùng transaction
+        TaiKhoan newTk = new TaiKhoan();
+        newTk.setUsername(username);
+        newTk.setMatKhau(passwordEncoder.encode("12345678"));
+        newTk.setVaiTro("KH");
+        newTk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+        newTk.setNgayTao(LocalDateTime.now());
+        TaiKhoan savedTk = taiKhoanRepository.save(newTk);
+
+        KhachHang newKh = new KhachHang();
+        newKh.setTaiKhoan(savedTk);
+        newKh.setHoKh("");
+        newKh.setTenKh(name);
+        newKh.setHoTenKh(name);
+        newKh.setSoDienThoaiKh(normalizedPhone);
+        newKh.setNgayTao(LocalDateTime.now());
+        KhachHang savedKh = khachHangRepository.save(newKh);
+
+        return PosCustomerResponse.builder()
+                .success(true)
+                .created(true)
+                .requiresConfirmation(false)
+                .message("Đăng ký tài khoản khách hàng thành công.")
+                .customer(PosCustomerResponse.CustomerDto.builder()
+                        .id(savedKh.getId())
+                        .hoTen(savedKh.getHoTenKh())
+                        .sdt(savedKh.getSoDienThoaiKh())
+                        .build())
+                .build();
+    }
 }
+

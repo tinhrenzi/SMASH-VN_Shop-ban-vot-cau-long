@@ -19,7 +19,6 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.CommentViolationLogRepository;
-import com.smashvn.shop.repository.DanhGiaAnhRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
@@ -39,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DanhGiaService {
 
     private final DanhGiaDAO danhGiaDAO;
-    private final DanhGiaAnhRepository danhGiaAnhRepository;
     private final SanPhamRepository sanPhamRepository;
     private final KhachHangRepository khachHangRepository;
     private final TaiKhoanRepository taiKhoanRepository;
@@ -223,21 +221,26 @@ public class DanhGiaService {
 
             LocalDateTime khoaDen;
             int violations = tk.getSoLanNhacNhoViPham();
-            if (violations == 1) {
-                khoaDen = LocalDateTime.now().plusHours(3);
-                textThoiHan = "3 giờ";
-            } else if (violations == 2) {
-                khoaDen = LocalDateTime.now().plusDays(1);
-                textThoiHan = "1 ngày";
-            } else if (violations == 3) {
-                khoaDen = LocalDateTime.now().plusDays(7);
-                textThoiHan = "7 ngày";
-            } else if (violations == 4) {
-                khoaDen = LocalDateTime.now().plusDays(30);
-                textThoiHan = "30 ngày";
-            } else {
-                khoaDen = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-                textThoiHan = "Vĩnh viễn";
+            switch (violations) {
+                case 1:
+                    khoaDen = LocalDateTime.now().plusHours(3);
+                    textThoiHan = "3 giờ";
+                    break;
+                case 2:
+                    khoaDen = LocalDateTime.now().plusDays(1);
+                    textThoiHan = "1 ngày";
+                    break;
+                case 3:
+                    khoaDen = LocalDateTime.now().plusDays(7);
+                    textThoiHan = "7 ngày";
+                    break;
+                case 4:
+                    khoaDen = LocalDateTime.now().plusDays(30);
+                    textThoiHan = "30 ngày";
+                    break;
+                default:
+                    khoaDen = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+                    textThoiHan = "Vĩnh viễn";
             }
             tk.setNgayKhoaBinhLuanDen(khoaDen);
             taiKhoanRepository.save(tk);

@@ -26,6 +26,8 @@ import com.smashvn.shop.service.admin.AdminPosService;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.product.PriceSnapshot;
 import com.smashvn.shop.config.SepayConfig;
+import com.smashvn.shop.dto.user.PosRegisterCustomerRequest;
+import com.smashvn.shop.dto.user.PosCustomerResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -267,9 +269,17 @@ public class AdminPosController {
                 ? hd.getPhuongThucThanhToan().getTenPhuongThuc()
                 : "Tiền mặt";
 
-        String trangThaiLabel = "DA_THANH_TOAN".equals(hd.getTrangThaiThanhToan())
+        String status = hd.getTrangThaiThanhToan();
+        String trangThaiLabel = "DA_THANH_TOAN".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)
                 ? "ĐÃ THANH TOÁN"
-                : ("CHO_THANH_TOAN".equals(hd.getTrangThaiThanhToan()) ? "CHỜ THANH TOÁN" : "HỦY");
+                : ("CHO_THANH_TOAN".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status) ? "CHỜ THANH TOÁN" : "HỦY");
+
+        if (hd.getThoiGianXacNhan() == null && hd.getPaidAt() != null) {
+            hd.setThoiGianXacNhan(hd.getPaidAt());
+        }
+        if (hd.getNguoiXacNhanThanhToan() == null && hd.getNhanVien() != null) {
+            hd.setNguoiXacNhanThanhToan(hd.getNhanVien().getHoTenNv());
+        }
 
         model.addAttribute("hoaDon", hd);
         model.addAttribute("maHoaDon", "HD-" + hd.getId());
@@ -322,6 +332,40 @@ public class AdminPosController {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/customers/register")
+    @ResponseBody
+    public ResponseEntity<PosCustomerResponse> registerCustomer(
+            @jakarta.validation.Valid @RequestBody PosRegisterCustomerRequest req,
+            org.springframework.validation.BindingResult result,
+            HttpSession session) {
+        
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) {
+            return ResponseEntity.status(401).body(PosCustomerResponse.builder()
+                    .success(false)
+                    .message("Phiên làm việc hết hạn hoặc chưa đăng nhập.")
+                    .build());
+        }
+
+        if (result.hasErrors()) {
+            String errorMsg = result.getAllErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest().body(PosCustomerResponse.builder()
+                    .success(false)
+                    .message(errorMsg)
+                    .build());
+        }
+
+        try {
+            PosCustomerResponse resp = adminPosService.registerCustomerAtPos(req);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(PosCustomerResponse.builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build());
         }
     }
 }

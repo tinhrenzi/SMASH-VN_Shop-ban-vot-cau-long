@@ -2,13 +2,27 @@ package com.smashvn.shop.entity;
 
 import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "KhachHang")
 @Data
 public class KhachHang {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -22,9 +36,6 @@ public class KhachHang {
 
     @Column(name = "so_dien_thoai_kh", length = 15)
     private String soDienThoaiKh;
-
-    @Column(name = "la_thanh_vien", nullable = false)
-    private boolean laThanhVien = false;
 
     @Column(name = "ngay_tao", nullable = false, updatable = false)
     private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
@@ -54,7 +65,9 @@ public class KhachHang {
     private String tenKh;
 
     public String getHoKh() {
-        if (this.hoKh != null) return this.hoKh;
+        if (this.hoKh != null) {
+            return this.hoKh;
+        }
         String[] parts = splitHoTenKh();
         return parts[0];
     }
@@ -65,7 +78,9 @@ public class KhachHang {
     }
 
     public String getTenKh() {
-        if (this.tenKh != null) return this.tenKh;
+        if (this.tenKh != null) {
+            return this.tenKh;
+        }
         String[] parts = splitHoTenKh();
         return parts[1];
     }
