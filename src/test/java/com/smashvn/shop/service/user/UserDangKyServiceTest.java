@@ -4,6 +4,7 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +23,9 @@ public class UserDangKyServiceTest {
     private KhachHangRepository khachHangRepository;
 
     @Mock
+    private NewsletterSubscriberRepository newsletterSubscriberRepository;
+
+    @Mock
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     private UserDangKyService userDangKyService;
@@ -30,7 +34,9 @@ public class UserDangKyServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(passwordEncoder.encode(any(String.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        userDangKyService = new UserDangKyService(taiKhoanRepository, khachHangRepository, passwordEncoder);
+        // Mock default behavior for newsletter subscriber check
+        when(newsletterSubscriberRepository.findByEmail(any(String.class))).thenReturn(java.util.Optional.empty());
+        userDangKyService = new UserDangKyService(taiKhoanRepository, khachHangRepository, newsletterSubscriberRepository, passwordEncoder);
     }
 
     @Test

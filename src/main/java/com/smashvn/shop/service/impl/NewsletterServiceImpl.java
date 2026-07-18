@@ -17,9 +17,11 @@ import com.smashvn.shop.entity.DotGiamGia;
 import com.smashvn.shop.entity.NewsletterSubscriber;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.exception.NewsletterValidationException;
 import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.service.NewsletterService;
 
 import jakarta.mail.internet.MimeMessage;
@@ -34,6 +36,7 @@ public class NewsletterServiceImpl implements NewsletterService {
     private final NewsletterSubscriberRepository subscriberRepository;
     private final DotGiamGiaDAO dotGiamGiaDAO;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final KhachHangRepository khachHangRepository;
     private final JavaMailSender mailSender;
 
     private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
@@ -87,6 +90,12 @@ public class NewsletterServiceImpl implements NewsletterService {
             sendWelcomeEmail(subscriber);
             log.info("[Newsletter] Created new subscriber: {}", normalizedEmail);
         }
+
+        // Sync with KhachHang profile if it exists
+        khachHangRepository.findByTaiKhoan_Username(normalizedEmail).ifPresent(kh -> {
+            kh.setNhanBanTin(true);
+            khachHangRepository.save(kh);
+        });
     }
 
     @Override
@@ -108,6 +117,12 @@ public class NewsletterServiceImpl implements NewsletterService {
         subscriber.setNgayHuy(LocalDateTime.now());
         subscriberRepository.save(subscriber);
         log.info("[Newsletter] Unsubscribed email: {}", subscriber.getEmail());
+
+        // Sync with KhachHang profile if it exists
+        khachHangRepository.findByTaiKhoan_Username(subscriber.getEmail()).ifPresent(kh -> {
+            kh.setNhanBanTin(false);
+            khachHangRepository.save(kh);
+        });
     }
 
     @Override

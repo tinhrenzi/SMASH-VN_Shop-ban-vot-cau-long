@@ -8,6 +8,7 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import com.smashvn.shop.util.LoginIdentifierClassifier;
 import com.smashvn.shop.util.LoginIdentifierClassifier.NormalizedLoginIdentifier;
 import com.smashvn.shop.util.LoginIdentifierClassifier.LoginIdentifierType;
@@ -20,6 +21,7 @@ public class UserDangKyService {
     
     private final TaiKhoanRepository taiKhoanRepository;
     private final KhachHangRepository khachHangRepository;
+    private final NewsletterSubscriberRepository newsletterSubscriberRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -103,7 +105,13 @@ public class UserDangKyService {
         khMoi.setHoKh(""); 
         khMoi.setTenKh("Người dùng mới"); // Đặt tên mặc định
         khMoi.setSoDienThoaiKh(finalPhone); // NULL if email, normalized phone string if phone
-        khMoi.setNhanBanTin(false);
+        boolean alreadySubscribed = false;
+        if (finalPhone == null) {
+            alreadySubscribed = newsletterSubscriberRepository.findByEmail(finalUsername)
+                    .map(sub -> "hoat_dong".equalsIgnoreCase(sub.getTrangThai()))
+                    .orElse(false);
+        }
+        khMoi.setNhanBanTin(alreadySubscribed);
         
         // Lưu Khách hàng
         khachHangRepository.save(khMoi);
