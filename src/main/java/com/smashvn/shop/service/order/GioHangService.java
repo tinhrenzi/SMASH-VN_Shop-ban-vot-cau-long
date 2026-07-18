@@ -462,7 +462,7 @@ public class GioHangService {
             }
         }
 
-        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, finalDistrictId, finalDiaChiNhan);
+        BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, finalDistrictId, finalWardCode, finalDiaChiNhan);
 
         // Voucher discount calculation
         BigDecimal giamGia = BigDecimal.ZERO;

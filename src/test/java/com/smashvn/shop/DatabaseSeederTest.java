@@ -48,6 +48,12 @@ public class DatabaseSeederTest {
     @Autowired
     private com.smashvn.shop.service.api.GhnService ghnService;
 
+    @Autowired
+    private com.smashvn.shop.service.user.UserDangNhapService userDangNhapService;
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     static class RacketSeed {
         String fileName;
         String brandName;
@@ -119,7 +125,7 @@ public class DatabaseSeederTest {
             // Need a TaiKhoan first
             TaiKhoan tk = new TaiKhoan();
             tk.setUsername("system_admin");
-            tk.setMatKhau("$2a$12$R9h/cIPz0gi.UR1gKdgpJeCVS7.p8s59W/H5.f3bC9mE3KzP9vD4O"); // BCrypt for "123456"
+            tk.setMatKhau(passwordEncoder.encode("123456"));
             tk.setVaiTro("QL");
             tk.setTrangThai("hoat_dong");
             tk.setNgayTao(LocalDateTime.now());
@@ -134,6 +140,14 @@ public class DatabaseSeederTest {
             return nhanVienRepository.save(nv);
         });
         System.out.println("Employee loaded: ID " + employee.getId() + " - " + employee.getHoTenNv());
+
+        // Ensure system_admin password is reset to 123456 in DB
+        TaiKhoan admin = taiKhoanRepository.findByUsername("system_admin");
+        if (admin != null) {
+            admin.setMatKhau(passwordEncoder.encode("123456"));
+            taiKhoanRepository.save(admin);
+            System.out.println("Updated system_admin password to 123456 in DB!");
+        }
 
         // 4. Set up the list of 40 racket images
         List<RacketSeed> racketList = new ArrayList<>();
@@ -371,6 +385,38 @@ public class DatabaseSeederTest {
             System.out.println("  Ten: " + carrier.getTenDonVi());
             System.out.println("  Token: '" + carrier.getToken() + "'");
             System.out.println("  ClientId: '" + carrier.getClientId() + "'");
+        }
+        System.out.println("=============================================");
+    }
+
+    @Test
+    public void checkAccounts() {
+        System.out.println("=== CHECKING TAI KHOAN DB RECORDS ===");
+        List<TaiKhoan> accounts = taiKhoanRepository.findAll();
+        System.out.println("Total accounts: " + accounts.size());
+        for (TaiKhoan account : accounts) {
+            System.out.println("ID: " + account.getId());
+            System.out.println("  Username: " + account.getUsername());
+            System.out.println("  Role: " + account.getVaiTro());
+            System.out.println("  Status: " + account.getTrangThaiTaiKhoan());
+            System.out.println("  Password Hash: " + account.getMatKhau());
+        }
+        System.out.println("=====================================");
+    }
+
+    @Test
+    public void testAdminLogin() {
+        System.out.println("=== TESTING KiemTraDangNhap FOR system_admin ===");
+        try {
+            boolean matchesDefault = passwordEncoder.matches("123456", "$2a$12$R9h/cIPz0gi.UR1gKdgpJeCVS7.p8s59W/H5.f3bC9mE3KzP9vD4O");
+            System.out.println("Matches default 123456 hash: " + matchesDefault);
+            System.out.println("New hash of 123456: " + passwordEncoder.encode("123456"));
+            
+            TaiKhoan tk = userDangNhapService.kiemTraDangNhap("system_admin", "123456");
+            System.out.println("Login Success! Account found: " + tk.getUsername() + ", Role: " + tk.getVaiTro());
+        } catch (Exception e) {
+            System.err.println("Login Failed: " + e.getMessage());
+            e.printStackTrace();
         }
         System.out.println("=============================================");
     }
