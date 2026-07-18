@@ -23,6 +23,7 @@ import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.api.GhnService;
+import com.smashvn.shop.service.api.GhnStatusMapper;
 import com.smashvn.shop.service.order.OrderViewService;
 
 import jakarta.servlet.http.HttpSession;
@@ -42,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GhnRestController {
 
     private final GhnService ghnService;
+    private final GhnStatusMapper ghnStatusMapper;
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final OrderViewService orderViewService;
@@ -309,31 +311,9 @@ public class GhnRestController {
                 String oldGhnStatus = hd.getGhnStatus();
 
                 // Ánh xạ trạng thái GHN sang trạng thái đơn hàng nội bộ (trangThaiDonHang)
-                String internalStatus = oldStatus;
-                switch (status.toLowerCase()) {
-                    case "ready_to_pick":
-                    case "picking":
-                        internalStatus = "cho_xac_nhan";
-                        break;
-                    case "money_collect_picking":
-                    case "picked":
-                    case "storing":
-                    case "sorting":
-                    case "transporting":
-                    case "delivering":
-                    case "money_collect_delivering":
-                        internalStatus = "dang_giao";
-                        break;
-                    case "delivered":
-                        internalStatus = "da_giao";
-                        break;
-                    case "cancel":
-                    case "exception":
-                    case "lost":
-                    case "damage":
-                    case "return":
-                        internalStatus = "da_huy";
-                        break;
+                String internalStatus = ghnStatusMapper.mapToInternalStatus(status);
+                if (internalStatus == null) {
+                    internalStatus = oldStatus; // Giữ nguyên trạng thái cũ nếu không nhận diện được
                 }
 
                 // Tránh xử lý trùng lặp do GHN retry webhook
@@ -343,7 +323,7 @@ public class GhnRestController {
                 }
 
                 // Cập nhật trạng thái đơn hàng và tồn kho thông qua OrderViewService
-                orderViewService.updateOrderStatusByWebhook(hd.getId(), internalStatus, status);
+                orderViewService.applyShippingStatus(hd.getId(), internalStatus, status);
 
                 log.info("[GHN_WEBHOOK] Updated HoaDon #{}: oldStatus={}, oldGhnStatus={} -> newStatus={}, newGhnStatus={}",
                         hd.getId(), oldStatus, oldGhnStatus, internalStatus, status);

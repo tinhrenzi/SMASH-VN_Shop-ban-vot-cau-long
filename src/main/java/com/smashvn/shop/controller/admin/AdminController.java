@@ -384,6 +384,7 @@ public class AdminController {
             map.put("moTaVoucherSnapshot", hd.getMoTaVoucherSnapshot() != null ? hd.getMoTaVoucherSnapshot() : "");
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
+            map.put("ghnOrderCode", hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "");
 
             // Phương thức thanh toán — null-safe
             String tenPhuongThuc = "N/A";

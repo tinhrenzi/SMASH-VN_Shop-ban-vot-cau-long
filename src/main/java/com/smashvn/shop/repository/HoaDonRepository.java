@@ -3,6 +3,7 @@ package com.smashvn.shop.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -101,4 +102,37 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT hd FROM HoaDon hd WHERE hd.id = :id")
     java.util.Optional<HoaDon> findByIdWithLock(@Param("id") Integer id);
+
+    /**
+     * Tìm các đơn hàng đang vận chuyển có mã vận đơn GHN (dùng cho Scheduler Polling).
+     * Native query vì TichHopVanChuyen không có JPA Entity.
+     * Phải thêm các subquery cho @Formula fields (ghnOrderCode, ghnStatus) vì SELECT hd.*
+     * chỉ trả về cột vật lý, không bao gồm cột ảo @Formula.
+     */
+    @Query(value = """
+            SELECT hd.*,
+                (SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = hd.id) AS ghnOrderCode,
+                (SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = hd.id) AS ghnStatus,
+                CASE WHEN hd.trang_thai_thanh_toan = 'REFUNDED' THEN 'COMPLETED' WHEN hd.trang_thai_thanh_toan = 'CHO_HOAN_TIEN' THEN 'PENDING' ELSE NULL END AS refundStatus
+            FROM HoaDon hd
+            WHERE hd.trang_thai_don_hang IN ('cho_xac_nhan', 'dang_lay_hang', 'dang_giao')
+              AND EXISTS (
+                  SELECT 1 FROM TichHopVanChuyen t
+                  WHERE t.id_hoa_don = hd.id
+                    AND t.ma_van_don IS NOT NULL
+              )
+            ORDER BY hd.ngay_tao ASC
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM HoaDon hd
+            WHERE hd.trang_thai_don_hang IN ('cho_xac_nhan', 'dang_lay_hang', 'dang_giao')
+              AND EXISTS (
+                  SELECT 1 FROM TichHopVanChuyen t
+                  WHERE t.id_hoa_don = hd.id
+                    AND t.ma_van_don IS NOT NULL
+              )
+            """,
+            nativeQuery = true)
+    List<HoaDon> findActiveShippingOrders(Pageable pageable);
 }

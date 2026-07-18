@@ -300,7 +300,7 @@ public class OrderViewService {
                     try {
                         guiEmailYeuCauHoanTien(hd, standardizedReason);
                     } catch (Exception e) {
-                        System.err.println("Lỗi gửi email yêu cầu hoàn tiền khi khách hàng hủy đơn: " + e.getMessage());
+                        log.error("Lỗi gửi email yêu cầu hoàn tiền khi khách hàng hủy đơn: {}", e.getMessage());
                     }
                 } else {
                     hd.setPaymentStatus("CANCELLED");
@@ -551,7 +551,7 @@ public class OrderViewService {
                         .build();
                 thongBaoRepository.save(thongBao);
             } catch (Exception e) {
-                System.err.println("Lỗi tạo thông báo trạng thái đơn hàng cho khách: " + e.getMessage());
+                log.error("Lỗi tạo thông báo trạng thái đơn hàng cho khách: {}", e.getMessage());
             }
         }
 
@@ -563,7 +563,7 @@ public class OrderViewService {
             try {
                 guiEmailYeuCauHoanTien(hd, standardizedReason);
             } catch (Exception e) {
-                System.err.println("Lỗi gửi email yêu cầu hoàn tiền khi admin hủy đơn: " + e.getMessage());
+                log.error("Lỗi gửi email yêu cầu hoàn tiền khi admin hủy đơn: {}", e.getMessage());
             }
         }
 
@@ -591,7 +591,7 @@ public class OrderViewService {
     }
 
     @Transactional
-    public void updateOrderStatusByWebhook(Integer idHoaDon, String newStatus, String ghnStatus) {
+    public void applyShippingStatus(Integer idHoaDon, String newStatus, String ghnStatus) {
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
@@ -768,7 +768,7 @@ public class OrderViewService {
                         .build();
                 thongBaoRepository.save(thongBao);
             } catch (Exception e) {
-                System.err.println("Lỗi tạo thông báo trạng thái giao hàng GHN cho khách: " + e.getMessage());
+                log.error("Lỗi tạo thông báo trạng thái giao hàng GHN cho khách: {}", e.getMessage());
             }
         }
 
@@ -894,7 +894,7 @@ public class OrderViewService {
 
     private void guiEmailYeuCauHoanTien(HoaDon hd, String lyDoHuy) {
         if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
-            System.err.println("Không có email quản trị nào được cấu hình trong app.admin.emails!");
+            log.error("Không có email quản trị nào được cấu hình trong app.admin.emails!");
             return;
         }
         String token = java.util.UUID.randomUUID().toString();
@@ -1019,7 +1019,7 @@ public class OrderViewService {
                 helper.setText(htmlMsg, true);
                 mailSender.send(message);
             } catch (Exception e) {
-                System.err.println("Lỗi gửi mail yêu cầu hoàn tiền đến " + com.smashvn.shop.util.ValidationUtils.maskEmail(email) + ": " + e.getMessage());
+                log.error("Lỗi gửi mail yêu cầu hoàn tiền đến {}: {}", com.smashvn.shop.util.ValidationUtils.maskEmail(email), e.getMessage());
             }
         }
     }
@@ -1295,7 +1295,7 @@ public class OrderViewService {
                         .build();
                 thongBaoRepository.save(thongBao);
             } catch (Exception e) {
-                System.err.println("Lỗi tạo thông báo trạng thái hoàn hàng cho khách: " + e.getMessage());
+                log.error("Lỗi tạo thông báo trạng thái hoàn hàng cho khách: {}", e.getMessage());
             }
         }
 

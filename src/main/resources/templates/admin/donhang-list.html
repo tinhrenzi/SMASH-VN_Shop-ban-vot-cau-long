@@ -709,6 +709,7 @@ function openOrderDetailModal(orderId) {
                         <p class="mb-1"><strong>Số điện thoại:</strong> ${data.sdt || 'N/A'}</p>
                         <p class="mb-1"><strong>Địa chỉ nhận:</strong> ${data.diaChi || 'N/A'}</p>
                         <p class="mb-1"><strong>Hình thức vận chuyển:</strong> ${data.donViVanChuyen === 'Mua tại quầy' ? 'Tại quầy' : (data.donViVanChuyen || 'N/A')}</p>
+                        ${data.ghnOrderCode ? `<p class="mb-1 text-success"><strong>Mã vận đơn GHN:</strong> <span class="fw-bold">${data.ghnOrderCode}</span></p>` : ''}
                         <p class="mb-1"><strong>Trạng thái đơn hàng:</strong> <span class="badge bg-info">${data.trangThai || 'N/A'}</span></p>
                         ${data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' ? `
                             <p class="mb-1 text-danger">
