@@ -7099,3 +7099,19 @@ input::-ms-clear {
     background: #ff4500;
     color: #fff;
 }
+
+/* --- Filter Animation for Best Sellers Grid --- */
+.filter__item {
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    will-change: opacity, transform;
+}
+.filter__btn--style-1 {
+    transition: all 0.3s ease;
+}
+.filter__btn--style-1.js-checked {
+    color: #ff4500;
+    position: relative;
+}
+.filter__btn--style-1.js-checked:before {
+    width: 100%;
+}

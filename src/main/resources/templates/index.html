@@ -20,7 +20,7 @@
     <link rel="stylesheet" th:href="@{/css/utility.css}">
 
     <!--====== Ứng dụng ======-->
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v=1.0.3)}">
 </head>
 <body class="config">
     <div class="preloader is-active">
@@ -198,18 +198,19 @@
                                     <div class="filter__category-wrapper">
 										<button class="btn filter__btn filter__btn--style-1 js-checked" type="button" data-filter="*">TẤT CẢ</button>
 									</div>
-										<div class="filter__category-wrapper" th:each="brand : ${brands}">
-										    <button class="btn filter__btn filter__btn--style-1" 
-										            type="button" 
-										            th:attr="data-filter='.' + ${brand.tenThuongHieu.replaceAll(' ', '')}"
-										            th:text="${brand.tenThuongHieu}">
-										        Tên Hãng
-										    </button>
-										</div>
+									<!-- Hiển thị nút lọc cho TẤT CẢ thương hiệu trong CSDL -->
+									<div class="filter__category-wrapper" th:each="brand : ${brands}">
+									    <button class="btn filter__btn filter__btn--style-1" 
+									            type="button" 
+									            th:attr="data-filter=${brand.tenThuongHieu}"
+									            th:text="${brand.tenThuongHieu}">
+									        Tên Hãng
+									    </button>
+									</div>
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:classappend="${product.thuongHieu.tenThuongHieu.replaceAll(' ', '')}" th:each="product, iterStat : ${bestSellers}" th:if="${iterStat.index &lt; 14}">
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:attr="data-brand=${product.thuongHieu.tenThuongHieu}" th:each="product, iterStat : ${bestSellers}" th:if="${iterStat.index &lt; 14}">
 									    
 											<div class="product-o product-o--hover-on product-o--radius">
 											    
@@ -1076,7 +1077,7 @@
     <script th:src="@{/js/jquery.shopnav.js}"></script>
 
     <!--====== Ứng dụng ======-->
-    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/app.js(v=1.0.3)}"></script>
 
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>

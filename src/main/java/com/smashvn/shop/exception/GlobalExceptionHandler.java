@@ -54,6 +54,14 @@ public class GlobalExceptionHandler {
         return mav;
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ModelAndView handleNoResourceFound(HttpServletRequest request, org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        log.warn("Không tìm thấy tài nguyên: {}", request.getRequestURI());
+        ModelAndView mav = new ModelAndView();
+        mav.setViewName("404");
+        return mav;
+    }
+
     @ExceptionHandler(Exception.class)
     public ModelAndView handleGenericException(HttpServletRequest request, Exception ex) {
         // Log stack trace nội bộ

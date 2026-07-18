@@ -77,7 +77,31 @@ public class HomeController {
         Pageable pageLimit14 = PageRequest.of(0, 14);
         Pageable pageLimit4 = PageRequest.of(0, 4);
         List<SanPham> newProductsList = sanPhamRepository.findNewProducts(pageLimit14);
-        List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimit14);
+        
+        // Lấy pool lớn sản phẩm bán chạy, sau đó phân bổ đều giữa các thương hiệu
+        Pageable pageLimitLarge = PageRequest.of(0, 100);
+        List<SanPham> allBestSellers = sanPhamRepository.findBestSellers(pageLimitLarge);
+        
+        // Nhóm theo thương hiệu rồi lấy lần lượt (round-robin) để đảm bảo mỗi hãng đều có sản phẩm
+        java.util.Map<String, java.util.List<SanPham>> byBrand = allBestSellers.stream()
+                .collect(Collectors.groupingBy(sp -> sp.getThuongHieu().getTenThuongHieu(), 
+                         java.util.LinkedHashMap::new, Collectors.toList()));
+        
+        List<SanPham> bestSellersList = new java.util.ArrayList<>();
+        int maxPerBrand = Math.max(1, 14 / Math.max(1, byBrand.size()));
+        for (java.util.List<SanPham> brandProducts : byBrand.values()) {
+            bestSellersList.addAll(brandProducts.stream().limit(maxPerBrand).collect(Collectors.toList()));
+        }
+        // Nếu chưa đủ 14, bổ sung thêm từ các sản phẩm còn lại
+        if (bestSellersList.size() < 14) {
+            for (SanPham sp : allBestSellers) {
+                if (!bestSellersList.contains(sp)) {
+                    bestSellersList.add(sp);
+                    if (bestSellersList.size() >= 14) break;
+                }
+            }
+        }
+        
         List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit4);
 
         // Tìm chiến dịch giảm giá có phần trăm giảm cao nhất đang hoạt động

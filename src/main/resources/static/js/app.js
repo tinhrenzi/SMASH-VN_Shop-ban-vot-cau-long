@@ -555,45 +555,60 @@
         }
     };
 
-    // Isotope Filter Component Initialization
+    // Filter Component with smooth CSS animation (replaces Isotope)
     RESHOP.initIsotopeFilter = function() {
-        console.log("[Isotope] initIsotopeFilter started");
         var $wrapper = $('.filter__grid-wrapper');
         var $btns = $('.filter__btn');
         
-        console.log("[Isotope] wrapper length:", $wrapper.length, "buttons length:", $btns.length);
-        
-        if ($wrapper.length && typeof $.fn.isotope === 'function') {
+        if ($wrapper.length) {
             var $row = $wrapper.find('.row');
-            console.log("[Isotope] Row container found:", $row.length);
+            var $items = $row.find('.filter__item');
             
-            var $grid = $row.isotope({
-                itemSelector: '.filter__item',
-                layoutMode: 'fitRows'
-            });
-            
-            if (typeof $.fn.imagesLoaded === 'function') {
-                console.log("[Isotope] imagesLoaded is defined");
-                $grid.imagesLoaded().progress(function() {
-                    $grid.isotope('layout');
-                });
-            } else {
-                console.warn("[Isotope] imagesLoaded is NOT defined on jQuery, using fallback");
-                setTimeout(function() {
-                    $grid.isotope('layout');
-                }, 500);
-            }
+            // Show all items initially with animation-ready state
+            $items.css({'opacity': '1', 'transform': 'scale(1)', 'transition': 'all 0.35s ease'});
             
             $btns.on('click', function() {
                 var filterValue = $(this).attr('data-filter');
-                console.log("[Isotope] Filter button clicked:", filterValue);
-                $grid.isotope({ filter: filterValue });
+                
+                // Update active button style
                 $btns.removeClass('js-checked');
                 $(this).addClass('js-checked');
+                
+                if (filterValue === '*') {
+                    // Show all: fade out hidden ones first, then show all
+                    $items.each(function() {
+                        var $item = $(this);
+                        if ($item.css('display') === 'none') {
+                            $item.css({'opacity': '0', 'transform': 'scale(0.8)'}).show();
+                            setTimeout(function() {
+                                $item.css({'opacity': '1', 'transform': 'scale(1)'});
+                            }, 50);
+                        }
+                    });
+                } else {
+                    // Filter by brand name using data-brand attribute
+                    $items.each(function() {
+                        var $item = $(this);
+                        var itemBrand = $item.attr('data-brand');
+                        
+                        if (itemBrand === filterValue) {
+                            // Show matching items
+                            if ($item.css('display') === 'none') {
+                                $item.css({'opacity': '0', 'transform': 'scale(0.8)'}).show();
+                                setTimeout(function() {
+                                    $item.css({'opacity': '1', 'transform': 'scale(1)'});
+                                }, 50);
+                            }
+                        } else {
+                            // Hide non-matching items with animation
+                            $item.css({'opacity': '0', 'transform': 'scale(0.8)'});
+                            setTimeout(function() {
+                                $item.hide();
+                            }, 350);
+                        }
+                    });
+                }
             });
-            console.log("[Isotope] Click handlers bound successfully");
-        } else {
-            console.warn("[Isotope] Skipping initialization. Wrapper length:", $wrapper.length, "Isotope defined:", (typeof $.fn.isotope === 'function'));
         }
     };
 

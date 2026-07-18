@@ -123,65 +123,68 @@
 
         /* ===== Custom Green Timeline Stepper (Matches 2nd image) ===== */
         .timeline-stepper {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            position: relative;
-            padding: 24px 0;
-            margin: 20px 0;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            position: relative !important;
+            padding: 24px 0 !important;
+            margin: 20px 0 !important;
+            width: 100% !important;
         }
         .timeline-stepper::before {
-            content: "";
-            position: absolute;
-            top: 32px;
-            left: 8%;
-            right: 8%;
-            height: 4px;
-            background-color: #e0e0e0;
-            z-index: 1;
+            content: "" !important;
+            position: absolute !important;
+            top: 32px !important;
+            left: 8% !important;
+            right: 8% !important;
+            height: 4px !important;
+            background-color: #e0e0e0 !important;
+            z-index: 1 !important;
         }
         .timeline-stepper-progress {
-            position: absolute;
-            top: 32px;
-            left: 8%;
-            max-width: 84%;
-            height: 4px;
-            background-color: #2ec155;
-            z-index: 2;
-            transition: width 0.4s ease;
+            position: absolute !important;
+            top: 32px !important;
+            left: 8% !important;
+            max-width: 84% !important;
+            height: 4px !important;
+            background-color: #2ec155 !important;
+            z-index: 2 !important;
+            transition: width 0.4s ease !important;
         }
         .timeline-stepper-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            flex: 1;
-            z-index: 3;
-            position: relative;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            flex: 1 1 0% !important;
+            z-index: 3 !important;
+            position: relative !important;
+            width: auto !important;
         }
         .timeline-stepper-icon-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #fff;
-            border: 4px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #bdbdbd;
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            background-color: #fff !important;
+            border: 4px solid #e0e0e0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 20px !important;
+            color: #bdbdbd !important;
+            margin-bottom: 12px !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
         }
         .timeline-stepper-step.active .timeline-stepper-icon-circle {
-            border-color: #2ec155;
-            color: #2ec155;
+            border-color: var(--step-color, #2ec155) !important;
+            color: var(--step-color, #2ec155) !important;
         }
         .timeline-stepper-step.finish .timeline-stepper-icon-circle {
-            border-color: #2ec155;
-            background-color: #2ec155;
-            color: #fff;
+            border-color: var(--step-color, #2ec155) !important;
+            background-color: var(--step-color, #2ec155) !important;
+            color: #fff !important;
         }
         .timeline-stepper-label {
             font-size: 13px;
@@ -564,12 +567,9 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Trường hợp: BÌNH THƯỜNG (chờ/xác nhận/giao/đã giao) -->
+                                                <!-- Trường hợp: BÌNH THƯỜNG (chờ/xác nhận/lấy hàng/giao/đã giao) -->
                                                 <div th:unless="${order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
-                                                     <div class="timeline-stepper-progress" th:style="'width: ' + 
-                                                          (${order['trangThaiDonHang'] == 'da_giao'} ? '84%' : 
-                                                          ((${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'dang_lay_hang'} ? '42%' : 
-                                                          ((${order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid'} ? '21%' : '0%')))))"></div>
+                                                     <div class="timeline-stepper-progress" th:style="${'width: ' + (order['trangThaiDonHang'] == 'da_giao' ? '84%' : (order['trangThaiDonHang'] == 'dang_giao' ? '51%' : (order['trangThaiDonHang'] == 'dang_lay_hang' ? '34%' : ((order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid') ? '17%' : '0%'))))}"></div>
                                                     
                                                     <!-- Bước 1: Đơn Hàng Đã Đặt -->
                                                     <div class="timeline-stepper-step finish">
@@ -590,9 +590,19 @@
                                                         <span class="timeline-stepper-time" th:text="${(order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid') ? (order['ngayThanhToan'] != null ? #temporals.format(order['ngayThanhToan'], 'HH:mm dd-MM-yyyy') : '') : (order['ngayXacNhan'] != null ? #temporals.format(order['ngayXacNhan'], 'HH:mm dd-MM-yyyy') : '')}"></span>
                                                     </div>
                                                     
-                                                    <!-- Bước 3: Đang Giao (Đã Giao Cho ĐVVC) -->
+                                                    <!-- Bước 3: Đang Lấy Hàng -->
                                                      <div th:class="'timeline-stepper-step ' + 
                                                           (${order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' ? 'finish' : ''})">
+                                                        <div class="timeline-stepper-icon-circle">
+                                                            <i class="fas fa-box-open"></i>
+                                                        </div>
+                                                        <span class="timeline-stepper-label">Đang Lấy Hàng</span>
+                                                        <span class="timeline-stepper-time" th:text="${order['ngayLayHang'] != null ? #temporals.format(order['ngayLayHang'], 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                    </div>
+                                                    
+                                                    <!-- Bước 4: Đang Giao -->
+                                                     <div th:class="'timeline-stepper-step ' + 
+                                                          (${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-truck"></i>
                                                         </div>
@@ -600,7 +610,7 @@
                                                         <span class="timeline-stepper-time" th:text="${order['ngayGiaoDVVC'] != null ? #temporals.format(order['ngayGiaoDVVC'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
-                                                    <!-- Bước 4: Đã giao thành công -->
+                                                    <!-- Bước 5: Đã giao thành công -->
                                                      <div th:class="'timeline-stepper-step ' + 
                                                           (${order['trangThaiDonHang'] == 'da_giao' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
@@ -610,7 +620,7 @@
                                                         <span class="timeline-stepper-time" th:text="${order['ngayGiaoThanhCong'] != null ? #temporals.format(order['ngayGiaoThanhCong'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
-                                                    <!-- Bước 5: Đánh Giá -->
+                                                    <!-- Bước 6: Đánh Giá -->
                                                      <div th:class="'timeline-stepper-step ' + 
                                                           (${order['trangThaiDonHang'] == 'da_giao' ? 'active' : ''})">
                                                         <div class="timeline-stepper-icon-circle">

@@ -6,7 +6,8 @@ public class LoginIdentifierClassifier {
 
     public enum LoginIdentifierType {
         EMAIL,
-        PHONE
+        PHONE,
+        USERNAME
     }
 
     public record NormalizedLoginIdentifier(
@@ -31,7 +32,12 @@ public class LoginIdentifierClassifier {
             return new NormalizedLoginIdentifier(LoginIdentifierType.PHONE, normalizedPhone);
         }
 
-        // 3. Invalid
+        // 3. Check if it matches standard username format (alphanumeric, dots, hyphens, underscores)
+        if (input.matches("^[A-Za-z0-9_.-]{3,50}$")) {
+            return new NormalizedLoginIdentifier(LoginIdentifierType.USERNAME, input);
+        }
+
+        // 4. Invalid
         throw new IllegalArgumentException("Vui lòng nhập email hoặc số điện thoại hợp lệ.");
     }
 }
