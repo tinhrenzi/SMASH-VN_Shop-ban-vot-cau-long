@@ -9,6 +9,7 @@ import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.api.GhnService;
+import com.smashvn.shop.service.api.GhnStatusMapper;
 import com.smashvn.shop.service.order.OrderViewService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class GhnRestControllerTest {
     private GhnService ghnService;
 
     @Mock
+    private GhnStatusMapper ghnStatusMapper;
+
+    @Mock
     private HoaDonRepository hoaDonRepository;
 
     @Mock
@@ -55,6 +59,7 @@ class GhnRestControllerTest {
         MockitoAnnotations.openMocks(this);
         GhnRestController controller = new GhnRestController(
                 ghnService,
+                ghnStatusMapper,
                 hoaDonRepository,
                 hoaDonChiTietRepository,
                 orderViewService,

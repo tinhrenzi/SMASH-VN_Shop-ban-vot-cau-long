@@ -43,7 +43,7 @@ public class KhachHang {
     @Column(name = "ngay_cap_nhat")
     private java.time.LocalDateTime ngayCapNhat;
 
-    @Column(name = "la_thanh_vien")
+    @Transient
     private Boolean nhanBanTin = false;
 
     @Transient

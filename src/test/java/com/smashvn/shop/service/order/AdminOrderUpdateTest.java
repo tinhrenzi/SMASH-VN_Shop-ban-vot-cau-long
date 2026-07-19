@@ -618,7 +618,7 @@ public class AdminOrderUpdateTest {
         HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
         
         // Call webhook with exception
-        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "exception");
+        orderViewService.applyShippingStatus(hd.getId(), "da_huy", "exception");
         
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertNotNull(updated);
@@ -632,11 +632,11 @@ public class AdminOrderUpdateTest {
         HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
         
         // Call webhook with lost twice
-        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
+        orderViewService.applyShippingStatus(hd.getId(), "da_huy", "lost");
         int logCount1 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId()).size();
         
         // Second call
-        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost");
+        orderViewService.applyShippingStatus(hd.getId(), "da_huy", "lost");
         int logCount2 = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", hd.getId()).size();
         
         // Log count should not increase
@@ -646,7 +646,7 @@ public class AdminOrderUpdateTest {
     @org.junit.jupiter.api.Test
     void testInvalidReturnStatusTransitions() {
         HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
-        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "lost"); // Set to LOST
+        orderViewService.applyShippingStatus(hd.getId(), "da_huy", "lost"); // Set to LOST
         
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertEquals(ReturnStatus.LOST, updated.getTrangThaiHoanHang());
@@ -670,7 +670,7 @@ public class AdminOrderUpdateTest {
         HoaDon hd = createTestOrder("dang_giao", "SEPAY", "paid", ptttOnline, 2);
         
         // Cancel order -> PENDING_RETURN (stock not restored yet)
-        orderViewService.updateOrderStatusByWebhook(hd.getId(), "da_huy", "return");
+        orderViewService.applyShippingStatus(hd.getId(), "da_huy", "return");
         
         SanPhamChiTiet spctPending = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertEquals(initialStock, spctPending.getSoLuongTon()); // Not restored
