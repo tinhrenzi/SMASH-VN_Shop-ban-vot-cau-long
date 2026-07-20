@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,9 +31,9 @@ import org.springframework.web.client.RestTemplate;
 import com.smashvn.shop.config.ShopContactProperties;
 import com.smashvn.shop.dto.chatbot.ChatFeedbackRequest;
 import com.smashvn.shop.dto.chatbot.ChatMessageDto;
+import com.smashvn.shop.dto.chatbot.ChatProductResponse;
 import com.smashvn.shop.dto.chatbot.ChatRequest;
 import com.smashvn.shop.dto.chatbot.ProductSearchCriteria;
-import com.smashvn.shop.dto.chatbot.ProductSuggestionDto;
 import com.smashvn.shop.dto.chatbot.ShopContactDto;
 import com.smashvn.shop.entity.ChatConversation;
 import com.smashvn.shop.entity.ChatFeedback;
@@ -52,6 +55,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChatbotServiceImpl implements ChatbotService {
 
+    private static final Pattern MIN_PRICE_PATTERN = Pattern.compile(
+            "(?:trên|hơn|tối\\s*thiểu|ít\\s*nhất|từ)\\s+([0-9]+(?:[.,][0-9]+)?)\\s*(chục\\s*)?(triệu|tr|nghìn|ngàn|k)\\b");
+    private static final Pattern MAX_PRICE_PATTERN = Pattern.compile(
+            "(?:dưới|thấp\\s*hơn|tối\\s*đa|không\\s*quá|đến|tới)\\s+([0-9]+(?:[.,][0-9]+)?)\\s*(chục\\s*)?(triệu|tr|nghìn|ngàn|k)\\b");
+
     private final ChatConversationRepository chatConversationRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatFeedbackRepository chatFeedbackRepository;
@@ -72,13 +80,13 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${gemini.api.model:gemini-3.5-flash}")
     private String model;
 
-    @Value("${gemini.chat.max-history-messages:20}")
+    @Value("${gemini.chat.max-history-messages:5}")
     private int maxHistoryMessages;
 
     @Value("${gemini.chat.max-user-message-length:2000}")
     private int maxUserMessageLength;
 
-    @Value("${gemini.chat.max-product-suggestions:5}")
+    @Value("${gemini.chat.max-product-suggestions:3}")
     private int maxProductSuggestions;
 
     @Override
@@ -148,15 +156,39 @@ public class ChatbotServiceImpl implements ChatbotService {
             return m2.getId().compareTo(m1.getId());
         });
         List<ChatMessage> history = dbMessages.stream()
-                .limit(maxHistoryMessages)
+                .limit(Math.min(maxHistoryMessages, 5))
                 .collect(Collectors.toList());
         Collections.reverse(history);
 
         // 7. Query and Filter Products in Java (Database-First)
-        List<SanPhamChiTiet> suggestions = queryAndFilterProducts(rawMessage);
-        List<ProductSuggestionDto> suggestionDtos = suggestions.stream()
-                .map(this::mapToProductSuggestionDto)
+        List<SanPhamChiTiet> suggestions = queryAndFilterProducts(rawMessage).stream()
+                .filter(new java.util.function.Predicate<>() {
+                    private final Set<Integer> seenProductIds = new java.util.HashSet<>();
+
+                    @Override
+                    public boolean test(SanPhamChiTiet variant) {
+                        return seenProductIds.add(variant.getSanPham().getId());
+                    }
+                })
+                .limit(3)
+                .toList();
+        List<ChatProductResponse> suggestionDtos = suggestions.stream()
+                .map(this::mapToChatProductResponse)
                 .collect(Collectors.toList());
+
+        if ((intent == ChatIntent.PRODUCT_SEARCH || intent == ChatIntent.PRODUCT_INFORMATION)
+                && suggestionDtos.isEmpty()) {
+            ChatMessage noResult = new ChatMessage();
+            noResult.setConversation(conversation);
+            noResult.setVaiTro("ASSISTANT");
+            noResult.setNoiDung("Hiện tại mình chưa tìm thấy sản phẩm phù hợp với yêu cầu của bạn.");
+            noResult.setTrangThai("SUCCESS");
+            noResult = chatbotDbHelper.saveMessage(noResult);
+            chatbotDbHelper.updateConversationTime(conversation.getId());
+            ChatMessageDto dto = mapToDto(noResult);
+            dto.setSuggestedProducts(Collections.emptyList());
+            return dto;
+        }
 
         // 8. Call Gemini API
         String aiResponse = null;
@@ -195,7 +227,9 @@ public class ChatbotServiceImpl implements ChatbotService {
             assistantMessage.setNoiDung(validatedResponse);
             assistantMessage.setTrangThai("SUCCESS");
         } else {
-            assistantMessage.setNoiDung("Xin lỗi, trợ lý ảo đang gặp sự cố kết nối. Quý khách vui lòng thử lại sau giây lát!");
+            assistantMessage.setNoiDung(suggestionDtos.isEmpty()
+                    ? "Chatbot hiện đang bận. Bạn vui lòng thử lại sau."
+                    : "Mình tìm thấy một số sản phẩm phù hợp với yêu cầu của bạn:");
             assistantMessage.setTrangThai("FAILED");
             assistantMessage.setMaLoi(errorCode);
             assistantMessage.setNoiDungLoi(errorMessage);
@@ -206,11 +240,7 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         // Map response to DTO
         ChatMessageDto dto = mapToDto(assistantMessage);
-        if ("SUCCESS".equals(assistantMessage.getTrangThai())) {
-            dto.setSuggestedProducts(suggestionDtos);
-        } else {
-            dto.setSuggestedProducts(Collections.emptyList());
-        }
+        dto.setSuggestedProducts(suggestionDtos);
 
         // Set human support flags if intent is ADVANCED_CONSULTATION
         if (intent == ChatIntent.ADVANCED_CONSULTATION) {
@@ -353,7 +383,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         // 2. Out of Scope
-        if (msgLower.contains("lập trình") || msgLower.contains("java code")
+        if (msgLower.contains("lập trình") || msgLower.contains("java code") || msgLower.contains("code java")
+                || msgLower.contains("viết code") || msgLower.contains("database") || msgLower.contains("sql server")
                 || msgLower.contains("chính trị") || msgLower.contains("thời tiết")
                 || msgLower.contains("tin tức") || msgLower.contains("giải trí")
                 || msgLower.contains("singing") || msgLower.contains("âm nhạc")
@@ -415,13 +446,16 @@ public class ChatbotServiceImpl implements ChatbotService {
         try {
             ProductSearchCriteria criteria = extractSearchCriteria(userPrompt);
             List<SanPhamChiTiet> results = sanPhamChiTietRepository.searchForChatbot(
+                    criteria.getKeyword(),
+                    criteria.getKeyword2(),
+                    criteria.getKeyword3(),
                     criteria.getBrandName(),
                     criteria.getCategoryName(),
                     criteria.getMinPrice(),
                     criteria.getMaxPrice(),
                     criteria.getColor(),
                     criteria.getWeight(),
-                    PageRequest.of(0, maxProductSuggestions));
+                    PageRequest.of(0, Math.min(maxProductSuggestions, 3)));
             log.debug("Chatbot database lookup returned {} product variants", results.size());
             return results;
         } catch (Exception ex) {
@@ -434,10 +468,17 @@ public class ChatbotServiceImpl implements ChatbotService {
         ProductSearchCriteria criteria = new ProductSearchCriteria();
         String promptLower = userPrompt.toLowerCase();
 
+        List<String> keywords = extractProductKeywords(promptLower);
+        if (!keywords.isEmpty()) {
+            criteria.setKeyword(keywords.get(0));
+            criteria.setKeyword2(keywords.size() > 1 ? keywords.get(1) : keywords.get(0));
+            criteria.setKeyword3(keywords.size() > 2 ? keywords.get(2) : keywords.get(0));
+        }
+
         // Brands
         if (promptLower.contains("yonex")) {
             criteria.setBrandName("Yonex");
-        } else if (promptLower.contains("lining")) {
+        } else if (promptLower.contains("lining") || promptLower.contains("li-ning") || promptLower.contains("li ning")) {
             criteria.setBrandName("Lining");
         } else if (promptLower.contains("victor")) {
             criteria.setBrandName("Victor");
@@ -461,14 +502,8 @@ public class ChatbotServiceImpl implements ChatbotService {
             criteria.setWeight("5u");
         }
 
-        // Prices
-        if (promptLower.contains("dưới 1 triệu") || promptLower.contains("dưới 1tr")) {
-            criteria.setMaxPrice(new BigDecimal("1000000"));
-        } else if (promptLower.contains("dưới 2 triệu") || promptLower.contains("dưới 2tr")) {
-            criteria.setMaxPrice(new BigDecimal("2000000"));
-        } else if (promptLower.contains("trên 2 triệu") || promptLower.contains("trên 2tr")) {
-            criteria.setMinPrice(new BigDecimal("2000000"));
-        }
+        criteria.setMinPrice(extractPriceBound(promptLower, MIN_PRICE_PATTERN));
+        criteria.setMaxPrice(extractPriceBound(promptLower, MAX_PRICE_PATTERN));
 
         // Common colour filters are deliberately extracted on the backend so
         // Gemini cannot invent a colour that is not present in the database.
@@ -482,19 +517,61 @@ public class ChatbotServiceImpl implements ChatbotService {
         return criteria;
     }
 
-    private String callGeminiApi(List<ChatMessage> history, List<ProductSuggestionDto> suggestionDtos, ChatIntent intent) throws Exception {
+    private BigDecimal extractPriceBound(String promptLower, Pattern pattern) {
+        Matcher matcher = pattern.matcher(promptLower);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        BigDecimal value = new BigDecimal(matcher.group(1).replace(',', '.'));
+        if (matcher.group(2) != null) {
+            value = value.multiply(BigDecimal.TEN);
+        }
+
+        String unit = matcher.group(3);
+        BigDecimal amount;
+        if ("triệu".equals(unit) || "tr".equals(unit)) {
+            amount = value.multiply(new BigDecimal("1000000"));
+        } else {
+            amount = value.multiply(new BigDecimal("1000"));
+        }
+        String matchedExpression = matcher.group().trim();
+        if (pattern == MIN_PRICE_PATTERN
+                && (matchedExpression.startsWith("trên") || matchedExpression.startsWith("hơn"))) {
+            return amount.add(BigDecimal.ONE);
+        }
+        return amount;
+    }
+
+    private List<String> extractProductKeywords(String promptLower) {
+        Set<String> ignored = Set.of("tôi", "muốn", "cần", "xin", "hãy", "giúp", "tìm", "mua", "tư", "vấn", "cho", "mình", "sản", "phẩm", "vợt", "cầu",
+                "lông", "giày", "áo", "quần", "phụ", "kiện", "giá", "dưới", "trên", "triệu", "yonex",
+                "lining", "li-ning", "victor", "đỏ", "xanh", "đen", "trắng", "vàng", "hồng", "tím", "cam",
+                "3u", "4u", "5u", "phù", "hợp", "còn", "hàng", "bao", "nhiêu", "loại", "có", "không",
+                "một", "chiếc", "cây", "nào", "được", "với", "và", "hoặc", "người", "mới", "chơi", "tốt");
+        return java.util.Arrays.stream(promptLower.replaceAll("[^\\p{L}\\p{N}-]+", " ").trim().split("\\s+"))
+                .filter(token -> token.length() > 1 && !ignored.contains(token) && !token.matches("\\d+(tr)?"))
+                .distinct()
+                .limit(3)
+                .toList();
+    }
+
+    private String callGeminiApi(List<ChatMessage> history, List<ChatProductResponse> suggestionDtos, ChatIntent intent) throws Exception {
         String apiUrl = baseUrl + "/chat/completions";
 
         List<Map<String, String>> messagesPayload = new ArrayList<>();
 
         // System prompt aligned to strict guidelines
-        StringBuilder systemPrompt = new StringBuilder();
-        systemPrompt.append("Bạn là trợ lý ảo nội bộ của SmashVN Shop. ")
-                .append("Nhiệm vụ duy nhất của bạn là hỗ trợ khách hàng tìm hiểu sản phẩm đang có trong hệ thống của shop, giải thích thông tin sản phẩm, gợi ý sản phẩm ở mức cơ bản, và hỗ trợ thông tin mua hàng/liên hệ cửa hàng. ")
-                .append("Bạn CHỈ được sử dụng dữ liệu sản phẩm, giá bán, tồn kho, thuộc tính được backend cung cấp trong context dưới đây. ")
-                .append("Tuyệt đối KHÔNG tự bịa tên sản phẩm, giá bán, tồn kho, thông số kỹ thuật hoặc thông tin chính sách của shop. ")
-                .append("Không được tự tạo card HTML hay layout cho sản phẩm (vì frontend sẽ tự hiển thị thông qua DTO gửi kèm). ")
-                .append("Tuyệt đối KHÔNG viết số điện thoại, email hoặc địa chỉ cửa hàng trực tiếp vào văn bản câu trả lời (vì frontend sẽ tự động hiển thị khối liên lạc này từ DTO). ");
+        StringBuilder systemPrompt = new StringBuilder("""
+                Bạn là trợ lý tư vấn sản phẩm của SMASH.
+                Quy tắc:
+                - Chỉ sử dụng dữ liệu sản phẩm được hệ thống cung cấp.
+                - Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu và tối đa 3 câu.
+                - Không tự tạo tên, giá, tồn kho, hình ảnh hoặc đường dẫn.
+                - Chỉ đề xuất tối đa 3 sản phẩm và chỉ nêu đặc điểm liên quan.
+                - Không lặp lại toàn bộ thông tin sản phẩm, không tạo HTML.
+                - Khi không có dữ liệu phù hợp, nói rõ là chưa tìm thấy.
+                """);
 
         if (intent == ChatIntent.ADVANCED_CONSULTATION) {
             systemPrompt.append("Lưu ý đặc biệt: Khách hàng đang hỏi tư vấn chuyên sâu/kỹ thuật/y tế. Bạn KHÔNG được đưa ra quyết định mức căng chính xác và KHÔNG được khẳng định sản phẩm phù hợp tuyệt đối. Hãy chỉ diễn giải thông số thật từ database cơ bản và khuyên khách hàng liên hệ nhân viên hoặc đến trực tiếp cửa hàng để được hỗ trợ chuyên sâu nhất. ");
@@ -504,14 +581,12 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (suggestionDtos.isEmpty()) {
             systemPrompt.append("(Không tìm thấy sản phẩm phù hợp trong dữ liệu của shop. Vui lòng thông báo rõ với khách và gợi ý đổi tiêu chí tìm kiếm).\n");
         } else {
-            for (ProductSuggestionDto prod : suggestionDtos) {
+            for (ChatProductResponse prod : suggestionDtos) {
                 systemPrompt.append("- ID: ").append(prod.getId())
-                        .append(", Tên: ").append(prod.getTenSanPham())
-                        .append(", Thương hiệu: ").append(prod.getThuongHieu())
-                        .append(", Màu sắc: ").append(prod.getMauSac())
-                        .append(", Trọng lượng: ").append(prod.getTrongLuong())
-                        .append(", Giá: ").append(prod.getGiaBan().toPlainString()).append(" VND")
-                        .append(", Tồn kho: ").append(prod.getSoLuongTon()).append("\n");
+                        .append(", Tên: ").append(prod.getName())
+                        .append(", Thương hiệu: ").append(prod.getBrand())
+                        .append(", Giá: ").append(prod.getPrice().toPlainString()).append(" VND")
+                        .append(", Mô tả: ").append(prod.getShortDescription()).append("\n");
             }
         }
 
@@ -530,53 +605,15 @@ public class ChatbotServiceImpl implements ChatbotService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", model);
         requestBody.put("messages", messagesPayload);
+        requestBody.put("max_tokens", 220);
 
-        int attempt = 0;
-        int maxAttempts = 3;
-        long delay = 1000;
-        ResponseEntity<Map<String, Object>> response = null;
-
-        while (attempt < maxAttempts) {
-            try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.set("Authorization", "Bearer " + apiKey);
-
-                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-                response = geminiRestTemplate.exchange(apiUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<Map<String, Object>>() {
-                });
-                break;
-            } catch (HttpStatusCodeException ex) {
-                int status = ex.getStatusCode().value();
-                if (status == 429 || status == 502 || status == 503 || status == 504) {
-                    attempt++;
-                    if (attempt >= maxAttempts) {
-                        throw ex;
-                    }
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException("Thread interrupted during retry delay", ie);
-                    }
-                    delay *= 2;
-                } else {
-                    throw ex;
-                }
-            } catch (ResourceAccessException ex) {
-                attempt++;
-                if (attempt >= maxAttempts) {
-                    throw ex;
-                }
-                try {
-                    Thread.sleep(delay);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Thread interrupted during retry delay", ie);
-                }
-                delay *= 2;
-            }
-        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + apiKey);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map<String, Object>> response = geminiRestTemplate.exchange(apiUrl, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {
+        });
 
         if (response != null && response.getBody() != null) {
             Map<String, Object> body = response.getBody();
@@ -593,7 +630,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         throw new RuntimeException("Cấu trúc phản hồi từ Gemini không hợp lệ.");
     }
 
-    private String validateGeminiResponse(String responseText, List<ProductSuggestionDto> suggestionDtos) {
+    private String validateGeminiResponse(String responseText, List<ChatProductResponse> suggestionDtos) {
         String lowerText = responseText.toLowerCase();
 
         // 1. Check system leakage
@@ -633,23 +670,48 @@ public class ChatbotServiceImpl implements ChatbotService {
         return dto;
     }
 
-    private ProductSuggestionDto mapToProductSuggestionDto(SanPhamChiTiet v) {
-        String hinhAnh = null;
+    private ChatProductResponse mapToChatProductResponse(SanPhamChiTiet v) {
+        String hinhAnh = "/images/placeholder.png";
         if (v.getHinhAnhSanPhams() != null && !v.getHinhAnhSanPhams().isEmpty()) {
-            hinhAnh = "/uploads/" + v.getHinhAnhSanPhams().get(0).getUrlHinhAnh();
+            com.smashvn.shop.entity.HinhAnhSanPham mainImage = v.getHinhAnhSanPhams().stream()
+                    .filter(image -> Boolean.TRUE.equals(image.getLaAnhChinh()))
+                    .findFirst()
+                    .orElse(v.getHinhAnhSanPhams().get(0));
+            hinhAnh = normalizeProductImageUrl(mainImage.getUrlHinhAnh());
         }
-
-        return ProductSuggestionDto.builder()
-                .id(v.getId())
-                .tenSanPham(v.getSanPham().getTenSanPham())
-                .thuongHieu(v.getSanPham().getThuongHieu() != null ? v.getSanPham().getThuongHieu().getTenThuongHieu() : "N/A")
-                .mauSac(v.getMauSac())
-                .trongLuong(v.getTrongLuong())
-                .giaBan(v.getGiaBan())
-                .soLuongTon(v.getSoLuongTon())
-                .hinhAnh(hinhAnh)
-                .duongDan("/san-pham/" + v.getSanPham().getId())
+        String description = v.getSanPham().getMoTa();
+        if (description != null) {
+            description = description.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
+        }
+        if (description != null && description.length() > 160) {
+            description = description.substring(0, 157).trim() + "...";
+        }
+        return ChatProductResponse.builder()
+                .id(v.getSanPham().getId())
+                .name(v.getSanPham().getTenSanPham())
+                .brand(v.getSanPham().getThuongHieu() != null ? v.getSanPham().getThuongHieu().getTenThuongHieu() : null)
+                .price(v.getGiaBan())
+                .shortDescription(description)
+                .imageUrl(hinhAnh)
+                .productUrl("/san-pham/" + v.getSanPham().getId())
                 .build();
+    }
+
+    private String normalizeProductImageUrl(String storedPath) {
+        if (storedPath == null || storedPath.isBlank()) {
+            return "/images/placeholder.png";
+        }
+        String path = storedPath.trim().replace('\\', '/');
+        if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("/uploads/")) {
+            return path;
+        }
+        if (path.startsWith("uploads/")) {
+            return "/" + path;
+        }
+        if (path.startsWith("product/")) {
+            return "/uploads/" + path;
+        }
+        return "/uploads/product/" + path;
     }
 
     private ChatMessageDto mapToDto(ChatMessage m) {

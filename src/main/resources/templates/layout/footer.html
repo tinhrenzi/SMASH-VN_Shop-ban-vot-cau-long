@@ -557,6 +557,22 @@
                     color: #ff4500;
                     font-weight: 700;
                 }
+                .chatbot-product-description {
+                    margin: 0;
+                    color: #687080;
+                    font-size: 0.72rem;
+                    line-height: 1.35;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .chatbot-product-link {
+                    color: #ff4500;
+                    font-size: 0.74rem;
+                    font-weight: 600;
+                    text-decoration: none;
+                }
 
                 /* Premium styling for parsed Markdown in Chatbot Bubble */
                 .chatbot-msg-bubble h1, .chatbot-msg-bubble h2, .chatbot-msg-bubble h3 {
@@ -629,9 +645,6 @@
                     margin: 12px 0;
                 }
             </style>
-
-            <!-- Load Marked.js to render premium Markdown formatting -->
-            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
@@ -747,12 +760,8 @@
                         .then(parseJsonResponse)
                         .then(data => {
                             removeTypingIndicator();
-                            if (data && data.length > 0) {
-                                // Clear typing and render bot message from response array
-                                const botMsg = data.find(m => m.senderType === "BOT");
-                                if (botMsg) {
-                                    renderMessage(botMsg.id, botMsg.senderType, botMsg.content, botMsg.thoiGian, botMsg.suggestedProducts);
-                                }
+                            if (data && data.message != null) {
+                                renderMessage(data.messageId, "BOT", data.message, data.time, data.products);
                             }
                         })
                         .catch(err => {
@@ -794,16 +803,8 @@
                         
                         const bubble = document.createElement("div");
                         bubble.className = "chatbot-msg-bubble shadow-sm";
-                        if (senderType === 'BOT') {
-                            // Parse markdown to HTML on the client side for maximum layout aesthetics
-                            if (typeof marked !== 'undefined') {
-                                bubble.innerHTML = marked.parse(content);
-                            } else {
-                                bubble.innerHTML = content.replace(/\n/g, '<br>');
-                            }
-                        } else {
-                            bubble.textContent = content; // Escaped text for user input
-                        }
+                        bubble.textContent = content;
+                        bubble.style.whiteSpace = "pre-line";
                         wrap.appendChild(bubble);
 
                         // Add likes/dislikes feedback for BOT messages
@@ -832,15 +833,14 @@
                             prodContainer.className = "chatbot-products-container";
 
                             products.forEach(p => {
-                                const card = document.createElement("a");
-                                card.href = p.duongDan || `/san-pham/${p.id}`;
+                                const card = document.createElement("div");
                                 card.className = "chatbot-product-card";
-                                card.target = "_blank";
 
                                 const img = document.createElement("img");
-                                img.src = p.hinhAnh || '/images/favicon.png';
+                                img.src = p.imageUrl;
+                                img.onerror = function() { this.onerror = null; this.src = '/images/placeholder.png'; };
                                 img.className = "chatbot-product-img";
-                                img.alt = p.tenSanPham;
+                                img.alt = p.name;
                                 card.appendChild(img);
 
                                 const info = document.createElement("div");
@@ -848,13 +848,26 @@
 
                                 const name = document.createElement("div");
                                 name.className = "chatbot-product-name";
-                                name.textContent = p.tenSanPham;
+                                name.textContent = p.name;
                                 info.appendChild(name);
 
                                 const price = document.createElement("div");
                                 price.className = "chatbot-product-price";
-                                price.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.giaBan);
+                                price.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price);
                                 info.appendChild(price);
+
+                                if (p.shortDescription) {
+                                    const description = document.createElement("p");
+                                    description.className = "chatbot-product-description";
+                                    description.textContent = p.shortDescription;
+                                    info.appendChild(description);
+                                }
+
+                                const link = document.createElement("a");
+                                link.href = p.productUrl;
+                                link.className = "chatbot-product-link";
+                                link.textContent = "Xem sản phẩm";
+                                info.appendChild(link);
 
                                 card.appendChild(info);
                                 prodContainer.appendChild(card);
@@ -882,7 +895,7 @@
                             },
                             body: JSON.stringify({
                                 messageId: messageId,
-                                positive: positive,
+                                rating: positive ? 1 : -1,
                                 note: positive ? "Hữu ích" : "Cần cải thiện"
                             })
                         })

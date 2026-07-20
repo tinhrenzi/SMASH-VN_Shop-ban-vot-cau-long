@@ -17,8 +17,12 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 
     @Query("""
-            SELECT spct FROM SanPhamChiTiet spct
+            SELECT DISTINCT spct FROM SanPhamChiTiet spct
             JOIN FETCH spct.sanPham sp
+            LEFT JOIN FETCH sp.danhMuc dm
+            LEFT JOIN FETCH sp.thuongHieu th
+            LEFT JOIN FETCH sp.nhanVien nv
+            LEFT JOIN FETCH spct.hinhAnhSanPhams ha
             WHERE sp.trangThaiValue = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
@@ -37,7 +41,19 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             WHERE sp.trangThaiValue = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
-              AND (:brandName IS NULL OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :brandName, '%')))
+              AND (:keyword IS NULL OR
+                   LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(COALESCE(spct.chatLieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(COALESCE(spct.kichThuoc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword2, '%')) OR
+                   LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword2, '%')) OR
+                   LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword3, '%')) OR
+                   LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword3, '%')))
+              AND (:brandName IS NULL OR
+                   REPLACE(LOWER(th.tenThuongHieu), '-', '') LIKE
+                   REPLACE(LOWER(CONCAT('%', :brandName, '%')), '-', ''))
               AND (:categoryName IS NULL OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :categoryName, '%')))
               AND (:minPrice IS NULL OR spct.giaBan >= :minPrice)
               AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)
@@ -46,6 +62,9 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             ORDER BY spct.soLuongTon DESC, spct.id DESC
             """)
     List<SanPhamChiTiet> searchForChatbot(
+            @Param("keyword") String keyword,
+            @Param("keyword2") String keyword2,
+            @Param("keyword3") String keyword3,
             @Param("brandName") String brandName,
             @Param("categoryName") String categoryName,
             @Param("minPrice") java.math.BigDecimal minPrice,

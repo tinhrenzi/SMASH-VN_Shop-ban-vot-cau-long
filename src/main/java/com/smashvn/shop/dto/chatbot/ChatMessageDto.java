@@ -17,7 +17,7 @@ public class ChatMessageDto {
     private LocalDateTime createdAt;
     private String thoiGian; // formatted time e.g. "15:30"
     private String status;
-    private List<ProductSuggestionDto> suggestedProducts;
+    private List<ChatProductResponse> suggestedProducts;
     private boolean requiresHumanSupport;
     private ShopContactDto contact;
 }

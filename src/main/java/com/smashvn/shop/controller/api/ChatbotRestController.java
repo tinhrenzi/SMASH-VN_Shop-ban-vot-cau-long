@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.smashvn.shop.dto.chatbot.ChatFeedbackRequest;
 import com.smashvn.shop.dto.chatbot.ChatMessageDto;
 import com.smashvn.shop.dto.chatbot.ChatRequest;
+import com.smashvn.shop.dto.chatbot.ChatResponse;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.ChatbotService;
@@ -45,15 +46,23 @@ public class ChatbotRestController {
     }
 
     @PostMapping("/send")
-    public ResponseEntity<List<ChatMessageDto>> sendMessage(
+    public ResponseEntity<ChatResponse> sendMessage(
             @RequestBody ChatRequest request,
             HttpSession session) {
         Integer idTaiKhoan = resolveTaiKhoanId(session);
         String sessionId = resolveSessionId(session);
 
         ChatMessageDto response = chatbotService.sendMessage(request, idTaiKhoan, sessionId);
-        // Wrap in list to fit frontend JS finding mechanism
-        return ResponseEntity.ok(List.of(response));
+        return ResponseEntity.ok(ChatResponse.builder()
+                .messageId(response.getId())
+                .conversationId(response.getConversationId())
+                .message(response.getContent())
+                .status(response.getStatus())
+                .time(response.getThoiGian())
+                .products(response.getSuggestedProducts() == null ? List.of() : response.getSuggestedProducts())
+                .requiresHumanSupport(response.isRequiresHumanSupport())
+                .contact(response.getContact())
+                .build());
     }
 
     @PostMapping("/feedback")

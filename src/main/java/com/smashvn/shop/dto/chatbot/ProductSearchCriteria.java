@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 @Data
 public class ProductSearchCriteria {
     private String keyword;
+    private String keyword2;
+    private String keyword3;
     private String brandName;
     private Integer categoryId;
     private String categoryName;
@@ -16,5 +18,5 @@ public class ProductSearchCriteria {
     private String tension;
     private Boolean inStock = true;
     private Boolean active = true;
-    private Integer maxResults = 5;
+    private Integer maxResults = 3;
 }
