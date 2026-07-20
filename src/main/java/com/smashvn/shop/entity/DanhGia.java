@@ -115,4 +115,20 @@ public class DanhGia {
     public void setNguoiHienHinhAnh(TaiKhoan nguoiHienHinhAnh) {
         this.nhanVien = nguoiHienHinhAnh;
     }
+
+    public TaiKhoan getNguoiAnBinhLuan() {
+        return Boolean.TRUE.equals(binhLuanAn) ? nhanVien : null;
+    }
+
+    public TaiKhoan getNguoiHienBinhLuan() {
+        return Boolean.FALSE.equals(binhLuanAn) && ngayHienBinhLuan != null ? nhanVien : null;
+    }
+
+    public TaiKhoan getNguoiAnHinhAnh() {
+        return Boolean.TRUE.equals(hinhAnhAn) ? nhanVien : null;
+    }
+
+    public TaiKhoan getNguoiHienHinhAnh() {
+        return Boolean.FALSE.equals(hinhAnhAn) && ngayHienHinhAnh != null ? nhanVien : null;
+    }
 }

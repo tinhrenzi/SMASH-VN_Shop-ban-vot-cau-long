@@ -1315,4 +1315,32 @@ public class OrderViewService {
                 roleStr
         );
     }
+
+    public record PaymentStatusInfo(String code, String label, String badgeClass) {}
+
+    public PaymentStatusInfo getPaymentStatusInfo(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return new PaymentStatusInfo("UNKNOWN", "Không xác định", "bg-secondary");
+        }
+        String upperStatus = status.trim().toUpperCase();
+        return switch (upperStatus) {
+            case "PAID", "DA_THANH_TOAN" -> 
+                new PaymentStatusInfo("PAID", "Đã thanh toán", "bg-success");
+            case "PENDING", "CHO_THANH_TOAN" -> 
+                new PaymentStatusInfo("PENDING", "Chờ thanh toán", "bg-warning text-dark");
+            case "CANCELLED", "CANCELED", "HUY", "DA_HUY", "FAILED" -> 
+                new PaymentStatusInfo("CANCELLED", "Đã hủy", "bg-danger");
+            case "REFUNDED" -> 
+                new PaymentStatusInfo("REFUNDED", "Đã hoàn tiền", "bg-danger");
+            case "CHO_HOAN_TIEN", "HOAN_TIEN" -> 
+                new PaymentStatusInfo("CHO_HOAN_TIEN", "Chờ hoàn tiền", "bg-warning text-dark");
+            case "SAI LỆCH SỐ TIỀN", "AMOUNT_MISMATCH" -> 
+                new PaymentStatusInfo("AMOUNT_MISMATCH", "Sai lệch số tiền", "bg-danger");
+            case "PAID_RECEIVED_AFTER_CANCEL" -> 
+                new PaymentStatusInfo("PAID_RECEIVED_AFTER_CANCEL", "Nhận thanh toán sau hủy", "bg-info");
+            default -> 
+                new PaymentStatusInfo("UNKNOWN", upperStatus, "bg-secondary");
+        };
+    }
 }
+

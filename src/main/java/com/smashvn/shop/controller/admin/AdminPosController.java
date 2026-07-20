@@ -46,6 +46,7 @@ public class AdminPosController {
     private final com.smashvn.shop.repository.ThuongHieuRepository thuongHieuRepository;
     private final PricingService pricingService;
     private final SepayConfig sepayConfig;
+    private final com.smashvn.shop.service.order.OrderViewService orderViewService;
 
     // ─── Trang chính POS ────────────────────────────────────────────────────────
     @GetMapping
@@ -269,10 +270,18 @@ public class AdminPosController {
                 ? hd.getPhuongThucThanhToan().getTenPhuongThuc()
                 : "Tiền mặt";
 
-        String status = hd.getTrangThaiThanhToan();
-        String trangThaiLabel = "DA_THANH_TOAN".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)
-                ? "ĐÃ THANH TOÁN"
-                : ("CHO_THANH_TOAN".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status) ? "CHỜ THANH TOÁN" : "HỦY");
+        var paymentInfo = orderViewService.getPaymentStatusInfo(hd.getTrangThaiThanhToan());
+        String trangThaiLabel = paymentInfo.label();
+
+        if (hd.getMaVoucherApDung() == null || hd.getMaVoucherApDung().isEmpty()) {
+            if (hd.getPhieuGiamGia() != null) {
+                hd.setMaVoucherApDung(hd.getPhieuGiamGia().getMaPhieu());
+            } else if (hd.getSoTienGiamVoucher().compareTo(BigDecimal.ZERO) > 0) {
+                hd.setMaVoucherApDung("Voucher");
+            } else {
+                hd.setMaVoucherApDung("Không áp dụng voucher");
+            }
+        }
 
         if (hd.getThoiGianXacNhan() == null && hd.getPaidAt() != null) {
             hd.setThoiGianXacNhan(hd.getPaidAt());

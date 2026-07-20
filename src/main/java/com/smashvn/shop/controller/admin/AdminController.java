@@ -99,6 +99,7 @@ public class AdminController {
         }
         model.addAttribute("currentStatusLabels", currentStatusLabels);
         model.addAttribute("nextStatusLabels", nextStatusLabels);
+        model.addAttribute("orderViewService", orderViewService);
 
         // Parse dates
         java.time.LocalDateTime start = parseStartDate(startDate);
@@ -379,9 +380,42 @@ public class AdminController {
             map.put("tongTien", hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO);
             map.put("phiVanChuyen", hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen() : java.math.BigDecimal.ZERO);
             map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : java.math.BigDecimal.ZERO);
-            map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");
-            map.put("tenVoucherApDung", hd.getTenVoucherApDung() != null ? hd.getTenVoucherApDung() : "");
-            map.put("moTaVoucherSnapshot", hd.getMoTaVoucherSnapshot() != null ? hd.getMoTaVoucherSnapshot() : "");
+
+            String maVoucher = hd.getMaVoucherApDung();
+            String tenVoucher = hd.getTenVoucherApDung();
+            String moTaVoucher = hd.getMoTaVoucherSnapshot();
+
+            if (maVoucher == null || maVoucher.isEmpty()) {
+                if (hd.getPhieuGiamGia() != null) {
+                    maVoucher = hd.getPhieuGiamGia().getMaPhieu();
+                } else if (hd.getSoTienGiamVoucher() != null && hd.getSoTienGiamVoucher().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    maVoucher = "Voucher";
+                } else {
+                    maVoucher = "Không áp dụng voucher";
+                }
+            }
+            if (tenVoucher == null || tenVoucher.isEmpty()) {
+                if (hd.getPhieuGiamGia() != null) {
+                    tenVoucher = hd.getPhieuGiamGia().getTenPhieu();
+                } else if (hd.getSoTienGiamVoucher() != null && hd.getSoTienGiamVoucher().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    tenVoucher = "Voucher giảm giá";
+                } else {
+                    tenVoucher = "Không áp dụng voucher";
+                }
+            }
+            if (moTaVoucher == null || moTaVoucher.isEmpty()) {
+                if (hd.getPhieuGiamGia() != null) {
+                    var pg = hd.getPhieuGiamGia();
+                    String limitDesc = pg.getGiaTriGiamToiDa() != null ? " (Giảm tối đa " + pg.getGiaTriGiamToiDa() + "đ)" : "";
+                    moTaVoucher = "Giảm " + pg.getGiaTri() + ("%".equals(pg.getDonVi()) ? "%" : "đ") + limitDesc + " cho đơn hàng từ " + pg.getGiaTriDonHangToiThieu() + "đ";
+                } else {
+                    moTaVoucher = "Không áp dụng voucher";
+                }
+            }
+
+            map.put("maVoucherApDung", maVoucher);
+            map.put("tenVoucherApDung", tenVoucher);
+            map.put("moTaVoucherSnapshot", moTaVoucher);
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
             map.put("ghnOrderCode", hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "");
@@ -392,7 +426,13 @@ public class AdminController {
                 tenPhuongThuc = hd.getPhuongThucThanhToan().getTenPhuongThuc();
             }
             map.put("paymentMethod", tenPhuongThuc);
+
+            var paymentInfo = orderViewService.getPaymentStatusInfo(hd.getTrangThaiThanhToan());
             map.put("paymentStatus", hd.getTrangThaiThanhToan() != null ? hd.getTrangThaiThanhToan() : "N/A");
+            map.put("paymentStatusCode", paymentInfo.code());
+            map.put("paymentStatusLabel", paymentInfo.label());
+            map.put("paymentStatusBadgeClass", paymentInfo.badgeClass());
+
             map.put("maGiaoDich", hd.getMaGiaoDich() != null ? hd.getMaGiaoDich() : "");
             map.put("nguoiXacNhan", hd.getNguoiXacNhanThanhToan() != null ? hd.getNguoiXacNhanThanhToan() : "Nhân viên hệ thống");
             String formattedXacNhanAt = "";
@@ -460,7 +500,7 @@ public class AdminController {
 
                 String thuocTinh = "";
                 if (item.getThuocTinhSnapshot() != null && !item.getThuocTinhSnapshot().isBlank()) {
-                    thuocTinh = item.getThuocTinhSnapshot();
+                    thuocTinh = item.getThuocTinhSnapshot().replace("Mức cảng:", "Sức căng khuyến nghị:");
                 } else if (item.getSanPhamChiTiet() != null) {
                     thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
                 }

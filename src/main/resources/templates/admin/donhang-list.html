@@ -189,7 +189,9 @@
                                             <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
                                             <td>
                                                 <span class="badge bg-dark text-white text-wrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
-                                                <small class="badge bg-warning text-dark border mt-1 text-wrap" th:text="${hd.trangThaiThanhToan}">Chưa thanh toán</small>
+                                                <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
+                                                       th:class="'badge border mt-1 text-wrap ' + ${statusInfo.badgeClass}" 
+                                                       th:text="${statusInfo.label}">Chưa thanh toán</small>
                                                 <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-wrap" style="font-size: 0.75rem;">
                                                     <span class="text-muted">Mã GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
                                                 </div>
@@ -334,7 +336,9 @@
                                             <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
                                             <td>
                                                 <span class="badge bg-dark text-white text-wrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
-                                                <small class="badge bg-warning text-dark border mt-1 text-wrap" th:text="${hd.trangThaiThanhToan}">Chưa thanh toán</small>
+                                                <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
+                                                       th:class="'badge border mt-1 text-wrap ' + ${statusInfo.badgeClass}" 
+                                                       th:text="${statusInfo.label}">Chưa thanh toán</small>
                                                 <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-wrap" style="font-size: 0.75rem;">
                                                     <span class="text-muted">Mã GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
                                                 </div>
@@ -728,7 +732,7 @@ function openOrderDetailModal(orderId) {
                     <div class="col-md-6">
                         <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin thanh toán</h6>
                         <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${data.paymentMethod || 'N/A'}</p>
-                        <p class="mb-1"><strong>Trạng thái thanh toán:</strong> <span class="badge ${data.paymentStatus === 'DA_THANH_TOAN' ? 'bg-success' : data.paymentStatus === 'CHO_HOAN_TIEN' || data.paymentStatus === 'REFUNDED' ? 'bg-danger' : 'bg-warning text-dark'}">${data.paymentStatus || 'N/A'}</span></p>
+                        <p class="mb-1"><strong>Trạng thái thanh toán:</strong> <span class="badge ${data.paymentStatusBadgeClass || 'bg-secondary'}">${data.paymentStatusLabel || data.paymentStatus || 'Không xác định'}</span></p>
 
                         ${data.maGiaoDich ? `<p class="mb-1"><strong>Mã giao dịch:</strong> <code class="text-dark">${data.maGiaoDich}</code></p>` : ''}
                         ${data.thoiGianThanhToan ? `<p class="mb-1"><strong>Thời gian thanh toán:</strong> ${data.thoiGianThanhToan}</p>` : ''}
@@ -843,7 +847,7 @@ function openOrderDetailModal(orderId) {
                             <div><strong>Số ĐT khách:</strong> ${data.sdt || 'N/A'}</div>
                             <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
                             <div><strong>Thanh toán:</strong> ${data.paymentMethod}</div>
-                            <div><strong>Trạng thái:</strong> <span style="font-weight: bold; color: ${data.paymentStatus === 'DA_THANH_TOAN' ? '#198754' : '#dc3545'}">${data.paymentStatus}</span></div>
+                            <div><strong>Trạng thái:</strong> <span style="font-weight: bold; color: ${data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('success') ? '#198754' : (data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('warning') ? '#ff9800' : '#dc3545')}">${data.paymentStatusLabel || data.paymentStatus || 'Không xác định'}</span></div>
                             ${data.maGiaoDich ? `<div><strong>Mã giao dịch:</strong> ${data.maGiaoDich}</div>` : ''}
                             <div><strong>NV xác nhận:</strong> ${data.nguoiXacNhan || 'Nhân viên hệ thống'}</div>
                             ${data.thoiGianXacNhan ? `<div><strong>Thời gian XN:</strong> ${data.thoiGianXacNhan}</div>` : ''}

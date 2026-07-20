@@ -615,7 +615,7 @@ public class GioHangService {
                 if (thuocTinh.length() > 0) {
                     thuocTinh.append(", ");
                 }
-                thuocTinh.append("Mức cảng: ").append(lockedSpct.getMucCang());
+                thuocTinh.append("Sức căng khuyến nghị: ").append(lockedSpct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(thuocTinh.toString());
 

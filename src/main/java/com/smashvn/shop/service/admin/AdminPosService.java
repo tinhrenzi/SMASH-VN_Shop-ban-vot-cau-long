@@ -314,7 +314,7 @@ public class AdminPosService {
                 if (thuocTinhSb.length() > 0) {
                     thuocTinhSb.append(", ");
                 }
-                thuocTinhSb.append("Mức cảng: ").append(spct.getMucCang());
+                thuocTinhSb.append("Sức căng khuyến nghị: ").append(spct.getMucCang());
             }
             hdct.setThuocTinhSnapshot(thuocTinhSb.toString());
 
