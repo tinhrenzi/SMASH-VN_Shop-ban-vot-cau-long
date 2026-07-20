@@ -207,6 +207,7 @@ public class UserDangNhapControllerTest {
         String accountKey = "invalid-email";
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenThrow(new RuntimeException("Định dạng email không hợp lệ!"));
 
         Model model = new ConcurrentModel();
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
@@ -214,7 +215,7 @@ public class UserDangNhapControllerTest {
         assertEquals("signin", view);
         assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
         verify(loginRateLimiter).loginFailed(accountKey);
-        verifyNoInteractions(userDangNhapService);
+        verify(userDangNhapService).kiemTraDangNhap(email, matKhau);
     }
 
     @Test

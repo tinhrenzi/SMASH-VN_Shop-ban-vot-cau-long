@@ -5,6 +5,7 @@ import com.smashvn.shop.exception.NewsletterValidationException;
 import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.service.impl.NewsletterServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,8 @@ public class NewsletterServiceTest {
     private PhieuGiamGiaRepository phieuGiamGiaRepository;
     @Mock
     private JavaMailSender mailSender;
+    @Mock
+    private KhachHangRepository khachHangRepository;
 
     @InjectMocks
     private NewsletterServiceImpl newsletterService;

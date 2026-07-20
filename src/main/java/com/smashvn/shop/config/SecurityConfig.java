@@ -25,7 +25,8 @@ public class SecurityConfig {
                         "/api/payment/sepay/ipn",
                         "/api/ghn/webhook",
                         "/api/chat/**",
-                        "/api/newsletter/subscribe"
+                        "/api/newsletter/subscribe",
+                        "/api/newsletter/unsubscribe-ajax"
                 ))
                 // Cấu hình các Header bảo mật nâng cao
                 .headers(headers -> {

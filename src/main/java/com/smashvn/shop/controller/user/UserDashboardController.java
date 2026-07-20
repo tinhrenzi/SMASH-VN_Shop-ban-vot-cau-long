@@ -41,6 +41,7 @@ public class UserDashboardController {
     private final SanPhamYeuThichRepository wishlistRepository;
     private final ThongBaoRepository thongBaoRepository;
     private final HoaDonRepository hoaDonRepository;
+    private final com.smashvn.shop.repository.NewsletterSubscriberRepository newsletterSubscriberRepository;
 
     // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
     private KhachHang getLoggedInCustomer(HttpSession session) {
@@ -87,6 +88,15 @@ public class UserDashboardController {
         model.addAttribute("orderPlaced", ordersList.size() - cancelled);
         model.addAttribute("cancelOrders", cancelled);
         model.addAttribute("wishlist", wishlistCount);
+
+        boolean nhanBanTin = false;
+        if (kh.getTaiKhoan() != null && kh.getTaiKhoan().getUsername() != null) {
+            String userEmail = kh.getTaiKhoan().getUsername().trim().toLowerCase();
+            nhanBanTin = newsletterSubscriberRepository.findByEmail(userEmail)
+                    .map(sub -> "hoat_dong".equalsIgnoreCase(sub.getTrangThai()))
+                    .orElse(false);
+        }
+        model.addAttribute("nhanBanTin", nhanBanTin);
 
         // Lấy địa chỉ giao hàng và hóa đơn mặc định
         SoDiaChi defaultShipping = null;

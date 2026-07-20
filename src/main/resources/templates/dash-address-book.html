@@ -166,7 +166,7 @@
 													    </td>
 													    <td th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan}">Tên người nhận</td>
 													    <td th:text="${dc.sdtNguoiNhan}">SĐT</td>
-													    <td th:text="${dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.thanhPho != null and !dc.thanhPho.isEmpty() and dc.thanhPho != dc.tinhThanh ? ', ' + dc.thanhPho : '')}">Địa chỉ nhà</td>
+													    <td th:text="${dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.districtName != null and !dc.districtName.isEmpty() ? ', ' + dc.districtName : '')}">Địa chỉ nhà</td>
 													    <td th:text="${dc.tinhThanh + ', ' + dc.quocGia}">Tỉnh/Thành phố</td>
 													    <td>
 													        <div class="radio-box">

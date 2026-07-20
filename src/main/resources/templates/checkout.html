@@ -287,7 +287,7 @@
                                                     <option th:each="dc : ${listDiaChi}" 
                                                             th:value="${dc.id}"
                                                             th:selected="${dc.defaultShipping}"
-                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.thanhPho != null and !dc.thanhPho.isEmpty() and dc.thanhPho != dc.tinhThanh ? ', ' + dc.thanhPho : '') + ', ' + dc.tinhThanh + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
+                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.districtName != null and !dc.districtName.isEmpty() ? ', ' + dc.districtName : '') + ', ' + dc.provinceName + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
                                                     </option>
                                                     <option value="new_address">-- Nhập địa chỉ mới --</option>
                                                 </select>
@@ -482,7 +482,7 @@
                                     <input type="hidden" name="phuongThucThanhToan" id="phuongThucThanhToan" value="COD">
 
                                     <div class="u-s-m-t-30">
-                                        <button class="btn btn--e-brand-b-2 w-100" type="submit" style="padding: 16px; font-size: 15px; font-weight: 700; border-radius: 8px;">ĐẶT HÀNG NGAY</button>
+                                        <button id="btn-checkout-submit" class="btn btn--e-brand-b-2 w-100" type="submit" style="padding: 16px; font-size: 15px; font-weight: 700; border-radius: 8px;">ĐẶT HÀNG NGAY</button>
                                     </div>
                                 </div>
                             </div>
@@ -650,6 +650,33 @@
         let isGhnLoadingMasterData = false;
         let quickAddressParseSeq = 0;
         let diaChiNhanTouchedByUser = false;
+        let isShippingLoading = false;
+
+        function setShippingFeeLoadingState(isLoading) {
+            isShippingLoading = isLoading;
+            const $btn = $('#btn-checkout-submit');
+            
+            if (isLoading) {
+                $('.js-ship-fee').html('<span style="color: #ff4500; font-size: 13px; font-weight: 600;"><i class="fas fa-spinner fa-spin me-1"></i> Đang tính phí...</span>');
+                if ($btn.length) {
+                    $btn.prop('disabled', true);
+                    if (!$btn.attr('data-original-text')) {
+                        $btn.attr('data-original-text', $btn.html());
+                    }
+                    $btn.html('<i class="fas fa-spinner fa-spin me-1"></i> ĐANG TÍNH PHÍ VẬN CHUYỂN...');
+                }
+            } else {
+                if ($btn.length) {
+                    $btn.prop('disabled', false);
+                    const origText = $btn.attr('data-original-text');
+                    if (origText) {
+                        $btn.html(origText);
+                    } else {
+                        $btn.html('ĐẶT HÀNG NGAY');
+                    }
+                }
+            }
+        }
 
         function cleanString(str) {
             if (!str) return '';
@@ -899,6 +926,7 @@
                 targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
             }
         }
 
@@ -937,6 +965,7 @@
                 targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
             }
         }
 
@@ -975,6 +1004,7 @@
                 targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
             }
             
             // Clear match target after fully matching ward
@@ -1158,6 +1188,7 @@
                     $('#manual-address-fields').slideUp(200);
                     clearValidationErrors();
 
+                    if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(true);
                     isGhnLoadingMasterData = true;
                     const details = addressMap[addressId];
                     $('#hoTenNhan').val(details.hoTen);
@@ -1313,6 +1344,7 @@
                     $('.js-ship-fee').text('0 đ');
                     currentShippingFee = 0;
                     updateUITotal();
+                    setShippingFeeLoadingState(false);
                     return;
                 }
 
@@ -1325,10 +1357,15 @@
 
                 if (isGhn) {
                     if (!provinceVal || !districtVal || !wardVal) {
-                        return; // do not calculate if required GHN fields are still empty
+                        // Keep loading active if still cascading/loading
+                        if (isGhnLoadingMasterData) {
+                            setShippingFeeLoadingState(true);
+                        }
+                        return; 
                     }
                     if (isGhnLoadingMasterData) {
-                        return; // do not calculate if AJAX loading is in progress
+                        setShippingFeeLoadingState(true);
+                        return; 
                     }
                 }
 
@@ -1358,6 +1395,8 @@
                     pendingShippingRequest.abort();
                 }
 
+                setShippingFeeLoadingState(true);
+
                 pendingShippingRequest = $.ajax({
                     url: '/api/shipping/fee',
                     type: 'GET',
@@ -1373,10 +1412,12 @@
                         const formattedFee = new Intl.NumberFormat('vi-VN').format(fee) + ' đ';
                         $('.js-ship-fee').text(formattedFee);
                         updateUITotal();
+                        setShippingFeeLoadingState(false);
                     },
                     error: function(xhr, status, error) {
                         if (status !== 'abort') {
                             console.error("Lỗi tính phí vận chuyển:", error);
+                            setShippingFeeLoadingState(false);
                         }
                     }
                 });
@@ -1509,6 +1550,11 @@
 
             $('#checkout-form').on('submit', function(e) {
                 e.preventDefault();
+
+                if (typeof isShippingLoading !== 'undefined' && isShippingLoading) {
+                    showToast('Hệ thống đang tính toán phí vận chuyển, vui lòng đợi trong giây lát...', 'warning');
+                    return;
+                }
 
                 let addressType = 'new';
                 if ($('#selectDiaChiLuu').length > 0) {
