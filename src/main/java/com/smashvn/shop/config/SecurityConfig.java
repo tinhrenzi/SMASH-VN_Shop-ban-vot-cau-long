@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/dang-nhap", "/admin/dang-xuat").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**", "/vendor/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
+                .requestMatchers("/api/chat/**").permitAll()
                 // Phân quyền chi tiết cho Admin/Staff theo Backend Enforcement (cả endpoint gốc và sub-paths)
                 .requestMatchers("/admin/nguoi-dung", "/admin/nguoi-dung/**").hasRole("QL")
                 .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")

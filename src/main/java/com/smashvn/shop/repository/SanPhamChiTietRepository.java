@@ -16,6 +16,15 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 
     @Query("""
+            SELECT spct FROM SanPhamChiTiet spct
+            JOIN FETCH spct.sanPham sp
+            WHERE sp.trangThaiValue = true
+              AND spct.trangThaiValue = true
+              AND spct.soLuongTon > 0
+            """)
+    List<SanPhamChiTiet> findAllActiveInStock();
+
+    @Query("""
             SELECT spct
             FROM SanPhamChiTiet spct
             WHERE spct.sanPham.id = :sanPhamId
