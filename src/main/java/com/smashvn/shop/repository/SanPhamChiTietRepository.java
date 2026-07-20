@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +24,35 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND spct.soLuongTon > 0
             """)
     List<SanPhamChiTiet> findAllActiveInStock();
+
+    /**
+     * Database-first lookup used by the chatbot. All business filters are
+     * applied in SQL and Pageable adds the result limit at database level.
+     */
+    @Query("""
+            SELECT DISTINCT spct FROM SanPhamChiTiet spct
+            JOIN FETCH spct.sanPham sp
+            LEFT JOIN FETCH sp.danhMuc dm
+            LEFT JOIN FETCH sp.thuongHieu th
+            WHERE sp.trangThaiValue = true
+              AND spct.trangThaiValue = true
+              AND spct.soLuongTon > 0
+              AND (:brandName IS NULL OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :brandName, '%')))
+              AND (:categoryName IS NULL OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :categoryName, '%')))
+              AND (:minPrice IS NULL OR spct.giaBan >= :minPrice)
+              AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)
+              AND (:color IS NULL OR LOWER(spct.mauSac) LIKE LOWER(CONCAT('%', :color, '%')))
+              AND (:weight IS NULL OR LOWER(spct.trongLuong) LIKE LOWER(CONCAT('%', :weight, '%')))
+            ORDER BY spct.soLuongTon DESC, spct.id DESC
+            """)
+    List<SanPhamChiTiet> searchForChatbot(
+            @Param("brandName") String brandName,
+            @Param("categoryName") String categoryName,
+            @Param("minPrice") java.math.BigDecimal minPrice,
+            @Param("maxPrice") java.math.BigDecimal maxPrice,
+            @Param("color") String color,
+            @Param("weight") String weight,
+            Pageable pageable);
 
     @Query("""
             SELECT spct

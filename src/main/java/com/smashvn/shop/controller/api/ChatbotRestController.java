@@ -1,5 +1,18 @@
 package com.smashvn.shop.controller.api;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.smashvn.shop.dto.chatbot.ChatFeedbackRequest;
 import com.smashvn.shop.dto.chatbot.ChatMessageDto;
 import com.smashvn.shop.dto.chatbot.ChatRequest;
@@ -10,14 +23,6 @@ import com.smashvn.shop.service.ChatbotService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -32,7 +37,7 @@ public class ChatbotRestController {
     public ResponseEntity<List<ChatMessageDto>> getHistory(
             @RequestParam(value = "conversationId", required = false) Long conversationId,
             HttpSession session) {
-        Integer idTaiKhoan = resolveTaiKhoanId();
+        Integer idTaiKhoan = resolveTaiKhoanId(session);
         String sessionId = resolveSessionId(session);
 
         List<ChatMessageDto> history = chatbotService.getConversationHistory(conversationId, idTaiKhoan, sessionId);
@@ -43,7 +48,7 @@ public class ChatbotRestController {
     public ResponseEntity<List<ChatMessageDto>> sendMessage(
             @RequestBody ChatRequest request,
             HttpSession session) {
-        Integer idTaiKhoan = resolveTaiKhoanId();
+        Integer idTaiKhoan = resolveTaiKhoanId(session);
         String sessionId = resolveSessionId(session);
 
         ChatMessageDto response = chatbotService.sendMessage(request, idTaiKhoan, sessionId);
@@ -55,7 +60,7 @@ public class ChatbotRestController {
     public ResponseEntity<?> submitFeedback(
             @RequestBody ChatFeedbackRequest request,
             HttpSession session) {
-        Integer idTaiKhoan = resolveTaiKhoanId();
+        Integer idTaiKhoan = resolveTaiKhoanId(session);
         String sessionId = resolveSessionId(session);
 
         try {
@@ -66,7 +71,16 @@ public class ChatbotRestController {
         }
     }
 
-    private Integer resolveTaiKhoanId() {
+    private Integer resolveTaiKhoanId(HttpSession session) {
+        // Customer authentication in this application is session based, so the
+        // session must be checked before Spring Security (which is normally
+        // anonymous for storefront customers).
+        Object sessionAccountId = session.getAttribute("idNguoiDung");
+        if (sessionAccountId instanceof Integer accountId
+                && taiKhoanRepository.existsById(accountId)) {
+            return accountId;
+        }
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
             String username = auth.getName();

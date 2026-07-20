@@ -1,31 +1,51 @@
 package com.smashvn.shop.service.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
 import com.smashvn.shop.config.ShopContactProperties;
-import com.smashvn.shop.dto.chatbot.*;
-import com.smashvn.shop.entity.*;
+import com.smashvn.shop.dto.chatbot.ChatFeedbackRequest;
+import com.smashvn.shop.dto.chatbot.ChatMessageDto;
+import com.smashvn.shop.dto.chatbot.ChatRequest;
+import com.smashvn.shop.dto.chatbot.ProductSearchCriteria;
+import com.smashvn.shop.dto.chatbot.ProductSuggestionDto;
+import com.smashvn.shop.dto.chatbot.ShopContactDto;
+import com.smashvn.shop.entity.ChatConversation;
+import com.smashvn.shop.entity.ChatFeedback;
+import com.smashvn.shop.entity.ChatMessage;
+import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.chatbot.ChatIntent;
 import com.smashvn.shop.repository.ChatConversationRepository;
-import com.smashvn.shop.repository.ChatMessageRepository;
 import com.smashvn.shop.repository.ChatFeedbackRepository;
+import com.smashvn.shop.repository.ChatMessageRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.ChatbotService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +69,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${gemini.api.base-url:https://generativelanguage.googleapis.com/v1beta/openai}")
     private String baseUrl;
 
-    @Value("${gemini.api.model:gemini-2.5-flash}")
+    @Value("${gemini.api.model:gemini-3.5-flash}")
     private String model;
 
     @Value("${gemini.chat.max-history-messages:20}")
@@ -81,7 +101,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         userMessage.setVaiTro("USER");
         userMessage.setNoiDung(rawMessage.trim());
         userMessage.setTrangThai("SUCCESS");
-        userMessage = chatbotDbHelper.saveMessage(userMessage);
+        chatbotDbHelper.saveMessage(userMessage);
 
         // 4. Classify Question / Intent
         ChatIntent intent = classifyQuestion(rawMessage);
@@ -111,7 +131,7 @@ public class ChatbotServiceImpl implements ChatbotService {
             medicalMsg = chatbotDbHelper.saveMessage(medicalMsg);
 
             chatbotDbHelper.updateConversationTime(conversation.getId());
-            
+
             ChatMessageDto dto = mapToDto(medicalMsg);
             dto.setRequiresHumanSupport(true);
             dto.setContact(buildContactDto());
@@ -122,7 +142,9 @@ public class ChatbotServiceImpl implements ChatbotService {
         List<ChatMessage> dbMessages = chatMessageRepository.findAllByConversationId(conversation.getId());
         dbMessages.sort((m1, m2) -> {
             int dateComp = m2.getNgayTao().compareTo(m1.getNgayTao());
-            if (dateComp != 0) return dateComp;
+            if (dateComp != 0) {
+                return dateComp;
+            }
             return m2.getId().compareTo(m1.getId());
         });
         List<ChatMessage> history = dbMessages.stream()
@@ -212,7 +234,9 @@ public class ChatbotServiceImpl implements ChatbotService {
         List<ChatMessage> messages = chatMessageRepository.findAllByConversationId(conversationId);
         messages.sort((m1, m2) -> {
             int dateComp = m2.getNgayTao().compareTo(m1.getNgayTao());
-            if (dateComp != 0) return dateComp;
+            if (dateComp != 0) {
+                return dateComp;
+            }
             return m2.getId().compareTo(m1.getId());
         });
 
@@ -287,7 +311,9 @@ public class ChatbotServiceImpl implements ChatbotService {
                 LocalDateTime t1 = c1.getNgayCapNhat() != null ? c1.getNgayCapNhat() : c1.getNgayTao();
                 LocalDateTime t2 = c2.getNgayCapNhat() != null ? c2.getNgayCapNhat() : c2.getNgayTao();
                 int dateComp = t2.compareTo(t1);
-                if (dateComp != 0) return dateComp;
+                if (dateComp != 0) {
+                    return dateComp;
+                }
                 return c2.getId().compareTo(c1.getId());
             });
             return activeConversations.get(0);
@@ -319,53 +345,53 @@ public class ChatbotServiceImpl implements ChatbotService {
         String msgLower = message.toLowerCase();
 
         // 1. Security Sensitive
-        if (msgLower.contains("api key") || msgLower.contains("system prompt") || 
-            msgLower.contains("cơ sở dữ liệu") || msgLower.contains("database schema") || 
-            msgLower.contains("source code") || msgLower.contains("secret key") ||
-            msgLower.contains("mật khẩu admin") || msgLower.contains("dữ liệu hệ thống")) {
+        if (msgLower.contains("api key") || msgLower.contains("system prompt")
+                || msgLower.contains("cơ sở dữ liệu") || msgLower.contains("database schema")
+                || msgLower.contains("source code") || msgLower.contains("secret key")
+                || msgLower.contains("mật khẩu admin") || msgLower.contains("dữ liệu hệ thống")) {
             return ChatIntent.SECURITY_SENSITIVE;
         }
 
         // 2. Out of Scope
-        if (msgLower.contains("lập trình") || msgLower.contains("java code") || 
-            msgLower.contains("chính trị") || msgLower.contains("thời tiết") || 
-            msgLower.contains("tin tức") || msgLower.contains("giải trí") || 
-            msgLower.contains("singing") || msgLower.contains("âm nhạc") ||
-            msgLower.contains("công thức nấu ăn") || msgLower.contains("dự báo thời tiết")) {
+        if (msgLower.contains("lập trình") || msgLower.contains("java code")
+                || msgLower.contains("chính trị") || msgLower.contains("thời tiết")
+                || msgLower.contains("tin tức") || msgLower.contains("giải trí")
+                || msgLower.contains("singing") || msgLower.contains("âm nhạc")
+                || msgLower.contains("công thức nấu ăn") || msgLower.contains("dự báo thời tiết")) {
             return ChatIntent.OUT_OF_SCOPE;
         }
 
         // 3. Advanced Consultation
-        if (msgLower.contains("chấn thương") || msgLower.contains("đau khớp") || 
-            msgLower.contains("phục hồi") || msgLower.contains("bác sĩ") || 
-            msgLower.contains("điều trị") || msgLower.contains("vận động viên") || 
-            msgLower.contains("chuyên nghiệp") || msgLower.contains("lực cổ tay") || 
-            msgLower.contains("thể trạng") || msgLower.contains("kỹ thuật cá nhân") || 
-            msgLower.contains("sức căng chính xác") || msgLower.contains("phù hợp tuyệt đối") || 
-            msgLower.contains("đau vai") || msgLower.contains("đau chân") || msgLower.contains("đau khớp")) {
+        if (msgLower.contains("chấn thương") || msgLower.contains("đau khớp")
+                || msgLower.contains("phục hồi") || msgLower.contains("bác sĩ")
+                || msgLower.contains("điều trị") || msgLower.contains("vận động viên")
+                || msgLower.contains("chuyên nghiệp") || msgLower.contains("lực cổ tay")
+                || msgLower.contains("thể trạng") || msgLower.contains("kỹ thuật cá nhân")
+                || msgLower.contains("sức căng chính xác") || msgLower.contains("phù hợp tuyệt đối")
+                || msgLower.contains("đau vai") || msgLower.contains("đau chân") || msgLower.contains("đau khớp")) {
             return ChatIntent.ADVANCED_CONSULTATION;
         }
 
         // 4. Store Information
-        if (msgLower.contains("hotline") || msgLower.contains("địa chỉ") || 
-            msgLower.contains("số điện thoại") || msgLower.contains("email") || 
-            msgLower.contains("giờ mở cửa") || msgLower.contains("hoạt động") || 
-            msgLower.contains("liên hệ") || msgLower.contains("phòng trưng bày") ||
-            msgLower.contains("địa chỉ shop")) {
+        if (msgLower.contains("hotline") || msgLower.contains("địa chỉ")
+                || msgLower.contains("số điện thoại") || msgLower.contains("email")
+                || msgLower.contains("giờ mở cửa") || msgLower.contains("hoạt động")
+                || msgLower.contains("liên hệ") || msgLower.contains("phòng trưng bày")
+                || msgLower.contains("địa chỉ shop")) {
             return ChatIntent.STORE_INFORMATION;
         }
 
         // 5. Product search intents
-        if (msgLower.contains("tìm") || msgLower.contains("mua") || 
-            msgLower.contains("giá") || msgLower.contains("rẻ") || 
-            msgLower.contains("bao nhiêu") || msgLower.contains("còn hàng") || 
-            msgLower.contains("sẵn hàng") || msgLower.contains("vợt") || 
-            msgLower.contains("giày")) {
+        if (msgLower.contains("tìm") || msgLower.contains("mua")
+                || msgLower.contains("giá") || msgLower.contains("rẻ")
+                || msgLower.contains("bao nhiêu") || msgLower.contains("còn hàng")
+                || msgLower.contains("sẵn hàng") || msgLower.contains("vợt")
+                || msgLower.contains("giày")) {
             return ChatIntent.PRODUCT_SEARCH;
         }
 
-        if (msgLower.contains("chi tiết") || msgLower.contains("thông số") ||
-            msgLower.contains("chất liệu") || msgLower.contains("cấu tạo")) {
+        if (msgLower.contains("chi tiết") || msgLower.contains("thông số")
+                || msgLower.contains("chất liệu") || msgLower.contains("cấu tạo")) {
             return ChatIntent.PRODUCT_INFORMATION;
         }
 
@@ -374,64 +400,32 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     private boolean isPureMedicalQuery(String message) {
         String msgLower = message.toLowerCase();
-        boolean hasMedicalKeywords = msgLower.contains("chấn thương") || msgLower.contains("đau khớp") ||
-                msgLower.contains("phục hồi") || msgLower.contains("bác sĩ") || msgLower.contains("điều trị") ||
-                msgLower.contains("đau vai") || msgLower.contains("đau khớp") || msgLower.contains("đau cổ tay");
-        
-        boolean hasProductKeywords = msgLower.contains("vợt") || msgLower.contains("giày") ||
-                msgLower.contains("áo") || msgLower.contains("phụ kiện") || msgLower.contains("yonex") ||
-                msgLower.contains("lining") || msgLower.contains("victor") || msgLower.contains("sản phẩm");
+        boolean hasMedicalKeywords = msgLower.contains("chấn thương") || msgLower.contains("đau khớp")
+                || msgLower.contains("phục hồi") || msgLower.contains("bác sĩ") || msgLower.contains("điều trị")
+                || msgLower.contains("đau vai") || msgLower.contains("đau khớp") || msgLower.contains("đau cổ tay");
+
+        boolean hasProductKeywords = msgLower.contains("vợt") || msgLower.contains("giày")
+                || msgLower.contains("áo") || msgLower.contains("phụ kiện") || msgLower.contains("yonex")
+                || msgLower.contains("lining") || msgLower.contains("victor") || msgLower.contains("sản phẩm");
 
         return hasMedicalKeywords && !hasProductKeywords;
     }
 
     private List<SanPhamChiTiet> queryAndFilterProducts(String userPrompt) {
         try {
-            // Retrieve only active variants in stock
-            List<SanPhamChiTiet> activeVariants = sanPhamChiTietRepository.findAllActiveInStock();
-
-            // Extract search criteria
             ProductSearchCriteria criteria = extractSearchCriteria(userPrompt);
-
-            // Filter in Java
-            String promptLower = userPrompt.toLowerCase();
-            return activeVariants.stream()
-                    .filter(v -> {
-                        if (criteria.getBrandName() != null) {
-                            String brand = v.getSanPham().getThuongHieu() != null ? v.getSanPham().getThuongHieu().getTenThuongHieu().toLowerCase() : "";
-                            if (!brand.contains(criteria.getBrandName().toLowerCase())) return false;
-                        }
-                        if (criteria.getCategoryName() != null) {
-                            String cat = v.getSanPham().getDanhMuc() != null ? v.getSanPham().getDanhMuc().getTenDanhMuc().toLowerCase() : "";
-                            if (!cat.contains(criteria.getCategoryName().toLowerCase())) return false;
-                        }
-                        if (criteria.getMaxPrice() != null) {
-                            if (v.getGiaBan().compareTo(criteria.getMaxPrice()) > 0) return false;
-                        }
-                        if (criteria.getMinPrice() != null) {
-                            if (v.getGiaBan().compareTo(criteria.getMinPrice()) < 0) return false;
-                        }
-                        if (criteria.getColor() != null) {
-                            String color = v.getMauSac() != null ? v.getMauSac().toLowerCase() : "";
-                            if (!color.contains(criteria.getColor().toLowerCase())) return false;
-                        }
-                        if (criteria.getWeight() != null) {
-                            String weight = v.getTrongLuong() != null ? v.getTrongLuong().toLowerCase() : "";
-                            if (!weight.contains(criteria.getWeight().toLowerCase())) return false;
-                        }
-
-                        // Keyword match
-                        if (criteria.getKeyword() != null) {
-                            String name = v.getSanPham().getTenSanPham().toLowerCase();
-                            if (!name.contains(criteria.getKeyword().toLowerCase())) return false;
-                        }
-
-                        return true;
-                    })
-                    .limit(maxProductSuggestions)
-                    .collect(Collectors.toList());
+            List<SanPhamChiTiet> results = sanPhamChiTietRepository.searchForChatbot(
+                    criteria.getBrandName(),
+                    criteria.getCategoryName(),
+                    criteria.getMinPrice(),
+                    criteria.getMaxPrice(),
+                    criteria.getColor(),
+                    criteria.getWeight(),
+                    PageRequest.of(0, maxProductSuggestions));
+            log.debug("Chatbot database lookup returned {} product variants", results.size());
+            return results;
         } catch (Exception ex) {
-            log.error("Error querying and filtering products: {}", ex.getMessage());
+            log.error("Chatbot database lookup failed", ex);
             return Collections.emptyList();
         }
     }
@@ -441,25 +435,48 @@ public class ChatbotServiceImpl implements ChatbotService {
         String promptLower = userPrompt.toLowerCase();
 
         // Brands
-        if (promptLower.contains("yonex")) criteria.setBrandName("Yonex");
-        else if (promptLower.contains("lining")) criteria.setBrandName("Lining");
-        else if (promptLower.contains("victor")) criteria.setBrandName("Victor");
+        if (promptLower.contains("yonex")) {
+            criteria.setBrandName("Yonex");
+        } else if (promptLower.contains("lining")) {
+            criteria.setBrandName("Lining");
+        } else if (promptLower.contains("victor")) {
+            criteria.setBrandName("Victor");
+        }
 
         // Categories
-        if (promptLower.contains("vợt")) criteria.setCategoryName("Vợt");
-        else if (promptLower.contains("giày")) criteria.setCategoryName("Giày");
-        else if (promptLower.contains("áo") || promptLower.contains("quần")) criteria.setCategoryName("Trang phục");
+        if (promptLower.contains("vợt")) {
+            criteria.setCategoryName("Vợt");
+        } else if (promptLower.contains("giày")) {
+            criteria.setCategoryName("Giày");
+        } else if (promptLower.contains("áo") || promptLower.contains("quần")) {
+            criteria.setCategoryName("Trang phục");
+        }
 
         // Weights
-        if (promptLower.contains("3u")) criteria.setWeight("3u");
-        else if (promptLower.contains("4u")) criteria.setWeight("4u");
-        else if (promptLower.contains("5u")) criteria.setWeight("5u");
+        if (promptLower.contains("3u")) {
+            criteria.setWeight("3u");
+        } else if (promptLower.contains("4u")) {
+            criteria.setWeight("4u");
+        } else if (promptLower.contains("5u")) {
+            criteria.setWeight("5u");
+        }
 
         // Prices
         if (promptLower.contains("dưới 1 triệu") || promptLower.contains("dưới 1tr")) {
             criteria.setMaxPrice(new BigDecimal("1000000"));
         } else if (promptLower.contains("dưới 2 triệu") || promptLower.contains("dưới 2tr")) {
             criteria.setMaxPrice(new BigDecimal("2000000"));
+        } else if (promptLower.contains("trên 2 triệu") || promptLower.contains("trên 2tr")) {
+            criteria.setMinPrice(new BigDecimal("2000000"));
+        }
+
+        // Common colour filters are deliberately extracted on the backend so
+        // Gemini cannot invent a colour that is not present in the database.
+        for (String color : List.of("đỏ", "xanh", "đen", "trắng", "vàng", "hồng", "tím", "cam")) {
+            if (promptLower.contains(color)) {
+                criteria.setColor(color);
+                break;
+            }
         }
 
         return criteria;
@@ -517,7 +534,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         int attempt = 0;
         int maxAttempts = 3;
         long delay = 1000;
-        ResponseEntity<Map> response = null;
+        ResponseEntity<Map<String, Object>> response = null;
 
         while (attempt < maxAttempts) {
             try {
@@ -526,32 +543,47 @@ public class ChatbotServiceImpl implements ChatbotService {
                 headers.set("Authorization", "Bearer " + apiKey);
 
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-                response = geminiRestTemplate.postForEntity(apiUrl, entity, Map.class);
+                response = geminiRestTemplate.exchange(apiUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<Map<String, Object>>() {
+                });
                 break;
             } catch (HttpStatusCodeException ex) {
                 int status = ex.getStatusCode().value();
                 if (status == 429 || status == 502 || status == 503 || status == 504) {
                     attempt++;
-                    if (attempt >= maxAttempts) throw ex;
-                    Thread.sleep(delay);
+                    if (attempt >= maxAttempts) {
+                        throw ex;
+                    }
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Thread interrupted during retry delay", ie);
+                    }
                     delay *= 2;
                 } else {
                     throw ex;
                 }
             } catch (ResourceAccessException ex) {
                 attempt++;
-                if (attempt >= maxAttempts) throw ex;
-                Thread.sleep(delay);
+                if (attempt >= maxAttempts) {
+                    throw ex;
+                }
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Thread interrupted during retry delay", ie);
+                }
                 delay *= 2;
             }
         }
 
         if (response != null && response.getBody() != null) {
-            Map body = response.getBody();
-            List choices = (List) body.get("choices");
+            Map<String, Object> body = response.getBody();
+            List<?> choices = (List<?>) body.get("choices");
             if (choices != null && !choices.isEmpty()) {
-                Map firstChoice = (Map) choices.get(0);
-                Map message = (Map) firstChoice.get("message");
+                Map<String, Object> firstChoice = (Map<String, Object>) choices.get(0);
+                Map<String, Object> message = (Map<String, Object>) firstChoice.get("message");
                 if (message != null) {
                     return (String) message.get("content");
                 }
@@ -565,19 +597,19 @@ public class ChatbotServiceImpl implements ChatbotService {
         String lowerText = responseText.toLowerCase();
 
         // 1. Check system leakage
-        if (lowerText.contains("system prompt") || lowerText.contains("api_key") || 
-            lowerText.contains("api-key") || lowerText.contains("database schema") ||
-            lowerText.contains("bảng") || lowerText.contains("cột") || lowerText.contains("select *")) {
+        if (lowerText.contains("system prompt") || lowerText.contains("api_key")
+                || lowerText.contains("api-key") || lowerText.contains("database schema")
+                || lowerText.contains("bảng") || lowerText.contains("cột") || lowerText.contains("select *")) {
             return "Xin lỗi, tôi chỉ hỗ trợ các nội dung liên quan đến sản phẩm và dịch vụ của SmashVN Shop.";
         }
 
         // 2. Check phone/email leaks to align with dynamic configuration
-        if (responseText.matches(".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}.*") || 
-            responseText.matches(".*\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b.*")) {
+        if (responseText.matches(".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}.*")
+                || responseText.matches(".*\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b.*")) {
             // Strip any raw details and redirect to UI fields
             return responseText.replaceAll("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "")
-                               .replaceAll("\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b", "")
-                               .trim() + " Vui lòng xem thông tin liên hệ được đính kèm ở khung bên dưới.";
+                    .replaceAll("\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b", "")
+                    .trim() + " Vui lòng xem thông tin liên hệ được đính kèm ở khung bên dưới.";
         }
 
         return responseText;
@@ -588,9 +620,9 @@ public class ChatbotServiceImpl implements ChatbotService {
         String mail = shopContactProperties.getEmail();
         String ph = shopContactProperties.getPhone();
 
-        if ((addr == null || addr.trim().isEmpty()) &&
-            (mail == null || mail.trim().isEmpty()) &&
-            (ph == null || ph.trim().isEmpty())) {
+        if ((addr == null || addr.trim().isEmpty())
+                && (mail == null || mail.trim().isEmpty())
+                && (ph == null || ph.trim().isEmpty())) {
             return null;
         }
 

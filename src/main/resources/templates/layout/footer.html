@@ -661,10 +661,12 @@
                         trigger.innerHTML = '<i class="fas fa-times"></i>';
                         trigger.classList.remove("chatbot-pulse"); // Disable pulse when open for clean aesthetics
                         
-                        // Load history once
+                        // Load history once, then greet the customer every time
+                        // the widget is opened.
                         if (!historyLoaded) {
-                            loadChatHistory();
+                            loadChatHistory().finally(showWelcomeMessage);
                         } else {
+                            showWelcomeMessage();
                             setTimeout(() => {
                                 messagesBox.scrollTop = messagesBox.scrollHeight;
                             }, 50);
@@ -690,14 +692,14 @@
                         messagesBox.innerHTML = "";
                         showTypingIndicator();
                         
-                        fetch("/api/chat/history")
-                            .then(res => res.json())
+                        return fetch("/api/chat/history", { credentials: "same-origin" })
+                            .then(parseJsonResponse)
                             .then(data => {
                                 removeTypingIndicator();
                                 historyLoaded = true;
                                 if (data && data.length > 0) {
                                     data.forEach(msg => {
-                                        renderMessage(msg.id, msg.senderType, msg.noiDung, msg.thoiGian, msg.products);
+                                        renderMessage(msg.id, msg.senderType, msg.content, msg.thoiGian, msg.suggestedProducts);
                                     });
                                 }
                             })
@@ -706,6 +708,19 @@
                                 console.error("Error loading chat history:", err);
                                 renderMessage(0, "BOT", "⚠️ Có lỗi xảy ra khi tải lịch sử trò chuyện. Vui lòng tải lại trang!", "");
                             });
+                    }
+
+                    function showWelcomeMessage() {
+                        const now = new Date();
+                        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                        renderMessage(0, "BOT", "Xin chào! 👋 Mình là trợ lý ảo của SmashVN. Mình có thể giúp bạn tìm sản phẩm, tư vấn vợt hoặc giải đáp thông tin cửa hàng.", timeStr);
+                    }
+
+                    function parseJsonResponse(response) {
+                        if (!response.ok) {
+                            throw new Error(`Chatbot API returned ${response.status}`);
+                        }
+                        return response.json();
                     }
 
                     function sendMessageAction() {
@@ -723,19 +738,20 @@
 
                         fetch("/api/chat/send", {
                             method: "POST",
+                            credentials: "same-origin",
                             headers: {
                                 "Content-Type": "application/json"
                             },
                             body: JSON.stringify({ content: text })
                         })
-                        .then(res => res.json())
+                        .then(parseJsonResponse)
                         .then(data => {
                             removeTypingIndicator();
                             if (data && data.length > 0) {
                                 // Clear typing and render bot message from response array
                                 const botMsg = data.find(m => m.senderType === "BOT");
                                 if (botMsg) {
-                                    renderMessage(botMsg.id, botMsg.senderType, botMsg.noiDung, botMsg.thoiGian, botMsg.products);
+                                    renderMessage(botMsg.id, botMsg.senderType, botMsg.content, botMsg.thoiGian, botMsg.suggestedProducts);
                                 }
                             }
                         })
@@ -772,6 +788,7 @@
                     }
 
                     function renderMessage(id, senderType, content, time, products) {
+                        if (!senderType || content == null) return;
                         const wrap = document.createElement("div");
                         wrap.className = `chatbot-msg-wrap ${senderType.toLowerCase()}`;
                         
@@ -816,12 +833,12 @@
 
                             products.forEach(p => {
                                 const card = document.createElement("a");
-                                card.href = `/san-pham/${p.id}`;
+                                card.href = p.duongDan || `/san-pham/${p.id}`;
                                 card.className = "chatbot-product-card";
                                 card.target = "_blank";
 
                                 const img = document.createElement("img");
-                                img.src = p.imageUrl || '/images/favicon.png';
+                                img.src = p.hinhAnh || '/images/favicon.png';
                                 img.className = "chatbot-product-img";
                                 img.alt = p.tenSanPham;
                                 card.appendChild(img);
@@ -859,6 +876,7 @@
 
                         fetch("/api/chat/feedback", {
                             method: "POST",
+                            credentials: "same-origin",
                             headers: {
                                 "Content-Type": "application/json"
                             },
