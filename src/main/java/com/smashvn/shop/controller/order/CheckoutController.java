@@ -185,8 +185,8 @@ public class CheckoutController {
             details.put("hoTen", dc.getHoNguoiNhan() + " " + dc.getTenNguoiNhan());
             details.put("sdt", dc.getSdtNguoiNhan());
             details.put("diaChiCuThe", dc.getDiaChiCuThe());
-            details.put("tinhThanh", dc.getTinhThanh());
-            details.put("thanhPho", dc.getThanhPho());
+            details.put("tinhThanh", dc.getProvinceName());
+            details.put("thanhPho", dc.getDistrictName());
             details.put("quocGia", dc.getQuocGia());
             details.put("latitude", dc.getLatitude());
             details.put("longitude", dc.getLongitude());
@@ -195,11 +195,11 @@ public class CheckoutController {
             if (dc.getWardName() != null && !dc.getWardName().trim().isEmpty() && !fullAddress.contains(dc.getWardName())) {
                 fullAddress += ", " + dc.getWardName().trim();
             }
-            if (dc.getThanhPho() != null && !dc.getThanhPho().trim().isEmpty() && !dc.getThanhPho().equalsIgnoreCase(dc.getTinhThanh()) && !fullAddress.contains(dc.getThanhPho())) {
-                fullAddress += ", " + dc.getThanhPho().trim();
+            if (dc.getDistrictName() != null && !dc.getDistrictName().trim().isEmpty() && !fullAddress.contains(dc.getDistrictName())) {
+                fullAddress += ", " + dc.getDistrictName().trim();
             }
-            if (dc.getTinhThanh() != null && !dc.getTinhThanh().trim().isEmpty() && !fullAddress.contains(dc.getTinhThanh())) {
-                fullAddress += ", " + dc.getTinhThanh().trim();
+            if (dc.getProvinceName() != null && !dc.getProvinceName().trim().isEmpty() && !fullAddress.contains(dc.getProvinceName())) {
+                fullAddress += ", " + dc.getProvinceName().trim();
             }
             if (dc.getQuocGia() != null && !dc.getQuocGia().trim().isEmpty() && !fullAddress.contains(dc.getQuocGia())) {
                 fullAddress += ", " + dc.getQuocGia().trim();

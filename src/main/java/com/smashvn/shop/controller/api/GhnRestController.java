@@ -211,8 +211,8 @@ public class GhnRestController {
     @PostMapping("/admin/push/{orderId}")
     public ResponseEntity<?> adminPushToGhn(
             @PathVariable Integer orderId,
-            @RequestParam Integer toDistrictId,
-            @RequestParam String toWardCode,
+            @RequestParam(required = false) Integer toDistrictId,
+            @RequestParam(required = false) String toWardCode,
             HttpSession session) {
 
         // Chỉ admin/nhân viên mới được dùng
@@ -243,11 +243,22 @@ public class GhnRestController {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng không có sản phẩm"));
             }
 
-            // Cập nhật district/ward vào entity trước khi tạo đơn
-            hd.setGhnToDistrictId(toDistrictId);
-            hd.setGhnToWardCode(toWardCode);
+            // Nếu không truyền từ RequestParam, dùng thông tin đã lưu trong hóa đơn
+            Integer finalDistrictId = toDistrictId != null ? toDistrictId : hd.getGhnToDistrictId();
+            String finalWardCode = toWardCode != null && !toWardCode.isBlank() ? toWardCode : hd.getGhnToWardCode();
 
-            String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, toDistrictId, toWardCode);
+            if (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) {
+                return ResponseEntity.ok(Map.of(
+                        "status", "error",
+                        "message", "Đơn hàng thiếu mã Quận/Huyện hoặc Phường/Xã để đẩy lên GHN. Hãy đảm bảo khách hàng có địa chỉ hợp lệ."
+                ));
+            }
+
+            // Cập nhật lại vào entity
+            hd.setGhnToDistrictId(finalDistrictId);
+            hd.setGhnToWardCode(finalWardCode);
+
+            String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, finalDistrictId, finalWardCode);
             if (ghnCode != null) {
                 hd.setGhnOrderCode(ghnCode);
                 hd.setGhnStatus("ready_to_pick");
@@ -264,7 +275,18 @@ public class GhnRestController {
             }
         } catch (Exception e) {
             log.error("[ADMIN] Push GHN error orderId={}: {}", orderId, e.getMessage(), e);
-            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Lỗi không xác định";
+            String detailedMsg = errorMsg;
+
+            String baseUrl = ghnConfig.getBaseUrl();
+            boolean isSandbox = baseUrl != null && (baseUrl.contains("dev.ghn.vn") || baseUrl.contains("5sao"));
+            if (isSandbox) {
+                detailedMsg += "\n\n[LƯU Ý MÔI TRƯỜNG SANDBOX GHN]:\n" +
+                               "1. Hãy đảm bảo API Token (GHN_TOKEN) và Shop ID (GHN_SHOP_ID) cấu hình trong file .env được tạo trên hệ thống thử nghiệm Sandbox (https://5sao.dev.ghn.vn) (Không dùng token thật từ app.ghn.vn).\n" +
+                               "2. Mã Quận/Huyện (ghnToDistrictId) và Phường/Xã (ghnToWardCode) của địa chỉ nhận phải khớp chính xác và đang hoạt động trên cơ sở dữ liệu Sandbox của GHN.\n" +
+                               "3. Cửa hàng gửi phải được thiết lập địa chỉ kho và được hỗ trợ gói dịch vụ giao hàng chuẩn trên Sandbox.";
+            }
+            return ResponseEntity.ok(Map.of("status", "error", "message", detailedMsg));
         }
     }
 

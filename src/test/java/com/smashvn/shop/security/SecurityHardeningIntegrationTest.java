@@ -173,8 +173,8 @@ public class SecurityHardeningIntegrationTest {
         if (vcs.isEmpty()) {
             DonViVanChuyen vc = new DonViVanChuyen();
             vc.setTenDonVi("Mua tại quầy");
-            vc.setWebsite("https://smashvn.com");
             vc.setHotline("0000");
+            vc.setWebsite("https://smashvn.com");
             testDvvc = donViVanChuyenDAO.save(vc);
         } else {
             testDvvc = vcs.get(0);

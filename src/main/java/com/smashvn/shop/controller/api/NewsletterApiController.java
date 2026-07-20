@@ -18,6 +18,7 @@ import java.util.Map;
 public class NewsletterApiController {
 
     private final NewsletterService newsletterService;
+    private final com.smashvn.shop.repository.NewsletterSubscriberRepository subscriberRepository;
 
     public static class SubscribeRequest {
         private String email;
@@ -49,6 +50,24 @@ public class NewsletterApiController {
             log.error("[Newsletter] Unexpected error during unsubscribe: ", e);
             model.addAttribute("errorMessage", "Có lỗi xảy ra trong hệ thống, vui lòng thử lại sau.");
             return "unsubscribe-error";
+        }
+    }
+
+    @PostMapping("/api/newsletter/unsubscribe-ajax")
+    @ResponseBody
+    public ResponseEntity<?> unsubscribeAjax(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email không được để trống!"));
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+        java.util.Optional<com.smashvn.shop.entity.NewsletterSubscriber> opt = subscriberRepository.findByEmail(normalizedEmail);
+        if (opt.isPresent()) {
+            com.smashvn.shop.entity.NewsletterSubscriber sub = opt.get();
+            newsletterService.unsubscribe(sub.getTokenHuy());
+            return ResponseEntity.ok(Map.of("success", true, "message", "Hủy đăng ký nhận bản tin thành công!"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email chưa đăng ký bản tin!"));
         }
     }
 
