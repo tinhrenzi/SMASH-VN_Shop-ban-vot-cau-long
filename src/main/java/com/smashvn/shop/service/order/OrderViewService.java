@@ -286,12 +286,15 @@ public class OrderViewService {
                     hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
                 }
 
-                if (PaymentStatus.PAID.getValue().equalsIgnoreCase(hd.getPaymentStatus())) {
-                    hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                if (isOrderPaid(hd)) {
+                    if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                        hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                        hd.setPaymentStatus("CHO_HOAN_TIEN");
+                    }
                     String pm = hd.getPaymentMethod();
                     boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
                             || (hd.getPhuongThucThanhToan() != null && !"COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()));
-                    if (isPrepaid) {
+                    if (isPrepaid || isOrderPaid(hd)) {
                         hd.setRefundStatus(RefundStatus.PENDING);
                     }
                     refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, customerId=%d",
@@ -506,9 +509,12 @@ public class OrderViewService {
             boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
                     || (hd.getPhuongThucThanhToan() != null && !"COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()));
 
-            if ("paid".equalsIgnoreCase(currentPaymentStatus) || "PAID".equalsIgnoreCase(hd.getPaymentStatus())) {
-                hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
-                if (isPrepaid) {
+            if (isOrderPaid(hd)) {
+                if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                    hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                    hd.setPaymentStatus("CHO_HOAN_TIEN");
+                }
+                if (isPrepaid || isOrderPaid(hd)) {
                     hd.setRefundStatus(RefundStatus.PENDING);
                 }
                 refundLogNote = String.format(" [REFUND_REQUIRED] orderId=%d, paymentMethod=%s, paidAmount=%s, cancellationTime=%s, actingUserId=%d",
@@ -735,9 +741,12 @@ public class OrderViewService {
                 hd.setThoiGianXacNhan(LocalDateTime.now());
             }
         } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
-            if ("paid".equalsIgnoreCase(currentPaymentStatus) || "PAID".equalsIgnoreCase(hd.getPaymentStatus())) {
-                hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
-                if (isPrepaid) {
+            if (isOrderPaid(hd)) {
+                if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                    hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+                    hd.setPaymentStatus("CHO_HOAN_TIEN");
+                }
+                if (isPrepaid || isOrderPaid(hd)) {
                     hd.setRefundStatus(RefundStatus.PENDING);
                 }
             } else {
@@ -1073,16 +1082,18 @@ public class OrderViewService {
         }
         TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
-        if (!"QL".equals(actingUser.getVaiTro())) {
-            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
+        if (!"QL".equals(actingUser.getVaiTro()) && !"NV".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý hoặc Nhân viên mới có thể phê duyệt.");
         }
 
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
 
         String response = hd.getGatewayResponse();
-        if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
-            throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+        if (token != null && !token.trim().isEmpty()) {
+            if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
+                throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+            }
         }
 
         if (!"CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
@@ -1105,8 +1116,13 @@ public class OrderViewService {
         }
 
         // Remove token from response
-        String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
-        hd.setGatewayResponse(newToken);
+        if (response != null && token != null && !token.trim().isEmpty()) {
+            String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
+            hd.setGatewayResponse(newToken);
+        } else if (response != null && response.contains("REFUND_TOKEN:")) {
+            String newToken = response.replaceAll("REFUND_TOKEN:[^;]+;?", "");
+            hd.setGatewayResponse(newToken);
+        }
 
         hoaDonRepository.save(hd);
 
@@ -1142,16 +1158,18 @@ public class OrderViewService {
         }
         TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
-        if (!"QL".equals(actingUser.getVaiTro())) {
-            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
+        if (!"QL".equals(actingUser.getVaiTro()) && !"NV".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý hoặc Nhân viên mới có thể phê duyệt.");
         }
 
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
 
         String response = hd.getGatewayResponse();
-        if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
-            throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+        if (token != null && !token.trim().isEmpty()) {
+            if (response == null || !response.contains("REFUND_TOKEN:" + token)) {
+                throw new IllegalArgumentException("Token xác nhận hoàn tiền không hợp lệ hoặc đã hết hiệu lực!");
+            }
         }
 
         if (!"CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
@@ -1170,8 +1188,13 @@ public class OrderViewService {
         hd.setRefundConfirmedBy(null);
 
         // Remove token from response
-        String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
-        hd.setGatewayResponse(newToken);
+        if (response != null && token != null && !token.trim().isEmpty()) {
+            String newToken = response.replaceAll("REFUND_TOKEN:" + token + ";?", "");
+            hd.setGatewayResponse(newToken);
+        } else if (response != null && response.contains("REFUND_TOKEN:")) {
+            String newToken = response.replaceAll("REFUND_TOKEN:[^;]+;?", "");
+            hd.setGatewayResponse(newToken);
+        }
 
         hoaDonRepository.save(hd);
 
@@ -1341,6 +1364,26 @@ public class OrderViewService {
             default -> 
                 new PaymentStatusInfo("UNKNOWN", upperStatus, "bg-secondary");
         };
+    }
+
+    public boolean isOrderPaid(HoaDon hd) {
+        if (hd == null) return false;
+        String tt = hd.getTrangThaiThanhToan();
+        String ps = hd.getPaymentStatus();
+        
+        if (tt != null) {
+            String t = tt.trim().toUpperCase();
+            if ("DA_THANH_TOAN".equals(t) || "PAID".equals(t) || "CHO_HOAN_TIEN".equals(t) || "DA_HOAN_TIEN".equals(t) || "REFUNDED".equals(t)) {
+                return true;
+            }
+        }
+        if (ps != null) {
+            String p = ps.trim().toUpperCase();
+            if ("DA_THANH_TOAN".equals(p) || "PAID".equals(p) || "CHO_HOAN_TIEN".equals(p) || "DA_HOAN_TIEN".equals(p) || "REFUNDED".equals(p)) {
+                return true;
+            }
+        }
+        return hd.getPaidAt() != null || hd.getNgayThanhToan() != null;
     }
 }
 

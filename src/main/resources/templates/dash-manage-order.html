@@ -763,7 +763,7 @@
                                                         <div><strong>Phương thức thanh toán:</strong> <span th:text="${order.phuongThucThanhToan}">COD</span></div>
                                                         <div>
                                                             <strong>Trạng thái thanh toán:</strong> 
-                                                            <span class="badge" th:classappend="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'Đã thanh toán' : 'Chờ thanh toán'}">Chờ thanh toán</span>
+                                                            <span class="badge" th:classappend="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'bg-success' : (order.trangThaiThanhToan == 'CHO_HOAN_TIEN' ? 'bg-warning text-dark' : (order.trangThaiThanhToan == 'DA_HOAN_TIEN' or order.trangThaiThanhToan == 'REFUNDED' ? 'bg-info text-white' : (order.trangThaiThanhToan == 'HUY' or order.trangThaiThanhToan == 'CANCELLED' ? 'bg-danger' : 'bg-warning text-dark')))}" th:text="${order.trangThaiThanhToan == 'DA_THANH_TOAN' ? 'Đã thanh toán' : (order.trangThaiThanhToan == 'CHO_HOAN_TIEN' ? 'Chờ hoàn tiền' : (order.trangThaiThanhToan == 'DA_HOAN_TIEN' or order.trangThaiThanhToan == 'REFUNDED' ? 'Đã hoàn tiền' : (order.trangThaiThanhToan == 'HUY' or order.trangThaiThanhToan == 'CANCELLED' ? 'Đã hủy' : 'Chờ thanh toán')))}">Chờ thanh toán</span>
                                                         </div>
                                                     </div>
                                                 </div>
