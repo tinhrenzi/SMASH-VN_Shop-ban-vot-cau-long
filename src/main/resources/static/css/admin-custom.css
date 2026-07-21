@@ -148,7 +148,8 @@ body {
     background: #ffffff;
     border-radius: 16px;
     padding: 0;
-    overflow: hidden;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 10px 30px rgba(21, 23, 28, 0.03);
     border: 1px solid rgba(21, 23, 28, 0.05);
 }
@@ -163,11 +164,12 @@ body {
 .table thead th {
     background-color: var(--brand-card-bg);
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 18px 20px;
+    letter-spacing: 0.04em;
+    padding: 14px 16px;
     border: none;
+    white-space: nowrap;
 }
 
 .table tbody td {
@@ -333,13 +335,14 @@ body {
 .stat-card-premium {
     background: #ffffff;
     border-radius: 16px;
-    padding: 26px;
+    padding: 20px 22px;
     position: relative;
     overflow: hidden;
     z-index: 1;
     border: 1px solid rgba(21, 23, 28, 0.04);
     box-shadow: 0 10px 30px rgba(21, 23, 28, 0.03);
     transition: all 0.3s ease;
+    height: 100%;
 }
 
 .stat-card-premium:hover {
@@ -378,17 +381,84 @@ body {
     background-color: #dc3545;
 }
 
+.stat-card-premium.accent-secondary::before {
+    background-color: #6c757d;
+}
+
+/* Perfect Circle Icon Wrappers */
+.stat-icon-wrapper {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    max-width: 52px !important;
+    max-height: 52px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+    margin-left: 8px;
+}
 
 .stat-icon {
-    font-size: 2.2rem;
+    font-size: 1.5rem !important;
     color: var(--brand-accent);
     opacity: 0.85;
     transition: all 0.3s ease;
+    line-height: 1 !important;
+    margin: 0 !important;
 }
 
 .stat-card-premium:hover .stat-icon {
     transform: scale(1.1) rotate(5deg);
     opacity: 1;
+}
+
+.stat-icon-badge {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+}
+
+.stat-icon-badge i {
+    font-size: 1.3rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+
+.stat-icon-badge-sm {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+}
+
+.stat-icon-badge-sm i {
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
 }
 
 /* Checkbox Card Premium Additions */
