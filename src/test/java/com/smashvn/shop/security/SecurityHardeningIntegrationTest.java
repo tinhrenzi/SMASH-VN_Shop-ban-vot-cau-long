@@ -413,6 +413,7 @@ public class SecurityHardeningIntegrationTest {
     void testApproveRefund_Authorization() throws Exception {
         HoaDon hd = createTestHoaDon("cho_xac_nhan");
         hd.setGatewayResponse("REFUND_TOKEN:test-token;");
+        hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
         hd = hoaDonRepository.save(hd);
 
         // Manager allowed
@@ -424,6 +425,9 @@ public class SecurityHardeningIntegrationTest {
                 .andExpect(redirectedUrl("/admin/don-hang"));
 
         // Staff denied
+        hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+        hd.setGatewayResponse("REFUND_TOKEN:test-token;");
+        hd = hoaDonRepository.save(hd);
         MockHttpSession staffSession = new MockHttpSession();
         staffSession.setAttribute("idNguoiDung", staffTk.getId());
         mockMvc.perform(post("/admin/don-hang/approve-refund-ui")
@@ -432,6 +436,9 @@ public class SecurityHardeningIntegrationTest {
                 .andExpect(flash().attribute("errorMsg", org.hamcrest.Matchers.containsString("Chỉ Quản lý mới có thể phê duyệt")));
 
         // Customer denied
+        hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+        hd.setGatewayResponse("REFUND_TOKEN:test-token;");
+        hd = hoaDonRepository.save(hd);
         MockHttpSession customerSession = new MockHttpSession();
         customerSession.setAttribute("idNguoiDung", customerTk.getId());
         mockMvc.perform(post("/admin/don-hang/approve-refund-ui")

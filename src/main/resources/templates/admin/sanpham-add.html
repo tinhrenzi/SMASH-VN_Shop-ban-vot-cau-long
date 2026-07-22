@@ -140,8 +140,18 @@
                             </div>
                         </div>
 
+                        <!-- SECTION 3.5: CẤU HÌNH ẢNH THEO MÀU SẮC -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-palette me-1"></i>3.5. Cấu Hình Hình Ảnh Cho Từng Màu Sắc</h5>
+                        <div class="checkbox-card-premium shadow-sm p-3 mb-4">
+                            <div class="row g-3" id="colorImagesContainer">
+                                <div class="col-12 text-muted small">
+                                    Vui lòng chọn ít nhất một màu sắc ở trên để thiết lập ảnh cho màu sắc đó.
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- SECTION 4: XEM TRƯỚC BIẾN THỂ -->
-                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Thiết Lập Giá, Số Lượng Kho & Ảnh Cho Từng Biến Thể</h5>
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Thiết Lập Giá & Số Lượng Kho Cho Từng Biến Thể</h5>
                         <div class="mb-4">
                             <div class="preview-box-premium shadow-sm p-3">
                                 <div id="preview-count" class="fw-bold mb-3 text-dark">Chưa có thuộc tính nào được chọn để xem trước.</div>
@@ -154,7 +164,6 @@
                                                 <th>Sức Căng Khuyến Nghị</th>
                                                 <th style="width: 180px;">Giá Bán (VNĐ) *</th>
                                                 <th style="width: 120px;">Số Lượng Kho *</th>
-                                                <th>Ảnh Biến Thể (Tùy chọn)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="preview-tbody">
@@ -202,6 +211,41 @@
             const mucCangVal = mucCangInput ? mucCangInput.value.trim().replace(/\s+/g, " ") : "";
             const checkedCangs = [mucCangVal];
 
+            // Render color image inputs
+            const colorImagesContainer = document.getElementById("colorImagesContainer");
+            if (colorImagesContainer) {
+                colorImagesContainer.innerHTML = "";
+                if (checkedMaus.length === 0) {
+                    colorImagesContainer.innerHTML = `<div class="col-12 text-muted small">Vui lòng chọn ít nhất một màu sắc ở trên để thiết lập ảnh cho màu sắc đó.</div>`;
+                } else {
+                    checkedMaus.forEach(mau => {
+                        const colDiv = document.createElement("div");
+                        colDiv.className = "col-md-6 mb-2";
+
+                        const label = document.createElement("label");
+                        label.className = "form-label small fw-bold text-secondary mb-1";
+                        label.textContent = `Hình ảnh cho màu ${mau} (Tùy chọn - để trống sẽ dùng ảnh chính)`;
+
+                        let fileInput;
+                        const cacheKey = `color_${mau}`;
+                        if (fileInputCache.has(cacheKey)) {
+                            fileInput = fileInputCache.get(cacheKey);
+                        } else {
+                            fileInput = document.createElement("input");
+                            fileInput.type = "file";
+                            fileInput.name = `colorImages[${mau}]`;
+                            fileInput.className = "form-control form-control-sm";
+                            fileInput.accept = "image/*";
+                            fileInputCache.set(cacheKey, fileInput);
+                        }
+
+                        colDiv.appendChild(label);
+                        colDiv.appendChild(fileInput);
+                        colorImagesContainer.appendChild(colDiv);
+                    });
+                }
+            }
+
             // Xóa rỗng tbody cũ
             previewTbody.innerHTML = "";
 
@@ -233,6 +277,9 @@
 
             // Tập hợp các keys hiện tại để dọn dẹp cache
             const currentKeys = new Set();
+            checkedMaus.forEach(mau => {
+                currentKeys.add(`color_${mau}`);
+            });
 
             // Render ra bảng xem trước
             let fragment = document.createDocumentFragment();
@@ -293,22 +340,6 @@
                         tdQty.appendChild(qtyInput);
                         tr.appendChild(tdQty);
 
-                        // Image column
-                        let tdImage = document.createElement("td");
-                        let fileInput;
-                        if (fileInputCache.has(variantKey)) {
-                            fileInput = fileInputCache.get(variantKey);
-                        } else {
-                            fileInput = document.createElement("input");
-                            fileInput.type = "file";
-                            fileInput.name = `variantImages[${variantKey}]`;
-                            fileInput.className = "form-control form-control-sm";
-                            fileInput.accept = "image/*";
-                            fileInputCache.set(variantKey, fileInput);
-                        }
-                        tdImage.appendChild(fileInput);
-                        tr.appendChild(tdImage);
-
                         fragment.appendChild(tr);
                     });
                 });
@@ -319,7 +350,15 @@
             for (let key of fileInputCache.keys()) {
                 if (!currentKeys.has(key)) {
                     fileInputCache.delete(key);
+                }
+            }
+            for (let key of priceInputCache.keys()) {
+                if (!currentKeys.has(key)) {
                     priceInputCache.delete(key);
+                }
+            }
+            for (let key of qtyInputCache.keys()) {
+                if (!currentKeys.has(key)) {
                     qtyInputCache.delete(key);
                 }
             }

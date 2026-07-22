@@ -69,11 +69,11 @@ public class AdminSanPhamController {
             HttpSession session,
             Model model) {
         try {
-            java.util.Map<String, MultipartFile> variantImageMap = new java.util.HashMap<>();
+            java.util.Map<String, MultipartFile> colorImageMap = new java.util.HashMap<>();
             request.getFileMap().forEach((key, file) -> {
-                if (key.startsWith("variantImages[")) {
-                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    variantImageMap.put(variantKey, file);
+                if (key.startsWith("colorImages[")) {
+                    String colorKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
+                    colorImageMap.put(colorKey, file);
                 }
             });
 
@@ -107,7 +107,7 @@ public class AdminSanPhamController {
                     tenSanPham, idDanhMuc, idThuongHieu, moTa,
                     defaultGia, defaultKho, fileAnh,
                     mauSacs, trongLuongs, mucCang,
-                    variantImageMap,
+                    colorImageMap,
                     variantPriceMap,
                     variantQuantityMap,
                     (Integer) session.getAttribute("idNguoiDung"),

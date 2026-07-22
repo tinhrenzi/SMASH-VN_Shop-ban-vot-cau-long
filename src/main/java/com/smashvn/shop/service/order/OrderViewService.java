@@ -288,8 +288,8 @@ public class OrderViewService {
 
                 if (isOrderPaid(hd)) {
                     if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                        hd.setPaymentStatus("paid");
                         hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
-                        hd.setPaymentStatus("CHO_HOAN_TIEN");
                     }
                     String pm = hd.getPaymentMethod();
                     boolean isPrepaid = (pm != null && !pm.equalsIgnoreCase("COD") && !pm.equalsIgnoreCase("cod"))
@@ -511,8 +511,8 @@ public class OrderViewService {
 
             if (isOrderPaid(hd)) {
                 if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                    hd.setPaymentStatus("paid");
                     hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
-                    hd.setPaymentStatus("CHO_HOAN_TIEN");
                 }
                 if (isPrepaid || isOrderPaid(hd)) {
                     hd.setRefundStatus(RefundStatus.PENDING);
@@ -743,8 +743,8 @@ public class OrderViewService {
         } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
             if (isOrderPaid(hd)) {
                 if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+                    hd.setPaymentStatus("paid");
                     hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
-                    hd.setPaymentStatus("CHO_HOAN_TIEN");
                 }
                 if (isPrepaid || isOrderPaid(hd)) {
                     hd.setRefundStatus(RefundStatus.PENDING);
@@ -902,15 +902,16 @@ public class OrderViewService {
     }
 
     private void guiEmailYeuCauHoanTien(HoaDon hd, String lyDoHuy) {
-        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
-            log.error("Không có email quản trị nào được cấu hình trong app.admin.emails!");
-            return;
-        }
         String token = java.util.UUID.randomUUID().toString();
         // Store token in gatewayResponse
         String oldResponse = hd.getGatewayResponse() != null ? hd.getGatewayResponse() : "";
         hd.setGatewayResponse("REFUND_TOKEN:" + token + ";" + oldResponse);
         hoaDonRepository.save(hd);
+
+        if (adminEmailsConfig == null || adminEmailsConfig.trim().isEmpty()) {
+            log.error("Không có email quản trị nào được cấu hình trong app.admin.emails!");
+            return;
+        }
 
         String maDonHang = hd.getMaDonHang() != null ? hd.getMaDonHang() : "POS#" + hd.getId();
 
@@ -1082,8 +1083,8 @@ public class OrderViewService {
         }
         TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
-        if (!"QL".equals(actingUser.getVaiTro()) && !"NV".equals(actingUser.getVaiTro())) {
-            throw new AccessDeniedException("Chỉ Quản lý hoặc Nhân viên mới có thể phê duyệt.");
+        if (!"QL".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
         }
 
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)
@@ -1158,8 +1159,8 @@ public class OrderViewService {
         }
         TaiKhoan actingUser = taiKhoanRepository.findById(actingUserId)
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
-        if (!"QL".equals(actingUser.getVaiTro()) && !"NV".equals(actingUser.getVaiTro())) {
-            throw new AccessDeniedException("Chỉ Quản lý hoặc Nhân viên mới có thể phê duyệt.");
+        if (!"QL".equals(actingUser.getVaiTro())) {
+            throw new AccessDeniedException("Chỉ Quản lý mới có thể phê duyệt.");
         }
 
         HoaDon hd = hoaDonRepository.findByIdWithLock(orderId)

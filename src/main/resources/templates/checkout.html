@@ -368,9 +368,8 @@
                                     </div>
                                     <div class="u-s-m-b-15">
                                         <label class="gl-label" for="idDonViVanChuyen">PHƯƠNG THỨC VẬN CHUYỂN *</label>
-                                        <select class="select-box select-box--primary-style" id="idDonViVanChuyen" name="idDonViVanChuyen" required>
-                                            <option value="" disabled selected>Chọn phương thức vận chuyển...</option>
-                                            <option th:each="dvvc : ${listDvvc}" th:value="${dvvc.id}" th:text="${dvvc.tenDonVi}"></option>
+                                        <select class="select-box select-box--primary-style" id="idDonViVanChuyen" name="idDonViVanChuyen" required disabled style="background-color: #e2e8f0; cursor: not-allowed;">
+                                            <option th:each="dvvc, status : ${listDvvc}" th:value="${dvvc.id}" th:text="${dvvc.tenDonVi}" th:selected="${status.first}"></option>
                                         </select>
                                     </div>
                                     <div class="u-s-m-b-15">

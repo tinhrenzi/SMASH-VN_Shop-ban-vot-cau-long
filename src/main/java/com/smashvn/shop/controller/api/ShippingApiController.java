@@ -38,8 +38,14 @@ public class ShippingApiController {
 
         log.debug("Received request to calculate shipping fee: carrierId={}, districtId={}, wardCode={}, address={}", carrierId, districtId, wardCode, address);
 
-        DonViVanChuyen carrier = null;
-        if (carrierId != null) {
+        DonViVanChuyen carrier = adminShippingService.getAllCarriers().stream()
+                .filter(c -> c.getTenDonVi() != null && (
+                        c.getTenDonVi().toLowerCase().contains("giao hàng nhanh") ||
+                        c.getTenDonVi().toLowerCase().contains("ghn")
+                ))
+                .findFirst()
+                .orElse(null);
+        if (carrier == null && carrierId != null) {
             try {
                 carrier = adminShippingService.getAllCarriers().stream()
                         .filter(c -> c.getId().equals(carrierId))

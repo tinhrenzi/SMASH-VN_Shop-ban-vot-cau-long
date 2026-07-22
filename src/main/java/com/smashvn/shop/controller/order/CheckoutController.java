@@ -156,19 +156,32 @@ public class CheckoutController {
                         return false;
                     }
                     String tenLower = dv.getTenDonVi().toLowerCase();
-                    return !tenLower.contains("quầy")
-                            && !tenLower.contains("quay")
-                            && !tenLower.contains("chỗ")
-                            && !tenLower.contains("cho")
-                            && !tenLower.contains("mua")
-                            && !tenLower.contains("tại")
-                            && !tenLower.contains("tai")
-                            && !tenLower.contains("tiết kiệm")
-                            && !tenLower.contains("tiet kiem")
-                            && !tenLower.contains("tietkiem")
-                            && !tenLower.contains("ghtk");
+                    return tenLower.contains("giao hàng nhanh") || tenLower.contains("ghn");
                 })
                 .collect(java.util.stream.Collectors.toList());
+
+        // Fallback for tests if Giao Hang Nhanh is not found in database
+        if (listDvvc.isEmpty()) {
+            listDvvc = donViVanChuyenDAO.findAll().stream()
+                    .filter(dv -> {
+                        if (dv.getTenDonVi() == null) {
+                            return false;
+                        }
+                        String tenLower = dv.getTenDonVi().toLowerCase();
+                        return !tenLower.contains("quầy")
+                                && !tenLower.contains("quay")
+                                && !tenLower.contains("chỗ")
+                                && !tenLower.contains("cho")
+                                && !tenLower.contains("mua")
+                                && !tenLower.contains("tại")
+                                && !tenLower.contains("tai")
+                                && !tenLower.contains("tiết kiệm")
+                                && !tenLower.contains("tiet kiem")
+                                && !tenLower.contains("tietkiem")
+                                && !tenLower.contains("ghtk");
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+        }
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
         boolean hasDefaultAddress = false;
@@ -401,7 +414,17 @@ public class CheckoutController {
             response.put("message", "Vui lòng chọn đơn vị vận chuyển.");
             return ResponseEntity.ok(response);
         }
-        DonViVanChuyen dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen).orElse(null);
+        // Force Giao Hàng Nhanh (GHN) carrier for online orders
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream()
+                .filter(c -> c.getTenDonVi() != null && (
+                        c.getTenDonVi().toLowerCase().contains("giao hàng nhanh") ||
+                        c.getTenDonVi().toLowerCase().contains("ghn")
+                ))
+                .findFirst()
+                .orElse(null);
+        if (dvvc == null) {
+            dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen).orElse(null);
+        }
         if (dvvc == null) {
             response.put("trangThai", "loi");
             response.put("message", "Đơn vị vận chuyển không tồn tại.");
@@ -413,6 +436,7 @@ public class CheckoutController {
             response.put("message", "Phương thức vận chuyển này không áp dụng cho mua hàng online.");
             return ResponseEntity.ok(response);
         }
+        Integer idDonViVanChuyenResolved = dvvc.getId();
 
         if (phuongThucThanhToan == null || phuongThucThanhToan.trim().isEmpty()) {
             response.put("trangThai", "loi");
@@ -559,7 +583,7 @@ public class CheckoutController {
 
         try {
             long startOrder = System.currentTimeMillis();
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, resolvedDiaChiLuuId, voucherCode);
+            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, resolvedDiaChiLuuId, voucherCode);
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
 

@@ -17,11 +17,10 @@ import com.smashvn.shop.entity.DotGiamGia;
 import com.smashvn.shop.entity.NewsletterSubscriber;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.exception.NewsletterValidationException;
+import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import com.smashvn.shop.repository.PhieuGiamGiaRepository;
-import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.service.NewsletterService;
 
 import jakarta.mail.internet.MimeMessage;

@@ -18,7 +18,6 @@ import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
 import com.smashvn.shop.util.LoginIdentifierClassifier;
-import com.smashvn.shop.util.LoginIdentifierClassifier.NormalizedLoginIdentifier;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;

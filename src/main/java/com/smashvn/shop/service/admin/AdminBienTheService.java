@@ -6,13 +6,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.smashvn.shop.dao.HinhAnhSanPhamDAO;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
@@ -29,6 +33,7 @@ public class AdminBienTheService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final HinhAnhSanPhamDAO hinhAnhSanPhamDAO;
 
     private static final String TRANG_THAI_DANG_BAN = "dang_ban";
     private static final String TRANG_THAI_NGUNG_KINH_DOANH = "ngung_kinh_doanh";
@@ -65,8 +70,44 @@ public class AdminBienTheService {
             throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và sức căng khuyến nghị này đã tồn tại!");
         }
 
-        // Save image securely (required on creation)
-        String secureFileName = saveImageSecurely(fileAnh, true);
+        List<Path> uploadedFiles = new ArrayList<>();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == STATUS_ROLLED_BACK) {
+                            for (Path path : uploadedFiles) {
+                                try {
+                                    Files.deleteIfExists(path);
+                                } catch (Exception e) {
+                                    // ignore
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
+        if (secureFileName == null || secureFileName.isEmpty()) {
+            // Fallback: Check if another variant of the same color exists
+            List<SanPhamChiTiet> existingVariants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
+            for (SanPhamChiTiet existing : existingVariants) {
+                if (existing.getMauSac().equalsIgnoreCase(cleanMauSac) && existing.getHinhAnhSanPham() != null && !existing.getHinhAnhSanPham().isEmpty()) {
+                    secureFileName = existing.getHinhAnhSanPham();
+                    break;
+                }
+            }
+            // If still null, fallback to the first variant's image (main image)
+            if (secureFileName == null && !existingVariants.isEmpty()) {
+                secureFileName = existingVariants.get(0).getHinhAnhSanPham();
+            }
+            if (secureFileName == null) {
+                throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc.");
+            }
+        }
 
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setSanPham(sp);
@@ -135,10 +176,52 @@ public class AdminBienTheService {
         spct.setTrongLuong(cleanTrongLuong);
         spct.setMucCang(cleanMucCang);
 
+        List<Path> uploadedFiles = new ArrayList<>();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == STATUS_ROLLED_BACK) {
+                            for (Path path : uploadedFiles) {
+                                try {
+                                    Files.deleteIfExists(path);
+                                } catch (Exception e) {
+                                    // ignore
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
         // Save image securely (optional on update)
-        String secureFileName = saveImageSecurely(fileAnh, false);
+        String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
         if (secureFileName != null) {
+            String oldFileName = spct.getHinhAnhSanPham();
             spct.setHinhAnhSanPham(secureFileName);
+
+            if (oldFileName != null && !oldFileName.equals(secureFileName)) {
+                TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCompletion(int status) {
+                            if (status == STATUS_COMMITTED) {
+                                boolean stillReferenced = hinhAnhSanPhamDAO.existsByUrlHinhAnh(oldFileName);
+                                if (!stillReferenced) {
+                                    try {
+                                        Path oldFilePath = Paths.get(uploadPathConfig).resolve("product").resolve(oldFileName).normalize().toAbsolutePath();
+                                        Files.deleteIfExists(oldFilePath);
+                                    } catch (Exception e) {
+                                        log.error("Failed to delete unused image file: {}", oldFileName, e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+            }
         } else {
             // Update mauSac in existing image records if color changed
             if (spct.getHinhAnhSanPhams() != null) {
@@ -182,31 +265,45 @@ public class AdminBienTheService {
         }
     }
 
-    // --- Helper Image Saving with Security Measures ---
-    private String saveImageSecurely(MultipartFile file, boolean isRequired) throws Exception {
-        if (file == null || file.isEmpty()) {
-            if (isRequired) {
-                throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc.");
-            }
-            return null;
+    private String computeFileHash(InputStream is) throws Exception {
+        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] buffer = new byte[8192];
+        int read;
+        while ((read = is.read(buffer)) != -1) {
+            digest.update(buffer, 0, read);
         }
+        byte[] hashBytes = digest.digest();
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashBytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
 
-        // 1. Check file extension
+    private String sanitizeFilename(String filename) {
+        if (filename == null) return "image.jpg";
+        String trimmed = filename.trim();
+        return trimmed.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
+    private void validateImageFile(MultipartFile file, String fileLabel) throws Exception {
+        if (file == null || file.isEmpty()) {
+            return;
+        }
         String origName = file.getOriginalFilename();
         String ext = "";
         if (origName != null && origName.contains(".")) {
-            ext = origName.substring(origName.lastIndexOf(".") + 1).toLowerCase();
+            ext = origName.substring(origName.lastIndexOf(".")).toLowerCase();
         }
-        if (!ext.equals("jpg") && !ext.equals("jpeg") && !ext.equals("png") && !ext.equals("webp")) {
+
+        if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
             throw new IllegalArgumentException("Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.");
         }
 
-        // 2. Check file size (max 5 MB)
         if (file.getSize() > 5 * 1024 * 1024) {
             throw new IllegalArgumentException("Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB.");
         }
 
-        // 3. Verify MIME type using Apache Tika
         org.apache.tika.Tika tika = new org.apache.tika.Tika();
         try (InputStream is = file.getInputStream()) {
             String mimeType = tika.detect(is);
@@ -215,34 +312,67 @@ public class AdminBienTheService {
             }
         }
 
-        // 4. Verify genuine image using ImageIO
         try (InputStream is = file.getInputStream()) {
-            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(is);
-            if (image == null) {
+            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(is);
+            if (img == null) {
                 throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
+            }
+            if (img.getWidth() > 5000 || img.getHeight() > 5000) {
+                throw new IllegalArgumentException("Độ phân giải hình ảnh vượt quá giới hạn cho phép (Tối đa 5000x5000px)!");
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
         }
+    }
 
-        // 5. Generate random filename
-        String secureFileName = java.util.UUID.randomUUID().toString() + "." + ext;
+    // --- Helper Image Saving with Security Measures ---
+    private String saveImageSecurely(MultipartFile file, boolean isRequired, List<Path> uploadedFiles) throws Exception {
+        if (file == null || file.isEmpty()) {
+            if (isRequired) {
+                throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc.");
+            }
+            return null;
+        }
 
-        // 6. Prevent path traversal
+        validateImageFile(file, "biến thể");
+
+        String origName = file.getOriginalFilename();
+        if (origName != null) {
+            origName = Paths.get(origName).getFileName().toString();
+        }
+        String safeFileName = sanitizeFilename(origName);
+
         Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
         Path productUploadPath = rootUploadPath.resolve("product").normalize();
         if (!Files.exists(productUploadPath)) {
             Files.createDirectories(productUploadPath);
         }
 
-        Path targetFilePath = productUploadPath.resolve(secureFileName).normalize().toAbsolutePath();
+        Path targetFilePath = productUploadPath.resolve(safeFileName).normalize().toAbsolutePath();
         Path normalizedRoot = productUploadPath.normalize().toAbsolutePath();
 
         if (!targetFilePath.startsWith(normalizedRoot)) {
             throw new SecurityException("Invalid upload path");
         }
 
-        // 7. Save file
+        if (Files.exists(targetFilePath)) {
+            String uploadedHash;
+            try (InputStream is = file.getInputStream()) {
+                uploadedHash = computeFileHash(is);
+            }
+            String existingHash;
+            try (InputStream is = Files.newInputStream(targetFilePath)) {
+                existingHash = computeFileHash(is);
+            }
+
+            if (uploadedHash.equals(existingHash)) {
+                return safeFileName;
+            } else {
+                throw new IllegalArgumentException("Đã tồn tại ảnh có tên '" + safeFileName + "' nhưng nội dung khác. Vui lòng đổi tên file trước khi tải lên.");
+            }
+        }
+
+        // Save file
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, targetFilePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
@@ -250,6 +380,7 @@ public class AdminBienTheService {
             throw e;
         }
 
-        return secureFileName;
+        uploadedFiles.add(targetFilePath);
+        return safeFileName;
     }
 }
