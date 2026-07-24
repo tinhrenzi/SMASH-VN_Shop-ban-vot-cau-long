@@ -23,14 +23,11 @@ public class AdminBienTheController {
     // 1. Hiển thị Trang Quản lý Biến thể (Gồm cả Form Thêm + Bảng Danh sách)
     @GetMapping
     public String hienThiTrangBienThe(@PathVariable("idSanPham") Integer idSanPham, Model model) {
-        // Lấy thông tin sản phẩm gốc để hiển thị tiêu đề
         SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
         model.addAttribute("sp", sp);
-        
-        // Lấy danh sách các biến thể của sản phẩm này
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(idSanPham));
-        
-        return "admin/bienthe-list"; // Trả về file giao diện
+        populateCategoryIds(model);
+        return "admin/bienthe-list";
     }
 
     // 2. Hứng dữ liệu khi Admin bấm "LƯU BIẾN THỂ MỚI"
@@ -40,11 +37,12 @@ public class AdminBienTheController {
                                   @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
                                   @RequestParam(value = "mauSac", required = false) String mauSac,
                                   @RequestParam(value = "trongLuong", required = false) String trongLuong,
+                                  @RequestParam(value = "kichThuoc", required = false) String kichThuoc,
                                   @RequestParam(value = "mucCang", required = false) String mucCang,
                                   @RequestParam(value = "fileAnh", required = false) MultipartFile fileAnh,
                                   RedirectAttributes redirectAttributes) {
         try {
-            adminBienTheService.themBienThe(idSanPham, giaBan, soLuongTon, mauSac, trongLuong, mucCang, fileAnh);
+            adminBienTheService.themBienThe(idSanPham, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
             redirectAttributes.addFlashAttribute("success", "Thêm biến thể mới thành công!");
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
         } catch (IllegalArgumentException | SecurityException e) {
@@ -89,11 +87,9 @@ public class AdminBienTheController {
     @GetMapping("/sua/{idBienThe}")
     public String hienThiFormSuaBienThe(@PathVariable("idSanPham") Integer idSanPham, 
                                         @PathVariable("idBienThe") Integer idBienThe, Model model) {
-        // Lấy SP gốc để hiện tiêu đề
         model.addAttribute("sp", sanPhamRepository.findById(idSanPham).orElseThrow());
-        // Lấy biến thể cần sửa
         model.addAttribute("bt", adminBienTheService.layBienTheTheoId(idBienThe));
-        
+        populateCategoryIds(model);
         return "admin/bienthe-edit";
     }
 
@@ -105,11 +101,12 @@ public class AdminBienTheController {
                                  @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
                                  @RequestParam(value = "mauSac", required = false) String mauSac,
                                  @RequestParam(value = "trongLuong", required = false) String trongLuong,
+                                 @RequestParam(value = "kichThuoc", required = false) String kichThuoc,
                                  @RequestParam(value = "mucCang", required = false) String mucCang,
                                  @RequestParam(value = "fileAnh", required = false) MultipartFile fileAnh,
                                  RedirectAttributes redirectAttributes) {
         try {
-            adminBienTheService.capNhatBienThe(idBienThe, giaBan, soLuongTon, mauSac, trongLuong, mucCang, fileAnh);
+            adminBienTheService.capNhatBienThe(idBienThe, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
             redirectAttributes.addFlashAttribute("success", "Cập nhật biến thể thành công!");
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
         } catch (IllegalArgumentException | SecurityException e) {
@@ -120,5 +117,19 @@ public class AdminBienTheController {
             redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi hệ thống khi cập nhật biến thể!");
             return "redirect:/admin/san-pham/" + idSanPham + "/bien-the/sua/" + idBienThe;
         }
+    }
+
+    private void populateCategoryIds(Model model) {
+        java.util.Map<String, Integer> categoryIds = java.util.Map.of(
+            "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
+            "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
+            "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
+            "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
+            "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
+            "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
+            "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
+            "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
+        );
+        model.addAttribute("categoryIds", categoryIds);
     }
 }

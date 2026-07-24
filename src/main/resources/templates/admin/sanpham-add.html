@@ -8,7 +8,16 @@
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
 </head>
 <body>
-<div class="container-fluid">
+<div class="container-fluid"
+     id="categoryConfigContainer"
+     th:attr="data-id-vot=${categoryIds != null ? categoryIds['VOT'] : 42},
+              data-id-giay=${categoryIds != null ? categoryIds['GIAY'] : 464},
+              data-id-hopcau=${categoryIds != null ? categoryIds['HOP_CAU'] : 465},
+              data-id-cuoc=${categoryIds != null ? categoryIds['CUOC'] : 466},
+              data-id-balo=${categoryIds != null ? categoryIds['BALO'] : 43},
+              data-id-trangphuc=${categoryIds != null ? categoryIds['TRANG_PHUC'] : 467},
+              data-id-quancan=${categoryIds != null ? categoryIds['QUAN_CAN'] : 468},
+              data-id-bangquan=${categoryIds != null ? categoryIds['BANG_QUAN'] : 469}">
     <div class="row">
         
         <!-- Sidebar layout dùng chung -->
@@ -39,57 +48,58 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tên Sản Phẩm *</label>
-                                <input type="text" name="tenSanPham" class="form-control" th:value="${tenSanPham}" required placeholder="VD: Vợt Yonex Astrox 88D Pro...">
+                                <input type="text" name="tenSanPham" class="form-control" th:value="${requestDto != null ? requestDto.tenSanPham : ''}" required placeholder="VD: Vợt Yonex Astrox 88D Pro...">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Danh Mục *</label>
-                                <select name="idDanhMuc" class="form-select" required>
-                                    <option value="">-- Chọn --</option>
-                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${dm.id == idDanhMuc}"></option>
+                                <select name="idDanhMuc" id="selectDanhMuc" class="form-select" required>
+                                    <option value="">-- Chọn Danh Mục --</option>
+                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${requestDto != null && requestDto.idDanhMuc == dm.id}"></option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Thương Hiệu *</label>
                                 <select name="idThuongHieu" class="form-select" required>
-                                    <option value="">-- Chọn --</option>
-                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}" th:selected="${th.id == idThuongHieu}"></option>
+                                    <option value="">-- Chọn Thương Hiệu --</option>
+                                    <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}" th:selected="${requestDto != null && requestDto.idThuongHieu == th.id}"></option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label">Mô tả sản phẩm</label>
-                            <textarea name="moTa" class="form-control" rows="3" required placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..." th:text="${moTa}"></textarea>
+                            <textarea name="moTa" class="form-control" rows="3" placeholder="Nhập mô tả giới thiệu về dòng sản phẩm này..." th:text="${requestDto != null ? requestDto.moTa : ''}"></textarea>
                         </div>
 
                         <!-- SECTION 2: CẤU HÌNH ẢNH SẢN PHẨM MẶC ĐỊNH -->
-                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-image me-1"></i>2. Cấu Hình Ảnh Sản Phẩm Mặc Định</h5>
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-image me-1"></i>2. Cấu Hình Ảnh & Giá Mặc Định</h5>
                         <div class="row mb-4">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <label class="form-label">Hình ảnh sản phẩm gốc *</label>
                                 <input type="file" name="fileAnh" class="form-control" accept="image/*" required>
                             </div>
+                            <div class="col-md-3" id="boxGiaMacDinh">
+                                <label class="form-label">Giá bán mặc định (VNĐ) *</label>
+                                <input type="number" name="giaBanDefault" id="giaBanDefault" class="form-control" min="1000" step="1000" value="3500000" required>
+                            </div>
+                            <div class="col-md-3" id="boxKhoMacDinh">
+                                <label class="form-label">Số lượng kho mặc định *</label>
+                                <input type="number" name="soLuongTonDefault" id="soLuongTonDefault" class="form-control" min="0" value="10" required>
+                            </div>
                         </div>
 
-                        <!-- SECTION 3: CHECKBOX THUỘC TÍNH -->
-                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-sliders-h me-1"></i>3. Chọn Các Thuộc Tính Để Tự Động Nhân Biến Thể</h5>
-                        <div class="row g-3 mb-4">
+                        <!-- SECTION 3: CHECKBOX THUỘC TÍNH (ẨN HÌNH THEO DANH MỤC) -->
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold" id="sectionAttributeTitle"><i class="fas fa-sliders-h me-1"></i>3. Chọn Các Thuộc Tính Để Tự Động Nhân Biến Thể</h5>
+                        <div class="row g-3 mb-4" id="sectionAttributeBox">
                             <!-- Màu Sắc -->
-                            <div class="col-md-4">
-                                <div class="checkbox-card-premium shadow-sm">
+                            <div class="col-md-3" id="boxMauSac">
+                                <div class="checkbox-card-premium shadow-sm p-3">
                                     <h6>Màu Sắc</h6>
                                     <div id="mauSacContainer">
                                         <div class="form-check my-2" th:each="mau : ${listMauSac}">
-                                            <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${mau}" th:id="'mau_' + ${mau}" th:checked="${selectedMauSacs != null && selectedMauSacs.contains(mau)}">
+                                            <input class="form-check-input filter-checkbox mau-cb" type="checkbox" th:value="${mau}" th:id="'mau_' + ${mau}">
                                             <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${mau}" th:text="${mau}"></label>
                                         </div>
-                                        <!-- Re-render any custom selected colors -->
-                                        <th:block th:if="${selectedMauSacs != null}">
-                                            <div class="form-check my-2" th:each="selectedMau : ${selectedMauSacs}" th:if="${!listMauSac.contains(selectedMau)}">
-                                                <input class="form-check-input filter-checkbox mau-cb" type="checkbox" name="mauSacs" th:value="${selectedMau}" th:id="'mau_' + ${selectedMau}" checked>
-                                                <label class="form-check-label fw-semibold text-secondary" th:for="'mau_' + ${selectedMau}" th:text="${selectedMau}"></label>
-                                            </div>
-                                        </th:block>
                                     </div>
                                     <div class="input-group mt-3">
                                         <input type="text" class="form-control form-control-sm" id="newColorInput" placeholder="Thêm màu mới..." maxlength="50">
@@ -98,51 +108,66 @@
                                 </div>
                             </div>
                             
-                            <!-- Trọng lượng/Size -->
-                            <div class="col-md-4">
-                                <div class="checkbox-card-premium shadow-sm">
-                                    <h6>Size / Trọng Lượng</h6>
+                            <!-- Trọng lượng (Vợt) -->
+                            <div class="col-md-3" id="boxTrongLuong">
+                                <div class="checkbox-card-premium shadow-sm p-3">
+                                    <h6>Trọng Lượng (Vợt)</h6>
                                     <div id="trongLuongContainer">
                                         <div class="form-check my-2" th:each="trong : ${listTrongLuong}">
-                                            <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${trong}" th:id="'trong_' + ${trong}" th:checked="${selectedTrongLuongs != null && selectedTrongLuongs.contains(trong)}">
+                                            <input class="form-check-input filter-checkbox trong-cb" type="checkbox" th:value="${trong}" th:id="'trong_' + ${trong}">
                                             <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${trong}" th:text="${trong}"></label>
                                         </div>
-                                        <!-- Re-render any custom selected weights -->
-                                        <th:block th:if="${selectedTrongLuongs != null}">
-                                            <div class="form-check my-2" th:each="selectedTrong : ${selectedTrongLuongs}" th:if="${!listTrongLuong.contains(selectedTrong)}">
-                                                <input class="form-check-input filter-checkbox trong-cb" type="checkbox" name="trongLuongs" th:value="${selectedTrong}" th:id="'trong_' + ${selectedTrong}" checked>
-                                                <label class="form-check-label fw-semibold text-secondary" th:for="'trong_' + ${selectedTrong}" th:text="${selectedTrong}"></label>
-                                            </div>
-                                        </th:block>
-                                    </div>
-                                    <div class="input-group mt-3">
-                                        <input type="text" class="form-control form-control-sm" id="newWeightInput" placeholder="Thêm trọng lượng/size..." maxlength="20">
-                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewAttribute('weight')"><i class="fas fa-plus"></i> Thêm</button>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Sức căng khuyến nghị -->
-                            <div class="col-md-4">
-                                <div class="checkbox-card-premium shadow-sm">
+                            <!-- Size Giày -->
+                            <div class="col-md-3 d-none" id="boxKichThuocGiay">
+                                <div class="checkbox-card-premium shadow-sm p-3">
+                                    <h6>Size Giày</h6>
+                                    <div id="kichThuocGiayContainer" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="form-check my-2" th:each="sizeG : ${listKichThuocGiay}">
+                                            <input class="form-check-input filter-checkbox kich-giay-cb" type="checkbox" th:value="${sizeG}" th:id="'sg_' + ${sizeG}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'sg_' + ${sizeG}" th:text="${sizeG}"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Size Trang Phục -->
+                            <div class="col-md-3 d-none" id="boxKichThuocTrangPhuc">
+                                <div class="checkbox-card-premium shadow-sm p-3">
+                                    <h6>Size Trang Phục</h6>
+                                    <div id="kichThuocTrangPhucContainer">
+                                        <div class="form-check my-2" th:each="sizeTP : ${listKichThuocTrangPhuc}">
+                                            <input class="form-check-input filter-checkbox kich-tp-cb" type="checkbox" th:value="${sizeTP}" th:id="'stp_' + ${sizeTP}">
+                                            <label class="form-check-label fw-semibold text-secondary" th:for="'stp_' + ${sizeTP}" th:text="${sizeTP}"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sức căng khuyến nghị (Vợt) -->
+                            <div class="col-md-3" id="boxMucCang">
+                                <div class="checkbox-card-premium shadow-sm p-3">
                                     <h6>Sức Căng Khuyến Nghị</h6>
                                     <div class="mt-3">
-                                        <label class="form-label small fw-bold text-secondary mb-1">Sức căng khuyến nghị</label>
+                                        <label class="form-label small fw-bold text-secondary mb-1">Sức căng chung (Vợt)</label>
                                         <input type="text"
                                                class="form-control form-control-sm"
                                                name="mucCang"
                                                id="mucCang"
-                                               th:value="${mucCang}"
+                                               th:value="${requestDto != null ? requestDto.mucCang : ''}"
                                                maxlength="50"
-                                               placeholder="VD: 20 - 28 lbs hoặc 9.0 - 12.5 kg">
+                                               placeholder="VD: 20 - 28 lbs">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- SECTION 3.5: CẤU HÌNH ẢNH THEO MÀU SẮC -->
-                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-palette me-1"></i>3.5. Cấu Hình Hình Ảnh Cho Từng Màu Sắc</h5>
-                        <div class="checkbox-card-premium shadow-sm p-3 mb-4">
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold" id="sectionColorImageTitle"><i class="fas fa-palette me-1"></i>3.5. Cấu Hình Hình Ảnh Cho Từng Màu Sắc</h5>
+                        <div class="checkbox-card-premium shadow-sm p-3 mb-4" id="sectionColorImageBox">
                             <div class="row g-3" id="colorImagesContainer">
                                 <div class="col-12 text-muted small">
                                     Vui lòng chọn ít nhất một màu sắc ở trên để thiết lập ảnh cho màu sắc đó.
@@ -151,17 +176,17 @@
                         </div>
 
                         <!-- SECTION 4: XEM TRƯỚC BIẾN THỂ -->
-                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Thiết Lập Giá & Số Lượng Kho Cho Từng Biến Thể</h5>
+                        <h5 class="text-brand border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-eye me-1"></i>4. Thiết Lập Biến Thể Hàng Loạt (Indexed Payload)</h5>
                         <div class="mb-4">
                             <div class="preview-box-premium shadow-sm p-3">
                                 <div id="preview-count" class="fw-bold mb-3 text-dark">Chưa có thuộc tính nào được chọn để xem trước.</div>
                                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                     <table class="table table-bordered table-hover align-middle mb-0 d-none" id="preview-table">
-                                        <thead class="table-dark">
+                                        <thead class="table-dark" id="preview-thead">
                                             <tr>
                                                 <th>Màu Sắc</th>
-                                                <th>Trọng Lượng</th>
-                                                <th>Sức Căng Khuyến Nghị</th>
+                                                <th>Kích Thước / Trọng Lượng</th>
+                                                <th style="width: 180px;">Giá Nhập (VNĐ)</th>
                                                 <th style="width: 180px;">Giá Bán (VNĐ) *</th>
                                                 <th style="width: 120px;">Số Lượng Kho *</th>
                                             </tr>
@@ -190,54 +215,154 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const checkboxes = document.querySelectorAll(".filter-checkbox");
+        const configElem = document.getElementById("categoryConfigContainer");
+        const CAT = {
+            VOT: parseInt(configElem.getAttribute("data-id-vot")),
+            GIAY: parseInt(configElem.getAttribute("data-id-giay")),
+            HOP_CAU: parseInt(configElem.getAttribute("data-id-hopcau")),
+            CUOC: parseInt(configElem.getAttribute("data-id-cuoc")),
+            BALO: parseInt(configElem.getAttribute("data-id-balo")),
+            TRANG_PHUC: parseInt(configElem.getAttribute("data-id-trangphuc")),
+            QUAN_CAN: parseInt(configElem.getAttribute("data-id-quancan")),
+            BANG_QUAN: parseInt(configElem.getAttribute("data-id-bangquan"))
+        };
+
+        const selectDanhMuc = document.getElementById("selectDanhMuc");
+        const boxMauSac = document.getElementById("boxMauSac");
+        const boxTrongLuong = document.getElementById("boxTrongLuong");
+        const boxKichThuocGiay = document.getElementById("boxKichThuocGiay");
+        const boxKichThuocTrangPhuc = document.getElementById("boxKichThuocTrangPhuc");
+        const boxMucCang = document.getElementById("boxMucCang");
+        const sectionColorImageTitle = document.getElementById("sectionColorImageTitle");
+        const sectionColorImageBox = document.getElementById("sectionColorImageBox");
+
         const previewTable = document.getElementById("preview-table");
         const previewTbody = document.getElementById("preview-tbody");
+        const previewThead = document.getElementById("preview-thead");
         const previewCount = document.getElementById("preview-count");
         const limitWarning = document.getElementById("limit-warning");
         const btnSubmit = document.getElementById("btnSubmit");
 
-        // Caches to preserve user selections when checking/unchecking boxes
-        const fileInputCache = new Map();
-        const priceInputCache = new Map();
-        const qtyInputCache = new Map();
+        const giaBanDefaultInput = document.getElementById("giaBanDefault");
+        const soLuongTonDefaultInput = document.getElementById("soLuongTonDefault");
+
+        function setBoxDisabled(boxElem, disabled) {
+            if (!boxElem) return;
+            if (disabled) {
+                boxElem.classList.add("d-none");
+            } else {
+                boxElem.classList.remove("d-none");
+            }
+            const inputs = boxElem.querySelectorAll("input, select, textarea, button");
+            inputs.forEach(i => i.disabled = disabled);
+        }
+
+        function handleCategoryChange() {
+            const catId = parseInt(selectDanhMuc.value);
+
+            // Reset UI Visibility & Disabled states
+            if (catId === CAT.VOT) {
+                setBoxDisabled(boxMauSac, false);
+                setBoxDisabled(boxTrongLuong, false);
+                setBoxDisabled(boxKichThuocGiay, true);
+                setBoxDisabled(boxKichThuocTrangPhuc, true);
+                setBoxDisabled(boxMucCang, false);
+                setBoxDisabled(sectionColorImageBox, false);
+                if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
+            } else if (catId === CAT.GIAY) {
+                setBoxDisabled(boxMauSac, false);
+                setBoxDisabled(boxTrongLuong, true);
+                setBoxDisabled(boxKichThuocGiay, false);
+                setBoxDisabled(boxKichThuocTrangPhuc, true);
+                setBoxDisabled(boxMucCang, true);
+                setBoxDisabled(sectionColorImageBox, false);
+                if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
+            } else if (catId === CAT.TRANG_PHUC) {
+                setBoxDisabled(boxMauSac, false);
+                setBoxDisabled(boxTrongLuong, true);
+                setBoxDisabled(boxKichThuocGiay, true);
+                setBoxDisabled(boxKichThuocTrangPhuc, false);
+                setBoxDisabled(boxMucCang, true);
+                setBoxDisabled(sectionColorImageBox, false);
+                if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
+            } else if (catId === CAT.HOP_CAU) {
+                setBoxDisabled(boxMauSac, true);
+                setBoxDisabled(boxTrongLuong, true);
+                setBoxDisabled(boxKichThuocGiay, true);
+                setBoxDisabled(boxKichThuocTrangPhuc, true);
+                setBoxDisabled(boxMucCang, true);
+                setBoxDisabled(sectionColorImageBox, true);
+                if (sectionColorImageTitle) sectionColorImageTitle.classList.add("d-none");
+            } else {
+                // Chỉ màu: CUOC, BALO, QUAN_CAN, BANG_QUAN
+                setBoxDisabled(boxMauSac, false);
+                setBoxDisabled(boxTrongLuong, true);
+                setBoxDisabled(boxKichThuocGiay, true);
+                setBoxDisabled(boxKichThuocTrangPhuc, true);
+                setBoxDisabled(boxMucCang, true);
+                setBoxDisabled(sectionColorImageBox, false);
+                if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
+            }
+
+            updatePreview();
+        }
 
         function updatePreview() {
-            // Lấy toàn bộ các thuộc tính được tick
-            const checkedMaus = Array.from(document.querySelectorAll(".mau-cb:checked")).map(cb => cb.value);
-            const checkedTrongs = Array.from(document.querySelectorAll(".trong-cb:checked")).map(cb => cb.value);
-            
-            const mucCangInput = document.getElementById("mucCang");
-            const mucCangVal = mucCangInput ? mucCangInput.value.trim().replace(/\s+/g, " ") : "";
-            const checkedCangs = [mucCangVal];
-
-            // Render color image inputs
+            const catId = parseInt(selectDanhMuc.value);
+            previewTbody.innerHTML = "";
             const colorImagesContainer = document.getElementById("colorImagesContainer");
+
+            if (isNaN(catId)) {
+                previewCount.textContent = "Vui lòng chọn danh mục để bắt đầu thiết lập.";
+                previewTable.classList.add("d-none");
+                return;
+            }
+
+            if (catId === CAT.HOP_CAU) {
+                previewCount.textContent = "Sản phẩm Hộp cầu sẽ được tự động tạo 1 biến thể mặc định từ Giá bán & Tồn kho ở Mục 2.";
+                previewCount.className = "fw-bold mb-2 text-success fs-6";
+                previewTable.classList.add("d-none");
+                btnSubmit.disabled = false;
+                limitWarning.classList.add("d-none");
+                if (colorImagesContainer) colorImagesContainer.innerHTML = "";
+                return;
+            }
+
+            // Lấy các lựa chọn checked từ box đang active
+            const checkedMaus = Array.from(document.querySelectorAll("#mauSacContainer .mau-cb:checked")).map(cb => cb.value);
+            let checkedSizes = [];
+            let sizeType = "";
+
+            if (catId === CAT.VOT) {
+                checkedSizes = Array.from(document.querySelectorAll("#trongLuongContainer .trong-cb:checked")).map(cb => cb.value);
+                sizeType = "TRONG_LUONG";
+            } else if (catId === CAT.GIAY) {
+                checkedSizes = Array.from(document.querySelectorAll("#kichThuocGiayContainer .kich-giay-cb:checked")).map(cb => cb.value);
+                sizeType = "KICH_THUOC_GIAY";
+            } else if (catId === CAT.TRANG_PHUC) {
+                checkedSizes = Array.from(document.querySelectorAll("#kichThuocTrangPhucContainer .kich-tp-cb:checked")).map(cb => cb.value);
+                sizeType = "KICH_THUOC_TP";
+            }
+
+            // Render box upload ảnh theo màu (1 colorIndex duy nhất cho mỗi màu)
             if (colorImagesContainer) {
                 colorImagesContainer.innerHTML = "";
                 if (checkedMaus.length === 0) {
-                    colorImagesContainer.innerHTML = `<div class="col-12 text-muted small">Vui lòng chọn ít nhất một màu sắc ở trên để thiết lập ảnh cho màu sắc đó.</div>`;
+                    colorImagesContainer.innerHTML = `<div class="col-12 text-muted small">Vui lòng chọn ít nhất một màu sắc ở trên để thiết lập ảnh.</div>`;
                 } else {
-                    checkedMaus.forEach(mau => {
+                    checkedMaus.forEach((mau, colorIdx) => {
                         const colDiv = document.createElement("div");
                         colDiv.className = "col-md-6 mb-2";
 
                         const label = document.createElement("label");
                         label.className = "form-label small fw-bold text-secondary mb-1";
-                        label.textContent = `Hình ảnh cho màu ${mau} (Tùy chọn - để trống sẽ dùng ảnh chính)`;
+                        label.textContent = `Hình ảnh cho màu ${mau} (Tùy chọn - để trống dùng ảnh chính)`;
 
-                        let fileInput;
-                        const cacheKey = `color_${mau}`;
-                        if (fileInputCache.has(cacheKey)) {
-                            fileInput = fileInputCache.get(cacheKey);
-                        } else {
-                            fileInput = document.createElement("input");
-                            fileInput.type = "file";
-                            fileInput.name = `colorImages[${mau}]`;
-                            fileInput.className = "form-control form-control-sm";
-                            fileInput.accept = "image/*";
-                            fileInputCache.set(cacheKey, fileInput);
-                        }
+                        const fileInput = document.createElement("input");
+                        fileInput.type = "file";
+                        fileInput.name = `colorImages[${colorIdx}]`;
+                        fileInput.className = "form-control form-control-sm";
+                        fileInput.accept = "image/*";
 
                         colDiv.appendChild(label);
                         colDiv.appendChild(fileInput);
@@ -246,211 +371,184 @@
                 }
             }
 
-            // Xóa rỗng tbody cũ
-            previewTbody.innerHTML = "";
+            const isSizeCategory = (catId === CAT.VOT || catId === CAT.GIAY || catId === CAT.TRANG_PHUC);
 
-            if (checkedMaus.length === 0 || checkedTrongs.length === 0) {
-                previewCount.textContent = "Vui lòng chọn ít nhất 1 Màu sắc và 1 Trọng lượng/Size để xem trước.";
+            if (checkedMaus.length === 0 || (isSizeCategory && checkedSizes.length === 0)) {
+                previewCount.textContent = isSizeCategory 
+                    ? "Vui lòng chọn ít nhất 1 Màu sắc và 1 Kích thước/Trọng lượng để xem trước."
+                    : "Vui lòng chọn ít nhất 1 Màu sắc để xem trước.";
                 previewCount.className = "fw-bold mb-2 text-warning";
+                previewTable.classList.add("d-none");
                 btnSubmit.disabled = false;
                 limitWarning.classList.add("d-none");
-                previewTable.classList.add("d-none");
                 return;
             }
 
-            // Tính tích Descartes
-            let total = checkedMaus.length * checkedTrongs.length * checkedCangs.length;
-            previewCount.textContent = `Tổng số biến thể sẽ được tự động tạo: ${total}`;
-            
-            previewTable.classList.remove("d-none");
+            let total = isSizeCategory ? (checkedMaus.length * checkedSizes.length) : checkedMaus.length;
+            previewCount.textContent = `Tổng số biến thể sẽ được tạo: ${total}`;
 
-            // Kiểm tra giới hạn 100 biến thể
             if (total > 100) {
                 limitWarning.classList.remove("d-none");
                 btnSubmit.disabled = true;
                 previewCount.className = "fw-bold mb-2 text-danger fs-5";
+                return;
             } else {
                 limitWarning.classList.add("d-none");
                 btnSubmit.disabled = false;
                 previewCount.className = "fw-bold mb-2 text-success fs-5";
             }
 
-            // Tập hợp các keys hiện tại để dọn dẹp cache
-            const currentKeys = new Set();
-            checkedMaus.forEach(mau => {
-                currentKeys.add(`color_${mau}`);
-            });
+            // Render Table Header dynamically
+            if (isSizeCategory) {
+                let sizeColName = (catId === CAT.VOT) ? "Trọng Lượng (Vợt)" : (catId === CAT.GIAY ? "Size Giày" : "Size Trang Phục");
+                previewThead.innerHTML = `
+                    <tr>
+                        <th>Màu Sắc</th>
+                        <th>${sizeColName}</th>
+                        <th style="width: 180px;">Giá Nhập (VNĐ)</th>
+                        <th style="width: 180px;">Giá Bán (VNĐ) *</th>
+                        <th style="width: 120px;">Số Lượng Kho *</th>
+                    </tr>
+                `;
+            } else {
+                previewThead.innerHTML = `
+                    <tr>
+                        <th>Màu Sắc</th>
+                        <th style="width: 180px;">Giá Nhập (VNĐ)</th>
+                        <th style="width: 180px;">Giá Bán (VNĐ) *</th>
+                        <th style="width: 120px;">Số Lượng Kho *</th>
+                    </tr>
+                `;
+            }
 
-            // Render ra bảng xem trước
+            previewTable.classList.remove("d-none");
+
+            const defGia = giaBanDefaultInput.value || "3500000";
+            const defKho = soLuongTonDefaultInput.value || "10";
+
+            let varIndex = 0;
             let fragment = document.createDocumentFragment();
-            checkedMaus.forEach(mau => {
-                checkedTrongs.forEach(trong => {
-                    checkedCangs.forEach(cang => {
-                        const variantKey = `${mau.trim()}_${trong.trim()}_${cang.trim()}`;
-                        currentKeys.add(variantKey);
 
-                        let tr = document.createElement("tr");
+            checkedMaus.forEach((mau, colorIdx) => {
+                const loopSizes = isSizeCategory ? checkedSizes : [""];
+                loopSizes.forEach(sizeVal => {
+                    let tr = document.createElement("tr");
 
-                        let tdMau = document.createElement("td");
-                        tdMau.innerHTML = `<strong>${mau}</strong>`;
-                        tr.appendChild(tdMau);
+                    // Hidden fields for DTO indexed binding
+                    const hMau = document.createElement("input");
+                    hMau.type = "hidden";
+                    hMau.name = `variants[${varIndex}].mauSac`;
+                    hMau.value = mau;
+                    tr.appendChild(hMau);
 
-                        let tdTrong = document.createElement("td");
-                        tdTrong.innerHTML = `<span>${trong}</span>`;
-                        tr.appendChild(tdTrong);
+                    const hColorIdx = document.createElement("input");
+                    hColorIdx.type = "hidden";
+                    hColorIdx.name = `variants[${varIndex}].colorIndex`;
+                    hColorIdx.value = colorIdx;
+                    tr.appendChild(hColorIdx);
 
-                        let tdCang = document.createElement("td");
-                        tdCang.innerHTML = `<span>${cang || "Chưa cập nhật"}</span>`;
-                        tr.appendChild(tdCang);
+                    if (catId === CAT.VOT) {
+                        const hTrong = document.createElement("input");
+                        hTrong.type = "hidden";
+                        hTrong.name = `variants[${varIndex}].trongLuong`;
+                        hTrong.value = sizeVal;
+                        tr.appendChild(hTrong);
+                    } else if (catId === CAT.GIAY || catId === CAT.TRANG_PHUC) {
+                        const hKich = document.createElement("input");
+                        hKich.type = "hidden";
+                        hKich.name = `variants[${varIndex}].kichThuoc`;
+                        hKich.value = sizeVal;
+                        tr.appendChild(hKich);
+                    }
 
-                        // Price column
-                        let tdPrice = document.createElement("td");
-                        let priceInput;
-                        if (priceInputCache.has(variantKey)) {
-                            priceInput = priceInputCache.get(variantKey);
-                        } else {
-                            priceInput = document.createElement("input");
-                            priceInput.type = "number";
-                            priceInput.name = `variantPrices[${variantKey}]`;
-                            priceInput.className = "form-control form-control-sm variant-price-input";
-                            priceInput.min = "1000";
-                            priceInput.step = "1000";
-                            priceInput.required = true;
-                            priceInput.value = "3500000";
-                            priceInputCache.set(variantKey, priceInput);
-                        }
-                        tdPrice.appendChild(priceInput);
-                        tr.appendChild(tdPrice);
+                    // TD Màu Sắc
+                    let tdMau = document.createElement("td");
+                    tdMau.innerHTML = `<strong>${mau}</strong>`;
+                    tr.appendChild(tdMau);
 
-                        // Quantity column
-                        let tdQty = document.createElement("td");
-                        let qtyInput;
-                        if (qtyInputCache.has(variantKey)) {
-                            qtyInput = qtyInputCache.get(variantKey);
-                        } else {
-                            qtyInput = document.createElement("input");
-                            qtyInput.type = "number";
-                            qtyInput.name = `variantQuantities[${variantKey}]`;
-                            qtyInput.className = "form-control form-control-sm variant-qty-input";
-                            qtyInput.min = "0";
-                            qtyInput.required = true;
-                            qtyInput.value = "10";
-                            qtyInputCache.set(variantKey, qtyInput);
-                        }
-                        tdQty.appendChild(qtyInput);
-                        tr.appendChild(tdQty);
+                    // TD Size/Weight
+                    if (isSizeCategory) {
+                        let tdSize = document.createElement("td");
+                        tdSize.innerHTML = `<span>${sizeVal}</span>`;
+                        tr.appendChild(tdSize);
+                    }
 
-                        fragment.appendChild(tr);
-                    });
+                    // TD Giá nhập
+                    let tdGiaNhap = document.createElement("td");
+                    let inGiaNhap = document.createElement("input");
+                    inGiaNhap.type = "number";
+                    inGiaNhap.name = `variants[${varIndex}].giaNhap`;
+                    inGiaNhap.className = "form-control form-control-sm";
+                    inGiaNhap.min = "0";
+                    inGiaNhap.value = "0";
+                    tdGiaNhap.appendChild(inGiaNhap);
+                    tr.appendChild(tdGiaNhap);
+
+                    // TD Giá bán
+                    let tdGiaBan = document.createElement("td");
+                    let inGiaBan = document.createElement("input");
+                    inGiaBan.type = "number";
+                    inGiaBan.name = `variants[${varIndex}].giaBan`;
+                    inGiaBan.className = "form-control form-control-sm";
+                    inGiaBan.min = "1000";
+                    inGiaBan.step = "1000";
+                    inGiaBan.required = true;
+                    inGiaBan.value = defGia;
+                    tdGiaBan.appendChild(inGiaBan);
+                    tr.appendChild(tdGiaBan);
+
+                    // TD Tồn kho
+                    let tdKho = document.createElement("td");
+                    let inKho = document.createElement("input");
+                    inKho.type = "number";
+                    inKho.name = `variants[${varIndex}].soLuongTon`;
+                    inKho.className = "form-control form-control-sm";
+                    inKho.min = "0";
+                    inKho.required = true;
+                    inKho.value = defKho;
+                    tdKho.appendChild(inKho);
+                    tr.appendChild(tdKho);
+
+                    fragment.appendChild(tr);
+                    varIndex++;
                 });
             });
+
             previewTbody.appendChild(fragment);
-
-            // Dọn dẹp cache những key không còn tồn tại
-            for (let key of fileInputCache.keys()) {
-                if (!currentKeys.has(key)) {
-                    fileInputCache.delete(key);
-                }
-            }
-            for (let key of priceInputCache.keys()) {
-                if (!currentKeys.has(key)) {
-                    priceInputCache.delete(key);
-                }
-            }
-            for (let key of qtyInputCache.keys()) {
-                if (!currentKeys.has(key)) {
-                    qtyInputCache.delete(key);
-                }
-            }
         }
 
-        // Đăng ký sự kiện change cho tất cả checkboxes và inputs
-        function registerCheckboxListeners() {
-            const currentCheckboxes = document.querySelectorAll(".filter-checkbox");
-            currentCheckboxes.forEach(cb => {
-                cb.removeEventListener("change", updatePreview);
-                cb.addEventListener("change", updatePreview);
-            });
+        // Listener cho danh mục & checkboxes
+        selectDanhMuc.addEventListener("change", handleCategoryChange);
 
-            const mucCangInput = document.getElementById("mucCang");
-            if (mucCangInput) {
-                mucCangInput.removeEventListener("input", updatePreview);
-                mucCangInput.addEventListener("input", updatePreview);
+        document.addEventListener("change", function(e) {
+            if (e.target && e.target.classList.contains("filter-checkbox")) {
+                updatePreview();
             }
-        }
+        });
 
-        registerCheckboxListeners();
-
-        // Chạy lần đầu khi load form
-        updatePreview();
-
-        window.updateProductPreview = function() {
-            registerCheckboxListeners();
-            updatePreview();
-        };
+        // Initialize on page load
+        handleCategoryChange();
     });
 
     function addNewAttribute(type) {
-        let inputId, containerId, name, cbClass, labelPrefix;
         if (type === 'color') {
-            inputId = 'newColorInput';
-            containerId = 'mauSacContainer';
-            name = 'mauSacs';
-            cbClass = 'mau-cb';
-            labelPrefix = 'mau_';
-        } else if (type === 'weight') {
-            inputId = 'newWeightInput';
-            containerId = 'trongLuongContainer';
-            name = 'trongLuongs';
-            cbClass = 'trong-cb';
-            labelPrefix = 'trong_';
-        }
+            const input = document.getElementById("newColorInput");
+            const value = input.value.trim();
+            if (!value) return;
 
-        const input = document.getElementById(inputId);
-        const value = input.value.trim();
-        if (!value) {
-            showToast('Vui lòng nhập giá trị!', 'warning');
-            return;
-        }
+            const container = document.getElementById("mauSacContainer");
+            const newId = "mau_" + value.replace(/\s+/g, '_');
+            const formCheck = document.createElement('div');
+            formCheck.className = 'form-check my-2';
+            formCheck.innerHTML = `
+                <input class="form-check-input filter-checkbox mau-cb" type="checkbox" value="${value}" id="${newId}" checked>
+                <label class="form-check-label fw-semibold text-secondary" for="${newId}">${value}</label>
+            `;
+            container.appendChild(formCheck);
+            input.value = '';
 
-        const container = document.getElementById(containerId);
-        // Check if value already exists
-        const existingCheckboxes = container.querySelectorAll(`input[name="${name}"]`);
-        for (let cb of existingCheckboxes) {
-            if (cb.value.toLowerCase() === value.toLowerCase()) {
-                showToast('Giá trị này đã tồn tại!', 'warning');
-                return;
-            }
-        }
-
-        // Create new checkbox
-        const newId = labelPrefix + value.replace(/\s+/g, '_');
-        const formCheck = document.createElement('div');
-        formCheck.className = 'form-check my-2';
-        
-        const cbInput = document.createElement('input');
-        cbInput.className = `form-check-input filter-checkbox ${cbClass}`;
-        cbInput.type = 'checkbox';
-        cbInput.name = name;
-        cbInput.value = value;
-        cbInput.id = newId;
-        cbInput.checked = true; // Auto check the newly added attribute
-        
-        const cbLabel = document.createElement('label');
-        cbLabel.className = 'form-check-label fw-semibold text-secondary';
-        cbLabel.htmlFor = newId;
-        cbLabel.textContent = value;
-
-        formCheck.appendChild(cbInput);
-        formCheck.appendChild(cbLabel);
-        container.appendChild(formCheck);
-
-        // Clear input
-        input.value = '';
-
-        // Trigger preview update
-        if (window.updateProductPreview) {
-            window.updateProductPreview();
+            const event = new Event('change', { bubbles: true });
+            formCheck.querySelector('input').dispatchEvent(event);
         }
     }
 </script>

@@ -722,7 +722,7 @@ function checkAndApplyVariant(container) {
     // Nếu giao diện không hiển thị tùy chọn nào, mặc định khớp với biến thể đầu tiên
     const matchedVariant = variants.find(v => {
         const matchColor = !hasColorOptions || (v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase());
-        const matchSize = !hasSizeOptions || (v.trongLuong && selectedSize && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase());
+        const matchSize = !hasSizeOptions || (selectedSize && ((v.trongLuong && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()) || (v.kichThuoc && v.kichThuoc.trim().toLowerCase() === selectedSize.trim().toLowerCase())));
         return matchColor && matchSize;
     });
 

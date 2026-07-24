@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
@@ -44,97 +45,52 @@ public class AdminSanPhamController {
 
     @GetMapping("/them")
     public String hienThiFormThem(Model model) {
-        model.addAttribute("listDanhMuc", danhMucRepository.findAll());
-        model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
-
-        // Đổ động thuộc tính ra Model phục vụ checkbox
-        model.addAttribute("listMauSac", listMauSacConfig);
-        model.addAttribute("listTrongLuong", listTrongLuongConfig);
+        populateFormModel(model);
         return "admin/sanpham-add";
     }
 
     @PostMapping("/them")
     public String xuLyThemSanPham(
-            @RequestParam("tenSanPham") String tenSanPham,
-            @RequestParam("idDanhMuc") Integer idDanhMuc,
-            @RequestParam("idThuongHieu") Integer idThuongHieu,
-            @RequestParam("moTa") String moTa,
-            @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
-            @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
-            @RequestParam("fileAnh") MultipartFile fileAnh,
-            @RequestParam(value = "mauSacs", required = false) List<String> mauSacs,
-            @RequestParam(value = "trongLuongs", required = false) List<String> trongLuongs,
-            @RequestParam(value = "mucCang", required = false) String mucCang,
-            org.springframework.web.multipart.MultipartHttpServletRequest request,
+            @org.springframework.web.bind.annotation.ModelAttribute SanPhamCreateRequest requestDto,
+            HttpServletRequest request,
             HttpSession session,
             Model model) {
         try {
-            java.util.Map<String, MultipartFile> colorImageMap = new java.util.HashMap<>();
-            request.getFileMap().forEach((key, file) -> {
-                if (key.startsWith("colorImages[")) {
-                    String colorKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    colorImageMap.put(colorKey, file);
-                }
-            });
-
-            java.util.Map<String, java.math.BigDecimal> variantPriceMap = new java.util.HashMap<>();
-            java.util.Map<String, Integer> variantQuantityMap = new java.util.HashMap<>();
-
-            request.getParameterMap().forEach((key, values) -> {
-                if (key.startsWith("variantPrices[")) {
-                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    if (values != null && values.length > 0) {
-                        String trimmed = values[0].trim();
-                        if (!trimmed.isEmpty()) {
-                            variantPriceMap.put(variantKey, new java.math.BigDecimal(trimmed));
-                        }
-                    }
-                } else if (key.startsWith("variantQuantities[")) {
-                    String variantKey = key.substring(key.indexOf("[") + 1, key.lastIndexOf("]"));
-                    if (values != null && values.length > 0) {
-                        String trimmed = values[0].trim();
-                        if (!trimmed.isEmpty()) {
-                            variantQuantityMap.put(variantKey, Integer.parseInt(trimmed));
-                        }
-                    }
-                }
-            });
-
-            BigDecimal defaultGia = (giaBan != null) ? giaBan : new BigDecimal("3500000");
-            Integer defaultKho = (soLuongTon != null) ? soLuongTon : 10;
-
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
             adminSanPhamService.themSanPhamVaBienThe(
-                    tenSanPham, idDanhMuc, idThuongHieu, moTa,
-                    defaultGia, defaultKho, fileAnh,
-                    mauSacs, trongLuongs, mucCang,
-                    colorImageMap,
-                    variantPriceMap,
-                    variantQuantityMap,
-                    (Integer) session.getAttribute("idNguoiDung"),
+                    requestDto,
+                    idNguoiDung,
                     request.getRemoteAddr()
             );
             return "redirect:/admin/san-pham?thanhcong";
         } catch (Exception e) {
-            // Khi lỗi, giữ lại thông tin nhập, ném lỗi ra màn hình
             model.addAttribute("loi", e.getMessage());
-            model.addAttribute("tenSanPham", tenSanPham);
-            model.addAttribute("idDanhMuc", idDanhMuc);
-            model.addAttribute("idThuongHieu", idThuongHieu);
-            model.addAttribute("moTa", moTa);
-            model.addAttribute("giaBan", giaBan);
-            model.addAttribute("soLuongTon", soLuongTon);
-            model.addAttribute("selectedMauSacs", mauSacs);
-            model.addAttribute("selectedTrongLuongs", trongLuongs);
-            model.addAttribute("mucCang", mucCang);
-
-            // Re-populate lists
-            model.addAttribute("listDanhMuc", danhMucRepository.findAll());
-            model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
-            model.addAttribute("listMauSac", listMauSacConfig);
-            model.addAttribute("listTrongLuong", listTrongLuongConfig);
-
+            model.addAttribute("requestDto", requestDto);
+            populateFormModel(model);
             return "admin/sanpham-add";
         }
+    }
+
+    private void populateFormModel(Model model) {
+        model.addAttribute("listDanhMuc", danhMucRepository.findAll());
+        model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+
+        java.util.Map<String, Integer> categoryIds = java.util.Map.of(
+            "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
+            "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
+            "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
+            "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
+            "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
+            "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
+            "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
+            "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
+        );
+        model.addAttribute("categoryIds", categoryIds);
+
+        model.addAttribute("listMauSac", com.smashvn.shop.constant.SanPhamAttributeConfig.DEFAULT_MAU_SAC);
+        model.addAttribute("listTrongLuong", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_TRONG_LUONG_VOT);
+        model.addAttribute("listKichThuocGiay", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_KICH_THUOC_GIAY);
+        model.addAttribute("listKichThuocTrangPhuc", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_KICH_THUOC_TRANG_PHUC);
     }
 
     @GetMapping("/sua/{id}")

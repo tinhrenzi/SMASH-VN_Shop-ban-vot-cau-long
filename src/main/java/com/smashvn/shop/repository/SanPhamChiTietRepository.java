@@ -3,17 +3,20 @@ package com.smashvn.shop.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import jakarta.persistence.LockModeType;
 
 import com.smashvn.shop.entity.SanPhamChiTiet;
 
+import jakarta.persistence.LockModeType;
+
 public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, Integer> {
+
     List<SanPhamChiTiet> findTop8ByOrderByIdDesc();
+
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 
     @Query("""
@@ -44,7 +47,6 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND (:keyword IS NULL OR
                    LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                   LOWER(COALESCE(spct.chatLieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(COALESCE(spct.kichThuoc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword2, '%')) OR
@@ -58,7 +60,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND (:minPrice IS NULL OR spct.giaBan >= :minPrice)
               AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)
               AND (:color IS NULL OR LOWER(spct.mauSac) LIKE LOWER(CONCAT('%', :color, '%')))
-              AND (:weight IS NULL OR LOWER(spct.trongLuong) LIKE LOWER(CONCAT('%', :weight, '%')))
+               AND (:weight IS NULL OR LOWER(spct.trongLuong) LIKE LOWER(CONCAT('%', :weight, '%')) OR LOWER(spct.kichThuoc) LIKE LOWER(CONCAT('%', :weight, '%')))
             ORDER BY spct.soLuongTon DESC, spct.id DESC
             """)
     List<SanPhamChiTiet> searchForChatbot(
@@ -89,6 +91,9 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != '' AND s.trangThaiValue = true")
     List<String> findDistinctTrongLuong();
 
+    @Query("SELECT DISTINCT s.kichThuoc FROM SanPhamChiTiet s WHERE s.kichThuoc IS NOT NULL AND s.kichThuoc != '' AND s.trangThaiValue = true")
+    List<String> findDistinctKichThuoc();
+
     @Query("""
             SELECT DISTINCT spct
             FROM SanPhamChiTiet spct
@@ -106,6 +111,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
                     LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(spct.mauSac, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(spct.trongLuong, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(COALESCE(spct.kichThuoc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(dm.tenDanhMuc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(th.tenThuongHieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))

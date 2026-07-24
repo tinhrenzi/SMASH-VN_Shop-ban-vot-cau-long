@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -47,27 +48,58 @@ public class AdminBienTheService {
     }
 
     // 2. Thêm biến thể mới
+    // 2. Thêm biến thể mới
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,
-            String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
+            String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh) throws Exception {
 
         SanPham sp = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm gốc"));
 
-        // Trim and validate input values
-        String cleanMauSac = mauSac != null ? mauSac.trim() : null;
-        String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
+        int idDanhMuc = sp.getDanhMuc().getId();
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.HOP_CAU) {
+            throw new IllegalArgumentException("Hộp cầu chỉ được phép có duy nhất một biến thể mặc định!");
+        }
 
-        validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
+        // Trim and sanitize
+        String cleanMauSac = normalizeText(mauSac);
+        String cleanTrongLuong = null;
+        String cleanKichThuoc = null;
+        String cleanMucCang = null;
 
-        // Kiểm tra trùng lặp tổ hợp duy nhất (id_san_pham, mau_sac, trong_luong, muc_cang)
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.VOT) {
+            cleanTrongLuong = normalizeCode(trongLuong);
+            if (cleanTrongLuong == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_TRONG_LUONG_VOT.contains(cleanTrongLuong)) {
+                throw new IllegalArgumentException("Trọng lượng vợt không hợp lệ (Chỉ chấp nhận: 3U, 4U, 5U)!");
+            }
+            cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
+        } else if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.GIAY) {
+            cleanKichThuoc = normalizeCode(kichThuoc);
+            if (cleanKichThuoc == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_KICH_THUOC_GIAY.contains(cleanKichThuoc)) {
+                throw new IllegalArgumentException("Kích thước giày không hợp lệ (Chỉ chấp nhận: 36 đến 46)!");
+            }
+        } else if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC) {
+            cleanKichThuoc = normalizeCode(kichThuoc);
+            if (cleanKichThuoc == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_KICH_THUOC_TRANG_PHUC.contains(cleanKichThuoc)) {
+                throw new IllegalArgumentException("Kích thước trang phục không hợp lệ (Chỉ chấp nhận: XS đến 3XL)!");
+            }
+        } else if (cleanMauSac == null) {
+            throw new IllegalArgumentException("Màu sắc không được để trống!");
+        }
+
+        validateBasicFinancial(giaBan, soLuongTon);
+
+        // Kiểm tra trùng lặp tổ hợp duy nhất (id_san_pham, mau_sac, trong_luong, kich_thuoc)
+        final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
+        final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
+        final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
+
         boolean exists = sanPhamChiTietRepository.findBySanPham_Id(idSanPham).stream()
-                .anyMatch(bt -> bt.getMauSac().equalsIgnoreCase(cleanMauSac)
-                        && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
-                        && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
+                .anyMatch(bt -> (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
+                        && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
+                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich));
         if (exists) {
-            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và sức căng khuyến nghị này đã tồn tại!");
+            throw new IllegalArgumentException("Biến thể với thuộc tính này đã tồn tại!");
         }
 
         List<Path> uploadedFiles = new ArrayList<>();
@@ -95,12 +127,12 @@ public class AdminBienTheService {
             // Fallback: Check if another variant of the same color exists
             List<SanPhamChiTiet> existingVariants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
             for (SanPhamChiTiet existing : existingVariants) {
-                if (existing.getMauSac().equalsIgnoreCase(cleanMauSac) && existing.getHinhAnhSanPham() != null && !existing.getHinhAnhSanPham().isEmpty()) {
+                if (existing.getMauSac() != null && existing.getMauSac().equalsIgnoreCase(cleanMauSac)
+                        && existing.getHinhAnhSanPham() != null && !existing.getHinhAnhSanPham().isEmpty()) {
                     secureFileName = existing.getHinhAnhSanPham();
                     break;
                 }
             }
-            // If still null, fallback to the first variant's image (main image)
             if (secureFileName == null && !existingVariants.isEmpty()) {
                 secureFileName = existingVariants.get(0).getHinhAnhSanPham();
             }
@@ -115,11 +147,17 @@ public class AdminBienTheService {
         spct.setSoLuongTon(soLuongTon);
         spct.setMauSac(cleanMauSac);
         spct.setTrongLuong(cleanTrongLuong);
+        spct.setKichThuoc(cleanKichThuoc);
         spct.setMucCang(cleanMucCang);
         spct.setTrangThai(TRANG_THAI_DANG_BAN);
         spct.setHinhAnhSanPham(secureFileName);
 
         sanPhamChiTietRepository.save(spct);
+
+        // Nếu là Vợt và có nhập sức căng mới, cập nhật đồng bộ cho toàn bộ các biến thể khác của vợt này
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.VOT && cleanMucCang != null) {
+            updateMucCangAllVariants(idSanPham, cleanMucCang);
+        }
     }
 
     // 3. Ẩn biến thể khỏi khách hàng (xóa mềm)
@@ -148,32 +186,66 @@ public class AdminBienTheService {
     // Thêm hàm Cập nhật Biến thể
     @Transactional
     public void capNhatBienThe(Integer idBienThe, BigDecimal giaBan, Integer soLuongTon,
-            String mauSac, String trongLuong, String mucCang, MultipartFile fileAnh) throws Exception {
+            String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh) throws Exception {
 
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể để sửa"));
 
-        // Trim and validate input values
-        String cleanMauSac = mauSac != null ? mauSac.trim() : null;
-        String cleanTrongLuong = trongLuong != null ? trongLuong.trim() : null;
-        String cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
+        int idDanhMuc = spct.getSanPham().getDanhMuc().getId();
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.HOP_CAU) {
+            // Hộp cầu giữ mauSac = "Mặc định"
+            mauSac = "Mặc định";
+            trongLuong = null;
+            kichThuoc = null;
+            mucCang = null;
+        }
 
-        validateBienThe(giaBan, soLuongTon, cleanMauSac, cleanTrongLuong, cleanMucCang);
+        String cleanMauSac = normalizeText(mauSac);
+        String cleanTrongLuong = null;
+        String cleanKichThuoc = null;
+        String cleanMucCang = null;
+
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.VOT) {
+            cleanTrongLuong = normalizeCode(trongLuong);
+            if (cleanTrongLuong == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_TRONG_LUONG_VOT.contains(cleanTrongLuong)) {
+                throw new IllegalArgumentException("Trọng lượng vợt không hợp lệ (Chỉ chấp nhận: 3U, 4U, 5U)!");
+            }
+            cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
+        } else if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.GIAY) {
+            cleanKichThuoc = normalizeCode(kichThuoc);
+            if (cleanKichThuoc == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_KICH_THUOC_GIAY.contains(cleanKichThuoc)) {
+                throw new IllegalArgumentException("Kích thước giày không hợp lệ (Chỉ chấp nhận: 36 đến 46)!");
+            }
+        } else if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC) {
+            cleanKichThuoc = normalizeCode(kichThuoc);
+            if (cleanKichThuoc == null || !com.smashvn.shop.constant.SanPhamAttributeConfig.ALLOWED_KICH_THUOC_TRANG_PHUC.contains(cleanKichThuoc)) {
+                throw new IllegalArgumentException("Kích thước trang phục không hợp lệ (Chỉ chấp nhận: XS đến 3XL)!");
+            }
+        } else if (idDanhMuc != com.smashvn.shop.constant.DanhMucIds.HOP_CAU && cleanMauSac == null) {
+            throw new IllegalArgumentException("Màu sắc không được để trống!");
+        }
+
+        validateBasicFinancial(giaBan, soLuongTon);
 
         // Kiểm tra trùng lặp tổ hợp duy nhất (trừ chính biến thể đang sửa)
+        final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
+        final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
+        final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
+
         boolean exists = sanPhamChiTietRepository.findBySanPham_Id(spct.getSanPham().getId()).stream()
                 .anyMatch(bt -> !bt.getId().equals(idBienThe)
-                        && bt.getMauSac().equalsIgnoreCase(cleanMauSac)
-                        && bt.getTrongLuong().equalsIgnoreCase(cleanTrongLuong)
-                        && (bt.getMucCang() == null ? cleanMucCang == null : bt.getMucCang().equalsIgnoreCase(cleanMucCang)));
+                        && (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
+                        && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
+                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich));
         if (exists) {
-            throw new IllegalArgumentException("Biến thể với màu sắc, trọng lượng và sức căng khuyến nghị này đã tồn tại!");
+            throw new IllegalArgumentException("Biến thể với thuộc tính này đã tồn tại!");
         }
 
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
         spct.setMauSac(cleanMauSac);
         spct.setTrongLuong(cleanTrongLuong);
+        spct.setKichThuoc(cleanKichThuoc);
         spct.setMucCang(cleanMucCang);
 
         List<Path> uploadedFiles = new ArrayList<>();
@@ -223,7 +295,6 @@ public class AdminBienTheService {
                 );
             }
         } else {
-            // Update mauSac in existing image records if color changed
             if (spct.getHinhAnhSanPhams() != null) {
                 for (com.smashvn.shop.entity.HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
                     hasp.setMauSac(cleanMauSac);
@@ -232,36 +303,39 @@ public class AdminBienTheService {
         }
 
         sanPhamChiTietRepository.save(spct);
+
+        if (idDanhMuc == com.smashvn.shop.constant.DanhMucIds.VOT && cleanMucCang != null) {
+            updateMucCangAllVariants(spct.getSanPham().getId(), cleanMucCang);
+        }
     }
 
-    // --- Helper Validation ---
-    private void validateBienThe(BigDecimal giaBan, Integer soLuongTon, String mauSac, String trongLuong, String mucCang) {
-        if (giaBan == null) {
-            throw new IllegalArgumentException("Giá bán không được để trống.");
+    private void updateMucCangAllVariants(Integer idSanPham, String cleanMucCang) {
+        List<SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
+        for (SanPhamChiTiet v : variants) {
+            if (!Objects.equals(v.getMucCang(), cleanMucCang)) {
+                v.setMucCang(cleanMucCang);
+                sanPhamChiTietRepository.save(v);
+            }
         }
-        if (giaBan.compareTo(BigDecimal.ZERO) <= 0) {
+    }
+
+    private String normalizeText(String s) {
+        if (s == null) return null;
+        String trimmed = s.trim().replaceAll("\\s+", " ");
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeCode(String s) {
+        String text = normalizeText(s);
+        return text == null ? null : text.toUpperCase();
+    }
+
+    private void validateBasicFinancial(BigDecimal giaBan, Integer soLuongTon) {
+        if (giaBan == null || giaBan.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Giá bán phải lớn hơn 0.");
         }
-        if (soLuongTon == null) {
-            throw new IllegalArgumentException("Số lượng tồn kho không được để trống.");
-        }
-        if (soLuongTon < 0) {
+        if (soLuongTon == null || soLuongTon < 0) {
             throw new IllegalArgumentException("Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
-        }
-        if (mauSac == null || mauSac.isEmpty()) {
-            throw new IllegalArgumentException("Màu sắc không được để trống.");
-        }
-        if (mauSac.length() > 50) {
-            throw new IllegalArgumentException("Màu sắc không được vượt quá 50 ký tự.");
-        }
-        if (trongLuong == null || trongLuong.isEmpty()) {
-            throw new IllegalArgumentException("Trọng lượng / Size không được để trống.");
-        }
-        if (trongLuong.length() > 50) {
-            throw new IllegalArgumentException("Trọng lượng / Size không được vượt quá 50 ký tự.");
-        }
-        if (mucCang != null && mucCang.length() > 50) {
-            throw new IllegalArgumentException("Sức căng khuyến nghị không được vượt quá 50 ký tự.");
         }
     }
 

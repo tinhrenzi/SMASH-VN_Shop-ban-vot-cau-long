@@ -15,6 +15,11 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.smashvn.shop.constant.DanhMucIds;
+import com.smashvn.shop.constant.SanPhamAttributeConfig;
+import com.smashvn.shop.dto.BienTheCreateRequest;
+import com.smashvn.shop.dto.SanPhamCreateRequest;
+import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
@@ -170,16 +175,12 @@ public class AdminSanPhamService {
         sanPhamRepository.save(sp);
     }
 
-    // --- HÀM THÊM MỚI CẢ SẢN PHẨM & TỰ ĐỘNG SINH BIẾN THỂ (NÂNG CẤP BẢO MẬT & KIỂM TOÁN) ---
+    // --- HÀM THÊM MỚI CẢ SẢN PHẨM & TỰ ĐỘNG SINH BIẾN THỂ (NÂNG CẤP BẢO MẬT & KIỂM TOÁN DÙNG DTO) ---
     @Transactional(rollbackFor = Exception.class)
-    public void themSanPhamVaBienThe(
-            String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa,
-            BigDecimal giaBan, Integer soLuongTon, MultipartFile fileAnh,
-            List<String> mauSacs, List<String> trongLuongs, String mucCang,
-            Map<String, MultipartFile> colorImageMap,
-            Map<String, BigDecimal> variantPriceMap,
-            Map<String, Integer> variantQuantityMap,
-            Integer idNguoiDung, String remoteAddr) throws Exception {
+    public void themSanPhamVaBienThe(SanPhamCreateRequest request, Integer idNguoiDung, String remoteAddr) throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Yêu cầu không hợp lệ!");
+        }
 
         List<Path> uploadedFiles = new ArrayList<>();
 
@@ -203,78 +204,103 @@ public class AdminSanPhamService {
         }
 
         try {
-            // 1. Validate dữ liệu đầu vào cơ bản
-            String trimmedTen = (tenSanPham == null) ? "" : tenSanPham.trim();
+            // 1. Validate idDanhMuc null trước khi gọi findById
+            if (request.getIdDanhMuc() == null) {
+                throw new IllegalArgumentException("Vui lòng chọn danh mục hợp lệ!");
+            }
+
+            DanhMuc dm = danhMucRepository.findById(request.getIdDanhMuc())
+                    .orElseThrow(() -> new IllegalArgumentException("Danh mục không tồn tại"));
+
+            if (Boolean.FALSE.equals(dm.getTrangThai())) {
+                throw new IllegalArgumentException("Danh mục đã ngừng hoạt động");
+            }
+
+            int idDanhMuc = dm.getId();
+            if (!DanhMucIds.isSupported(idDanhMuc)) {
+                throw new IllegalArgumentException("Danh mục chưa được cấu hình thuộc tính");
+            }
+
+            // Validate Tên sản phẩm & Thương hiệu
+            String trimmedTen = (request.getTenSanPham() == null) ? "" : request.getTenSanPham().trim();
             String sanitizedTen = org.jsoup.Jsoup.clean(trimmedTen, org.jsoup.safety.Safelist.none());
             if (sanitizedTen.isEmpty()) {
-                throw new RuntimeException("Tên sản phẩm bắt buộc!");
+                throw new IllegalArgumentException("Tên sản phẩm bắt buộc!");
             }
             if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
-                throw new RuntimeException("Tên sản phẩm phải có độ dài từ 2 đến 100 ký tự!");
+                throw new IllegalArgumentException("Tên sản phẩm phải có độ dài từ 2 đến 100 ký tự!");
             }
-            if (idDanhMuc == null || idDanhMuc < 1) {
-                throw new RuntimeException("Vui lòng chọn danh mục hợp lệ!");
+            if (request.getIdThuongHieu() == null || request.getIdThuongHieu() < 1) {
+                throw new IllegalArgumentException("Vui lòng chọn thương hiệu hợp lệ!");
             }
-            if (idThuongHieu == null || idThuongHieu < 1) {
-                throw new RuntimeException("Vui lòng chọn thương hiệu hợp lệ!");
-            }
+
             String sanitizedMoTa = "";
-            if (moTa != null) {
-                String trimmedMoTa = moTa.trim();
+            if (request.getMoTa() != null) {
+                String trimmedMoTa = request.getMoTa().trim();
                 sanitizedMoTa = org.jsoup.Jsoup.clean(trimmedMoTa, org.jsoup.safety.Safelist.none());
                 if (sanitizedMoTa.length() > 2000) {
-                    throw new RuntimeException("Mô tả sản phẩm không được vượt quá 2000 ký tự!");
+                    throw new IllegalArgumentException("Mô tả sản phẩm không được vượt quá 2000 ký tự!");
                 }
             }
-            if (giaBan == null || giaBan.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new RuntimeException("Giá bán phải lớn hơn 0 VNĐ!");
-            }
-            if (soLuongTon == null || soLuongTon < 0) {
-                throw new RuntimeException("Số lượng kho không được âm!");
-            }
-            if (fileAnh == null || fileAnh.isEmpty()) {
-                throw new RuntimeException("Hình ảnh sản phẩm là bắt buộc khi thêm mới!");
+
+            if (request.getFileAnh() == null || request.getFileAnh().isEmpty()) {
+                throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc khi thêm mới!");
             }
 
-            // 2. Validate và lọc các thuộc tính checkbox
-            if (mauSacs == null || mauSacs.isEmpty()
-                    || trongLuongs == null || trongLuongs.isEmpty()) {
-                throw new RuntimeException("Vui lòng chọn ít nhất một màu sắc và một trọng lượng!");
-            }
-            String cleanMucCang = RacketSpecUtils.sanitizeRecommendedTension(mucCang);
+            // 2. Validate và lưu ảnh chính + ảnh theo màu (mỗi colorIndex chỉ upload/copy 1 lần)
+            String secureMainFileName = saveImageSecurely(request.getFileAnh(), "chính của sản phẩm", uploadedFiles);
 
-            Set<String> uniqueMauSacs = new LinkedHashSet<>(mauSacs);
-            Set<String> uniqueTrongLuongs = new LinkedHashSet<>(trongLuongs);
-            Set<String> uniqueMucCangs = Set.of(cleanMucCang);
+            List<MultipartFile> colorImages = request.getColorImages();
+            Map<String, Integer> colorIndexByColor = new LinkedHashMap<>();
+            List<BienTheCreateRequest> rawVariants = request.getVariants() != null ? request.getVariants() : new ArrayList<>();
 
-            // 3. Giới hạn số lượng biến thể tối đa (Variant Generation Limit)
-            int totalVariants = uniqueMauSacs.size() * uniqueTrongLuongs.size() * uniqueMucCangs.size();
-            if (totalVariants > 100) {
-                throw new RuntimeException("Số lượng biến thể được tạo ra vượt quá giới hạn cho phép (Tối đa 100 biến thể)! Hiện tại đang yêu cầu tạo: " + totalVariants);
-            }
+            if (idDanhMuc != DanhMucIds.HOP_CAU) {
+                if (rawVariants.isEmpty()) {
+                    throw new IllegalArgumentException("Danh sách biến thể không được để trống!");
+                }
+                if (rawVariants.size() > 100) {
+                    throw new IllegalArgumentException("Số lượng biến thể được tạo ra vượt quá giới hạn cho phép (Tối đa 100 biến thể)!");
+                }
 
-            // 4. File Upload Security & Validation (Ảnh chính)
-            String secureFileName = saveImageSecurely(fileAnh, "chính của sản phẩm", uploadedFiles);
-
-            // 5. Lưu ảnh màu sắc trước
-            Map<String, String> imageByColor = new HashMap<>();
-            if (colorImageMap != null) {
-                for (Map.Entry<String, MultipartFile> entry : colorImageMap.entrySet()) {
-                    String color = entry.getKey();
-                    MultipartFile colorFile = entry.getValue();
-                    if (colorFile != null && !colorFile.isEmpty()) {
-                        String colorFileName = saveImageSecurely(colorFile, "màu " + color, uploadedFiles);
-                        imageByColor.put(color, colorFileName);
+                // Kiểm tra sự thống nhất colorIndex theo màu
+                for (BienTheCreateRequest v : rawVariants) {
+                    String normMau = normalizeText(v.getMauSac());
+                    if (normMau == null) {
+                        throw new IllegalArgumentException("Màu sắc của biến thể không được để trống!");
+                    }
+                    Integer idx = v.getColorIndex();
+                    if (colorIndexByColor.containsKey(normMau)) {
+                        if (!Objects.equals(colorIndexByColor.get(normMau), idx)) {
+                            throw new IllegalArgumentException("Tất cả biến thể cùng màu '" + normMau + "' phải dùng thống nhất một chỉ số ảnh màu (colorIndex)!");
+                        }
+                    } else {
+                        colorIndexByColor.put(normMau, idx);
                     }
                 }
             }
 
-            // 6. Lưu sản phẩm gốc
+            // Upload các file ảnh theo colorIndex duy nhất (1 file chỉ upload 1 lần)
+            Map<Integer, String> savedColorImages = new HashMap<>();
+            for (Integer cIdx : new HashSet<>(colorIndexByColor.values())) {
+                if (cIdx != null) {
+                    if (cIdx < 0 || colorImages == null || cIdx >= colorImages.size()) {
+                        throw new IllegalArgumentException("Chỉ số ảnh màu (colorIndex) vượt quá phạm vi danh sách ảnh!");
+                    }
+                    MultipartFile colorFile = colorImages.get(cIdx);
+                    if (colorFile != null && !colorFile.isEmpty()) {
+                        String colorFileName = saveImageSecurely(colorFile, "màu index " + cIdx, uploadedFiles);
+                        savedColorImages.put(cIdx, colorFileName);
+                    }
+                }
+            }
+
+            // 3. Tạo và lưu SanPham gốc
             SanPham sp = new SanPham();
             sp.setTenSanPham(sanitizedTen);
             sp.setMoTa(sanitizedMoTa);
-            sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());
-            sp.setThuongHieu(thuongHieuRepository.findById(idThuongHieu).orElseThrow());
+            sp.setDanhMuc(dm);
+            sp.setThuongHieu(thuongHieuRepository.findById(request.getIdThuongHieu())
+                    .orElseThrow(() -> new IllegalArgumentException("Thương hiệu không tồn tại")));
             sp.setTrangThai("dang_ban");
 
             NhanVien creator = null;
@@ -317,63 +343,128 @@ public class AdminSanPhamService {
                         creator.setNgayTao(java.time.LocalDateTime.now());
                         creator = nhanVienRepository.save(creator);
                     } else {
-                        throw new RuntimeException("Hệ thống chưa có nhân viên nào! Không thể tạo sản phẩm.");
+                        throw new IllegalArgumentException("Hệ thống chưa có nhân viên nào! Không thể tạo sản phẩm.");
                     }
                 }
             }
             sp.setNhanVien(creator);
             sp = sanPhamRepository.save(sp);
 
-            // 7. Tạo Cartesian Product và phòng chống trùng lặp
+            // 4. Xử lý lưu các biến thể SanPhamChiTiet
             Set<String> checkDuplicates = new HashSet<>();
+            int savedCount = 0;
 
-            for (String mau : uniqueMauSacs) {
-                for (String trong : uniqueTrongLuongs) {
-                    for (String cang : uniqueMucCangs) {
+            if (idDanhMuc == DanhMucIds.HOP_CAU) {
+                // Hộp cầu: backend tự sinh đúng 1 biến thể mặc định
+                BigDecimal gNhap = request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO;
+                if (gNhap.compareTo(BigDecimal.ZERO) < 0) {
+                    throw new IllegalArgumentException("Giá nhập không được nhỏ hơn 0!");
+                }
+                BigDecimal gBan = request.getGiaBanDefault();
+                if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Giá bán phải lớn hơn 0 VNĐ!");
+                }
+                Integer sTon = request.getSoLuongTonDefault();
+                if (sTon == null || sTon < 0) {
+                    throw new IllegalArgumentException("Số lượng tồn kho không được âm!");
+                }
 
-                        String combKey = mau.toLowerCase().trim() + "_" + trong.toLowerCase().trim() + "_" + cang.toLowerCase().trim();
-                        if (checkDuplicates.contains(combKey)) {
-                            continue;
+                SanPhamChiTiet spct = new SanPhamChiTiet();
+                spct.setSanPham(sp);
+                spct.setMauSac("Mặc định");
+                spct.setTrongLuong(null);
+                spct.setKichThuoc(null);
+                spct.setMucCang(null);
+                spct.setGiaNhap(gNhap);
+                spct.setGiaBan(gBan);
+                spct.setSoLuongTon(sTon);
+                spct.setTrangThai("dang_ban");
+                spct.setHinhAnhSanPham(secureMainFileName);
+                sanPhamChiTietRepository.save(spct);
+                savedCount = 1;
+            } else {
+                String cleanMucCangChung = RacketSpecUtils.sanitizeRecommendedTension(request.getMucCang());
+
+                for (BienTheCreateRequest v : rawVariants) {
+                    String normMau = normalizeText(v.getMauSac());
+                    String normTrong = null;
+                    String normKich = null;
+                    String normCang = null;
+
+                    if (idDanhMuc == DanhMucIds.VOT) {
+                        normTrong = normalizeCode(v.getTrongLuong());
+                        if (normTrong == null || !SanPhamAttributeConfig.ALLOWED_TRONG_LUONG_VOT.contains(normTrong)) {
+                            throw new IllegalArgumentException("Trọng lượng vợt không hợp lệ (Chỉ chấp nhận: 3U, 4U, 5U)!");
                         }
-                        checkDuplicates.add(combKey);
-
-                        // Lấy ảnh theo màu, nếu không có thì fallback sang ảnh chính
-                        String variantFileName = imageByColor.get(mau);
-                        if (variantFileName == null || variantFileName.isEmpty()) {
-                            variantFileName = secureFileName;
+                        normKich = null; // Force null
+                        normCang = cleanMucCangChung;
+                    } else if (idDanhMuc == DanhMucIds.GIAY) {
+                        normTrong = null; // Force null
+                        normKich = normalizeCode(v.getKichThuoc());
+                        if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_GIAY.contains(normKich)) {
+                            throw new IllegalArgumentException("Kích thước giày không hợp lệ (Chỉ chấp nhận: 36 đến 46)!");
                         }
-
-                        String variantKey = mau.trim() + "_" + trong.trim() + "_" + cang.trim();
-                        BigDecimal vPrice = (variantPriceMap != null && variantPriceMap.containsKey(variantKey)) ? variantPriceMap.get(variantKey) : giaBan;
-                        Integer vQty = (variantQuantityMap != null && variantQuantityMap.containsKey(variantKey)) ? variantQuantityMap.get(variantKey) : soLuongTon;
-
-                        if (vPrice == null || vPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                            throw new RuntimeException("Giá bán của biến thể " + variantKey + " phải lớn hơn 0 VNĐ!");
+                        normCang = null; // Force null
+                    } else if (idDanhMuc == DanhMucIds.TRANG_PHUC) {
+                        normTrong = null; // Force null
+                        normKich = normalizeCode(v.getKichThuoc());
+                        if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_TRANG_PHUC.contains(normKich)) {
+                            throw new IllegalArgumentException("Kích thước trang phục không hợp lệ (Chỉ chấp nhận: XS đến 3XL)!");
                         }
-                        if (vQty == null || vQty < 0) {
-                            throw new RuntimeException("Số lượng kho của biến thể " + variantKey + " không được âm!");
-                        }
-
-                        SanPhamChiTiet spct = new SanPhamChiTiet();
-                        spct.setSanPham(sp);
-                        spct.setGiaBan(vPrice);
-                        spct.setSoLuongTon(vQty);
-                        spct.setMauSac(mau.trim());
-                        spct.setTrongLuong(trong.trim());
-                        spct.setMucCang(cang.trim());
-                        spct.setHinhAnhSanPham(variantFileName);
-
-                        sanPhamChiTietRepository.save(spct);
+                        normCang = null; // Force null
+                    } else if (idDanhMuc == DanhMucIds.CUOC || idDanhMuc == DanhMucIds.BALO || idDanhMuc == DanhMucIds.QUAN_CAN || idDanhMuc == DanhMucIds.BANG_QUAN) {
+                        normTrong = null; // Force null
+                        normKich = null; // Force null
+                        normCang = null; // Force null
                     }
+
+                    // Kiểm tra tài chính & kho
+                    BigDecimal gNhap = v.getGiaNhap() != null ? v.getGiaNhap() : (request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO);
+                    if (gNhap.compareTo(BigDecimal.ZERO) < 0) {
+                        throw new IllegalArgumentException("Giá nhập của biến thể không được nhỏ hơn 0!");
+                    }
+                    BigDecimal gBan = v.getGiaBan() != null ? v.getGiaBan() : request.getGiaBanDefault();
+                    if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new IllegalArgumentException("Giá bán của biến thể phải lớn hơn 0 VNĐ!");
+                    }
+                    Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : request.getSoLuongTonDefault();
+                    if (sTon == null || sTon < 0) {
+                        throw new IllegalArgumentException("Số lượng kho của biến thể không được âm!");
+                    }
+
+                    // Kiểm tra trùng lặp tổ hợp duy nhất
+                    String combKey = normMau.toLowerCase() + "|" + (normTrong != null ? normTrong.toLowerCase() : "") + "|" + (normKich != null ? normKich.toLowerCase() : "");
+                    if (checkDuplicates.contains(combKey)) {
+                        throw new IllegalArgumentException("Có biến thể bị trùng lặp trong danh sách nhập!");
+                    }
+                    checkDuplicates.add(combKey);
+
+                    // Chọn ảnh cho biến thể
+                    Integer cIdx = v.getColorIndex();
+                    String variantFileName = (cIdx != null && savedColorImages.containsKey(cIdx)) ? savedColorImages.get(cIdx) : secureMainFileName;
+
+                    SanPhamChiTiet spct = new SanPhamChiTiet();
+                    spct.setSanPham(sp);
+                    spct.setGiaNhap(gNhap);
+                    spct.setGiaBan(gBan);
+                    spct.setSoLuongTon(sTon);
+                    spct.setMauSac(normMau);
+                    spct.setTrongLuong(normTrong);
+                    spct.setKichThuoc(normKich);
+                    spct.setMucCang(normCang);
+                    spct.setTrangThai("dang_ban");
+                    spct.setHinhAnhSanPham(variantFileName);
+
+                    sanPhamChiTietRepository.save(spct);
+                    savedCount++;
                 }
             }
 
             // Ghi nhật ký kiểm toán
-            String note = "Thêm sản phẩm '" + sp.getTenSanPham() + "' cùng " + totalVariants + " biến thể.";
+            String note = "Thêm sản phẩm '" + sp.getTenSanPham() + "' cùng " + savedCount + " biến thể.";
             auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "INSERT", "", sp.getTenSanPham(), remoteAddr, note, creator.getChucVu());
 
         } catch (Exception e) {
-            // fallback thủ công phòng hờ khi sync manager không chạy
             for (Path path : uploadedFiles) {
                 try {
                     Files.deleteIfExists(path);
@@ -383,6 +474,17 @@ public class AdminSanPhamService {
             }
             throw e;
         }
+    }
+
+    private String normalizeText(String s) {
+        if (s == null) return null;
+        String trimmed = s.trim().replaceAll("\\s+", " ");
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeCode(String s) {
+        String text = normalizeText(s);
+        return text == null ? null : text.toUpperCase();
     }
 
     // --- HÀM CẬP NHẬT (CHỈ SỬA SẢN PHẨM GỐC) ---

@@ -299,9 +299,8 @@ public class AdminPosService {
             hdct.setSkuSnapshot(sku);
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
 
-            // Freeze variant attributes at time of purchase
             StringBuilder thuocTinhSb = new StringBuilder();
-            if (spct.getMauSac() != null && !spct.getMauSac().isBlank()) {
+            if (spct.getMauSac() != null && !spct.getMauSac().isBlank() && !"Mặc định".equalsIgnoreCase(spct.getMauSac().trim())) {
                 thuocTinhSb.append("Màu sắc: ").append(spct.getMauSac());
             }
             if (spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank()) {
@@ -309,6 +308,14 @@ public class AdminPosService {
                     thuocTinhSb.append(", ");
                 }
                 thuocTinhSb.append("Trọng lượng: ").append(spct.getTrongLuong());
+            }
+            if (spct.getKichThuoc() != null && !spct.getKichThuoc().isBlank()) {
+                if (thuocTinhSb.length() > 0) {
+                    thuocTinhSb.append(", ");
+                }
+                int catId = spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null ? spct.getSanPham().getDanhMuc().getId() : 0;
+                String label = (catId == com.smashvn.shop.constant.DanhMucIds.GIAY) ? "Size giày: " : "Size: ";
+                thuocTinhSb.append(label).append(spct.getKichThuoc());
             }
             if (spct.getMucCang() != null && !spct.getMucCang().isBlank()) {
                 if (thuocTinhSb.length() > 0) {
