@@ -63,6 +63,9 @@ public class AdminBienTheService {
 
         // Trim and sanitize
         String cleanMauSac = normalizeText(mauSac);
+        if (cleanMauSac != null && cleanMauSac.length() > 50) {
+            throw new IllegalArgumentException("Màu sắc không được vượt quá 50 ký tự.");
+        }
         String cleanTrongLuong = null;
         String cleanKichThuoc = null;
         String cleanMucCang = null;
@@ -201,6 +204,9 @@ public class AdminBienTheService {
         }
 
         String cleanMauSac = normalizeText(mauSac);
+        if (cleanMauSac != null && cleanMauSac.length() > 50) {
+            throw new IllegalArgumentException("Màu sắc không được vượt quá 50 ký tự.");
+        }
         String cleanTrongLuong = null;
         String cleanKichThuoc = null;
         String cleanMucCang = null;

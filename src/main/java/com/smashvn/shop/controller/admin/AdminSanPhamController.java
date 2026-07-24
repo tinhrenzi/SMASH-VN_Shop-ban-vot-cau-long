@@ -1,8 +1,5 @@
 package com.smashvn.shop.controller.admin;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.SanPham;
@@ -32,10 +28,6 @@ public class AdminSanPhamController {
     private final DanhMucRepository danhMucRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final AdminSanPhamService adminSanPhamService;
-
-    // Các thuộc tính thuộc phân loại vợt cầu lông
-    private final List<String> listMauSacConfig = List.of("Đỏ", "Xanh dương", "Đen", "Trắng", "Vàng", "Cam");
-    private final List<String> listTrongLuongConfig = List.of("3U", "4U", "5U");
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
@@ -76,14 +68,14 @@ public class AdminSanPhamController {
         model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
 
         java.util.Map<String, Integer> categoryIds = java.util.Map.of(
-            "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
-            "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
-            "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
-            "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
-            "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
-            "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
-            "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
-            "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
+                "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
+                "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
+                "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
+                "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
+                "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
+                "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
+                "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
+                "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
         );
         model.addAttribute("categoryIds", categoryIds);
 

@@ -388,6 +388,7 @@ public class DanhGiaService {
                         .thoiHanKhoa(textThoiHan)
                         .ngayViPham(LocalDateTime.now())
                         .createdAt(LocalDateTime.now())
+                        .nguon("USER")
                         .build();
                 commentViolationLogRepository.save(logEntry);
             }
@@ -408,7 +409,12 @@ public class DanhGiaService {
      * bảng SanPham
      */
     public void updateProductRatingStats(Integer idSanPham) {
-        List<DanhGia> activeReviews = layDanhSachDanhGiaTheoSanPham(idSanPham);
+        List<DanhGia> activeReviews = danhGiaDAO.findBySanPham_IdAndDaXoaFalseAndBinhLuanAnFalseOrderByNgayDanhGiaDesc(idSanPham)
+                .stream()
+                .filter(dg -> dg.getKhachHang() == null || dg.getKhachHang().getTaiKhoan() == null
+                || dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen() == null
+                || dg.getKhachHang().getTaiKhoan().getNgayKhoaBinhLuanDen().isBefore(LocalDateTime.now()))
+                .toList();
         int soDanhGia = activeReviews.size();
         double diemTrungBinh = activeReviews.stream()
                 .mapToDouble(DanhGia::getSoSao)
@@ -440,9 +446,9 @@ public class DanhGiaService {
         dg.setAnBinhLuan(true);
         dg.setNguoiAnBinhLuan(admin);
         dg.setNgayAnBinhLuan(LocalDateTime.now());
-        danhGiaDAO.save(dg);
+        danhGiaDAO.saveAndFlush(dg);
 
-        // Lưu ý nghiệp vụ: KHÔNG cập nhật cache rating khi ẩn bình luận (sao vẫn hiển thị bình thường)
+        updateProductRatingStats(dg.getSanPham().getId());
     }
 
     /**
@@ -455,10 +461,94 @@ public class DanhGiaService {
         TaiKhoan admin = taiKhoanRepository.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản quản trị!"));
 
+        List<String> customKeywords = commentModerationService.getActiveRawKeywords();
+        if (dg.getBinhLuan() != null && !dg.getBinhLuan().isBlank()) {
+            ProfanityFilter.FilterResult moderation = profanityFilter.filterWithResult(dg.getBinhLuan(), customKeywords);
+            if (moderation.moderated()) {
+                throw new IllegalArgumentException("Không thể hiển thị lại vì nội dung bình luận vẫn vi phạm từ khóa cấm hiện tại.");
+            }
+        }
+
         dg.setAnBinhLuan(false);
         dg.setNguoiHienBinhLuan(admin);
         dg.setNgayHienBinhLuan(LocalDateTime.now());
-        danhGiaDAO.save(dg);
+        danhGiaDAO.saveAndFlush(dg);
+
+        updateProductRatingStats(dg.getSanPham().getId());
+    }
+
+    /**
+     * Quét và tự động ẩn các bình luận vi phạm danh sách từ cấm mới
+     */
+    @Transactional
+    public void scanAndModerateReviews() {
+        long startTime = System.currentTimeMillis();
+        List<String> customKeywords = commentModerationService.getActiveRawKeywords();
+        if (customKeywords == null || customKeywords.isEmpty()) {
+            log.info("[REVIEW_MODERATION_JOB] No active custom keywords found. Exiting scan.");
+            return;
+        }
+
+        List<DanhGia> activeReviews = danhGiaDAO.findByDaXoaFalseAndBinhLuanAnFalse();
+        java.util.Set<Integer> productIdsToUpdate = new java.util.HashSet<>();
+        int hiddenCount = 0;
+
+        for (DanhGia dg : activeReviews) {
+            String text = dg.getBinhLuan();
+            if (text == null || text.trim().isEmpty()) {
+                continue;
+            }
+
+            ProfanityFilter.FilterResult moderation = profanityFilter.filterWithResult(text, customKeywords);
+            if (moderation.moderated()) {
+                dg.setAnBinhLuan(true);
+                dg.setNgayAnBinhLuan(LocalDateTime.now());
+                danhGiaDAO.save(dg);
+
+                productIdsToUpdate.add(dg.getSanPham().getId());
+                hiddenCount++;
+
+                SeverityLevel severity = profanityFilter.getSeverity(text, customKeywords);
+                if (severity == SeverityLevel.NONE) {
+                    severity = SeverityLevel.MEDIUM;
+                }
+
+                TaiKhoan tk = (dg.getKhachHang() != null) ? dg.getKhachHang().getTaiKhoan() : null;
+                if (tk == null) {
+                    // Fallback to avoid dropping the log silently
+                    tk = taiKhoanRepository.findAll().stream().findFirst().orElse(null);
+                }
+
+                if (tk != null) {
+                    CommentViolationLog logEntry = CommentViolationLog.builder()
+                            .taiKhoan(tk)
+                            .danhGia(dg)
+                            .sanPham(dg.getSanPham())
+                            .noiDungGoc(text)
+                            .noiDungDaLoc(moderation.content())
+                            .mucDoViPham(severity.name())
+                            .soLanViPham(tk.getSoLanNhacNhoViPham())
+                            .thoiHanKhoa(null)
+                            .ngayViPham(LocalDateTime.now())
+                            .createdAt(LocalDateTime.now())
+                            .nguon("AUTO_SCAN")
+                            .build();
+                    commentViolationLogRepository.save(logEntry);
+                }
+            }
+        }
+
+        if (!productIdsToUpdate.isEmpty()) {
+            danhGiaDAO.flush();
+            for (Integer productId : productIdsToUpdate) {
+                updateProductRatingStats(productId);
+            }
+        }
+
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        log.info("[REVIEW_MODERATION_JOB] Scan summary: checked {} reviews, hidden {} reviews, recalculated {} products, duration {} ms.",
+                 activeReviews.size(), hiddenCount, productIdsToUpdate.size(), duration);
     }
 
     /**
@@ -508,9 +598,10 @@ public class DanhGiaService {
         dg.setDaXoa(true);
         dg.setNguoiXoa(admin);
         dg.setNgayXoa(LocalDateTime.now());
-        danhGiaDAO.save(dg);
+        danhGiaDAO.saveAndFlush(dg);
 
         // Cập nhật lại cache rating trên thực thể SanPham khi đánh giá bị loại bỏ
         updateProductRatingStats(dg.getSanPham().getId());
     }
+
 }

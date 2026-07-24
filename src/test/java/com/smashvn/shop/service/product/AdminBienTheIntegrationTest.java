@@ -92,9 +92,11 @@ public class AdminBienTheIntegrationTest {
         csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
 
         // Seed mock category, brand, and product
-        DanhMuc dm = new DanhMuc();
-        dm.setTenDanhMuc("Vợt Cầu Lông");
-        dm = danhMucRepository.save(dm);
+        DanhMuc dm = danhMucRepository.findById(42).orElseGet(() -> {
+            DanhMuc newDm = new DanhMuc();
+            newDm.setTenDanhMuc("Vợt Cầu Lông");
+            return danhMucRepository.save(newDm);
+        });
 
         ThuongHieu th = new ThuongHieu();
         th.setTenThuongHieu("Yonex");

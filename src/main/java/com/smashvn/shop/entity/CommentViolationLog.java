@@ -42,6 +42,10 @@ public class CommentViolationLog {
     @Column(name = "thoi_han_khoa", length = 100)
     private String thoiHanKhoa;
 
+    @Column(name = "nguon", nullable = false, length = 50)
+    @Builder.Default
+    private String nguon = "USER";
+
     @Column(name = "ngay_vi_pham", nullable = false)
     @Builder.Default
     private LocalDateTime ngayViPham = LocalDateTime.now();

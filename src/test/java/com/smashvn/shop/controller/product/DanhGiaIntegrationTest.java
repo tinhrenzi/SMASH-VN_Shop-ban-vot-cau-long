@@ -574,10 +574,10 @@ public class DanhGiaIntegrationTest {
         assertEquals(testAdmin.getId(), updatedDg.getNhanVien().getId());
         assertNotNull(updatedDg.getNgayAnBinhLuan());
 
-        // Rating Stats cache should NOT be updated by moderation action
+        // Rating Stats cache should be updated by moderation action (excluding the hidden comment)
         SanPham updatedSp = sanPhamRepository.findById(activeProduct.getId()).orElseThrow();
-        assertEquals(1, updatedSp.getSoDanhGia());
-        assertEquals(5.0, updatedSp.getDiemTrungBinh());
+        assertEquals(0, updatedSp.getSoDanhGia());
+        assertEquals(0.0, updatedSp.getDiemTrungBinh());
 
         // 2. Hide Image Only
         mockMvc.perform(post("/admin/danh-gia/an-hinh-anh/" + dg.getId())
