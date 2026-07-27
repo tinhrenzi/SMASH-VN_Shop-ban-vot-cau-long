@@ -68,6 +68,18 @@ public class AdminControllerRenderTest {
     }
 
     @Test
+    public void testSanPhamAddRender() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
+
+        mockMvc.perform(get("/admin/san-pham/them")
+                .requestAttr("_csrf", csrfToken)
+                .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
+    @Test
     public void testGetOrderDetailJson_Unauthorized() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         mockMvc.perform(get("/admin/don-hang/detail-json").param("id", "999"))

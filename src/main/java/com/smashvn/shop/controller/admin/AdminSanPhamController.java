@@ -70,13 +70,16 @@ public class AdminSanPhamController {
         model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
 
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
+        java.util.Map<Integer, String> categoryTypes = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.DanhMuc dm : allCategories) {
             com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
+            categoryTypes.put(dm.getId(), type.name());
             if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
                 categoryIds.put(type.name(), dm.getId());
             }
         }
         model.addAttribute("categoryIds", categoryIds);
+        model.addAttribute("categoryTypes", categoryTypes);
 
         model.addAttribute("listMauSac", com.smashvn.shop.constant.SanPhamAttributeConfig.DEFAULT_MAU_SAC);
         model.addAttribute("listTrongLuong", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_TRONG_LUONG_VOT);
