@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.util.List;
 
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.SanPham;
@@ -64,19 +65,17 @@ public class AdminSanPhamController {
     }
 
     private void populateFormModel(Model model) {
-        model.addAttribute("listDanhMuc", danhMucRepository.findAll());
+        List<com.smashvn.shop.entity.DanhMuc> allCategories = danhMucRepository.findAll();
+        model.addAttribute("listDanhMuc", allCategories);
         model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
 
-        java.util.Map<String, Integer> categoryIds = java.util.Map.of(
-                "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
-                "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
-                "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
-                "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
-                "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
-                "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
-                "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
-                "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
-        );
+        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
+        for (com.smashvn.shop.entity.DanhMuc dm : allCategories) {
+            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
+            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
+                categoryIds.put(type.name(), dm.getId());
+            }
+        }
         model.addAttribute("categoryIds", categoryIds);
 
         model.addAttribute("listMauSac", com.smashvn.shop.constant.SanPhamAttributeConfig.DEFAULT_MAU_SAC);

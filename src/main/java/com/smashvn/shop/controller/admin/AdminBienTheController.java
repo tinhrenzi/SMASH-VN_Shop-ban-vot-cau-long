@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 
 import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.service.admin.AdminBienTheService;
 
@@ -18,6 +19,7 @@ import com.smashvn.shop.service.admin.AdminBienTheService;
 public class AdminBienTheController {
 
     private final SanPhamRepository sanPhamRepository;
+    private final DanhMucRepository danhMucRepository;
     private final AdminBienTheService adminBienTheService;
 
     // 1. Hiển thị Trang Quản lý Biến thể (Gồm cả Form Thêm + Bảng Danh sách)
@@ -120,16 +122,13 @@ public class AdminBienTheController {
     }
 
     private void populateCategoryIds(Model model) {
-        java.util.Map<String, Integer> categoryIds = java.util.Map.of(
-            "VOT", com.smashvn.shop.constant.DanhMucIds.VOT,
-            "GIAY", com.smashvn.shop.constant.DanhMucIds.GIAY,
-            "HOP_CAU", com.smashvn.shop.constant.DanhMucIds.HOP_CAU,
-            "CUOC", com.smashvn.shop.constant.DanhMucIds.CUOC,
-            "BALO", com.smashvn.shop.constant.DanhMucIds.BALO,
-            "TRANG_PHUC", com.smashvn.shop.constant.DanhMucIds.TRANG_PHUC,
-            "QUAN_CAN", com.smashvn.shop.constant.DanhMucIds.QUAN_CAN,
-            "BANG_QUAN", com.smashvn.shop.constant.DanhMucIds.BANG_QUAN
-        );
+        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
+        for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {
+            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
+            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
+                categoryIds.put(type.name(), dm.getId());
+            }
+        }
         model.addAttribute("categoryIds", categoryIds);
     }
 }

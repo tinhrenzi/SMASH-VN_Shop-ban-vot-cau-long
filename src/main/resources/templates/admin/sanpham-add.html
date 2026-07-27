@@ -54,7 +54,7 @@
                                 <label class="form-label">Danh Mục *</label>
                                 <select name="idDanhMuc" id="selectDanhMuc" class="form-select" required>
                                     <option value="">-- Chọn Danh Mục --</option>
-                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${requestDto != null && requestDto.idDanhMuc == dm.id}"></option>
+                                    <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:data-type="${T(com.smashvn.shop.constant.CategoryType).fromIdOrName(dm, dm.id).name()}" th:selected="${requestDto != null && requestDto.idDanhMuc == dm.id}"></option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -254,11 +254,33 @@
             inputs.forEach(i => i.disabled = disabled);
         }
 
+        function getSelectedCategoryType() {
+            const selectedOption = selectDanhMuc.options[selectDanhMuc.selectedIndex];
+            if (!selectedOption || !selectedOption.value) return "";
+            const dataType = selectedOption.getAttribute("data-type");
+            if (dataType) return dataType;
+            const catId = parseInt(selectedOption.value);
+            if (catId === CAT.VOT) return "VOT";
+            if (catId === CAT.GIAY) return "GIAY";
+            if (catId === CAT.TRANG_PHUC) return "TRANG_PHUC";
+            if (catId === CAT.HOP_CAU) return "HOP_CAU";
+            if (catId === CAT.CUOC) return "CUOC";
+            if (catId === CAT.BALO) return "BALO";
+            if (catId === CAT.QUAN_CAN) return "QUAN_CAN";
+            if (catId === CAT.BANG_QUAN) return "BANG_QUAN";
+            const text = (selectedOption.textContent || "").toLowerCase();
+            if (text.includes("vợt") || text.includes("vot")) return "VOT";
+            if (text.includes("giày") || text.includes("giay")) return "GIAY";
+            if (text.includes("trang phục") || text.includes("quần") || text.includes("áo")) return "TRANG_PHUC";
+            if (text.includes("hộp cầu") || text.includes("quả cầu")) return "HOP_CAU";
+            return "";
+        }
+
         function handleCategoryChange() {
-            const catId = parseInt(selectDanhMuc.value);
+            const catType = getSelectedCategoryType();
 
             // Reset UI Visibility & Disabled states
-            if (catId === CAT.VOT) {
+            if (catType === "VOT") {
                 setBoxDisabled(boxMauSac, false);
                 setBoxDisabled(boxTrongLuong, false);
                 setBoxDisabled(boxKichThuocGiay, true);
@@ -266,7 +288,7 @@
                 setBoxDisabled(boxMucCang, false);
                 setBoxDisabled(sectionColorImageBox, false);
                 if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
-            } else if (catId === CAT.GIAY) {
+            } else if (catType === "GIAY") {
                 setBoxDisabled(boxMauSac, false);
                 setBoxDisabled(boxTrongLuong, true);
                 setBoxDisabled(boxKichThuocGiay, false);
@@ -274,7 +296,7 @@
                 setBoxDisabled(boxMucCang, true);
                 setBoxDisabled(sectionColorImageBox, false);
                 if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
-            } else if (catId === CAT.TRANG_PHUC) {
+            } else if (catType === "TRANG_PHUC") {
                 setBoxDisabled(boxMauSac, false);
                 setBoxDisabled(boxTrongLuong, true);
                 setBoxDisabled(boxKichThuocGiay, true);
@@ -282,7 +304,7 @@
                 setBoxDisabled(boxMucCang, true);
                 setBoxDisabled(sectionColorImageBox, false);
                 if (sectionColorImageTitle) sectionColorImageTitle.classList.remove("d-none");
-            } else if (catId === CAT.HOP_CAU) {
+            } else if (catType === "HOP_CAU") {
                 setBoxDisabled(boxMauSac, true);
                 setBoxDisabled(boxTrongLuong, true);
                 setBoxDisabled(boxKichThuocGiay, true);
@@ -305,17 +327,17 @@
         }
 
         function updatePreview() {
-            const catId = parseInt(selectDanhMuc.value);
+            const catType = getSelectedCategoryType();
             previewTbody.innerHTML = "";
             const colorImagesContainer = document.getElementById("colorImagesContainer");
 
-            if (isNaN(catId)) {
+            if (!selectDanhMuc.value) {
                 previewCount.textContent = "Vui lòng chọn danh mục để bắt đầu thiết lập.";
                 previewTable.classList.add("d-none");
                 return;
             }
 
-            if (catId === CAT.HOP_CAU) {
+            if (catType === "HOP_CAU") {
                 previewCount.textContent = "Sản phẩm Hộp cầu sẽ được tự động tạo 1 biến thể mặc định từ Giá bán & Tồn kho ở Mục 2.";
                 previewCount.className = "fw-bold mb-2 text-success fs-6";
                 previewTable.classList.add("d-none");
@@ -330,13 +352,13 @@
             let checkedSizes = [];
             let sizeType = "";
 
-            if (catId === CAT.VOT) {
+            if (catType === "VOT") {
                 checkedSizes = Array.from(document.querySelectorAll("#trongLuongContainer .trong-cb:checked")).map(cb => cb.value);
                 sizeType = "TRONG_LUONG";
-            } else if (catId === CAT.GIAY) {
+            } else if (catType === "GIAY") {
                 checkedSizes = Array.from(document.querySelectorAll("#kichThuocGiayContainer .kich-giay-cb:checked")).map(cb => cb.value);
                 sizeType = "KICH_THUOC_GIAY";
-            } else if (catId === CAT.TRANG_PHUC) {
+            } else if (catType === "TRANG_PHUC") {
                 checkedSizes = Array.from(document.querySelectorAll("#kichThuocTrangPhucContainer .kich-tp-cb:checked")).map(cb => cb.value);
                 sizeType = "KICH_THUOC_TP";
             }

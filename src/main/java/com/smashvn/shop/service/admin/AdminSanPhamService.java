@@ -217,7 +217,8 @@ public class AdminSanPhamService {
             }
 
             int idDanhMuc = dm.getId();
-            if (!DanhMucIds.isSupported(idDanhMuc)) {
+            com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, idDanhMuc);
+            if (catType == com.smashvn.shop.constant.CategoryType.OTHER && !DanhMucIds.isSupported(idDanhMuc)) {
                 throw new IllegalArgumentException("Danh mục chưa được cấu hình thuộc tính");
             }
 
@@ -254,7 +255,7 @@ public class AdminSanPhamService {
             Map<String, Integer> colorIndexByColor = new LinkedHashMap<>();
             List<BienTheCreateRequest> rawVariants = request.getVariants() != null ? request.getVariants() : new ArrayList<>();
 
-            if (idDanhMuc != DanhMucIds.HOP_CAU) {
+            if (catType != com.smashvn.shop.constant.CategoryType.HOP_CAU) {
                 if (rawVariants.isEmpty()) {
                     throw new IllegalArgumentException("Danh sách biến thể không được để trống!");
                 }
@@ -354,7 +355,7 @@ public class AdminSanPhamService {
             Set<String> checkDuplicates = new HashSet<>();
             int savedCount = 0;
 
-            if (idDanhMuc == DanhMucIds.HOP_CAU) {
+            if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
                 // Hộp cầu: backend tự sinh đúng 1 biến thể mặc định
                 BigDecimal gNhap = request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO;
                 if (gNhap.compareTo(BigDecimal.ZERO) < 0) {
@@ -391,28 +392,28 @@ public class AdminSanPhamService {
                     String normKich = null;
                     String normCang = null;
 
-                    if (idDanhMuc == DanhMucIds.VOT) {
+                    if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
                         normTrong = normalizeCode(v.getTrongLuong());
                         if (normTrong == null || !SanPhamAttributeConfig.ALLOWED_TRONG_LUONG_VOT.contains(normTrong)) {
                             throw new IllegalArgumentException("Trọng lượng vợt không hợp lệ (Chỉ chấp nhận: 3U, 4U, 5U)!");
                         }
                         normKich = null; // Force null
                         normCang = cleanMucCangChung;
-                    } else if (idDanhMuc == DanhMucIds.GIAY) {
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.GIAY) {
                         normTrong = null; // Force null
                         normKich = normalizeCode(v.getKichThuoc());
                         if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_GIAY.contains(normKich)) {
                             throw new IllegalArgumentException("Kích thước giày không hợp lệ (Chỉ chấp nhận: 36 đến 46)!");
                         }
                         normCang = null; // Force null
-                    } else if (idDanhMuc == DanhMucIds.TRANG_PHUC) {
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC) {
                         normTrong = null; // Force null
                         normKich = normalizeCode(v.getKichThuoc());
                         if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_TRANG_PHUC.contains(normKich)) {
                             throw new IllegalArgumentException("Kích thước trang phục không hợp lệ (Chỉ chấp nhận: XS đến 3XL)!");
                         }
                         normCang = null; // Force null
-                    } else if (idDanhMuc == DanhMucIds.CUOC || idDanhMuc == DanhMucIds.BALO || idDanhMuc == DanhMucIds.QUAN_CAN || idDanhMuc == DanhMucIds.BANG_QUAN) {
+                    } else {
                         normTrong = null; // Force null
                         normKich = null; // Force null
                         normCang = null; // Force null
