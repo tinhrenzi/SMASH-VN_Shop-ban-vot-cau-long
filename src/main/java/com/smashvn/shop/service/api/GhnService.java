@@ -483,10 +483,9 @@ public class GhnService {
         List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
         for (HoaDonChiTiet ct : items) {
             GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
-            // Đính kèm thông số trọng lượng (3U/4U) và màu sắc để phân biệt phân loại rõ ràng khi đẩy lên GHN
-            String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() 
-                    + " [" + ct.getSanPhamChiTiet().getTrongLuong() 
-                    + " - " + ct.getSanPhamChiTiet().getMauSac() + "]";
+            String specStr = ct.getSanPhamChiTiet().getTrongLuong() != null && !ct.getSanPhamChiTiet().getTrongLuong().isBlank() ? ct.getSanPhamChiTiet().getTrongLuong() : (ct.getSanPhamChiTiet().getKichThuoc() != null ? ct.getSanPhamChiTiet().getKichThuoc() : "");
+            String classification = (ct.getSanPhamChiTiet().getMauSac() != null ? ct.getSanPhamChiTiet().getMauSac() : "") + (!specStr.isEmpty() ? " - " + specStr : "");
+            String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() + (!classification.isEmpty() ? " [" + classification + "]" : "");
             item.setName(detailName);
             item.setCode("SP-" + ct.getSanPhamChiTiet().getId());
             item.setQuantity(ct.getSoLuong());

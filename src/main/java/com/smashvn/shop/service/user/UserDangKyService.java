@@ -42,8 +42,10 @@ public class UserDangKyService {
         if (!looksLikePhone) {
             // Validate as email
             String emailTrimmed = username.trim().toLowerCase();
-            if (!emailTrimmed.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-                throw new RuntimeException("Định dạng email không hợp lệ!");
+            try {
+                com.smashvn.shop.util.EmailValidatorUtils.validateEmail(emailTrimmed);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(e.getMessage());
             }
             finalUsername = emailTrimmed;
 

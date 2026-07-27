@@ -78,13 +78,10 @@
                                 <label class="form-label">Hình ảnh sản phẩm gốc *</label>
                                 <input type="file" name="fileAnh" class="form-control" accept="image/*" required>
                             </div>
-                            <div class="col-md-3" id="boxGiaMacDinh">
+                            <div class="col-md-6" id="boxGiaMacDinh">
                                 <label class="form-label">Giá bán mặc định (VNĐ) *</label>
                                 <input type="number" name="giaBanDefault" id="giaBanDefault" class="form-control" min="1000" step="1000" value="3500000" required>
-                            </div>
-                            <div class="col-md-3" id="boxKhoMacDinh">
-                                <label class="form-label">Số lượng kho mặc định *</label>
-                                <input type="number" name="soLuongTonDefault" id="soLuongTonDefault" class="form-control" min="0" value="10" required>
+                                <input type="hidden" name="soLuongTonDefault" id="soLuongTonDefault" value="0">
                             </div>
                         </div>
 
@@ -424,7 +421,7 @@
             previewTable.classList.remove("d-none");
 
             const defGia = giaBanDefaultInput.value || "3500000";
-            const defKho = soLuongTonDefaultInput.value || "10";
+            const defKho = "0";
 
             let varIndex = 0;
             let fragment = document.createDocumentFragment();

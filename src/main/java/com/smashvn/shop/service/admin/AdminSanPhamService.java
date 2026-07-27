@@ -364,8 +364,8 @@ public class AdminSanPhamService {
                 if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("Giá bán phải lớn hơn 0 VNĐ!");
                 }
-                Integer sTon = request.getSoLuongTonDefault();
-                if (sTon == null || sTon < 0) {
+                Integer sTon = request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0;
+                if (sTon < 0) {
                     throw new IllegalArgumentException("Số lượng tồn kho không được âm!");
                 }
 
@@ -427,8 +427,8 @@ public class AdminSanPhamService {
                     if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                         throw new IllegalArgumentException("Giá bán của biến thể phải lớn hơn 0 VNĐ!");
                     }
-                    Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : request.getSoLuongTonDefault();
-                    if (sTon == null || sTon < 0) {
+                    Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : (request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0);
+                    if (sTon < 0) {
                         throw new IllegalArgumentException("Số lượng kho của biến thể không được âm!");
                     }
 

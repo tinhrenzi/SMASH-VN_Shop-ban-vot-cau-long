@@ -183,7 +183,9 @@ public class GioHangService {
         // Đóng gói dữ liệu trả về cho Modal JS
         Map<String, Object> result = new HashMap<>();
         result.put("tenSanPham", spct.getSanPham().getTenSanPham());
-        result.put("phanLoai", spct.getMauSac() + " | " + spct.getTrongLuong());
+        String sizeOrWeight = spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank() ? spct.getTrongLuong() : (spct.getKichThuoc() != null ? spct.getKichThuoc() : "");
+        String phanLoaiStr = (spct.getMauSac() != null ? spct.getMauSac() : "") + (!sizeOrWeight.isEmpty() ? " | " + sizeOrWeight : "");
+        result.put("phanLoai", phanLoaiStr);
         result.put("giaBan", pricingService.calculateCurrentSellingPrice(spct));
         result.put("hinhAnh", spct.getHinhAnhSanPham());
         result.put("soLuongThem", soLuong);
@@ -235,6 +237,7 @@ public class GioHangService {
             map.put("idSanPham", sp.getId());
             map.put("mauSac", item.getSanPhamChiTiet().getMauSac());
             map.put("trongLuong", item.getSanPhamChiTiet().getTrongLuong());
+            map.put("kichThuoc", item.getSanPhamChiTiet().getKichThuoc());
             danhSachMini.add(map);
         }
 
@@ -610,6 +613,12 @@ public class GioHangService {
                     thuocTinh.append(", ");
                 }
                 thuocTinh.append("Trọng lượng: ").append(lockedSpct.getTrongLuong());
+            }
+            if (lockedSpct.getKichThuoc() != null && !lockedSpct.getKichThuoc().isBlank()) {
+                if (thuocTinh.length() > 0) {
+                    thuocTinh.append(", ");
+                }
+                thuocTinh.append("Kích thước: ").append(lockedSpct.getKichThuoc());
             }
             if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().isBlank()) {
                 if (thuocTinh.length() > 0) {

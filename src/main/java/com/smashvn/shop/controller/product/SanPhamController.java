@@ -60,9 +60,10 @@ public class SanPhamController {
                 .map(SanPhamChiTiet::getMauSac)
                 .collect(java.util.stream.Collectors.toSet());
         
-        // 2. Lấy danh sách Size (Trọng lượng) không trùng lặp
+        // 2. Lấy danh sách Size (Trọng lượng / Kích thước) không trùng lặp
         java.util.Set<String> listKichThuoc = danhSachChiTiet.stream()
-                .map(SanPhamChiTiet::getTrongLuong)
+                .map(ct -> ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank() ? ct.getTrongLuong() : ct.getKichThuoc())
+                .filter(value -> value != null && !value.trim().isEmpty())
                 .collect(java.util.stream.Collectors.toSet());
 
         java.util.Set<String> listMucCang = danhSachChiTiet.stream()
@@ -77,6 +78,7 @@ public class SanPhamController {
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
+            map.put("kichThuoc", ct.getKichThuoc());
             map.put("mucCang", ct.getMucCang());
             map.put("giaBan", ct.getGiaBan());
             map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));
@@ -200,7 +202,10 @@ public class SanPhamController {
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
 
         java.util.Set<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).collect(java.util.stream.Collectors.toSet());
-        java.util.Set<String> listKichThuoc = danhSachChiTiet.stream().map(SanPhamChiTiet::getTrongLuong).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<String> listKichThuoc = danhSachChiTiet.stream()
+                .map(ct -> ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank() ? ct.getTrongLuong() : ct.getKichThuoc())
+                .filter(value -> value != null && !value.trim().isEmpty())
+                .collect(java.util.stream.Collectors.toSet());
         java.util.Set<String> listMucCang = danhSachChiTiet.stream()
                 .map(SanPhamChiTiet::getMucCang)
                 .filter(value -> value != null && !value.trim().isEmpty())
@@ -211,6 +216,7 @@ public class SanPhamController {
             map.put("id", ct.getId());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
+            map.put("kichThuoc", ct.getKichThuoc());
             map.put("mucCang", ct.getMucCang());
             map.put("giaBan", ct.getGiaBan());
             map.put("giaSauGiam", sanPham.getGiaSauGiam(ct.getGiaBan()));

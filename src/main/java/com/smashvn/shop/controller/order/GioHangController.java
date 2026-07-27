@@ -68,7 +68,9 @@ public class GioHangController {
                 Map<String, Object> data = new HashMap<>();
                 data.put("trangThai", "ok");
                 data.put("tenSanPham", spct.getSanPham().getTenSanPham());
-                data.put("phanLoai", spct.getMauSac() + " | " + spct.getTrongLuong());
+                String sizeOrWeight = spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank() ? spct.getTrongLuong() : (spct.getKichThuoc() != null ? spct.getKichThuoc() : "");
+                String phanLoaiStr = (spct.getMauSac() != null ? spct.getMauSac() : "") + (!sizeOrWeight.isEmpty() ? " | " + sizeOrWeight : "");
+                data.put("phanLoai", phanLoaiStr);
                 data.put("giaBan", pricingService.calculateCurrentSellingPrice(spct));
                 data.put("hinhAnh", spct.getHinhAnhSanPham());
                 data.put("soLuongThem", soLuong);

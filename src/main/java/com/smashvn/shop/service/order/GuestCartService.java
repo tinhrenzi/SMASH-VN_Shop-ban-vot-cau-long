@@ -215,6 +215,7 @@ public class GuestCartService {
             map.put("idSanPham", sp.getId());
             map.put("mauSac", spct.getMauSac());
             map.put("trongLuong", spct.getTrongLuong());
+            map.put("kichThuoc", spct.getKichThuoc());
             danhSachMini.add(map);
         }
 
