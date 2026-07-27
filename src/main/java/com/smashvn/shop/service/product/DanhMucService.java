@@ -1,13 +1,21 @@
 package com.smashvn.shop.service.product;
 
 import com.smashvn.shop.entity.DanhMuc;
+import com.smashvn.shop.entity.DanhMucThuocTinh;
+import com.smashvn.shop.entity.ThuocTinh;
 import com.smashvn.shop.repository.DanhMucRepository;
+import com.smashvn.shop.repository.DanhMucThuocTinhRepository;
+import com.smashvn.shop.repository.ThuocTinhRepository;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -16,16 +24,15 @@ public class DanhMucService {
     private static final Logger log = LoggerFactory.getLogger(DanhMucService.class);
 
     private final DanhMucRepository danhMucRepository;
+    private final DanhMucThuocTinhRepository danhMucThuocTinhRepository;
+    private final ThuocTinhRepository thuocTinhRepository;
 
-    // ----------------------------------------------------------------
-    // Public API
-    // ----------------------------------------------------------------
-
-    /**
-     * Thêm mới danh mục.
-     * Service là nguồn xác thực duy nhất: sanitize → validate → kiểm tra trùng → lưu.
-     */
     public DanhMuc themDanhMuc(String tenDanhMuc) {
+        return themDanhMuc(tenDanhMuc, List.of());
+    }
+
+    @Transactional
+    public DanhMuc themDanhMuc(String tenDanhMuc, List<Integer> thuocTinhIds) {
         String normalized = normalize(tenDanhMuc);
         validateLength(normalized);
 
@@ -37,14 +44,38 @@ public class DanhMucService {
 
         DanhMuc dm = new DanhMuc();
         dm.setTenDanhMuc(normalized);
-        return danhMucRepository.save(dm);
+        dm = danhMucRepository.save(dm);
+
+        if (thuocTinhIds != null && !thuocTinhIds.isEmpty()) {
+            List<DanhMucThuocTinh> listMapping = new ArrayList<>();
+            for (Integer ttId : thuocTinhIds) {
+                if (ttId != null) {
+                    ThuocTinh tt = thuocTinhRepository.findById(ttId).orElse(null);
+                    if (tt != null) {
+                        DanhMucThuocTinh mapping = DanhMucThuocTinh.builder()
+                                .danhMuc(dm)
+                                .thuocTinh(tt)
+                                .trangThai(true)
+                                .build();
+                        listMapping.add(mapping);
+                    }
+                }
+            }
+            if (!listMapping.isEmpty()) {
+                danhMucThuocTinhRepository.saveAll(listMapping);
+                dm.setDanhMucThuocTinhs(listMapping);
+            }
+        }
+
+        return dm;
     }
 
-    /**
-     * Cập nhật danh mục theo ID.
-     * Cho phép giữ nguyên tên hiện tại (self-exclude khi kiểm tra trùng).
-     */
     public DanhMuc suaDanhMuc(Integer id, String tenDanhMuc) {
+        return suaDanhMuc(id, tenDanhMuc, List.of());
+    }
+
+    @Transactional
+    public DanhMuc suaDanhMuc(Integer id, String tenDanhMuc, List<Integer> thuocTinhIds) {
         String normalized = normalize(tenDanhMuc);
         validateLength(normalized);
 
@@ -57,24 +88,31 @@ public class DanhMucService {
         DanhMuc dm = danhMucRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + id));
         dm.setTenDanhMuc(normalized);
-        return danhMucRepository.save(dm);
+
+        // Xóa toàn bộ thuộc tính cũ và FLUSH NGAY để DB thực thi DELETE
+        // trước khi INSERT bản ghi mới (tránh vi phạm UNIQUE constraint)
+        dm.getDanhMucThuocTinhs().clear();
+        DanhMuc flushedDm = danhMucRepository.saveAndFlush(dm);
+
+        // Thêm lại các thuộc tính mới
+        if (thuocTinhIds != null && !thuocTinhIds.isEmpty()) {
+            for (Integer ttId : thuocTinhIds) {
+                if (ttId != null) {
+                    thuocTinhRepository.findById(ttId).ifPresent(tt -> {
+                        DanhMucThuocTinh mapping = DanhMucThuocTinh.builder()
+                                .danhMuc(flushedDm)
+                                .thuocTinh(tt)
+                                .trangThai(true)
+                                .build();
+                        flushedDm.getDanhMucThuocTinhs().add(mapping);
+                    });
+                }
+            }
+        }
+
+        return danhMucRepository.save(flushedDm);
     }
 
-    // ----------------------------------------------------------------
-    // Private helpers
-    // ----------------------------------------------------------------
-
-    /**
-     * Normalization pipeline (applied before ALL validation and duplicate checks):
-     * 1. Jsoup.clean(Safelist.none()) — strip all HTML / XSS tags
-     * 2. .trim()                       — remove leading/trailing whitespace
-     * 3. .replaceAll("\\s+", " ")      — collapse multiple inner spaces to one
-     *
-     * Examples:
-     *   "  NIKE  "  →  "NIKE"
-     *   "<b>Nike</b>" →  "Nike"
-     *   "Nike  Pro"  →  "Nike Pro"
-     */
     String normalize(String input) {
         if (input == null) {
             throw new IllegalArgumentException("Tên danh mục không được để trống!");
@@ -86,7 +124,6 @@ public class DanhMucService {
         return cleaned;
     }
 
-    /** Validate 2–100 characters after normalization */
     private void validateLength(String normalized) {
         if (normalized.length() < 2) {
             throw new IllegalArgumentException("Tên danh mục phải có ít nhất 2 ký tự!");

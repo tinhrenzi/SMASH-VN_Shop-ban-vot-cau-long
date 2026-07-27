@@ -106,6 +106,9 @@ public class OrderPricingIntegrationTest {
     @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private MockMvc mockMvc;
     private TaiKhoan testUser;
     private KhachHang testKhachHang;
@@ -661,6 +664,9 @@ public class OrderPricingIntegrationTest {
         // Clean up any test-specific orders created in the tests
         for (Integer orderId : orderIdsToClean) {
             try {
+                jdbcTemplate.update("DELETE FROM TichHopVanChuyen WHERE id_hoa_don = ?", orderId);
+            } catch (Exception e) {}
+            try {
                 paymentTransactionRepository.deleteAll(paymentTransactionRepository.findByOrder_Id(orderId));
                 paymentTransactionRepository.flush();
             } catch (Exception e) {}
@@ -776,6 +782,41 @@ public class OrderPricingIntegrationTest {
             }
         } catch (Exception e) {
             System.err.println("Error deleting strayStaff in tearDown: " + e.getMessage());
+        }
+
+        try {
+            List<TaiKhoan> strayPricingUsers = taiKhoanRepository.findAll().stream()
+                    .filter(tk -> tk.getUsername() != null && tk.getUsername().contains("tester_pricing_"))
+                    .toList();
+            for (TaiKhoan tk : strayPricingUsers) {
+                KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
+                if (kh != null) {
+                    GioHang gh = gioHangRepository.findByKhachHang_Id(kh.getId());
+                    if (gh != null) {
+                        gioHangChiTietRepository.deleteAll(gioHangChiTietRepository.findByGioHang_Id(gh.getId()));
+                        gioHangRepository.delete(gh);
+                        gioHangRepository.flush();
+                    }
+                    List<HoaDon> orders = hoaDonRepository.findByKhachHang_Id(kh.getId());
+                    for (HoaDon hd : orders) {
+                        try {
+                            jdbcTemplate.update("DELETE FROM TichHopVanChuyen WHERE id_hoa_don = ?", hd.getId());
+                        } catch (Exception e) {}
+                        paymentTransactionRepository.deleteAll(paymentTransactionRepository.findByOrder_Id(hd.getId()));
+                        hoaDonChiTietRepository.deleteAll(hoaDonChiTietRepository.findByHoaDon_Id(hd.getId()));
+                        hoaDonRepository.delete(hd);
+                    }
+                    khachHangRepository.delete(kh);
+                    khachHangRepository.flush();
+                }
+                deleteEditLogsForAccount(tk.getId());
+                tokenRepository.deleteAll(tokenRepository.findByTaiKhoan_Id(tk.getId()));
+                tokenRepository.flush();
+                taiKhoanRepository.delete(tk);
+                taiKhoanRepository.flush();
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting strayPricingUsers in tearDown: " + e.getMessage());
         }
     }
 

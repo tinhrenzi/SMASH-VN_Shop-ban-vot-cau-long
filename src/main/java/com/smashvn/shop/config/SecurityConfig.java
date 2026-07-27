@@ -24,9 +24,12 @@ public class SecurityConfig {
                         "/api/payment/zalopay/callback",
                         "/api/payment/sepay/ipn",
                         "/api/ghn/webhook",
+                        "/api/ghn/admin/**",
                         "/api/chat/**",
                         "/api/newsletter/subscribe",
-                        "/api/newsletter/unsubscribe-ajax"
+                        "/api/newsletter/unsubscribe-ajax",
+                        "/api/attributes",
+                        "/api/categories/**"
                 ))
                 // Cấu hình các Header bảo mật nâng cao
                 .headers(headers -> {
