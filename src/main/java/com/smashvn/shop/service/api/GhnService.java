@@ -483,8 +483,7 @@ public class GhnService {
         List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
         for (HoaDonChiTiet ct : items) {
             GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
-            String specStr = ct.getSanPhamChiTiet().getTrongLuong() != null && !ct.getSanPhamChiTiet().getTrongLuong().isBlank() ? ct.getSanPhamChiTiet().getTrongLuong() : (ct.getSanPhamChiTiet().getKichThuoc() != null ? ct.getSanPhamChiTiet().getKichThuoc() : "");
-            String classification = (ct.getSanPhamChiTiet().getMauSac() != null ? ct.getSanPhamChiTiet().getMauSac() : "") + (!specStr.isEmpty() ? " - " + specStr : "");
+            String classification = ct.getSanPhamChiTiet().getPhanLoaiHienThi();
             String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() + (!classification.isEmpty() ? " [" + classification + "]" : "");
             item.setName(detailName);
             item.setCode("SP-" + ct.getSanPhamChiTiet().getId());

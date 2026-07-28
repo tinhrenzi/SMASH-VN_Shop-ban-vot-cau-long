@@ -388,7 +388,6 @@ public class DanhGiaService {
                         .thoiHanKhoa(textThoiHan)
                         .ngayViPham(LocalDateTime.now())
                         .createdAt(LocalDateTime.now())
-                        .nguon("USER")
                         .build();
                 commentViolationLogRepository.save(logEntry);
             }
@@ -531,7 +530,6 @@ public class DanhGiaService {
                             .thoiHanKhoa(null)
                             .ngayViPham(LocalDateTime.now())
                             .createdAt(LocalDateTime.now())
-                            .nguon("AUTO_SCAN")
                             .build();
                     commentViolationLogRepository.save(logEntry);
                 }

@@ -80,7 +80,6 @@ public class DatabaseSeederTest {
                 .orElseGet(() -> {
                     ThuongHieu th = new ThuongHieu();
                     th.setTenThuongHieu(brandName);
-                    th.setMoTa("Thương hiệu " + brandName + " chính hãng");
                     th.setTrangThai(true);
                     return thuongHieuRepository.save(th);
                 });
@@ -93,7 +92,6 @@ public class DatabaseSeederTest {
                 .orElseGet(() -> {
                     DanhMuc dm = new DanhMuc();
                     dm.setTenDanhMuc(categoryName);
-                    dm.setMoTa(description);
                     dm.setTrangThai(true);
                     return danhMucRepository.save(dm);
                 });

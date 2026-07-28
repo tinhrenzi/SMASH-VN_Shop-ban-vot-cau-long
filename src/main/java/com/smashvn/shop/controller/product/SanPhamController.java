@@ -76,6 +76,11 @@ public class SanPhamController {
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", ct.getId());
+            Map<String, String> attributes = ct.getSanPhamChiTietThuocTinhs().stream()
+                    .filter(tt -> tt.getThuocTinh() != null && tt.getGiaTri() != null)
+                    .collect(Collectors.toMap(tt -> tt.getThuocTinh().getTenThuocTinh(), tt -> tt.getGiaTri(), (a, b) -> a));
+            map.put("attributes", attributes);
+            map.put("phanLoai", ct.getPhanLoaiHienThi());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
             map.put("kichThuoc", ct.getKichThuoc());

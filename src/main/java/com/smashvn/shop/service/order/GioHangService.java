@@ -604,29 +604,7 @@ public class GioHangService {
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
 
             // Freeze variant attributes as a display string at time of purchase
-            StringBuilder thuocTinh = new StringBuilder();
-            if (lockedSpct.getMauSac() != null && !lockedSpct.getMauSac().isBlank()) {
-                thuocTinh.append("Màu sắc: ").append(lockedSpct.getMauSac());
-            }
-            if (lockedSpct.getTrongLuong() != null && !lockedSpct.getTrongLuong().isBlank()) {
-                if (thuocTinh.length() > 0) {
-                    thuocTinh.append(", ");
-                }
-                thuocTinh.append("Trọng lượng: ").append(lockedSpct.getTrongLuong());
-            }
-            if (lockedSpct.getKichThuoc() != null && !lockedSpct.getKichThuoc().isBlank()) {
-                if (thuocTinh.length() > 0) {
-                    thuocTinh.append(", ");
-                }
-                thuocTinh.append("Kích thước: ").append(lockedSpct.getKichThuoc());
-            }
-            if (lockedSpct.getMucCang() != null && !lockedSpct.getMucCang().isBlank()) {
-                if (thuocTinh.length() > 0) {
-                    thuocTinh.append(", ");
-                }
-                thuocTinh.append("Sức căng khuyến nghị: ").append(lockedSpct.getMucCang());
-            }
-            hdct.setThuocTinhSnapshot(thuocTinh.toString());
+            hdct.setThuocTinhSnapshot(lockedSpct.getPhanLoaiHienThi());
 
             hoaDonChiTietRepository.save(hdct);
         }

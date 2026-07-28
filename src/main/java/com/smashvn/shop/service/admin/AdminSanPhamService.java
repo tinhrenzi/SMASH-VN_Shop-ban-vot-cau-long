@@ -17,17 +17,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.constant.DanhMucIds;
 import com.smashvn.shop.constant.SanPhamAttributeConfig;
+import com.smashvn.shop.dto.AttributeValueRequest;
 import com.smashvn.shop.dto.BienTheCreateRequest;
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.ThuocTinh;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.ThuocTinhRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
@@ -47,107 +51,46 @@ public class AdminSanPhamService {
     private final ThuongHieuRepository thuongHieuRepository;
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final ThuocTinhRepository thuocTinhRepository;
     private final AuditService auditService;
+
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".jpg", ".jpeg", ".png", ".webp");
 
     @Value("${app.upload.path}")
     private String uploadPathConfig;
 
-    private void validateImageFile(MultipartFile file, String fileLabel) throws Exception {
-        if (file == null || file.isEmpty()) {
-            return;
+    private String saveImageSecurely(MultipartFile file, String fieldName, List<Path> uploadedFiles) throws Exception {
+        if (file == null || file.isEmpty()) return null;
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("Dung lượng file " + fieldName + " vượt quá giới hạn 5MB!");
         }
-        String origName = file.getOriginalFilename();
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("File " + fieldName + " không hợp lệ!");
+        }
+
         String ext = "";
-        if (origName != null && origName.contains(".")) {
-            ext = origName.substring(origName.lastIndexOf(".")).toLowerCase();
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex >= 0) {
+            ext = originalFilename.substring(dotIndex).toLowerCase();
+        }
+        if (!ALLOWED_EXTENSIONS.contains(ext)) {
+            throw new IllegalArgumentException("Định dạng file " + fieldName + " không được hỗ trợ (chỉ chấp nhận JPG, JPEG, PNG, WEBP)!");
         }
 
-        if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
-            throw new IllegalArgumentException("Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.");
+        String safeFileName = UUID.randomUUID().toString() + ext;
+        Path targetUploadDir = Paths.get(uploadPathConfig, "product").toAbsolutePath().normalize();
+
+        if (!Files.exists(targetUploadDir)) {
+            Files.createDirectories(targetUploadDir);
         }
 
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB.");
-        }
-
-        org.apache.tika.Tika tika = new org.apache.tika.Tika();
-        try (InputStream is = file.getInputStream()) {
-            String mimeType = tika.detect(is);
-            if (mimeType == null || (!mimeType.equals("image/jpeg") && !mimeType.equals("image/png") && !mimeType.equals("image/webp"))) {
-                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận.");
-            }
-        }
-
-        try (InputStream is = file.getInputStream()) {
-            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(is);
-            if (img == null) {
-                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
-            }
-            if (img.getWidth() > 5000 || img.getHeight() > 5000) {
-                throw new IllegalArgumentException("Độ phân giải hình ảnh vượt quá giới hạn cho phép (Tối đa 5000x5000px)!");
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
-        }
-    }
-
-    private String computeFileHash(InputStream is) throws Exception {
-        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] buffer = new byte[8192];
-        int read;
-        while ((read = is.read(buffer)) != -1) {
-            digest.update(buffer, 0, read);
-        }
-        byte[] hashBytes = digest.digest();
-        StringBuilder sb = new StringBuilder();
-        for (byte b : hashBytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-
-    private String sanitizeFilename(String filename) {
-        if (filename == null) return "image.jpg";
-        String trimmed = filename.trim();
-        return trimmed.replaceAll("[\\\\/:*?\"<>|]", "_");
-    }
-
-    private String saveImageSecurely(MultipartFile file, String label, List<Path> uploadedFiles) throws Exception {
-        validateImageFile(file, label);
-
-        String origName = file.getOriginalFilename();
-        if (origName != null) {
-            origName = Paths.get(origName).getFileName().toString();
-        }
-        String safeFileName = sanitizeFilename(origName);
-
-        Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
-        Path productUploadPath = rootUploadPath.resolve("product").normalize();
-        if (!Files.exists(productUploadPath)) {
-            Files.createDirectories(productUploadPath);
-        }
-
-        Path targetFilePath = productUploadPath.resolve(safeFileName).normalize().toAbsolutePath();
-        Path normalizedRoot = productUploadPath.normalize().toAbsolutePath();
-        if (!targetFilePath.startsWith(normalizedRoot)) {
-            throw new RuntimeException("Tên tệp không hợp lệ (Phòng chống Path Traversal)!");
-        }
-
-        if (Files.exists(targetFilePath)) {
-            String uploadedHash;
-            try (InputStream is = file.getInputStream()) {
-                uploadedHash = computeFileHash(is);
-            }
-            String existingHash;
-            try (InputStream is = Files.newInputStream(targetFilePath)) {
-                existingHash = computeFileHash(is);
-            }
-
-            if (uploadedHash.equals(existingHash)) {
-                return safeFileName;
-            } else {
-                throw new IllegalArgumentException("Đã tồn tại ảnh có tên '" + safeFileName + "' nhưng nội dung khác. Vui lòng đổi tên file trước khi tải lên.");
-            }
+        Path targetFilePath = targetUploadDir.resolve(safeFileName).normalize();
+        if (!targetFilePath.startsWith(targetUploadDir)) {
+            throw new IllegalArgumentException("Đường dẫn lưu file không hợp lệ!");
         }
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -175,13 +118,9 @@ public class AdminSanPhamService {
         sanPhamRepository.save(sp);
     }
 
-    // --- HÀM THÊM MỚI CẢ SẢN PHẨM & TỰ ĐỘNG SINH BIẾN THỂ (NÂNG CẤP BẢO MẬT & KIỂM TOÁN DÙNG DTO) ---
+    // --- HÀM THÊM MỚI CẢ SẢN PHẨM & TỰ ĐỘNG SINH BIẾN THỂ ---
     @Transactional(rollbackFor = Exception.class)
     public void themSanPhamVaBienThe(SanPhamCreateRequest request, Integer idNguoiDung, String remoteAddr) throws Exception {
-        if (request == null) {
-            throw new IllegalArgumentException("Yêu cầu không hợp lệ!");
-        }
-
         List<Path> uploadedFiles = new ArrayList<>();
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -194,7 +133,7 @@ public class AdminSanPhamService {
                                 try {
                                     Files.deleteIfExists(path);
                                 } catch (Exception e) {
-                                    // ignore
+                                    log.error("Xóa file thất bại sau rollback: {}", path, e);
                                 }
                             }
                         }
@@ -204,25 +143,22 @@ public class AdminSanPhamService {
         }
 
         try {
-            // 1. Validate idDanhMuc null trước khi gọi findById
-            if (request.getIdDanhMuc() == null) {
+            if (request == null) {
+                throw new IllegalArgumentException("Dữ liệu không hợp lệ");
+            }
+
+            Integer idDanhMuc = request.getIdDanhMuc();
+            if (idDanhMuc == null || idDanhMuc < 1) {
                 throw new IllegalArgumentException("Vui lòng chọn danh mục hợp lệ!");
             }
-
-            DanhMuc dm = danhMucRepository.findById(request.getIdDanhMuc())
+            DanhMuc dm = danhMucRepository.findById(idDanhMuc)
                     .orElseThrow(() -> new IllegalArgumentException("Danh mục không tồn tại"));
 
-            if (Boolean.FALSE.equals(dm.getTrangThai())) {
-                throw new IllegalArgumentException("Danh mục đã ngừng hoạt động");
-            }
-
-            int idDanhMuc = dm.getId();
             com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, idDanhMuc);
             if (catType == com.smashvn.shop.constant.CategoryType.OTHER && !DanhMucIds.isSupported(idDanhMuc)) {
                 throw new IllegalArgumentException("Danh mục chưa được cấu hình thuộc tính");
             }
 
-            // Validate Tên sản phẩm & Thương hiệu
             String trimmedTen = (request.getTenSanPham() == null) ? "" : request.getTenSanPham().trim();
             String sanitizedTen = org.jsoup.Jsoup.clean(trimmedTen, org.jsoup.safety.Safelist.none());
             if (sanitizedTen.isEmpty()) {
@@ -248,7 +184,6 @@ public class AdminSanPhamService {
                 throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc khi thêm mới!");
             }
 
-            // 2. Validate và lưu ảnh chính + ảnh theo màu (mỗi colorIndex chỉ upload/copy 1 lần)
             String secureMainFileName = saveImageSecurely(request.getFileAnh(), "chính của sản phẩm", uploadedFiles);
 
             List<MultipartFile> colorImages = request.getColorImages();
@@ -263,11 +198,10 @@ public class AdminSanPhamService {
                     throw new IllegalArgumentException("Số lượng biến thể được tạo ra vượt quá giới hạn cho phép (Tối đa 100 biến thể)!");
                 }
 
-                // Kiểm tra sự thống nhất colorIndex theo màu
                 for (BienTheCreateRequest v : rawVariants) {
                     String normMau = normalizeText(v.getMauSac());
                     if (normMau == null) {
-                        throw new IllegalArgumentException("Màu sắc của biến thể không được để trống!");
+                        normMau = "Mặc định";
                     }
                     Integer idx = v.getColorIndex();
                     if (colorIndexByColor.containsKey(normMau)) {
@@ -280,7 +214,6 @@ public class AdminSanPhamService {
                 }
             }
 
-            // Upload các file ảnh theo colorIndex duy nhất (1 file chỉ upload 1 lần)
             Map<Integer, String> savedColorImages = new HashMap<>();
             for (Integer cIdx : new HashSet<>(colorIndexByColor.values())) {
                 if (cIdx != null) {
@@ -295,7 +228,6 @@ public class AdminSanPhamService {
                 }
             }
 
-            // 3. Tạo và lưu SanPham gốc
             SanPham sp = new SanPham();
             sp.setTenSanPham(sanitizedTen);
             sp.setMoTa(sanitizedMoTa);
@@ -318,69 +250,43 @@ public class AdminSanPhamService {
                         }
                         creator.setHoTenNv("Quản trị viên " + namePrefix);
                         creator.setChucVu("QL".equals(tk.getVaiTro()) ? "Quản lý" : "Nhân viên");
-                        creator.setSoDienThoaiNv("0999999999");
-                        creator.setNgayTao(java.time.LocalDateTime.now());
+                        creator.setSoDienThoaiNv("0000000000");
                         creator = nhanVienRepository.save(creator);
                     }
                 }
             }
+
             if (creator == null) {
                 List<NhanVien> listNV = nhanVienRepository.findAll();
                 if (!listNV.isEmpty()) {
                     creator = listNV.get(0);
                 } else {
-                    List<TaiKhoan> staffAccounts = taiKhoanRepository.findByVaiTroIn(List.of("QL", "NV"));
-                    if (!staffAccounts.isEmpty()) {
-                        TaiKhoan tk = staffAccounts.get(0);
-                        creator = new NhanVien();
-                        creator.setTaiKhoan(tk);
-                        String namePrefix = tk.getUsername();
-                        if (namePrefix.contains("@")) {
-                            namePrefix = namePrefix.split("@")[0];
-                        }
-                        creator.setHoTenNv("Quản trị viên " + namePrefix);
-                        creator.setChucVu("QL".equals(tk.getVaiTro()) ? "Quản lý" : "Nhân viên");
-                        creator.setSoDienThoaiNv("0999999999");
-                        creator.setNgayTao(java.time.LocalDateTime.now());
-                        creator = nhanVienRepository.save(creator);
-                    } else {
-                        throw new IllegalArgumentException("Hệ thống chưa có nhân viên nào! Không thể tạo sản phẩm.");
-                    }
+                    throw new IllegalArgumentException("Không tìm thấy thông tin nhân viên thao tác!");
                 }
             }
             sp.setNhanVien(creator);
             sp = sanPhamRepository.save(sp);
 
-            // 4. Xử lý lưu các biến thể SanPhamChiTiet
             Set<String> checkDuplicates = new HashSet<>();
             int savedCount = 0;
 
             if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
-                // Hộp cầu: backend tự sinh đúng 1 biến thể mặc định
                 BigDecimal gNhap = request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO;
-                if (gNhap.compareTo(BigDecimal.ZERO) < 0) {
-                    throw new IllegalArgumentException("Giá nhập không được nhỏ hơn 0!");
-                }
                 BigDecimal gBan = request.getGiaBanDefault();
                 if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("Giá bán phải lớn hơn 0 VNĐ!");
                 }
                 Integer sTon = request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0;
-                if (sTon < 0) {
-                    throw new IllegalArgumentException("Số lượng tồn kho không được âm!");
-                }
 
                 SanPhamChiTiet spct = new SanPhamChiTiet();
                 spct.setSanPham(sp);
-                spct.setMauSac("Mặc định");
-                spct.setTrongLuong(null);
-                spct.setKichThuoc(null);
-                spct.setMucCang(null);
                 spct.setGiaNhap(gNhap);
                 spct.setGiaBan(gBan);
                 spct.setSoLuongTon(sTon);
                 spct.setTrangThai("dang_ban");
                 spct.setHinhAnhSanPham(secureMainFileName);
+
+                saveVariantAttribute(spct, "Màu sắc", "Mặc định");
                 sanPhamChiTietRepository.save(spct);
                 savedCount = 1;
             } else {
@@ -388,59 +294,31 @@ public class AdminSanPhamService {
 
                 for (BienTheCreateRequest v : rawVariants) {
                     String normMau = normalizeText(v.getMauSac());
+                    if (normMau == null) normMau = "Mặc định";
                     String normTrong = null;
                     String normKich = null;
                     String normCang = null;
 
                     if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
                         normTrong = normalizeCode(v.getTrongLuong());
-                        if (normTrong == null || !SanPhamAttributeConfig.ALLOWED_TRONG_LUONG_VOT.contains(normTrong)) {
-                            throw new IllegalArgumentException("Trọng lượng vợt không hợp lệ (Chỉ chấp nhận: 3U, 4U, 5U)!");
-                        }
-                        normKich = null; // Force null
                         normCang = cleanMucCangChung;
-                    } else if (catType == com.smashvn.shop.constant.CategoryType.GIAY) {
-                        normTrong = null; // Force null
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.GIAY || catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC) {
                         normKich = normalizeCode(v.getKichThuoc());
-                        if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_GIAY.contains(normKich)) {
-                            throw new IllegalArgumentException("Kích thước giày không hợp lệ (Chỉ chấp nhận: 36 đến 46)!");
-                        }
-                        normCang = null; // Force null
-                    } else if (catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC) {
-                        normTrong = null; // Force null
-                        normKich = normalizeCode(v.getKichThuoc());
-                        if (normKich == null || !SanPhamAttributeConfig.ALLOWED_KICH_THUOC_TRANG_PHUC.contains(normKich)) {
-                            throw new IllegalArgumentException("Kích thước trang phục không hợp lệ (Chỉ chấp nhận: XS đến 3XL)!");
-                        }
-                        normCang = null; // Force null
-                    } else {
-                        normTrong = null; // Force null
-                        normKich = null; // Force null
-                        normCang = null; // Force null
                     }
 
-                    // Kiểm tra tài chính & kho
                     BigDecimal gNhap = v.getGiaNhap() != null ? v.getGiaNhap() : (request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO);
-                    if (gNhap.compareTo(BigDecimal.ZERO) < 0) {
-                        throw new IllegalArgumentException("Giá nhập của biến thể không được nhỏ hơn 0!");
-                    }
                     BigDecimal gBan = v.getGiaBan() != null ? v.getGiaBan() : request.getGiaBanDefault();
                     if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                         throw new IllegalArgumentException("Giá bán của biến thể phải lớn hơn 0 VNĐ!");
                     }
                     Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : (request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0);
-                    if (sTon < 0) {
-                        throw new IllegalArgumentException("Số lượng kho của biến thể không được âm!");
-                    }
 
-                    // Kiểm tra trùng lặp tổ hợp duy nhất
                     String combKey = normMau.toLowerCase() + "|" + (normTrong != null ? normTrong.toLowerCase() : "") + "|" + (normKich != null ? normKich.toLowerCase() : "");
                     if (checkDuplicates.contains(combKey)) {
                         throw new IllegalArgumentException("Có biến thể bị trùng lặp trong danh sách nhập!");
                     }
                     checkDuplicates.add(combKey);
 
-                    // Chọn ảnh cho biến thể
                     Integer cIdx = v.getColorIndex();
                     String variantFileName = (cIdx != null && savedColorImages.containsKey(cIdx)) ? savedColorImages.get(cIdx) : secureMainFileName;
 
@@ -449,107 +327,115 @@ public class AdminSanPhamService {
                     spct.setGiaNhap(gNhap);
                     spct.setGiaBan(gBan);
                     spct.setSoLuongTon(sTon);
-                    spct.setMauSac(normMau);
-                    spct.setTrongLuong(normTrong);
-                    spct.setKichThuoc(normKich);
-                    spct.setMucCang(normCang);
                     spct.setTrangThai("dang_ban");
                     spct.setHinhAnhSanPham(variantFileName);
+
+                    if (v.getAttributes() != null && !v.getAttributes().isEmpty()) {
+                        for (AttributeValueRequest attrReq : v.getAttributes()) {
+                            if (attrReq.getAttributeName() != null && attrReq.getValue() != null && !attrReq.getValue().isBlank()) {
+                                saveVariantAttribute(spct, attrReq.getAttributeName(), attrReq.getValue());
+                            }
+                        }
+                    } else {
+                        saveVariantAttribute(spct, "Màu sắc", normMau);
+                        saveVariantAttribute(spct, "Trọng lượng", normTrong);
+                        saveVariantAttribute(spct, "Kích thước", normKich);
+                        saveVariantAttribute(spct, "Sức căng", normCang);
+                    }
 
                     sanPhamChiTietRepository.save(spct);
                     savedCount++;
                 }
             }
 
-            // Ghi nhật ký kiểm toán
+            String role = (creator != null && creator.getChucVu() != null) ? creator.getChucVu() : "Quản trị viên";
             String note = "Thêm sản phẩm '" + sp.getTenSanPham() + "' cùng " + savedCount + " biến thể.";
-            auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "INSERT", "", sp.getTenSanPham(), remoteAddr, note, creator.getChucVu());
+            auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "INSERT", "", sp.getTenSanPham(), remoteAddr, note, role);
 
         } catch (Exception e) {
             for (Path path : uploadedFiles) {
                 try {
                     Files.deleteIfExists(path);
                 } catch (Exception ex) {
-                    // ignore
+                    log.error("Xóa file thất bại sau exception: {}", path, ex);
                 }
             }
             throw e;
         }
     }
 
-    private String normalizeText(String s) {
-        if (s == null) return null;
-        String trimmed = s.trim().replaceAll("\\s+", " ");
-        return trimmed.isEmpty() ? null : trimmed;
+    private void saveVariantAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
+        if (giaTri == null || giaTri.isBlank()) return;
+        ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(tenThuocTinh)
+                .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
+                        .tenThuocTinh(tenThuocTinh.trim())
+                        .trangThai(true)
+                        .build()));
+        SanPhamChiTietThuocTinh attVal = SanPhamChiTietThuocTinh.builder()
+                .sanPhamChiTiet(spct)
+                .thuocTinh(tt)
+                .giaTri(giaTri.trim())
+                .build();
+        if (spct.getSanPhamChiTietThuocTinhs() == null) {
+            spct.setSanPhamChiTietThuocTinhs(new ArrayList<>());
+        }
+        spct.getSanPhamChiTietThuocTinhs().add(attVal);
     }
 
-    private String normalizeCode(String s) {
-        String text = normalizeText(s);
-        return text == null ? null : text.toUpperCase();
+    private String normalizeText(String str) {
+        if (str == null) return null;
+        String s = str.trim();
+        return s.isEmpty() ? null : s;
     }
 
-    // --- HÀM CẬP NHẬT (CHỈ SỬA SẢN PHẨM GỐC) ---
+    private String normalizeCode(String str) {
+        if (str == null) return null;
+        String s = str.trim().toUpperCase();
+        return s.isEmpty() ? null : s;
+    }
+
+    public List<SanPham> layTatCaSanPham() {
+        return sanPhamRepository.findAll();
+    }
+
+    public SanPham layTheoId(Integer id) {
+        return sanPhamRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm id: " + id));
+    }
+
     @Transactional
-    public void capNhatSanPham(Integer idSanPham, String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa, Integer idNguoiDung, String remoteAddr) {
-        String trimmedTen = (tenSanPham == null) ? "" : tenSanPham.trim();
-        String sanitizedTen = org.jsoup.Jsoup.clean(trimmedTen, org.jsoup.safety.Safelist.none());
-        if (sanitizedTen.isEmpty()) {
-            throw new RuntimeException("Tên sản phẩm bắt buộc!");
-        }
-        if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
-            throw new RuntimeException("Tên sản phẩm phải có độ dài từ 2 đến 100 ký tự!");
-        }
-        if (idDanhMuc == null || idDanhMuc < 1) {
-            throw new RuntimeException("Vui lòng chọn danh mục hợp lệ!");
-        }
-        if (idThuongHieu == null || idThuongHieu < 1) {
-            throw new RuntimeException("Vui lòng chọn thương hiệu hợp lệ!");
-        }
-        String sanitizedMoTa = "";
-        if (moTa != null) {
-            String trimmedMoTa = moTa.trim();
-            sanitizedMoTa = org.jsoup.Jsoup.clean(trimmedMoTa, org.jsoup.safety.Safelist.none());
-            if (sanitizedMoTa.length() > 2000) {
-                throw new RuntimeException("Mô tả sản phẩm không được vượt quá 2000 ký tự!");
-            }
-        }
+    public void capNhatSanPham(Integer id, String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa) {
+        capNhatSanPham(id, tenSanPham, idDanhMuc, idThuongHieu, moTa, null, null);
+    }
 
-        SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
-        String oldVal = "Ten: " + sp.getTenSanPham() + ", DanhMuc: " + sp.getDanhMuc().getId() + ", ThuongHieu: " + sp.getThuongHieu().getId();
-
-        sp.setTenSanPham(sanitizedTen);
-        sp.setMoTa(sanitizedMoTa);
+    @Transactional
+    public void capNhatSanPham(Integer id, String tenSanPham, Integer idDanhMuc, Integer idThuongHieu, String moTa, Integer idNguoiDung, String remoteAddr) {
+        SanPham sp = layTheoId(id);
+        sp.setTenSanPham(tenSanPham);
+        sp.setMoTa(moTa);
         sp.setDanhMuc(danhMucRepository.findById(idDanhMuc).orElseThrow());
         sp.setThuongHieu(thuongHieuRepository.findById(idThuongHieu).orElseThrow());
         sanPhamRepository.save(sp);
-
-        String newVal = "Ten: " + sanitizedTen + ", DanhMuc: " + idDanhMuc + ", ThuongHieu: " + idThuongHieu;
-        NhanVien creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
-        String role = (creator != null) ? creator.getChucVu() : "UNKNOWN";
-        auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", oldVal, newVal, remoteAddr, "Cập nhật thông tin sản phẩm gốc", role);
     }
 
-    // --- HÀM XÓA MỀM ---
     @Transactional
     public void xoaSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
-        SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
-        sp.setTrangThai("ngung_kinh_doanh");
-        sanPhamRepository.save(sp);
-
-        NhanVien creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
-        String role = (creator != null) ? creator.getChucVu() : "UNKNOWN";
-        auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", "trangThai: dang_ban", "trangThai: ngung_kinh_doanh", remoteAddr, "Ngừng kinh doanh sản phẩm (Xóa mềm)", role);
+        ngungKinhDoanhSanPham(idSanPham, idNguoiDung, remoteAddr);
     }
 
-    // --- HÀM MỞ BÁN LẠI ---
+    @Transactional
+    public void ngungKinhDoanhSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
+        SanPham sp = sanPhamRepository.findById(idSanPham)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm id: " + idSanPham));
+        sp.setTrangThai("ngung_kinh_doanh");
+        sanPhamRepository.save(sp);
+    }
+
     @Transactional
     public void moBanLaiSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
-        SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
+        SanPham sp = sanPhamRepository.findById(idSanPham)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm id: " + idSanPham));
         sp.setTrangThai("dang_ban");
         sanPhamRepository.save(sp);
-
-        NhanVien creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
-        String role = (creator != null) ? creator.getChucVu() : "UNKNOWN";
-        auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", "trangThai: ngung_kinh_doanh", "trangThai: dang_ban", remoteAddr, "Mở bán lại sản phẩm", role);
     }
 }

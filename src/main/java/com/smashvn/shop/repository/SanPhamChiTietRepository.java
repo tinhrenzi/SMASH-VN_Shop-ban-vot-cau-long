@@ -26,6 +26,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH sp.thuongHieu th
             LEFT JOIN FETCH sp.nhanVien nv
             LEFT JOIN FETCH spct.hinhAnhSanPhams ha
+            LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
@@ -33,22 +34,21 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     List<SanPhamChiTiet> findAllActiveInStock();
 
     /**
-     * Database-first lookup used by the chatbot. All business filters are
-     * applied in SQL and Pageable adds the result limit at database level.
+     * Database-first lookup used by the chatbot. Query joins SanPhamChiTietThuocTinh.
      */
     @Query("""
             SELECT DISTINCT spct FROM SanPhamChiTiet spct
             JOIN FETCH spct.sanPham sp
             LEFT JOIN FETCH sp.danhMuc dm
             LEFT JOIN FETCH sp.thuongHieu th
+            LEFT JOIN spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
               AND (:keyword IS NULL OR
                    LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                   LOWER(COALESCE(spct.kichThuoc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                   LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(COALESCE(att.giaTri, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                    LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword2, '%')) OR
                    LOWER(COALESCE(sp.moTa, '')) LIKE LOWER(CONCAT('%', :keyword2, '%')) OR
                    LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword3, '%')) OR
@@ -59,8 +59,18 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND (:categoryName IS NULL OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :categoryName, '%')))
               AND (:minPrice IS NULL OR spct.giaBan >= :minPrice)
               AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)
-              AND (:color IS NULL OR LOWER(spct.mauSac) LIKE LOWER(CONCAT('%', :color, '%')))
-               AND (:weight IS NULL OR LOWER(spct.trongLuong) LIKE LOWER(CONCAT('%', :weight, '%')) OR LOWER(spct.kichThuoc) LIKE LOWER(CONCAT('%', :weight, '%')))
+              AND (:color IS NULL OR EXISTS (
+                    SELECT 1 FROM SanPhamChiTietThuocTinh subAtt
+                    WHERE subAtt.sanPhamChiTiet = spct
+                      AND LOWER(subAtt.thuocTinh.tenThuocTinh) LIKE '%màu%'
+                      AND LOWER(subAtt.giaTri) LIKE LOWER(CONCAT('%', :color, '%'))
+                  ))
+              AND (:weight IS NULL OR EXISTS (
+                    SELECT 1 FROM SanPhamChiTietThuocTinh subAtt2
+                    WHERE subAtt2.sanPhamChiTiet = spct
+                      AND (LOWER(subAtt2.thuocTinh.tenThuocTinh) LIKE '%trọng%' OR LOWER(subAtt2.thuocTinh.tenThuocTinh) LIKE '%kích%' OR LOWER(subAtt2.thuocTinh.tenThuocTinh) LIKE '%size%')
+                      AND LOWER(subAtt2.giaTri) LIKE LOWER(CONCAT('%', :weight, '%'))
+                  ))
             ORDER BY spct.soLuongTon DESC, spct.id DESC
             """)
     List<SanPhamChiTiet> searchForChatbot(
@@ -76,8 +86,9 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             Pageable pageable);
 
     @Query("""
-            SELECT spct
+            SELECT DISTINCT spct
             FROM SanPhamChiTiet spct
+            LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
             WHERE spct.sanPham.id = :sanPhamId
               AND spct.trangThaiValue = true
             ORDER BY spct.id ASC
@@ -88,10 +99,20 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
     Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
 
-    @Query("SELECT DISTINCT s.trongLuong FROM SanPhamChiTiet s WHERE s.trongLuong IS NOT NULL AND s.trongLuong != '' AND s.trangThaiValue = true")
+    @Query("""
+            SELECT DISTINCT s.giaTri FROM SanPhamChiTietThuocTinh s
+            WHERE (LOWER(s.thuocTinh.tenThuocTinh) LIKE '%trọng%' OR LOWER(s.thuocTinh.tenThuocTinh) LIKE '%weight%')
+              AND s.giaTri IS NOT NULL AND s.giaTri != ''
+              AND s.sanPhamChiTiet.trangThaiValue = true
+            """)
     List<String> findDistinctTrongLuong();
 
-    @Query("SELECT DISTINCT s.kichThuoc FROM SanPhamChiTiet s WHERE s.kichThuoc IS NOT NULL AND s.kichThuoc != '' AND s.trangThaiValue = true")
+    @Query("""
+            SELECT DISTINCT s.giaTri FROM SanPhamChiTietThuocTinh s
+            WHERE (LOWER(s.thuocTinh.tenThuocTinh) LIKE '%kích%' OR LOWER(s.thuocTinh.tenThuocTinh) LIKE '%size%')
+              AND s.giaTri IS NOT NULL AND s.giaTri != ''
+              AND s.sanPhamChiTiet.trangThaiValue = true
+            """)
     List<String> findDistinctKichThuoc();
 
     @Query("""
@@ -102,6 +123,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH sp.thuongHieu th
             LEFT JOIN FETCH sp.cacDotGiamGia dgg
             LEFT JOIN FETCH spct.hinhAnhSanPhams imgs
+            LEFT JOIN spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
               AND spct.trangThaiValue = true
               AND (:idDanhMuc IS NULL OR :idDanhMuc = -1 OR dm.id = :idDanhMuc)
@@ -109,10 +131,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND (
                     :keyword IS NULL OR :keyword = '' OR
                     LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                    LOWER(COALESCE(spct.mauSac, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                    LOWER(COALESCE(spct.trongLuong, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                    LOWER(COALESCE(spct.kichThuoc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                    LOWER(COALESCE(spct.sucCang, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(COALESCE(att.giaTri, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(dm.tenDanhMuc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(th.tenThuongHieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                   )

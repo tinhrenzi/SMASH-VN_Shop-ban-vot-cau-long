@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.smashvn.shop.dao.DotGiamGiaDAO;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.DotGiamGia;
@@ -41,6 +43,7 @@ public class HomeController {
     private final DotGiamGiaDAO dotGiamGiaDAO;
 
     @GetMapping("/")
+    @Transactional(readOnly = true)
     public String hienThiTrangChu(Model model) {
         // Lấy danh sách sản phẩm gốc (SanPham) thay vì biến thể
         List<SanPham> danhSachSanPham = sanPhamRepository.findAll();
@@ -84,7 +87,7 @@ public class HomeController {
         
         // Nhóm theo thương hiệu rồi lấy lần lượt (round-robin) để đảm bảo mỗi hãng đều có sản phẩm
         java.util.Map<String, java.util.List<SanPham>> byBrand = allBestSellers.stream()
-                .collect(Collectors.groupingBy(sp -> sp.getThuongHieu().getTenThuongHieu(), 
+                .collect(Collectors.groupingBy(sp -> sp.getThuongHieu() != null ? sp.getThuongHieu().getTenThuongHieu() : "Khác", 
                          java.util.LinkedHashMap::new, Collectors.toList()));
         
         List<SanPham> bestSellersList = new java.util.ArrayList<>();
@@ -148,6 +151,7 @@ public class HomeController {
     }
 
     @GetMapping("/shop")
+    @Transactional(readOnly = true)
     public String hienThiCuaHang(
             @RequestParam(value = "q", required = false) String keyword,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,

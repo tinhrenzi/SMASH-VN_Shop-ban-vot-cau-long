@@ -9,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.smashvn.shop.dao.HinhAnhSanPhamDAO;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
+import com.smashvn.shop.entity.ThuocTinh;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.ThuocTinhRepository;
 import com.smashvn.shop.util.RacketSpecUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,7 @@ public class AdminBienTheService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final ThuocTinhRepository thuocTinhRepository;
     private final HinhAnhSanPhamDAO hinhAnhSanPhamDAO;
 
     private static final String TRANG_THAI_DANG_BAN = "dang_ban";
@@ -48,7 +53,6 @@ public class AdminBienTheService {
     }
 
     // 2. Thêm biến thể mới
-    // 2. Thêm biến thể mới
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,
             String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh) throws Exception {
@@ -61,7 +65,6 @@ public class AdminBienTheService {
             throw new IllegalArgumentException("Hộp cầu chỉ được phép có duy nhất một biến thể mặc định!");
         }
 
-        // Trim and sanitize
         String cleanMauSac = normalizeText(mauSac);
         if (cleanMauSac != null && cleanMauSac.length() > 50) {
             throw new IllegalArgumentException("Màu sắc không được vượt quá 50 ký tự.");
@@ -92,7 +95,6 @@ public class AdminBienTheService {
 
         validateBasicFinancial(giaBan, soLuongTon);
 
-        // Kiểm tra trùng lặp tổ hợp duy nhất (id_san_pham, mau_sac, trong_luong, kich_thuoc)
         final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
         final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
         final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
@@ -127,7 +129,6 @@ public class AdminBienTheService {
 
         String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
         if (secureFileName == null || secureFileName.isEmpty()) {
-            // Fallback: Check if another variant of the same color exists
             List<SanPhamChiTiet> existingVariants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
             for (SanPhamChiTiet existing : existingVariants) {
                 if (existing.getMauSac() != null && existing.getMauSac().equalsIgnoreCase(cleanMauSac)
@@ -148,22 +149,21 @@ public class AdminBienTheService {
         spct.setSanPham(sp);
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
-        spct.setMauSac(cleanMauSac);
-        spct.setTrongLuong(cleanTrongLuong);
-        spct.setKichThuoc(cleanKichThuoc);
-        spct.setMucCang(cleanMucCang);
         spct.setTrangThai(TRANG_THAI_DANG_BAN);
-        spct.setHinhAnhSanPham(secureFileName);
 
+        saveOrUpdateAttribute(spct, "Màu sắc", cleanMauSac);
+        saveOrUpdateAttribute(spct, "Trọng lượng", cleanTrongLuong);
+        saveOrUpdateAttribute(spct, "Kích thước", cleanKichThuoc);
+        saveOrUpdateAttribute(spct, "Sức căng", cleanMucCang);
+
+        spct.setHinhAnhSanPham(secureFileName);
         sanPhamChiTietRepository.save(spct);
 
-        // Nếu là Vợt và có nhập sức căng mới, cập nhật đồng bộ cho toàn bộ các biến thể khác của vợt này
         if (catType == com.smashvn.shop.constant.CategoryType.VOT && cleanMucCang != null) {
             updateMucCangAllVariants(idSanPham, cleanMucCang);
         }
     }
 
-    // 3. Ẩn biến thể khỏi khách hàng (xóa mềm)
     @Transactional
     public void xoaBienThe(Integer idBienThe) {
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
@@ -180,13 +180,11 @@ public class AdminBienTheService {
         sanPhamChiTietRepository.save(spct);
     }
 
-    // Thêm hàm lấy 1 biến thể duy nhất để đổ lên Form sửa
     public SanPhamChiTiet layBienTheTheoId(Integer idBienThe) {
         return sanPhamChiTietRepository.findById(idBienThe)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể này"));
     }
 
-    // Thêm hàm Cập nhật Biến thể
     @Transactional
     public void capNhatBienThe(Integer idBienThe, BigDecimal giaBan, Integer soLuongTon,
             String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh) throws Exception {
@@ -196,7 +194,6 @@ public class AdminBienTheService {
 
         com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId());
         if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
-            // Hộp cầu giữ mauSac = "Mặc định"
             mauSac = "Mặc định";
             trongLuong = null;
             kichThuoc = null;
@@ -233,7 +230,6 @@ public class AdminBienTheService {
 
         validateBasicFinancial(giaBan, soLuongTon);
 
-        // Kiểm tra trùng lặp tổ hợp duy nhất (trừ chính biến thể đang sửa)
         final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
         final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
         final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
@@ -249,10 +245,11 @@ public class AdminBienTheService {
 
         spct.setGiaBan(giaBan);
         spct.setSoLuongTon(soLuongTon);
-        spct.setMauSac(cleanMauSac);
-        spct.setTrongLuong(cleanTrongLuong);
-        spct.setKichThuoc(cleanKichThuoc);
-        spct.setMucCang(cleanMucCang);
+
+        saveOrUpdateAttribute(spct, "Màu sắc", cleanMauSac);
+        saveOrUpdateAttribute(spct, "Trọng lượng", cleanTrongLuong);
+        saveOrUpdateAttribute(spct, "Kích thước", cleanKichThuoc);
+        saveOrUpdateAttribute(spct, "Sức căng", cleanMucCang);
 
         List<Path> uploadedFiles = new ArrayList<>();
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -274,32 +271,10 @@ public class AdminBienTheService {
             );
         }
 
-        // Save image securely (optional on update)
         String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
         if (secureFileName != null) {
             String oldFileName = spct.getHinhAnhSanPham();
             spct.setHinhAnhSanPham(secureFileName);
-
-            if (oldFileName != null && !oldFileName.equals(secureFileName)) {
-                TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCompletion(int status) {
-                            if (status == STATUS_COMMITTED) {
-                                boolean stillReferenced = hinhAnhSanPhamDAO.existsByUrlHinhAnh(oldFileName);
-                                if (!stillReferenced) {
-                                    try {
-                                        Path oldFilePath = Paths.get(uploadPathConfig).resolve("product").resolve(oldFileName).normalize().toAbsolutePath();
-                                        Files.deleteIfExists(oldFilePath);
-                                    } catch (Exception e) {
-                                        log.error("Failed to delete unused image file: {}", oldFileName, e);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                );
-            }
         } else {
             if (spct.getHinhAnhSanPhams() != null) {
                 for (com.smashvn.shop.entity.HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
@@ -315,13 +290,44 @@ public class AdminBienTheService {
         }
     }
 
+    private void saveOrUpdateAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
+        if (spct.getSanPhamChiTietThuocTinhs() == null) {
+            spct.setSanPhamChiTietThuocTinhs(new ArrayList<>());
+        }
+        SanPhamChiTietThuocTinh existing = spct.getSanPhamChiTietThuocTinhs().stream()
+                .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
+                .findFirst()
+                .orElse(null);
+
+        if (giaTri == null || giaTri.isBlank()) {
+            if (existing != null) {
+                spct.getSanPhamChiTietThuocTinhs().remove(existing);
+            }
+            return;
+        }
+
+        if (existing != null) {
+            existing.setGiaTri(giaTri.trim());
+        } else {
+            ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(tenThuocTinh)
+                    .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
+                            .tenThuocTinh(tenThuocTinh.trim())
+                            .trangThai(true)
+                            .build()));
+            SanPhamChiTietThuocTinh val = SanPhamChiTietThuocTinh.builder()
+                    .sanPhamChiTiet(spct)
+                    .thuocTinh(tt)
+                    .giaTri(giaTri.trim())
+                    .build();
+            spct.getSanPhamChiTietThuocTinhs().add(val);
+        }
+    }
+
     private void updateMucCangAllVariants(Integer idSanPham, String cleanMucCang) {
         List<SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
         for (SanPhamChiTiet v : variants) {
-            if (!Objects.equals(v.getMucCang(), cleanMucCang)) {
-                v.setMucCang(cleanMucCang);
-                sanPhamChiTietRepository.save(v);
-            }
+            saveOrUpdateAttribute(v, "Sức căng", cleanMucCang);
+            sanPhamChiTietRepository.save(v);
         }
     }
 
@@ -345,121 +351,40 @@ public class AdminBienTheService {
         }
     }
 
-    private String computeFileHash(InputStream is) throws Exception {
-        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] buffer = new byte[8192];
-        int read;
-        while ((read = is.read(buffer)) != -1) {
-            digest.update(buffer, 0, read);
-        }
-        byte[] hashBytes = digest.digest();
-        StringBuilder sb = new StringBuilder();
-        for (byte b : hashBytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+    private static final List<String> ALLOWED_EXTENSIONS = List.of(".jpg", ".jpeg", ".png", ".webp");
 
-    private String sanitizeFilename(String filename) {
-        if (filename == null) return "image.jpg";
-        String trimmed = filename.trim();
-        return trimmed.replaceAll("[\\\\/:*?\"<>|]", "_");
-    }
-
-    private void validateImageFile(MultipartFile file, String fileLabel) throws Exception {
+    private String saveImageSecurely(MultipartFile file, boolean requireImage, List<Path> uploadedFiles) throws Exception {
         if (file == null || file.isEmpty()) {
-            return;
-        }
-        String origName = file.getOriginalFilename();
-        String ext = "";
-        if (origName != null && origName.contains(".")) {
-            ext = origName.substring(origName.lastIndexOf(".")).toLowerCase();
-        }
-
-        if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
-            throw new IllegalArgumentException("Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.");
-        }
-
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB.");
-        }
-
-        org.apache.tika.Tika tika = new org.apache.tika.Tika();
-        try (InputStream is = file.getInputStream()) {
-            String mimeType = tika.detect(is);
-            if (mimeType == null || (!mimeType.equals("image/jpeg") && !mimeType.equals("image/png") && !mimeType.equals("image/webp"))) {
-                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận.");
-            }
-        }
-
-        try (InputStream is = file.getInputStream()) {
-            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(is);
-            if (img == null) {
-                throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
-            }
-            if (img.getWidth() > 5000 || img.getHeight() > 5000) {
-                throw new IllegalArgumentException("Độ phân giải hình ảnh vượt quá giới hạn cho phép (Tối đa 5000x5000px)!");
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Tệp tải lên không phải là ảnh hợp lệ!");
-        }
-    }
-
-    // --- Helper Image Saving with Security Measures ---
-    private String saveImageSecurely(MultipartFile file, boolean isRequired, List<Path> uploadedFiles) throws Exception {
-        if (file == null || file.isEmpty()) {
-            if (isRequired) {
+            if (requireImage) {
                 throw new IllegalArgumentException("Hình ảnh sản phẩm là bắt buộc.");
             }
             return null;
         }
-
-        validateImageFile(file, "biến thể");
-
-        String origName = file.getOriginalFilename();
-        if (origName != null) {
-            origName = Paths.get(origName).getFileName().toString();
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("Dung lượng file vượt quá giới hạn 5MB.");
         }
-        String safeFileName = sanitizeFilename(origName);
-
-        Path rootUploadPath = Paths.get(uploadPathConfig).toAbsolutePath().normalize();
-        Path productUploadPath = rootUploadPath.resolve("product").normalize();
-        if (!Files.exists(productUploadPath)) {
-            Files.createDirectories(productUploadPath);
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("Tên file không hợp lệ.");
         }
-
-        Path targetFilePath = productUploadPath.resolve(safeFileName).normalize().toAbsolutePath();
-        Path normalizedRoot = productUploadPath.normalize().toAbsolutePath();
-
-        if (!targetFilePath.startsWith(normalizedRoot)) {
-            throw new SecurityException("Invalid upload path");
+        String ext = "";
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex >= 0) {
+            ext = originalFilename.substring(dotIndex).toLowerCase();
         }
-
-        if (Files.exists(targetFilePath)) {
-            String uploadedHash;
-            try (InputStream is = file.getInputStream()) {
-                uploadedHash = computeFileHash(is);
-            }
-            String existingHash;
-            try (InputStream is = Files.newInputStream(targetFilePath)) {
-                existingHash = computeFileHash(is);
-            }
-
-            if (uploadedHash.equals(existingHash)) {
-                return safeFileName;
-            } else {
-                throw new IllegalArgumentException("Đã tồn tại ảnh có tên '" + safeFileName + "' nhưng nội dung khác. Vui lòng đổi tên file trước khi tải lên.");
-            }
+        if (!ALLOWED_EXTENSIONS.contains(ext)) {
+            throw new IllegalArgumentException("Định dạng file không được hỗ trợ (chỉ chấp nhận JPG, JPEG, PNG, WEBP).");
         }
-
-        // Save file
+        String safeFileName = UUID.randomUUID().toString() + ext;
+        Path targetUploadDir = Paths.get(uploadPathConfig, "product").toAbsolutePath().normalize();
+        if (!Files.exists(targetUploadDir)) {
+            Files.createDirectories(targetUploadDir);
+        }
+        Path targetFilePath = targetUploadDir.resolve(safeFileName).normalize();
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, targetFilePath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            log.error("[UPLOAD_FAILURE] Failed to save product variant image: {}", e.getMessage());
-            throw e;
         }
-
         uploadedFiles.add(targetFilePath);
         return safeFileName;
     }

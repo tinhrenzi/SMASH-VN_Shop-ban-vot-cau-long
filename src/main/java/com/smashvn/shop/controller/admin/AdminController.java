@@ -502,7 +502,7 @@ public class AdminController {
                 if (item.getThuocTinhSnapshot() != null && !item.getThuocTinhSnapshot().isBlank()) {
                     thuocTinh = item.getThuocTinhSnapshot().replace("Mức cảng:", "Sức căng khuyến nghị:");
                 } else if (item.getSanPhamChiTiet() != null) {
-                    thuocTinh = "Màu sắc: " + (item.getSanPhamChiTiet().getMauSac() != null ? item.getSanPhamChiTiet().getMauSac() : "N/A");
+                    thuocTinh = item.getSanPhamChiTiet().getPhanLoaiHienThi();
                 }
 
                 java.math.BigDecimal giaNiemYet = item.getGiaGoc();

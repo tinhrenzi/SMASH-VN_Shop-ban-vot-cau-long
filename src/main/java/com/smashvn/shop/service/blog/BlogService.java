@@ -363,7 +363,6 @@ public class BlogService {
                     .deletedAt(c.getDeletedAt() != null ? c.getDeletedAt().toString() : "")
                     .deletedReason(c.getDeletedReason())
                     .deletedByEmail(deletedByEmail)
-                    .parentCommentId(c.getParentComment() != null ? c.getParentComment().getId() : null)
                     .build();
         }).collect(Collectors.toList());
     }

@@ -75,7 +75,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "AND (:brandId IS NULL OR sp.thuongHieu.id = :brandId) " +
            "AND (:minPrice IS NULL AND :maxPrice IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND spct.trangThaiValue = true AND (:minPrice IS NULL OR spct.giaBan >= :minPrice) AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice))) " +
            "AND (:rating IS NULL OR :rating = 0.0 OR sp.diemTrungBinh >= :rating) " +
-           "AND (:trongLuong IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct3 WHERE spct3.sanPham = sp AND spct3.trangThaiValue = true AND (spct3.trongLuong IN :trongLuong OR spct3.kichThuoc IN :trongLuong))) " +
+           "AND (:trongLuong IS NULL OR EXISTS (SELECT 1 FROM SanPhamChiTiet spct3 JOIN spct3.sanPhamChiTietThuocTinhs att3 WHERE spct3.sanPham = sp AND spct3.trangThaiValue = true AND att3.giaTri IN :trongLuong)) " +
            "ORDER BY CASE WHEN (sp.trangThaiValue = true AND (SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp AND spct2.trangThaiValue = true) > 0) THEN 1 ELSE 0 END DESC, " +
            "CASE WHEN :sort = 'price_asc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND spct.trangThaiValue = true) END ASC, " +
            "CASE WHEN :sort = 'price_desc' THEN (SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND spct.trangThaiValue = true) END DESC, " +
@@ -102,7 +102,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
            "ORDER BY sp.id DESC")
     java.util.List<SanPham> searchAutocomplete(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN SanPhamChiTiet spct ON spct.sanPham = sp WHERE spct.trongLuong = :trongLuong AND sp.trangThaiValue = true AND spct.trangThaiValue = true")
+    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN sp.sanPhamChiTiets spct JOIN spct.sanPhamChiTietThuocTinhs att WHERE att.giaTri = :trongLuong AND sp.trangThaiValue = true AND spct.trangThaiValue = true")
     long countByTrongLuong(@Param("trongLuong") String trongLuong);
 
 

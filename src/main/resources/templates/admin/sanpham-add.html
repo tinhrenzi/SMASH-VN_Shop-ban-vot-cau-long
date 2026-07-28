@@ -388,19 +388,49 @@
                 hColorIdx.value = colorIdx;
                 tr.appendChild(hColorIdx);
 
-                // Populate kichThuoc or trongLuong based on format
-                if (sizeVal.includes("U")) {
-                    const hTrong = document.createElement("input");
-                    hTrong.type = "hidden";
-                    hTrong.name = `variants[${index}].trongLuong`;
-                    hTrong.value = sizeVal;
-                    tr.appendChild(hTrong);
-                } else {
-                    const hKich = document.createElement("input");
-                    hKich.type = "hidden";
-                    hKich.name = `variants[${index}].kichThuoc`;
-                    hKich.value = sizeVal;
-                    tr.appendChild(hKich);
+                // Add dynamic attribute 1 (Màu sắc)
+                if (mauVal) {
+                    const hA1Name = document.createElement("input");
+                    hA1Name.type = "hidden";
+                    hA1Name.name = `variants[${index}].attributes[0].attributeName`;
+                    hA1Name.value = "Màu sắc";
+                    tr.appendChild(hA1Name);
+
+                    const hA1Val = document.createElement("input");
+                    hA1Val.type = "hidden";
+                    hA1Val.name = `variants[${index}].attributes[0].value`;
+                    hA1Val.value = mauVal;
+                    tr.appendChild(hA1Val);
+                }
+
+                // Add dynamic attribute 2 (Kích thước / Trọng lượng)
+                if (sizeVal) {
+                    const attr2Name = sizeVal.includes("U") ? "Trọng lượng" : "Kích thước";
+                    const hA2Name = document.createElement("input");
+                    hA2Name.type = "hidden";
+                    hA2Name.name = `variants[${index}].attributes[1].attributeName`;
+                    hA2Name.value = attr2Name;
+                    tr.appendChild(hA2Name);
+
+                    const hA2Val = document.createElement("input");
+                    hA2Val.type = "hidden";
+                    hA2Val.name = `variants[${index}].attributes[1].value`;
+                    hA2Val.value = sizeVal;
+                    tr.appendChild(hA2Val);
+
+                    if (sizeVal.includes("U")) {
+                        const hTrong = document.createElement("input");
+                        hTrong.type = "hidden";
+                        hTrong.name = `variants[${index}].trongLuong`;
+                        hTrong.value = sizeVal;
+                        tr.appendChild(hTrong);
+                    } else {
+                        const hKich = document.createElement("input");
+                        hKich.type = "hidden";
+                        hKich.name = `variants[${index}].kichThuoc`;
+                        hKich.value = sizeVal;
+                        tr.appendChild(hKich);
+                    }
                 }
 
                 if (inGiaNhap) inGiaNhap.name = `variants[${index}].giaNhap`;

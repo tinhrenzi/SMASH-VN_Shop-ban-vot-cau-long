@@ -80,6 +80,7 @@ public class AdminPosController {
             }
             map.put("id", v.getId());
             map.put("tenSanPham", v.getSanPham() != null && v.getSanPham().getTenSanPham() != null ? v.getSanPham().getTenSanPham() : "Sản phẩm");
+            map.put("phanLoai", v.getPhanLoaiHienThi());
             map.put("mauSac", v.getMauSac() != null ? v.getMauSac() : "N/A");
             map.put("trongLuong", v.getTrongLuong() != null ? v.getTrongLuong() : "N/A");
             map.put("mucCang", v.getMucCang() != null ? v.getMucCang() : "N/A");

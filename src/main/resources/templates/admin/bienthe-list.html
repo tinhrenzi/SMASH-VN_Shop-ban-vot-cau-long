@@ -134,14 +134,7 @@
                                               style="width: 60px; height: 60px; object-fit: contain; padding: 4px; background-color: #ffffff; border-radius: 8px; border: 1px solid #f1f5f9; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                                      </td>
                                     <td>
-                                        <strong class="text-primary fs-6" th:if="${bt.mauSac != 'Mặc định'}" th:text="${bt.mauSac}">Đỏ</strong>
-                                        <span class="badge bg-secondary fs-6" th:if="${bt.mauSac == 'Mặc định'}">Biến thể mặc định</span>
-                                        <br>
-                                        <small class="text-muted fw-semibold">
-                                            <span th:if="${bt.trongLuong != null and !#strings.isEmpty(bt.trongLuong)}" th:text="'Trọng lượng: ' + ${bt.trongLuong}">Trọng lượng: 4U</span>
-                                            <span th:if="${bt.kichThuoc != null and !#strings.isEmpty(bt.kichThuoc)}" th:text="${sp.danhMuc.id == categoryIds['GIAY'] ? 'Size giày: ' : 'Size: '} + ${bt.kichThuoc}">Size: 42</span>
-                                            <span th:if="${bt.mucCang != null and !#strings.isEmpty(bt.mucCang)}" th:text="' | Sức căng khuyến nghị: ' + ${bt.mucCang}"> | Sức căng: 20-28 lbs</span>
-                                        </small>
+                                        <strong class="text-primary fs-6" th:text="${bt.phanLoaiHienThi}">Mặc định</strong>
                                     </td>
                                     <td class="text-danger fw-bold fs-6" th:text="${#numbers.formatDecimal(bt.giaBan, 0, 'COMMA', 0, 'POINT')} + ' đ'">Giá</td>
                                     <td>
