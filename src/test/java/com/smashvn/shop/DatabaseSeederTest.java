@@ -111,7 +111,7 @@ public class DatabaseSeederTest {
     @Transactional
     @Commit
     public void seedDatabase() {
-        System.out.println("=== STARTING FULL DATABASE SEEDING FOR ALL CATEGORIES ===");
+        System.out.println("=== STARTING FULL DATABASE SEEDING & IMAGE PATH UPDATE FOR ALL CATEGORIES ===");
 
         // 1. Ensure Admin Account exists
         NhanVien employee = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
@@ -240,8 +240,9 @@ public class DatabaseSeederTest {
                                         && finalSize.equalsIgnoreCase(ct.getKichThuoc()))
                                 .toList();
 
+                        SanPhamChiTiet spct;
                         if (existingList.isEmpty()) {
-                            SanPhamChiTiet spct = new SanPhamChiTiet();
+                            spct = new SanPhamChiTiet();
                             spct.setSanPham(product);
                             spct.setMauSac(color);
                             spct.setKichThuoc(size);
@@ -253,24 +254,33 @@ public class DatabaseSeederTest {
                             spct.setTrangThai("dang_ban");
                             spct.setNgayTao(LocalDateTime.now());
                             spct.setNgayCapNhat(LocalDateTime.now());
-
-                            List<HinhAnhSanPham> imageEntities = new ArrayList<>();
-                            int imgIdx = 0;
-                            for (File imgFile : imgFiles) {
-                                String relPath = folderName + "/" + productName + "/" + imgFile.getName();
-                                HinhAnhSanPham hasp = new HinhAnhSanPham();
-                                hasp.setSanPhamChiTiet(spct);
-                                hasp.setUrlHinhAnh(relPath);
-                                hasp.setMauSac(color);
-                                hasp.setLaAnhChinh(imgIdx == 0);
-                                imageEntities.add(hasp);
-                                imgIdx++;
-                            }
-
-                            spct.setHinhAnhSanPhams(imageEntities);
-                            sanPhamChiTietRepository.save(spct);
-                            System.out.println("Created variant for " + formalCatName + ": " + productName + " (" + size + ")");
+                            spct = sanPhamChiTietRepository.save(spct);
+                        } else {
+                            spct = existingList.get(0);
                         }
+
+                        List<HinhAnhSanPham> imageEntities = new ArrayList<>();
+                        int imgIdx = 0;
+                        for (File imgFile : imgFiles) {
+                            String relPath = folderName + "/" + productName + "/" + imgFile.getName();
+                            HinhAnhSanPham hasp = new HinhAnhSanPham();
+                            hasp.setSanPhamChiTiet(spct);
+                            hasp.setUrlHinhAnh(relPath);
+                            hasp.setMauSac(color);
+                            hasp.setLaAnhChinh(imgIdx == 0);
+                            imageEntities.add(hasp);
+                            imgIdx++;
+                        }
+
+                        if (spct.getHinhAnhSanPhams() == null) {
+                            spct.setHinhAnhSanPhams(new ArrayList<>());
+                        } else {
+                            spct.getHinhAnhSanPhams().clear();
+                        }
+                        spct.getHinhAnhSanPhams().addAll(imageEntities);
+
+                        sanPhamChiTietRepository.save(spct);
+                        System.out.println("Updated image paths for " + formalCatName + ": " + productName + " (" + size + ") -> " + imageEntities.size() + " images");
                     }
                 }
             }
@@ -350,11 +360,13 @@ public class DatabaseSeederTest {
             List<String> weights = (seed.customWeight != null) ? List.of(seed.customWeight) : List.of("3U", "4U");
             for (String weight : weights) {
                 final String finalWeight = weight;
-                boolean exists = (product.getSanPhamChiTiets() != null) && product.getSanPhamChiTiets().stream()
-                        .anyMatch(ct -> seed.color.equalsIgnoreCase(ct.getMauSac()) && finalWeight.equalsIgnoreCase(ct.getTrongLuong()));
+                List<SanPhamChiTiet> existingList = (product.getSanPhamChiTiets() != null) ? product.getSanPhamChiTiets().stream()
+                        .filter(ct -> seed.color.equalsIgnoreCase(ct.getMauSac()) && finalWeight.equalsIgnoreCase(ct.getTrongLuong()))
+                        .toList() : List.of();
 
-                if (!exists) {
-                    SanPhamChiTiet spct = new SanPhamChiTiet();
+                SanPhamChiTiet spct;
+                if (existingList.isEmpty()) {
+                    spct = new SanPhamChiTiet();
                     spct.setSanPham(product);
                     spct.setMauSac(seed.color);
                     spct.setTrongLuong(weight);
@@ -366,17 +378,26 @@ public class DatabaseSeederTest {
                     spct.setTrangThai("dang_ban");
                     spct.setNgayTao(LocalDateTime.now());
                     spct.setNgayCapNhat(LocalDateTime.now());
-
-                    HinhAnhSanPham hasp = new HinhAnhSanPham();
-                    hasp.setSanPhamChiTiet(spct);
-                    hasp.setUrlHinhAnh(seed.fileName);
-                    hasp.setMauSac(seed.color);
-                    hasp.setLaAnhChinh(true);
-
-                    spct.setHinhAnhSanPhams(List.of(hasp));
-                    sanPhamChiTietRepository.save(spct);
-                    System.out.println("Created variant for Racket: " + product.getTenSanPham() + " | " + weight);
+                    spct = sanPhamChiTietRepository.save(spct);
+                } else {
+                    spct = existingList.get(0);
                 }
+
+                HinhAnhSanPham hasp = new HinhAnhSanPham();
+                hasp.setSanPhamChiTiet(spct);
+                hasp.setUrlHinhAnh(seed.fileName);
+                hasp.setMauSac(seed.color);
+                hasp.setLaAnhChinh(true);
+
+                if (spct.getHinhAnhSanPhams() == null) {
+                    spct.setHinhAnhSanPhams(new ArrayList<>());
+                } else {
+                    spct.getHinhAnhSanPhams().clear();
+                }
+                spct.getHinhAnhSanPhams().add(hasp);
+
+                sanPhamChiTietRepository.save(spct);
+                System.out.println("Updated Racket variant image: " + product.getTenSanPham() + " | " + weight + " -> " + seed.fileName);
             }
         }
 
@@ -404,6 +425,6 @@ public class DatabaseSeederTest {
                     return donViVanChuyenDAO.save(dv);
                 });
 
-        System.out.println("=== FULL DATABASE SEEDING COMPLETED SUCCESSFULLY ===");
+        System.out.println("=== FULL DATABASE SEEDING AND IMAGE PATH UPDATE COMPLETED SUCCESSFULLY ===");
     }
 }

@@ -254,6 +254,7 @@ public class CheckoutController {
         TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
         return tk != null
                 && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty()
                 && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 
@@ -804,9 +805,14 @@ public class CheckoutController {
 
     @PostMapping("/checkout/api/check-email")
     @ResponseBody
-    public ResponseEntity<Map<String, String>> checkEmail(@RequestParam("email") String email) {
+    public ResponseEntity<Map<String, String>> checkEmail(@RequestParam("email") String email, HttpSession session) {
         Map<String, String> response = new HashMap<>();
         String status = guestCheckoutService.checkEmailStatus(email);
+        if ("GUEST_EXPIRED".equals(status) || "GUEST_VALID".equals(status)) {
+            if (email != null && !email.trim().isEmpty()) {
+                session.setAttribute("guestCheckoutEmail", email.trim());
+            }
+        }
         response.put("status", status);
         return ResponseEntity.ok(response);
     }
@@ -895,7 +901,7 @@ public class CheckoutController {
                 || !sessionEmail.equalsIgnoreCase(sessionTk.getUsername())
                 || (email != null && !email.trim().isEmpty() && !email.trim().equalsIgnoreCase(sessionTk.getUsername()))) {
             response.put("success", false);
-            response.put("message", "Phien khach vang lai khong hop le hoac khong khop email dat hang.");
+            response.put("message", "Phiên khách vãng lai không hợp lệ hoặc không khớp email đặt hàng.");
             return ResponseEntity.ok(response);
         }
 

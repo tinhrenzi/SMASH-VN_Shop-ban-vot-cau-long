@@ -543,7 +543,10 @@
                 <!-- Password login form for ACTIVE accounts -->
                 <div id="guest-password-form-group">
                     <div class="u-s-m-b-15">
-                        <label class="gl-label" for="guest-password-input">MẬT KHẨU *</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="gl-label" for="guest-password-input" style="margin-bottom: 0;">MẬT KHẨU *</label>
+                            <a href="javascript:void(0)" id="btn-guest-forgot-password" style="font-size: 12px; color: #ff4500; font-weight: 600; text-decoration: underline;">Quên mật khẩu?</a>
+                        </div>
                         <div style="position: relative; display: block; width: 100%;">
                             <input class="input-text input-text--primary-style" type="password" id="guest-password-input" placeholder="Nhập mật khẩu của bạn..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
                             <span class="toggle-password" data-target="guest-password-input" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">
@@ -551,6 +554,7 @@
                             </span>
                         </div>
                         <div id="guest-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
+                        <div id="guest-password-success" style="color: #10b981; font-size: 12px; margin-top: 5px; display: none;"></div>
                     </div>
                     <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-verify-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">XÁC NHẬN ĐĂNG NHẬP</button>
                 </div>
@@ -1082,8 +1086,45 @@
                 $('#guest-new-password').val('');
                 $('#guest-confirm-password').val('');
                 $('#guest-password-error').hide();
+                $('#guest-password-success').hide();
                 $('#guest-new-password-error').hide();
                 $('#guest-confirm-password-error').hide();
+            });
+
+            // Handle Forgot Password link inside Member Verification modal
+            $('#btn-guest-forgot-password').on('click', function(e) {
+                e.preventDefault();
+                const email = $('#email').val().trim();
+                if (!email) {
+                    $('#guest-password-error').text('Vui lòng nhập địa chỉ email liên hệ.').show();
+                    return;
+                }
+
+                const $link = $(this);
+                $link.text('Đang gửi email...').css('pointer-events', 'none');
+                $('#guest-password-error').hide();
+                $('#guest-password-success').hide();
+
+                $.ajax({
+                    url: '/user/checkout/api/forgot-password',
+                    type: 'POST',
+                    data: { email: email },
+                    success: function(resp) {
+                        $link.text('Quên mật khẩu?').css('pointer-events', 'auto');
+                        if (resp.success) {
+                            $('#guest-password-success').text(resp.message).show();
+                            if (typeof showToast === 'function') {
+                                showToast(resp.message, 'success');
+                            }
+                        } else {
+                            $('#guest-password-error').text(resp.message || 'Không thể gửi yêu cầu khôi phục mật khẩu.').show();
+                        }
+                    },
+                    error: function() {
+                        $link.text('Quên mật khẩu?').css('pointer-events', 'auto');
+                        $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
+                    }
+                });
             });
 
             // Verify active member password

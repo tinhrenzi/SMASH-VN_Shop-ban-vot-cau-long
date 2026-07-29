@@ -72,8 +72,11 @@ public class UserDangNhapService {
         }
 
         // 6. Kiểm tra trạng thái tài khoản
-        if (!"hoat_dong".equals(taiKhoan.getTrangThai()) && !"cho_khoa".equals(taiKhoan.getTrangThai())) {
+        if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || "bi_khoa".equalsIgnoreCase(taiKhoan.getTrangThai())) {
             throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+        }
+        if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST && (taiKhoan.getMatKhau() == null || taiKhoan.getMatKhau().trim().isEmpty())) {
+            throw new RuntimeException("Tài khoản vãng lai chưa được kích hoạt mật khẩu. Vui lòng đăng nhập bằng Google hoặc kích hoạt qua email!");
         }
         return taiKhoan;
     }
@@ -100,7 +103,7 @@ public class UserDangNhapService {
             String randomPass = java.util.UUID.randomUUID().toString();
             tk.setMatKhau(passwordEncoder.encode(randomPass));
             tk.setVaiTro("KH");
-            tk.setTrangThai("hoat_dong");
+            tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
             tk = taiKhoanRepository.save(tk);
 
             // 2. Tạo ngay hồ sơ Khách Hàng đi kèm
@@ -113,8 +116,18 @@ public class UserDangNhapService {
             khachHangRepository.save(kh);
         } else {
             // ĐÃ TỒN TẠI: Kiểm tra xem tài khoản có bị khóa không
-            if (!"hoat_dong".equals(tk.getTrangThai())) {
+            if (tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || "bi_khoa".equalsIgnoreCase(tk.getTrangThai())) {
                 throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+            }
+            // Nếu là tài khoản GUEST (khách vãng lai mua hàng trước đó), tự động nâng cấp thành ACTIVE khi đăng nhập Google thành công
+            if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
+                tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+                if (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty()) {
+                    String randomPass = java.util.UUID.randomUUID().toString();
+                    tk.setMatKhau(passwordEncoder.encode(randomPass));
+                }
+                tk = taiKhoanRepository.save(tk);
+                log.info("[GOOGLE_LOGIN] Upgraded guest account {} to ACTIVE status on Google OAuth login.", normalizedEmail);
             }
         }
         return tk;
