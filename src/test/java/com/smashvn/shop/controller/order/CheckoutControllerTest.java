@@ -114,6 +114,7 @@ public class CheckoutControllerTest {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(123);
         tk.setUsername("active@example.com");
+        tk.setMatKhau("password123");
         tk.setVaiTro("KH");
         tk.setTrangThai("hoat_dong");
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);

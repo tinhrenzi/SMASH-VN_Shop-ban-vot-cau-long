@@ -45,11 +45,17 @@ public class SanPhamYeuThichController {
             return ResponseEntity.status(401).body(result);
         }
 
-        String kq = yeuThichService.themVaoWishlist(idNguoiDung, idSanPham);
-        long count = yeuThichRepository.countById_SanPhamId(idSanPham);
-        result.put("status", kq);
-        result.put("count", count);
-        return ResponseEntity.ok(result);
+        try {
+            String kq = yeuThichService.themVaoWishlist(idNguoiDung, idSanPham);
+            long count = yeuThichRepository.countById_SanPhamId(idSanPham);
+            result.put("status", kq);
+            result.put("count", count);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            result.put("status", "loi");
+            result.put("message", "Không thể thực hiện thao tác yêu thích. Vui lòng thử lại!");
+            return ResponseEntity.ok(result);
+        }
     }
 
     // 3. Xóa 1 sản phẩm

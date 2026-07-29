@@ -764,7 +764,7 @@ public class OrderViewService {
                 String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
                 String labelCu = getStatusLabel(currentStatus);
                 String labelMoi = getStatusLabel(newStatus);
-                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s] (Tự động cập nhật qua vận chuyển GHN).",
+                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].",
                         maDon, labelCu, labelMoi);
 
                 ThongBao thongBao = ThongBao.builder()

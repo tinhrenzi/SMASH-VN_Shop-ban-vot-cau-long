@@ -1259,7 +1259,12 @@ function checkAndApplyVariant(container) {
               var status = res.status;
               var count = res.count;
               if (status === 'chuadangnhap') {
-                  window.location.href = '/user/dang-nhap';
+                  showToast('Vui lòng đăng nhập để sử dụng tính năng yêu thích!', 'info');
+                  setTimeout(function() {
+                      window.location.href = '/user/dang-nhap';
+                  }, 1000);
+              } else if (status === 'loi') {
+                  showToast(res.message || 'Có lỗi xảy ra, vui lòng thử lại!', 'error');
               } else if (status === 'xoa') {
                   showToast('Đã xóa sản phẩm khỏi danh sách yêu thích!', 'info');
                   if (element) {
@@ -1302,8 +1307,15 @@ function checkAndApplyVariant(container) {
                   }
               }
           },
-          error: function() {
-              showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+          error: function(xhr) {
+              if (xhr.status === 401 || xhr.status === 403) {
+                  showToast('Vui lòng đăng nhập để sử dụng tính năng yêu thích!', 'info');
+                  setTimeout(function() {
+                      window.location.href = '/user/dang-nhap';
+                  }, 1000);
+              } else {
+                  showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+              }
           }
       });
   }
