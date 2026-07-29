@@ -1,15 +1,14 @@
 package com.smashvn.shop.service.order;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.smashvn.shop.entity.HoaDon;
-import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.PhieuGiamGia;
 
 @SpringBootTest

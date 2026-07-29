@@ -29,12 +29,14 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     }
 
     static Integer parseIdFromMaDonHang(String code) {
-        if (code == null) return null;
+        if (code == null) {
+            return null;
+        }
         try {
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
             java.util.regex.Matcher matcher = pattern.matcher(code.trim());
             if (matcher.find()) {
-                return Integer.parseInt(matcher.group());
+                return Integer.valueOf(matcher.group());
             }
         } catch (Exception e) {
             // Ignore
@@ -104,9 +106,9 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     java.util.Optional<HoaDon> findByIdWithLock(@Param("id") Integer id);
 
     /**
-     * Tìm các đơn hàng đang vận chuyển có mã vận đơn GHN (dùng cho Scheduler Polling).
-     * Native query vì TichHopVanChuyen không có JPA Entity.
-     * Phải thêm các subquery cho @Formula fields (ghnOrderCode, ghnStatus) vì SELECT hd.*
+     * Tìm các đơn hàng đang vận chuyển có mã vận đơn GHN (dùng cho Scheduler
+     * Polling). Native query vì TichHopVanChuyen không có JPA Entity. Phải thêm
+     * các subquery cho @Formula fields (ghnOrderCode, ghnStatus) vì SELECT hd.*
      * chỉ trả về cột vật lý, không bao gồm cột ảo @Formula.
      */
     @Query(value = """

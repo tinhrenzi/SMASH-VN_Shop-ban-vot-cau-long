@@ -1,18 +1,16 @@
 package com.smashvn.shop.service.product;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +20,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.repository.DanhMucRepository;
-import com.smashvn.shop.repository.SanPhamRepository;
-import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.admin.AdminSanPhamService;
-import com.smashvn.shop.service.admin.AdminBienTheService;
 
 @SpringBootTest
 @Transactional
@@ -35,19 +28,6 @@ public class UniqueVariantImagesValidationTest {
 
     @Autowired
     private AdminSanPhamService adminSanPhamService;
-
-    @Autowired
-    private AdminBienTheService adminBienTheService;
-
-    @Autowired
-    private SanPhamRepository sanPhamRepository;
-
-    @Autowired
-    private DanhMucRepository danhMucRepository;
-
-    @Autowired
-    private ThuongHieuRepository thuongHieuRepository;
-
     @Value("${app.upload.path}")
     private String uploadPathConfig;
 
@@ -96,11 +76,11 @@ public class UniqueVariantImagesValidationTest {
 
         // Unwrap the proxy to get the real target instance (avoids null fields in proxy instance)
         Object targetService = org.springframework.test.util.AopTestUtils.getTargetObject(adminSanPhamService);
-        
+
         java.lang.reflect.Method saveMethod = AdminSanPhamService.class.getDeclaredMethod("saveImageSecurely", MultipartFile.class, String.class, List.class);
         saveMethod.setAccessible(true);
         List<Path> uploaded = new ArrayList<>();
-        
+
         String savedName = (String) saveMethod.invoke(targetService, file, "test", uploaded);
         createdFiles.add(targetPath);
 
@@ -117,7 +97,7 @@ public class UniqueVariantImagesValidationTest {
         // 3. Third upload with same name but different content (should throw exception)
         byte[] content2 = createDummyPng(5); // size difference changes hash
         MockMultipartFile fileDiff = new MockMultipartFile("fileAnh", testName, "image/png", content2);
-        
+
         try {
             saveMethod.invoke(targetService, fileDiff, "test", new ArrayList<Path>());
             fail("Expected exception for same name but different content");
@@ -140,7 +120,7 @@ public class UniqueVariantImagesValidationTest {
         List<Path> uploaded = new ArrayList<>();
 
         String savedName = (String) saveMethod.invoke(targetService, file, "test", uploaded);
-        
+
         // Unsafe path components must be removed by Paths.get().getFileName()
         assertEquals("unsafe_image.png", savedName);
         Path targetPath = productDir.resolve("unsafe_image.png").normalize();

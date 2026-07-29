@@ -29,6 +29,7 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.TrangThaiGioHang;
+import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.GioHangRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
@@ -39,6 +40,7 @@ import com.smashvn.shop.repository.PhieuGiamGiaRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.ThongBaoRepository;
 import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.service.admin.AdminShippingService;
 import com.smashvn.shop.service.api.GhnService;
@@ -74,6 +76,7 @@ public class GioHangService {
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final PricingService pricingService;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final ThongBaoRepository thongBaoRepository;
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -632,6 +635,25 @@ public class GioHangService {
                     // Không throw – lỗi GHN không làm hỏng đơn hàng
                 }
             }
+        }
+
+        // Tạo thông báo đơn hàng hệ thống
+        try {
+            if (kh != null && kh.getTaiKhoan() != null) {
+                String orderCode = hd.getMaDonHang() != null ? hd.getMaDonHang() : "DHSVN-" + hd.getId();
+                ThongBao thongBaoOrder = ThongBao.builder()
+                        .taiKhoan(kh.getTaiKhoan())
+                        .tieuDe("Đặt hàng thành công")
+                        .noiDung("Đơn hàng #" + orderCode + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
+                        .daDoc(false)
+                        .loaiThongBao("don_hang")
+                        .ngayTao(LocalDateTime.now())
+                        .build();
+                thongBaoRepository.save(thongBaoOrder);
+                log.info("[GioHangService] Saved order notification for TaiKhoan ID {}", kh.getTaiKhoan().getId());
+            }
+        } catch (Exception e) {
+            log.error("[GioHangService] Failed to save order notification: {}", e.getMessage());
         }
 
         return hd;

@@ -4,8 +4,10 @@ import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.TokenKhoiPhuc;
+import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.repository.ThongBaoRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.entity.HoaDonChiTiet;
@@ -34,6 +36,7 @@ public class GuestCheckoutService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final KhachHangRepository khachHangRepository;
     private final TokenKhoiPhucRepository tokenRepository;
+    private final ThongBaoRepository thongBaoRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final JavaMailSender mailSender;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
@@ -177,6 +180,23 @@ public class GuestCheckoutService {
         tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30)); // 30 days validation limit
         tkp.setDaSuDung(false);
         tokenRepository.save(tkp);
+
+        // Tạo thông báo hệ thống cho tài khoản vãng lai được khởi tạo tự động
+        try {
+            ThongBao thongBaoAcc = ThongBao.builder()
+                    .taiKhoan(savedTk)
+                    .tieuDe("Tài khoản của bạn đã được khởi tạo tự động")
+                    .noiDung("Cảm ơn bạn đã mua sắm tại Smash VN! Tài khoản của bạn đã được hệ thống tự động khởi tạo theo email " 
+                            + trimmedEmail + ". Vui lòng kiểm tra hộp thư email của bạn để nhận đường dẫn kích hoạt và thiết lập lại mật khẩu.")
+                    .daDoc(false)
+                    .loaiThongBao("tai_khoan")
+                    .ngayTao(LocalDateTime.now())
+                    .build();
+            thongBaoRepository.save(thongBaoAcc);
+            log.info("[GUEST_CHECKOUT] Created system notification for auto-registered account ID {}", savedTk.getId());
+        } catch (Exception e) {
+            log.error("[GUEST_CHECKOUT] Failed to create system notification for account ID {}: {}", savedTk.getId(), e.getMessage());
+        }
 
         log.info("[GUEST_CHECKOUT] Auto-registered GUEST account & generated token: {}", trimmedEmail);
 

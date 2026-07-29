@@ -1,23 +1,29 @@
 package com.smashvn.shop.controller.order;
 
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.smashvn.shop.entity.GioHangChiTiet;
-import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
 import com.smashvn.shop.service.product.PricingService;
-import com.smashvn.shop.repository.SanPhamChiTietRepository;
-import com.smashvn.shop.repository.TaiKhoanRepository;
+
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/gio-hang")
@@ -48,8 +54,7 @@ public class GioHangController {
             @RequestParam(value = "idSanPhamChiTiet", required = false) Integer idSanPhamChiTiet,
             @RequestParam(value = "soLuong", required = false) Integer soLuong,
             HttpSession session) {
-        
-        Map<String, Object> response = new HashMap<>();
+
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
 
@@ -59,7 +64,7 @@ public class GioHangController {
         if (idSanPhamChiTiet == null) {
             return ResponseEntity.status(400).body("Sản phẩm không hợp lệ.");
         }
-        
+
         if (!activeAccount) {
             try {
                 guestCartService.addToGuestCart(session, idSanPhamChiTiet, soLuong);
@@ -97,7 +102,7 @@ public class GioHangController {
     public ResponseEntity<Map<String, Object>> layDuLieuMiniCart(HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
-        
+
         if (!activeAccount) {
             Map<String, Object> response = guestCartService.layDuLieuMiniCart(session);
             return ResponseEntity.ok(response);
@@ -113,7 +118,7 @@ public class GioHangController {
     public String hienThiGioHang(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
-        
+
         List<GioHangChiTiet> danhSachChiTiet = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
 
@@ -121,14 +126,15 @@ public class GioHangController {
             List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
             for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
                 com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
-                if (spct == null) continue;
+                if (spct == null) {
+                    continue;
+                }
 
                 GioHangChiTiet detail = new GioHangChiTiet();
                 detail.setId(spct.getId()); // Sử dụng ID SPCT làm ID chi tiết tạm thời
                 detail.setSanPhamChiTiet(spct);
                 detail.setSoLuong(item.getSoLuong());
 
-                SanPham sp = spct.getSanPham();
                 int tonKho = spct.getSoLuongTon();
                 boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(spct) && item.getSoLuong() != null && item.getSoLuong() > 0;
                 if (hopLe) {
@@ -140,7 +146,6 @@ public class GioHangController {
         } else {
             danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
             for (GioHangChiTiet item : danhSachChiTiet) {
-                SanPham sp = item.getSanPhamChiTiet().getSanPham();
                 int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
                 boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(item.getSanPhamChiTiet()) && item.getSoLuong() != null && item.getSoLuong() > 0;
                 if (hopLe) {
@@ -155,37 +160,37 @@ public class GioHangController {
         return "cart";
     }
 
-	 // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Chuyển sang POST để chống CSRF)
-	    @PostMapping("/api/xoa/{id}")
-	    @ResponseBody
-	    public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
-	        Map<String, String> response = new HashMap<>();
-	        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-            boolean activeAccount = isActiveAccount(idNguoiDung);
-	        
-	        try {
-	            if (!activeAccount) {
-	                guestCartService.removeFromGuestCart(session, idChiTiet);
-	            } else {
-	                gioHangService.xoaSanPhamKhoiGio(idChiTiet, idNguoiDung);
-	            }
-	            response.put("trangThai", "ok");
-	        } catch (Exception e) {
-	            response.put("trangThai", "loi");
-	            response.put("message", e.getMessage());
-	        }
-	        return ResponseEntity.ok(response);
-	    }
+    // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Chuyển sang POST để chống CSRF)
+    @PostMapping("/api/xoa/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
+        Map<String, String> response = new HashMap<>();
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+
+        try {
+            if (!activeAccount) {
+                guestCartService.removeFromGuestCart(session, idChiTiet);
+            } else {
+                gioHangService.xoaSanPhamKhoiGio(idChiTiet, idNguoiDung);
+            }
+            response.put("trangThai", "ok");
+        } catch (Exception e) {
+            response.put("trangThai", "loi");
+            response.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(response);
+    }
 
     // HÀM 5: CẬP NHẬT SỐ LƯỢNG (Dùng cho AJAX trong cart.html)
     @PostMapping("/cap-nhat")
     @ResponseBody
     public ResponseEntity<String> capNhatSoLuong(@RequestParam(value = "idChiTiet", required = false) Integer idChiTiet,
-                                                 @RequestParam(value = "soLuong", required = false) Integer soLuong,
-                                                 HttpSession session) {
+            @RequestParam(value = "soLuong", required = false) Integer soLuong,
+            HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
-        
+
         if (soLuong == null) {
             return ResponseEntity.status(400).body("Số lượng sản phẩm không được để trống.");
         }

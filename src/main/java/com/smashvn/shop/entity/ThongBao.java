@@ -1,8 +1,20 @@
 package com.smashvn.shop.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ThongBao")
@@ -11,6 +23,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ThongBao {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -26,6 +39,7 @@ public class ThongBao {
     private String noiDung;
 
     @Column(name = "da_doc", nullable = false)
+    @Builder.Default
     private Boolean daDoc = false;
 
     @Column(name = "loai_thong_bao", length = 50)
