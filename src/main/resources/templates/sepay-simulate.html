@@ -226,6 +226,11 @@
                         <div class="spinner-grow spinner-grow-sm text-info" role="status" style="animation-duration: 1.2s; width: 0.8rem; height: 0.8rem;"></div>
                         <span>Đang chờ bạn quét mã thanh toán...</span>
                     </div>
+                    <div id="paymentCountdownBox" class="mt-3 p-2 rounded" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <small style="color: #f87171;" class="fw-bold">
+                            <i class="fas fa-clock me-1"></i>Thời gian chờ thanh toán: <span id="timerCountdown">03:00</span>
+                        </small>
+                    </div>
                 </div>
             </div>
 
@@ -350,31 +355,57 @@
             }
         });
 
-        // Start polling for payment status with a safe timeout to avoid the page hanging forever
+        // Start 3-minute (180 seconds) countdown timer & polling for payment status
         let pollInterval = null;
+        let countdownTimer = null;
         let pollAttempts = 0;
-        const MAX_POLL_ATTEMPTS = 120;
+        const MAX_POLL_ATTEMPTS = 90; // 90 attempts * 2 seconds = 180 seconds
+        let secondsLeft = 180;
 
         function stopPolling() {
             if (pollInterval) {
                 clearInterval(pollInterval);
                 pollInterval = null;
             }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
         }
 
-        function showPollingError(message) {
+        function handlePaymentExpired() {
             stopPolling();
-            $('#overlayTitle').text('Đang chờ xác nhận thanh toán');
-            $('#overlayMsg').text(message);
+            $('#timerCountdown').text('00:00');
+            $('#overlayTitle').text('Phiên thanh toán hết hạn');
+            $('#overlayMsg').text('Đã hết thời gian chờ thanh toán. Phiên thanh toán đã bị hủy. Đang quay lại giỏ hàng...');
             $('#statusOverlay').css('display', 'flex');
+            setTimeout(function() {
+                window.location.href = '/gio-hang';
+            }, 2500);
+        }
+
+        function startTimer() {
+            countdownTimer = setInterval(function() {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    handlePaymentExpired();
+                    return;
+                }
+                const m = Math.floor(secondsLeft / 60);
+                const s = secondsLeft % 60;
+                const formattedTime = (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+                $('#timerCountdown').text(formattedTime);
+            }, 1000);
         }
 
         if (orderCode) {
             stopPolling();
+            startTimer();
+
             pollInterval = setInterval(function() {
                 pollAttempts++;
                 if (pollAttempts > MAX_POLL_ATTEMPTS) {
-                    showPollingError('Chúng tôi vẫn đang chờ xác nhận thanh toán. Bạn có thể kiểm tra lại trong trang đơn hàng.');
+                    handlePaymentExpired();
                     return;
                 }
 
@@ -390,17 +421,14 @@
                             setTimeout(function() {
                                 window.location.href = '/user/my-order?payment=success';
                             }, 1000);
+                        } else if (response && response.paymentStatus === 'expired') {
+                            handlePaymentExpired();
                         } else if (response && response.success && response.paymentStatus === 'pending') {
-                            // Continue polling until payment arrives or timeout triggers.
-                        } else {
-                            showPollingError('Không thể xác nhận trạng thái thanh toán. Vui lòng kiểm tra lại trong trang đơn hàng của bạn.');
+                            // Continue polling until payment arrives or 180s timeout triggers.
                         }
                     },
                     error: function(xhr, status, error) {
                         console.warn('Error polling payment status:', status, error);
-                        if (xhr && (xhr.status === 401 || xhr.status === 403)) {
-                            showPollingError('Bạn có thể kiểm tra trạng thái thanh toán trực tiếp trong trang đơn hàng.');
-                        }
                     }
                 });
             }, 2000);
@@ -408,9 +436,7 @@
 
         $('#btnSimulateCancel').off('click').on('click', function() {
             stopPolling();
-            if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng của bạn sẽ ở trạng thái Chờ thanh toán.')) {
-                window.location.href = '/user/my-order';
-            }
+            window.location.href = '/gio-hang';
         });
 
         $(window).on('beforeunload', function() {

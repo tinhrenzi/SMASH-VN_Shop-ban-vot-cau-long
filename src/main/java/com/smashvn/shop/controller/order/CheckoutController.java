@@ -608,14 +608,17 @@ public class CheckoutController {
                 }
             }
 
-            guestCheckoutService.incrementPurchaseCount(idNguoiDung);
+            boolean isCod = "COD".equalsIgnoreCase(phuongThucThanhToan);
+            if (isCod) {
+                guestCheckoutService.incrementPurchaseCount(idNguoiDung);
+            }
 
             TaiKhoan tk = (checkoutTk != null) ? checkoutTk : taiKhoanRepository.findById(idNguoiDung).orElse(null);
             if (tk != null) {
                 response.put("isGuest", tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST);
                 response.put("soLanMuaThanhCong", tk.getSoLanMuaThanhCong());
 
-                if ("NEW".equals(emailStatus)) {
+                if (isCod && "NEW".equals(emailStatus)) {
                     long startEmail = System.currentTimeMillis();
                     try {
                         String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
@@ -635,24 +638,26 @@ public class CheckoutController {
                 response.put("soLanMuaThanhCong", 0);
             }
 
-            // Trigger order confirmation email
-            String userEmail = null;
-            if (tk != null && tk.getUsername() != null && tk.getUsername().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-                userEmail = tk.getUsername();
-            } else if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
-                String un = hd.getKhachHang().getTaiKhoan().getUsername();
-                if (un != null && un.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-                    userEmail = un;
+            // Trigger order confirmation email for COD orders (SePay orders trigger on payment confirmation)
+            if (isCod) {
+                String userEmail = null;
+                if (tk != null && tk.getUsername() != null && tk.getUsername().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                    userEmail = tk.getUsername();
+                } else if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+                    String un = hd.getKhachHang().getTaiKhoan().getUsername();
+                    if (un != null && un.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                        userEmail = un;
+                    }
+                } else if (email != null && !email.trim().isEmpty()) {
+                    userEmail = email.trim();
                 }
-            } else if (email != null && !email.trim().isEmpty()) {
-                userEmail = email.trim();
-            }
-            if (userEmail != null && !userEmail.trim().isEmpty()) {
-                try {
-                    String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-                    guestCheckoutService.sendOrderConfirmationEmail(userEmail, hd, appUrl);
-                } catch (Exception e) {
-                    log.error("Failed to trigger order confirmation email", e);
+                if (userEmail != null && !userEmail.trim().isEmpty()) {
+                    try {
+                        String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                        guestCheckoutService.sendOrderConfirmationEmail(userEmail, hd, appUrl);
+                    } catch (Exception e) {
+                        log.error("Failed to trigger order confirmation email", e);
+                    }
                 }
             }
 

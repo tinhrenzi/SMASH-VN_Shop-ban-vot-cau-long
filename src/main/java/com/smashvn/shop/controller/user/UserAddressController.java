@@ -45,7 +45,11 @@ public class UserAddressController {
             return null;
         }
         KhachHang kh = dashboardService.layThongTinKhachHang(idTaiKhoan);
-        if (kh == null || kh.getTaiKhoan() == null || kh.getTaiKhoan().getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE) {
+        if (kh == null || kh.getTaiKhoan() == null) {
+            return null;
+        }
+        com.smashvn.shop.entity.AccountStatus status = kh.getTaiKhoan().getTrangThaiTaiKhoan();
+        if (status == com.smashvn.shop.entity.AccountStatus.LOCKED || status == com.smashvn.shop.entity.AccountStatus.PENDING_LOCK) {
             return null;
         }
         return kh;

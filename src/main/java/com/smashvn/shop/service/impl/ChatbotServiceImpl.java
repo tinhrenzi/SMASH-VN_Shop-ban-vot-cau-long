@@ -77,7 +77,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${gemini.api.base-url:https://generativelanguage.googleapis.com/v1beta/openai}")
     private String baseUrl;
 
-    @Value("${gemini.api.model:gemini-3.5-flash}")
+    @Value("${gemini.api.model:gemini-2.0-flash}")
     private String model;
 
     @Value("${gemini.chat.max-history-messages:5}")

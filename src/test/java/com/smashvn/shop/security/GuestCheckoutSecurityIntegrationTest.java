@@ -156,7 +156,7 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void testGuestAccountSessionCannotAccessDashboard() throws Exception {
+    void testGuestAccountSessionCanAccessDashboard() throws Exception {
         String email = "guest-dashboard-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
 
@@ -166,8 +166,8 @@ public class GuestCheckoutSecurityIntegrationTest {
         guestSession.setAttribute("vaiTro", "KH");
 
         mockMvc.perform(get("/user/dashboard").session(guestSession).requestAttr("_csrf", csrfToken))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/user/dang-nhap"));
+                .andExpect(status().isOk())
+                .andExpect(view().name("dashboard"));
     }
 
     @Test

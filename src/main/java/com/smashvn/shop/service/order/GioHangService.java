@@ -305,28 +305,31 @@ public class GioHangService {
     }
 
     @org.springframework.transaction.annotation.Transactional
+    public void expirePendingOrder(HoaDon order) {
+        if (order != null && OrderStatus.CHO_THANH_TOAN.getValue().equals(order.getTrangThaiDonHang())) {
+            order.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue());
+            order.setPaymentStatus("expired");
+            order.setTrangThaiThanhToan("HỦY");
+            hoaDonRepository.save(order);
+            log.info("[GioHangService] Expired pending order #{} (marked as da_huy / expired)", order.getId());
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public void cleanPendingOrders(Integer idTaiKhoan) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
         if (kh == null) {
             return;
         }
         List<HoaDon> existingOrders = hoaDonRepository.findByKhachHang_Id(kh.getId());
-        java.time.LocalDateTime fifteenMinutesAgo = java.time.LocalDateTime.now().minusMinutes(15);
+        java.time.LocalDateTime threeMinutesAgo = java.time.LocalDateTime.now().minusMinutes(3);
         for (HoaDon oldOrder : existingOrders) {
             if ("cho_thanh_toan".equals(oldOrder.getTrangThaiDonHang())
                     && "pending".equalsIgnoreCase(oldOrder.getPaymentStatus())) {
 
-                // Only clean up orders that have expired (created more than 15 minutes ago)
-                if (oldOrder.getNgayTao() != null && oldOrder.getNgayTao().isBefore(fifteenMinutesAgo)) {
-                    List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(oldOrder.getId());
-                    if (txs != null && !txs.isEmpty()) {
-                        paymentTransactionRepository.deleteAll(txs);
-                    }
-                    List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(oldOrder.getId());
-                    hoaDonChiTietRepository.deleteAll(details);
-                    // Xóa lịch sử trạng thái đơn hàng (được tạo bởi database triggers/legacy flow) trước để tránh lỗi Foreign Key
-                    hoaDonRepository.deleteOrderStatusHistoryByOrderId(oldOrder.getId());
-                    hoaDonRepository.delete(oldOrder);
+                // Expire pending orders created more than 3 minutes ago
+                if (oldOrder.getNgayTao() != null && oldOrder.getNgayTao().isBefore(threeMinutesAgo)) {
+                    expirePendingOrder(oldOrder);
                 }
             }
         }
@@ -495,8 +498,10 @@ public class GioHangService {
 
             giamGia = VoucherCalculator.calculateVoucherDiscount(tamTinh, voucher);
 
-            voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1);
-            phieuGiamGiaRepository.save(voucher);
+            if ("COD".equalsIgnoreCase(phuongThucThanhToan)) {
+                voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1);
+                phieuGiamGiaRepository.save(voucher);
+            }
             appliedVoucher = voucher;
         }
 
@@ -637,23 +642,25 @@ public class GioHangService {
             }
         }
 
-        // Tạo thông báo đơn hàng hệ thống
-        try {
-            if (kh != null && kh.getTaiKhoan() != null) {
-                String orderCode = hd.getMaDonHang() != null ? hd.getMaDonHang() : "DHSVN-" + hd.getId();
-                ThongBao thongBaoOrder = ThongBao.builder()
-                        .taiKhoan(kh.getTaiKhoan())
-                        .tieuDe("Đặt hàng thành công")
-                        .noiDung("Đơn hàng #" + orderCode + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
-                        .daDoc(false)
-                        .loaiThongBao("don_hang")
-                        .ngayTao(LocalDateTime.now())
-                        .build();
-                thongBaoRepository.save(thongBaoOrder);
-                log.info("[GioHangService] Saved order notification for TaiKhoan ID {}", kh.getTaiKhoan().getId());
+        // Tạo thông báo đơn hàng hệ thống (Chỉ dành cho COD, SePay sẽ tạo khi thanh toán thành công)
+        if ("COD".equalsIgnoreCase(ptttName)) {
+            try {
+                if (kh != null && kh.getTaiKhoan() != null) {
+                    String orderCode = hd.getMaDonHang() != null ? hd.getMaDonHang() : "DHSVN-" + hd.getId();
+                    ThongBao thongBaoOrder = ThongBao.builder()
+                            .taiKhoan(kh.getTaiKhoan())
+                            .tieuDe("Đặt hàng thành công")
+                            .noiDung("Đơn hàng #" + orderCode + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
+                            .daDoc(false)
+                            .loaiThongBao("don_hang")
+                            .ngayTao(LocalDateTime.now())
+                            .build();
+                    thongBaoRepository.save(thongBaoOrder);
+                    log.info("[GioHangService] Saved order notification for TaiKhoan ID {}", kh.getTaiKhoan().getId());
+                }
+            } catch (Exception e) {
+                log.error("[GioHangService] Failed to save order notification: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("[GioHangService] Failed to save order notification: {}", e.getMessage());
         }
 
         return hd;

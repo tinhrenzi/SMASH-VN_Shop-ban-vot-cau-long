@@ -123,8 +123,10 @@ public class PendingOrderDeletionBugTest {
         // Perform clean pending orders
         gioHangService.cleanPendingOrders(testTk.getId());
 
-        // Verify that the order has been deleted
-        assertFalse(hoaDonRepository.findById(expiredOrder.getId()).isPresent(), 
-                "Pending order created 20 minutes ago should be deleted.");
+        // Verify that the order has been marked as expired (da_huy)
+        HoaDon reloaded = hoaDonRepository.findById(expiredOrder.getId()).orElse(null);
+        assertNotNull(reloaded, "Expired pending order record should exist.");
+        assertEquals("da_huy", reloaded.getTrangThaiDonHang(), "Pending order created 20 minutes ago should be expired to da_huy.");
+        assertEquals("expired", reloaded.getPaymentStatus(), "Pending order created 20 minutes ago should have paymentStatus expired.");
     }
 }

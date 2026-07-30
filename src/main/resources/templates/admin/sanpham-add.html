@@ -207,19 +207,27 @@
 
                     if (!attributes || attributes.length === 0) {
                         boxContainer.innerHTML = `<div class="col-12 text-muted fst-italic">Danh mục này chưa được cấu hình loại thuộc tính nào. Bạn vẫn có thể thêm biến thể thủ công bên dưới.</div>`;
-                        if (thAttr1) thAttr1.textContent = 'Màu Sắc *';
-                        if (thAttr2) thAttr2.textContent = 'Kích Thước / Thuộc Tính';
+                        if (thAttr1) thAttr1.textContent = 'Màu Sắc / Thuộc Tính *';
+                        if (thAttr2) {
+                            thAttr2.textContent = 'Kích Thước / Thuộc Tính 2';
+                            thAttr2.classList.add('d-none');
+                        }
                         updatePreview();
                         return;
                     }
 
-                    // Cập nhật header theo Loại Danh Mục
-                    if (thAttr1) thAttr1.textContent = 'Màu Sắc *';
-                    if (thAttr2) {
-                        if (catType === 'GIAY') thAttr2.textContent = 'Size Giày';
-                        else if (catType === 'TRANG_PHUC') thAttr2.textContent = 'Size Trang Phục';
-                        else if (catType === 'VOT') thAttr2.textContent = 'Trọng Lượng Vợt';
-                        else thAttr2.textContent = 'Thuộc Tính 2';
+                    // Cập nhật header theo Thuộc tính & Loại Danh Mục
+                    if (attributes.length === 1) {
+                        if (thAttr1) thAttr1.textContent = attributes[0].tenThuocTinh + ' *';
+                        if (thAttr2) thAttr2.classList.add('d-none');
+                    } else {
+                        if (thAttr1) thAttr1.textContent = attributes[0].tenThuocTinh + ' *';
+                        if (thAttr2) {
+                            if (catType === 'GIAY') thAttr2.textContent = 'Size Giày';
+                            else if (catType === 'TRANG_PHUC') thAttr2.textContent = 'Size Trang Phục';
+                            else if (catType === 'VOT') thAttr2.textContent = 'Trọng Lượng Vợt';
+                            else thAttr2.textContent = attributes[1] ? attributes[1].tenThuocTinh : 'Thuộc Tính 2';
+                        }
                     }
 
                     attributes.forEach((att, idx) => {
@@ -353,6 +361,7 @@
 
             // TD Size / Weight / Attribute 2
             const tdSize = document.createElement("td");
+            tdSize.className = "td-attr2";
             tdSize.innerHTML = `<input type="text" class="form-control form-control-sm var-size-weight" list="listSizeWeightDatalist" placeholder="${sizePlaceholder}" value="${sizeVal}">`;
             tr.appendChild(tdSize);
 
@@ -513,6 +522,45 @@
                     });
                 }
             }
+
+            updateVariantColumnsVisibility();
+        }
+
+        function updateVariantColumnsVisibility() {
+            const attrCards = document.querySelectorAll("#sectionAttributeBox .attr-card");
+            let showSecond = true;
+
+            if (attrCards.length === 1) {
+                showSecond = false;
+            } else if (attrCards.length > 1) {
+                const checkedGroups = Array.from(attrCards).filter(card => card.querySelectorAll(".dynamic-attr-cb:checked").length > 0);
+                if (checkedGroups.length === 1) {
+                    showSecond = false;
+                }
+            } else if (attrCards.length === 0) {
+                showSecond = false;
+            }
+
+            const thAttr2 = document.getElementById("thAttr2");
+            if (thAttr2) {
+                if (showSecond) {
+                    thAttr2.classList.remove("d-none");
+                } else {
+                    thAttr2.classList.add("d-none");
+                }
+            }
+
+            const rows = previewTbody.querySelectorAll("tr");
+            rows.forEach(tr => {
+                const tdSize = tr.querySelector(".td-attr2");
+                if (tdSize) {
+                    if (showSecond) {
+                        tdSize.classList.remove("d-none");
+                    } else {
+                        tdSize.classList.add("d-none");
+                    }
+                }
+            });
         }
 
         function updatePreview() {

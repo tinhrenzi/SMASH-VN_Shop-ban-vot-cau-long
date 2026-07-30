@@ -22,6 +22,7 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.PaymentMethod;
 import com.smashvn.shop.entity.PaymentStatus;
 import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.entity.ReturnStatus;
@@ -70,10 +71,15 @@ public class OrderViewService {
         if (realOrders != null && !realOrders.isEmpty()) {
             // CÓ ĐƠN HÀNG THẬT
             for (HoaDon hd : realOrders) {
-                // Skip unpaid/pending orders (cho_thanh_toan) to prevent duplicate/misleading display in Order History
-                // if ("cho_thanh_toan".equals(hd.getTrangThaiDonHang())) {
-                //     continue;
-                // }
+                // Skip unconfirmed orders (cho_thanh_toan or orders expired/cancelled before confirmation)
+                if ("cho_thanh_toan".equalsIgnoreCase(hd.getTrangThaiDonHang())) {
+                    continue;
+                }
+                if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(hd.getTrangThaiDonHang())
+                        && !"paid".equalsIgnoreCase(hd.getPaymentStatus())
+                        && !PaymentMethod.COD.getValue().equalsIgnoreCase(hd.getPaymentMethod())) {
+                    continue;
+                }
                 Map<String, Object> orderMap = new HashMap<>();
                 orderMap.put("id", hd.getId());
                 orderMap.put("date", hd.getNgayTao().format(formatter));

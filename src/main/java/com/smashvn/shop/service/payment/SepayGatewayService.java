@@ -38,6 +38,9 @@ public class SepayGatewayService implements PaymentGatewayService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final AuditService auditService;
     private final GhnService ghnService;
+    private final com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final ThongBaoRepository thongBaoRepository;
 
     @Override
     @Transactional
@@ -125,14 +128,14 @@ public class SepayGatewayService implements PaymentGatewayService {
             return createSuccessResponse("Processed");
         }
 
-        // 4. Handle Cancelled Order
-        if (OrderStatus.DA_HUY.getValue().equals(order.getTrangThaiDonHang())) {
-            log.warn("SePay IPN: Payment received for already cancelled order: {}", orderCode);
+        // 4. Handle Cancelled or Expired Order (Late Webhook / Late IPN)
+        if (OrderStatus.DA_HUY.getValue().equals(order.getTrangThaiDonHang()) || "expired".equalsIgnoreCase(order.getPaymentStatus())) {
+            log.warn("SePay IPN: Late payment received for already cancelled/expired order: {}", orderCode);
             
             // Save transaction record
             PaymentTransaction tx = saveTransactionRecord(transaction, order, PaymentStatus.PAID_RECEIVED_AFTER_CANCEL.getValue(), rawPayload);
 
-            // Mark payment status = PAID_RECEIVED_AFTER_CANCEL (Do not reactivate order, do not deduct stock)
+            // Mark payment status = PAID_RECEIVED_AFTER_CANCEL (Do not reactivate order, do not deduct stock, do not clear cart, do not send email)
             order.setPaymentStatus(PaymentStatus.PAID_RECEIVED_AFTER_CANCEL.getValue());
             order.setTrangThaiThanhToan("HUY"); // Keeps payment status synced
             hoaDonRepository.save(order);
@@ -140,13 +143,13 @@ public class SepayGatewayService implements PaymentGatewayService {
             // Create urgent admin alert
             auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
                     "da_huy", "da_huy", "127.0.0.1", 
-                    "[PAYMENT_RECEIVED_AFTER_CANCEL] CRITICAL: Payment received after order cancellation. Ref: " + transactionId + ", Amt: " + transferAmount, 
+                    "[PAYMENT_RECEIVED_AFTER_CANCEL] CRITICAL: Payment received after order cancellation/expiration. Ref: " + transactionId + ", Amt: " + transferAmount, 
                     "SYSTEM");
             
             return createSuccessResponse("Processed");
         }
 
-        // 5. Normal Payment Processing
+        // 5. Normal Payment Processing & Re-validation
         List<HoaDonChiTiet> orderItems = hoaDonChiTietRepository.findByHoaDon_Id(order.getId());
 
         // Verify stock is sufficient
@@ -178,6 +181,21 @@ public class SepayGatewayService implements PaymentGatewayService {
                     sanPhamChiTietRepository.save(lockedSpct);
                 }
             }
+
+            // Re-validate and deduct voucher usage upon payment confirmation
+            if (order.getPhieuGiamGia() != null) {
+                try {
+                    PhieuGiamGia voucher = phieuGiamGiaRepository.findByMaPhieuWithLock(order.getPhieuGiamGia().getMaPhieu()).orElse(null);
+                    if (voucher != null && voucher.getActive() && voucher.getSoLuongConLai() > 0) {
+                        voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1);
+                        phieuGiamGiaRepository.save(voucher);
+                    } else {
+                        log.warn("[VOUCHER_UNAVAILABLE] Voucher {} was no longer available upon payment confirmation for order #{}", order.getMaVoucherApDung(), order.getId());
+                    }
+                } catch (Exception vEx) {
+                    log.error("Failed to re-validate voucher for order #{}", order.getId(), vEx);
+                }
+            }
         } else {
             // Stock conflict
             targetOrderStatus = OrderStatus.STOCK_CONFLICT.getValue();
@@ -199,8 +217,50 @@ public class SepayGatewayService implements PaymentGatewayService {
         }
         hoaDonRepository.save(order);
 
-        // Clear items from customer's cart
-        clearCustomerCart(order, orderItems);
+        if (stockSufficient) {
+            // Clear items from customer's cart only when payment confirmation succeeds
+            clearCustomerCart(order, orderItems);
+
+            // Increment purchase count
+            if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
+                try {
+                    guestCheckoutService.incrementPurchaseCount(order.getKhachHang().getTaiKhoan().getId());
+                } catch (Exception e) {
+                    log.error("Failed to increment purchase count for order #{}", order.getId(), e);
+                }
+            }
+
+            // Trigger order confirmation email & guest notification
+            try {
+                String email = null;
+                if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
+                    email = order.getKhachHang().getTaiKhoan().getUsername();
+                }
+                if (email != null && email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                    guestCheckoutService.sendOrderConfirmationEmail(email, order, "http://localhost:8080");
+                }
+            } catch (Exception e) {
+                log.error("Failed to send order confirmation email for order #{}", order.getId(), e);
+            }
+
+            // Create system notification
+            try {
+                if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
+                    String orderCodeStr = order.getMaDonHang() != null ? order.getMaDonHang() : "DHSVN-" + order.getId();
+                    ThongBao thongBaoOrder = ThongBao.builder()
+                            .taiKhoan(order.getKhachHang().getTaiKhoan())
+                            .tieuDe("Đặt hàng thành công")
+                            .noiDung("Đơn hàng #" + orderCodeStr + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
+                            .daDoc(false)
+                            .loaiThongBao("don_hang")
+                            .ngayTao(LocalDateTime.now())
+                            .build();
+                    thongBaoRepository.save(thongBaoOrder);
+                }
+            } catch (Exception e) {
+                log.error("Failed to save ThongBao for order #{}", order.getId(), e);
+            }
+        }
 
         // Save transaction record in db (Catch race condition database exceptions)
         saveTransactionRecord(transaction, order, "success", rawPayload);

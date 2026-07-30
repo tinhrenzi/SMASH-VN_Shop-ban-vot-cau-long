@@ -1884,11 +1884,14 @@
 
             function queryPaymentStatus(maDonHang) {
                 attempts++;
-                if (attempts > 150) { // 150 attempts * 2 seconds = 300 seconds (5 minutes)
-                    clearInterval(pollingInterval);
+                if (attempts > 90) { // 90 attempts * 2 seconds = 180 seconds (3 minutes)
+                    if (pollingInterval) clearInterval(pollingInterval);
                     $('#zp-spinner-loading').hide();
                     $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
-                        .html('<i class="fas fa-exclamation-triangle"></i> Chúng tôi vẫn đang chờ xác nhận thanh toán. Bạn có thể kiểm tra lại trong trang đơn hàng.');
+                        .html('<i class="fas fa-exclamation-triangle"></i> Đã hết thời gian chờ thanh toán. Phiên thanh toán đã bị hủy. Đang quay lại giỏ hàng...');
+                    setTimeout(function() {
+                        window.location.href = '/gio-hang';
+                    }, 2000);
                     return;
                 }
 
@@ -1896,8 +1899,8 @@
                     url: '/api/payment/sepay/query/' + maDonHang,
                     type: 'GET',
                     success: function(resp) {
-                        if (resp.paymentStatus === 'paid') {
-                            clearInterval(pollingInterval);
+                        if (resp && resp.paymentStatus === 'paid') {
+                            if (pollingInterval) clearInterval(pollingInterval);
                             $('#zp-spinner-loading').hide();
                             $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
                                 .html('<i class="fas fa-check-circle"></i> Thanh toán thành công! Đang chuyển hướng...');
@@ -1906,6 +1909,14 @@
                             setTimeout(function() {
                                 window.location.href = '/user/my-order?payment=success';
                             }, 1000);
+                        } else if (resp && resp.paymentStatus === 'expired') {
+                            if (pollingInterval) clearInterval(pollingInterval);
+                            $('#zp-spinner-loading').hide();
+                            $('#zp-status-msg').removeClass('zp-status-pending zp-status-success').addClass('zp-status-error')
+                                .html('<i class="fas fa-exclamation-triangle"></i> Đã hết thời gian chờ thanh toán. Phiên thanh toán đã bị hủy. Đang quay lại giỏ hàng...');
+                            setTimeout(function() {
+                                window.location.href = '/gio-hang';
+                            }, 2000);
                         }
                     },
                     error: function() {
@@ -1916,11 +1927,9 @@
 
             // Close Modal handler
             $('#zp-close-btn').on('click', function() {
-                if (confirm('Bạn có chắc chắn muốn thoát khỏi màn hình thanh toán này? Đơn hàng sẽ ở trạng thái chờ thanh toán.')) {
-                    if (pollingInterval) clearInterval(pollingInterval);
-                    $('#zp-modal-overlay').removeClass('active');
-                    window.location.href = '/user/my-order';
-                }
+                if (pollingInterval) clearInterval(pollingInterval);
+                $('#zp-modal-overlay').removeClass('active');
+                window.location.href = '/gio-hang';
             });
         });
     </script>

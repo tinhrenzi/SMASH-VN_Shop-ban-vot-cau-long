@@ -44,6 +44,7 @@ public class SepayIpnController {
     private final HoaDonRepository hoaDonRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final AuditService auditService;
+    private final com.smashvn.shop.service.order.GioHangService gioHangService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/api/payment/sepay/ipn")
@@ -176,8 +177,24 @@ public class SepayIpnController {
 
         String paymentStatus = order.getPaymentStatus();
         String trangThaiThanhToan = order.getTrangThaiThanhToan();
+
+        // Check 180s expiration for pending orders
+        if ("cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()) || "pending".equalsIgnoreCase(paymentStatus)) {
+            if (order.getNgayTao() != null && LocalDateTime.now().isAfter(order.getNgayTao().plusSeconds(180))) {
+                gioHangService.expirePendingOrder(order);
+                paymentStatus = "expired";
+                resp.put("paymentStatus", "expired");
+                resp.put("orderStatus", "da_huy");
+                resp.put("trangThaiThanhToan", "HỦY");
+                resp.put("message", "Đã hết thời gian chờ thanh toán. Phiên thanh toán đã bị hủy.");
+                return ResponseEntity.ok(resp);
+            }
+        }
+
         if ("DA_THANH_TOAN".equalsIgnoreCase(trangThaiThanhToan) || "DA_THANH_TOAN".equalsIgnoreCase(paymentStatus) || "paid".equalsIgnoreCase(paymentStatus)) {
             paymentStatus = "paid";
+        } else if ("expired".equalsIgnoreCase(paymentStatus) || "da_huy".equalsIgnoreCase(order.getTrangThaiDonHang())) {
+            paymentStatus = "expired";
         } else if ("CHO_THANH_TOAN".equalsIgnoreCase(trangThaiThanhToan) || "CHO_THANH_TOAN".equalsIgnoreCase(paymentStatus) || "pending".equalsIgnoreCase(paymentStatus) || paymentStatus == null) {
             paymentStatus = "pending";
         }

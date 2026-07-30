@@ -67,6 +67,18 @@ public class SepayIpnControllerTest {
     @Mock
     private HoaDonRepository hoaDonRepository;
 
+    @Mock
+    private com.smashvn.shop.service.order.GioHangService gioHangService;
+
+    @Mock
+    private com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+
+    @Mock
+    private com.smashvn.shop.repository.PhieuGiamGiaRepository phieuGiamGiaRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.ThongBaoRepository thongBaoRepository;
+
     @InjectMocks
     private SepayIpnController sepayIpnController;
 
@@ -117,7 +129,10 @@ public class SepayIpnControllerTest {
                 gioHangChiTietRepository,
                 paymentTransactionRepository,
                 auditService,
-                ghnService
+                ghnService,
+                guestCheckoutService,
+                phieuGiamGiaRepository,
+                thongBaoRepository
         );
     }
 
