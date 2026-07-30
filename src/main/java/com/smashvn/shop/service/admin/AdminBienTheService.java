@@ -292,7 +292,7 @@ public class AdminBienTheService {
 
     private void saveOrUpdateAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
         if (spct.getSanPhamChiTietThuocTinhs() == null) {
-            spct.setSanPhamChiTietThuocTinhs(new ArrayList<>());
+            spct.setSanPhamChiTietThuocTinhs(new java.util.LinkedHashSet<>());
         }
         SanPhamChiTietThuocTinh existing = spct.getSanPhamChiTietThuocTinhs().stream()
                 .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))

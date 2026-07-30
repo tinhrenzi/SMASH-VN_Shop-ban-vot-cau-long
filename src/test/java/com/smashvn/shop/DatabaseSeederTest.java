@@ -51,6 +51,12 @@ public class DatabaseSeederTest {
     @Autowired
     private DanhGiaService danhGiaService;
 
+    @Autowired
+    private GioHangChiTietRepository gioHangChiTietRepository;
+
+    @Autowired
+    private SanPhamYeuThichRepository sanPhamYeuThichRepository;
+
     static class RacketSeed {
         String fileName;
         String brandName;
@@ -280,7 +286,6 @@ public class DatabaseSeederTest {
                         spct.getHinhAnhSanPhams().addAll(imageEntities);
 
                         sanPhamChiTietRepository.save(spct);
-                        System.out.println("Updated image paths for " + formalCatName + ": " + productName + " (" + size + ") -> " + imageEntities.size() + " images");
                     }
                 }
             }
@@ -292,7 +297,6 @@ public class DatabaseSeederTest {
         ThuongHieu liningBrand = findOrCreateBrand("Li-Ning");
 
         List<RacketSeed> racketList = new ArrayList<>();
-        // Li-Ning (16 images)
         racketList.add(new RacketSeed("Li-ning/AERONAUT 6000_Đỏ_xanh.png", "Li-Ning", "Li-Ning Aeronaut 6000", "Đỏ xanh", 2300000));
         racketList.add(new RacketSeed("Li-ning/AXFORCE 9 AYPT317-2_Đen.png", "Li-Ning", "Li-Ning Axforce 9 AYPT317-2", "Đen", 1850000));
         racketList.add(new RacketSeed("Li-ning/AXFORCE BIGBANG_Đen.png", "Li-Ning", "Li-Ning Axforce Bigbang Đen", "Đen", 1950000));
@@ -310,7 +314,6 @@ public class DatabaseSeederTest {
         racketList.add(new RacketSeed("Li-ning/Phong P-AYPT059-4_Xanh.png", "Li-Ning", "Li-Ning Phong P-AYPT059-4", "Xanh", 2600000));
         racketList.add(new RacketSeed("Li-ning/WindStorm 72S Neon_Xanh nước biển nhạt.png", "Li-Ning", "Li-Ning Windstorm 72S Neon", "Xanh nước biển nhạt", 2150000));
 
-        // Yonex (24 images)
         racketList.add(new RacketSeed("Yonex/ ARCSABER11_ Pro_Xám ngọc trai _Đỏ.png", "Yonex", "Yonex Arcsaber 11 Pro", "Xám ngọc trai Đỏ", 4100000));
         racketList.add(new RacketSeed("Yonex/ARCSABER11_Play_Xám ngọc trai _Đỏ.png", "Yonex", "Yonex Arcsaber 11 Play", "Xám ngọc trai Đỏ", 1350000));
         racketList.add(new RacketSeed("Yonex/ARCSABER11_Tour_Xám ngọc trai _Đỏ.png", "Yonex", "Yonex Arcsaber 11 Tour", "Xám ngọc trai Đỏ", 2650000));
@@ -397,18 +400,20 @@ public class DatabaseSeederTest {
                 spct.getHinhAnhSanPhams().add(hasp);
 
                 sanPhamChiTietRepository.save(spct);
-                System.out.println("Updated Racket variant image: " + product.getTenSanPham() + " | " + weight + " -> " + seed.fileName);
             }
         }
 
-        // 5. Recalculate ratings for all products based on actual customer reviews (no hardcoded ratings)
+        // 5. Clean up any broken/dummy products whose images do NOT exist in uploads/product/
+        auditAndCleanBrokenProductsInternal();
+
+        // 6. Recalculate ratings for all remaining products
         List<SanPham> allProducts = sanPhamRepository.findAll();
         for (SanPham sp : allProducts) {
             danhGiaService.updateProductRatingStats(sp.getId());
         }
         System.out.println("Recalculated rating stats for all " + allProducts.size() + " products.");
 
-        // 6. Ensure GHN shipping carrier exists
+        // 7. Ensure GHN shipping carrier exists
         donViVanChuyenDAO.findAll().stream()
                 .filter(dv -> dv.getTenDonVi() != null && 
                         (dv.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH") || 
@@ -425,6 +430,110 @@ public class DatabaseSeederTest {
                     return donViVanChuyenDAO.save(dv);
                 });
 
-        System.out.println("=== FULL DATABASE SEEDING AND IMAGE PATH UPDATE COMPLETED SUCCESSFULLY ===");
+        System.out.println("=== FULL DATABASE SEEDING AND AUDIT COMPLETED SUCCESSFULLY ===");
+    }
+
+    private void auditAndCleanBrokenProductsInternal() {
+        System.out.println("--- AUDITING FOR PRODUCTS WITH BROKEN/MISSING IMAGES ON DISK ---");
+        File baseDir = new File("uploads/product");
+
+        List<SanPham> products = sanPhamRepository.findAll();
+        int deletedCount = 0;
+        int fixedCount = 0;
+
+        for (SanPham sp : new ArrayList<>(products)) {
+            boolean hasValidImageOnDisk = false;
+
+            if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
+                for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
+                    if (spct.getHinhAnhSanPhams() != null && !spct.getHinhAnhSanPhams().isEmpty()) {
+                        for (HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
+                            String url = hasp.getUrlHinhAnh();
+                            if (url != null && !url.isBlank()) {
+                                String cleanUrl = url.replace("/uploads/product/", "").replace("uploads/product/", "");
+                                File fileOnDisk = new File(baseDir, cleanUrl);
+                                if (fileOnDisk.exists() && fileOnDisk.isFile()) {
+                                    hasValidImageOnDisk = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (hasValidImageOnDisk) break;
+                }
+            }
+
+            if (!hasValidImageOnDisk) {
+                System.out.println("BROKEN IMAGE PRODUCT DETECTED: ID " + sp.getId() + " - Name: '" + sp.getTenSanPham() + "'");
+
+                // Try to find a matching image file in uploads/product/
+                String cleanName = sp.getTenSanPham().replaceAll("(?i)cầu lông|chính hãng|nam|nữ|vợt|áo|quần|giày|balo|túi|t-shirt", "").trim();
+                File matchFile = (cleanName.length() >= 3) ? findMatchingImageFile(baseDir, cleanName) : null;
+
+                if (matchFile != null) {
+                    String relPath = baseDir.toPath().relativize(matchFile.toPath()).toString().replace("\\", "/");
+                    System.out.println(" -> FIXED image path to: " + relPath);
+                    if (sp.getSanPhamChiTiets() != null) {
+                        for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
+                            if (spct.getHinhAnhSanPhams() == null) {
+                                spct.setHinhAnhSanPhams(new ArrayList<>());
+                            } else {
+                                spct.getHinhAnhSanPhams().clear();
+                            }
+                            HinhAnhSanPham hasp = new HinhAnhSanPham();
+                            hasp.setSanPhamChiTiet(spct);
+                            hasp.setUrlHinhAnh(relPath);
+                            hasp.setMauSac(spct.getMauSac());
+                            hasp.setLaAnhChinh(true);
+                            spct.getHinhAnhSanPhams().add(hasp);
+                            sanPhamChiTietRepository.save(spct);
+                        }
+                    }
+                    fixedCount++;
+                } else {
+                    System.out.println(" -> NO MATCHING IMAGE ON DISK. Deleting product ID " + sp.getId() + " ('" + sp.getTenSanPham() + "')");
+                    
+                    // Remove references in SanPhamYeuThich
+                    sanPhamYeuThichRepository.findAll().stream()
+                            .filter(yt -> yt.getSanPham() != null && yt.getSanPham().getId().equals(sp.getId()))
+                            .forEach(sanPhamYeuThichRepository::delete);
+
+                    if (sp.getSanPhamChiTiets() != null) {
+                        for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
+                            // Clean up references in GioHangChiTiet
+                            gioHangChiTietRepository.findAll().stream()
+                                    .filter(ghct -> ghct.getSanPhamChiTiet() != null && ghct.getSanPhamChiTiet().getId().equals(spct.getId()))
+                                    .forEach(gioHangChiTietRepository::delete);
+
+                            sanPhamChiTietRepository.delete(spct);
+                        }
+                    }
+                    sanPhamRepository.delete(sp);
+                    deletedCount++;
+                }
+            }
+        }
+        System.out.println("--- AUDIT SUMMARY: Fixed " + fixedCount + " products, Deleted " + deletedCount + " broken products without image files ---");
+    }
+
+    private File findMatchingImageFile(File dir, String keyword) {
+        if (keyword == null || keyword.length() < 3) return null;
+        String lowerKw = keyword.toLowerCase();
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+
+        for (File f : files) {
+            if (f.isDirectory()) {
+                File subMatch = findMatchingImageFile(f, keyword);
+                if (subMatch != null) return subMatch;
+            } else {
+                String name = f.getName().toLowerCase();
+                if ((name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp"))
+                        && (name.contains(lowerKw) || f.getParentFile().getName().toLowerCase().contains(lowerKw))) {
+                    return f;
+                }
+            }
+        }
+        return null;
     }
 }

@@ -104,7 +104,7 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th style="width: 25%;" id="thAttr1">Màu Sắc *</th>
-                                        <th style="width: 25%;" id="thAttr2">Kích Thước / Trọng Lượng / Thuộc Tính *</th>
+                                        <th style="width: 25%;" id="thAttr2">Kích Thước / Trọng Lượng / Thuộc Tính</th>
                                         <th style="width: 15%;">Giá Nhập (VNĐ)</th>
                                         <th style="width: 15%;">Giá Bán (VNĐ) *</th>
                                         <th style="width: 10%;">Tồn Kho *</th>
@@ -208,7 +208,7 @@
                     if (!attributes || attributes.length === 0) {
                         boxContainer.innerHTML = `<div class="col-12 text-muted fst-italic">Danh mục này chưa được cấu hình loại thuộc tính nào. Bạn vẫn có thể thêm biến thể thủ công bên dưới.</div>`;
                         if (thAttr1) thAttr1.textContent = 'Màu Sắc *';
-                        if (thAttr2) thAttr2.textContent = 'Kích Thước / Thuộc Tính *';
+                        if (thAttr2) thAttr2.textContent = 'Kích Thước / Thuộc Tính';
                         updatePreview();
                         return;
                     }
@@ -216,10 +216,10 @@
                     // Cập nhật header theo Loại Danh Mục
                     if (thAttr1) thAttr1.textContent = 'Màu Sắc *';
                     if (thAttr2) {
-                        if (catType === 'GIAY') thAttr2.textContent = 'Size Giày *';
-                        else if (catType === 'TRANG_PHUC') thAttr2.textContent = 'Size Trang Phục *';
-                        else if (catType === 'VOT') thAttr2.textContent = 'Trọng Lượng Vợt *';
-                        else thAttr2.textContent = 'Thuộc Tính 2 *';
+                        if (catType === 'GIAY') thAttr2.textContent = 'Size Giày';
+                        else if (catType === 'TRANG_PHUC') thAttr2.textContent = 'Size Trang Phục';
+                        else if (catType === 'VOT') thAttr2.textContent = 'Trọng Lượng Vợt';
+                        else thAttr2.textContent = 'Thuộc Tính 2';
                     }
 
                     attributes.forEach((att, idx) => {
@@ -353,7 +353,7 @@
 
             // TD Size / Weight / Attribute 2
             const tdSize = document.createElement("td");
-            tdSize.innerHTML = `<input type="text" class="form-control form-control-sm var-size-weight" list="listSizeWeightDatalist" placeholder="${sizePlaceholder}" required value="${sizeVal}">`;
+            tdSize.innerHTML = `<input type="text" class="form-control form-control-sm var-size-weight" list="listSizeWeightDatalist" placeholder="${sizePlaceholder}" value="${sizeVal}">`;
             tr.appendChild(tdSize);
 
             // TD Giá Nhập

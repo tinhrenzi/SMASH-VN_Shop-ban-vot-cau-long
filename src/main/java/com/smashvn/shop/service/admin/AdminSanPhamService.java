@@ -377,7 +377,7 @@ public class AdminSanPhamService {
                 .giaTri(giaTri.trim())
                 .build();
         if (spct.getSanPhamChiTietThuocTinhs() == null) {
-            spct.setSanPhamChiTietThuocTinhs(new ArrayList<>());
+            spct.setSanPhamChiTietThuocTinhs(new java.util.LinkedHashSet<>());
         }
         spct.getSanPhamChiTietThuocTinhs().add(attVal);
     }

@@ -27,8 +27,10 @@ public class SanPhamChiTietThuocTinh {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_thuoc_tinh", nullable = false)
+    @EqualsAndHashCode.Include
     private ThuocTinh thuocTinh;
 
     @Column(name = "gia_tri", nullable = false, length = 500)
+    @EqualsAndHashCode.Include
     private String giaTri;
 }

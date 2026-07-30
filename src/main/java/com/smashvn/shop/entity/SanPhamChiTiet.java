@@ -76,7 +76,7 @@ public class SanPhamChiTiet {
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @org.hibernate.annotations.BatchSize(size = 30)
     @Builder.Default
-    private List<SanPhamChiTietThuocTinh> sanPhamChiTietThuocTinhs = new ArrayList<>();
+    private java.util.Set<SanPhamChiTietThuocTinh> sanPhamChiTietThuocTinhs = new java.util.LinkedHashSet<>();
 
     @Transient
     private String hinhAnhSanPham;
@@ -162,7 +162,7 @@ public class SanPhamChiTiet {
 
     private void setGiaTriThuocTinhHelper(String tenThuocTinh, String giaTri) {
         if (this.sanPhamChiTietThuocTinhs == null) {
-            this.sanPhamChiTietThuocTinhs = new ArrayList<>();
+            this.sanPhamChiTietThuocTinhs = new java.util.LinkedHashSet<>();
         }
         SanPhamChiTietThuocTinh existing = this.sanPhamChiTietThuocTinhs.stream()
                 .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
@@ -179,10 +179,25 @@ public class SanPhamChiTiet {
         if (existing != null) {
             existing.setGiaTri(giaTri.trim());
         } else {
-            ThuocTinh tt = ThuocTinh.builder()
-                    .tenThuocTinh(tenThuocTinh.trim())
-                    .trangThai(true)
-                    .build();
+            ThuocTinh tt = null;
+            try {
+                com.smashvn.shop.repository.ThuocTinhRepository repo = com.smashvn.shop.config.SpringContextHelper.getBean(com.smashvn.shop.repository.ThuocTinhRepository.class);
+                if (repo != null) {
+                    tt = repo.findByTenThuocTinhIgnoreCase(tenThuocTinh.trim())
+                            .orElseGet(() -> repo.save(ThuocTinh.builder()
+                                    .tenThuocTinh(tenThuocTinh.trim())
+                                    .trangThai(true)
+                                    .build()));
+                }
+            } catch (Exception ignored) {}
+
+            if (tt == null) {
+                tt = ThuocTinh.builder()
+                        .tenThuocTinh(tenThuocTinh.trim())
+                        .trangThai(true)
+                        .build();
+            }
+
             SanPhamChiTietThuocTinh val = SanPhamChiTietThuocTinh.builder()
                     .sanPhamChiTiet(this)
                     .thuocTinh(tt)
