@@ -113,6 +113,16 @@ public class DanhMucService {
         return danhMucRepository.save(flushedDm);
     }
 
+    @Transactional
+    public DanhMuc anHoacHienDanhMuc(Integer id) {
+        DanhMuc dm = danhMucRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + id));
+        boolean currentStatus = Boolean.TRUE.equals(dm.getTrangThai());
+        dm.setTrangThai(!currentStatus);
+        log.info("[CATEGORY] Toggled status for category ID {}: {} -> {}", id, currentStatus, !currentStatus);
+        return danhMucRepository.save(dm);
+    }
+
     String normalize(String input) {
         if (input == null) {
             throw new IllegalArgumentException("Tên danh mục không được để trống!");

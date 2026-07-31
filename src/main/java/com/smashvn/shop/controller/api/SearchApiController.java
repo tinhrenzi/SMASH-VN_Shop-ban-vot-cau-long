@@ -69,7 +69,7 @@ public class SearchApiController {
         Map<String, Object> result = new HashMap<>();
 
         // 1. Danh mục (Vợt, Giày, Phụ kiện)
-        List<Map<String, Object>> categories = danhMucRepository.findAll().stream()
+        List<Map<String, Object>> categories = danhMucRepository.findByTrangThaiTrue().stream()
             .map(dm -> Map.<String, Object>of(
                 "id", dm.getId(),
                 "ten", dm.getTenDanhMuc()
@@ -77,7 +77,7 @@ public class SearchApiController {
         result.put("danhMuc", categories);
 
         // 2. Thương hiệu (Yonex, Victor, Lining, ...)
-        List<Map<String, Object>> brands = thuongHieuRepository.findAll().stream()
+        List<Map<String, Object>> brands = thuongHieuRepository.findByTrangThaiTrue().stream()
             .map(th -> Map.<String, Object>of(
                 "id", th.getId(),
                 "ten", th.getTenThuongHieu()

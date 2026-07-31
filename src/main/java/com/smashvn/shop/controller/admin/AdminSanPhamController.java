@@ -65,13 +65,13 @@ public class AdminSanPhamController {
     }
 
     private void populateFormModel(Model model) {
-        List<com.smashvn.shop.entity.DanhMuc> allCategories = danhMucRepository.findAll();
-        model.addAttribute("listDanhMuc", allCategories);
-        model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+        List<com.smashvn.shop.entity.DanhMuc> activeCategories = danhMucRepository.findByTrangThaiTrue();
+        model.addAttribute("listDanhMuc", activeCategories);
+        model.addAttribute("listThuongHieu", thuongHieuRepository.findByTrangThaiTrue());
 
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
         java.util.Map<Integer, String> categoryTypes = new java.util.HashMap<>();
-        for (com.smashvn.shop.entity.DanhMuc dm : allCategories) {
+        for (com.smashvn.shop.entity.DanhMuc dm : activeCategories) {
             com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
             categoryTypes.put(dm.getId(), type.name());
             if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
@@ -91,8 +91,22 @@ public class AdminSanPhamController {
     public String hienThiFormSua(@PathVariable("id") Integer id, Model model) {
         SanPham sp = sanPhamRepository.findById(id).orElseThrow();
         model.addAttribute("sp", sp);
-        model.addAttribute("listDanhMuc", danhMucRepository.findAll());
-        model.addAttribute("listThuongHieu", thuongHieuRepository.findAll());
+
+        List<com.smashvn.shop.entity.DanhMuc> activeCategories = danhMucRepository.findByTrangThaiTrue();
+        if (sp.getDanhMuc() != null && Boolean.FALSE.equals(sp.getDanhMuc().getTrangThai())) {
+            if (!activeCategories.contains(sp.getDanhMuc())) {
+                activeCategories.add(sp.getDanhMuc());
+            }
+        }
+        model.addAttribute("listDanhMuc", activeCategories);
+
+        List<com.smashvn.shop.entity.ThuongHieu> activeBrands = thuongHieuRepository.findByTrangThaiTrue();
+        if (sp.getThuongHieu() != null && Boolean.FALSE.equals(sp.getThuongHieu().getTrangThai())) {
+            if (!activeBrands.contains(sp.getThuongHieu())) {
+                activeBrands.add(sp.getThuongHieu());
+            }
+        }
+        model.addAttribute("listThuongHieu", activeBrands);
         return "admin/sanpham-edit";
     }
 

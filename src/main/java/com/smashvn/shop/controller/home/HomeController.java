@@ -74,7 +74,7 @@ public class HomeController {
             discountedProducts.addAll(fallback);
         }
 
-        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
+        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findByTrangThaiTrue();
 
         // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm, riêng nổi bật lấy 4)
         Pageable pageLimit14 = PageRequest.of(0, 14);
@@ -199,8 +199,8 @@ public class HomeController {
         BigDecimal globalMinPrice = BigDecimal.ZERO;
         BigDecimal globalMaxPrice = new BigDecimal("30000000");
 
-        List<DanhMuc> danhSachDanhMuc = danhMucRepository.findAll();
-        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findAll();
+        List<DanhMuc> danhSachDanhMuc = danhMucRepository.findByTrangThaiTrue();
+        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findByTrangThaiTrue();
 
         java.util.Map<Integer, Long> categoryCounts = new java.util.HashMap<>();
         for (DanhMuc dm : danhSachDanhMuc) {

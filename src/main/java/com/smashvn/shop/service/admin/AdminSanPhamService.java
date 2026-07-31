@@ -153,6 +153,9 @@ public class AdminSanPhamService {
             }
             DanhMuc dm = danhMucRepository.findById(idDanhMuc)
                     .orElseThrow(() -> new IllegalArgumentException("Danh mục không tồn tại"));
+            if (Boolean.FALSE.equals(dm.getTrangThai())) {
+                throw new IllegalArgumentException("Danh mục này đã bị ẩn, không thể thêm sản phẩm mới vào danh mục!");
+            }
 
             com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, idDanhMuc);
             if (catType == com.smashvn.shop.constant.CategoryType.OTHER && !DanhMucIds.isSupported(idDanhMuc)) {
@@ -169,6 +172,11 @@ public class AdminSanPhamService {
             }
             if (request.getIdThuongHieu() == null || request.getIdThuongHieu() < 1) {
                 throw new IllegalArgumentException("Vui lòng chọn thương hiệu hợp lệ!");
+            }
+            ThuongHieu th = thuongHieuRepository.findById(request.getIdThuongHieu())
+                    .orElseThrow(() -> new IllegalArgumentException("Thương hiệu không tồn tại"));
+            if (Boolean.FALSE.equals(th.getTrangThai())) {
+                throw new IllegalArgumentException("Hãng/thương hiệu này đã bị ẩn, không thể thêm sản phẩm mới vào thương hiệu này!");
             }
 
             String sanitizedMoTa = "";

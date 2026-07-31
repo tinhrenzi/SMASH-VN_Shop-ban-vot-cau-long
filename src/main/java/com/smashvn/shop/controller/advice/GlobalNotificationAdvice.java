@@ -101,9 +101,7 @@ public class GlobalNotificationAdvice {
     @ModelAttribute("globalCategories")
     public List<DanhMuc> getGlobalCategories() {
         try {
-            return danhMucRepository.findAll().stream()
-                    .filter(d -> Boolean.TRUE.equals(d.getTrangThai()))
-                    .collect(Collectors.toList());
+            return danhMucRepository.findByTrangThaiTrue();
         } catch (Exception e) {
             return List.of();
         }
@@ -112,9 +110,7 @@ public class GlobalNotificationAdvice {
     @ModelAttribute("globalBrands")
     public List<ThuongHieu> getGlobalBrands() {
         try {
-            return thuongHieuRepository.findAll().stream()
-                    .filter(t -> Boolean.TRUE.equals(t.getTrangThai()))
-                    .collect(Collectors.toList());
+            return thuongHieuRepository.findByTrangThaiTrue();
         } catch (Exception e) {
             return List.of();
         }

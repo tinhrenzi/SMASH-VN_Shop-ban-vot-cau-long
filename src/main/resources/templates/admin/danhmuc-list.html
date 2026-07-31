@@ -99,54 +99,68 @@
                                 <span class="badge bg-primary" th:text="${listDanhMuc.size()} + ' danh mục'"></span>
                             </div>
                             <div class="card-body p-0">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 50px;" class="text-center">STT</th>
-                                            <th style="width: 70px;">Mã DM</th>
-                                            <th>Tên Danh Mục &amp; Loại Thuộc Tính</th>
-                                            <th class="text-center" style="width: 120px;">Hành Động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbodyDanhMuc">
-                                        <tr th:each="dm, iterStat : ${listDanhMuc}" th:attr="data-id=${dm.id}">
-                                            <td class="text-center" th:text="${iterStat.count}">1</td>
-                                            <td class="text-muted fw-bold"
-                                                style="font-family: monospace; font-size: 0.9rem;"
-                                                th:text="'#' + ${dm.id}">#1</td>
-                                            <td>
-                                                <div class="fw-semibold text-secondary dm-name"
-                                                    th:text="${dm.tenDanhMuc}">Vot Cau Long</div>
-                                                <div class="mt-1 small">
-                                                    <span class="badge bg-info text-dark me-1 mb-1"
-                                                        th:each="tt : ${dm.thuocTinhList}"
-                                                        th:text="${tt.tenThuocTinh}"></span>
-                                                    <span class="badge bg-light text-muted me-1"
-                                                        th:if="${dm.thuocTinhList.isEmpty()}">Chưa có thuộc tính</span>
-                                                </div>
-                                            </td>
-                                            <td class="text-center text-nowrap">
-                                                <button type="button" class="btn btn-warning btn-action-square"
-                                                    th:attr="data-id=${dm.id},data-ten=${dm.tenDanhMuc}"
-                                                    onclick="moModalSuaDanhMuc(this)" title="Sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <form th:action="@{/admin/danh-muc/xoa/{id}(id=${dm.id})}" method="POST"
-                                                    style="display:inline;"
-                                                    onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
-                                                    <input type="hidden" th:if="${_csrf != null}"
-                                                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                    <button type="submit" class="btn btn-danger btn-action-square ms-1"
-                                                        title="Xóa"><i class="fas fa-trash-alt"></i></button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        <tr th:if="${listDanhMuc.isEmpty()}">
-                                            <td colspan="4" class="text-center text-muted py-4">Chưa có danh mục nào.
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 45px;" class="text-center">STT</th>
+                                                <th style="width: 60px;">Mã DM</th>
+                                                <th>Tên Danh Mục &amp; Loại Thuộc Tính</th>
+                                                <th class="text-center" style="width: 95px;">Trạng Thái</th>
+                                                <th class="text-center" style="width: 90px;">Hành Động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyDanhMuc">
+                                            <tr th:each="dm, iterStat : ${listDanhMuc}" th:attr="data-id=${dm.id}">
+                                                <td class="text-center" th:text="${iterStat.count}">1</td>
+                                                <td class="text-muted fw-bold"
+                                                    style="font-family: monospace; font-size: 0.9rem;"
+                                                    th:text="'#' + ${dm.id}">#1</td>
+                                                <td>
+                                                    <div class="fw-semibold text-secondary dm-name"
+                                                        th:text="${dm.tenDanhMuc}">Vot Cau Long</div>
+                                                    <div class="mt-1 small">
+                                                        <span class="badge bg-info text-dark me-1 mb-1"
+                                                            th:each="tt : ${dm.thuocTinhList}"
+                                                            th:text="${tt.tenThuocTinh}"></span>
+                                                        <span class="badge bg-light text-muted me-1"
+                                                            th:if="${dm.thuocTinhList.isEmpty()}">Chưa có thuộc tính</span>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span th:if="${dm.trangThai}" class="badge bg-success">Hiển thị</span>
+                                                    <span th:unless="${dm.trangThai}" class="badge bg-secondary">Đã ẩn</span>
+                                                </td>
+                                                <td class="text-center text-nowrap">
+                                                    <button type="button" class="btn btn-warning btn-action-square"
+                                                        th:attr="data-id=${dm.id},data-ten=${dm.tenDanhMuc}"
+                                                        onclick="moModalSuaDanhMuc(this)" title="Sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form th:action="@{/admin/danh-muc/an/{id}(id=${dm.id})}" method="POST"
+                                                        style="display:inline;">
+                                                        <input type="hidden" th:if="${_csrf != null}"
+                                                            th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <button type="submit" th:if="${dm.trangThai}" class="btn btn-secondary btn-action-square ms-1"
+                                                            title="Ẩn danh mục khỏi người dùng"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn ẩn danh mục này khỏi giao diện người dùng?');">
+                                                            <i class="fas fa-eye-slash"></i>
+                                                        </button>
+                                                        <button type="submit" th:unless="${dm.trangThai}" class="btn btn-success btn-action-square ms-1"
+                                                            title="Hiển thị danh mục trên giao diện người dùng"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn hiển thị lại danh mục này?');">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            <tr th:if="${listDanhMuc.isEmpty()}">
+                                                <td colspan="5" class="text-center text-muted py-4">Chưa có danh mục nào.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -185,45 +199,59 @@
                                 <span class="badge bg-primary" th:text="${listThuongHieu.size()} + ' hãng'"></span>
                             </div>
                             <div class="card-body p-0">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 60px;" class="text-center">STT</th>
-                                            <th style="width: 80px;">Mã TH</th>
-                                            <th>Tên Hãng / Thương Hiệu</th>
-                                            <th class="text-center" style="width: 140px;">Hành Động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbodyThuongHieu">
-                                        <tr th:each="th, iterStat : ${listThuongHieu}" th:attr="data-id=${th.id}">
-                                            <td class="text-center" th:text="${iterStat.count}">1</td>
-                                            <td class="text-muted fw-bold"
-                                                style="font-family: monospace; font-size: 0.9rem;"
-                                                th:text="'#' + ${th.id}">#1</td>
-                                            <td class="fw-semibold text-secondary th-name"
-                                                th:text="${th.tenThuongHieu}">Yonex</td>
-                                            <td class="text-center text-nowrap">
-                                                <button type="button" class="btn btn-warning btn-action-square"
-                                                    th:attr="data-id=${th.id},data-ten=${th.tenThuongHieu}"
-                                                    onclick="moModalSuaThuongHieu(this)" title="Sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <form th:action="@{/admin/danh-muc/thuong-hieu/xoa/{id}(id=${th.id})}"
-                                                    method="POST" style="display:inline;"
-                                                    onsubmit="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
-                                                    <input type="hidden" th:if="${_csrf != null}"
-                                                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                    <button type="submit" class="btn btn-danger btn-action-square ms-1"
-                                                        title="Xóa"><i class="fas fa-trash-alt"></i></button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        <tr th:if="${listThuongHieu.isEmpty()}">
-                                            <td colspan="4" class="text-center text-muted py-4">Chưa có thương hiệu nào.
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 45px;" class="text-center">STT</th>
+                                                <th style="width: 60px;">Mã TH</th>
+                                                <th>Tên Hãng / Thương Hiệu</th>
+                                                <th class="text-center" style="width: 95px;">Trạng Thái</th>
+                                                <th class="text-center" style="width: 90px;">Hành Động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyThuongHieu">
+                                            <tr th:each="th, iterStat : ${listThuongHieu}" th:attr="data-id=${th.id}">
+                                                <td class="text-center" th:text="${iterStat.count}">1</td>
+                                                <td class="text-muted fw-bold"
+                                                    style="font-family: monospace; font-size: 0.9rem;"
+                                                    th:text="'#' + ${th.id}">#1</td>
+                                                <td class="fw-semibold text-secondary th-name"
+                                                    th:text="${th.tenThuongHieu}">Yonex</td>
+                                                <td class="text-center">
+                                                    <span th:if="${th.trangThai}" class="badge bg-success">Hiển thị</span>
+                                                    <span th:unless="${th.trangThai}" class="badge bg-secondary">Đã ẩn</span>
+                                                </td>
+                                                <td class="text-center text-nowrap">
+                                                    <button type="button" class="btn btn-warning btn-action-square"
+                                                        th:attr="data-id=${th.id},data-ten=${th.tenThuongHieu}"
+                                                        onclick="moModalSuaThuongHieu(this)" title="Sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form th:action="@{/admin/danh-muc/thuong-hieu/an/{id}(id=${th.id})}"
+                                                        method="POST" style="display:inline;">
+                                                        <input type="hidden" th:if="${_csrf != null}"
+                                                            th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <button type="submit" th:if="${th.trangThai}" class="btn btn-secondary btn-action-square ms-1"
+                                                            title="Ẩn thương hiệu khỏi người dùng"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn ẩn thương hiệu này khỏi giao diện người dùng?');">
+                                                            <i class="fas fa-eye-slash"></i>
+                                                        </button>
+                                                        <button type="submit" th:unless="${th.trangThai}" class="btn btn-success btn-action-square ms-1"
+                                                            title="Hiển thị thương hiệu trên giao diện người dùng"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn hiển thị lại thương hiệu này?');">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            <tr th:if="${listThuongHieu.isEmpty()}">
+                                                <td colspan="5" class="text-center text-muted py-4">Chưa có thương hiệu nào.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

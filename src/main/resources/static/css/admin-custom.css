@@ -385,6 +385,10 @@ body {
     background-color: #6c757d;
 }
 
+.stat-card-premium.accent-info::before {
+    background-color: #0ea5e9;
+}
+
 /* Perfect Circle Icon Wrappers */
 .stat-icon-wrapper {
     width: 52px !important;

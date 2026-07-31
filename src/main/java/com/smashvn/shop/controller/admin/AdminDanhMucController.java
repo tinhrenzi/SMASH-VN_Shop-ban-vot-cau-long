@@ -84,17 +84,17 @@ public class AdminDanhMucController {
         return "redirect:/admin/danh-muc";
     }
 
-    @PostMapping("/xoa/{id}")
-    public String xoaDanhMuc(
+    @PostMapping({"/an/{id}", "/xoa/{id}"})
+    public String anHoacHienDanhMuc(
             @PathVariable("id") Integer id,
             RedirectAttributes redirectAttributes) {
         try {
-            if (sanPhamRepository.existsByDanhMucId(id)) {
-                throw new IllegalArgumentException(
-                        "Không thể xóa danh mục này vì đang có sản phẩm thuộc danh mục!");
+            com.smashvn.shop.entity.DanhMuc dm = danhMucService.anHoacHienDanhMuc(id);
+            if (Boolean.TRUE.equals(dm.getTrangThai())) {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã hiển thị danh mục trên giao diện người dùng!");
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã ẩn danh mục khỏi giao diện người dùng thành công!");
             }
-            danhMucRepository.deleteById(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Xóa danh mục thành công!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -137,17 +137,17 @@ public class AdminDanhMucController {
         return "redirect:/admin/danh-muc";
     }
 
-    @PostMapping("/thuong-hieu/xoa/{id}")
-    public String xoaThuongHieu(
+    @PostMapping({"/thuong-hieu/an/{id}", "/thuong-hieu/xoa/{id}"})
+    public String anHoacHienThuongHieu(
             @PathVariable("id") Integer id,
             RedirectAttributes redirectAttributes) {
         try {
-            if (sanPhamRepository.existsByThuongHieuId(id)) {
-                throw new IllegalArgumentException(
-                        "Không thể xóa thương hiệu này vì đang có sản phẩm thuộc thương hiệu!");
+            com.smashvn.shop.entity.ThuongHieu th = thuongHieuService.anHoacHienThuongHieu(id);
+            if (Boolean.TRUE.equals(th.getTrangThai())) {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã hiển thị thương hiệu trên giao diện người dùng!");
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã ẩn thương hiệu khỏi giao diện người dùng thành công!");
             }
-            thuongHieuRepository.deleteById(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Xóa thương hiệu thành công!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }

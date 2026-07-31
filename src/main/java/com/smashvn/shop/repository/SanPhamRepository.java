@@ -67,6 +67,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThaiValue = true " +
+           "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
+           "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) " +
            "AND (:keyword IS NULL OR :keyword = '' OR " +
            "       LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -96,26 +98,28 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      * Tìm kiếm nhanh (autocomplete) - trả về tối đa 8 sản phẩm đang bán phù hợp từ khóa.
      */
     @Query("SELECT sp FROM SanPham sp " +
-           "WHERE sp.trangThaiValue = true AND " +
+           "WHERE sp.trangThaiValue = true " +
+           "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
+           "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND " +
            "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "ORDER BY sp.id DESC")
     java.util.List<SanPham> searchAutocomplete(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN sp.sanPhamChiTiets spct JOIN spct.sanPhamChiTietThuocTinhs att WHERE att.giaTri = :trongLuong AND sp.trangThaiValue = true AND spct.trangThaiValue = true")
+    @Query("SELECT COUNT(DISTINCT sp) FROM SanPham sp JOIN sp.sanPhamChiTiets spct JOIN spct.sanPhamChiTietThuocTinhs att WHERE att.giaTri = :trongLuong AND sp.trangThaiValue = true AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND spct.trangThaiValue = true")
     long countByTrongLuong(@Param("trongLuong") String trongLuong);
 
 
     /**
      * Lấy giá thấp nhất trong toàn bộ sản phẩm (để khởi tạo slider)
      */
-    @Query("SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.trangThaiValue = true")
+    @Query("SELECT MIN(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.trangThaiValue = true AND (spct.sanPham.danhMuc IS NULL OR spct.sanPham.danhMuc.trangThai = true) AND (spct.sanPham.thuongHieu IS NULL OR spct.sanPham.thuongHieu.trangThai = true)")
     BigDecimal findMinPrice();
 
     /**
      * Lấy giá cao nhất trong toàn bộ sản phẩm (để khởi tạo slider)
      */
-    @Query("SELECT MAX(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.trangThaiValue = true")
+    @Query("SELECT MAX(spct.giaBan) FROM SanPhamChiTiet spct WHERE spct.trangThaiValue = true AND (spct.sanPham.danhMuc IS NULL OR spct.sanPham.danhMuc.trangThai = true) AND (spct.sanPham.thuongHieu IS NULL OR spct.sanPham.thuongHieu.trangThai = true)")
     BigDecimal findMaxPrice();
 
     /**
@@ -123,6 +127,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThaiValue = true " +
+           "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
+           "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) " +
            "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp AND spct2.trangThaiValue = true) > 0) THEN 1 ELSE 0 END DESC, sp.id DESC")
     java.util.List<SanPham> findNewProducts(Pageable pageable);
 
@@ -131,6 +137,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThaiValue = true " +
+           "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
+           "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) " +
            "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp AND spct2.trangThaiValue = true) > 0) THEN 1 ELSE 0 END DESC, " +
            "         (SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct " +
            "          WHERE hdct.sanPhamChiTiet.sanPham = sp) DESC, sp.id DESC")
@@ -141,6 +149,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
      */
     @Query("SELECT sp FROM SanPham sp " +
            "WHERE sp.trangThaiValue = true " +
+           "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
+           "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) " +
            "ORDER BY CASE WHEN ((SELECT COALESCE(SUM(spct2.soLuongTon), 0) FROM SanPhamChiTiet spct2 WHERE spct2.sanPham = sp AND spct2.trangThaiValue = true) > 0) THEN 1 ELSE 0 END DESC, " +
            "         ((SELECT COALESCE(SUM(hdct.soLuong), 0) FROM HoaDonChiTiet hdct WHERE hdct.sanPhamChiTiet.sanPham = sp) + " +
            "          (SELECT COUNT(spy) FROM SanPhamYeuThich spy WHERE spy.sanPham = sp)) DESC, sp.id DESC")
@@ -148,12 +158,14 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
     @Query("SELECT sp FROM SanPham sp WHERE " +
            "sp.trangThaiValue = true AND " +
+           "(sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND " +
+           "(sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND " +
            "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     java.util.List<SanPham> searchByKeyword(@Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.trangThaiValue = true")
+    @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.trangThaiValue = true AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true)")
     long countActiveProducts();
 
     @Query("SELECT sp FROM SanPham sp WHERE sp.trangThaiValue = false AND (" +
@@ -164,6 +176,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
     @Query("SELECT DISTINCT sp FROM SanPham sp JOIN sp.sanPhamChiTiets spct WHERE " +
            "sp.trangThaiValue = true AND " +
+           "(sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND " +
+           "(sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND " +
            "(:keyword IS NULL OR :keyword = '' OR LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
            "spct.trangThaiValue = true AND " +
            "(:minPrice IS NULL OR spct.giaBan >= :minPrice) AND " +

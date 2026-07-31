@@ -44,10 +44,21 @@
         }
 
         /* Custom cell paddings to fit desktop perfectly */
-        #orderTable th, #orderTable td {
+        #onlineOrderTable th, #onlineOrderTable td, #posOrderTable th, #posOrderTable td {
             padding: 12px 8px !important;
             font-size: 0.88rem;
             vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .tab-content .table td.customer-cell {
+            white-space: normal !important;
+            min-width: 150px;
+        }
+
+        .tab-content .badge {
+            white-space: nowrap !important;
+            display: inline-block;
         }
         
         /* Specific widths for buttons inside form to prevent wrapping */
@@ -181,41 +192,41 @@
                                             <td class="text-nowrap">
                                                 <code class="text-dark order-code-text" style="font-size: 0.82rem;" th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}" th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
                                             </td>
-                                            <td>
+                                            <td class="customer-cell">
                                                 <div style="font-weight: 700; color: #1e2229;" th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}" th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">John Doe</div>
                                                 <small class="text-muted text-nowrap" th:text="${hd.sdtNhan}"></small>
                                             </td>
                                             <td class="text-nowrap" th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
                                             <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
                                             <td>
-                                                <span class="badge bg-dark text-white text-wrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
+                                                <span class="badge bg-dark text-white text-nowrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
                                                 <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
-                                                       th:class="'badge border mt-1 text-wrap ' + ${statusInfo.badgeClass}" 
+                                                       th:class="'badge border mt-1 text-nowrap ' + ${statusInfo.badgeClass}" 
                                                        th:text="${statusInfo.label}">Chưa thanh toán</small>
-                                                <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-wrap" style="font-size: 0.75rem;">
+                                                <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-nowrap" style="font-size: 0.75rem;">
                                                     <span class="text-muted">Mã GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
                                                 </div>
                                             </td>
                                             <td>
-                                                <span class="badge bg-light text-dark border text-wrap" 
+                                                <span class="badge bg-light text-dark border text-nowrap" 
                                                       th:text="${hd.donViVanChuyen != null ? 
                                                                 (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG NHANH') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG NHANH') ? 'GHN' : 
                                                                 (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG TIẾT KIỆM') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG TIET KIEM') ? 'GHTK' : 
                                                                 (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHTK</span>
                                             </td>
                                             <td>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold text-wrap">
+                                                <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold text-nowrap">
                                                     <i class="fas fa-check-circle me-1"></i>Đã giao
                                                 </span>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="badge bg-warning text-dark py-2 px-3 fw-bold text-wrap">
+                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="badge bg-warning text-dark py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                 </span>
                                                 <span th:if="${hd.trangThaiDonHang == 'da_giao' || hd.trangThaiDonHang == 'da_huy'}" class="d-none"></span>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="badge bg-danger py-2 px-3 fw-bold text-wrap">
+                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="badge bg-danger py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                 </span>
                                                 <span th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
-                                                      th:class="'badge py-2 px-3 fw-bold text-wrap ' + 
+                                                      th:class="'badge py-2 px-3 fw-bold text-nowrap ' + 
                                                                 (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'bg-secondary' : 
                                                                 (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'bg-warning text-dark' : 
                                                                 (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'bg-primary' : 
@@ -303,7 +314,6 @@
                                         <col style="width: 110px;"> <!-- Ngày Tạo -->
                                         <col style="width: 100px;"> <!-- Tổng Tiền -->
                                         <col style="width: 135px;"> <!-- Thanh Toán -->
-                                        <col style="width: 90px;"> <!-- Vận Chuyển -->
                                         <col style="width: 110px;"> <!-- Trạng Thái HĐ -->
                                         <col style="width: 120px;"> <!-- Thao tác -->
                                     </colgroup>
@@ -316,7 +326,6 @@
                                             <th>Ngày Tạo</th>
                                             <th>Tổng Tiền</th>
                                             <th>Thanh Toán</th>
-                                            <th>Vận Chuyển</th>
                                             <th>Trạng Thái HĐ</th>
                                             <th>Thao tác</th>
                                         </tr>
@@ -328,41 +337,35 @@
                                             <td class="text-nowrap">
                                                 <code class="text-dark order-code-text" style="font-size: 0.82rem;" th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}" th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
                                             </td>
-                                            <td>
+                                            <td class="customer-cell">
                                                 <div style="font-weight: 700; color: #1e2229;" th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}" th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">John Doe</div>
                                                 <small class="text-muted text-nowrap" th:text="${hd.sdtNhan}"></small>
                                             </td>
                                             <td class="text-nowrap" th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
                                             <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
                                             <td>
-                                                <span class="badge bg-dark text-white text-wrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
+                                                <span class="badge bg-dark text-white text-nowrap" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
                                                 <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
-                                                       th:class="'badge border mt-1 text-wrap ' + ${statusInfo.badgeClass}" 
+                                                       th:class="'badge border mt-1 text-nowrap ' + ${statusInfo.badgeClass}" 
                                                        th:text="${statusInfo.label}">Chưa thanh toán</small>
-                                                <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-wrap" style="font-size: 0.75rem;">
+                                                <div th:if="${hd.maGiaoDich != null && !hd.maGiaoDich.isEmpty()}" class="mt-1 text-nowrap" style="font-size: 0.75rem;">
                                                     <span class="text-muted">Mã GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
                                                 </div>
                                             </td>
+
                                             <td>
-                                                <span class="badge bg-light text-dark border text-wrap" 
-                                                      th:text="${hd.donViVanChuyen != null ? 
-                                                                (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG NHANH') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG NHANH') ? 'GHN' : 
-                                                                (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG TIẾT KIỆM') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG TIET KIEM') ? 'GHTK' : 
-                                                                (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHTK</span>
-                                            </td>
-                                            <td>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold text-wrap">
-                                                    <i class="fas fa-check-circle me-1"></i>Đã giao
+                                                <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold text-nowrap">
+                                                    <i class="fas fa-check-circle me-1"></i>Hoàn thành
                                                 </span>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="badge bg-warning text-dark py-2 px-3 fw-bold text-wrap">
+                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="badge bg-warning text-dark py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                 </span>
                                                 <span th:if="${hd.trangThaiDonHang == 'da_giao' || hd.trangThaiDonHang == 'da_huy'}" class="d-none"></span>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="badge bg-danger py-2 px-3 fw-bold text-wrap">
+                                                <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="badge bg-danger py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                 </span>
                                                 <span th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
-                                                      th:class="'badge py-2 px-3 fw-bold text-wrap ' + 
+                                                      th:class="'badge py-2 px-3 fw-bold text-nowrap ' + 
                                                                 (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'bg-secondary' : 
                                                                 (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'bg-warning text-dark' : 
                                                                 (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'bg-primary' : 
@@ -431,7 +434,7 @@
                                             </td>
                                         </tr>
                                         <tr th:if="${danhSachDonHangPos.isEmpty()}">
-                                            <td colspan="10" class="text-center text-muted py-4">Chưa có hóa đơn bán tại quầy nào trong hệ thống.</td>
+                                            <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán tại quầy nào trong hệ thống.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -512,7 +515,7 @@
                         </select>
                     </div>
                     <div class="mb-3" id="adminCustomReasonWrapper" style="display: none;">
-                        <textarea class="form-control" id="adminCustomCancelReason" placeholder="Vui lòng nhập lý do hủy chi tiết tại đây..." rows="3"></textarea>
+                        <textarea class="form-control" id="adminCustomCancelReason" oninput="toggleAdminCancelReasonTextarea()" placeholder="Vui lòng nhập lý do hủy chi tiết tại đây..." rows="3"></textarea>
                         <div id="adminCancelReasonError" class="text-danger mt-1 fw-bold" style="display: none; font-size: 13px;">
                             ⚠️ Vui lòng điền lý do hủy đơn.
                         </div>
@@ -1051,14 +1054,17 @@ window.toggleAdminCancelReasonTextarea = function() {
     const select = document.getElementById('adminCancelReasonSelect');
     const wrapper = document.getElementById('adminCustomReasonWrapper');
     const textarea = document.getElementById('adminCustomCancelReason');
+    const finalInput = document.getElementById('adminCancelReasonFinal');
     const errDiv = document.getElementById('adminCancelReasonError');
     if (errDiv) errDiv.style.display = 'none';
-    if (select && wrapper && textarea) {
+    if (select && wrapper && finalInput) {
         if (select.value === 'Khác') {
             wrapper.style.display = 'block';
+            finalInput.value = textarea ? textarea.value.trim() : '';
         } else {
             wrapper.style.display = 'none';
-            textarea.value = '';
+            if (textarea) textarea.value = '';
+            finalInput.value = select.value;
         }
     }
 };
@@ -1068,9 +1074,10 @@ window.extractCancelReason = function(ghiChu) {
     const prefix = "Lý do hủy:";
     const idx = ghiChu.lastIndexOf(prefix);
     if (idx !== -1) {
-        return ghiChu.substring(idx + prefix.length).trim() || "Không cung cấp lý do";
+        const extracted = ghiChu.substring(idx + prefix.length).trim();
+        return extracted || "Không cung cấp lý do";
     }
-    return "Không cung cấp lý do";
+    return ghiChu.trim() || "Không cung cấp lý do";
 };
 
 window.openAdminCancelModal = function(btn) {
@@ -1086,11 +1093,17 @@ window.openAdminCancelModal = function(btn) {
     const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
     document.getElementById('adminCancelCsrf').value = csrfToken;
     
-    // Reset modal inputs
-    document.getElementById('adminCancelReasonSelect').value = 'Khách hàng yêu cầu hủy';
-    document.getElementById('adminCustomCancelReason').value = '';
-    document.getElementById('adminCustomReasonWrapper').style.display = 'none';
-    document.getElementById('adminCancelReasonError').style.display = 'none';
+    // Reset modal inputs & set default final reason
+    const select = document.getElementById('adminCancelReasonSelect');
+    if (select) select.value = 'Khách hàng yêu cầu hủy';
+    const finalInput = document.getElementById('adminCancelReasonFinal');
+    if (finalInput) finalInput.value = 'Khách hàng yêu cầu hủy';
+    const textarea = document.getElementById('adminCustomCancelReason');
+    if (textarea) textarea.value = '';
+    const wrapper = document.getElementById('adminCustomReasonWrapper');
+    if (wrapper) wrapper.style.display = 'none';
+    const errDiv = document.getElementById('adminCancelReasonError');
+    if (errDiv) errDiv.style.display = 'none';
     
     const modal = new bootstrap.Modal(document.getElementById('adminCancelOrderModal'));
     modal.show();
@@ -1112,9 +1125,9 @@ document.getElementById('adminCancelOrderForm').addEventListener('submit', funct
     const errDiv = document.getElementById('adminCancelReasonError');
     if (errDiv) errDiv.style.display = 'none';
 
-    let finalReason = select.value;
+    let finalReason = select ? select.value : 'Khách hàng yêu cầu hủy';
     if (finalReason === 'Khác') {
-        finalReason = textarea.value.trim();
+        finalReason = textarea ? textarea.value.trim() : '';
         if (!finalReason) {
             e.preventDefault();
             if (errDiv) errDiv.style.display = 'block';

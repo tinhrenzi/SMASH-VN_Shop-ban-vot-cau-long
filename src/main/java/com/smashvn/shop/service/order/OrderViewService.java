@@ -273,14 +273,16 @@ public class OrderViewService {
                 hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue()); // "da_huy"
                 String refundLogNote = "";
 
-                String standardizedReason = "Không cung cấp lý do";
+                String standardizedReason = "Khách hàng yêu cầu hủy";
                 if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
                     String trimmed = lyDoHuy.trim();
                     String sanitized = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
                     if (sanitized.length() > 500) {
                         throw new IllegalArgumentException("Lý do hủy không được vượt quá 500 ký tự.");
                     }
-                    standardizedReason = sanitized;
+                    if (!sanitized.isEmpty()) {
+                        standardizedReason = sanitized;
+                    }
                 }
 
                 String addition = "Lý do hủy: " + standardizedReason;
@@ -501,14 +503,16 @@ public class OrderViewService {
                 }
             }
         } else if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus)) {
-            String standardizedReason = "Không cung cấp lý do";
+            String standardizedReason = "Khách hàng yêu cầu hủy";
             if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
                 String trimmed = lyDoHuy.trim();
                 String sanitized = org.jsoup.Jsoup.clean(trimmed, org.jsoup.safety.Safelist.none());
                 if (sanitized.length() > 500) {
                     throw new IllegalArgumentException("Lý do hủy không được vượt quá 500 ký tự.");
                 }
-                standardizedReason = sanitized;
+                if (!sanitized.isEmpty()) {
+                    standardizedReason = sanitized;
+                }
             }
 
             String pm = hd.getPaymentMethod();
@@ -568,7 +572,7 @@ public class OrderViewService {
         }
 
         if (OrderStatus.DA_HUY.getValue().equalsIgnoreCase(newStatus) && "CHO_HOAN_TIEN".equals(hd.getTrangThaiThanhToan())) {
-            String standardizedReason = "Không cung cấp lý do";
+            String standardizedReason = "Khách hàng yêu cầu hủy";
             if (lyDoHuy != null && !lyDoHuy.trim().isEmpty()) {
                 standardizedReason = lyDoHuy.trim();
             }
