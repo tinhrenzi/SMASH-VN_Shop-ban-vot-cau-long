@@ -198,6 +198,8 @@ public class AdminBienTheService {
             trongLuong = null;
             kichThuoc = null;
             mucCang = null;
+        } else if (mauSac != null) {
+            mauSac = mauSac.replaceAll("(?i),\\s*Mặc\\s*định", "").trim();
         }
 
         String cleanMauSac = normalizeText(mauSac);

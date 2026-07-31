@@ -3,9 +3,12 @@ package com.smashvn.shop.controller.admin;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.PaymentTransaction;
@@ -37,6 +40,7 @@ public class AdminController {
     private final OrderViewService orderViewService;
     private final com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
@@ -174,6 +178,83 @@ public class AdminController {
     public String hienThiDanhSachKhachHang(Model model) {
         model.addAttribute("danhSachKhachHang", khachHangRepository.findByTaiKhoan_VaiTro("KH"));
         return "admin/khachhang-list";
+    }
+
+    @GetMapping("/khach-hang/api/{id}")
+    @ResponseBody
+    public ResponseEntity<?> getChiTietKhachHangApi(@PathVariable("id") Integer idKhachHang) {
+        com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findById(idKhachHang).orElse(null);
+        if (kh == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        java.util.List<com.smashvn.shop.entity.HoaDon> hoaDons = hoaDonRepository.findByKhachHang_IdOrderByIdDesc(idKhachHang);
+
+        long tongDonHoanThanh = hoaDons.stream()
+                .filter(hd -> {
+                    String st = hd.getTrangThaiDonHang();
+                    return st != null && ("da_giao".equalsIgnoreCase(st) || "hoan_thanh".equalsIgnoreCase(st));
+                })
+                .count();
+
+        java.math.BigDecimal tongChiTieu = hoaDons.stream()
+                .filter(hd -> {
+                    String st = hd.getTrangThaiDonHang();
+                    return st != null && ("da_giao".equalsIgnoreCase(st) || "hoan_thanh".equalsIgnoreCase(st));
+                })
+                .map(hd -> hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        java.util.List<com.smashvn.shop.entity.SoDiaChi> diaChis = soDiaChiRepository.findByKhachHang_Id(idKhachHang);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", kh.getId());
+        response.put("maKhachHang", "KH" + kh.getId());
+        response.put("hoTen", kh.getHoTenKh() != null ? kh.getHoTenKh() : "Khách Hàng");
+        response.put("username", kh.getTaiKhoan() != null ? kh.getTaiKhoan().getUsername() : "Khách vãng lai / POS");
+        response.put("soDienThoai", (kh.getSoDienThoaiKh() != null && !kh.getSoDienThoaiKh().isBlank()) ? kh.getSoDienThoaiKh() : "Chưa cập nhật");
+
+        String trangThai = "Không có tài khoản";
+        if (kh.getTaiKhoan() != null) {
+            trangThai = "hoat_dong".equalsIgnoreCase(kh.getTaiKhoan().getTrangThai()) ? "Hoạt động" : "Bị khóa";
+        }
+        response.put("trangThaiTaiKhoan", trangThai);
+
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        response.put("ngayTaoFormatted", kh.getNgayTao() != null ? kh.getNgayTao().format(dtf) : "N/A");
+
+        response.put("tongDonHoanThanh", tongDonHoanThanh);
+        response.put("tongChiTieuRaw", tongChiTieu);
+        response.put("tongChiTieuFormatted", String.format("%,d ₫", tongChiTieu.longValue()));
+        response.put("tongSoDonHang", hoaDons.size());
+
+        java.util.List<java.util.Map<String, Object>> listDiaChiMap = diaChis.stream().map(dc -> {
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("hoTenNguoiNhan", dc.getHoVaTenNguoiNhan());
+            item.put("sdtNguoiNhan", dc.getSdtNguoiNhan());
+            StringBuilder fullAddr = new StringBuilder(dc.getDiaChiCuThe() != null ? dc.getDiaChiCuThe() : "");
+            if (dc.getPhuongXa() != null && !dc.getPhuongXa().isBlank()) fullAddr.append(", ").append(dc.getPhuongXa());
+            if (dc.getQuanHuyen() != null && !dc.getQuanHuyen().isBlank()) fullAddr.append(", ").append(dc.getQuanHuyen());
+            if (dc.getTinhThanh() != null && !dc.getTinhThanh().isBlank()) fullAddr.append(", ").append(dc.getTinhThanh());
+            item.put("diaChiFull", fullAddr.toString());
+            item.put("laMacDinh", dc.isDiaChiMacDinh());
+            return item;
+        }).collect(java.util.stream.Collectors.toList());
+        response.put("danhSachDiaChi", listDiaChiMap);
+
+        java.util.List<java.util.Map<String, Object>> listDonHangMap = hoaDons.stream().limit(10).map(hd -> {
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("id", hd.getId());
+            item.put("maDonHang", hd.getMaDonHang());
+            item.put("ngayTaoFormatted", hd.getNgayTao() != null ? hd.getNgayTao().format(dtf) : "N/A");
+            item.put("tongTienFormatted", hd.getTongTien() != null ? String.format("%,d ₫", hd.getTongTien().longValue()) : "0 ₫");
+            item.put("trangThaiDonHang", hd.getTrangThaiDonHang());
+            item.put("trangThaiThanhToan", hd.getTrangThaiThanhToan());
+            return item;
+        }).collect(java.util.stream.Collectors.toList());
+        response.put("danhSachDonHang", listDonHangMap);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/khuyen-mai")

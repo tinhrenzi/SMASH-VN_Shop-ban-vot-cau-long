@@ -143,32 +143,22 @@
 								    <div class="u-s-m-b-15">
 								        <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
 								
-								            <div class="u-s-m-b-15" th:if="${listMauSac != null and !listMauSac.isEmpty()}">
-								                <span class="pd-detail__label u-s-m-b-8">1. Màu sắc:</span>
+								            <!-- Chọn thuộc tính động -->
+								            <div class="u-s-m-b-15" th:each="entry, iterStat : ${dynamicAttributes}">
+								                <span class="pd-detail__label u-s-m-b-8" th:text="${iterStat.count} + '. ' + ${entry.key} + ':'">Thuộc tính:</span>
 								                <div class="d-flex flex-wrap">
-								                    <div th:each="mau : ${listMauSac}" 
-								                         class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
-								                         th:attr="data-color=${mau}"
-								                         onclick="selectColor(this)">
-								                        <span th:text="${mau}"></span>
-								                    </div>
-								                </div>
-								            </div>
-								        
-								            <div class="u-s-m-b-15" th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
-								                <span class="pd-detail__label u-s-m-b-8">2. Trọng lượng / Size:</span>
-								                <div class="d-flex flex-wrap">
-								                    <div th:each="size : ${listKichThuoc}" 
-								                         class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
-								                         th:attr="data-size=${size}"
-								                         onclick="selectSize(this)">
-								                        <span th:text="${size}"></span>
+								                    <div th:each="val : ${entry.value}" 
+								                         class="variant-btn u-s-m-r-8 u-s-m-b-8 dynamic-attr-btn"
+								                         th:classappend="'attr-btn-' + ${#strings.replace(entry.key, ' ', '_')}"
+								                         th:attr="data-attr-name=${entry.key}, data-attr-value=${val}"
+								                         onclick="selectDynamicAttribute(this)">
+								                        <span th:text="${val}"></span>
 								                    </div>
 								                </div>
 								            </div>
 								        
 								            <div class="js-stock-status u-s-m-b-15 text-danger fw-bold" style="display:none;">
-								                <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ Màu sắc và Kích thước
+								                <i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ các thuộc tính phân loại.
 								            </div>
 
 								            <!-- Hiển thị số lượng tồn kho của biến thể được chọn -->
@@ -248,48 +238,30 @@
                                             <div class="u-s-m-b-15">
                                                 <div class="pd-table gl-scroll">
                                                     <table>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>Thương hiệu</td>
-                                                                <td th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Danh mục sản phẩm</td>
-                                                                <td th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Màu sắc hiện có</td>
-                                                                <td>
-                                                                    <th:block th:if="${listMauSac != null and !listMauSac.isEmpty()}">
-                                                                        <span th:each="mau, iterStat : ${listMauSac}"><span th:text="${mau}"></span><span th:if="${!iterStat.last}">, </span></span>
-                                                                    </th:block>
-                                                                    <span th:if="${listMauSac == null or listMauSac.isEmpty()}">Chưa có thông tin</span>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Size / Trọng lượng</td>
-                                                                <td>
-                                                                    <th:block th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
-                                                                        <span th:each="size, iterStat : ${listKichThuoc}"><span th:text="${size}"></span><span th:if="${!iterStat.last}">, </span></span>
-                                                                    </th:block>
-                                                                    <span th:if="${listKichThuoc == null or listKichThuoc.isEmpty()}">Chưa có thông tin</span>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Sức căng khuyến nghị</td>
-                                                                <td>
-                                                                    <th:block th:if="${listMucCang != null and !listMucCang.isEmpty()}">
-                                                                        <span th:each="cang, iterStat : ${listMucCang}"><span th:text="${cang}"></span><span th:if="${!iterStat.last}">, </span></span>
-                                                                    </th:block>
-                                                                    <span th:if="${listMucCang == null or listMucCang.isEmpty()}">Chưa có thông tin</span>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Đối tượng sử dụng</td>
-                                                                <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
+                                                         <tbody>
+                                                             <tr>
+                                                                 <td>Thương hiệu</td>
+                                                                 <td th:text="${sp.thuongHieu.tenThuongHieu}">Yonex</td>
+                                                             </tr>
+                                                             <tr>
+                                                                 <td>Danh mục sản phẩm</td>
+                                                                 <td th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</td>
+                                                             </tr>
+                                                             <!-- Hiển thị các thuộc tính động của sản phẩm -->
+                                                             <tr th:each="entry : ${dynamicAttributes}">
+                                                                 <td th:text="${entry.key}">Thuộc tính</td>
+                                                                 <td>
+                                                                     <span th:each="val, iterStat : ${entry.value}">
+                                                                         <span th:text="${val}"></span><span th:if="${!iterStat.last}">, </span>
+                                                                     </span>
+                                                                 </td>
+                                                             </tr>
+                                                             <tr>
+                                                                 <td>Đối tượng sử dụng</td>
+                                                                 <td>Người chơi phong trào, bán chuyên và chuyên nghiệp</td>
+                                                             </tr>
+                                                         </tbody>
+                                                     </table>
                                                 </div>
                                             </div>
                                         </div>

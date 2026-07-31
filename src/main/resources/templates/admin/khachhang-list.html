@@ -48,25 +48,30 @@
                                     <th>Họ Tên</th>
                                     <th>Tên đăng nhập</th>
                                     <th>Số Điện Thoại</th>
-                                    <th>Nhận Bản Tin</th>
                                     <th>Trạng Thái</th>
+                                    <th style="width: 130px;" class="text-center">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="kh, iterStat : ${danhSachKhachHang}">
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
-                                    <td class="fw-bold text-primary" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
+                                    <td class="fw-bold text-primary" style="cursor: pointer;" th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
                                     <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan?.username ?: 'Khách vãng lai / POS'}">john@gmail.com</td>
                                     <td th:text="${kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
-                                    <td>
-                                        <span th:if="${kh.nhanBanTin}" class="badge bg-success">Đồng ý</span>
-                                        <span th:unless="${kh.nhanBanTin}" class="badge bg-secondary text-muted">Không</span>
-                                    </td>
                                     <td>
                                         <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-success">Hoạt động</span>
                                         <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai != 'hoat_dong'}" class="badge bg-danger">Bị Khóa</span>
                                         <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary shadow-sm rounded-2 text-nowrap btn-view-khach-hang"
+                                                th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'"
+                                                th:data-id="${kh.id}" 
+                                                title="Xem chi tiết khách hàng">
+                                            <i class="fas fa-eye me-1"></i>Chi tiết
+                                        </button>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">
@@ -81,6 +86,285 @@
     </div>
 </div>
 
+<!-- Modal Chi Tiết Khách Hàng -->
+<div class="modal fade" id="modalChiTietKhachHang" tabindex="-1" aria-labelledby="modalChiTietKhachHangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="modalChiTietKhachHangLabel">
+                    <i class="fas fa-user-circle text-brand me-2"></i>Chi Tiết Khách Hàng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <!-- Loading Spinner -->
+                <div id="modalKhachHangLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="text-muted mt-3 mb-0 fw-semibold">Đang tải thông tin khách hàng...</p>
+                </div>
+
+                <!-- Main Content Body (Hidden initially) -->
+                <div id="modalKhachHangBody" class="d-none">
+                    
+                    <!-- 1. Key Statistics Cards -->
+                    <div class="row g-3 mb-4">
+                        <!-- Card 1: Tổng đơn hoàn thành -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm rounded-3 bg-white h-100 border-start border-success border-4">
+                                <div class="card-body p-3 d-flex align-items-center">
+                                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success">
+                                        <i class="fas fa-check-circle fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase">Đơn Hàng Hoàn Thành</div>
+                                        <div class="fs-4 fw-bold text-success" id="khStatDonHoanThanh">0 đơn</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Tổng chi tiêu -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm rounded-3 bg-white h-100 border-start border-warning border-4">
+                                <div class="card-body p-3 d-flex align-items-center">
+                                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning">
+                                        <i class="fas fa-wallet fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-semibold text-uppercase">Tổng Chi Tiêu</div>
+                                        <div class="fs-4 fw-bold text-dark" id="khStatTongChiTieu">0 ₫</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Thông tin cá nhân -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+                        <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center py-3">
+                            <i class="fas fa-id-card text-primary me-2"></i>Thông Tin Cá Nhân
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Mã Khách Hàng:</span>
+                                    <span class="fw-bold text-dark fs-6" id="khDetailMaKH">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Họ và Tên:</span>
+                                    <span class="fw-bold text-primary fs-6" id="khDetailHoTen">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Tên Đăng Nhập (Email):</span>
+                                    <span class="fw-semibold text-secondary" id="khDetailUsername">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Số Điện Thoại:</span>
+                                    <span class="fw-semibold text-dark" id="khDetailSDT">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Trạng Thái Tài Khoản:</span>
+                                    <span id="khDetailTrangThai">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">Ngày Tham Gia:</span>
+                                    <span class="fw-semibold text-dark" id="khDetailNgayTao">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Sổ Địa Chỉ -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+                        <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center py-3">
+                            <i class="fas fa-map-marker-alt text-danger me-2"></i>Sổ Địa Chỉ Giao Hàng
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="khContainerDiaChi" class="p-3">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Lịch Sử Đơn Hàng Gần Đây -->
+                    <div class="card border-0 shadow-sm rounded-3 bg-white">
+                        <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center justify-content-between py-3">
+                            <span><i class="fas fa-shopping-bag text-info me-2"></i>Lịch Sử Đơn Hàng Gần Đây</span>
+                            <span class="badge bg-light text-dark border" id="khStatTongSoDon">0 đơn</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Mã Đơn</th>
+                                            <th>Ngày Đặt</th>
+                                            <th>Tổng Tiền</th>
+                                            <th>Trạng Thái Đơn</th>
+                                            <th>Thanh Toán</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="khTbodyDonHang">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-0 py-3">
+                <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+window.xemChiTietKhachHang = function(id) {
+    if (!id) return;
+    const modalElement = document.getElementById('modalChiTietKhachHang');
+    if (!modalElement) {
+        console.error('Không tìm thấy modalChiTietKhachHang');
+        return;
+    }
+
+    let modalKhachHang = bootstrap.Modal.getInstance(modalElement);
+    if (!modalKhachHang) {
+        modalKhachHang = new bootstrap.Modal(modalElement);
+    }
+
+    const loadingElem = document.getElementById('modalKhachHangLoading');
+    const bodyElem = document.getElementById('modalKhachHangBody');
+
+    if (loadingElem) loadingElem.classList.remove('d-none');
+    if (bodyElem) bodyElem.classList.add('d-none');
+
+    modalKhachHang.show();
+
+    fetch('/admin/khach-hang/api/' + id)
+        .then(res => {
+            if (!res.ok) throw new Error('Không thể lấy thông tin khách hàng (Mã lỗi ' + res.status + ')');
+            return res.json();
+        })
+        .then(data => {
+            document.getElementById('khStatDonHoanThanh').textContent = (data.tongDonHoanThanh !== undefined ? data.tongDonHoanThanh : 0) + ' đơn';
+            document.getElementById('khStatTongChiTieu').textContent = data.tongChiTieuFormatted || '0 ₫';
+            document.getElementById('khStatTongSoDon').textContent = (data.tongSoDonHang !== undefined ? data.tongSoDonHang : 0) + ' đơn hàng';
+
+            document.getElementById('khDetailMaKH').textContent = data.maKhachHang || ('KH' + id);
+            document.getElementById('khDetailHoTen').textContent = data.hoTen || '-';
+            document.getElementById('khDetailUsername').textContent = data.username || '-';
+            document.getElementById('khDetailSDT').textContent = data.soDienThoai || '-';
+            document.getElementById('khDetailNgayTao').textContent = data.ngayTaoFormatted || '-';
+
+            const statusElem = document.getElementById('khDetailTrangThai');
+            if (statusElem) {
+                if (data.trangThaiTaiKhoan === 'Hoạt động') {
+                    statusElem.innerHTML = '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Hoạt động</span>';
+                } else if (data.trangThaiTaiKhoan === 'Bị khóa') {
+                    statusElem.innerHTML = '<span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Bị Khóa</span>';
+                } else {
+                    statusElem.innerHTML = '<span class="badge bg-secondary">Không có tài khoản</span>';
+                }
+            }
+
+            const addrContainer = document.getElementById('khContainerDiaChi');
+            if (addrContainer) {
+                if (!data.danhSachDiaChi || data.danhSachDiaChi.length === 0) {
+                    addrContainer.innerHTML = '<div class="text-muted fst-italic text-center py-2">Khách hàng chưa lưu sổ địa chỉ nào.</div>';
+                } else {
+                    let addrHtml = '<div class="row g-2">';
+                    data.danhSachDiaChi.forEach(dc => {
+                        addrHtml += `
+                            <div class="col-12">
+                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark small">${dc.hoTenNguoiNhan || 'Người nhận'} - <span class="text-secondary">${dc.sdtNguoiNhan || ''}</span></div>
+                                        <div class="small text-muted">${dc.diaChiFull || ''}</div>
+                                    </div>
+                                    ${dc.laMacDinh ? '<span class="badge bg-primary ms-2">Mặc định</span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    addrHtml += '</div>';
+                    addrContainer.innerHTML = addrHtml;
+                }
+            }
+
+            const tbodyDonHang = document.getElementById('khTbodyDonHang');
+            if (tbodyDonHang) {
+                if (!data.danhSachDonHang || data.danhSachDonHang.length === 0) {
+                    tbodyDonHang.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có lịch sử đơn hàng.</td></tr>';
+                } else {
+                    let orderHtml = '';
+                    data.danhSachDonHang.forEach(dh => {
+                        orderHtml += `
+                            <tr>
+                                <td class="fw-bold text-primary">${dh.maDonHang || ''}</td>
+                                <td>${dh.ngayTaoFormatted || ''}</td>
+                                <td class="fw-bold text-dark">${dh.tongTienFormatted || '0 ₫'}</td>
+                                <td><span class="badge ${getBadgeOrder(dh.trangThaiDonHang)}">${formatTrangThaiDon(dh.trangThaiDonHang)}</span></td>
+                                <td><span class="badge ${getBadgePay(dh.trangThaiThanhToan)}">${formatTrangThaiThanhToan(dh.trangThaiThanhToan)}</span></td>
+                            </tr>
+                        `;
+                    });
+                    tbodyDonHang.innerHTML = orderHtml;
+                }
+            }
+
+            if (loadingElem) loadingElem.classList.add('d-none');
+            if (bodyElem) bodyElem.classList.remove('d-none');
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Lỗi: ' + err.message);
+            if (modalKhachHang) modalKhachHang.hide();
+        });
+};
+
+function formatTrangThaiDon(st) {
+    if (!st) return 'N/A';
+    const map = {
+        'CHO_XAC_NHAN': 'Chờ xác nhận',
+        'CHO_GIAO': 'Chờ giao',
+        'DANG_GIAO': 'Đang giao',
+        'DA_GIAO': 'Đã giao',
+        'hoan_thanh': 'Hoàn thành',
+        'DA_HUY': 'Đã hủy',
+        'HUY': 'Đã hủy'
+    };
+    return map[st] || map[st.toUpperCase()] || st;
+}
+
+function getBadgeOrder(st) {
+    if (!st) return 'bg-secondary';
+    const s = st.toLowerCase();
+    if (s === 'hoan_thanh' || s === 'da_giao') return 'bg-success';
+    if (s === 'da_huy' || s === 'huy') return 'bg-danger';
+    if (s === 'dang_giao') return 'bg-info';
+    return 'bg-warning text-dark';
+}
+
+function formatTrangThaiThanhToan(st) {
+    if (!st) return 'Chưa thanh toán';
+    const s = st.toLowerCase();
+    if (s === 'da_thanh_toan' || s === 'paid') return 'Đã thanh toán';
+    if (s === 'cho_thanh_toan' || s === 'pending') return 'Chờ thanh toán';
+    return st;
+}
+
+function getBadgePay(st) {
+    if (!st) return 'bg-secondary';
+    const s = st.toLowerCase();
+    if (s === 'da_thanh_toan' || s === 'paid') return 'bg-success';
+    return 'bg-warning text-dark';
+}
+</script>
 </body>
 </html>

@@ -160,6 +160,10 @@ public class SanPhamChiTiet {
         setGiaTriThuocTinhHelper("Sức căng", mucCang);
     }
 
+    public void setChatLieu(String chatLieu) {
+        setGiaTriThuocTinhHelper("Chất liệu", chatLieu);
+    }
+
     private void setGiaTriThuocTinhHelper(String tenThuocTinh, String giaTri) {
         if (this.sanPhamChiTietThuocTinhs == null) {
             this.sanPhamChiTietThuocTinhs = new java.util.LinkedHashSet<>();

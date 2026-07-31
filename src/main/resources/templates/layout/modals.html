@@ -104,30 +104,17 @@
                                           style="font-size:13px; color:#666; line-height:1.6;">Mô tả ngắn...</span>
                                 </div>
 
-                                <!-- Chọn màu sắc -->
-                                <div class="u-s-m-b-15" th:if="${listMauSac != null and !listMauSac.isEmpty()}">
-                                    <span class="pd-detail__label u-s-m-b-8">Màu sắc:</span>
+                                <!-- Chọn thuộc tính động -->
+                                <div class="u-s-m-b-15" th:each="entry, iterStat : ${dynamicAttributes}">
+                                    <span class="pd-detail__label u-s-m-b-8" th:text="${iterStat.count} + '. ' + ${entry.key} + ':'">Thuộc tính:</span>
                                     <div class="d-flex flex-wrap">
-                                        <button th:each="mau : ${listMauSac}"
+                                        <button th:each="val : ${entry.value}"
                                                 type="button"
-                                                class="variant-btn color-btn u-s-m-r-8 u-s-m-b-8"
-                                                th:attr="data-color=${mau}"
-                                                onclick="selectColor(this)"
-                                                th:text="${mau}">
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Chọn kích thước -->
-                                <div class="u-s-m-b-15" th:if="${listKichThuoc != null and !listKichThuoc.isEmpty()}">
-                                    <span class="pd-detail__label u-s-m-b-8">Trọng lượng / Kích thước:</span>
-                                    <div class="d-flex flex-wrap">
-                                        <button th:each="size : ${listKichThuoc}"
-                                                type="button"
-                                                class="variant-btn size-btn u-s-m-r-8 u-s-m-b-8"
-                                                th:attr="data-size=${size}"
-                                                onclick="selectSize(this)"
-                                                th:text="${size}">
+                                                class="variant-btn u-s-m-r-8 u-s-m-b-8 dynamic-attr-btn"
+                                                th:classappend="'attr-btn-' + ${#strings.replace(entry.key, ' ', '_')}"
+                                                th:attr="data-attr-name=${entry.key}, data-attr-value=${val}"
+                                                onclick="selectDynamicAttribute(this)"
+                                                th:text="${val}">
                                         </button>
                                     </div>
                                 </div>

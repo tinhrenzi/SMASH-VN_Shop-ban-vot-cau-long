@@ -202,4 +202,34 @@ public class AdminControllerRenderTest {
                 .andExpect(jsonPath("$.nguoiXacNhan").value("Staff Tester"))
                 .andExpect(jsonPath("$.thoiGianXacNhan").isNotEmpty());
     }
+
+    @Test
+    public void testGetChiTietKhachHangApi() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setUsername("khach_test_api@smashvn.com");
+        tk.setMatKhau("123456");
+        tk.setVaiTro("KH");
+        tk.setTrangThai("hoat_dong");
+        tk = taiKhoanRepository.save(tk);
+
+        KhachHang kh = new KhachHang();
+        kh.setTaiKhoan(tk);
+        kh.setHoTenKh("Nguyễn Văn Test");
+        kh.setSoDienThoaiKh("0988777666");
+        kh = khachHangRepository.save(kh);
+
+        mockMvc.perform(get("/admin/khach-hang/api/" + kh.getId())
+                .sessionAttr("idNguoiDung", tk.getId())
+                .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(kh.getId()))
+                .andExpect(jsonPath("$.maKhachHang").value("KH" + kh.getId()))
+                .andExpect(jsonPath("$.hoTen").value("Nguyễn Văn Test"))
+                .andExpect(jsonPath("$.soDienThoai").value("0988777666"))
+                .andExpect(jsonPath("$.trangThaiTaiKhoan").value("Hoạt động"))
+                .andExpect(jsonPath("$.tongDonHoanThanh").value(0))
+                .andExpect(jsonPath("$.tongChiTieuFormatted").value("0 ₫"));
+    }
 }

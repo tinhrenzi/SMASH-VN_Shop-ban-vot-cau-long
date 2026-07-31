@@ -422,6 +422,7 @@
             font-weight: normal;
         }
 
+
         /* Override list active styles for product-m__hover container */
         .is-list-active .product-m__hover {
             position: static !important;
@@ -431,6 +432,19 @@
             box-shadow: none !important;
             background: transparent !important;
             display: block !important;
+        }
+
+        /* Clamp long descriptions to max 4 lines with ellipsis */
+        .product-m__preview-description {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 4 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: normal !important;
+            line-height: 1.6 !important;
+            max-height: 6.4em !important; /* 4 lines * 1.6 */
+            margin-bottom: 8px !important;
         }
     </style>
 </head>

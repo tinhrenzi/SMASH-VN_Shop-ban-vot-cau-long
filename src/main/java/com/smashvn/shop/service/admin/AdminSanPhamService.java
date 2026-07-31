@@ -23,6 +23,7 @@ import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.SanPham;
+import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.TaiKhoan;
