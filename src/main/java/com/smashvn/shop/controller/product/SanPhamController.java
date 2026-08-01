@@ -13,6 +13,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
+import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
+import com.smashvn.shop.entity.ThuocTinh;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.DanhGia;
 import com.smashvn.shop.entity.TaiKhoan;
@@ -93,6 +95,31 @@ public class SanPhamController {
             return map;
         }).collect(Collectors.toList());
 
+        // 4. Lấy tất cả thuộc tính động của các biến thể hoạt động
+        Map<String, java.util.Set<String>> dynamicAttributes = new java.util.LinkedHashMap<>();
+        for (SanPhamChiTiet ct : danhSachChiTiet) {
+            for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
+                if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
+                    String attrName = scttt.getThuocTinh().getTenThuocTinh();
+                    String attrVal = scttt.getGiaTri().trim();
+                    dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+                }
+            }
+        }
+
+        // Chỉ giữ lại những thuộc tính được cấu hình cho danh mục của sản phẩm này
+        if (sanPham.getDanhMuc() != null) {
+            List<ThuocTinh> allowedAttrs = sanPham.getDanhMuc().getThuocTinhList();
+            if (allowedAttrs != null && !allowedAttrs.isEmpty()) {
+                java.util.Set<String> allowedNames = allowedAttrs.stream()
+                        .map(ThuocTinh::getTenThuocTinh)
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toSet());
+                dynamicAttributes.keySet().removeIf(key -> !allowedNames.contains(key.trim().toLowerCase()));
+            }
+        }
+
         boolean inWishlist = false;
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
         if (idTaiKhoan != null) {
@@ -130,6 +157,7 @@ public class SanPhamController {
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("listMucCang", listMucCang);
+        model.addAttribute("dynamicAttributes", dynamicAttributes);
         model.addAttribute("sp", sanPham);
         model.addAttribute("listChiTiet", danhSachChiTiet);
         model.addAttribute("anhDaiDien", anhDaiDien);
@@ -219,6 +247,10 @@ public class SanPhamController {
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", ct.getId());
+            Map<String, String> attributes = ct.getSanPhamChiTietThuocTinhs().stream()
+                    .filter(tt -> tt.getThuocTinh() != null && tt.getGiaTri() != null)
+                    .collect(Collectors.toMap(tt -> tt.getThuocTinh().getTenThuocTinh(), tt -> tt.getGiaTri(), (a, b) -> a));
+            map.put("attributes", attributes);
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
             map.put("kichThuoc", ct.getKichThuoc());
@@ -230,6 +262,31 @@ public class SanPhamController {
             map.put("hinhAnhSanPham", ct.getHinhAnhSanPham());
             return map;
         }).collect(java.util.stream.Collectors.toList());
+
+        // Lấy tất cả thuộc tính động của các biến thể hoạt động
+        Map<String, java.util.Set<String>> dynamicAttributes = new java.util.LinkedHashMap<>();
+        for (SanPhamChiTiet ct : danhSachChiTiet) {
+            for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
+                if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
+                    String attrName = scttt.getThuocTinh().getTenThuocTinh();
+                    String attrVal = scttt.getGiaTri().trim();
+                    dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+                }
+            }
+        }
+
+        // Chỉ giữ lại những thuộc tính được cấu hình cho danh mục của sản phẩm này
+        if (sanPham.getDanhMuc() != null) {
+            List<ThuocTinh> allowedAttrs = sanPham.getDanhMuc().getThuocTinhList();
+            if (allowedAttrs != null && !allowedAttrs.isEmpty()) {
+                java.util.Set<String> allowedNames = allowedAttrs.stream()
+                        .map(ThuocTinh::getTenThuocTinh)
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toSet());
+                dynamicAttributes.keySet().removeIf(key -> !allowedNames.contains(key.trim().toLowerCase()));
+            }
+        }
 
         boolean inWishlist = false;
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
@@ -246,6 +303,7 @@ public class SanPhamController {
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("listMucCang", listMucCang);
+        model.addAttribute("dynamicAttributes", dynamicAttributes);
         model.addAttribute("listBienTheJS", listBienTheJS);
         model.addAttribute("inWishlist", inWishlist);
         model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));

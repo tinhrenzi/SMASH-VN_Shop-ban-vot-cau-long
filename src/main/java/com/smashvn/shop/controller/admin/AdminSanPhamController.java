@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 
 import com.smashvn.shop.dto.SanPhamCreateRequest;
@@ -15,6 +16,7 @@ import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.admin.AdminSanPhamService;
+import com.smashvn.shop.service.admin.AdminBienTheService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -29,6 +31,7 @@ public class AdminSanPhamController {
     private final DanhMucRepository danhMucRepository;
     private final ThuongHieuRepository thuongHieuRepository;
     private final AdminSanPhamService adminSanPhamService;
+    private final AdminBienTheService adminBienTheService;
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
@@ -107,6 +110,18 @@ public class AdminSanPhamController {
             }
         }
         model.addAttribute("listThuongHieu", activeBrands);
+
+        // Tải thêm danh sách biến thể và categoryIds cho phần quản lý biến thể tích hợp
+        model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(id));
+        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
+        for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {
+            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
+            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
+                categoryIds.put(type.name(), dm.getId());
+            }
+        }
+        model.addAttribute("categoryIds", categoryIds);
+
         return "admin/sanpham-edit";
     }
 
@@ -117,13 +132,16 @@ public class AdminSanPhamController {
             @RequestParam("idThuongHieu") Integer idThuongHieu,
             @RequestParam("moTa") String moTa,
             HttpSession session,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
         try {
             Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
             adminSanPhamService.capNhatSanPham(idSanPham, tenSanPham, idDanhMuc, idThuongHieu, moTa, idNguoiDung, request.getRemoteAddr());
-            return "redirect:/admin/san-pham?suaThanhCong";
+            redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin sản phẩm thành công!");
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (Exception e) {
-            return "redirect:/admin/san-pham/sua/" + idSanPham + "?loi=LoiHeThong";
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật: " + e.getMessage());
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         }
     }
 

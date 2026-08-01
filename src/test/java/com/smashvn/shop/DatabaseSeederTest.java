@@ -3,8 +3,6 @@ package com.smashvn.shop;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.annotation.Commit;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.smashvn.shop.entity.*;
@@ -17,6 +15,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 public class DatabaseSeederTest {
@@ -32,6 +31,9 @@ public class DatabaseSeederTest {
 
     @Autowired
     private ThuongHieuRepository thuongHieuRepository;
+
+    @Autowired
+    private ThuocTinhRepository thuocTinhRepository;
 
     @Autowired
     private NhanVienRepository nhanVienRepository;
@@ -57,6 +59,10 @@ public class DatabaseSeederTest {
     @Autowired
     private SanPhamYeuThichRepository sanPhamYeuThichRepository;
 
+    private final Map<String, ThuongHieu> brandCache = new HashMap<>();
+    private final Map<String, DanhMuc> categoryCache = new HashMap<>();
+    private final Map<String, ThuocTinh> attributeCache = new HashMap<>();
+
     static class RacketSeed {
         String fileName;
         String brandName;
@@ -80,27 +86,77 @@ public class DatabaseSeederTest {
     }
 
     private ThuongHieu findOrCreateBrand(String brandName) {
-        return thuongHieuRepository.findAll().stream()
+        String key = brandName.trim().toLowerCase();
+        if (brandCache.containsKey(key)) {
+            return brandCache.get(key);
+        }
+        ThuongHieu th = thuongHieuRepository.findAll().stream()
                 .filter(b -> b.getTenThuongHieu().equalsIgnoreCase(brandName))
                 .findFirst()
                 .orElseGet(() -> {
-                    ThuongHieu th = new ThuongHieu();
-                    th.setTenThuongHieu(brandName);
-                    th.setTrangThai(true);
-                    return thuongHieuRepository.save(th);
+                    ThuongHieu newBrand = new ThuongHieu();
+                    newBrand.setTenThuongHieu(brandName);
+                    newBrand.setTrangThai(true);
+                    return thuongHieuRepository.save(newBrand);
                 });
+        brandCache.put(key, th);
+        return th;
     }
 
     private DanhMuc findOrCreateCategory(String categoryName, String description) {
-        return danhMucRepository.findAll().stream()
+        String key = categoryName.trim().toLowerCase();
+        if (categoryCache.containsKey(key)) {
+            return categoryCache.get(key);
+        }
+        DanhMuc dm = danhMucRepository.findAll().stream()
                 .filter(c -> c.getTenDanhMuc().equalsIgnoreCase(categoryName))
                 .findFirst()
                 .orElseGet(() -> {
-                    DanhMuc dm = new DanhMuc();
-                    dm.setTenDanhMuc(categoryName);
-                    dm.setTrangThai(true);
-                    return danhMucRepository.save(dm);
+                    DanhMuc newCat = new DanhMuc();
+                    newCat.setTenDanhMuc(categoryName);
+                    newCat.setTrangThai(true);
+                    return danhMucRepository.save(newCat);
                 });
+        categoryCache.put(key, dm);
+        return dm;
+    }
+
+    private ThuocTinh getOrCreateThuocTinh(String name) {
+        String key = name.trim().toLowerCase();
+        if (attributeCache.containsKey(key)) {
+            return attributeCache.get(key);
+        }
+        ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(name.trim())
+                .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
+                        .tenThuocTinh(name.trim())
+                        .trangThai(true)
+                        .build()));
+        attributeCache.put(key, tt);
+        return tt;
+    }
+
+    private void setChiTietThuocTinh(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
+        if (giaTri == null || giaTri.isBlank()) return;
+        ThuocTinh tt = getOrCreateThuocTinh(tenThuocTinh);
+        if (spct.getSanPhamChiTietThuocTinhs() == null) {
+            spct.setSanPhamChiTietThuocTinhs(new LinkedHashSet<>());
+        }
+        
+        SanPhamChiTietThuocTinh existing = spct.getSanPhamChiTietThuocTinhs().stream()
+                .filter(val -> val.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(val.getThuocTinh().getTenThuocTinh()))
+                .findFirst()
+                .orElse(null);
+
+        if (existing != null) {
+            existing.setGiaTri(giaTri.trim());
+        } else {
+            SanPhamChiTietThuocTinh val = SanPhamChiTietThuocTinh.builder()
+                    .sanPhamChiTiet(spct)
+                    .thuocTinh(tt)
+                    .giaTri(giaTri.trim())
+                    .build();
+            spct.getSanPhamChiTietThuocTinhs().add(val);
+        }
     }
 
     private ThuongHieu detectBrand(String text) {
@@ -113,13 +169,33 @@ public class DatabaseSeederTest {
         return findOrCreateBrand("Khác");
     }
 
-    @Test
-    @Transactional
-    @Commit
-    public void seedDatabase() {
-        System.out.println("=== STARTING FULL DATABASE SEEDING & IMAGE PATH UPDATE FOR ALL CATEGORIES ===");
+    private String extractColor(String text) {
+        String lower = text.toLowerCase();
+        if (lower.contains("đen trắng") || lower.contains("trắng đen")) return "Đen / Trắng";
+        if (lower.contains("xanh ngọc")) return "Xanh Ngọc";
+        if (lower.contains("xanh dương")) return "Xanh Dương";
+        if (lower.contains("xanh chuối") || lower.contains("chuối")) return "Xanh Chuối";
+        if (lower.contains("xanh lá")) return "Xanh Lá";
+        if (lower.contains("trắng đỏ") || lower.contains("đỏ trắng")) return "Trắng / Đỏ";
+        if (lower.contains("xám ngọc trai")) return "Xám Ngọc Trai";
+        if (lower.contains("tím đêm")) return "Tím Đêm";
+        if (lower.contains("vàng đen")) return "Vàng Đen";
+        if (lower.contains("đen")) return "Màu Đen";
+        if (lower.contains("trắng")) return "Màu Trắng";
+        if (lower.contains("đỏ")) return "Màu Đỏ";
+        if (lower.contains("xanh")) return "Màu Xanh";
+        if (lower.contains("xám")) return "Màu Xám";
+        if (lower.contains("tím")) return "Màu Tím";
+        if (lower.contains("vàng")) return "Màu Vàng";
+        if (lower.contains("cam")) return "Màu Cam";
+        return "Mặc định";
+    }
 
-        // 1. Ensure Admin Account exists
+    @Test
+    public void seedDatabase() {
+        System.out.println("=== STARTING COMPLETE DATABASE SEEDING & ATTRIBUTE ENHANCEMENT FOR ALL CATEGORIES ===");
+
+        // 1. Ensure Admin Accounts exist
         NhanVien employee = nhanVienRepository.findAll().stream().findFirst().orElseGet(() -> {
             TaiKhoan tk = new TaiKhoan();
             tk.setUsername("system_admin");
@@ -138,7 +214,6 @@ public class DatabaseSeederTest {
             return nhanVienRepository.save(nv);
         });
 
-        // Ensure admin account with password 123456
         TaiKhoan adminAcc = taiKhoanRepository.findByUsername("admin");
         if (adminAcc == null) {
             adminAcc = new TaiKhoan();
@@ -162,6 +237,11 @@ public class DatabaseSeederTest {
             adminAcc.setTrangThai("hoat_dong");
             taiKhoanRepository.save(adminAcc);
         }
+
+        // Pre-populate brand, category, and attribute caches
+        thuongHieuRepository.findAll().forEach(b -> brandCache.put(b.getTenThuongHieu().trim().toLowerCase(), b));
+        danhMucRepository.findAll().forEach(c -> categoryCache.put(c.getTenDanhMuc().trim().toLowerCase(), c));
+        thuocTinhRepository.findAll().forEach(a -> attributeCache.put(a.getTenThuocTinh().trim().toLowerCase(), a));
 
         // 2. Map of category folder names to formal category names
         Map<String, String> categoryFolderMap = new LinkedHashMap<>();
@@ -202,24 +282,34 @@ public class DatabaseSeederTest {
             for (File pFolder : productFolders) {
                 String productName = pFolder.getName();
                 ThuongHieu brand = detectBrand(productName);
+                String extractedColor = extractColor(productName);
 
-                SanPham product = sanPhamRepository.findAll().stream()
+                SanPham existingProduct = sanPhamRepository.findAll().stream()
                         .filter(sp -> sp.getTenSanPham().equalsIgnoreCase(productName))
                         .findFirst()
-                        .orElseGet(() -> {
-                            SanPham sp = new SanPham();
-                            sp.setTenSanPham(productName);
-                            sp.setMoTa(productName + " chính hãng phân phối tại Smash-VN. Thiết kế thời trang, chất liệu cao cấp thoáng khí, mang lại sự thoải mái tối đa.");
-                            sp.setDanhMuc(category);
-                            sp.setThuongHieu(brand);
-                            sp.setNhanVien(employee);
-                            sp.setTrangThai("dang_ban");
-                            sp.setDiemTrungBinh(0.0);
-                            sp.setSoDanhGia(0);
-                            sp.setNgayTao(LocalDateTime.now());
-                            sp.setNgayCapNhat(LocalDateTime.now());
-                            return sanPhamRepository.save(sp);
-                        });
+                        .orElse(null);
+
+                SanPham product;
+                if (existingProduct == null) {
+                    product = new SanPham();
+                    product.setTenSanPham(productName);
+                    product.setMoTa(productName + " chính hãng phân phối tại Smash-VN. Thiết kế thời trang, chất liệu cao cấp thoáng khí, mang lại sự thoải mái tối đa.");
+                    product.setDanhMuc(category);
+                    product.setThuongHieu(brand);
+                    product.setNhanVien(employee);
+                    product.setTrangThai("dang_ban");
+                    product.setDiemTrungBinh(0.0);
+                    product.setSoDanhGia(0);
+                    product.setNgayTao(LocalDateTime.now());
+                    product.setNgayCapNhat(LocalDateTime.now());
+                } else {
+                    product = existingProduct;
+                    product.setDanhMuc(category);
+                    product.setThuongHieu(brand);
+                    product.setTrangThai("dang_ban");
+                    product.setNgayCapNhat(LocalDateTime.now());
+                }
+                final SanPham savedProduct = sanPhamRepository.save(product);
 
                 File[] imgFiles = pFolder.listFiles((dir, name) -> {
                     String lower = name.toLowerCase();
@@ -227,44 +317,70 @@ public class DatabaseSeederTest {
                 });
 
                 if (imgFiles != null && imgFiles.length > 0) {
-                    List<String> sizeList = new ArrayList<>();
+                    List<String> sizeList;
+                    String defaultMaterial;
+
                     if (folderName.equals("Áo") || folderName.equals("Quần")) {
-                        sizeList = List.of("M", "L");
+                        sizeList = List.of("S", "M", "L", "XL");
+                        defaultMaterial = "Thun lạnh thể thao cao cấp, co giãn 4 chiều, thấm hút mồ hôi tuyệt đối";
                     } else if (folderName.equals("Giày")) {
-                        sizeList = List.of("41", "42");
-                    } else {
-                        sizeList = List.of("Tiêu chuẩn");
+                        sizeList = List.of("39", "40", "41", "42", "43");
+                        defaultMaterial = "Da PU cao cấp, đế cao su chống trượt bám sân, đệm phylon giảm chấn";
+                    } else if (folderName.equals("Balo") || folderName.equals("Túi Xách")) {
+                        sizeList = List.of("Standard");
+                        defaultMaterial = "Vải Polyester dệt sợi chống thấm nước cao cấp, trang bị ngăn cách nhiệt";
+                    } else { // Cước
+                        sizeList = List.of("Standard");
+                        defaultMaterial = "High-Polymer Nylon Braided Multifilament siêu bền";
                     }
 
+                    final String finalExtractedColor = extractedColor;
                     for (String size : sizeList) {
-                        String color = "Mặc định";
                         final String finalSize = size;
 
                         List<SanPhamChiTiet> existingList = sanPhamChiTietRepository.findAll().stream()
-                                .filter(ct -> ct.getSanPham().getId().equals(product.getId())
-                                        && color.equalsIgnoreCase(ct.getMauSac())
+                                .filter(ct -> ct.getSanPham() != null && ct.getSanPham().getId().equals(savedProduct.getId())
+                                        && (finalExtractedColor.equalsIgnoreCase(ct.getMauSac()) || "Mặc định".equalsIgnoreCase(ct.getMauSac()))
                                         && finalSize.equalsIgnoreCase(ct.getKichThuoc()))
                                 .toList();
 
                         SanPhamChiTiet spct;
                         if (existingList.isEmpty()) {
                             spct = new SanPhamChiTiet();
-                            spct.setSanPham(product);
-                            spct.setMauSac(color);
-                            spct.setKichThuoc(size);
-                            spct.setTrongLuong("Tiêu chuẩn");
-                            spct.setSucCang("N/A");
+                            spct.setSanPham(savedProduct);
                             spct.setGiaBan(basePrice);
                             spct.setGiaNhap(basePrice.multiply(BigDecimal.valueOf(0.7)));
                             spct.setSoLuongTon(50);
                             spct.setTrangThai("dang_ban");
                             spct.setNgayTao(LocalDateTime.now());
                             spct.setNgayCapNhat(LocalDateTime.now());
-                            spct = sanPhamChiTietRepository.save(spct);
                         } else {
                             spct = existingList.get(0);
+                            spct.setSanPham(savedProduct);
                         }
 
+                        // Set attributes safely using helper
+                        setChiTietThuocTinh(spct, "Màu sắc", extractedColor);
+                        setChiTietThuocTinh(spct, "Kích thước", size);
+                        setChiTietThuocTinh(spct, "Chất liệu", defaultMaterial);
+
+                        if (folderName.equals("Balo")) {
+                            setChiTietThuocTinh(spct, "Trọng lượng", "0.95 kg");
+                            setChiTietThuocTinh(spct, "Sức căng", "N/A");
+                        } else if (folderName.equals("Túi Xách")) {
+                            setChiTietThuocTinh(spct, "Trọng lượng", "1.20 kg");
+                            setChiTietThuocTinh(spct, "Sức căng", "N/A");
+                        } else if (folderName.equals("Cước")) {
+                            setChiTietThuocTinh(spct, "Trọng lượng", "10m");
+                            setChiTietThuocTinh(spct, "Sức căng", "0.65 mm - 0.68 mm");
+                        } else {
+                            setChiTietThuocTinh(spct, "Trọng lượng", "Tiêu chuẩn");
+                            setChiTietThuocTinh(spct, "Sức căng", "N/A");
+                        }
+
+                        spct = sanPhamChiTietRepository.save(spct);
+
+                        // Attach images
                         List<HinhAnhSanPham> imageEntities = new ArrayList<>();
                         int imgIdx = 0;
                         for (File imgFile : imgFiles) {
@@ -272,7 +388,7 @@ public class DatabaseSeederTest {
                             HinhAnhSanPham hasp = new HinhAnhSanPham();
                             hasp.setSanPhamChiTiet(spct);
                             hasp.setUrlHinhAnh(relPath);
-                            hasp.setMauSac(color);
+                            hasp.setMauSac(extractedColor);
                             hasp.setLaAnhChinh(imgIdx == 0);
                             imageEntities.add(hasp);
                             imgIdx++;
@@ -342,49 +458,62 @@ public class DatabaseSeederTest {
         for (RacketSeed seed : racketList) {
             ThuongHieu brand = "Yonex".equalsIgnoreCase(seed.brandName) ? yonexBrand : liningBrand;
 
-            SanPham product = sanPhamRepository.findAll().stream()
+            SanPham existingProduct = sanPhamRepository.findAll().stream()
                     .filter(sp -> sp.getTenSanPham().equalsIgnoreCase(seed.productName))
                     .findFirst()
-                    .orElseGet(() -> {
-                        SanPham sp = new SanPham();
-                        sp.setTenSanPham(seed.productName);
-                        sp.setMoTa("Vợt cầu lông " + seed.productName + " chính hãng phân phối tại Smash-VN. Thiết kế hiện đại, công nghệ tiên tiến.");
-                        sp.setDanhMuc(racketCat);
-                        sp.setThuongHieu(brand);
-                        sp.setNhanVien(employee);
-                        sp.setTrangThai("dang_ban");
-                        sp.setDiemTrungBinh(0.0);
-                        sp.setSoDanhGia(0);
-                        sp.setNgayTao(LocalDateTime.now());
-                        sp.setNgayCapNhat(LocalDateTime.now());
-                        return sanPhamRepository.save(sp);
-                    });
+                    .orElse(null);
+
+            SanPham product;
+            if (existingProduct == null) {
+                product = new SanPham();
+                product.setTenSanPham(seed.productName);
+                product.setMoTa("Vợt cầu lông " + seed.productName + " chính hãng phân phối tại Smash-VN. Thiết kế hiện đại, công nghệ tiên tiến.");
+                product.setDanhMuc(racketCat);
+                product.setThuongHieu(brand);
+                product.setNhanVien(employee);
+                product.setTrangThai("dang_ban");
+                product.setDiemTrungBinh(0.0);
+                product.setSoDanhGia(0);
+                product.setNgayTao(LocalDateTime.now());
+                product.setNgayCapNhat(LocalDateTime.now());
+            } else {
+                product = existingProduct;
+                product.setDanhMuc(racketCat);
+                product.setThuongHieu(brand);
+                product.setTrangThai("dang_ban");
+                product.setNgayCapNhat(LocalDateTime.now());
+            }
+            final SanPham savedProduct = sanPhamRepository.save(product);
 
             List<String> weights = (seed.customWeight != null) ? List.of(seed.customWeight) : List.of("3U", "4U");
             for (String weight : weights) {
                 final String finalWeight = weight;
-                List<SanPhamChiTiet> existingList = (product.getSanPhamChiTiets() != null) ? product.getSanPhamChiTiets().stream()
-                        .filter(ct -> seed.color.equalsIgnoreCase(ct.getMauSac()) && finalWeight.equalsIgnoreCase(ct.getTrongLuong()))
-                        .toList() : List.of();
+                List<SanPhamChiTiet> existingList = sanPhamChiTietRepository.findAll().stream()
+                        .filter(ct -> ct.getSanPham() != null && ct.getSanPham().getId().equals(savedProduct.getId())
+                                && seed.color.equalsIgnoreCase(ct.getMauSac()) && finalWeight.equalsIgnoreCase(ct.getTrongLuong()))
+                        .toList();
 
                 SanPhamChiTiet spct;
                 if (existingList.isEmpty()) {
                     spct = new SanPhamChiTiet();
-                    spct.setSanPham(product);
-                    spct.setMauSac(seed.color);
-                    spct.setTrongLuong(weight);
-                    spct.setMucCang("24-28 lbs");
+                    spct.setSanPham(savedProduct);
                     spct.setGiaBan(seed.price);
                     spct.setSoLuongTon(50);
-                    spct.setKichThuoc("G5");
                     spct.setGiaNhap(seed.price.multiply(BigDecimal.valueOf(0.7)));
                     spct.setTrangThai("dang_ban");
                     spct.setNgayTao(LocalDateTime.now());
                     spct.setNgayCapNhat(LocalDateTime.now());
-                    spct = sanPhamChiTietRepository.save(spct);
                 } else {
                     spct = existingList.get(0);
+                    spct.setSanPham(savedProduct);
                 }
+
+                setChiTietThuocTinh(spct, "Màu sắc", seed.color);
+                setChiTietThuocTinh(spct, "Trọng lượng", weight);
+                setChiTietThuocTinh(spct, "Sức căng", "24 - 28 lbs");
+                setChiTietThuocTinh(spct, "Kích thước", "G5");
+                setChiTietThuocTinh(spct, "Chất liệu", "High Modulus Graphite / Carbon Fiber cao cấp");
+                spct = sanPhamChiTietRepository.save(spct);
 
                 HinhAnhSanPham hasp = new HinhAnhSanPham();
                 hasp.setSanPhamChiTiet(spct);
@@ -430,7 +559,7 @@ public class DatabaseSeederTest {
                     return donViVanChuyenDAO.save(dv);
                 });
 
-        System.out.println("=== FULL DATABASE SEEDING AND AUDIT COMPLETED SUCCESSFULLY ===");
+        System.out.println("=== FULL DATABASE SEEDING AND ATTRIBUTE ENHANCEMENT COMPLETED SUCCESSFULLY ===");
     }
 
     private void auditAndCleanBrokenProductsInternal() {
@@ -438,14 +567,23 @@ public class DatabaseSeederTest {
         File baseDir = new File("uploads/product");
 
         List<SanPham> products = sanPhamRepository.findAll();
+        List<SanPhamChiTiet> allSpcts = sanPhamChiTietRepository.findAll();
+        Map<Integer, List<SanPhamChiTiet>> spctMap = allSpcts.stream()
+                .filter(ct -> ct.getSanPham() != null)
+                .collect(Collectors.groupingBy(ct -> ct.getSanPham().getId()));
+
+        List<SanPhamYeuThich> allYeuThich = sanPhamYeuThichRepository.findAll();
+        List<GioHangChiTiet> allGioHang = gioHangChiTietRepository.findAll();
+
         int deletedCount = 0;
         int fixedCount = 0;
 
         for (SanPham sp : new ArrayList<>(products)) {
             boolean hasValidImageOnDisk = false;
+            List<SanPhamChiTiet> spcts = spctMap.getOrDefault(sp.getId(), List.of());
 
-            if (sp.getSanPhamChiTiets() != null && !sp.getSanPhamChiTiets().isEmpty()) {
-                for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
+            if (!spcts.isEmpty()) {
+                for (SanPhamChiTiet spct : spcts) {
                     if (spct.getHinhAnhSanPhams() != null && !spct.getHinhAnhSanPhams().isEmpty()) {
                         for (HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
                             String url = hasp.getUrlHinhAnh();
@@ -466,47 +604,40 @@ public class DatabaseSeederTest {
             if (!hasValidImageOnDisk) {
                 System.out.println("BROKEN IMAGE PRODUCT DETECTED: ID " + sp.getId() + " - Name: '" + sp.getTenSanPham() + "'");
 
-                // Try to find a matching image file in uploads/product/
                 String cleanName = sp.getTenSanPham().replaceAll("(?i)cầu lông|chính hãng|nam|nữ|vợt|áo|quần|giày|balo|túi|t-shirt", "").trim();
                 File matchFile = (cleanName.length() >= 3) ? findMatchingImageFile(baseDir, cleanName) : null;
 
                 if (matchFile != null) {
                     String relPath = baseDir.toPath().relativize(matchFile.toPath()).toString().replace("\\", "/");
                     System.out.println(" -> FIXED image path to: " + relPath);
-                    if (sp.getSanPhamChiTiets() != null) {
-                        for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
-                            if (spct.getHinhAnhSanPhams() == null) {
-                                spct.setHinhAnhSanPhams(new ArrayList<>());
-                            } else {
-                                spct.getHinhAnhSanPhams().clear();
-                            }
-                            HinhAnhSanPham hasp = new HinhAnhSanPham();
-                            hasp.setSanPhamChiTiet(spct);
-                            hasp.setUrlHinhAnh(relPath);
-                            hasp.setMauSac(spct.getMauSac());
-                            hasp.setLaAnhChinh(true);
-                            spct.getHinhAnhSanPhams().add(hasp);
-                            sanPhamChiTietRepository.save(spct);
+                    for (SanPhamChiTiet spct : spcts) {
+                        if (spct.getHinhAnhSanPhams() == null) {
+                            spct.setHinhAnhSanPhams(new ArrayList<>());
+                        } else {
+                            spct.getHinhAnhSanPhams().clear();
                         }
+                        HinhAnhSanPham hasp = new HinhAnhSanPham();
+                        hasp.setSanPhamChiTiet(spct);
+                        hasp.setUrlHinhAnh(relPath);
+                        hasp.setMauSac(spct.getMauSac());
+                        hasp.setLaAnhChinh(true);
+                        spct.getHinhAnhSanPhams().add(hasp);
+                        sanPhamChiTietRepository.save(spct);
                     }
                     fixedCount++;
                 } else {
                     System.out.println(" -> NO MATCHING IMAGE ON DISK. Deleting product ID " + sp.getId() + " ('" + sp.getTenSanPham() + "')");
                     
-                    // Remove references in SanPhamYeuThich
-                    sanPhamYeuThichRepository.findAll().stream()
+                    allYeuThich.stream()
                             .filter(yt -> yt.getSanPham() != null && yt.getSanPham().getId().equals(sp.getId()))
                             .forEach(sanPhamYeuThichRepository::delete);
 
-                    if (sp.getSanPhamChiTiets() != null) {
-                        for (SanPhamChiTiet spct : sp.getSanPhamChiTiets()) {
-                            // Clean up references in GioHangChiTiet
-                            gioHangChiTietRepository.findAll().stream()
-                                    .filter(ghct -> ghct.getSanPhamChiTiet() != null && ghct.getSanPhamChiTiet().getId().equals(spct.getId()))
-                                    .forEach(gioHangChiTietRepository::delete);
+                    for (SanPhamChiTiet spct : spcts) {
+                        allGioHang.stream()
+                                .filter(ghct -> ghct.getSanPhamChiTiet() != null && ghct.getSanPhamChiTiet().getId().equals(spct.getId()))
+                                .forEach(gioHangChiTietRepository::delete);
 
-                            sanPhamChiTietRepository.delete(spct);
-                        }
+                        sanPhamChiTietRepository.delete(spct);
                     }
                     sanPhamRepository.delete(sp);
                     deletedCount++;

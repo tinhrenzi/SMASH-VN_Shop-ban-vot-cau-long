@@ -132,11 +132,8 @@
                                         <a th:href="@{/admin/san-pham/sua/{id}(id=${sp.id})}" class="btn btn-warning btn-action-square" title="Sửa">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        
-                                        <a th:href="@{/admin/san-pham/{id}/bien-the(id=${sp.id})}" class="btn btn-brand btn-action-square ms-1" title="Quản lý Phân loại/Biến thể">
-                                            <i class="fas fa-tags"></i>
-                                        </a>
-                                        
+
+
                                         <form th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" 
                                               th:action="@{/admin/san-pham/xoa/{id}(id=${sp.id})}" 
                                               method="POST" style="display: inline;"

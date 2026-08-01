@@ -643,14 +643,12 @@
   ==============================================================*/
 function selectColor(element) {
     if (!element) return;
-    // 1. Tìm khu vực bao quanh nó (để tách biệt giữa Modal và Trang chủ)
     let container = element.closest('.pd-detail'); 
     if (!container) return;
     
     container.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
     
-    // 2. Lưu màu vừa chọn trực tiếp vào khu vực đó
     container.setAttribute('data-selected-color', element.getAttribute('data-color'));
     checkAndApplyVariant(container);
 }
@@ -667,18 +665,39 @@ function selectSize(element) {
     checkAndApplyVariant(container);
 }
 
+function selectDynamicAttribute(element) {
+    if (!element) return;
+    let container = element.closest('.pd-detail');
+    if (!container) return;
+
+    const attrName = element.getAttribute('data-attr-name');
+    const attrVal = element.getAttribute('data-attr-value');
+
+    // Remove active class from buttons in the same attribute group
+    container.querySelectorAll('.dynamic-attr-btn').forEach(btn => {
+        if (btn.getAttribute('data-attr-name') === attrName) {
+            btn.classList.remove('active');
+        }
+    });
+    element.classList.add('active');
+
+    // Store in container
+    const sanitizedKey = 'data-selected-attr-' + attrName.replace(/\s+/g, '_').toLowerCase();
+    container.setAttribute(sanitizedKey, attrVal);
+    checkAndApplyVariant(container);
+}
+
 function checkAndApplyVariant(container) {
     if (!container) return;
-    // 1. Lấy các phần tử DOM thông qua class
     const btnAdd = container.querySelector('.js-btn-add-cart');
     const stockStatus = container.querySelector('.js-stock-status');
     const inputId = container.querySelector('.js-variant-id');
     const quantityInput = container.querySelector('.js-quantity-input');
-    // Tìm phần tử hiển thị giá và tồn kho bên trong container trước để tránh trùng lặp giữa trang chi tiết và quick-look modal
+    
     const priceDisplay = container.querySelector('.js-display-price') || container.querySelector('.pd-detail__price') || document.getElementById('js-display-price');
     const originalPriceDisplay = container.querySelector('.js-display-original-price') || container.querySelector('.pd-detail__del');
     const discountBadgeDisplay = container.querySelector('.js-display-discount-badge') || container.querySelector('.pd-detail__discount');
-    // Panel tồn kho riêng
+    
     const stockInfoPanel = container.querySelector('.js-variant-stock-info') || document.getElementById('js-variant-stock-info');
     const stockCountEl = container.querySelector('.js-variant-stock-count') || document.getElementById('js-variant-stock-count');
     const stockBadgeEl = container.querySelector('.js-variant-stock-badge') || document.getElementById('js-variant-stock-badge');
@@ -686,28 +705,42 @@ function checkAndApplyVariant(container) {
     const selectedColor = container.getAttribute('data-selected-color');
     const selectedSize = container.getAttribute('data-selected-size');
 
-    // Kiểm tra xem trên giao diện thực tế có hiển thị các tùy chọn để chọn không
     const hasColorOptions = container.querySelector('.color-btn') !== null;
     const hasSizeOptions = container.querySelector('.size-btn') !== null;
 
-    // Nếu có tùy chọn nhưng chưa chọn đủ
-    if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
+    // Scan dynamic attributes
+    const dynamicButtons = container.querySelectorAll('.dynamic-attr-btn');
+    const dynamicAttrNames = Array.from(new Set(Array.from(dynamicButtons).map(btn => btn.getAttribute('data-attr-name'))));
+    
+    let hasMissingAttr = false;
+    const selectedAttributes = {};
+    for (const name of dynamicAttrNames) {
+        const key = 'data-selected-attr-' + name.replace(/\s+/g, '_').toLowerCase();
+        const val = container.getAttribute(key);
+        if (!val) {
+            hasMissingAttr = true;
+        } else {
+            selectedAttributes[name] = val;
+        }
+    }
+
+    if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize) || hasMissingAttr) {
         if(stockStatus) {
-            stockStatus.style.display = 'none';
-            stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.';
+            stockStatus.style.display = 'block';
+            stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ các thuộc tính phân loại.';
             stockStatus.className = 'js-stock-status u-s-m-b-15 text-warning fw-bold';
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if (btnAdd) {
-            btnAdd.disabled = false;
-            btnAdd.innerText = 'Thêm vào giỏ';
-            btnAdd.style.backgroundColor = '';
-            btnAdd.style.borderColor = '';
+            btnAdd.disabled = true;
+            btnAdd.innerText = 'THÊM VÀO GIỎ';
+            btnAdd.style.backgroundColor = '#cccccc';
+            btnAdd.style.borderColor = '#cccccc';
         }
         return;
     }
 
-    const variants = container.danhSachBienThe;
+    const variants = container.danhSachBienTo || container.danhSachBienThe;
     if (typeof variants === 'undefined' || !variants) {
         console.error("Lỗi: Không tìm thấy danh sách biến thể trên container!", container);
         if (stockStatus) {
@@ -718,12 +751,36 @@ function checkAndApplyVariant(container) {
         return;
     }
 
-    // Tìm biến thể khớp với Màu và Size đã chọn (Bọc trim() và toLowerCase() phòng trường hợp khoảng trắng thừa trong DB)
-    // Nếu giao diện không hiển thị tùy chọn nào, mặc định khớp với biến thể đầu tiên
     const matchedVariant = variants.find(v => {
         const matchColor = !hasColorOptions || (v.mauSac && selectedColor && v.mauSac.trim().toLowerCase() === selectedColor.trim().toLowerCase());
         const matchSize = !hasSizeOptions || (selectedSize && ((v.trongLuong && v.trongLuong.trim().toLowerCase() === selectedSize.trim().toLowerCase()) || (v.kichThuoc && v.kichThuoc.trim().toLowerCase() === selectedSize.trim().toLowerCase())));
-        return matchColor && matchSize;
+        
+        let matchDynamic = true;
+        if (v.attributes) {
+            for (const name in selectedAttributes) {
+                const vVal = v.attributes[name];
+                const selVal = selectedAttributes[name];
+                if (!vVal || vVal.trim().toLowerCase() !== selVal.trim().toLowerCase()) {
+                    matchDynamic = false;
+                    break;
+                }
+            }
+        } else {
+            for (const name in selectedAttributes) {
+                const selVal = selectedAttributes[name].trim().toLowerCase();
+                if (name === "Màu sắc") {
+                    if (!v.mauSac || v.mauSac.trim().toLowerCase() !== selVal) matchDynamic = false;
+                } else if (name === "Kích thước") {
+                    if (!v.kichThuoc || v.kichThuoc.trim().toLowerCase() !== selVal) matchDynamic = false;
+                } else if (name === "Trọng lượng") {
+                    if (!v.trongLuong || v.trongLuong.trim().toLowerCase() !== selVal) matchDynamic = false;
+                } else if (name === "Mức căng" || name === "Sức căng") {
+                    const vCang = v.mucCang || v.sucCang;
+                    if (!vCang || vCang.trim().toLowerCase() !== selVal) matchDynamic = false;
+                }
+            }
+        }
+        return matchColor && matchSize && matchDynamic;
     });
 
     if (matchedVariant) {

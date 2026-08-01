@@ -4,6 +4,7 @@ color 0A
 title Universal Deploy Tool v2.0
 
 cd /d "%~dp0"
+set GIT_PAGER=cat
 
 ::===========================================
 :: KIEM TRA GIT
@@ -210,7 +211,7 @@ echo.
 echo ===============================================
 echo [2/3] CAC COMMIT MOI TREN REMOTE (NEU CO):
 echo ===============================================
-git log HEAD..@{u} --stat -n 5 2>nul
+git --no-pager log HEAD..@{u} --stat -n 5 2>nul
 
 echo.
 echo ===============================================
@@ -222,7 +223,7 @@ echo.
 echo ===============================================
 echo LICH SU 5 COMMIT MOI NHAT (NGUOI SUA ^& FILE THAY DOI):
 echo ===============================================
-git log -n 5 --stat
+git --no-pager log -n 5 --stat
 
 echo.
 pause
@@ -236,7 +237,7 @@ goto MENU
 
 cls
 
-git status
+git --no-pager status
 
 pause
 goto MENU

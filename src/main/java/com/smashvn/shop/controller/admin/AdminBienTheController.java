@@ -46,14 +46,14 @@ public class AdminBienTheController {
         try {
             adminBienTheService.themBienThe(idSanPham, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
             redirectAttributes.addFlashAttribute("success", "Thêm biến thể mới thành công!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (IllegalArgumentException | SecurityException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (Exception e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi hệ thống khi thêm biến thể!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         }
     }
 
@@ -65,10 +65,10 @@ public class AdminBienTheController {
         try {
             adminBienTheService.xoaBienThe(idBienThe);
             redirectAttributes.addFlashAttribute("success", "Đã ẩn biến thể khỏi khách hàng thành công!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Không thể ẩn biến thể này.");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         }
     }
 
@@ -82,7 +82,7 @@ public class AdminBienTheController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Không thể mở bán lại biến thể này.");
         }
-        return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+        return "redirect:/admin/san-pham/sua/" + idSanPham;
     }
     
     // 4. Hiển thị Form Sửa Biến Thể
@@ -110,14 +110,14 @@ public class AdminBienTheController {
         try {
             adminBienTheService.capNhatBienThe(idBienThe, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
             redirectAttributes.addFlashAttribute("success", "Cập nhật biến thể thành công!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the";
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (IllegalArgumentException | SecurityException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the/sua/" + idBienThe;
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (Exception e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi hệ thống khi cập nhật biến thể!");
-            return "redirect:/admin/san-pham/" + idSanPham + "/bien-the/sua/" + idBienThe;
+            return "redirect:/admin/san-pham/sua/" + idSanPham;
         }
     }
 
