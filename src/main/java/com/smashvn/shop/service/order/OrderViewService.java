@@ -250,10 +250,12 @@ public class OrderViewService {
                     || OrderStatus.CHO_XAC_NHAN.getValue().equals(currentStatus)
                     || OrderStatus.DA_XAC_NHAN.getValue().equals(currentStatus)) {
 
-                // Nếu ở trạng thái cho_xac_nhan hoặc da_xac_nhan, tức là hàng đã bị trừ trong kho
-                // Ta cần khôi phục lại kho cho các biến thể sản phẩm
-                if (OrderStatus.CHO_XAC_NHAN.getValue().equals(currentStatus)
-                        || OrderStatus.DA_XAC_NHAN.getValue().equals(currentStatus)) {
+                // Khôi phục lại kho cho các biến thể sản phẩm nếu đã từng bị trừ kho
+                boolean stockWasDeducted = OrderStatus.CHO_XAC_NHAN.getValue().equals(currentStatus)
+                        || OrderStatus.DA_XAC_NHAN.getValue().equals(currentStatus)
+                        || (OrderStatus.CHO_THANH_TOAN.getValue().equals(currentStatus) && ("COD".equalsIgnoreCase(hd.getPaymentMethod()) || (hd.getPhuongThucThanhToan() != null && "COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()))));
+
+                if (stockWasDeducted) {
                     List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
                     for (HoaDonChiTiet item : items) {
                         SanPhamChiTiet spct = item.getSanPhamChiTiet();
@@ -293,6 +295,7 @@ public class OrderViewService {
                     String newGhiChu = currentGhiChu + "\n" + addition;
                     hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
                 }
+                hd.setLyDoHuy(standardizedReason);
 
                 if (isOrderPaid(hd)) {
                     if (!"DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) && !"REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
@@ -436,8 +439,8 @@ public class OrderViewService {
         }
 
         // 7. Inventory State tracking
-        boolean oldIsDeducted = isStockDeductedState(currentStatus);
-        boolean newIsDeducted = isStockDeductedState(newStatus);
+        boolean oldIsDeducted = isStockDeductedState(hd, currentStatus);
+        boolean newIsDeducted = isStockDeductedState(hd, newStatus);
 
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
 
@@ -542,6 +545,7 @@ public class OrderViewService {
                 String newGhiChu = currentGhiChu + "\n" + addition;
                 hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
             }
+            hd.setLyDoHuy(standardizedReason);
         }
 
         // 9. Update Order
@@ -827,13 +831,26 @@ public class OrderViewService {
     }
 
     private boolean isStockDeductedState(String status) {
+        return isStockDeductedState(null, status);
+    }
+
+    private boolean isStockDeductedState(HoaDon hd, String status) {
         if (status == null) {
             return false;
         }
         String lower = status.toLowerCase();
-        return "cho_xac_nhan".equals(lower) || "da_xac_nhan".equals(lower)
+        if ("cho_xac_nhan".equals(lower) || "da_xac_nhan".equals(lower)
                 || "dang_lay_hang".equals(lower) || "dang_giao".equals(lower)
-                || "da_giao".equals(lower);
+                || "da_giao".equals(lower)) {
+            return true;
+        }
+        if ("cho_thanh_toan".equals(lower) && hd != null) {
+            String pm = hd.getPaymentMethod();
+            if ("COD".equalsIgnoreCase(pm) || (hd.getPhuongThucThanhToan() != null && "COD".equalsIgnoreCase(hd.getPhuongThucThanhToan().getTenPhuongThuc()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getNextStatus(String currentStatus) {

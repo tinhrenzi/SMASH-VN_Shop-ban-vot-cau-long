@@ -6,7 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,7 +25,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.constant.DanhMucIds;
-import com.smashvn.shop.constant.SanPhamAttributeConfig;
 import com.smashvn.shop.dto.AttributeValueRequest;
 import com.smashvn.shop.dto.BienTheCreateRequest;
 import com.smashvn.shop.dto.SanPhamCreateRequest;
@@ -27,13 +35,14 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThuocTinh;
+import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.ThuocTinhRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
-import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.util.RacketSpecUtils;
 
@@ -61,7 +70,9 @@ public class AdminSanPhamService {
     private String uploadPathConfig;
 
     private String saveImageSecurely(MultipartFile file, String fieldName, List<Path> uploadedFiles) throws Exception {
-        if (file == null || file.isEmpty()) return null;
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
 
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("Dung lượng file " + fieldName + " vượt quá giới hạn 5MB!");
@@ -125,20 +136,20 @@ public class AdminSanPhamService {
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == STATUS_ROLLED_BACK) {
-                            for (Path path : uploadedFiles) {
-                                try {
-                                    Files.deleteIfExists(path);
-                                } catch (Exception e) {
-                                    log.error("Xóa file thất bại sau rollback: {}", path, e);
-                                }
+                    new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        for (Path path : uploadedFiles) {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (Exception e) {
+                                log.error("Xóa file thất bại sau rollback: {}", path, e);
                             }
                         }
                     }
                 }
+            }
             );
         }
 
@@ -302,7 +313,9 @@ public class AdminSanPhamService {
 
                 for (BienTheCreateRequest v : rawVariants) {
                     String normMau = normalizeText(v.getMauSac());
-                    if (normMau == null) normMau = "Mặc định";
+                    if (normMau == null) {
+                        normMau = "Mặc định";
+                    }
                     String normTrong = null;
                     String normKich = null;
                     String normCang = null;
@@ -373,12 +386,14 @@ public class AdminSanPhamService {
     }
 
     private void saveVariantAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
-        if (giaTri == null || giaTri.isBlank()) return;
+        if (giaTri == null || giaTri.isBlank()) {
+            return;
+        }
         ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(tenThuocTinh)
                 .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
-                        .tenThuocTinh(tenThuocTinh.trim())
-                        .trangThai(true)
-                        .build()));
+                .tenThuocTinh(tenThuocTinh.trim())
+                .trangThai(true)
+                .build()));
         SanPhamChiTietThuocTinh attVal = SanPhamChiTietThuocTinh.builder()
                 .sanPhamChiTiet(spct)
                 .thuocTinh(tt)
@@ -391,13 +406,17 @@ public class AdminSanPhamService {
     }
 
     private String normalizeText(String str) {
-        if (str == null) return null;
+        if (str == null) {
+            return null;
+        }
         String s = str.trim();
         return s.isEmpty() ? null : s;
     }
 
     private String normalizeCode(String str) {
-        if (str == null) return null;
+        if (str == null) {
+            return null;
+        }
         String s = str.trim().toUpperCase();
         return s.isEmpty() ? null : s;
     }

@@ -65,7 +65,7 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
             + "LEFT JOIN hd.khachHang "
             + "LEFT JOIN hd.phuongThucThanhToan "
             + "WHERE hd.ngayTao BETWEEN :start AND :end "
-            + "ORDER BY hd.ngayTao DESC")
+            + "ORDER BY hd.ngayTao ASC")
     List<Object[]> findAllOrdersInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT COUNT(kh.id) FROM KhachHang kh "

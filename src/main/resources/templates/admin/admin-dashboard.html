@@ -205,7 +205,9 @@
                                             <td class="fw-semibold text-secondary" th:text="${tk.username}"></td>
                                             <td>
                                                 <span th:if="${tk.trangThai == 'hoat_dong'}" class="badge bg-success rounded-pill px-2.5 py-1.5">Hoạt động</span>
-                                                <span th:unless="${tk.trangThai == 'hoat_dong'}" class="badge bg-danger rounded-pill px-2.5 py-1.5" th:text="${tk.trangThai}">Khóa</span>
+                                                <span th:if="${tk.trangThai == 'khach_vang_lai'}" class="badge bg-info text-white rounded-pill px-2.5 py-1.5">Khách vãng lai</span>
+                                                <span th:if="${tk.trangThai == 'cho_khoa'}" class="badge bg-warning text-dark rounded-pill px-2.5 py-1.5">Chờ khóa</span>
+                                                <span th:if="${tk.trangThai == 'bi_khoa'}" class="badge bg-danger rounded-pill px-2.5 py-1.5">Bị khóa</span>
                                             </td>
                                         </tr>
                                         <tr th:if="${danhSachTaiKhoanKhachHang.isEmpty()}">

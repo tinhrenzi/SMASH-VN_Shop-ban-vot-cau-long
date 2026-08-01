@@ -100,7 +100,7 @@ public class HoaDon {
     @Transient
     private String paymentStatus;
 
-    @Transient
+    @Column(name = "ma_giao_dich", length = 100)
     private String maGiaoDich;
 
     @Transient
@@ -130,13 +130,13 @@ public class HoaDon {
     @Transient
     private String moTaVoucherSnapshot;
 
-    @Transient
+    @Column(name = "ghi_chu", length = 500)
     private String ghiChu;
 
-    @Transient
+    @Column(name = "nguoi_xac_nhan_thanh_toan", length = 100)
     private String nguoiXacNhanThanhToan;
 
-    @Transient
+    @Column(name = "thoi_gian_xac_nhan")
     private LocalDateTime thoiGianXacNhan;
 
     @Transient

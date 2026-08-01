@@ -64,9 +64,11 @@
                                         <span th:unless="${kh.nhanBanTin}" class="badge bg-secondary text-muted">Không</span>
                                     </td>
                                     <td>
-                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-success">Hoạt động</span>
-                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai != 'hoat_dong'}" class="badge bg-danger">Bị Khóa</span>
-                                        <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
+                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'hoat_dong' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'ACTIVE')}" class="badge bg-success">Hoạt động</span>
+                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'khach_vang_lai' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'GUEST')}" class="badge bg-info text-white">Khách vãng lai</span>
+                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'cho_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'PENDING_LOCK')}" class="badge bg-warning text-dark">Chờ khóa</span>
+                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'bi_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'LOCKED')}" class="badge bg-danger">Bị Khóa</span>
+                                         <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">
