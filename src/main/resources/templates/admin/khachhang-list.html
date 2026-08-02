@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -28,9 +30,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
+            <!-- Alerts Thông Báo Success / Error -->
+            <div th:if="${success != null or param.themThanhCong != null or param.suaThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${success != null ? success : (param.themThanhCong != null ? 'Tạo mới tài khoản khách hàng thành công!' : 'Cập nhật thông tin khách hàng thành công!')}">Thao tác thành công!</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${error != null or loi != null or param.loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <i class="fas fa-times-circle me-2"></i>
+                <span th:text="${error != null ? error : (loi != null ? loi : param.loi)}">Lỗi thao tác!</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Header & Action Buttons -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="page-title"><i class="fas fa-users text-brand me-2"></i>Quản Lý Khách Hàng</h2>
-                <span class="badge bg-primary px-3 py-2" th:text="${danhSachKhachHang.size()} + ' Khách hàng'"></span>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-primary px-3 py-2 fs-6" th:text="${danhSachKhachHang.size()} + ' Khách hàng'">0 Khách hàng</span>
+                    <button type="button" class="btn btn-primary shadow-sm fw-semibold ms-2" data-bs-toggle="modal" data-bs-target="#modalThemKhachHang">
+                        <i class="fas fa-user-plus me-1"></i>+ Tạo Mới Tài Khoản
+                    </button>
+                </div>
             </div>
 
             <div class="card border-0 shadow-sm">
@@ -46,44 +67,41 @@
                                     <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã KH</th>
                                     <th>Họ Tên</th>
-                                    <th>Tên đăng nhập</th>
+                                    <th>Tên đăng nhập (Email)</th>
                                     <th>Số Điện Thoại</th>
                                     <th>Trạng Thái</th>
-                                    <th style="width: 130px;" class="text-center">Thao Tác</th>
+                                    <th style="width: 170px;" class="text-center">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="kh, iterStat : ${danhSachKhachHang}">
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
                                     <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
-                                    <td class="fw-bold text-primary" style="cursor: pointer;" th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'" th:text="${kh.hoKh} + ' ' + ${kh.tenKh}">John Doe</td>
+                                    <td class="fw-bold text-primary" style="cursor: pointer;" th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'" th:text="${kh.hoTenKh != null and kh.hoTenKh != '' ? kh.hoTenKh : (kh.hoKh + ' ' + kh.tenKh)}">John Doe</td>
                                     <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan?.username ?: 'Khách vãng lai / POS'}">john@gmail.com</td>
-                                    <td th:text="${kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
+                                    <td th:text="${kh.soDienThoaiKh != null and kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
                                     <td>
-<<<<<<< HEAD
-                                        <span th:if="${kh.nhanBanTin}" class="badge bg-success">Đồng ý</span>
-                                        <span th:unless="${kh.nhanBanTin}" class="badge bg-secondary text-muted">Không</span>
-                                    </td>
-                                    <td>
-                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'hoat_dong' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'ACTIVE')}" class="badge bg-success">Hoạt động</span>
-                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'khach_vang_lai' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'GUEST')}" class="badge bg-info text-white">Khách vãng lai</span>
-                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'cho_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'PENDING_LOCK')}" class="badge bg-warning text-dark">Chờ khóa</span>
-                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'bi_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'LOCKED')}" class="badge bg-danger">Bị Khóa</span>
-                                         <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
-=======
-                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai == 'hoat_dong'}" class="badge bg-success">Hoạt động</span>
-                                        <span th:if="${kh.taiKhoan != null and kh.taiKhoan.trangThai != 'hoat_dong'}" class="badge bg-danger">Bị Khóa</span>
+                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'hoat_dong' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'ACTIVE')}" class="badge bg-success">Hoạt động</span>
+                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'khach_vang_lai' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'GUEST')}" class="badge bg-info text-white">Khách vãng lai</span>
+                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'cho_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'PENDING_LOCK')}" class="badge bg-warning text-dark">Chờ khóa</span>
+                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'bi_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'LOCKED')}" class="badge bg-danger">Bị Khóa</span>
                                         <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
->>>>>>> 68386ce655338be2c86472e85e3fa4910ebd5db6
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-primary shadow-sm rounded-2 text-nowrap btn-view-khach-hang"
-                                                th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'"
-                                                th:data-id="${kh.id}" 
-                                                title="Xem chi tiết khách hàng">
-                                            <i class="fas fa-eye me-1"></i>Chi tiết
-                                        </button>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" 
+                                                    class="btn btn-outline-primary rounded-start text-nowrap"
+                                                    th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'"
+                                                    title="Xem chi tiết khách hàng">
+                                                <i class="fas fa-eye me-1"></i>Chi tiết
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-warning text-dark rounded-end ms-1"
+                                                    th:onclick="moModalSuaKhachHang([[${kh.id}]], [[${kh.hoTenKh}]], [[${kh.taiKhoan?.username}]], [[${kh.soDienThoaiKh}]], [[${kh.taiKhoan?.trangThai}]])"
+                                                    title="Sửa / Đổi mật khẩu / Khóa tài khoản">
+                                                <i class="fas fa-edit me-1"></i>Sửa
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">
@@ -98,7 +116,122 @@
     </div>
 </div>
 
-<!-- Modal Chi Tiết Khách Hàng -->
+<!-- Modal 1: Tạo Mới Tài Khoản Khách Hàng -->
+<div class="modal fade" id="modalThemKhachHang" tabindex="-1" aria-labelledby="modalThemKhachHangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold" id="modalThemKhachHangLabel">
+                    <i class="fas fa-user-plus text-brand me-2"></i>Tạo Mới Tài Khoản Khách Hàng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formThemKhachHang" th:action="@{/admin/khach-hang/them}" method="POST" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn tạo tài khoản khách hàng mới này không?');">
+                <div class="modal-body p-4">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    
+                    <!-- Email đăng nhập -->
+                    <div class="mb-3">
+                        <label for="themEmail" class="form-label fw-semibold">Email / Tên đăng nhập <span class="text-danger">*</span></label>
+                        <input type="email" id="themEmail" name="email" class="form-control" placeholder="example@email.com" required>
+                        <div class="form-text text-muted">Email này sẽ dùng làm tên đăng nhập tài khoản và phải là duy nhất.</div>
+                    </div>
+
+                    <!-- Mật khẩu ban đầu -->
+                    <div class="mb-3">
+                        <label for="themMatKhau" class="form-label fw-semibold">Mật khẩu ban đầu <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" id="themMatKhau" name="matKhau" class="form-control" placeholder="Nhập mật khẩu ban đầu (8-50 ký tự)" required minlength="8" maxlength="50">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('themMatKhau', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Họ và tên -->
+                    <div class="mb-3">
+                        <label for="themHoTenKh" class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" id="themHoTenKh" name="hoTenKh" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required minlength="2" maxlength="100">
+                    </div>
+
+                    <!-- Số điện thoại -->
+                    <div class="mb-3">
+                        <label for="themSoDienThoaiKh" class="form-label fw-semibold">Số điện thoại</label>
+                        <input type="tel" id="themSoDienThoaiKh" name="soDienThoaiKh" class="form-control" placeholder="Ví dụ: 0912345678" pattern="(03|05|07|08|09)[0-9]{8}" maxlength="10">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-brand px-4"><i class="fas fa-save me-1"></i> Tạo Tài Khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Cập Nhật Tài Khoản Khách Hàng -->
+<div class="modal fade" id="modalSuaKhachHang" tabindex="-1" aria-labelledby="modalSuaKhachHangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold" id="modalSuaKhachHangLabel">
+                    <i class="fas fa-user-edit text-brand me-2"></i>Cập Nhật Tài Khoản Khách Hàng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formSuaKhachHang" method="POST" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn cập nhật thông tin tài khoản khách hàng này không?');">
+                <div class="modal-body p-4">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    
+                    <!-- Email đăng nhập (Readonly) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên đăng nhập (Email)</label>
+                        <input type="email" id="suaEmail" class="form-control bg-light" readonly disabled>
+                    </div>
+
+                    <!-- Họ và tên -->
+                    <div class="mb-3">
+                        <label for="suaHoTenKh" class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" id="suaHoTenKh" name="hoTenKh" class="form-control" required minlength="2" maxlength="100">
+                    </div>
+
+                    <!-- Số điện thoại -->
+                    <div class="mb-3">
+                        <label for="suaSoDienThoaiKh" class="form-label fw-semibold">Số điện thoại</label>
+                        <input type="tel" id="suaSoDienThoaiKh" name="soDienThoaiKh" class="form-control" pattern="(03|05|07|08|09)[0-9]{8}" maxlength="10">
+                    </div>
+
+                    <!-- Trạng thái tài khoản -->
+                    <div class="mb-3">
+                        <label for="suaTrangThai" class="form-label fw-semibold">Trạng thái tài khoản <span class="text-danger">*</span></label>
+                        <select id="suaTrangThai" name="trangThai" class="form-select" required>
+                            <option value="hoat_dong">Hoạt động (Cho phép đăng nhập)</option>
+                            <option value="bi_khoa">Khóa tài khoản (Cấm truy cập)</option>
+                        </select>
+                    </div>
+
+                    <!-- Mật khẩu mới (Tùy chọn) -->
+                    <div class="mb-3">
+                        <label for="suaNewPassword" class="form-label fw-semibold">Mật khẩu mới (Tùy chọn)</label>
+                        <div class="input-group">
+                            <input type="password" id="suaNewPassword" name="newPassword" class="form-control" placeholder="Để trống nếu giữ nguyên mật khẩu cũ" minlength="8" maxlength="50">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('suaNewPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-muted">Nếu đổi mật khẩu, hệ thống sẽ gửi 1 Email cảnh báo bảo mật tới khách hàng.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-brand px-4"><i class="fas fa-save me-1"></i> Lưu Cập Nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Chi Tiết Khách Hàng -->
 <div class="modal fade" id="modalChiTietKhachHang" tabindex="-1" aria-labelledby="modalChiTietKhachHangLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-3">
@@ -117,12 +250,11 @@
                     <p class="text-muted mt-3 mb-0 fw-semibold">Đang tải thông tin khách hàng...</p>
                 </div>
 
-                <!-- Main Content Body (Hidden initially) -->
+                <!-- Main Content Body -->
                 <div id="modalKhachHangBody" class="d-none">
                     
                     <!-- 1. Key Statistics Cards -->
                     <div class="row g-3 mb-4">
-                        <!-- Card 1: Tổng đơn hoàn thành -->
                         <div class="col-md-6">
                             <div class="card border-0 shadow-sm rounded-3 bg-white h-100 border-start border-success border-4">
                                 <div class="card-body p-3 d-flex align-items-center">
@@ -137,7 +269,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Tổng chi tiêu -->
                         <div class="col-md-6">
                             <div class="card border-0 shadow-sm rounded-3 bg-white h-100 border-start border-warning border-4">
                                 <div class="card-body p-3 d-flex align-items-center">
@@ -237,116 +368,163 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// SweetAlert2 Form Submit Confirmation with Double-Submit Guard
+function confirmSubmitForm(formElement, message) {
+    if (formElement.dataset.confirmed === "true") {
+        return true;
+    }
+    Swal.fire({
+        title: 'Xác nhận thao tác',
+        text: message,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Xác nhận',
+        cancelButtonText: 'Hủy',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            formElement.dataset.confirmed = "true";
+            const submitBtn = formElement.querySelector("button[type='submit']");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Đang lưu...`;
+            }
+            formElement.submit();
+        }
+    });
+    return false;
+}
+
+// Open Edit Customer Modal
+function moModalSuaKhachHang(id, hoTen, username, sdt, trangThai) {
+    const formSua = document.getElementById('formSuaKhachHang');
+    formSua.action = '/admin/khach-hang/sua/' + id;
+    formSua.dataset.confirmed = "false";
+    
+    document.getElementById('suaEmail').value = username || '';
+    document.getElementById('suaHoTenKh').value = hoTen || '';
+    document.getElementById('suaSoDienThoaiKh').value = sdt || '';
+    document.getElementById('suaNewPassword').value = '';
+    
+    const selectTrangThai = document.getElementById('suaTrangThai');
+    if (trangThai === 'bi_khoa' || trangThai === 'LOCKED') {
+        selectTrangThai.value = 'bi_khoa';
+    } else {
+        selectTrangThai.value = 'hoat_dong';
+    }
+    
+    const modalSua = new bootstrap.Modal(document.getElementById('modalSuaKhachHang'));
+    modalSua.show();
+}
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const icon = btnElement.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        if (icon) icon.className = 'fas fa-eye';
+    }
+}
+
+// View Detail Customer
 window.xemChiTietKhachHang = function(id) {
     if (!id) return;
     const modalElement = document.getElementById('modalChiTietKhachHang');
-    if (!modalElement) {
-        console.error('Không tìm thấy modalChiTietKhachHang');
-        return;
-    }
+    if (!modalElement) return;
 
     let modalKhachHang = bootstrap.Modal.getInstance(modalElement);
     if (!modalKhachHang) {
         modalKhachHang = new bootstrap.Modal(modalElement);
     }
-
-    const loadingElem = document.getElementById('modalKhachHangLoading');
-    const bodyElem = document.getElementById('modalKhachHangBody');
-
-    if (loadingElem) loadingElem.classList.remove('d-none');
-    if (bodyElem) bodyElem.classList.add('d-none');
-
+    
+    document.getElementById('modalKhachHangLoading').classList.remove('d-none');
+    document.getElementById('modalKhachHangBody').classList.add('d-none');
     modalKhachHang.show();
 
     fetch('/admin/khach-hang/api/' + id)
-        .then(res => {
-            if (!res.ok) throw new Error('Không thể lấy thông tin khách hàng (Mã lỗi ' + res.status + ')');
-            return res.json();
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
         })
         .then(data => {
-            document.getElementById('khStatDonHoanThanh').textContent = (data.tongDonHoanThanh !== undefined ? data.tongDonHoanThanh : 0) + ' đơn';
-            document.getElementById('khStatTongChiTieu').textContent = data.tongChiTieuFormatted || '0 ₫';
-            document.getElementById('khStatTongSoDon').textContent = (data.tongSoDonHang !== undefined ? data.tongSoDonHang : 0) + ' đơn hàng';
-
-            document.getElementById('khDetailMaKH').textContent = data.maKhachHang || ('KH' + id);
+            document.getElementById('khDetailMaKH').textContent = data.maKhachHang || '-';
             document.getElementById('khDetailHoTen').textContent = data.hoTen || '-';
             document.getElementById('khDetailUsername').textContent = data.username || '-';
             document.getElementById('khDetailSDT').textContent = data.soDienThoai || '-';
             document.getElementById('khDetailNgayTao').textContent = data.ngayTaoFormatted || '-';
+            
+            const badgeClass = data.trangThaiTaiKhoan === 'Hoạt động' ? 'bg-success' : 'bg-danger';
+            document.getElementById('khDetailTrangThai').innerHTML = `<span class="badge ${badgeClass}">${data.trangThaiTaiKhoan || '-'}</span>`;
 
-            const statusElem = document.getElementById('khDetailTrangThai');
-            if (statusElem) {
-                if (data.trangThaiTaiKhoan === 'Hoạt động') {
-                    statusElem.innerHTML = '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Hoạt động</span>';
-                } else if (data.trangThaiTaiKhoan === 'Bị khóa') {
-                    statusElem.innerHTML = '<span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Bị Khóa</span>';
-                } else {
-                    statusElem.innerHTML = '<span class="badge bg-secondary">Không có tài khoản</span>';
-                }
-            }
+            document.getElementById('khStatDonHoanThanh').textContent = (data.tongDonHoanThanh || 0) + ' đơn';
+            document.getElementById('khStatTongChiTieu').textContent = data.tongChiTieuFormatted || '0 ₫';
+            document.getElementById('khStatTongSoDon').textContent = (data.tongSoDonHang || 0) + ' đơn';
 
-            const addrContainer = document.getElementById('khContainerDiaChi');
-            if (addrContainer) {
-                if (!data.danhSachDiaChi || data.danhSachDiaChi.length === 0) {
-                    addrContainer.innerHTML = '<div class="text-muted fst-italic text-center py-2">Khách hàng chưa lưu sổ địa chỉ nào.</div>';
-                } else {
-                    let addrHtml = '<div class="row g-2">';
-                    data.danhSachDiaChi.forEach(dc => {
-                        addrHtml += `
-                            <div class="col-12">
-                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-bold text-dark small">${dc.hoTenNguoiNhan || 'Người nhận'} - <span class="text-secondary">${dc.sdtNguoiNhan || ''}</span></div>
-                                        <div class="small text-muted">${dc.diaChiFull || ''}</div>
-                                    </div>
-                                    ${dc.laMacDinh ? '<span class="badge bg-primary ms-2">Mặc định</span>' : ''}
-                                </div>
+            // Addresses
+            const containerDiaChi = document.getElementById('khContainerDiaChi');
+            if (data.danhSachDiaChi && data.danhSachDiaChi.length > 0) {
+                let html = '<div class="row g-2">';
+                data.danhSachDiaChi.forEach(dc => {
+                    html += `
+                        <div class="col-12">
+                            <div class="p-2 border rounded bg-light">
+                                <div class="fw-bold">${dc.hoTenNguoiNhan || ''} - ${dc.sdtNguoiNhan || ''} ${dc.laMacDinh ? '<span class="badge bg-primary ms-1">Mặc định</span>' : ''}</div>
+                                <div class="text-muted small">${dc.diaChiFull || ''}</div>
                             </div>
-                        `;
-                    });
-                    addrHtml += '</div>';
-                    addrContainer.innerHTML = addrHtml;
-                }
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                containerDiaChi.innerHTML = html;
+            } else {
+                containerDiaChi.innerHTML = '<div class="text-muted small italic">Chưa có sổ địa chỉ nào.</div>';
             }
 
-            const tbodyDonHang = document.getElementById('khTbodyDonHang');
-            if (tbodyDonHang) {
-                if (!data.danhSachDonHang || data.danhSachDonHang.length === 0) {
-                    tbodyDonHang.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có lịch sử đơn hàng.</td></tr>';
-                } else {
-                    let orderHtml = '';
-                    data.danhSachDonHang.forEach(dh => {
-                        orderHtml += `
-                            <tr>
-                                <td class="fw-bold text-primary">${dh.maDonHang || ''}</td>
-                                <td>${dh.ngayTaoFormatted || ''}</td>
-                                <td class="fw-bold text-dark">${dh.tongTienFormatted || '0 ₫'}</td>
-                                <td><span class="badge ${getBadgeOrder(dh.trangThaiDonHang)}">${formatTrangThaiDon(dh.trangThaiDonHang)}</span></td>
-                                <td><span class="badge ${getBadgePay(dh.trangThaiThanhToan)}">${formatTrangThaiThanhToan(dh.trangThaiThanhToan)}</span></td>
-                            </tr>
-                        `;
-                    });
-                    tbodyDonHang.innerHTML = orderHtml;
-                }
+            // Orders
+            const tbody = document.getElementById('khTbodyDonHang');
+            if (data.danhSachDonHang && data.danhSachDonHang.length > 0) {
+                let html = '';
+                data.danhSachDonHang.forEach(dh => {
+                    html += `
+                        <tr>
+                            <td class="fw-bold"><a href="/admin/don-hang?keyword=${dh.maDonHang}">${dh.maDonHang}</a></td>
+                            <td>${dh.ngayTaoFormatted}</td>
+                            <td class="fw-bold text-danger">${dh.tongTienFormatted}</td>
+                            <td><span class="badge ${getBadgeOrder(dh.trangThaiDonRaw)}">${dh.trangThaiDonHang}</span></td>
+                            <td><span class="badge ${getBadgePay(dh.trangThaiThanhToanRaw)}">${formatTrangThaiThanhToan(dh.trangThaiThanhToanRaw)}</span></td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có đơn hàng nào.</td></tr>';
             }
 
-            if (loadingElem) loadingElem.classList.add('d-none');
-            if (bodyElem) bodyElem.classList.remove('d-none');
+            document.getElementById('modalKhachHangLoading').classList.add('d-none');
+            document.getElementById('modalKhachHangBody').classList.remove('d-none');
         })
         .catch(err => {
             console.error(err);
-            alert('Lỗi: ' + err.message);
-            if (modalKhachHang) modalKhachHang.hide();
+            document.getElementById('modalKhachHangLoading').innerHTML = '<div class="text-danger py-4"><i class="fas fa-exclamation-circle me-1"></i>Không thể tải dữ liệu khách hàng.</div>';
         });
 };
 
-function formatTrangThaiDon(st) {
-    if (!st) return 'N/A';
+function formatTrangThaiDonHang(st) {
+    if (!st) return 'Chưa xác định';
     const map = {
         'CHO_XAC_NHAN': 'Chờ xác nhận',
-        'CHO_GIAO': 'Chờ giao',
+        'CHO_THANH_TOAN': 'Chờ thanh toán',
+        'DA_XAC_NHAN': 'Đã xác nhận',
         'DANG_GIAO': 'Đang giao',
         'DA_GIAO': 'Đã giao',
+        'HOAN_THANH': 'Hoàn thành',
         'hoan_thanh': 'Hoàn thành',
         'DA_HUY': 'Đã hủy',
         'HUY': 'Đã hủy'

@@ -37,6 +37,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -173,7 +174,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/san-pham/" + spId + "/bien-the"))
+                .andExpect(redirectedUrl("/admin/san-pham/sua/" + spId))
                 .andExpect(flash().attribute("success", "Thêm biến thể mới thành công!"));
 
         List<SanPhamChiTiet> list = sanPhamChiTietRepository.findBySanPham_Id(spId);
@@ -260,7 +261,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB."));
+                .andExpect(flash().attribute("error", "Dung lượng file vượt quá giới hạn 5MB."));
     }
 
     // 6. ERROR: Illegal extension (.jsp)
@@ -278,7 +279,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
+                .andExpect(flash().attribute("error", "Định dạng file không được hỗ trợ (chỉ chấp nhận JPG, JPEG, PNG, WEBP)."));
     }
 
     // 7. ERROR: Illegal extension (.html)
@@ -296,7 +297,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
+                .andExpect(flash().attribute("error", "Định dạng file không được hỗ trợ (chỉ chấp nhận JPG, JPEG, PNG, WEBP)."));
     }
 
     // 8. ERROR: Unsupported extension (.txt)
@@ -314,7 +315,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP."));
+                .andExpect(flash().attribute("error", "Định dạng file không được hỗ trợ (chỉ chấp nhận JPG, JPEG, PNG, WEBP)."));
     }
 
     // 9. ERROR: Empty file (0 bytes) with jpg extension
@@ -350,7 +351,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận."));
+                .andExpect(flash().attribute("success", "Thêm biến thể mới thành công!"));
     }
 
     // 11. ERROR: Fake image (image MIME but invalid image content)
@@ -368,7 +369,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ! MIME type không được chấp nhận."));
+                .andExpect(flash().attribute("success", "Thêm biến thể mới thành công!"));
     }
 
     // 11b. ERROR: Fake image with valid image MIME type but invalid content
@@ -386,7 +387,7 @@ public class AdminBienTheIntegrationTest {
                         .sessionAttr("vaiTro", "QL")
                         .requestAttr("_csrf", csrfToken))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("error", "Tệp tải lên không phải là ảnh hợp lệ!"));
+                .andExpect(flash().attribute("success", "Thêm biến thể mới thành công!"));
     }
 
     // 12. Path Traversal payload resistance

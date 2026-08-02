@@ -85,37 +85,73 @@ public class CheckoutController {
         BigDecimal tongTien = BigDecimal.ZERO;
 
         if (!activeAccount) {
-            List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
-            if (guestItems.isEmpty()) {
-                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
+            if (idNguoiDung != null) {
+                com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+                if (kh != null) {
+                    guestCartService.transferGuestCartToDb(session, kh.getId());
+                }
             }
-            for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
-                com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
-                if (spct == null) {
-                    continue;
+            List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
+            if (!guestItems.isEmpty()) {
+                for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
+                    com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
+                    if (spct == null) {
+                        continue;
+                    }
+
+                    GioHangChiTiet detail = new GioHangChiTiet();
+                    detail.setId(spct.getId());
+                    detail.setSanPhamChiTiet(spct);
+                    detail.setSoLuong(item.getSoLuong());
+
+                    SanPham sp = spct.getSanPham();
+                    int tonKho = spct.getSoLuongTon();
+
+                    if (!isSanPhamChiTietDangBan(spct)) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    if (tonKho <= 0) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    if (item.getSoLuong() > tonKho) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+
+                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
+                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+                    danhSachChiTiet.add(detail);
+                }
+            } else if (idNguoiDung != null) {
+                // If guest session cart was transferred to DB cart, load from DB cart
+                danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+                if (danhSachChiTiet.isEmpty()) {
+                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
                 }
 
-                GioHangChiTiet detail = new GioHangChiTiet();
-                detail.setId(spct.getId());
-                detail.setSanPhamChiTiet(spct);
-                detail.setSoLuong(item.getSoLuong());
+                for (GioHangChiTiet item : danhSachChiTiet) {
+                    if (item.getSanPhamChiTiet() == null || item.getSanPhamChiTiet().getSanPham() == null) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng chứa sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    SanPham sp = item.getSanPhamChiTiet().getSanPham();
+                    int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
 
-                SanPham sp = spct.getSanPham();
-                int tonKho = spct.getSoLuongTon();
-
-                if (!isSanPhamChiTietDangBan(spct)) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+                    if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm trong giỏ hàng không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    if (!isSanPhamChiTietDangBan(item.getSanPhamChiTiet())) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    if (tonKho <= 0) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    if (item.getSoLuong() > tonKho) {
+                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
+                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
                 }
-                if (tonKho <= 0) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                if (item.getSoLuong() > tonKho) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-
-                BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
-                tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
-                danhSachChiTiet.add(detail);
+            } else {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
             }
         } else {
             // Clean up any old unpaid pending orders when loading the checkout page
@@ -388,6 +424,12 @@ public class CheckoutController {
             }
         } else {
             log.info("[GuestCheckout] Inactive account exists or already registered: Skip autoRegisterGuest.");
+            if (idNguoiDung != null) {
+                com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+                if (kh != null) {
+                    guestCartService.transferGuestCartToDb(session, kh.getId());
+                }
+            }
         }
 
         com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
@@ -454,21 +496,15 @@ public class CheckoutController {
             boolean setAsDefault = false;
 
             if (currentTk != null) {
-                if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
-                    // Guest account: automatically save
+                long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
+                if (currentTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST
+                        || startedAsAnonymousGuest
+                        || existingCount == 0
+                        || Boolean.TRUE.equals(saveAddress)) {
+                    // Guest account / Auto-registered guest / First address: automatically save to SoDiaChi
                     shouldSave = true;
-                    long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
                     if (existingCount == 0) {
                         setAsDefault = true;
-                    }
-                } else {
-                    // Registered user: only save if saveAddress is true
-                    if (Boolean.TRUE.equals(saveAddress)) {
-                        shouldSave = true;
-                        long existingCount = soDiaChiRepository.findByKhachHang_Id(khachHang.getId()).size();
-                        if (existingCount == 0) {
-                            setAsDefault = true;
-                        }
                     }
                 }
             }

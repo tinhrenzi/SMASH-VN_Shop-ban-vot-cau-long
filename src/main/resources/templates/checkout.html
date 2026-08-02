@@ -11,6 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/vendor.css}">
     <link rel="stylesheet" th:href="@{/css/utility.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
@@ -1725,15 +1726,44 @@
                     submitData.idDiaChiLuu = parseInt($('#selectDiaChiLuu').val());
                 }
 
-                // Loader
-                $('.preloader').addClass('is-active');
+                function escapeHtml(str) {
+                    if (!str) return '';
+                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                }
 
-                console.log('[Diagnostics] checkout submit start', submitData);
-                $.ajax({
-                    url: '/checkout/submit',
-                    type: 'POST',
-                    data: submitData,
-                    success: function(response) {
+                const totalText = $('.js-checkout-total').text().trim();
+                const paymentName = paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản Ngân hàng (SePay QR)';
+
+                Swal.fire({
+                    title: 'Xác nhận tiến hành thanh toán',
+                    html: `
+                        <div style="text-align: left; font-size: 14px; line-height: 1.6; padding: 5px;">
+                            <p style="margin-bottom: 6px;"><strong>Người nhận:</strong> ${escapeHtml(hoTen)} - ${escapeHtml(sdt)}</p>
+                            <p style="margin-bottom: 6px;"><strong>Địa chỉ giao:</strong> ${escapeHtml(diaChi)}</p>
+                            <p style="margin-bottom: 6px;"><strong>Phương thức:</strong> ${escapeHtml(paymentName)}</p>
+                            <div style="font-size: 16px; color: #ff4500; font-weight: 700; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                                Tổng thanh toán: <span>${escapeHtml(totalText)}</span>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ff4500',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-check me-1"></i> Đồng Ý Đặt Hàng',
+                    cancelButtonText: 'Hủy bỏ',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Loader
+                        $('.preloader').addClass('is-active');
+
+                        console.log('[Diagnostics] checkout submit start', submitData);
+                        $.ajax({
+                            url: '/checkout/submit',
+                            type: 'POST',
+                            data: submitData,
+                            success: function(response) {
                         console.log('[Diagnostics] API response received:', response);
                         $('.preloader').removeClass('is-active');
 
@@ -1841,7 +1871,9 @@
                         showToast('Đã xảy ra lỗi kết nối: ' + error, 'error');
                     }
                 });
-            });
+            }
+        });
+    });
 
             function createSePayOrder(orderId, maDonHang, amount) {
                 attempts = 0;

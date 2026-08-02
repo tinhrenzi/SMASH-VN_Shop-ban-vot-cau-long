@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 
 const MCP_URL = "https://onehost-wphn072607.000nethost.com:2023/api/mcp";
-const MCP_TOKEN = "sp_b0f5485b3b40b9179254600b3595fd655e2e09d593efd8519a843b94b35b9131"; // Token từ code của bạn
+const MCP_TOKEN = process.env.MCP_TOKEN || "sp_ecebf199442b91142e42a7923a5fe6c2a8d6afb110dbb5cb30925ca2a0a64834"; // Token mới nhất của bạn
 
 // Hàm gửi request HTTP
 function sendRequest(payload, sessionId = null) {

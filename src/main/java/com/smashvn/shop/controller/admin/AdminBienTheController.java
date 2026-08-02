@@ -7,11 +7,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.service.admin.AdminBienTheService;
+
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
 
 @Controller
 @RequestMapping("/admin/san-pham/{idSanPham}/bien-the") // Link động chứa ID sản phẩm
@@ -20,6 +23,7 @@ public class AdminBienTheController {
 
     private final SanPhamRepository sanPhamRepository;
     private final DanhMucRepository danhMucRepository;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final AdminBienTheService adminBienTheService;
 
     // 1. Hiển thị Trang Quản lý Biến thể (Gồm cả Form Thêm + Bảng Danh sách)
@@ -85,16 +89,6 @@ public class AdminBienTheController {
         return "redirect:/admin/san-pham/sua/" + idSanPham;
     }
     
-    // 4. Hiển thị Form Sửa Biến Thể
-    @GetMapping("/sua/{idBienThe}")
-    public String hienThiFormSuaBienThe(@PathVariable("idSanPham") Integer idSanPham, 
-                                        @PathVariable("idBienThe") Integer idBienThe, Model model) {
-        model.addAttribute("sp", sanPhamRepository.findById(idSanPham).orElseThrow());
-        model.addAttribute("bt", adminBienTheService.layBienTheTheoId(idBienThe));
-        populateCategoryIds(model);
-        return "admin/bienthe-edit";
-    }
-
     // 5. Xử lý Cập nhật Biến Thể
     @PostMapping("/sua/{idBienThe}")
     public String xuLySuaBienThe(@PathVariable("idSanPham") Integer idSanPham,
@@ -108,6 +102,32 @@ public class AdminBienTheController {
                                  @RequestParam(value = "fileAnh", required = false) MultipartFile fileAnh,
                                  RedirectAttributes redirectAttributes) {
         try {
+            if (idBienThe != null && idBienThe == 0) {
+                // Cập nhật đồng loạt giá bán và số lượng cho tất cả biến thể của sản phẩm
+                List<com.smashvn.shop.entity.SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
+                if (variants.isEmpty()) {
+                    throw new IllegalArgumentException("Sản phẩm chưa có biến thể nào để cập nhật.");
+                }
+                boolean updated = false;
+                for (com.smashvn.shop.entity.SanPhamChiTiet bt : variants) {
+                    if (giaBan != null && giaBan.compareTo(BigDecimal.ZERO) > 0) {
+                        bt.setGiaBan(giaBan);
+                        updated = true;
+                    }
+                    if (soLuongTon != null && soLuongTon >= 0) {
+                        bt.setSoLuongTon(soLuongTon);
+                        updated = true;
+                    }
+                    sanPhamChiTietRepository.save(bt);
+                }
+                if (updated) {
+                    redirectAttributes.addFlashAttribute("success", "Cập nhật đồng loạt tất cả biến thể thành công!");
+                } else {
+                    redirectAttributes.addFlashAttribute("error", "Vui lòng nhập giá bán hợp lệ (> 0) hoặc số lượng kho (>= 0) để cập nhật đồng loạt.");
+                }
+                return "redirect:/admin/san-pham/sua/" + idSanPham;
+            }
+
             adminBienTheService.capNhatBienThe(idBienThe, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
             redirectAttributes.addFlashAttribute("success", "Cập nhật biến thể thành công!");
             return "redirect:/admin/san-pham/sua/" + idSanPham;

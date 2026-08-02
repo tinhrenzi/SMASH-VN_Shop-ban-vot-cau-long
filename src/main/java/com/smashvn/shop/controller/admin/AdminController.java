@@ -41,6 +41,7 @@ public class AdminController {
     private final com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
+    private final com.smashvn.shop.service.admin.AdminKhachHangService adminKhachHangService;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
@@ -174,10 +175,82 @@ public class AdminController {
         return val.trim();
     }
 
+    private String friendlyErrorMessage(Exception ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "";
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause.getMessage() != null) {
+                message += " " + cause.getMessage();
+            }
+            cause = cause.getCause();
+        }
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("uk_username") || lowerMessage.contains("username") || lowerMessage.contains("email")) {
+            return "Email/Tên đăng nhập đã được sử dụng trong hệ thống.";
+        }
+        if (lowerMessage.contains("so_dien_thoai") || lowerMessage.contains("sodienthoai")) {
+            return "Số điện thoại đã được sử dụng.";
+        }
+        if (lowerMessage.contains("duplicate") || lowerMessage.contains("unique") || lowerMessage.contains("constraint")) {
+            return "Dữ liệu đã tồn tại hoặc không hợp lệ. Vui lòng kiểm tra lại.";
+        }
+        return message.isBlank() ? "Không thể thực hiện thao tác. Vui lòng kiểm tra lại." : ex.getMessage();
+    }
+
     @GetMapping("/khach-hang")
     public String hienThiDanhSachKhachHang(Model model) {
         model.addAttribute("danhSachKhachHang", khachHangRepository.findByTaiKhoan_VaiTro("KH"));
         return "admin/khachhang-list";
+    }
+
+    @PostMapping("/khach-hang/them")
+    public String xuLyThemKhachHang(
+            @RequestParam("email") String email,
+            @RequestParam("matKhau") String matKhau,
+            @RequestParam("hoTenKh") String hoTenKh,
+            @RequestParam(value = "soDienThoaiKh", required = false) String soDienThoaiKh,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+            String ipAddress = request.getRemoteAddr();
+
+            adminKhachHangService.createKhachHang(email, matKhau, hoTenKh, soDienThoaiKh, actingTaiKhoanId, ipAddress);
+            redirectAttributes.addFlashAttribute("success", "Tạo mới tài khoản khách hàng thành công!");
+            return "redirect:/admin/khach-hang?themThanhCong";
+        } catch (Exception e) {
+            String errorMessage = friendlyErrorMessage(e);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
+            redirectAttributes.addFlashAttribute("loi", errorMessage);
+            return "redirect:/admin/khach-hang";
+        }
+    }
+
+    @PostMapping("/khach-hang/sua/{id}")
+    public String xuLySuaKhachHang(
+            @PathVariable("id") Integer id,
+            @RequestParam("hoTenKh") String hoTenKh,
+            @RequestParam(value = "soDienThoaiKh", required = false) String soDienThoaiKh,
+            @RequestParam("trangThai") String trangThai,
+            @RequestParam(value = "newPassword", required = false) String newPassword,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+            String ipAddress = request.getRemoteAddr();
+
+            adminKhachHangService.updateKhachHang(id, hoTenKh, soDienThoaiKh, trangThai, newPassword, actingTaiKhoanId, ipAddress);
+            redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin khách hàng thành công!");
+            return "redirect:/admin/khach-hang?suaThanhCong";
+        } catch (Exception e) {
+            String errorMessage = friendlyErrorMessage(e);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
+            redirectAttributes.addFlashAttribute("loi", errorMessage);
+            return "redirect:/admin/khach-hang";
+        }
     }
 
     @GetMapping("/khach-hang/api/{id}")
