@@ -123,7 +123,7 @@
                                             <form th:if="${nv.taiKhoan.trangThai == 'hoat_dong'}" 
                                                   th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
                                                   method="POST" style="display: inline;"
-                                                  onsubmit="return confirm('Bạn có chắc chắn muốn yêu cầu khóa tài khoản này? Yêu cầu sẽ được gửi tới Admin phê duyệt.');">
+                                                  onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn yêu cầu khóa tài khoản này? Yêu cầu sẽ được gửi tới Admin phê duyệt.');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-danger ms-1" title="Khóa tài khoản">
                                                     <i class="fas fa-lock-open"></i> Khóa
@@ -133,7 +133,7 @@
                                             <form th:if="${nv.taiKhoan.trangThai == 'cho_khoa'}" 
                                                   th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
                                                   method="POST" style="display: inline;"
-                                                  onsubmit="return confirm('Bạn có muốn hủy yêu cầu khóa tài khoản này không?');">
+                                                  onsubmit="return confirmSubmitForm(this, 'Bạn có muốn hủy yêu cầu khóa tài khoản này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-secondary ms-1" title="Hủy yêu cầu khóa">
                                                     <i class="fas fa-undo"></i> Hủy yêu cầu khóa
@@ -143,7 +143,7 @@
                                             <form th:if="${nv.taiKhoan.trangThai == 'bi_khoa'}" 
                                                   th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
                                                   method="POST" style="display: inline;"
-                                                  onsubmit="return confirm('Bạn có muốn mở khóa cho tài khoản này hoạt động trở lại?');">
+                                                  onsubmit="return confirmSubmitForm(this, 'Bạn có muốn mở khóa cho tài khoản này hoạt động trở lại không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-success ms-1" title="Mở khóa tài khoản">
                                                     <i class="fas fa-lock"></i> Kích hoạt

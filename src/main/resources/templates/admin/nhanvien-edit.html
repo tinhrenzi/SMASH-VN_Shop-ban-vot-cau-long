@@ -46,7 +46,7 @@
                             <h5 class="fw-bold mb-0 text-white"><i class="fas fa-user-edit me-2 text-brand"></i>Sửa Thông Tin Tài Khoản: <span th:text="${nv.taiKhoan.username}" class="text-warning"></span></h5>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/admin/nhan-vien/sua/{id}(id=${nv.id})}" method="POST" class="row g-4">
+                            <form th:action="@{/admin/nhan-vien/sua/{id}(id=${nv.id})}" method="POST" class="row g-4" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn cập nhật thông tin nhân viên này không?');">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 
                                 <!-- Email đăng nhập (Read Only) -->

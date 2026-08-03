@@ -259,7 +259,62 @@
                     });
                 }
             });
+
+            // Global SweetAlert2 Confirmation Helpers
+            window.confirmSubmitForm = function(formElement, message) {
+                if (formElement.dataset.confirmed === "true") {
+                    return true;
+                }
+                const msgLower = (message || '').toLowerCase();
+                const isDelete = msgLower.includes('xóa') || msgLower.includes('khóa') || msgLower.includes('tạm dừng') || msgLower.includes('ngừng') || msgLower.includes('ẩn');
+                Swal.fire({
+                    title: isDelete ? 'Xác nhận thực hiện' : 'Xác nhận cập nhật',
+                    text: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+                    icon: isDelete ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: isDelete ? '#dc2626' : '#ff4500',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Xác nhận',
+                    cancelButtonText: 'Hủy bỏ',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        formElement.dataset.confirmed = "true";
+                        const submitBtn = formElement.querySelector("button[type='submit']");
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Đang xử lý...`;
+                        }
+                        formElement.submit();
+                    }
+                });
+                return false;
+            };
+
+            window.confirmActionLink = function(event, linkElement, message) {
+                if (event) event.preventDefault();
+                const href = linkElement.getAttribute('href');
+                const msgLower = (message || '').toLowerCase();
+                const isDelete = msgLower.includes('xóa') || msgLower.includes('khóa') || msgLower.includes('tạm dừng') || msgLower.includes('ngừng') || msgLower.includes('ẩn');
+                Swal.fire({
+                    title: 'Xác nhận thực hiện',
+                    text: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+                    icon: isDelete ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: isDelete ? '#dc2626' : '#ff4500',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Xác nhận',
+                    cancelButtonText: 'Hủy bỏ',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = href;
+                    }
+                });
+                return false;
+            };
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </div>
 
 </body>

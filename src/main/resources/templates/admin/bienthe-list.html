@@ -45,7 +45,7 @@
                     <h5 class="mb-0 text-white"><i class="fas fa-plus-circle me-2 text-brand"></i>Thêm Phân Loại Biến Thể Mới</h5>
                 </div>
                 <div class="card-body bg-white">
-                    <form id="formThemBienThe" th:action="@{/admin/san-pham/{id}/bien-the/them(id=${sp.id})}" method="post" enctype="multipart/form-data">
+                    <form id="formThemBienThe" th:action="@{/admin/san-pham/{id}/bien-the/them(id=${sp.id})}" method="post" enctype="multipart/form-data" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn thêm biến thể mới này không?');">
                         <!-- CSRF Token -->
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <div class="row mb-3">
@@ -152,13 +152,13 @@
                                         <a th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and (bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban')}"
                                            th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                            class="btn btn-sm btn-danger ms-1" title="Ẩn Biến Thể"
-                                           onclick="return confirm('Ẩn phân loại này khỏi khách hàng? Admin vẫn có thể mở bán lại sau.');">
+                                           onclick="return confirmActionLink(event, this, 'Ẩn phân loại này khỏi khách hàng? Admin vẫn có thể mở bán lại sau.');">
                                             <i class="fas fa-eye-slash"></i> Ẩn
                                         </a>
                                         <a th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and (bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban')}"
                                            th:href="@{/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                            class="btn btn-sm btn-success ms-1" title="Mở Bán Lại"
-                                           onclick="return confirm('Mở bán lại phân loại này?');">
+                                           onclick="return confirmActionLink(event, this, 'Bạn có chắc chắn muốn mở bán lại phân loại này?');">
                                             <i class="fas fa-undo"></i> Mở lại
                                         </a>
                                     </td>

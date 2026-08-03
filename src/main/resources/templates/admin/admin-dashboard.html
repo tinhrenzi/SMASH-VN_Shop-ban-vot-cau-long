@@ -292,14 +292,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (btnApprove) {
                 const id = btnApprove.getAttribute('data-id');
-                if (confirm('Bạn có chắc chắn muốn PHÊ DUYỆT KHÓA tài khoản này? Người này sẽ bị chặn truy cập hệ thống ngay lập tức.')) {
-                    processLockAction(id, 'approve-lock');
-                }
+                Swal.fire({
+                    title: 'Xác nhận phê duyệt',
+                    text: 'Bạn có chắc chắn muốn PHÊ DUYỆT KHÓA tài khoản này? Người này sẽ bị chặn truy cập hệ thống ngay lập tức.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Phê duyệt khóa',
+                    cancelButtonText: 'Hủy bỏ',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) processLockAction(id, 'approve-lock');
+                });
             } else if (btnReject) {
                 const id = btnReject.getAttribute('data-id');
-                if (confirm('Bạn có chắc chắn muốn TỪ CHỐI KHÓA tài khoản này? Trạng thái hoạt động của nhân viên sẽ được giữ nguyên.')) {
-                    processLockAction(id, 'reject-lock');
-                }
+                Swal.fire({
+                    title: 'Xác nhận từ chối',
+                    text: 'Bạn có chắc chắn muốn TỪ CHỐI KHÓA tài khoản này? Trạng thái hoạt động của nhân viên sẽ được giữ nguyên.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Từ chối khóa',
+                    cancelButtonText: 'Hủy bỏ',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) processLockAction(id, 'reject-lock');
+                });
             }
         });
     }

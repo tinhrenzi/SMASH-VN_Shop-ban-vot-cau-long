@@ -162,7 +162,7 @@
                                             </button>
                                         </form>
                                         <!-- Soft Delete (QL only) -->
-                                        <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/delete/{id}(id=${blog.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA bài viết này? Bài viết sẽ được lưu trữ 90 ngày trước khi bị xóa vĩnh viễn.');">
+                                        <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/delete/{id}(id=${blog.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn XÓA bài viết này? Bài viết sẽ được lưu trữ 90 ngày trước khi bị xóa vĩnh viễn.');">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                             <button type="submit" class="btn btn-sm btn-outline-danger px-2 ms-1" title="Xóa tạm thời">
                                                 <i class="fas fa-trash"></i>

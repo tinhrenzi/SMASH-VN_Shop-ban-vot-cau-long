@@ -106,7 +106,7 @@
                                             <!-- Nút gỡ khóa bình luận thủ công -->
                                             <form th:if="${vp.taiKhoan != null and vp.taiKhoan.ngayKhoaBinhLuanDen != null and vp.taiKhoan.ngayKhoaBinhLuanDen.isAfter(T(java.time.LocalDateTime).now())}" 
                                                   th:action="@{'/admin/danh-gia/vi-pham/go-khoa/' + ${vp.taiKhoan.id}}" method="post"
-                                                  onsubmit="return confirm('Bạn có chắc chắn muốn mở khóa tính năng bình luận cho tài khoản này sớm hơn thời hạn?');">
+                                                  onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn mở khóa tính năng bình luận cho tài khoản này sớm hơn thời hạn không?');">
                                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-success w-100">
                                                     <i class="fas fa-unlock me-1"></i>Mở Khóa
@@ -115,7 +115,7 @@
                                             <!-- Nút reset số lần vi phạm -->
                                             <form th:if="${vp.taiKhoan != null and vp.taiKhoan.soLanNhacNhoViPham != null and vp.taiKhoan.soLanNhacNhoViPham > 0}" 
                                                   th:action="@{'/admin/danh-gia/vi-pham/reset-vi-pham/' + ${vp.taiKhoan.id}}" method="post"
-                                                  onsubmit="return confirm('Bạn có chắc chắn muốn reset bộ đếm vi phạm về 0 cho tài khoản này?');">
+                                                  onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn reset bộ đếm vi phạm về 0 cho tài khoản này không?');">
                                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-warning w-100">
                                                     <i class="fas fa-redo me-1"></i>Reset Vi Phạm

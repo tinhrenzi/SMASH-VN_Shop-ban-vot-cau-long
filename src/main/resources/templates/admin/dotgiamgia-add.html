@@ -68,7 +68,7 @@
                             <h5 class="fw-bold mb-0 text-white"><i class="fas fa-percent me-2 text-brand"></i>Thông Tin Chiến Dịch Đợt Giảm Giá</h5>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/admin/khuyen-mai/dot-giam-gia/them}" method="POST" id="campaignForm">
+                            <form th:action="@{/admin/khuyen-mai/dot-giam-gia/them}" method="POST" id="campaignForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn khởi tạo đợt giảm giá này không?');">
                                 <div class="row g-4">
                                     <!-- A. Thông tin chiến dịch -->
                                     <div class="col-12 border-bottom pb-2">

@@ -269,8 +269,8 @@
                                             </form>
 
                                             <!-- Hành động Xóa Mềm -->
-                                            <form th:if="${!dg.daXoa}" th:action="@{'/admin/danh-gia/xoa/' + ${dg.id}}" method="post" 
-                                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa mềm đánh giá này? Khách hàng sẽ không nhìn thấy điểm số và bình luận nữa.');">
+                                             <form th:if="${!dg.daXoa}" th:action="@{'/admin/danh-gia/xoa/' + ${dg.id}}" method="post" 
+                                                   onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn xóa mềm đánh giá này không? Khách hàng sẽ không nhìn thấy điểm số và bình luận nữa.');">
                                                 <button type="submit" class="btn btn-sm btn-danger w-100">
                                                     <i class="fas fa-trash me-1"></i>Xóa Mềm
                                                 </button>

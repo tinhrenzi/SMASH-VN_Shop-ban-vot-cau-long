@@ -46,7 +46,7 @@
                             <h5 class="fw-bold mb-0 text-white"><i class="fas fa-user-plus me-2 text-brand"></i>Nhập Thông Tin Tài Khoản Nhân Viên</h5>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/admin/nhan-vien/them}" method="POST" class="row g-4">
+                            <form th:action="@{/admin/nhan-vien/them}" method="POST" class="row g-4" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn khởi tạo tài khoản nhân viên mới này không?');">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <!-- Email đăng nhập -->
                                 <div class="col-md-6">

@@ -121,13 +121,13 @@
                                             <a th:href="@{/admin/khuyen-mai/dot-giam-gia/sua/{id}(id=${dgg.id})}" class="btn btn-sm btn-outline-primary px-2" title="Chỉnh sửa">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form th:if="${dgg.active}" th:action="@{/admin/khuyen-mai/dot-giam-gia/deactivate/{id}(id=${dgg.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn TẠM DỪNG chiến dịch này?');">
+                                            <form th:if="${dgg.active}" th:action="@{/admin/khuyen-mai/dot-giam-gia/deactivate/{id}(id=${dgg.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn TẠM DỪNG chiến dịch này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-warning px-2" title="Tạm dừng">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             </form>
-                                            <form th:if="${dgg.active}" th:action="@{/admin/khuyen-mai/dot-giam-gia/delete/{id}(id=${dgg.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA chiến dịch này?');">
+                                            <form th:if="${dgg.active}" th:action="@{/admin/khuyen-mai/dot-giam-gia/delete/{id}(id=${dgg.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn XÓA chiến dịch này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger px-2" title="Xóa">
                                                     <i class="fas fa-trash"></i>
@@ -200,13 +200,13 @@
                                             <a th:href="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${pgg.id})}" class="btn btn-sm btn-outline-primary px-2" title="Chỉnh sửa">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form th:if="${pgg.active}" th:action="@{/admin/khuyen-mai/phieu-giam-gia/deactivate/{id}(id=${pgg.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn TẠM DỪNG phát hành phiếu này?');">
+                                            <form th:if="${pgg.active}" th:action="@{/admin/khuyen-mai/phieu-giam-gia/deactivate/{id}(id=${pgg.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn TẠM DỪNG phát hành phiếu này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-warning px-2" title="Tạm dừng">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             </form>
-                                            <form th:if="${pgg.active}" th:action="@{/admin/khuyen-mai/phieu-giam-gia/delete/{id}(id=${pgg.id})}" method="POST" style="display: inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA phiếu này?');">
+                                            <form th:if="${pgg.active}" th:action="@{/admin/khuyen-mai/phieu-giam-gia/delete/{id}(id=${pgg.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn XÓA phiếu giảm giá này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger px-2" title="Xóa">
                                                     <i class="fas fa-trash"></i>

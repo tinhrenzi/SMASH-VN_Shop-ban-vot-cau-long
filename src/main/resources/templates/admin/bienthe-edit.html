@@ -42,7 +42,7 @@
                         <div class="card-body p-4 bg-white">
                             <div th:if="${error != null}" class="alert alert-danger border-0 shadow-sm mb-4" th:text="${error}">Đã xảy ra lỗi!</div>
 
-                            <form id="formSuaBienThe" th:action="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" method="post" enctype="multipart/form-data">
+                            <form id="formSuaBienThe" th:action="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" method="post" enctype="multipart/form-data" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn lưu thông tin cập nhật cho biến thể này không?');">
                                 <!-- CSRF Token -->
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 

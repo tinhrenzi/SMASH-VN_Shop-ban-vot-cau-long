@@ -138,17 +138,16 @@
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                     <form th:action="@{/admin/danh-muc/an/{id}(id=${dm.id})}" method="POST"
-                                                        style="display:inline;">
+                                                        style="display:inline;"
+                                                        onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn thay đổi trạng thái ẩn/hiện danh mục này không?');">
                                                         <input type="hidden" th:if="${_csrf != null}"
                                                             th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                         <button type="submit" th:if="${dm.trangThai}" class="btn btn-secondary btn-action-square ms-1"
-                                                            title="Ẩn danh mục khỏi người dùng"
-                                                            onclick="return confirm('Bạn có chắc chắn muốn ẩn danh mục này khỏi giao diện người dùng?');">
+                                                            title="Ẩn danh mục khỏi người dùng">
                                                             <i class="fas fa-eye-slash"></i>
                                                         </button>
                                                         <button type="submit" th:unless="${dm.trangThai}" class="btn btn-success btn-action-square ms-1"
-                                                            title="Hiển thị danh mục trên giao diện người dùng"
-                                                            onclick="return confirm('Bạn có chắc chắn muốn hiển thị lại danh mục này?');">
+                                                            title="Hiển thị danh mục trên giao diện người dùng">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
                                                     </form>
@@ -229,17 +228,16 @@
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                     <form th:action="@{/admin/danh-muc/thuong-hieu/an/{id}(id=${th.id})}"
-                                                        method="POST" style="display:inline;">
+                                                        method="POST" style="display:inline;"
+                                                        onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn thay đổi trạng thái ẩn/hiện thương hiệu này không?');">
                                                         <input type="hidden" th:if="${_csrf != null}"
                                                             th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                         <button type="submit" th:if="${th.trangThai}" class="btn btn-secondary btn-action-square ms-1"
-                                                            title="Ẩn thương hiệu khỏi người dùng"
-                                                            onclick="return confirm('Bạn có chắc chắn muốn ẩn thương hiệu này khỏi giao diện người dùng?');">
+                                                            title="Ẩn thương hiệu khỏi người dùng">
                                                             <i class="fas fa-eye-slash"></i>
                                                         </button>
                                                         <button type="submit" th:unless="${th.trangThai}" class="btn btn-success btn-action-square ms-1"
-                                                            title="Hiển thị thương hiệu trên giao diện người dùng"
-                                                            onclick="return confirm('Bạn có chắc chắn muốn hiển thị lại thương hiệu này?');">
+                                                            title="Hiển thị thương hiệu trên giao diện người dùng">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
                                                     </form>
@@ -270,7 +268,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <form id="formSuaDanhMuc" method="POST" novalidate>
+                <form id="formSuaDanhMuc" method="POST" novalidate onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn lưu các thay đổi cho danh mục này không?');">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}"
                         th:value="${_csrf.token}" />
                     <div class="modal-body">
@@ -326,7 +324,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <form id="formSuaThuongHieu" method="POST" novalidate>
+                <form id="formSuaThuongHieu" method="POST" novalidate onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn lưu thông tin thương hiệu này không?');">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}"
                         th:value="${_csrf.token}" />
                     <div class="modal-body">

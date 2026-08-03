@@ -137,7 +137,7 @@
                                         <form th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" 
                                               th:action="@{/admin/san-pham/xoa/{id}(id=${sp.id})}" 
                                               method="POST" style="display: inline;"
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn ngừng bán sản phẩm này?');">
+                                              onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn ngừng bán sản phẩm này không?');">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                             <button type="submit" class="btn btn-danger btn-action-square ms-1" title="Ngừng bán">
                                                 <i class="fas fa-trash-alt"></i>
@@ -147,7 +147,7 @@
                                         <form th:if="${sp.trangThai == 'ngung_kinh_doanh'}" 
                                               th:action="@{/admin/san-pham/mo-ban-lai/{id}(id=${sp.id})}" 
                                               method="POST" style="display: inline;"
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn mở bán lại sản phẩm này?');">
+                                              onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn mở bán lại sản phẩm này không?');">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                             <button type="submit" class="btn btn-success btn-action-square ms-1" title="Mở bán lại">
                                                 <i class="fas fa-play"></i>

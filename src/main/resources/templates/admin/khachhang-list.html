@@ -212,7 +212,7 @@
                 </div>
                 <div class="modal-footer bg-light border-0 py-3">
                     <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn btn-brand px-4"><i class="fas fa-save me-1"></i> Lưu Cập Nhật</button>
+                    <button type="submit" class="btn btn-brand px-4"><i class="fas fa-save me-1"></i> Cập Nhật</button>
                 </div>
             </form>
         </div>
@@ -362,14 +362,14 @@ function confirmSubmitForm(formElement, message) {
         return true;
     }
     Swal.fire({
-        title: 'Xác nhận thao tác',
+        title: 'Xác nhận cập nhật',
         text: message,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#0d6efd',
+        confirmButtonColor: '#ff4500',
         cancelButtonColor: '#6c757d',
         confirmButtonText: 'Xác nhận',
-        cancelButtonText: 'Hủy',
+        cancelButtonText: 'Hủy bỏ',
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
@@ -377,7 +377,7 @@ function confirmSubmitForm(formElement, message) {
             const submitBtn = formElement.querySelector("button[type='submit']");
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Đang lưu...`;
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Đang cập nhật...`;
             }
             formElement.submit();
         }

@@ -42,7 +42,7 @@
                             <h5 class="fw-bold mb-0 text-white"><i class="fas fa-edit me-2 text-brand"></i>Chỉnh Sửa Phiếu Giảm Giá <span th:text="'#' + ${voucher.id}"></span></h5>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${voucher.id})}" method="POST" id="voucherForm">
+                            <form th:action="@{/admin/khuyen-mai/phieu-giam-gia/sua/{id}(id=${voucher.id})}" method="POST" id="voucherForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn cập nhật phiếu giảm giá này không?');">
                                 <div class="row g-4">
                                     <!-- Mã phiếu -->
                                     <div class="col-md-12">

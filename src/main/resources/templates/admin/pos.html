@@ -1584,40 +1584,50 @@
     function cancelPendingOrder(hoaDonId) {
         stopPaymentPolling();
         
-        if (!confirm("Bạn có chắc chắn muốn HỦY hóa đơn này? Hành động này sẽ khôi phục lại tồn kho và voucher.")) {
-            // Nếu người dùng click cancel thì tiếp tục polling
-            startPaymentPolling(currentCheckoutMaHoaDon, hoaDonId);
-            return;
-        }
-
-        const overlay = document.getElementById("posLoadingOverlay");
-        overlay.style.display = "flex";
-        closePaymentConfirmModal();
-
-        const tokenHolder = document.getElementById('csrf-token-holder');
-        const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
-        const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
-        const headers = { "Content-Type": "application/json" };
-        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
-
-        fetch(`/admin/pos/cancel-order/${hoaDonId}`, {
-            method: "POST",
-            headers: headers
-        })
-        .then(res => res.json())
-        .then(data => {
-            overlay.style.display = "none";
-            if (data.success) {
-                clearPOSState();
-                showToast("Hủy hóa đơn chờ thanh toán thành công. Tồn kho và voucher đã được khôi phục.", "info");
-            } else {
-                showToast(`Lỗi hủy hóa đơn: ${data.message}`, "error");
+        Swal.fire({
+            title: 'Hủy hóa đơn?',
+            text: 'Bạn có chắc chắn muốn HỦY hóa đơn này? Hành động này sẽ khôi phục lại tồn kho và voucher.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xác nhận hủy',
+            cancelButtonText: 'Quay lại',
+            reverseButtons: true
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                startPaymentPolling(currentCheckoutMaHoaDon, hoaDonId);
+                return;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            overlay.style.display = "none";
-            showToast("Đã xảy ra lỗi kết nối khi hủy hóa đơn.", "error");
+            const overlay = document.getElementById("posLoadingOverlay");
+            overlay.style.display = "flex";
+            closePaymentConfirmModal();
+
+            const tokenHolder = document.getElementById('csrf-token-holder');
+            const csrfToken = tokenHolder ? tokenHolder.getAttribute('data-csrf-token') : '';
+            const csrfHeader = tokenHolder ? tokenHolder.getAttribute('data-csrf-header') : '';
+            const headers = { "Content-Type": "application/json" };
+            if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+            fetch(`/admin/pos/cancel-order/${hoaDonId}`, {
+                method: "POST",
+                headers: headers
+            })
+            .then(res => res.json())
+            .then(data => {
+                overlay.style.display = "none";
+                if (data.success) {
+                    clearPOSState();
+                    showToast("Hủy hóa đơn chờ thanh toán thành công. Tồn kho và voucher đã được khôi phục.", "info");
+                } else {
+                    showToast(`Lỗi hủy hóa đơn: ${data.message}`, "error");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                overlay.style.display = "none";
+                showToast("Đã xảy ra lỗi kết nối khi hủy hóa đơn.", "error");
+            });
         });
     }
 

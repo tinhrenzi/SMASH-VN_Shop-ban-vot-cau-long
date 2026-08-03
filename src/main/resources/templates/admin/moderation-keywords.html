@@ -106,7 +106,7 @@
                                                     </button>
 
                                                     <!-- Delete Form -->
-                                                    <form th:action="@{/admin/moderation/keywords/delete/{id}(id=${kw.id})}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa từ khóa này?')">
+                                                     <form th:action="@{/admin/moderation/keywords/delete/{id}(id=${kw.id})}" method="POST" class="d-inline" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn xóa từ khóa cấm này không?');">
                                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
                                                             <i class="fas fa-trash"></i>
