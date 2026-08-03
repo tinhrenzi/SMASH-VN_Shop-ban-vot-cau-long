@@ -2,7 +2,6 @@ package com.smashvn.shop.service.admin;
 
 import java.time.LocalDateTime;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.mail.SimpleMailMessage;
@@ -99,15 +98,15 @@ public class AdminKhachHangService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email.trim());
             message.setSubject("[SmashVN] Cảnh báo bảo mật: Mật khẩu tài khoản của bạn đã được thay đổi");
-            
+
             String nameDisplay = (hoTenKh != null && !hoTenKh.isBlank()) ? hoTenKh.trim() : "Khách hàng";
             String content = String.format(
-                "Xin chào %s,\n\n" +
-                "Mật khẩu tài khoản SmashVN của bạn (%s) đã được quản trị viên đặt lại vào lúc %s.\n\n" +
-                "Nếu bạn KHÔNG yêu cầu thao tác này, vui lòng liên hệ ngay với bộ phận hỗ trợ hoặc quản trị viên hệ thống SmashVN để đảm bảo an toàn cho tài khoản.\n\n" +
-                "Trân trọng,\n" +
-                "Đội ngũ Hỗ trợ SmashVN",
-                nameDisplay, email, LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+                    "Xin chào %s,\n\n"
+                    + "Mật khẩu tài khoản SmashVN của bạn (%s) đã được quản trị viên đặt lại vào lúc %s.\n\n"
+                    + "Nếu bạn KHÔNG yêu cầu thao tác này, vui lòng liên hệ ngay với bộ phận hỗ trợ hoặc quản trị viên hệ thống SmashVN để đảm bảo an toàn cho tài khoản.\n\n"
+                    + "Trân trọng,\n"
+                    + "Đội ngũ Hỗ trợ SmashVN",
+                    nameDisplay, email, LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
             );
             message.setText(content);
             mailSender.send(message);
@@ -189,7 +188,7 @@ public class AdminKhachHangService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public KhachHang updateKhachHang(Integer idKhachHang, String hoTenKh, String soDienThoaiKh, String trangThai, String newPassword, Integer actingTaiKhoanId, String ipAddress) {
+    public KhachHang updateKhachHang(Integer idKhachHang, String hoTenKh, String soDienThoaiKh, String trangThai, Integer actingTaiKhoanId, String ipAddress) {
         String trimmedName = (hoTenKh == null) ? "" : hoTenKh.trim();
         String sanitizedName = Jsoup.clean(trimmedName, Safelist.none());
 
@@ -205,15 +204,6 @@ public class AdminKhachHangService {
 
         if (!trimmedPhone.isEmpty() && !trimmedPhone.matches(ValidationUtils.PHONE_REGEX)) {
             throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam!");
-        }
-
-        boolean passwordChanged = false;
-        if (newPassword != null && !newPassword.trim().isEmpty()) {
-            String trimmedPass = newPassword.trim();
-            if (trimmedPass.length() < 8 || trimmedPass.length() > 50) {
-                throw new IllegalArgumentException("Mật khẩu mới phải dài từ 8 đến 50 ký tự!");
-            }
-            passwordChanged = true;
         }
 
         KhachHang kh = findById(idKhachHang);
@@ -232,9 +222,6 @@ public class AdminKhachHangService {
             if (trangThai != null && !trangThai.isBlank()) {
                 tk.setTrangThai(trangThai);
             }
-            if (passwordChanged) {
-                tk.setMatKhau(passwordEncoder.encode(newPassword.trim()));
-            }
             tk.setNgayCapNhat(LocalDateTime.now());
             saveTaiKhoan(tk);
         }
@@ -244,15 +231,7 @@ public class AdminKhachHangService {
             TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
             String role = actingUser != null ? actingUser.getVaiTro() : "ADMIN";
             String note = "Cập nhật thông tin khách hàng: " + (tk != null ? ValidationUtils.maskEmail(tk.getUsername()) : "ID " + idKhachHang);
-            if (passwordChanged) {
-                note += " (đã đặt lại mật khẩu mới)";
-            }
             auditService.log(actingTaiKhoanId, "KhachHang", kh.getId().longValue(), "UPDATE", oldStateStr, formatState(kh, tk), ipAddress, note, role);
-        }
-
-        // 5. Gửi email cảnh báo nếu đổi mật khẩu
-        if (passwordChanged && tk != null && tk.getUsername() != null && tk.getUsername().contains("@")) {
-            guiEmailCanhBaoMatKhau(tk.getUsername(), sanitizedName);
         }
 
         return kh;

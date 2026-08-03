@@ -303,58 +303,62 @@
                 </div>
             </div>
 
-            <!-- ==================== HÀNG 1: THÔNG TIN SẢN PHẨM GỐC (FULL WIDTH) ==================== -->
-            <div class="custom-card mb-4">
-                <div class="custom-card-header">
-                    <div class="d-flex align-items-center">
-                        <div class="header-icon-box icon-box-primary">
-                            <i class="fas fa-info-circle"></i>
+            <!-- ==================== HÀNG 1: THÔNG TIN SẢN PHẨM GỐC (FULL WIDTH CÂN ĐỐI) ==================== -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="custom-card">
+                        <div class="custom-card-header">
+                            <div class="d-flex align-items-center">
+                                <div class="header-icon-box icon-box-primary">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold fs-6">Thông Tin Sản Phẩm Gốc</h5>
+                                    <small class="text-muted">Cập nhật các thuộc tính cơ bản của sản phẩm</small>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="mb-0 fw-bold fs-6">Thông Tin Sản Phẩm Gốc</h5>
-                            <small class="text-muted">Cập nhật các thuộc tính cơ bản của sản phẩm</small>
+                        <div class="card-body p-4">
+                            <form th:action="@{/admin/san-pham/sua/{id}(id=${sp.id})}" method="post">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Tên Sản Phẩm *</label>
+                                        <input type="text" name="tenSanPham" class="form-control" th:value="${sp.tenSanPham}" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label-custom">Danh Mục *</label>
+                                        <select name="idDanhMuc" class="form-select" required>
+                                            <option value="">-- Chọn --</option>
+                                            <option th:each="dm : ${listDanhMuc}"
+                                                    th:value="${dm.id}"
+                                                    th:text="${dm.tenDanhMuc}"
+                                                    th:selected="${dm.id == sp.danhMuc.id}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label-custom">Thương Hiệu *</label>
+                                        <select name="idThuongHieu" class="form-select" required>
+                                            <option value="">-- Chọn --</option>
+                                            <option th:each="th : ${listThuongHieu}"
+                                                    th:value="${th.id}"
+                                                    th:text="${th.tenThuongHieu}"
+                                                    th:selected="${th.id == sp.thuongHieu.id}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label-custom">Mô tả sản phẩm</label>
+                                    <textarea name="moTa" class="form-control" rows="2" th:text="${sp.moTa}" placeholder="Nhập mô tả sản phẩm..."></textarea>
+                                </div>
+                                <div class="text-end pt-2">
+                                    <button type="submit" class="btn btn-custom-primary">
+                                        <i class="fas fa-save me-2"></i>Lưu Thông Tin Gốc
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </div>
-                <div class="card-body p-4">
-                    <form th:action="@{/admin/san-pham/sua/{id}(id=${sp.id})}" method="post">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Tên Sản Phẩm *</label>
-                                <input type="text" name="tenSanPham" class="form-control" th:value="${sp.tenSanPham}" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label-custom">Danh Mục *</label>
-                                <select name="idDanhMuc" class="form-select" required>
-                                    <option value="">-- Chọn --</option>
-                                    <option th:each="dm : ${listDanhMuc}"
-                                            th:value="${dm.id}"
-                                            th:text="${dm.tenDanhMuc}"
-                                            th:selected="${dm.id == sp.danhMuc.id}"></option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label-custom">Thương Hiệu *</label>
-                                <select name="idThuongHieu" class="form-select" required>
-                                    <option value="">-- Chọn --</option>
-                                    <option th:each="th : ${listThuongHieu}"
-                                            th:value="${th.id}"
-                                            th:text="${th.tenThuongHieu}"
-                                            th:selected="${th.id == sp.thuongHieu.id}"></option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label-custom">Mô tả sản phẩm</label>
-                            <textarea name="moTa" class="form-control" rows="2" th:text="${sp.moTa}" placeholder="Nhập mô tả sản phẩm..."></textarea>
-                        </div>
-                        <div class="text-end pt-2">
-                            <button type="submit" class="btn btn-custom-primary">
-                                <i class="fas fa-save me-2"></i>Lưu Thông Tin Gốc
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
 

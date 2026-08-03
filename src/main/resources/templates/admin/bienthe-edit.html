@@ -19,95 +19,138 @@
             <!-- Header layout dùng chung -->
             <div th:replace="~{admin/layout/header :: header}"></div>
             
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
-                    <span class="text-white">
-                        <i class="fas fa-edit me-2 text-brand"></i>Sửa Phân Loại: 
-                        <span th:text="${sp.tenSanPham}">Tên SP</span>
-                        <span class="badge bg-secondary ms-2" th:text="${sp.danhMuc.tenDanhMuc}">Danh mục</span>
-                    </span>
-                    <a th:href="@{/admin/san-pham/{id}/bien-the(id=${sp.id})}" class="btn btn-sm btn-light">
-                        <i class="fas fa-arrow-left"></i> Quay lại
-                    </a>
-                </div>
-                <div class="card-body bg-white">
-                    <div th:if="${error != null}" class="alert alert-danger border-0 shadow-sm" th:text="${error}">Đã xảy ra lỗi!</div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title">
+                    <i class="fas fa-edit text-brand me-2"></i>Chỉnh Sửa Biến Thể
+                </h2>
+                <a th:href="@{/admin/san-pham/{id}/bien-the(id=${sp.id})}" class="btn btn-secondary shadow-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Quay lại Danh Sách Biến Thể
+                </a>
+            </div>
 
-                    <form id="formSuaBienThe" th:action="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" method="post" enctype="multipart/form-data">
-                        <!-- CSRF Token -->
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <label class="form-label">Giá bán (VNĐ) *</label>
-                                <input type="number" name="giaBan" class="form-control" th:value="${bt.giaBan}" required min="1000" step="1000">
+            <div class="row justify-content-center">
+                <div class="col-lg-10 col-xl-8">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center rounded-top-3">
+                            <div>
+                                <i class="fas fa-box-open text-brand me-2"></i>
+                                <span class="fw-bold text-white">Sản phẩm: <span class="text-warning" th:text="${sp.tenSanPham}">Tên SP</span></span>
+                                <span class="badge bg-secondary ms-2" th:text="${sp.danhMuc.tenDanhMuc}">Danh mục</span>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Số lượng kho *</label>
-                                <input type="number" name="soLuongTon" class="form-control" th:value="${bt.soLuongTon}" required min="0">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Hình ảnh sản phẩm (Để trống nếu giữ ảnh cũ)</label>
-                                <input type="file" name="fileAnh" id="fileAnh" class="form-control" accept="image/jpeg, image/png, image/webp">
-                                <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
-                                
-                                <div class="mt-3 d-flex align-items-center" th:if="${bt.hinhAnhSanPham != null}" id="currentImageArea">
-                                    <small class="text-muted me-2">Ảnh hiện tại:</small>
-                                    <img th:src="@{'/uploads/product/' + ${bt.hinhAnhSanPham}}" alt="Ảnh SP" 
-                                         style="height: 60px; width: 60px; object-fit: contain; padding: 4px; background-color: #ffffff; border-radius: 8px; border: 1px solid #f1f5f9; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span class="badge bg-light text-dark fw-bold px-3 py-2 fs-6">Mã biến thể: #<span th:text="${bt.id}">1</span></span>
+                        </div>
+                        <div class="card-body p-4 bg-white">
+                            <div th:if="${error != null}" class="alert alert-danger border-0 shadow-sm mb-4" th:text="${error}">Đã xảy ra lỗi!</div>
+
+                            <form id="formSuaBienThe" th:action="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" method="post" enctype="multipart/form-data">
+                                <!-- CSRF Token -->
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                <!-- Section 1: Giá & Số lượng kho (Cân đối 2 cột 6 - 6) -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                        <input type="number" name="giaBan" class="form-control" th:value="${bt.giaBan}" required min="1000" step="1000" placeholder="VD: 2500000">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Số lượng kho <span class="text-danger">*</span></label>
+                                        <input type="number" name="soLuongTon" class="form-control" th:value="${bt.soLuongTon}" required min="0" placeholder="VD: 10">
+                                    </div>
                                 </div>
-                                <div id="imagePreviewContainer" class="mt-3" style="display: none;">
-                                    <small class="text-muted d-block mb-1">Xem trước ảnh mới:</small>
-                                    <img id="imagePreview" src="" alt="Preview image" style="height: 60px; width: 60px; object-fit: contain; padding: 4px; background-color: #ffffff; border-radius: 8px; border: 1px solid #f1f5f9; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+
+                                <!-- Section 2: Thuộc tính hiển thị linh hoạt tùy Danh mục -->
+                                <!-- 2A. Dành cho Vợt (3 Thuộc tính: 4 - 4 - 4 = 12 cột) -->
+                                <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Màu sắc <span class="text-danger">*</span></label>
+                                        <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Trọng lượng (Vợt) <span class="text-danger">*</span></label>
+                                        <input type="text" name="trongLuong" class="form-control" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Sức căng khuyến nghị</label>
+                                        <input type="text" name="mucCang" class="form-control" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 20 - 28 lbs">
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Thuộc tính hiển thị theo ID danh mục -->
-                        <div class="row mb-4" th:if="${sp.danhMuc.id != categoryIds['HOP_CAU']}">
-                            <div class="col-md-4">
-                                <label class="form-label">Màu sắc *</label>
-                                <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50">
-                            </div>
-
-                            <!-- Vợt: Trọng lượng -->
-                            <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
-                                <label class="form-label">Trọng lượng (Vợt) *</label>
-                                <input type="text" name="trongLuong" class="form-control" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
-                            </div>
-
-                            <!-- Giày: Kích thước -->
-                            <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['GIAY']}">
-                                <label class="form-label">Size giày *</label>
-                                <input type="text" name="kichThuoc" class="form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46">
-                            </div>
-
-                            <!-- Trang Phục: Kích thước -->
-                            <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['TRANG_PHUC']}">
-                                <label class="form-label">Size trang phục *</label>
-                                <input type="text" name="kichThuoc" class="form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L...">
-                            </div>
-
-                            <!-- Vợt: Sức căng -->
-                            <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
-                                <label class="form-label">Sức căng khuyến nghị chung</label>
-                                <input type="text" name="mucCang" class="form-control" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 20 - 28 lbs">
-                            </div>
-                        </div>
-
-                        <!-- Hộp cầu mặc định -->
-                        <div class="row mb-4" th:if="${sp.danhMuc.id == categoryIds['HOP_CAU']}">
-                            <div class="col-12">
-                                <input type="hidden" name="mauSac" value="Mặc định">
-                                <div class="alert alert-info border-0 shadow-sm">
-                                    <i class="fas fa-info-circle me-2"></i> Hộp cầu không sử dụng màu sắc hoặc kích thước. Bạn đang sửa thông tin giá bán và số lượng của biến thể mặc định này.
+                                <!-- 2B. Dành cho Giày (2 Thuộc tính: 6 - 6 = 12 cột) -->
+                                <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['GIAY']}">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Màu sắc <span class="text-danger">*</span></label>
+                                        <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Size giày <span class="text-danger">*</span></label>
+                                        <input type="text" name="kichThuoc" class="form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="text-center mt-2">
-                            <button type="submit" class="btn btn-warning px-5 fw-bold text-dark shadow-sm"><i class="fas fa-save me-2"></i> LƯU THAY ĐỔI</button>
+                                <!-- 2C. Dành cho Trang Phục (2 Thuộc tính: 6 - 6 = 12 cột) -->
+                                <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['TRANG_PHUC']}">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Màu sắc <span class="text-danger">*</span></label>
+                                        <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Size trang phục <span class="text-danger">*</span></label>
+                                        <input type="text" name="kichThuoc" class="form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L, XL...">
+                                    </div>
+                                </div>
+
+                                <!-- 2D. Dành cho các danh mục khác ngoại trừ Hộp Cầu, Vợt, Giày, Trang Phục (1 Thuộc tính: 12 cột) -->
+                                <div class="row g-3 mb-4" th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and sp.danhMuc.id != categoryIds['VOT'] and sp.danhMuc.id != categoryIds['GIAY'] and sp.danhMuc.id != categoryIds['TRANG_PHUC']}">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Màu sắc <span class="text-danger">*</span></label>
+                                        <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Tiêu chuẩn">
+                                    </div>
+                                </div>
+
+                                <!-- 2E. Dành cho Hộp Cầu -->
+                                <div class="row mb-4" th:if="${sp.danhMuc.id == categoryIds['HOP_CAU']}">
+                                    <div class="col-12">
+                                        <input type="hidden" name="mauSac" value="Mặc định">
+                                        <div class="alert alert-info border-0 shadow-sm mb-0">
+                                            <i class="fas fa-info-circle me-2"></i> Hộp cầu không sử dụng màu sắc hoặc kích thước. Bạn đang sửa thông tin giá bán và số lượng của biến thể mặc định này.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Section 3: Hình ảnh sản phẩm (Khu vực xem trước cân đối) -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Hình ảnh biến thể (Để trống nếu giữ ảnh cũ)</label>
+                                        <input type="file" name="fileAnh" id="fileAnh" class="form-control" accept="image/jpeg, image/png, image/webp">
+                                        <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
+
+                                        <div class="mt-3 p-3 bg-light rounded-3 border d-flex align-items-center gap-4" th:if="${bt.hinhAnhSanPham != null}">
+                                            <div th:if="${bt.hinhAnhSanPham != null}" id="currentImageArea" class="d-flex align-items-center gap-2">
+                                                <small class="text-muted fw-semibold">Ảnh hiện tại:</small>
+                                                <img th:src="@{'/uploads/product/' + ${bt.hinhAnhSanPham}}" alt="Ảnh SP" 
+                                                     style="height: 70px; width: 70px; object-fit: contain; padding: 4px; background-color: #ffffff; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                            </div>
+                                            <div id="imagePreviewContainer" style="display: none;" class="d-flex align-items-center gap-2">
+                                                <small class="text-muted fw-semibold">Xem trước ảnh mới:</small>
+                                                <img id="imagePreview" src="" alt="Preview image" 
+                                                     style="height: 70px; width: 70px; object-fit: contain; padding: 4px; background-color: #ffffff; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-4">
+                                    <a th:href="@{/admin/san-pham/{id}/bien-the(id=${sp.id})}" class="btn btn-secondary px-4">
+                                        <i class="fas fa-times me-1"></i> Hủy bỏ
+                                    </a>
+                                    <button type="submit" class="btn btn-warning fw-bold text-dark px-4 shadow-sm">
+                                        <i class="fas fa-save me-1"></i> LƯU THAY ĐỔI
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </main>
@@ -157,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const reader = new FileReader();
             reader.onload = function (e) {
                 previewImg.src = e.target.result;
-                previewContainer.style.display = "block";
+                previewContainer.style.display = "flex";
                 if (currentImageArea) currentImageArea.style.display = "none";
             };
             reader.readAsDataURL(file);

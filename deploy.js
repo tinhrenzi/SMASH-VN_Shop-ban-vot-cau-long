@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 
 const MCP_URL = "https://onehost-wphn072607.000nethost.com:2023/api/mcp";
-const MCP_TOKEN = process.env.MCP_TOKEN || "sp_ecebf199442b91142e42a7923a5fe6c2a8d6afb110dbb5cb30925ca2a0a64834"; // Token mới nhất của bạn
+const MCP_TOKEN = process.env.MCP_TOKEN || "sp_a0429b5c6e9db4ce91236079923bcc7bf827aaad5208485c157e0ccbab094401"; // Token mới nhất của bạn
 
 // Hàm gửi request HTTP
 function sendRequest(payload, sessionId = null) {
@@ -58,7 +58,7 @@ async function callMcp(toolName, arguments = {}, sessionId) {
 
     const res = await sendRequest(payload, sessionId);
     let body = res.body.trim();
-    
+
     // Parse SSE format (data: {...})
     if (body.includes('data:')) {
         const lines = body.split('\n');
@@ -69,7 +69,7 @@ async function callMcp(toolName, arguments = {}, sessionId) {
             }
         }
     }
-    
+
     return JSON.parse(body);
 }
 
@@ -87,19 +87,27 @@ async function getMcpSession() {
     });
 
     const res = await sendRequest(initPayload);
-    // Lấy Session ID từ Headers (Express/Node chuyển header thành lowercase)
+
+    // In ra để kiểm tra
+    console.log("==== HEADERS ====");
+    console.log(res.headers);
+
+    console.log("==== BODY ====");
+    console.log(res.body);
+
+    // Lấy Session ID từ Headers
     const sessionId = res.headers['mcp-session-id'];
 
     if (sessionId) {
-        // Báo cho server biết đã khởi tạo xong
         const initializedPayload = JSON.stringify({
             jsonrpc: "2.0",
             method: "notifications/initialized",
             params: {}
         });
+
         await sendRequest(initializedPayload, sessionId);
     }
-    
+
     return sessionId;
 }
 
@@ -107,16 +115,16 @@ async function getMcpSession() {
 function findJarFile() {
     const targetDir = path.join(__dirname, 'target');
     if (!fs.existsSync(targetDir)) return null;
-    
+
     const files = fs.readdirSync(targetDir);
     const jarFile = files.find(f => f.endsWith('.jar') && !f.endsWith('-plain.jar'));
-    
+
     return jarFile ? path.join(targetDir, jarFile) : null;
 }
 
 async function deploy() {
     console.log("🚀 Bắt đầu quá trình Deploy qua MCP...");
-    
+
     const jarPath = findJarFile();
     if (!jarPath) {
         console.error("❌ Không tìm thấy file .jar trong thư mục 'target'. Bạn đã chạy lệnh 'mvnw clean package' chưa?");
@@ -135,9 +143,9 @@ async function deploy() {
         // Đọc file .jar thành base64 string
         const jarContentBase64 = fs.readFileSync(jarPath, 'base64');
         const jarName = path.basename(jarPath);
-        
+
         console.log(`⬆️ Đang upload dữ liệu dạng base64... (việc này có thể mất vài phút do file .jar khá lớn)`);
-        
+
         // 1. Ghi file .b64 lên server
         const b64WriteRes = await callMcp("write_file", {
             path: `public_html/${jarName}.b64`,

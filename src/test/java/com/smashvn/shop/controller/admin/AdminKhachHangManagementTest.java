@@ -71,26 +71,11 @@ public class AdminKhachHangManagementTest {
         String newSdt = "0900000002";
         String newTrangThai = "bi_khoa";
 
-        KhachHang updatedKh = adminKhachHangService.updateKhachHang(kh.getId(), newName, newSdt, newTrangThai, null, null, "127.0.0.1");
+        KhachHang updatedKh = adminKhachHangService.updateKhachHang(kh.getId(), newName, newSdt, newTrangThai, null, "127.0.0.1");
 
         assertEquals(newName, updatedKh.getHoTenKh());
         assertEquals(newSdt, updatedKh.getSoDienThoaiKh());
         assertEquals("bi_khoa", updatedKh.getTaiKhoan().getTrangThai());
         assertEquals(AccountStatus.LOCKED, updatedKh.getTaiKhoan().getTrangThaiTaiKhoan());
-    }
-
-    @Test
-    public void testUpdateKhachHangPasswordReset() {
-        String testEmail = "khachhangpass_" + System.currentTimeMillis() + "@smash.vn";
-        String oldPass = "PasswordOld123";
-        String newPass = "PasswordNew456";
-
-        KhachHang kh = adminKhachHangService.createKhachHang(testEmail, oldPass, "Khách Pass", "0900000003", null, "127.0.0.1");
-        assertTrue(passwordEncoder.matches(oldPass, kh.getTaiKhoan().getMatKhau()));
-
-        KhachHang updatedKh = adminKhachHangService.updateKhachHang(kh.getId(), "Khách Pass", "0900000003", "hoat_dong", newPass, null, "127.0.0.1");
-
-        assertTrue(passwordEncoder.matches(newPass, updatedKh.getTaiKhoan().getMatKhau()));
-        assertFalse(passwordEncoder.matches(oldPass, updatedKh.getTaiKhoan().getMatKhau()));
     }
 }

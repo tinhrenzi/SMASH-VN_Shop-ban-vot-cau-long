@@ -1,5 +1,6 @@
 package com.smashvn.shop.controller.admin;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +9,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.PaymentTransaction;
@@ -234,7 +234,6 @@ public class AdminController {
             @RequestParam("hoTenKh") String hoTenKh,
             @RequestParam(value = "soDienThoaiKh", required = false) String soDienThoaiKh,
             @RequestParam("trangThai") String trangThai,
-            @RequestParam(value = "newPassword", required = false) String newPassword,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
@@ -242,7 +241,7 @@ public class AdminController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminKhachHangService.updateKhachHang(id, hoTenKh, soDienThoaiKh, trangThai, newPassword, actingTaiKhoanId, ipAddress);
+            adminKhachHangService.updateKhachHang(id, hoTenKh, soDienThoaiKh, trangThai, actingTaiKhoanId, ipAddress);
             redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin khách hàng thành công!");
             return "redirect:/admin/khach-hang?suaThanhCong";
         } catch (Exception e) {
@@ -306,9 +305,15 @@ public class AdminController {
             item.put("hoTenNguoiNhan", dc.getHoVaTenNguoiNhan());
             item.put("sdtNguoiNhan", dc.getSdtNguoiNhan());
             StringBuilder fullAddr = new StringBuilder(dc.getDiaChiCuThe() != null ? dc.getDiaChiCuThe() : "");
-            if (dc.getPhuongXa() != null && !dc.getPhuongXa().isBlank()) fullAddr.append(", ").append(dc.getPhuongXa());
-            if (dc.getQuanHuyen() != null && !dc.getQuanHuyen().isBlank()) fullAddr.append(", ").append(dc.getQuanHuyen());
-            if (dc.getTinhThanh() != null && !dc.getTinhThanh().isBlank()) fullAddr.append(", ").append(dc.getTinhThanh());
+            if (dc.getPhuongXa() != null && !dc.getPhuongXa().isBlank()) {
+                fullAddr.append(", ").append(dc.getPhuongXa());
+            }
+            if (dc.getQuanHuyen() != null && !dc.getQuanHuyen().isBlank()) {
+                fullAddr.append(", ").append(dc.getQuanHuyen());
+            }
+            if (dc.getTinhThanh() != null && !dc.getTinhThanh().isBlank()) {
+                fullAddr.append(", ").append(dc.getTinhThanh());
+            }
             item.put("diaChiFull", fullAddr.toString());
             item.put("laMacDinh", dc.isDiaChiMacDinh());
             return item;

@@ -67,7 +67,7 @@
                                     <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã KH</th>
                                     <th>Họ Tên</th>
-                                    <th>Tên đăng nhập (Email)</th>
+                                    <th>Tên đăng nhập</th>
                                     <th>Số Điện Thoại</th>
                                     <th>Trạng Thái</th>
                                     <th style="width: 170px;" class="text-center">Thao Tác</th>
@@ -98,7 +98,7 @@
                                             <button type="button" 
                                                     class="btn btn-warning text-dark rounded-end ms-1"
                                                     th:onclick="moModalSuaKhachHang([[${kh.id}]], [[${kh.hoTenKh}]], [[${kh.taiKhoan?.username}]], [[${kh.soDienThoaiKh}]], [[${kh.taiKhoan?.trangThai}]])"
-                                                    title="Sửa / Đổi mật khẩu / Khóa tài khoản">
+                                                    title="Sửa / Khóa tài khoản">
                                                 <i class="fas fa-edit me-1"></i>Sửa
                                             </button>
                                         </div>
@@ -132,7 +132,7 @@
                     
                     <!-- Email đăng nhập -->
                     <div class="mb-3">
-                        <label for="themEmail" class="form-label fw-semibold">Email / Tên đăng nhập <span class="text-danger">*</span></label>
+                        <label for="themEmail" class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
                         <input type="email" id="themEmail" name="email" class="form-control" placeholder="example@email.com" required>
                         <div class="form-text text-muted">Email này sẽ dùng làm tên đăng nhập tài khoản và phải là duy nhất.</div>
                     </div>
@@ -183,10 +183,10 @@
                 <div class="modal-body p-4">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     
-                    <!-- Email đăng nhập (Readonly) -->
+                    <!-- Tên đăng nhập (Readonly) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tên đăng nhập (Email)</label>
-                        <input type="email" id="suaEmail" class="form-control bg-light" readonly disabled>
+                        <label class="form-label fw-semibold">Tên đăng nhập</label>
+                        <input type="text" id="suaEmail" class="form-control bg-light" readonly disabled>
                     </div>
 
                     <!-- Họ và tên -->
@@ -208,18 +208,6 @@
                             <option value="hoat_dong">Hoạt động (Cho phép đăng nhập)</option>
                             <option value="bi_khoa">Khóa tài khoản (Cấm truy cập)</option>
                         </select>
-                    </div>
-
-                    <!-- Mật khẩu mới (Tùy chọn) -->
-                    <div class="mb-3">
-                        <label for="suaNewPassword" class="form-label fw-semibold">Mật khẩu mới (Tùy chọn)</label>
-                        <div class="input-group">
-                            <input type="password" id="suaNewPassword" name="newPassword" class="form-control" placeholder="Để trống nếu giữ nguyên mật khẩu cũ" minlength="8" maxlength="50">
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('suaNewPassword', this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="form-text text-muted">Nếu đổi mật khẩu, hệ thống sẽ gửi 1 Email cảnh báo bảo mật tới khách hàng.</div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-0 py-3">
@@ -406,7 +394,6 @@ function moModalSuaKhachHang(id, hoTen, username, sdt, trangThai) {
     document.getElementById('suaEmail').value = username || '';
     document.getElementById('suaHoTenKh').value = hoTen || '';
     document.getElementById('suaSoDienThoaiKh').value = sdt || '';
-    document.getElementById('suaNewPassword').value = '';
     
     const selectTrangThai = document.getElementById('suaTrangThai');
     if (trangThai === 'bi_khoa' || trangThai === 'LOCKED') {
