@@ -717,7 +717,12 @@ function openOrderDetailModal(orderId) {
                         <p class="mb-1"><strong>Địa chỉ nhận:</strong> ${data.diaChi || 'N/A'}</p>
                         <p class="mb-1"><strong>Hình thức vận chuyển:</strong> ${data.donViVanChuyen === 'Mua tại quầy' ? 'Tại quầy' : (data.donViVanChuyen || 'N/A')}</p>
                         ${data.ghnOrderCode ? `
-                            <p class="mb-1 text-success"><strong>Mã vận đơn GHN:</strong> <span class="fw-bold">${data.ghnOrderCode}</span></p>
+                            <p class="mb-1 text-success">
+                                <strong>Mã vận đơn GHN:</strong> <span class="fw-bold me-2">${data.ghnOrderCode}</span>
+                                <button type="button" class="btn btn-xs btn-outline-success py-0 px-2 shadow-sm" style="font-size: 11px;" onclick="syncGhnStatus(${data.id})" title="Đồng bộ ngay trạng thái mới nhất từ GHN">
+                                    <i class="fas fa-sync-alt me-1"></i>Đồng bộ GHN
+                                </button>
+                            </p>
                         ` : (data.donViVanChuyen && (data.donViVanChuyen.toUpperCase().includes('GHN') || data.donViVanChuyen.toUpperCase().includes('GIAO HÀNG NHANH')) ? `
                             <div class="mt-2 p-2 border border-warning rounded bg-warning-subtle" id="ghn-push-box-${data.id}" style="border-width: 1px !important;">
                                 <p class="mb-1 text-warning-emphasis fw-bold" style="font-size: 12px;"><i class="fas fa-exclamation-triangle me-1"></i>Chưa gửi đơn lên GHN Sandbox</p>
@@ -1198,6 +1203,51 @@ window.pushOrderToGhn = function(orderId) {
             errorDiv.innerHTML = `<strong>Lỗi đẩy đơn GHN Sandbox:</strong><br>${err.message}`;
         }
         buttons.forEach(btn => btn.disabled = false);
+    });
+};
+
+window.syncGhnStatus = function(orderId) {
+    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+    const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+    fetch(`/api/ghn/admin/sync/${orderId}`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            Swal.fire({
+                title: 'Đồng bộ thành công',
+                text: `${data.message}\nTrạng thái GHN hiện tại: ${data.ghnStatus}`,
+                icon: 'success',
+                confirmButtonText: 'Đóng'
+            }).then(() => {
+                openOrderDetailModal(orderId);
+            });
+        } else {
+            Swal.fire({
+                title: 'Không thể đồng bộ',
+                text: data.message,
+                icon: 'error',
+                confirmButtonText: 'Đóng'
+            });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        Swal.fire({
+            title: 'Lỗi',
+            text: err.message,
+            icon: 'error',
+            confirmButtonText: 'Đóng'
+        });
     });
 };
 </script>

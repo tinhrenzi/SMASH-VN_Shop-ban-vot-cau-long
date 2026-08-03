@@ -34,6 +34,7 @@ public class GhnStatusMapper {
             case "transporting":
             case "delivering":
             case "money_collect_delivering":
+            case "delivery_fail":
                 return "dang_giao";
 
             case "delivered":
@@ -44,6 +45,8 @@ public class GhnStatusMapper {
             case "lost":
             case "damage":
             case "return":
+            case "returned":
+            case "waiting_to_return":
                 return "da_huy";
 
             default:
@@ -54,7 +57,7 @@ public class GhnStatusMapper {
     /**
      * Kiểm tra xem trạng thái GHN có phải là trạng thái kết thúc (terminal) hay
      * không. Trạng thái kết thúc: delivered, cancel, exception, lost, damage,
-     * return.
+     * return, returned.
      */
     public boolean isTerminalGhnStatus(String ghnStatus) {
         if (ghnStatus == null) {
@@ -68,6 +71,7 @@ public class GhnStatusMapper {
             case "lost":
             case "damage":
             case "return":
+            case "returned":
                 return true;
             default:
                 return false;

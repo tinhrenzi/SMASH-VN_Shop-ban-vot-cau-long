@@ -291,6 +291,55 @@ public class GhnRestController {
     }
 
     /**
+     * [ADMIN] Đồng bộ thủ công trạng thái đơn hàng từ GHN API về hệ thống nội bộ
+     * POST /api/ghn/admin/sync/{orderId}
+     */
+    @PostMapping("/admin/sync/{orderId}")
+    public ResponseEntity<?> adminSyncGhnStatus(@PathVariable Integer orderId, HttpSession session) {
+        String role = (String) session.getAttribute("vaiTro");
+        if (role == null || (!role.equals("QL") && !role.equals("NV"))) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("status", "error", "message", "Không có quyền truy cập"));
+        }
+
+        try {
+            HoaDon hd = hoaDonRepository.findById(orderId).orElse(null);
+            if (hd == null) {
+                return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy đơn hàng ID=" + orderId));
+            }
+
+            String ghnCode = hd.getGhnOrderCode();
+            if (ghnCode == null || ghnCode.isBlank()) {
+                return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng chưa có mã GHN để đồng bộ"));
+            }
+
+            Map<String, Object> trackingData = ghnService.trackOrder(ghnCode);
+            if (trackingData == null || trackingData.get("status") == null) {
+                return ResponseEntity.ok(Map.of("status", "error", "message", "Không thể truy vấn thông tin từ GHN API cho mã " + ghnCode));
+            }
+
+            String ghnStatus = (String) trackingData.get("status");
+            String internalStatus = ghnStatusMapper.mapToInternalStatus(ghnStatus);
+            if (internalStatus == null) {
+                internalStatus = hd.getTrangThaiDonHang();
+            }
+
+            orderViewService.applyShippingStatus(hd.getId(), internalStatus, ghnStatus);
+            log.info("[ADMIN] Đã đồng bộ thủ công đơn #{}: GHN status={}, internalStatus={}", orderId, ghnStatus, internalStatus);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "ok",
+                    "message", "Đồng bộ trạng thái GHN thành công!",
+                    "ghnStatus", ghnStatus,
+                    "internalStatus", internalStatus
+            ));
+        } catch (Exception e) {
+            log.error("[ADMIN] Sync GHN error orderId={}: {}", orderId, e.getMessage(), e);
+            return ResponseEntity.ok(Map.of("status", "error", "message", "Lỗi đồng bộ: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Webhook nhận cập nhật trạng thái đơn hàng từ GHN POST /api/ghn/webhook
      */
     @PostMapping("/webhook")
