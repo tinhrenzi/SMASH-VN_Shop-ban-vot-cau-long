@@ -11,3 +11,58 @@
 
 ---
 [![](https://visitcount.itsvg.in/api?id=tinhrenzi&icon=0&color=0)](https://visitcount.itsvg.in)
+
+## 🛠️ Dữ liệu mẫu môi trường dev (Professional Data Seeder)
+
+Hệ thống hỗ trợ cơ chế tạo dữ liệu mẫu cho môi trường phát triển (profile `dev`). Seeder mặc định **TẮT** và chạy ở chế độ **DRY-RUN** (chỉ đọc và kiểm tra, không ghi database).
+
+> [!WARNING]
+> Cơ chế seed chỉ được sử dụng cho profile `dev`. Cấm kích hoạt trên môi trường Production!
+
+### 1. Cách chạy Dry-Run (An toàn, không ghi Database)
+Mở PowerShell tại thư mục gốc của dự án và chạy:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
+$env:APP_SEED_ENABLED="true"
+$env:APP_SEED_DRY_RUN="true"
+$env:APP_SEED_INCLUDE_COMMERCE="false"
+$env:APP_SEED_PRODUCT_IMAGE_ROOT="uploads/product"
+$env:APP_PASSWORD_MIGRATION_ENABLED="false"
+$env:SPRING_FLYWAY_ENABLED="false"
+$env:SPRING_JPA_HIBERNATE_DDL_AUTO="validate"
+.\mvnw.cmd spring-boot:run
+```
+
+### 2. Cách chạy Commit trong tương lai (Khi được người dùng xác nhận)
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
+$env:APP_SEED_ENABLED="true"
+$env:APP_SEED_DRY_RUN="false"
+$env:APP_SEED_INCLUDE_COMMERCE="true"
+$env:APP_SEED_PRODUCT_IMAGE_ROOT="uploads/product"
+$env:APP_PASSWORD_MIGRATION_ENABLED="false"
+$env:SPRING_FLYWAY_ENABLED="false"
+$env:SPRING_JPA_HIBERNATE_DDL_AUTO="validate"
+.\mvnw.cmd spring-boot:run
+```
+
+### 3. Dọn dẹp biến môi trường sau khi chạy
+
+```powershell
+Remove-Item Env:APP_SEED_ENABLED -ErrorAction SilentlyContinue
+Remove-Item Env:APP_SEED_DRY_RUN -ErrorAction SilentlyContinue
+Remove-Item Env:APP_SEED_INCLUDE_COMMERCE -ErrorAction SilentlyContinue
+Remove-Item Env:APP_SEED_PRODUCT_IMAGE_ROOT -ErrorAction SilentlyContinue
+Remove-Item Env:APP_PASSWORD_MIGRATION_ENABLED -ErrorAction SilentlyContinue
+```
+
+### 4. Tài khoản thử nghiệm (Test Accounts)
+- **Quản trị:** `admin` (Role: `QL`) - Mật khẩu: `123456`
+- **Nhân viên:** `nhanvien01` (Role: `NV`) - Mật khẩu: `123456`
+- **Khách hàng:** `khachhang01` đến `khachhang12` (Role: `KH`) - Mật khẩu: `123456`
+
+### 5. Ghi chú quan trọng
+- CÓ 33 ảnh UUID dạng mồ côi nằm trực tiếp tại gốc `uploads/product/` bị bỏ qua (không seed, không xóa và không tự suy đoán).
+- Đường dẫn ảnh lưu trong Database là đường dẫn tương đối so với `uploads/product/`.

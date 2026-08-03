@@ -81,6 +81,10 @@ public class SanPhamController {
             Map<String, String> attributes = ct.getSanPhamChiTietThuocTinhs().stream()
                     .filter(tt -> tt.getThuocTinh() != null && tt.getGiaTri() != null)
                     .collect(Collectors.toMap(tt -> tt.getThuocTinh().getTenThuocTinh(), tt -> tt.getGiaTri(), (a, b) -> a));
+            if (ct.getMauSac() != null && !ct.getMauSac().isBlank()) attributes.putIfAbsent("Màu sắc", ct.getMauSac().trim());
+            if (ct.getKichThuoc() != null && !ct.getKichThuoc().isBlank()) attributes.putIfAbsent("Kích thước", ct.getKichThuoc().trim());
+            if (ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank()) attributes.putIfAbsent("Trọng lượng", ct.getTrongLuong().trim());
+            if (ct.getMucCang() != null && !ct.getMucCang().isBlank()) attributes.putIfAbsent("Sức căng", ct.getMucCang().trim());
             map.put("attributes", attributes);
             map.put("phanLoai", ct.getPhanLoaiHienThi());
             map.put("mauSac", ct.getMauSac());
@@ -95,30 +99,63 @@ public class SanPhamController {
             return map;
         }).collect(Collectors.toList());
 
-        // 4. Lấy tất cả thuộc tính động của các biến thể hoạt động
+        // 4. Xác định loại danh mục để lọc thuộc tính chọn biến thể phù hợp
+        com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(
+                sanPham.getDanhMuc(), sanPham.getDanhMuc() != null ? sanPham.getDanhMuc().getId() : null);
+
+        Map<String, java.util.Set<String>> allAttributes = new java.util.LinkedHashMap<>();
         Map<String, java.util.Set<String>> dynamicAttributes = new java.util.LinkedHashMap<>();
+
         for (SanPhamChiTiet ct : danhSachChiTiet) {
-            for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
-                if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
-                    String attrName = scttt.getThuocTinh().getTenThuocTinh();
-                    String attrVal = scttt.getGiaTri().trim();
-                    dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+            // 1. Thuộc tính từ bảng EAV (SanPhamChiTietThuocTinh)
+            if (ct.getSanPhamChiTietThuocTinhs() != null) {
+                for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
+                    if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
+                        String attrName = scttt.getThuocTinh().getTenThuocTinh().trim();
+                        String attrVal = scttt.getGiaTri().trim();
+
+                        allAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+
+                        if (isSelectableAttribute(catType, attrName)) {
+                            dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+                        }
+                    }
+                }
+            }
+
+            // 2. Cột thuộc tính trực tiếp (mauSac, kichThuoc, trongLuong, mucCang)
+            if (ct.getMauSac() != null && !ct.getMauSac().isBlank()) {
+                String val = ct.getMauSac().trim();
+                allAttributes.computeIfAbsent("Màu sắc", k -> new java.util.LinkedHashSet<>()).add(val);
+                if (isSelectableAttribute(catType, "Màu sắc")) {
+                    dynamicAttributes.computeIfAbsent("Màu sắc", k -> new java.util.LinkedHashSet<>()).add(val);
+                }
+            }
+            if (ct.getKichThuoc() != null && !ct.getKichThuoc().isBlank()) {
+                String val = ct.getKichThuoc().trim();
+                allAttributes.computeIfAbsent("Kích thước", k -> new java.util.LinkedHashSet<>()).add(val);
+                if (isSelectableAttribute(catType, "Kích thước")) {
+                    dynamicAttributes.computeIfAbsent("Kích thước", k -> new java.util.LinkedHashSet<>()).add(val);
+                }
+            }
+            if (ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank()) {
+                String val = ct.getTrongLuong().trim();
+                allAttributes.computeIfAbsent("Trọng lượng", k -> new java.util.LinkedHashSet<>()).add(val);
+                if (isSelectableAttribute(catType, "Trọng lượng")) {
+                    dynamicAttributes.computeIfAbsent("Trọng lượng", k -> new java.util.LinkedHashSet<>()).add(val);
+                }
+            }
+            if (ct.getMucCang() != null && !ct.getMucCang().isBlank()) {
+                String val = ct.getMucCang().trim();
+                allAttributes.computeIfAbsent("Sức căng", k -> new java.util.LinkedHashSet<>()).add(val);
+                if (isSelectableAttribute(catType, "Sức căng")) {
+                    dynamicAttributes.computeIfAbsent("Sức căng", k -> new java.util.LinkedHashSet<>()).add(val);
                 }
             }
         }
 
-        // Chỉ giữ lại những thuộc tính được cấu hình cho danh mục của sản phẩm này
-        if (sanPham.getDanhMuc() != null) {
-            List<ThuocTinh> allowedAttrs = sanPham.getDanhMuc().getThuocTinhList();
-            if (allowedAttrs != null && !allowedAttrs.isEmpty()) {
-                java.util.Set<String> allowedNames = allowedAttrs.stream()
-                        .map(ThuocTinh::getTenThuocTinh)
-                        .map(String::trim)
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toSet());
-                dynamicAttributes.keySet().removeIf(key -> !allowedNames.contains(key.trim().toLowerCase()));
-            }
-        }
+        // Fallback: tự tạo thuộc tính mặc định nếu dynamicAttributes rỗng
+        applyDefaultCategoryAttributesIfEmpty(catType, sanPham, dynamicAttributes, allAttributes, listBienTheJS);
 
         boolean inWishlist = false;
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
@@ -157,6 +194,7 @@ public class SanPhamController {
         model.addAttribute("listMauSac", listMauSac);
         model.addAttribute("listKichThuoc", listKichThuoc);
         model.addAttribute("listMucCang", listMucCang);
+        model.addAttribute("allAttributes", allAttributes);
         model.addAttribute("dynamicAttributes", dynamicAttributes);
         model.addAttribute("sp", sanPham);
         model.addAttribute("listChiTiet", danhSachChiTiet);
@@ -221,28 +259,29 @@ public class SanPhamController {
         return "redirect:/san-pham/" + idSanPham + "#pd-rev";
     }
 
-    // Trả về một đoạn HTML (fragment) thay vì trả về toàn bộ trang web
-    @GetMapping("/modal/quick-look/{id}")
-    public String hienThiQuickLookModal(@PathVariable("id") Integer id, Model model, HttpSession session) {
+    @GetMapping("/api/san-pham/{id}/quick-look")
+    public String quickLook(@PathVariable("id") Integer id, Model model, HttpSession session) {
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
-                
-        if ("ngung_ban".equals(sanPham.getTrangThai()) || "ngung_kinh_doanh".equals(sanPham.getTrangThai())) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Sản phẩm này đã ngừng kinh doanh!");
-        }
-                
+        
         List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findActiveBySanPham_Id(id);
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhSanPham();
 
-        java.util.Set<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<String> listMauSac = danhSachChiTiet.stream()
+                .map(SanPhamChiTiet::getMauSac)
+                .filter(value -> value != null && !value.trim().isEmpty())
+                .collect(java.util.stream.Collectors.toSet());
+        
         java.util.Set<String> listKichThuoc = danhSachChiTiet.stream()
                 .map(ct -> ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank() ? ct.getTrongLuong() : ct.getKichThuoc())
                 .filter(value -> value != null && !value.trim().isEmpty())
                 .collect(java.util.stream.Collectors.toSet());
+
         java.util.Set<String> listMucCang = danhSachChiTiet.stream()
                 .map(SanPhamChiTiet::getMucCang)
                 .filter(value -> value != null && !value.trim().isEmpty())
                 .collect(java.util.stream.Collectors.toSet());
+
         int phanTram = sanPham.getActiveGiamGiaPhanTram();
         List<Map<String, Object>> listBienTheJS = danhSachChiTiet.stream().map(ct -> {
             Map<String, Object> map = new HashMap<>();
@@ -250,7 +289,12 @@ public class SanPhamController {
             Map<String, String> attributes = ct.getSanPhamChiTietThuocTinhs().stream()
                     .filter(tt -> tt.getThuocTinh() != null && tt.getGiaTri() != null)
                     .collect(Collectors.toMap(tt -> tt.getThuocTinh().getTenThuocTinh(), tt -> tt.getGiaTri(), (a, b) -> a));
+            if (ct.getMauSac() != null && !ct.getMauSac().isBlank()) attributes.putIfAbsent("Màu sắc", ct.getMauSac().trim());
+            if (ct.getKichThuoc() != null && !ct.getKichThuoc().isBlank()) attributes.putIfAbsent("Kích thước", ct.getKichThuoc().trim());
+            if (ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank()) attributes.putIfAbsent("Trọng lượng", ct.getTrongLuong().trim());
+            if (ct.getMucCang() != null && !ct.getMucCang().isBlank()) attributes.putIfAbsent("Sức căng", ct.getMucCang().trim());
             map.put("attributes", attributes);
+            map.put("phanLoai", ct.getPhanLoaiHienThi());
             map.put("mauSac", ct.getMauSac());
             map.put("trongLuong", ct.getTrongLuong());
             map.put("kichThuoc", ct.getKichThuoc());
@@ -263,30 +307,38 @@ public class SanPhamController {
             return map;
         }).collect(java.util.stream.Collectors.toList());
 
-        // Lấy tất cả thuộc tính động của các biến thể hoạt động
+        com.smashvn.shop.constant.CategoryType catTypeQuick = com.smashvn.shop.constant.CategoryType.fromIdOrName(
+                sanPham.getDanhMuc(), sanPham.getDanhMuc() != null ? sanPham.getDanhMuc().getId() : null);
+
         Map<String, java.util.Set<String>> dynamicAttributes = new java.util.LinkedHashMap<>();
         for (SanPhamChiTiet ct : danhSachChiTiet) {
-            for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
-                if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
-                    String attrName = scttt.getThuocTinh().getTenThuocTinh();
-                    String attrVal = scttt.getGiaTri().trim();
-                    dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+            if (ct.getSanPhamChiTietThuocTinhs() != null) {
+                for (SanPhamChiTietThuocTinh scttt : ct.getSanPhamChiTietThuocTinhs()) {
+                    if (scttt.getThuocTinh() != null && scttt.getGiaTri() != null && !scttt.getGiaTri().isBlank()) {
+                        String attrName = scttt.getThuocTinh().getTenThuocTinh().trim();
+                        if (isSelectableAttribute(catTypeQuick, attrName)) {
+                            String attrVal = scttt.getGiaTri().trim();
+                            dynamicAttributes.computeIfAbsent(attrName, k -> new java.util.LinkedHashSet<>()).add(attrVal);
+                        }
+                    }
                 }
+            }
+
+            if (ct.getMauSac() != null && !ct.getMauSac().isBlank() && isSelectableAttribute(catTypeQuick, "Màu sắc")) {
+                dynamicAttributes.computeIfAbsent("Màu sắc", k -> new java.util.LinkedHashSet<>()).add(ct.getMauSac().trim());
+            }
+            if (ct.getKichThuoc() != null && !ct.getKichThuoc().isBlank() && isSelectableAttribute(catTypeQuick, "Kích thước")) {
+                dynamicAttributes.computeIfAbsent("Kích thước", k -> new java.util.LinkedHashSet<>()).add(ct.getKichThuoc().trim());
+            }
+            if (ct.getTrongLuong() != null && !ct.getTrongLuong().isBlank() && isSelectableAttribute(catTypeQuick, "Trọng lượng")) {
+                dynamicAttributes.computeIfAbsent("Trọng lượng", k -> new java.util.LinkedHashSet<>()).add(ct.getTrongLuong().trim());
+            }
+            if (ct.getMucCang() != null && !ct.getMucCang().isBlank() && isSelectableAttribute(catTypeQuick, "Sức căng")) {
+                dynamicAttributes.computeIfAbsent("Sức căng", k -> new java.util.LinkedHashSet<>()).add(ct.getMucCang().trim());
             }
         }
 
-        // Chỉ giữ lại những thuộc tính được cấu hình cho danh mục của sản phẩm này
-        if (sanPham.getDanhMuc() != null) {
-            List<ThuocTinh> allowedAttrs = sanPham.getDanhMuc().getThuocTinhList();
-            if (allowedAttrs != null && !allowedAttrs.isEmpty()) {
-                java.util.Set<String> allowedNames = allowedAttrs.stream()
-                        .map(ThuocTinh::getTenThuocTinh)
-                        .map(String::trim)
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toSet());
-                dynamicAttributes.keySet().removeIf(key -> !allowedNames.contains(key.trim().toLowerCase()));
-            }
-        }
+        applyDefaultCategoryAttributesIfEmpty(catTypeQuick, sanPham, dynamicAttributes, new java.util.LinkedHashMap<>(), listBienTheJS);
 
         boolean inWishlist = false;
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
@@ -309,5 +361,115 @@ public class SanPhamController {
         model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));
         
         return "layout/modals :: quick-look-fragment"; 
+    }
+
+    private boolean isSelectableAttribute(com.smashvn.shop.constant.CategoryType catType, String attrName) {
+        if (attrName == null || attrName.isBlank()) return false;
+        String norm = attrName.toLowerCase().trim();
+
+        // 1. Hộp cầu (HOP_CAU): Không cần nút chọn biến thể
+        if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
+            return false;
+        }
+
+        // 2. Vợt cầu lông (VOT): Chọn Màu sắc, Trọng lượng, Sức căng. (Ẩn Kích thước / Size khỏi nút chọn biến thể)
+        if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
+            if (norm.contains("kích") || norm.contains("size")) {
+                return false;
+            }
+        }
+
+        // 3. Tất cả các sản phẩm / danh mục còn lại (Trang phục, Giày, Cước, Balo, Quấn cán, Phụ kiện...):
+        // Hiển thị TẤT CẢ các thuộc tính hiện có của biến thể
+        return true;
+    }
+
+    private void applyDefaultCategoryAttributesIfEmpty(
+            com.smashvn.shop.constant.CategoryType catType,
+            SanPham sanPham,
+            Map<String, java.util.Set<String>> dynamicAttributes,
+            Map<String, java.util.Set<String>> allAttributes,
+            List<Map<String, Object>> listBienTheJS) {
+
+        if (!dynamicAttributes.isEmpty()) {
+            return;
+        }
+
+        if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
+            return;
+        }
+
+        String title = sanPham != null && sanPham.getTenSanPham() != null ? sanPham.getTenSanPham() : "";
+        String titleLower = title.toLowerCase();
+
+        String detectedColor = null;
+        if (titleLower.contains("đỏ")) detectedColor = "Đỏ";
+        else if (titleLower.contains("xanh")) detectedColor = "Xanh";
+        else if (titleLower.contains("đen")) detectedColor = "Đen";
+        else if (titleLower.contains("trắng")) detectedColor = "Trắng";
+        else if (titleLower.contains("vàng")) detectedColor = "Vàng";
+        else if (titleLower.contains("cam")) detectedColor = "Cam";
+        else if (titleLower.contains("hồng")) detectedColor = "Hồng";
+        else if (titleLower.contains("tím")) detectedColor = "Tím";
+        else if (titleLower.contains("xám")) detectedColor = "Xám";
+
+        switch (catType) {
+            case TRANG_PHUC:
+                dynamicAttributes.put("Kích thước", new java.util.LinkedHashSet<>(java.util.List.of("S", "M", "L", "XL")));
+                if (detectedColor != null) {
+                    dynamicAttributes.put("Màu sắc", new java.util.LinkedHashSet<>(java.util.List.of(detectedColor)));
+                }
+                break;
+
+            case GIAY:
+                dynamicAttributes.put("Kích thước", new java.util.LinkedHashSet<>(java.util.List.of("39", "40", "41", "42", "43")));
+                if (detectedColor != null) {
+                    dynamicAttributes.put("Màu sắc", new java.util.LinkedHashSet<>(java.util.List.of(detectedColor)));
+                }
+                break;
+
+            case VOT:
+                dynamicAttributes.put("Trọng lượng", new java.util.LinkedHashSet<>(java.util.List.of("4U", "3U")));
+                dynamicAttributes.put("Sức căng", new java.util.LinkedHashSet<>(java.util.List.of("24-28 lbs")));
+                if (detectedColor != null) {
+                    dynamicAttributes.put("Màu sắc", new java.util.LinkedHashSet<>(java.util.List.of(detectedColor)));
+                }
+                break;
+
+            case CUOC:
+                dynamicAttributes.put("Đường kính", new java.util.LinkedHashSet<>(java.util.List.of("0.65mm", "0.68mm", "0.70mm")));
+                if (detectedColor != null) {
+                    dynamicAttributes.put("Màu sắc", new java.util.LinkedHashSet<>(java.util.List.of(detectedColor)));
+                }
+                break;
+
+            case BALO:
+            case QUAN_CAN:
+            case BANG_QUAN:
+            default:
+                if (detectedColor != null) {
+                    dynamicAttributes.put("Màu sắc", new java.util.LinkedHashSet<>(java.util.List.of(detectedColor)));
+                } else {
+                    dynamicAttributes.put("Phân loại", new java.util.LinkedHashSet<>(java.util.List.of("Tiêu chuẩn")));
+                }
+                break;
+        }
+
+        allAttributes.putAll(dynamicAttributes);
+
+        if (listBienTheJS != null) {
+            for (Map<String, Object> map : listBienTheJS) {
+                @SuppressWarnings("unchecked")
+                Map<String, String> attrs = (Map<String, String>) map.get("attributes");
+                if (attrs == null) {
+                    attrs = new java.util.HashMap<>();
+                    map.put("attributes", attrs);
+                }
+                for (Map.Entry<String, java.util.Set<String>> entry : dynamicAttributes.entrySet()) {
+                    String firstVal = entry.getValue().iterator().next();
+                    attrs.putIfAbsent(entry.getKey(), firstVal);
+                }
+            }
+        }
     }
 }

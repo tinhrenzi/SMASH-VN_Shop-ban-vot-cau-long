@@ -89,6 +89,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             SELECT DISTINCT spct
             FROM SanPhamChiTiet spct
             LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
+            LEFT JOIN FETCH att.thuocTinh tt
             WHERE spct.sanPham.id = :sanPhamId
               AND spct.trangThaiValue = true
             ORDER BY spct.id ASC

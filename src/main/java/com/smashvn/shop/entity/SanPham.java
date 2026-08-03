@@ -10,10 +10,17 @@ import lombok.*;
 
 @Entity
 @Table(name = "SanPham")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"danhMuc", "thuongHieu", "nhanVien", "cacDotGiamGia", "sanPhamChiTiets"})
 public class SanPham {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @ManyToOne
@@ -32,6 +39,7 @@ public class SanPham {
     private String tenSanPham;
     
     @Column(name = "trang_thai", nullable = false)
+    @Builder.Default
     private Boolean trangThaiValue = true;
 
     public String getTrangThai() {
@@ -48,8 +56,6 @@ public class SanPham {
 
     @ManyToMany(mappedBy = "sanPhams")
     @org.hibernate.annotations.BatchSize(size = 30)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<DotGiamGia> cacDotGiamGia;
     
     @OneToMany(mappedBy = "sanPham", fetch = FetchType.LAZY)

@@ -67,43 +67,33 @@ public class HomeController {
 
         // Nếu không đủ 2 sản phẩm giảm giá, bổ sung sản phẩm thông thường
         if (discountedProducts.size() < 2) {
+            Set<Integer> existingIds = discountedProducts.stream().map(SanPham::getId).collect(Collectors.toSet());
             List<SanPham> fallback = danhSachSanPham.stream()
-                    .filter(p -> !discountedProducts.contains(p) && ("dang_ban".equals(p.getTrangThai()) || p.getTrangThai() == null))
+                    .filter(p -> !existingIds.contains(p.getId()) && ("dang_ban".equals(p.getTrangThai()) || p.getTrangThai() == null))
                     .limit(2 - discountedProducts.size())
                     .collect(Collectors.toList());
             discountedProducts.addAll(fallback);
         }
 
-        List<ThuongHieu> danhSachThuongHieu = thuongHieuRepository.findByTrangThaiTrue();
+        List<ThuongHieu> rawBrands = thuongHieuRepository.findByTrangThaiTrue();
+        java.util.Map<String, ThuongHieu> uniqueBrands = new java.util.LinkedHashMap<>();
+        for (ThuongHieu th : rawBrands) {
+            if (th.getTenThuongHieu() != null) {
+                String key = th.getTenThuongHieu().toLowerCase().replaceAll("[\\s\\-_]", "");
+                if (key.contains("lining")) key = "lining";
+                uniqueBrands.putIfAbsent(key, th);
+            }
+        }
+        List<ThuongHieu> danhSachThuongHieu = new java.util.ArrayList<>(uniqueBrands.values());
 
         // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm, riêng nổi bật lấy 4)
         Pageable pageLimit14 = PageRequest.of(0, 14);
         Pageable pageLimit4 = PageRequest.of(0, 4);
         List<SanPham> newProductsList = sanPhamRepository.findNewProducts(pageLimit14);
         
-        // Lấy pool lớn sản phẩm bán chạy, sau đó phân bổ đều giữa các thương hiệu
+        // Lấy danh sách sản phẩm bán chạy đầy đủ cho tất cả thương hiệu
         Pageable pageLimitLarge = PageRequest.of(0, 100);
-        List<SanPham> allBestSellers = sanPhamRepository.findBestSellers(pageLimitLarge);
-        
-        // Nhóm theo thương hiệu rồi lấy lần lượt (round-robin) để đảm bảo mỗi hãng đều có sản phẩm
-        java.util.Map<String, java.util.List<SanPham>> byBrand = allBestSellers.stream()
-                .collect(Collectors.groupingBy(sp -> sp.getThuongHieu() != null ? sp.getThuongHieu().getTenThuongHieu() : "Khác", 
-                         java.util.LinkedHashMap::new, Collectors.toList()));
-        
-        List<SanPham> bestSellersList = new java.util.ArrayList<>();
-        int maxPerBrand = Math.max(1, 14 / Math.max(1, byBrand.size()));
-        for (java.util.List<SanPham> brandProducts : byBrand.values()) {
-            bestSellersList.addAll(brandProducts.stream().limit(maxPerBrand).collect(Collectors.toList()));
-        }
-        // Nếu chưa đủ 14, bổ sung thêm từ các sản phẩm còn lại
-        if (bestSellersList.size() < 14) {
-            for (SanPham sp : allBestSellers) {
-                if (!bestSellersList.contains(sp)) {
-                    bestSellersList.add(sp);
-                    if (bestSellersList.size() >= 14) break;
-                }
-            }
-        }
+        List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimitLarge);
         
         List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit4);
 

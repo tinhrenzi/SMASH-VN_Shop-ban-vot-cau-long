@@ -70,6 +70,7 @@ public class SanPhamChiTiet {
 
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @org.hibernate.annotations.BatchSize(size = 30)
+    @jakarta.persistence.OrderBy("laAnhChinh DESC, thuTu ASC, id ASC")
     @Builder.Default
     private List<HinhAnhSanPham> hinhAnhSanPhams = new ArrayList<>();
 
@@ -83,7 +84,16 @@ public class SanPhamChiTiet {
 
     public String getHinhAnhSanPham() {
         if (hinhAnhSanPhams != null && !hinhAnhSanPhams.isEmpty()) {
-            return hinhAnhSanPhams.get(0).getUrlHinhAnh();
+            HinhAnhSanPham mainImg = hinhAnhSanPhams.stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getLaAnhChinh()))
+                    .findFirst()
+                    .orElseGet(() -> hinhAnhSanPhams.stream()
+                            .filter(img -> img.getThuTu() != null)
+                            .min(java.util.Comparator.comparing(HinhAnhSanPham::getThuTu))
+                            .orElse(hinhAnhSanPhams.get(0)));
+            if (mainImg != null && mainImg.getUrlHinhAnh() != null) {
+                return mainImg.getUrlHinhAnh();
+            }
         }
         return hinhAnhSanPham;
     }

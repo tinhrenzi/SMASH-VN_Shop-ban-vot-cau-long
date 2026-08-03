@@ -12,7 +12,14 @@ import com.smashvn.shop.repository.TaiKhoanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Component
+@ConditionalOnProperty(
+    name = "app.password-migration.enabled",
+    havingValue = "true",
+    matchIfMissing = true
+)
 @RequiredArgsConstructor
 @Slf4j
 public class PlaintextPasswordMigrator implements CommandLineRunner {

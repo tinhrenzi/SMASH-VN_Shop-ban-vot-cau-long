@@ -210,7 +210,7 @@
 	                             </div>
                                 <div class="filter__grid-wrapper u-s-m-t-30">
                                     <div class="row">
-									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:attr="data-brand=${product.thuongHieu.tenThuongHieu}" th:each="product, iterStat : ${bestSellers}" th:if="${iterStat.index &lt; 14}">
+									    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 u-s-m-b-30 filter__item" th:attr="data-brand=${product.thuongHieu.tenThuongHieu}" th:each="product : ${bestSellers}">
 									    
 											<div class="product-o product-o--hover-on product-o--radius">
 											    
@@ -601,8 +601,8 @@
                             <!-- Cột 1: Banners & New Products -->
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
                                 <a class="promotion" th:href="@{/shop}">
-                                    <div class="aspect aspect--bg-grey aspect--vertical">
-                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-1.jpg}" alt="">
+                                    <div class="aspect aspect--bg-grey aspect--square">
+                                        <img class="aspect__img promotion__img" style="object-fit: cover; width: 100%; height: 100%;" th:src="@{/images/promo/promo-img-1.jpg}" alt="">
                                     </div>
                                     <div class="promotion__content">
                                         <div class="promotion__text-wrap">
@@ -638,8 +638,8 @@
                             <!-- Cột 2: Banners & Best Sellers -->
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
                                 <a class="promotion" th:href="@{/shop}">
-                                    <div class="aspect aspect--bg-grey aspect--vertical">
-                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-2.jpg}" alt="">
+                                    <div class="aspect aspect--bg-grey aspect--square">
+                                        <img class="aspect__img promotion__img" style="object-fit: cover; width: 100%; height: 100%;" th:src="@{/images/promo/promo-img-2.jpg}" alt="">
                                     </div>
                                     <div class="promotion__content">
                                         <div class="promotion__text-wrap">
@@ -675,8 +675,8 @@
                             <!-- Cột 3: Banners & Featured Products -->
                             <div class="col-lg-4 col-md-4 col-sm-6 u-s-m-b-30">
                                 <a class="promotion" th:href="@{/shop}">
-                                    <div class="aspect aspect--bg-grey aspect--vertical">
-                                        <img class="aspect__img promotion__img" th:src="@{/images/promo/promo-img-3.jpg}" alt="">
+                                    <div class="aspect aspect--bg-grey aspect--square">
+                                        <img class="aspect__img promotion__img" style="object-fit: cover; width: 100%; height: 100%;" th:src="@{/images/promo/promo-img-3.jpg}" alt="">
                                     </div>
                                     <div class="promotion__content">
                                         <div class="promotion__text-wrap">

@@ -52,11 +52,17 @@
                              <div class="pd-breadcrumb u-s-m-b-30">
                                  <ul class="pd-breadcrumb__list">
                                      <li class="has-separator">
-                                         <a th:href="@{/index.html}">Trang chủ</a></li>
-                                     <li class="has-separator">
-                                         <a th:href="@{/index.html}">Vợt Cầu Lông</a></li>
+                                         <a th:href="@{/}">Trang chủ</a>
+                                     </li>
+                                     <li class="has-separator" th:if="${sp.danhMuc != null}">
+                                         <a th:href="@{/shop(categoryId=${sp.danhMuc.id})}" th:text="${sp.danhMuc.tenDanhMuc}">Danh mục</a>
+                                     </li>
+                                     <li class="has-separator" th:if="${sp.thuongHieu != null}">
+                                         <a th:href="@{/shop(brandId=${sp.thuongHieu.id})}" th:text="${sp.thuongHieu.tenThuongHieu}">Thương hiệu</a>
+                                     </li>
                                      <li class="is-marked">
-                                         <a href="javascript:void(0)" th:text="${sp.tenSanPham}">Chi tiết sản phẩm</a></li>
+                                         <a href="javascript:void(0)" th:text="${sp.tenSanPham}">Chi tiết sản phẩm</a>
+                                     </li>
                                  </ul>
                              </div>
                              <!--====== End - Product Breadcrumb ======-->
@@ -247,8 +253,8 @@
                                                                  <td>Danh mục sản phẩm</td>
                                                                  <td th:text="${sp.danhMuc.tenDanhMuc}">Vợt Cầu Lông</td>
                                                              </tr>
-                                                             <!-- Hiển thị các thuộc tính động của sản phẩm -->
-                                                             <tr th:each="entry : ${dynamicAttributes}">
+                                                             <!-- Hiển thị tất cả thuộc tính của sản phẩm -->
+                                                             <tr th:each="entry : ${allAttributes ?: dynamicAttributes}">
                                                                  <td th:text="${entry.key}">Thuộc tính</td>
                                                                  <td>
                                                                      <span th:each="val, iterStat : ${entry.value}">

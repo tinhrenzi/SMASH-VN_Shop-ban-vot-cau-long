@@ -564,8 +564,15 @@
             var $row = $wrapper.find('.row');
             var $items = $row.find('.filter__item');
             
-            // Show all items initially with animation-ready state
-            $items.css({'opacity': '1', 'transform': 'scale(1)', 'transition': 'all 0.35s ease'});
+            // Show top 14 items initially for 'TẤT CẢ' tab (row 4 product 2)
+            $items.css({'transition': 'all 0.35s ease'});
+            $items.each(function(idx) {
+                if (idx < 14) {
+                    $(this).css({'opacity': '1', 'transform': 'scale(1)'}).show();
+                } else {
+                    $(this).css({'opacity': '0', 'transform': 'scale(0.8)'}).hide();
+                }
+            });
             
             $btns.on('click', function() {
                 var filterValue = $(this).attr('data-filter');
@@ -575,24 +582,10 @@
                 $(this).addClass('js-checked');
                 
                 if (filterValue === '*') {
-                    // Show all: fade out hidden ones first, then show all
-                    $items.each(function() {
+                    // Show first 14 items for 'TẤT CẢ' tab, hide the rest
+                    $items.each(function(idx) {
                         var $item = $(this);
-                        if ($item.css('display') === 'none') {
-                            $item.css({'opacity': '0', 'transform': 'scale(0.8)'}).show();
-                            setTimeout(function() {
-                                $item.css({'opacity': '1', 'transform': 'scale(1)'});
-                            }, 50);
-                        }
-                    });
-                } else {
-                    // Filter by brand name using data-brand attribute
-                    $items.each(function() {
-                        var $item = $(this);
-                        var itemBrand = $item.attr('data-brand');
-                        
-                        if (itemBrand === filterValue) {
-                            // Show matching items
+                        if (idx < 14) {
                             if ($item.css('display') === 'none') {
                                 $item.css({'opacity': '0', 'transform': 'scale(0.8)'}).show();
                                 setTimeout(function() {
@@ -600,7 +593,40 @@
                                 }, 50);
                             }
                         } else {
-                            // Hide non-matching items with animation
+                            $item.css({'opacity': '0', 'transform': 'scale(0.8)'});
+                            setTimeout(function() {
+                                $item.hide();
+                            }, 350);
+                        }
+                    });
+                } else {
+                    // Filter by brand name using data-brand attribute with normalized brand matching
+                    function normalizeBrandName(str) {
+                        if (!str) return '';
+                        var s = str.toLowerCase().trim().replace(/[\s\-_]/g, '');
+                        if (s.indexOf('lining') !== -1) return 'lining';
+                        return s;
+                    }
+                    var normFilter = normalizeBrandName(filterValue);
+                    var matchCount = 0;
+
+                    $items.each(function() {
+                        var $item = $(this);
+                        var itemBrand = $item.attr('data-brand') || '';
+                        var normItem = normalizeBrandName(itemBrand);
+                        var isMatch = (normItem === normFilter) || (normFilter === 'lining' && normItem === 'lining');
+
+                        if (isMatch && matchCount < 14) {
+                            matchCount++;
+                            // Show matching items (up to max 14)
+                            if ($item.css('display') === 'none') {
+                                $item.css({'opacity': '0', 'transform': 'scale(0.8)'}).show();
+                                setTimeout(function() {
+                                    $item.css({'opacity': '1', 'transform': 'scale(1)'});
+                                }, 50);
+                            }
+                        } else {
+                            // Hide non-matching or excess items with animation
                             $item.css({'opacity': '0', 'transform': 'scale(0.8)'});
                             setTimeout(function() {
                                 $item.hide();

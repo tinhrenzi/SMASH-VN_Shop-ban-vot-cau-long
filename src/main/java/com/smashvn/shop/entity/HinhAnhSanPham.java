@@ -23,4 +23,7 @@ public class HinhAnhSanPham {
 
     @Column(name = "la_anh_chinh")
     private Boolean laAnhChinh = false;
+
+    @Column(name = "thu_tu")
+    private Integer thuTu;
 }

@@ -62,14 +62,39 @@ public class GlobalExceptionHandler {
         return mav;
     }
 
+    @ExceptionHandler({org.apache.catalina.connector.ClientAbortException.class, java.io.IOException.class})
+    public void handleClientAbort(HttpServletRequest request, Exception ex) {
+        // Khách hàng ngắt kết nối thủ công (tắt tab, F5, reload trang).
+        // Ghi log nhẹ và không render lại view để tránh lỗi IllegalStateException (getOutputStream already called).
+        log.debug("Khách hàng ngắt kết nối khi đang tải trang tại URL: {}", request.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
-    public ModelAndView handleGenericException(HttpServletRequest request, Exception ex) {
-        // Log stack trace nội bộ
+    public ModelAndView handleGenericException(HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response, Exception ex) {
+        // Kiểm tra nếu kết nối đã bị đóng hoặc response đã gửi xong dữ liệu
+        if (response.isCommitted() || isClientAbort(ex)) {
+            log.debug("Response đã được gửi hoặc khách ngắt kết nối tại URL: {}", request.getRequestURI());
+            return null;
+        }
+
+        // Log stack trace nội bộ cho các lỗi thực sự
         log.error("Lỗi hệ thống chưa được bắt giữ tại URL: " + request.getRequestURI(), ex);
         
         ModelAndView mav = new ModelAndView();
         mav.addObject("loi", "Đã xảy ra lỗi hệ thống. Vui lòng liên hệ quản trị viên!");
         mav.setViewName("error/generic");
         return mav;
+    }
+
+    private boolean isClientAbort(Throwable ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            String name = cause.getClass().getName();
+            if (name.contains("ClientAbortException") || cause instanceof java.io.IOException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }
