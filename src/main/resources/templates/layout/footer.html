@@ -670,16 +670,12 @@
 
                     function openChatbot() {
                         windowBox.classList.remove("chatbot-hidden");
-                        // Transform the trigger bubble to show close icon
                         trigger.innerHTML = '<i class="fas fa-times"></i>';
-                        trigger.classList.remove("chatbot-pulse"); // Disable pulse when open for clean aesthetics
+                        trigger.classList.remove("chatbot-pulse");
                         
-                        // Load history once, then greet the customer every time
-                        // the widget is opened.
                         if (!historyLoaded) {
-                            loadChatHistory().finally(showWelcomeMessage);
+                            loadChatHistory();
                         } else {
-                            showWelcomeMessage();
                             setTimeout(() => {
                                 messagesBox.scrollTop = messagesBox.scrollHeight;
                             }, 50);
@@ -688,7 +684,6 @@
 
                     function closeChatbot() {
                         windowBox.classList.add("chatbot-hidden");
-                        // Restore original robot icon and notification dot
                         trigger.innerHTML = '<i class="fas fa-robot"></i><span class="chatbot-notification-dot"></span>';
                         trigger.classList.add("chatbot-pulse");
                     }
@@ -714,12 +709,15 @@
                                     data.forEach(msg => {
                                         renderMessage(msg.id, msg.senderType, msg.content, msg.thoiGian, msg.suggestedProducts);
                                     });
+                                } else {
+                                    showWelcomeMessage();
                                 }
                             })
                             .catch(err => {
                                 removeTypingIndicator();
+                                historyLoaded = true;
                                 console.error("Error loading chat history:", err);
-                                renderMessage(0, "BOT", "⚠️ Có lỗi xảy ra khi tải lịch sử trò chuyện. Vui lòng tải lại trang!", "");
+                                showWelcomeMessage();
                             });
                     }
 
@@ -833,11 +831,13 @@
                             prodContainer.className = "chatbot-products-container";
 
                             products.forEach(p => {
-                                const card = document.createElement("div");
+                                const card = document.createElement("a");
                                 card.className = "chatbot-product-card";
+                                card.href = p.detailUrl || p.productUrl || ('/san-pham/' + p.id);
+                                card.setAttribute("aria-label", "Xem chi tiết " + p.name);
 
                                 const img = document.createElement("img");
-                                img.src = p.imageUrl;
+                                img.src = p.imageUrl || '/images/placeholder.png';
                                 img.onerror = function() { this.onerror = null; this.src = '/images/placeholder.png'; };
                                 img.className = "chatbot-product-img";
                                 img.alt = p.name;
@@ -851,23 +851,15 @@
                                 name.textContent = p.name;
                                 info.appendChild(name);
 
-                                const price = document.createElement("div");
-                                price.className = "chatbot-product-price";
-                                price.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price);
-                                info.appendChild(price);
-
-                                if (p.shortDescription) {
-                                    const description = document.createElement("p");
-                                    description.className = "chatbot-product-description";
-                                    description.textContent = p.shortDescription;
-                                    info.appendChild(description);
+                                const fmtVND = v => v ? Number(v).toLocaleString('vi-VN') + 'đ' : '';
+                                const priceWrap = document.createElement("div");
+                                priceWrap.className = "chatbot-product-price";
+                                if (p.salePrice && Number(p.salePrice) > 0 && Number(p.salePrice) < Number(p.price)) {
+                                    priceWrap.innerHTML = '<span style="color:#e53935;font-weight:700;">' + fmtVND(p.salePrice) + '</span> <span style="text-decoration:line-through;color:#9e9e9e;font-size:0.82em;">' + fmtVND(p.price) + '</span>';
+                                } else {
+                                    priceWrap.textContent = fmtVND(p.price);
                                 }
-
-                                const link = document.createElement("a");
-                                link.href = p.productUrl;
-                                link.className = "chatbot-product-link";
-                                link.textContent = "Xem sản phẩm";
-                                info.appendChild(link);
+                                info.appendChild(priceWrap);
 
                                 card.appendChild(info);
                                 prodContainer.appendChild(card);

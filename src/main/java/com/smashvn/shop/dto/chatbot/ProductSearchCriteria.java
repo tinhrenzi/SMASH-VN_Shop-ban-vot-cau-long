@@ -18,5 +18,5 @@ public class ProductSearchCriteria {
     private String tension;
     private Boolean inStock = true;
     private Boolean active = true;
-    private Integer maxResults = 3;
+    private Integer maxResults = 5;
 }

@@ -26,6 +26,7 @@ public class SecurityConfig {
                         "/api/ghn/webhook",
                         "/api/ghn/admin/**",
                         "/api/chat/**",
+                        "/api/chatbot/**",
                         "/api/newsletter/subscribe",
                         "/api/newsletter/unsubscribe-ajax",
                         "/api/attributes",
@@ -43,6 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**", "/vendor/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
                 .requestMatchers("/api/chat/**").permitAll()
+                .requestMatchers("/api/chatbot/**").permitAll()
                 // Phân quyền chi tiết cho Admin/Staff theo Backend Enforcement (cả endpoint gốc và sub-paths)
                 .requestMatchers("/admin/nguoi-dung", "/admin/nguoi-dung/**").hasRole("QL")
                 .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")
