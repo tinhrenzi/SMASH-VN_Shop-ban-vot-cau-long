@@ -71,7 +71,7 @@ import lombok.extern.slf4j.Slf4j;
  *   seedableImages        = 118
  *   productGroups         = 71
  */
-@Component
+// @Component - Tạm thời vô hiệu hóa seeder để chuẩn bị cho dữ liệu demo
 @Profile("dev")
 @ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
 @Order(100)

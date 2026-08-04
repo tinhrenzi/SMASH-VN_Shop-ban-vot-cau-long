@@ -174,7 +174,7 @@
 								                <span id="js-variant-stock-badge" class="js-variant-stock-badge pd-detail__stock" style="margin-left:8px;"></span>
 								            </div>
 								        
-								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
+								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" th:value="${listChiTiet != null and listChiTiet.size() == 1 ? listChiTiet[0].id : ''}" required>
 								        
 								            <div class="pd-detail-action-row u-s-m-b-15">
 								                <div class="pd-detail-action-row__counter">

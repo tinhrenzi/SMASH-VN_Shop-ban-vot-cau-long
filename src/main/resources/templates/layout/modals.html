@@ -157,7 +157,7 @@
                                 <!-- Form thêm vào giỏ + bộ đếm số lượng -->
                                 <div class="u-s-m-b-25">
                                     <form class="pd-detail__form" th:action="@{/gio-hang/them}" method="post">
-                                        <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" required>
+                                        <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" th:value="${listChiTiet != null and listChiTiet.size() == 1 ? listChiTiet[0].id : ''}" required>
                                         <div class="pd-detail-inline-2" style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
                                             <!-- Bộ đếm số lượng -->
                                             <div class="input-counter" style="background:#f1f3f5; border:none; border-radius:30px; display:inline-block; position:relative !important; overflow:hidden; height:45px; min-width:120px !important; max-width:120px !important;">
@@ -255,8 +255,8 @@
 	                            <span class="s-option__text">Giỏ hàng của bạn đã được cập nhật</span>
 	                            <div class="s-option__link-box">
 	                                <a class="s-option__link btn--e-white-brand-shadow" data-dismiss="modal">TIẾP TỤC MUA SẮM</a>
-	                                <a class="s-option__link btn--e-white-brand-shadow" th:href="@{/gio-hang}">XEM GIỎ HÀNG</a>
-	                                <a class="s-option__link btn--e-brand-shadow" th:href="@{/checkout}">THANH TOÁN TỚI ĐÂY</a>
+	                                <a class="s-option__link btn--e-white-brand-shadow" th:href="@{/gio-hang}" onclick="$('#add-to-cart').modal('hide');">XEM GIỎ HÀNG</a>
+	                                <a class="s-option__link btn--e-brand-shadow" th:href="@{/checkout}" onclick="$('#add-to-cart').modal('hide');">THANH TOÁN TỚI ĐÂY</a>
 	                            </div>
 	                        </div>
 	                    </div>
