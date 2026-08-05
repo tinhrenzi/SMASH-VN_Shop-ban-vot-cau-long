@@ -218,7 +218,8 @@
 											        <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
 											            <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
 											                 th:if="${!product.sanPhamChiTiets.isEmpty()}"
-											                 th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+											                 th:src="@{${product.sanPhamChiTiets[0].hinhAnhUrl}}"
+											                 onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh Sản Phẩm">
 											        </a>
 											        <!-- Shopee Discount Badge -->
 											        <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
@@ -411,7 +412,8 @@
                                             <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
                                                 <img class="aspect__img" style="object-fit: cover; width: 100%; height: 100%;"
                                                      th:if="${!product.sanPhamChiTiets.isEmpty()}"
-                                                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                                     th:src="@{${product.sanPhamChiTiets[0].hinhAnhUrl}}"
+                                                     onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh Sản Phẩm">
                                             </a>
                                             <!-- Shopee Discount Badge -->
                                             <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>
@@ -532,7 +534,8 @@
 							            <a class="aspect aspect--bg-grey aspect--vertical u-d-block" th:href="@{/san-pham/{id}(id=${product.id})}">
 							                <img class="aspect__img" 
 							                     th:if="${!product.sanPhamChiTiets.isEmpty()}"
-							                     th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+							                     th:src="@{${product.sanPhamChiTiets[0].hinhAnhUrl}}"
+							                     onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh Sản Phẩm">
 							            </a>
 							            <!-- Shopee Discount Badge -->
 							            <div th:if="${product.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${product.getActiveGiamGiaPhanTram()} + '%'"></div>

@@ -72,8 +72,8 @@
                             <div class="pd u-s-m-b-30">
 							    <div class="slider-fouc pd-wrap">
 							        <div id="pd-o-initiate">
-							            <div class="pd-o-img-wrap" th:each="chitiet : ${listChiTiet}" th:data-src="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}">
-							                <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}" th:data-zoom-image="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}" alt="Ảnh sản phẩm">
+							            <div class="pd-o-img-wrap" th:each="chitiet : ${listChiTiet}" th:data-src="@{${chitiet.hinhAnhUrl}}">
+							                <img class="u-img-fluid" th:src="@{${chitiet.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" th:data-zoom-image="@{${chitiet.hinhAnhUrl}}" alt="Ảnh sản phẩm">
 							            </div>
 							        </div>
 							        <span class="pd-text">Di chuột để phóng to</span>
@@ -82,7 +82,7 @@
 							        <div class="slider-fouc">
 							            <div id="pd-o-thumbnail">
 							                <div th:each="chitiet : ${listChiTiet}">
-							                    <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}" alt="Thumbnail">
+							                    <img class="u-img-fluid" th:src="@{${chitiet.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Thumbnail">
 							                </div>
 							            </div>
 							        </div>
@@ -616,7 +616,8 @@
                                             <a class="aspect aspect--bg-white aspect--square u-d-block" th:href="@{/san-pham/{id}(id=${related.id})}" style="background-color: #ffffff !important; border-radius: 12px; overflow: hidden; border: 1px solid #f1f5f9; display: block;">
                                                 <img class="aspect__img" style="object-fit: contain; padding: 12px; background-color: #ffffff !important; width: 100%; height: 100%;"
                                                      th:if="${!related.sanPhamChiTiets.isEmpty()}"
-                                                     th:src="@{'/uploads/product/' + ${related.sanPhamChiTiets[0].hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                                     th:src="@{${related.sanPhamChiTiets[0].hinhAnhUrl}}"
+                                                     onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh Sản Phẩm">
                                             </a>
                                             <!-- Shopee Discount Badge -->
                                             <div th:if="${related.getActiveGiamGiaPhanTram() > 0}" class="shopee-discount-badge" th:text="'-' + ${related.getActiveGiamGiaPhanTram()} + '%'"></div>

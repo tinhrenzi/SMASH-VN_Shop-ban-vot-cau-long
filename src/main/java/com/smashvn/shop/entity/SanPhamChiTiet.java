@@ -98,6 +98,21 @@ public class SanPhamChiTiet {
         return hinhAnhSanPham;
     }
 
+    public String getHinhAnhUrl() {
+        String img = getHinhAnhSanPham();
+        if (img == null || img.isBlank()) {
+            return "/images/placeholder.png";
+        }
+        img = img.trim();
+        if (img.startsWith("/")) {
+            return img;
+        }
+        if (img.startsWith("uploads/")) {
+            return "/" + img;
+        }
+        return "/uploads/product/" + img;
+    }
+
     public void setHinhAnhSanPham(String hinhAnhSanPham) {
         this.hinhAnhSanPham = hinhAnhSanPham;
         if (hinhAnhSanPham != null && !hinhAnhSanPham.isEmpty()) {

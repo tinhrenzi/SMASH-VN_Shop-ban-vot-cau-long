@@ -754,7 +754,8 @@
                                                        th:href="@{/san-pham/{id}(id=${product.id})}"
                                                        style="background-color: #ffffff !important;">
                                                         <img class="aspect__img"
-                                                             th:src="@{'/uploads/product/' + ${product.sanPhamChiTiets[0].hinhAnhSanPham}}"
+                                                             th:src="@{${product.sanPhamChiTiets[0].hinhAnhUrl}}"
+                                                             onerror="this.onerror=null; this.src='/images/placeholder.png';"
                                                              alt=""
                                                              style="object-fit: contain; padding: 12px; background-color: #ffffff !important;">
                                                     </a>

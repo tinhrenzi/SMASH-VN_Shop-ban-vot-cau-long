@@ -78,4 +78,9 @@ public class ShippingApiController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/carriers")
+    public ResponseEntity<java.util.List<DonViVanChuyen>> getCarriers() {
+        return ResponseEntity.ok(adminShippingService.getAllCarriers());
+    }
 }

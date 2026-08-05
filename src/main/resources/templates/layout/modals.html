@@ -37,7 +37,7 @@
                                 <div class="pd-wrap">
                                     <div id="js-product-detail-modal">
                                         <div th:each="chitiet : ${listChiTiet}">
-                                            <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}" alt="Ảnh Sản Phẩm">
+                                            <img class="u-img-fluid" th:src="@{${chitiet.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh Sản Phẩm">
                                         </div>
                                     </div>
                                 </div>
@@ -45,7 +45,7 @@
                                 <div class="u-s-m-t-15">
                                     <div id="js-product-detail-modal-thumbnail">
                                         <div th:each="chitiet : ${listChiTiet}">
-                                            <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${chitiet.hinhAnhSanPham}}" alt="Thumbnail">
+                                            <img class="u-img-fluid" th:src="@{${chitiet.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Thumbnail">
                                         </div>
                                     </div>
                                 </div>

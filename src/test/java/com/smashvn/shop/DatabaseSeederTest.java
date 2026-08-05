@@ -59,6 +59,9 @@ public class DatabaseSeederTest {
     @Autowired
     private SanPhamYeuThichRepository sanPhamYeuThichRepository;
 
+    @Autowired
+    private HoaDonRepository hoaDonRepository;
+
     private final Map<String, ThuongHieu> brandCache = new HashMap<>();
     private final Map<String, DanhMuc> categoryCache = new HashMap<>();
     private final Map<String, ThuocTinh> attributeCache = new HashMap<>();
@@ -542,24 +545,69 @@ public class DatabaseSeederTest {
         }
         System.out.println("Recalculated rating stats for all " + allProducts.size() + " products.");
 
-        // 7. Ensure GHN shipping carrier exists
-        donViVanChuyenDAO.findAll().stream()
-                .filter(dv -> dv.getTenDonVi() != null && 
-                        (dv.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH") || 
-                         dv.getTenDonVi().toUpperCase().contains("GHN")))
-                .findFirst()
-                .orElseGet(() -> {
-                    DonViVanChuyen dv = new DonViVanChuyen();
-                    dv.setMaDonVi("GHN");
-                    dv.setTenDonVi("Giao Hàng Nhanh (GHN)");
-                    dv.setHotline("1900 636677");
-                    dv.setWebsite("https://ghn.vn");
-                    dv.setPhiLocal(BigDecimal.valueOf(30000));
-                    dv.setPhiNationwide(BigDecimal.valueOf(40000));
-                    return donViVanChuyenDAO.save(dv);
-                });
+        // 7. Ensure ONLY 2 Shipping Carriers exist in CSDL: GHN (Giao Hàng Nhanh) and TAIQUAY (Mua tại quầy)
+        List<DonViVanChuyen> existingCarriers = donViVanChuyenDAO.findAll();
+
+        List<DonViVanChuyen> carriersToSeed = List.of(
+            createCarrier("GHN", "Giao Hàng Nhanh (GHN)", "1900 636677", "https://ghn.vn", 25000, 38000),
+            createCarrier("TAIQUAY", "Mua tại quầy", "0987654321", "https://smashvn.com", 0, 0)
+        );
+
+        List<DonViVanChuyen> activeList = new ArrayList<>();
+        for (DonViVanChuyen target : carriersToSeed) {
+            DonViVanChuyen found = existingCarriers.stream()
+                    .filter(c -> (c.getMaDonVi() != null && c.getMaDonVi().equalsIgnoreCase(target.getMaDonVi()))
+                              || (c.getTenDonVi() != null && (c.getTenDonVi().toLowerCase().contains(target.getMaDonVi().toLowerCase()) || c.getTenDonVi().toLowerCase().contains("giao hàng nhanh") || c.getTenDonVi().toLowerCase().contains("quầy"))))
+                    .findFirst()
+                    .orElse(null);
+
+            if (found == null) {
+                found = donViVanChuyenDAO.save(target);
+                System.out.println("Seeded new carrier: " + target.getTenDonVi());
+            } else {
+                found.setMaDonVi(target.getMaDonVi());
+                found.setTenDonVi(target.getTenDonVi());
+                found.setHotline(target.getHotline());
+                found.setWebsite(target.getWebsite());
+                found.setPhiLocal(target.getPhiLocal());
+                found.setPhiNationwide(target.getPhiNationwide());
+                found = donViVanChuyenDAO.save(found);
+                System.out.println("Updated carrier info: " + found.getTenDonVi());
+            }
+            activeList.add(found);
+        }
+
+        // Clean up any obsolete carriers that are not GHN or TAIQUAY
+        List<Integer> activeIds = activeList.stream().map(DonViVanChuyen::getId).toList();
+        DonViVanChuyen defaultGhn = activeList.get(0);
+
+        List<DonViVanChuyen> obsoleteCarriers = donViVanChuyenDAO.findAll().stream()
+                .filter(c -> !activeIds.contains(c.getId()))
+                .toList();
+
+        for (DonViVanChuyen obsolete : obsoleteCarriers) {
+            hoaDonRepository.findAll().stream()
+                    .filter(hd -> hd.getDonViVanChuyen() != null && hd.getDonViVanChuyen().getId().equals(obsolete.getId()))
+                    .forEach(hd -> {
+                        hd.setDonViVanChuyen(defaultGhn);
+                        hoaDonRepository.save(hd);
+                    });
+            donViVanChuyenDAO.delete(obsolete);
+            System.out.println("Removed obsolete carrier: " + obsolete.getTenDonVi());
+        }
 
         System.out.println("=== FULL DATABASE SEEDING AND ATTRIBUTE ENHANCEMENT COMPLETED SUCCESSFULLY ===");
+    }
+
+    private DonViVanChuyen createCarrier(String ma, String ten, String hotline, String web, double phiLocal, double phiNationwide) {
+        DonViVanChuyen dv = new DonViVanChuyen();
+        dv.setMaDonVi(ma);
+        dv.setTenDonVi(ten);
+        dv.setHotline(hotline);
+        dv.setWebsite(web);
+        dv.setPhiLocal(BigDecimal.valueOf(phiLocal));
+        dv.setPhiNationwide(BigDecimal.valueOf(phiNationwide));
+        return dv;
     }
 
     private void auditAndCleanBrokenProductsInternal() {

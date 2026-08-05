@@ -77,7 +77,7 @@
 											    <td>
 											        <div class="table-p__box">
 											            <div class="table-p__img-wrap">
-											                <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.hinhAnhSanPham}}" alt="Ảnh sản phẩm">
+											                <img class="u-img-fluid" th:src="@{${item.sanPhamChiTiet.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh sản phẩm">
 											            </div>
 											            <div class="table-p__info">
 											                <span class="table-p__name">

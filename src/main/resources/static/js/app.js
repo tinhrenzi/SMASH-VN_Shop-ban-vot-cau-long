@@ -691,6 +691,14 @@ function selectSize(element) {
     checkAndApplyVariant(container);
 }
 
+function resolveImageUrl(imgPath) {
+    if (!imgPath) return '/images/placeholder.png';
+    var s = imgPath.trim();
+    if (s.startsWith('/')) return s;
+    if (s.startsWith('uploads/')) return '/' + s;
+    return '/uploads/product/' + s;
+}
+
 function selectDynamicAttribute(element) {
     if (!element) return;
     let container = element.closest('.pd-detail');
@@ -893,7 +901,7 @@ function checkAndApplyVariant(container) {
         const mainRow = container.closest('.row');
         
         if (mainRow && matchedVariant.hinhAnhSanPham) {
-            const newImgSrc = '/uploads/product/' + matchedVariant.hinhAnhSanPham;
+            const newImgSrc = resolveImageUrl(matchedVariant.hinhAnhSanPham);
 
             // Ưu tiên tìm ảnh đang active trong slider Slick (Của Modal hoặc Detail)
             let activeImage = mainRow.querySelector('#js-product-detail-modal .slick-current img') ||
@@ -907,6 +915,10 @@ function checkAndApplyVariant(container) {
 
             if (activeImage) {
                 // Đổi đường dẫn ảnh hiển thị
+                activeImage.onerror = function() {
+                    this.onerror = null;
+                    this.src = '/images/placeholder.png';
+                };
                 activeImage.src = newImgSrc;
 
                 // Nếu ảnh có plugin Kính lúp (ElevateZoom) ở trang Chi tiết
@@ -998,7 +1010,7 @@ function checkAndApplyVariant(container) {
               response.danhSach.forEach(function(item) {
                   var formattedPrice = new Intl.NumberFormat('vi-VN').format(item.giaBan) + ' đ';
                   var productUrl = '/san-pham/' + item.idSanPham;
-                  var imageUrl = '/uploads/product/' + item.hinhAnh;
+                  var imageUrl = resolveImageUrl(item.hinhAnh);
 
                   var variantHtml = '';
                   var hasMau = item.mauSac && item.mauSac.trim().length > 0;
@@ -1127,7 +1139,7 @@ function checkAndApplyVariant(container) {
                   var formattedPrice = new Intl.NumberFormat('vi-VN').format(response.giaBan) + ' đ';
                   $('#js-modal-cart-price').text(formattedPrice);
                   
-                  $('#js-modal-cart-img').attr('src', '/uploads/product/' + response.hinhAnh);
+                  $('#js-modal-cart-img').attr('src', resolveImageUrl(response.hinhAnh));
 
                   // 2. Ẩn modal Quick Look nếu khách đang thao tác từ Quick Look
                   $('#quick-look').modal('hide');
@@ -1247,7 +1259,7 @@ function checkAndApplyVariant(container) {
                   
                   var formattedPrice = new Intl.NumberFormat('vi-VN').format(response.giaBan) + ' đ';
                   $('#js-modal-cart-price').text(formattedPrice);
-                  $('#js-modal-cart-img').attr('src', '/uploads/product/' + response.hinhAnh);
+                  $('#js-modal-cart-img').attr('src', resolveImageUrl(response.hinhAnh));
 
                   // Hiển thị modal thông báo thành công
                   $('#add-to-cart').modal('show');
@@ -1454,9 +1466,9 @@ function checkAndApplyVariant(container) {
     # CUSTOM JS: Lấy vị trí hiện tại (Geolocation + OpenStreetMap + Bản đồ tương tác)
   ==============================================================*/
 
-  // Global variables for Map and Marker
-  let leafletMap = null;
-  let mapMarker = null;
+  // Global variables for Map and Marker (use var to allow re-declaration if script is re-evaluated by jQuery globalEval)
+  var leafletMap = null;
+  var mapMarker = null;
 
   // Dynamic Toast CSS injection for premium notifications
   (function injectToastStyles() {
@@ -1861,7 +1873,7 @@ function checkAndApplyVariant(container) {
   }
 
   // Debounced reverse geocoding to update UI and inputs (Requirement: Debounce reverse geocoding when dragging marker)
-  const debouncedReverseGeocode = debounce(async function(lat, lon) {
+  var debouncedReverseGeocode = debounce(async function(lat, lon) {
       try {
           const parsedAddress = await reverseGeocode(lat, lon);
           populateAddressFields(parsedAddress);
