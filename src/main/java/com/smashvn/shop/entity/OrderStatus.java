@@ -9,6 +9,7 @@ public enum OrderStatus {
     DA_TAO_VAN_DON_GHN("da_tao_van_don_ghn"),
     DA_BAN_GIAO_GHN("da_ban_giao_ghn"),
     DANG_GIAO("dang_giao"),
+    GIAO_THAT_BAI("giao_that_bai"),
     DANG_LAY_HANG("dang_lay_hang"),
     DA_GIAO("da_giao"),
     DA_HUY("da_huy"),

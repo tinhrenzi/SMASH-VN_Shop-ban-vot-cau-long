@@ -26,6 +26,15 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <style>
         /* ===== Badge Trạng thái ===== */
+        .manage-o__badge {
+            width: auto !important;
+            min-width: 5.9375rem !important;
+            white-space: nowrap !important;
+            padding: 6px 14px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
         .badge--pending   { background-color: #fff3cd !important; color: #856404 !important; }
         .badge--warning   { background-color: #ffeeb3 !important; color: #856404 !important; }
         .badge--processing{ background-color: #cce5ff !important; color: #004085 !important; }
@@ -443,30 +452,8 @@
                                                     <!-- ===== Badge trạng thái đầy đủ ===== -->
                                                     <div>
                                                         <span class="manage-o__badge"
-                                                              th:classappend="${order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'badge--pending' :
-                                                                              (order['trangThaiDonHang'] == 'cho_xac_nhan'  ? 'badge--processing' :
-                                                                              (order['trangThaiDonHang'] == 'da_xac_nhan'   ? 'badge--confirmed' :
-                                                                              (order['trangThaiDonHang'] == 'dang_chuan_bi_hang' ? 'badge--processing' :
-                                                                              (order['trangThaiDonHang'] == 'san_sang_giao' ? 'badge--confirmed' :
-                                                                              (order['trangThaiDonHang'] == 'da_tao_van_don_ghn' ? 'badge--shipping' :
-                                                                              (order['trangThaiDonHang'] == 'da_ban_giao_ghn' ? 'badge--shipping' :
-                                                                              (order['trangThaiDonHang'] == 'dang_lay_hang' ? 'badge--confirmed' :
-                                                                              (order['trangThaiDonHang'] == 'dang_giao'     ? 'badge--shipping' :
-                                                                              (order['trangThaiDonHang'] == 'da_giao'       ? 'badge--delivered' :
-                                                                              (order['trangThaiDonHang'] == 'da_huy'        ? 'badge--cancelled' :
-                                                                              (order['trangThaiDonHang'] == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))))))}"
-                                                              th:text="${order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'Chờ thanh toán' :
-                                                                        (order['trangThaiDonHang'] == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
-                                                                        (order['trangThaiDonHang'] == 'da_xac_nhan'   ? 'Đã xác nhận' :
-                                                                        (order['trangThaiDonHang'] == 'dang_chuan_bi_hang' ? 'Đang chuẩn bị hàng' :
-                                                                        (order['trangThaiDonHang'] == 'san_sang_giao' ? 'Sẵn sàng giao' :
-                                                                        (order['trangThaiDonHang'] == 'da_tao_van_don_ghn' ? 'Đã tạo vận đơn GHN' :
-                                                                        (order['trangThaiDonHang'] == 'da_ban_giao_ghn' ? 'Đã bàn giao GHN' :
-                                                                        (order['trangThaiDonHang'] == 'dang_lay_hang' ? 'Đang lấy hàng' :
-                                                                        (order['trangThaiDonHang'] == 'dang_giao'     ? 'Đang giao hàng' :
-                                                                        (order['trangThaiDonHang'] == 'da_giao'       ? 'Đã giao thành công' :
-                                                                        (order['trangThaiDonHang'] == 'da_huy'        ? 'Đã hủy' :
-                                                                        (order['trangThaiDonHang'] == 'stock_conflict'? 'Lỗi tồn kho' : order['trangThaiDonHang'])))))))))))}"
+                                                              th:classappend="${order['trangThaiHoanHang'] != null ? (order['trangThaiHoanHang'] == 'REFUNDED' or order['trangThaiHoanHang'] == 'RETURNED' ? 'badge--delivered' : (order['trangThaiHoanHang'] == 'REJECTED' ? 'badge--cancelled' : 'badge--pending')) : (order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'badge--delivered' : (order['trangThaiDonHang'] == 'da_huy' or order['trangThaiDonHang'] == 'giao_that_bai' ? 'badge--cancelled' : (order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'badge--pending' : 'badge--processing')))}"
+                                                              th:text="${order['trangThaiHoanHang'] != null ? ('Trả hàng: ' + order['trangThaiHoanHangLabel']) : (order['trangThaiDonHangLabel'] != null ? order['trangThaiDonHangLabel'] : order['trangThaiDonHang'])}"
                                                         >Trạng thái</span>
                                                     </div>
                                                 </div>
@@ -493,8 +480,8 @@
                                                      <i class="fas fa-times-circle"></i> Hủy đơn hàng
                                                  </button>
 
-                                                 <!-- Nút Đã nhận được hàng (Khi đang giao hoặc đã giao) -->
-                                                 <button th:if="${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao'}"
+                                                 <!-- Nút Đã nhận được hàng (Chỉ khi CHÍNH THỨC ĐÃ GIAO THÀNH CÔNG và CHƯA có yêu cầu trả hàng) -->
+                                                 <button th:if="${order['trangThaiDonHang'] == 'da_giao' and order['trangThaiHoanHang'] == null}"
                                                          id="btn-xac-nhan-nhan-hang"
                                                          th:onclick="'xacNhanNhanHang(' + ${order.id} + ')'"
                                                          style="padding: 10px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; color: white; background-color: #198754; border: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 0;">
@@ -531,7 +518,7 @@
 
                                                  <!-- Step 3: WAITING_FOR_PICKUP -->
                                                  <div th:if="${order['trangThaiHoanHang'] == 'WAITING_FOR_PICKUP'}"
-                                                      style="padding: 14px 18px; background: #e3f2fd; border-left: 4px solid #1e88e5; border-radius: 8px; font-size: 13px; color: #1565c0; line-height: 1.6;">
+                                                      style="padding: 14px 18px; background: #e3f2fd; border-left: 4px solid #198754; border-radius: 8px; font-size: 13px; color: #1565c0; line-height: 1.6;">
                                                      <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
                                                          <i class="fas fa-truck-loading" style="font-size: 16px;"></i> Shop đã duyệt yêu cầu! Shipper GHN đang đến lấy hàng trả.
                                                      </div>
@@ -560,15 +547,31 @@
                                                          <i class="fas fa-check-double" style="font-size: 16px;"></i>
                                                          <span th:text="${order['trangThaiHoanHang'] == 'REFUNDED' ? 'Shop đã hoàn tất thủ tục Trả hàng & Hoàn tiền thành công cho bạn!' : 'Shop đã kiểm tra kiện hàng và nhập kho thành công. Đang tiến hành hoàn tiền.'}"></span>
                                                      </div>
+                                                     <div th:if="${order['trangThaiHoanHang'] == 'REFUNDED'}" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(25, 135, 84, 0.3); font-size: 12px; color: #145a32;">
+                                                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                                                             <div><strong>Số tiền hoàn:</strong> <span style="font-size: 14px; font-weight: 700; color: #d9534f;" th:text="${#numbers.formatDecimal(order['soTienHoan'] != null ? order['soTienHoan'] : order['tongTien'], 0, 'COMMA', 0, 'POINT')} + 'đ'"></span></div>
+                                                             <div><strong>Phương thức:</strong> <span th:text="${order['phuongThucHoanTien'] != null and !#strings.isEmpty(order['phuongThucHoanTien']) ? order['phuongThucHoanTien'] : 'Chuyển khoản ngân hàng'}"></span></div>
+                                                             <div th:if="${order['maGiaoDichHoanTien'] != null and !#strings.isEmpty(order['maGiaoDichHoanTien'])}"><strong>Mã giao dịch:</strong> <code th:text="${order['maGiaoDichHoanTien']}"></code></div>
+                                                             <div th:if="${order['thoiGianHoanTien'] != null and !#strings.isEmpty(order['thoiGianHoanTien'])}"><strong>Thời gian:</strong> <span th:text="${order['thoiGianHoanTien']}"></span></div>
+                                                         </div>
+                                                         <div th:if="${order['ghiChuHoanTien'] != null and !#strings.isEmpty(order['ghiChuHoanTien'])}" style="margin-top: 6px;">
+                                                             <strong>Ghi chú từ Shop:</strong> <span th:text="${order['ghiChuHoanTien']}"></span>
+                                                         </div>
+                                                         <div th:if="${order['anhChungTuHoanTien'] != null and !#strings.isEmpty(order['anhChungTuHoanTien'])}" style="margin-top: 8px;">
+                                                             <a th:href="${order['anhChungTuHoanTien']}" target="_blank" class="btn btn-sm btn-outline-success" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid #198754; color: #198754; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                                                 <i class="fas fa-file-invoice-dollar"></i> Xem chứng từ chuyển khoản
+                                                             </a>
+                                                         </div>
+                                                     </div>
                                                  </div>
                                              </div>
 
-                                             <!-- Thông báo không thể hủy (khi đang giao / đã giao) -->
-                                              <div th:if="${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao'}"
+                                              <!-- Thông báo không thể hủy (khi đang giao / đã giao và chưa có yêu cầu trả hàng) -->
+                                              <div th:if="${(order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'giao_that_bai') and order['trangThaiHoanHang'] == null}"
                                                   style="margin-top: 14px; padding: 10px 14px; background: #f8f9fa; border-left: 4px solid #90a4ae; border-radius: 4px; font-size: 13px; color: #546e7a;">
                                                  <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
-                                                 Đơn hàng đang được vận chuyển hoặc đã giao, không thể hủy đơn.
-                                             </div>
+                                                 <span th:text="${order['trangThaiDonHang'] == 'giao_that_bai' ? 'Giao hàng không thành công (Khách hẹn giao lại hoặc sai địa chỉ). Đơn vị vận chuyển sẽ thử giao lại.' : 'Đơn hàng đang được vận chuyển hoặc đã giao, không thể hủy đơn.'}">Đơn hàng đang được vận chuyển hoặc đã giao, không thể hủy đơn.</span>
+                                              </div>
 
                                             <!-- Thông báo đơn đã bị hủy -->
                                             <div th:if="${order['trangThaiDonHang'] == 'da_huy'}"
@@ -615,38 +618,38 @@
                                                   </div>
 
                                                 <!-- Timeline - hiển thị theo trạng thái -->
-                                                <!-- Trường hợp: ĐÃ HỦY -->
-                                                <div th:if="${order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
-                                                    <div class="timeline-stepper-progress" style="width: 42%; background-color: #e53935;"></div>
-                                                    
-                                                    <div class="timeline-stepper-step finish">
-                                                        <div class="timeline-stepper-icon-circle">
-                                                            <i class="fas fa-file-invoice"></i>
-                                                        </div>
-                                                        <span class="timeline-stepper-label">Đơn Hàng Đã Đặt</span>
-                                                        <span class="timeline-stepper-time" th:text="${order.ngayDat != null ? #temporals.format(order.ngayDat, 'HH:mm dd-MM-yyyy') : ''}"></span>
-                                                    </div>
-                                                    
-                                                    <div class="timeline-stepper-step finish" style="--step-color: #e53935;">
-                                                        <div class="timeline-stepper-icon-circle" style="border-color: #e53935; background-color: #e53935; color: #fff;">
-                                                            <i class="fas fa-times-circle"></i>
-                                                        </div>
-                                                        <span class="timeline-stepper-label" style="color: #e53935;">Đơn Hàng Đã Hủy</span>
-                                                        <span class="timeline-stepper-time" style="color: #e53935;" th:text="${order['ngayHuy'] != null ? #temporals.format(order['ngayHuy'], 'HH:mm dd-MM-yyyy') : ''}"></span>
-                                                    </div>
-                                                    
-                                                    <div class="timeline-stepper-step">
-                                                        <div class="timeline-stepper-icon-circle">
-                                                            <i class="fas fa-check-double"></i>
-                                                        </div>
-                                                        <span class="timeline-stepper-label">Hoàn Tất</span>
-                                                        <span class="timeline-stepper-time"></span>
-                                                    </div>
-                                                </div>
+                                                 <!-- Trường hợp 1: ĐÃ HỦY (Chỉ khi KHÔNG PHẢI đơn hoàn trả hàng) -->
+                                                 <div th:if="${order['trangThaiHoanHang'] == null and order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
+                                                     <div class="timeline-stepper-progress" style="width: 42%; background-color: #e53935;"></div>
+                                                     
+                                                     <div class="timeline-stepper-step finish">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-file-invoice"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Đơn Hàng Đã Đặt</span>
+                                                         <span class="timeline-stepper-time" th:text="${order.ngayDat != null ? #temporals.format(order.ngayDat, 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                     </div>
+                                                     
+                                                     <div class="timeline-stepper-step finish" style="--step-color: #e53935;">
+                                                         <div class="timeline-stepper-icon-circle" style="border-color: #e53935; background-color: #e53935; color: #fff;">
+                                                             <i class="fas fa-times-circle"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label" style="color: #e53935;">Đơn Hàng Đã Hủy</span>
+                                                         <span class="timeline-stepper-time" style="color: #e53935;" th:text="${order['ngayHuy'] != null ? #temporals.format(order['ngayHuy'], 'HH:mm dd-MM-yyyy') : ''}"></span>
+                                                     </div>
+                                                     
+                                                     <div class="timeline-stepper-step">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-check-double"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Hoàn Tất</span>
+                                                         <span class="timeline-stepper-time"></span>
+                                                     </div>
+                                                 </div>
 
-                                                <!-- Trường hợp: BÌNH THƯỜNG (chờ/xác nhận/lấy hàng/giao/đã giao/hoàn thành) -->
-                                                <div th:unless="${order['trangThaiDonHang'] == 'da_huy'}" class="timeline-stepper">
-                                                     <div class="timeline-stepper-progress" th:style="${'width: ' + ((order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh') ? '100%' : (order['trangThaiDonHang'] == 'dang_giao' ? '51%' : (order['trangThaiDonHang'] == 'dang_lay_hang' ? '34%' : ((order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid') ? '17%' : '0%'))))}"></div>
+                                                 <!-- Trường hợp 2: BÌNH THƯỜNG (Chỉ khi KHÔNG PHẢI đơn hoàn trả hàng) -->
+                                                 <div th:if="${order['trangThaiHoanHang'] == null and order['trangThaiDonHang'] != 'da_huy'}" class="timeline-stepper">
+                                                      <div class="timeline-stepper-progress" th:style="${'width: ' + ((order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh') ? '100%' : ((order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'giao_that_bai') ? '51%' : (order['trangThaiDonHang'] == 'dang_lay_hang' ? '34%' : ((order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid') ? '17%' : '0%'))))}"></div>
                                                     
                                                     <!-- Bước 1: Đơn Hàng Đã Đặt -->
                                                     <div class="timeline-stepper-step finish">
@@ -659,7 +662,7 @@
                                                     
                                                     <!-- Bước 2: Đã Xác Nhận / Thanh Toán -->
                                                      <div th:class="'timeline-stepper-step ' + 
-                                                          (${order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid' ? 'finish' : ''})">
+                                                          (${order['trangThaiDonHang'] == 'da_xac_nhan' or order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'giao_that_bai' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' or order['trangThaiThanhToan'] == 'DA_THANH_TOAN' or order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['status'] == 'paid' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-money-bill-wave"></i>
                                                         </div>
@@ -669,7 +672,7 @@
                                                     
                                                     <!-- Bước 3: Đang Lấy Hàng -->
                                                      <div th:class="'timeline-stepper-step ' + 
-                                                          (${order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'finish' : ''})">
+                                                          (${order['trangThaiDonHang'] == 'dang_lay_hang' or order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'giao_that_bai' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'finish' : ''})">
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-box-open"></i>
                                                         </div>
@@ -677,13 +680,13 @@
                                                         <span class="timeline-stepper-time" th:text="${order['ngayLayHang'] != null ? #temporals.format(order['ngayLayHang'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
-                                                    <!-- Bước 4: Đang Giao -->
+                                                    <!-- Bước 4: Đang Giao / Giao Thất Bại -->
                                                      <div th:class="'timeline-stepper-step ' + 
-                                                          (${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'finish' : ''})">
-                                                        <div class="timeline-stepper-icon-circle">
-                                                            <i class="fas fa-truck"></i>
+                                                          (${order['trangThaiDonHang'] == 'dang_giao' or order['trangThaiDonHang'] == 'giao_that_bai' or order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? (order['trangThaiDonHang'] == 'giao_that_bai' ? 'finish active' : 'finish') : ''})">
+                                                        <div class="timeline-stepper-icon-circle" th:style="${order['trangThaiDonHang'] == 'giao_that_bai' ? 'border-color: #e53935; background-color: #e53935; color: #fff;' : ''}">
+                                                            <i th:class="${order['trangThaiDonHang'] == 'giao_that_bai' ? 'fas fa-exclamation-triangle' : 'fas fa-truck'}"></i>
                                                         </div>
-                                                        <span class="timeline-stepper-label">Đang Giao</span>
+                                                        <span class="timeline-stepper-label" th:style="${order['trangThaiDonHang'] == 'giao_that_bai' ? 'color: #e53935;' : ''}" th:text="${order['trangThaiDonHang'] == 'giao_that_bai' ? 'Giao Thất Bại (Giao lại)' : 'Đang Giao'}">Đang Giao</span>
                                                         <span class="timeline-stepper-time" th:text="${order['ngayGiaoDVVC'] != null ? #temporals.format(order['ngayGiaoDVVC'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
@@ -708,8 +711,58 @@
                                                     </div>
                                                 </div>
 
+                                                 <!-- Trường hợp: TRẢ HÀNG & HOÀN TIỀN (Return Stepper 5 bước) -->
+                                                 <div th:if="${order['trangThaiHoanHang'] != null}" class="timeline-stepper timeline-stepper--return">
+                                                     <div class="timeline-stepper-progress" th:style="${'width: ' + (order['trangThaiHoanHang'] == 'REFUNDED' ? '100%' : (order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'DELIVERED_TO_SHOP' ? '75%' : (order['trangThaiHoanHang'] == 'PICKED_UP' or order['trangThaiHoanHang'] == 'RETURNING' ? '50%' : (order['trangThaiHoanHang'] == 'WAITING_FOR_PICKUP' ? '25%' : '0%'))))}"></div>
+                                                     
+                                                     <!-- Bước 1: Gửi Yêu Cầu Trả Hàng -->
+                                                     <div class="timeline-stepper-step finish">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-undo"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Gửi Yêu Cầu Trả Hàng</span>
+                                                         <span class="timeline-stepper-time"></span>
+                                                     </div>
+
+                                                     <!-- Bước 2: Shop Duyệt / Thu Hồi -->
+                                                     <div th:class="'timeline-stepper-step ' + (${order['trangThaiHoanHang'] == 'WAITING_FOR_PICKUP' or order['trangThaiHoanHang'] == 'PICKED_UP' or order['trangThaiHoanHang'] == 'RETURNING' or order['trangThaiHoanHang'] == 'DELIVERED_TO_SHOP' or order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED' ? 'finish' : (order['trangThaiHoanHang'] == 'REJECTED' ? 'finish' : '')})">
+                                                         <div class="timeline-stepper-icon-circle" th:style="${order['trangThaiHoanHang'] == 'REJECTED' ? 'border-color: #e53935; background-color: #e53935; color: #fff;' : ''}">
+                                                             <i th:class="${order['trangThaiHoanHang'] == 'REJECTED' ? 'fas fa-times-circle' : 'fas fa-user-check'}"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label" th:style="${order['trangThaiHoanHang'] == 'REJECTED' ? 'color: #e53935;' : ''}" th:text="${order['trangThaiHoanHang'] == 'REJECTED' ? 'Shop Từ Chối' : 'Shop Duyệt / Thu Hồi'}">Shop Duyệt</span>
+                                                         <span class="timeline-stepper-time"></span>
+                                                     </div>
+
+                                                     <!-- Bước 3: Đang Vận Chuyển Trả -->
+                                                     <div th:class="'timeline-stepper-step ' + (${order['trangThaiHoanHang'] == 'PICKED_UP' or order['trangThaiHoanHang'] == 'RETURNING' or order['trangThaiHoanHang'] == 'DELIVERED_TO_SHOP' or order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED' ? 'finish' : ''})">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-truck-loading"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Đang Trả Về Shop</span>
+                                                         <span class="timeline-stepper-time"></span>
+                                                     </div>
+
+                                                     <!-- Bước 4: Shop Nhận & Kiểm Kho -->
+                                                     <div th:class="'timeline-stepper-step ' + (${order['trangThaiHoanHang'] == 'DELIVERED_TO_SHOP' or order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED' ? 'finish' : ''})">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-boxes"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Shop Nhận & Kiểm Kho</span>
+                                                         <span class="timeline-stepper-time"></span>
+                                                     </div>
+
+                                                     <!-- Bước 5: Hoàn Tiền Thành Công -->
+                                                     <div th:class="'timeline-stepper-step ' + (${order['trangThaiHoanHang'] == 'REFUNDED' ? 'finish active' : ''})">
+                                                         <div class="timeline-stepper-icon-circle">
+                                                             <i class="fas fa-hand-holding-usd"></i>
+                                                         </div>
+                                                         <span class="timeline-stepper-label">Hoàn Tiền Thành Công</span>
+                                                         <span class="timeline-stepper-time" th:text="${order['thoiGianHoanTien'] != null ? order['thoiGianHoanTien'] : ''}"></span>
+                                                     </div>
+                                                 </div>
+
                                                 <!-- Thông báo nhận hàng và nút đánh giá -->
-                                                <div th:if="${order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh'}" 
+                                                <div th:if="${(order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh') and order['trangThaiHoanHang'] == null}" 
                                                      style="margin-top: 15px; margin-bottom: 15px; padding: 15px 20px; background-color: #f4fbf7; border: 1px solid #c2ebd6; border-left: 4px solid #198754; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                                                     <div style="display: flex; align-items: center; color: #198754; font-size: 14px; font-weight: 500;">
                                                         <i class="fas fa-check-circle" style="color: #198754; font-size: 20px; margin-right: 10px;"></i>

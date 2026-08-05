@@ -42,6 +42,7 @@ public class AdminController {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
     private final com.smashvn.shop.service.admin.AdminKhachHangService adminKhachHangService;
+    private final com.smashvn.shop.service.common.FileStorageService fileStorageService;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
@@ -81,7 +82,14 @@ public class AdminController {
 
         java.util.List<com.smashvn.shop.entity.HoaDon> onlineOrders = new java.util.ArrayList<>();
         java.util.List<com.smashvn.shop.entity.HoaDon> posOrders = new java.util.ArrayList<>();
+        java.util.List<com.smashvn.shop.entity.HoaDon> returnOrders = new java.util.ArrayList<>();
         for (com.smashvn.shop.entity.HoaDon hd : orders) {
+            com.smashvn.shop.entity.ReturnStatus resolvedReturn = orderViewService.resolveReturnStatus(hd.getId(), hd);
+            if (resolvedReturn != null) {
+                hd.setTrangThaiHoanHang(resolvedReturn);
+                hd.setGhnReturnOrderCode(orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd));
+                returnOrders.add(hd);
+            }
             if (hd.getMaDonHang() != null && hd.getMaDonHang().startsWith("HDSVN")) {
                 posOrders.add(hd);
             } else {
@@ -90,6 +98,7 @@ public class AdminController {
         }
         model.addAttribute("danhSachDonHangOnline", onlineOrders);
         model.addAttribute("danhSachDonHangPos", posOrders);
+        model.addAttribute("danhSachDonHangReturn", returnOrders);
 
         java.util.Map<Integer, String> currentStatusLabels = new java.util.HashMap<>();
         java.util.Map<Integer, String> nextStatusLabels = new java.util.HashMap<>();
@@ -577,7 +586,11 @@ public class AdminController {
             map.put("moTaVoucherSnapshot", moTaVoucher);
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
+            String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
+            com.smashvn.shop.entity.ReturnStatus resolvedReturnStatus = orderViewService.resolveReturnStatus(hd.getId(), hd);
+
             map.put("ghnOrderCode", hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "");
+            map.put("ghnReturnOrderCode", returnCode != null ? returnCode : "");
 
             // Phương thức thanh toán — null-safe
             String tenPhuongThuc = "N/A";
@@ -611,8 +624,8 @@ public class AdminController {
             map.put("ghiChu", hd.getGhiChu() != null ? hd.getGhiChu() : "");
 
             // Return status details
-            map.put("trangThaiHoanHang", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "");
-            map.put("trangThaiHoanHangLabel", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().getLabel() : "");
+            map.put("trangThaiHoanHang", resolvedReturnStatus != null ? resolvedReturnStatus.name() : "");
+            map.put("trangThaiHoanHangLabel", resolvedReturnStatus != null ? resolvedReturnStatus.getLabel() : "");
             map.put("ngayXacNhanHoanHang", hd.getNgayXacNhanHoanHang() != null ? hd.getNgayXacNhanHoanHang().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "");
             map.put("nhanVienXacNhan", hd.getNhanVienXacNhan() != null ? hd.getNhanVienXacNhan().getHoTenNv() : "");
 
@@ -829,6 +842,11 @@ public class AdminController {
     @PostMapping("/don-hang/confirm-refund")
     public String confirmRefund(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "phuongThucHoanTien", required = false) String phuongThucHoanTien,
+            @RequestParam(value = "soTienHoan", required = false) java.math.BigDecimal soTienHoan,
+            @RequestParam(value = "maGiaoDichHoanTien", required = false) String maGiaoDichHoanTien,
+            @RequestParam(value = "ghiChuHoanTien", required = false) String ghiChuHoanTien,
+            @RequestParam(value = "fileChungTu", required = false) org.springframework.web.multipart.MultipartFile fileChungTu,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
@@ -838,7 +856,24 @@ public class AdminController {
         }
 
         try {
-            orderViewService.xacNhanHoanTienChoKhach(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            String anhChungTuUrl = null;
+            if (fileChungTu != null && !fileChungTu.isEmpty()) {
+                java.util.List<String> savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
+                if (!savedNames.isEmpty()) {
+                    anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
+                }
+            }
+
+            orderViewService.xacNhanHoanTienChoKhach(
+                idHoaDon,
+                phuongThucHoanTien,
+                soTienHoan,
+                maGiaoDichHoanTien,
+                ghiChuHoanTien,
+                anhChungTuUrl,
+                actingTaiKhoanId,
+                request.getRemoteAddr()
+            );
             redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());

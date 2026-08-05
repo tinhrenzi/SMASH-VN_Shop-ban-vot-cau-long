@@ -308,6 +308,25 @@ public class GhnRestController {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy đơn hàng ID=" + orderId));
             }
 
+            String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
+            if (returnCode != null && !returnCode.isBlank()) {
+                Map<String, Object> trackingData = ghnService.trackOrder(returnCode);
+                if (trackingData != null && trackingData.get("status") != null) {
+                    String ghnStatus = (String) trackingData.get("status");
+                    com.smashvn.shop.entity.ReturnStatus newReturnStatus = ghnStatusMapper.mapToReturnStatus(ghnStatus);
+                    if (newReturnStatus != null) {
+                        orderViewService.updateReturnStatusFromGhn(hd.getId(), newReturnStatus, ghnStatus, "ADMIN_SYNC");
+                        log.info("[ADMIN] Đã đồng bộ thủ công ĐƠN HOÀN TRẢ #{}: GHN returnStatus={}, internalReturnStatus={}", orderId, ghnStatus, newReturnStatus.name());
+                        return ResponseEntity.ok(Map.of(
+                                "status", "ok",
+                                "message", "Đồng bộ trạng thái GHN Thu Hồi thành công! Mã: " + returnCode,
+                                "ghnStatus", ghnStatus,
+                                "internalStatus", newReturnStatus.name()
+                        ));
+                    }
+                }
+            }
+
             String ghnCode = hd.getGhnOrderCode();
             if (ghnCode == null || ghnCode.isBlank()) {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng chưa có mã GHN để đồng bộ"));
@@ -363,10 +382,24 @@ public class GhnRestController {
                 return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Missing OrderCode or Status"));
             }
 
-            // Tìm đơn hàng theo mã vận đơn GHN
-            HoaDon hd = hoaDonRepository.findByGhnOrderCode(orderCode).orElse(null);
+            // 1. Tìm đơn hàng theo mã vận đơn thu hồi hoặc mã vận đơn xuôi
+            HoaDon hd = null;
+            boolean isReturnOrderWebhook = false;
+
+            for (HoaDon h : hoaDonRepository.findAll()) {
+                String rCode = orderViewService.resolveGhnReturnOrderCode(h.getId(), h);
+                if (rCode != null && rCode.equalsIgnoreCase(orderCode)) {
+                    hd = h;
+                    isReturnOrderWebhook = true;
+                    break;
+                }
+            }
+
             if (hd == null) {
-                // Thử tìm theo ClientOrderCode nếu có
+                hd = hoaDonRepository.findByGhnOrderCode(orderCode).orElse(null);
+            }
+
+            if (hd == null) {
                 String clientOrderCode = (String) payload.get("ClientOrderCode");
                 if (clientOrderCode != null && !clientOrderCode.isBlank()) {
                     try {
@@ -378,22 +411,29 @@ public class GhnRestController {
             }
 
             if (hd != null) {
+                if (isReturnOrderWebhook || orderViewService.resolveReturnStatus(hd.getId(), hd) != null) {
+                    com.smashvn.shop.entity.ReturnStatus newReturnStatus = ghnStatusMapper.mapToReturnStatus(status);
+                    if (newReturnStatus != null) {
+                        orderViewService.updateReturnStatusFromGhn(hd.getId(), newReturnStatus, status, "GHN_WEBHOOK");
+                        log.info("[GHN_WEBHOOK] Updated ReturnStatus for HoaDon #{}: ghnStatus={} -> newReturnStatus={}",
+                                hd.getId(), status, newReturnStatus.name());
+                        return ResponseEntity.ok(Map.of("status", "ok", "message", "Return status update success"));
+                    }
+                }
+
                 String oldStatus = hd.getTrangThaiDonHang();
                 String oldGhnStatus = hd.getGhnStatus();
 
-                // Ánh xạ trạng thái GHN sang trạng thái đơn hàng nội bộ (trangThaiDonHang)
                 String internalStatus = ghnStatusMapper.mapToInternalStatus(status);
                 if (internalStatus == null) {
-                    internalStatus = oldStatus; // Giữ nguyên trạng thái cũ nếu không nhận diện được
+                    internalStatus = oldStatus;
                 }
 
-                // Tránh xử lý trùng lặp do GHN retry webhook
                 if (status.equalsIgnoreCase(oldGhnStatus) && internalStatus.equalsIgnoreCase(oldStatus)) {
                     log.info("[GHN_WEBHOOK] Duplicate update ignored. Order #{} is already in status {} and state {}", hd.getId(), status, internalStatus);
                     return ResponseEntity.ok(Map.of("status", "ok", "message", "Duplicate update ignored"));
                 }
 
-                // Cập nhật trạng thái đơn hàng và tồn kho thông qua OrderViewService
                 orderViewService.applyShippingStatus(hd.getId(), internalStatus, status);
 
                 log.info("[GHN_WEBHOOK] Updated HoaDon #{}: oldStatus={}, oldGhnStatus={} -> newStatus={}, newGhnStatus={}",

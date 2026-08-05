@@ -161,6 +161,31 @@ public class HoaDon {
     @Transient
     private NhanVien refundConfirmedBy;
 
+    // Các trường đính kèm cho chứng từ và thông tin hoàn tiền
+    @Transient
+    private String phuongThucHoanTien;
+
+    @Transient
+    private BigDecimal soTienHoan;
+
+    @Transient
+    private String maGiaoDichHoanTien;
+
+    @Transient
+    private String ghiChuHoanTien;
+
+    @Transient
+    private String anhChungTuHoanTien;
+
+    @Transient
+    private LocalDateTime thoiGianHoanTien;
+
+    @Transient
+    private String nguoiThucHienHoanTien;
+
+    @Transient
+    private Boolean daNhapKhoHoan;
+
     // Getters overriding Lombok for NULL safety
     public BigDecimal getSoTienGiamVoucher() {
         return soTienGiamVoucher == null ? BigDecimal.ZERO : soTienGiamVoucher;

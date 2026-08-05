@@ -36,8 +36,9 @@ public class GhnStatusMapper {
             case "transporting":
             case "delivering":
             case "money_collect_delivering":
-            case "delivery_fail":
                 return "dang_giao";
+            case "delivery_fail":
+                return "giao_that_bai";
 
             case "delivered":
                 return "da_giao";
@@ -94,12 +95,14 @@ public class GhnStatusMapper {
             case "storing":
             case "sorting":
             case "transporting":
-            case "return":
             case "returning":
             case "waiting_to_return":
+            case "delivery_fail":
                 return com.smashvn.shop.entity.ReturnStatus.RETURNING;
+            case "return":
             case "returned":
             case "returned_to_sender":
+            case "delivered":
                 return com.smashvn.shop.entity.ReturnStatus.DELIVERED_TO_SHOP;
             case "lost":
                 return com.smashvn.shop.entity.ReturnStatus.LOST;

@@ -191,6 +191,7 @@ public class OrderViewService {
         map.put("trangThaiThanhToan", hd.getTrangThaiThanhToan());
         map.put("tongTien", hd.getTongTien());
         map.put("trangThaiDonHang", hd.getTrangThaiDonHang());
+        map.put("trangThaiDonHangLabel", getStatusLabel(hd.getTrangThaiDonHang()));
         map.put("status", getFrontendStatusLabel(hd.getTrangThaiDonHang()));
         map.put("ghiChu", hd.getGhiChu());
         map.put("paymentMethod", hd.getPaymentMethod());
@@ -225,6 +226,16 @@ public class OrderViewService {
         map.put("trangThaiHoanHangLabel", returnStatus != null ? returnStatus.getLabel() : "");
         map.put("lyDoHoanTien", hd.getLyDoHoanTien() != null ? hd.getLyDoHoanTien() : "");
         map.put("ghnReturnOrderCode", resolveGhnReturnOrderCode(hd.getId(), hd));
+
+        Map<String, String> refundDetails = resolveRefundDetails(hd.getId(), hd);
+        map.put("phuongThucHoanTien", refundDetails.getOrDefault("phuongThucHoanTien", hd.getPhuongThucHoanTien() != null ? hd.getPhuongThucHoanTien() : ""));
+        map.put("soTienHoan", refundDetails.getOrDefault("soTienHoan", hd.getSoTienHoan() != null ? hd.getSoTienHoan().toString() : (hd.getTongTien() != null ? hd.getTongTien().toString() : "0")));
+        map.put("maGiaoDichHoanTien", refundDetails.getOrDefault("maGiaoDichHoanTien", hd.getMaGiaoDichHoanTien() != null ? hd.getMaGiaoDichHoanTien() : ""));
+        map.put("ghiChuHoanTien", refundDetails.getOrDefault("ghiChuHoanTien", hd.getGhiChuHoanTien() != null ? hd.getGhiChuHoanTien() : ""));
+        map.put("anhChungTuHoanTien", refundDetails.getOrDefault("anhChungTuHoanTien", hd.getAnhChungTuHoanTien() != null ? hd.getAnhChungTuHoanTien() : ""));
+        map.put("thoiGianHoanTien", refundDetails.getOrDefault("thoiGianHoanTien", hd.getThoiGianHoanTien() != null ? hd.getThoiGianHoanTien().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) : ""));
+        map.put("nguoiThucHienHoanTien", refundDetails.getOrDefault("nguoiThucHienHoanTien", hd.getNguoiThucHienHoanTien() != null ? hd.getNguoiThucHienHoanTien() : ""));
+        map.put("daNhapKhoHoan", isDaNhapKhoHoan(hd.getId(), hd));
 
         return map;
     }
@@ -363,7 +374,9 @@ public class OrderViewService {
             case "dang_lay_hang" ->
                 List.of("dang_giao", "da_huy");
             case "dang_giao" ->
-                List.of("da_giao", "da_huy");
+                List.of("da_giao", "giao_that_bai", "da_huy");
+            case "giao_that_bai" ->
+                List.of("dang_giao", "da_giao", "da_huy");
             case "stock_conflict" ->
                 List.of("cho_xac_nhan", "da_huy");
             default ->
@@ -393,7 +406,9 @@ public class OrderViewService {
             case "dang_lay_hang" ->
                 "Đang lấy hàng";
             case "dang_giao" ->
-                "Đang giao";
+                "Đang giao hàng";
+            case "giao_that_bai" ->
+                "Giao hàng thất bại (Khách hẹn giao lại/Chờ chuyển hoàn)";
             case "da_giao" ->
                 "Đã giao";
             case "da_huy" ->
@@ -1524,6 +1539,63 @@ public class OrderViewService {
         return null;
     }
 
+    public boolean isDaNhapKhoHoan(Integer idHoaDon, HoaDon hd) {
+        if (hd != null && Boolean.TRUE.equals(hd.getDaNhapKhoHoan())) {
+            return true;
+        }
+        ReturnStatus st = resolveReturnStatus(idHoaDon, hd);
+        if (st == ReturnStatus.RETURNED || st == ReturnStatus.REFUNDED) {
+            return true;
+        }
+        try {
+            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
+            for (int i = logs.size() - 1; i >= 0; i--) {
+                String giaTriMoi = logs.get(i).getGiaTriMoi();
+                if (giaTriMoi != null && giaTriMoi.contains("daNhapKhoHoan=true")) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {}
+        return false;
+    }
+
+    public Map<String, String> resolveRefundDetails(Integer idHoaDon, HoaDon hd) {
+        Map<String, String> res = new HashMap<>();
+        if (hd != null) {
+            if (hd.getPhuongThucHoanTien() != null) res.put("phuongThucHoanTien", hd.getPhuongThucHoanTien());
+            if (hd.getSoTienHoan() != null) res.put("soTienHoan", hd.getSoTienHoan().toString());
+            if (hd.getMaGiaoDichHoanTien() != null) res.put("maGiaoDichHoanTien", hd.getMaGiaoDichHoanTien());
+            if (hd.getGhiChuHoanTien() != null) res.put("ghiChuHoanTien", hd.getGhiChuHoanTien());
+            if (hd.getAnhChungTuHoanTien() != null) res.put("anhChungTuHoanTien", hd.getAnhChungTuHoanTien());
+            if (hd.getThoiGianHoanTien() != null) res.put("thoiGianHoanTien", hd.getThoiGianHoanTien().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            if (hd.getNguoiThucHienHoanTien() != null) res.put("nguoiThucHienHoanTien", hd.getNguoiThucHienHoanTien());
+        }
+        try {
+            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
+            for (int i = logs.size() - 1; i >= 0; i--) {
+                String gtm = logs.get(i).getGiaTriMoi();
+                if (gtm != null && gtm.contains("trangThaiHoanHang=REFUNDED")) {
+                    String[] parts = gtm.split(",");
+                    for (String part : parts) {
+                        String[] kv = part.split("=", 2);
+                        if (kv.length == 2) {
+                            String key = kv[0].trim();
+                            String val = kv[1].trim();
+                            if (!res.containsKey(key) && !"NULL".equalsIgnoreCase(val)) {
+                                res.put(key, val);
+                            }
+                        }
+                    }
+                    if (!res.containsKey("thoiGianHoanTien") && logs.get(i).getThoiGian() != null) {
+                        res.put("thoiGianHoanTien", logs.get(i).getThoiGian().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+        return res;
+    }
+
     @Transactional
     public boolean xacNhanDaNhanHang(Integer idHoaDon, Integer idKhachHang, String clientIp) {
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon).orElse(null);
@@ -1642,6 +1714,37 @@ public class OrderViewService {
     }
 
     @Transactional
+    public void updateReturnStatusFromGhn(Integer idHoaDon, ReturnStatus newReturnStatus, String ghnStatus, String source) {
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
+        if (currentReturn == newReturnStatus) {
+            return;
+        }
+
+        if (currentReturn == ReturnStatus.RETURNED || currentReturn == ReturnStatus.REFUNDED || currentReturn == ReturnStatus.REJECTED) {
+            log.info("[{}] Bỏ qua cập nhật ReturnStatus cho đơn hàng #{} (trạng thái hiện tại {} là terminal)", source, idHoaDon, currentReturn);
+            return;
+        }
+
+        hd.setTrangThaiHoanHang(newReturnStatus);
+        hoaDonRepository.save(hd);
+
+        auditService.log(
+            null,
+            "HoaDon",
+            Long.valueOf(hd.getId()),
+            "UPDATE",
+            "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "NULL"),
+            "trangThaiHoanHang=" + newReturnStatus.name() + ", ghnStatus=" + ghnStatus,
+            "127.0.0.1",
+            "[" + source + "] Cập nhật trạng thái hoàn hàng từ GHN (" + ghnStatus + ") -> " + newReturnStatus.name(),
+            "SYSTEM"
+        );
+    }
+
+    @Transactional
     public void tuChoiYeuCauTraHang(Integer idHoaDon, String lyDoTuChoi, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
@@ -1724,9 +1827,9 @@ public class OrderViewService {
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
-        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
-        if (currentReturn == ReturnStatus.RETURNED || currentReturn == ReturnStatus.REFUNDED) {
-            throw new IllegalStateException("Đơn hàng này đã được kiểm hàng và nhập kho trước đó.");
+        if (isDaNhapKhoHoan(idHoaDon, hd)) {
+            log.warn("[IDEMPOTENT_GUARD] Đơn hàng ID {} đã được kiểm hàng và nhập kho trước đó.", idHoaDon);
+            return;
         }
 
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
@@ -1742,8 +1845,10 @@ public class OrderViewService {
             }
         }
 
+        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
         hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
         hd.setNgayXacNhanHoanHang(LocalDateTime.now());
+        hd.setDaNhapKhoHoan(true);
         hoaDonRepository.save(hd);
 
         auditService.log(
@@ -1752,7 +1857,7 @@ public class OrderViewService {
             Long.valueOf(hd.getId()),
             "UPDATE",
             "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "DELIVERED_TO_SHOP"),
-            "trangThaiHoanHang=RETURNED",
+            "trangThaiHoanHang=RETURNED, daNhapKhoHoan=true",
             clientIp,
             "[KIEM_KHO_NHAP_KHO] Shop đã kiểm kiện hàng và nhập kho thành công. " + detailsBuilder.toString().trim(),
             roleStr
@@ -1761,6 +1866,11 @@ public class OrderViewService {
 
     @Transactional
     public void xacNhanHoanTienChoKhach(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
+        xacNhanHoanTienChoKhach(idHoaDon, "Chuyển khoản", null, null, null, null, actingTaiKhoanId, clientIp);
+    }
+
+    @Transactional
+    public void xacNhanHoanTienChoKhach(Integer idHoaDon, String phuongThucHoanTien, BigDecimal soTienHoan, String maGiaoDichHoanTien, String ghiChuHoanTien, String anhChungTuHoanTien, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
         }
@@ -1773,15 +1883,34 @@ public class OrderViewService {
 
         ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
         if (currentReturn == ReturnStatus.REFUNDED) {
-            throw new IllegalStateException("Đơn hàng này đã hoàn tiền xong trước đó.");
+            log.warn("[IDEMPOTENT_GUARD] Đơn hàng ID {} đã hoàn tiền xong trước đó.", idHoaDon);
+            return;
         }
+
+        BigDecimal finalSoTienHoan = (soTienHoan != null && soTienHoan.compareTo(BigDecimal.ZERO) > 0) ? soTienHoan : hd.getTongTien();
+        String finalPhuongThuc = (phuongThucHoanTien != null && !phuongThucHoanTien.isBlank()) ? phuongThucHoanTien : "Chuyển khoản ngân hàng";
+        String finalMaGD = (maGiaoDichHoanTien != null) ? maGiaoDichHoanTien.trim() : "";
+        String finalGhiChu = (ghiChuHoanTien != null) ? ghiChuHoanTien.trim() : "";
+        String finalAnhChungTu = (anhChungTuHoanTien != null) ? anhChungTuHoanTien.trim() : "";
 
         hd.setTrangThaiHoanHang(ReturnStatus.REFUNDED);
         hd.setTrangThaiThanhToan("DA_HOAN_TIEN");
         hd.setPaymentStatus("REFUNDED");
         hd.setRefundStatus(RefundStatus.COMPLETED);
         hd.setRefundTime(LocalDateTime.now());
+
+        hd.setPhuongThucHoanTien(finalPhuongThuc);
+        hd.setSoTienHoan(finalSoTienHoan);
+        hd.setMaGiaoDichHoanTien(finalMaGD);
+        hd.setGhiChuHoanTien(finalGhiChu);
+        hd.setAnhChungTuHoanTien(finalAnhChungTu);
+        hd.setThoiGianHoanTien(LocalDateTime.now());
+        hd.setNguoiThucHienHoanTien(actingUser.getUsername());
+
         hoaDonRepository.save(hd);
+
+        String logStr = String.format("trangThaiHoanHang=REFUNDED, trangThaiThanhToan=DA_HOAN_TIEN, phuongThucHoanTien=%s, soTienHoan=%s, maGiaoDichHoanTien=%s, ghiChuHoanTien=%s, anhChungTuHoanTien=%s, nguoiThucHienHoanTien=%s",
+                finalPhuongThuc, finalSoTienHoan, finalMaGD, finalGhiChu, finalAnhChungTu, actingUser.getUsername());
 
         auditService.log(
             actingTaiKhoanId,
@@ -1789,9 +1918,9 @@ public class OrderViewService {
             Long.valueOf(hd.getId()),
             "UPDATE",
             "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "RETURNED"),
-            "trangThaiHoanHang=REFUNDED, trangThaiThanhToan=DA_HOAN_TIEN",
+            logStr,
             clientIp,
-            "[HOAN_TIEN_KHACH_HANG] Admin đã hoàn tiền thành công cho khách hàng.",
+            "[HOAN_TIEN_KHACH_HANG] Admin đã hoàn tiền thành công cho khách hàng. Phương thức: " + finalPhuongThuc + ", Số tiền: " + finalSoTienHoan + "đ",
             roleStr
         );
     }
