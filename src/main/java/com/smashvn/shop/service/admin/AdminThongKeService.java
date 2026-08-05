@@ -236,7 +236,9 @@ public class AdminThongKeService {
             BigDecimal amount = (BigDecimal) row[12];
 
             Long id = rawId != null ? rawId.longValue() : 0L;
-            String invoiceCode = "HD-" + id;
+            String dateStr = ngayTao != null ? ngayTao.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) : "20260805";
+            String prefix = (row.length > 13 && row[13] != null) ? "HDSVN" : "DHSVN";
+            String invoiceCode = prefix + dateStr + "-" + id;
 
             String customerName = "Khách vãng lai";
             if (ho != null || ten != null) {

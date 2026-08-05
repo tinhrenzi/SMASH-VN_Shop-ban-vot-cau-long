@@ -127,11 +127,22 @@ public class AdminKhachHangService {
         String trimmedPhone = (soDienThoaiKh == null) ? "" : soDienThoaiKh.trim();
 
         // 1. Validation
-        if (sanitizedEmail.isEmpty()) {
-            throw new IllegalArgumentException("Email/Tên đăng nhập không được để trống!");
+        if (sanitizedEmail.isEmpty() && trimmedPhone.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng nhập Email hoặc Số điện thoại để tạo tài khoản!");
         }
-        if (!sanitizedEmail.matches(ValidationUtils.EMAIL_REGEX)) {
-            throw new IllegalArgumentException("Email không đúng định dạng!");
+
+        String usernameToUse = "";
+        if (!sanitizedEmail.isEmpty()) {
+            if (!sanitizedEmail.matches(ValidationUtils.EMAIL_REGEX)) {
+                throw new IllegalArgumentException("Email không đúng định dạng!");
+            }
+            usernameToUse = sanitizedEmail;
+        } else {
+            String normalizedPhone = com.smashvn.shop.util.PhoneUtils.normalize(trimmedPhone);
+            if (!com.smashvn.shop.util.PhoneUtils.isValid(normalizedPhone)) {
+                throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam!");
+            }
+            usernameToUse = normalizedPhone;
         }
 
         if (matKhau == null || matKhau.trim().isEmpty()) {
@@ -153,14 +164,14 @@ public class AdminKhachHangService {
             throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam!");
         }
 
-        // Check duplicate email
-        if (taiKhoanRepository.existsByUsername(sanitizedEmail)) {
-            throw new IllegalArgumentException(MSG_DUPLICATE_EMAIL);
+        // Check duplicate username
+        if (taiKhoanRepository.existsByUsername(usernameToUse)) {
+            throw new IllegalArgumentException("Tên đăng nhập (" + usernameToUse + ") đã tồn tại trong hệ thống!");
         }
 
         // 2. Tạo TaiKhoan mới
         TaiKhoan tk = new TaiKhoan();
-        tk.setUsername(sanitizedEmail);
+        tk.setUsername(usernameToUse);
         tk.setMatKhau(passwordEncoder.encode(trimmedPassword));
         tk.setVaiTro("KH");
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);

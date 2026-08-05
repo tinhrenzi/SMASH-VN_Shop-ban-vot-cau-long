@@ -45,9 +45,9 @@
                             <label class="form-label">Trạng Thế</label>
                             <select name="status" class="form-select">
                                 <option value="">-- Tất cả --</option>
-                                <option value="success" th:selected="${status == 'success'}">Thành Công (success)</option>
-                                <option value="stock_conflict" th:selected="${status == 'stock_conflict'}">Tranh Chấp Kho (stock_conflict)</option>
-                                <option value="paid_received_after_cancel" th:selected="${status == 'paid_received_after_cancel'}">Thanh Toán Sau Hủy (paid_received_after_cancel)</option>
+                                <option value="success" th:selected="${status == 'success'}">Thành Công</option>
+                                <option value="stock_conflict" th:selected="${status == 'stock_conflict'}">Tranh Chấp Kho</option>
+                                <option value="paid_received_after_cancel" th:selected="${status == 'paid_received_after_cancel'}">Thanh Toán Sau Hủy</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -86,7 +86,7 @@
                                 <tr>
                                     <th style="width: 60px;" class="text-center">STT</th>
                                     <th>Mã TX</th>
-                                    <th>Mã GD (Gateway)</th>
+                                    <th>Mã Giao Dịch</th>
                                     <th>Mã Đơn Hàng</th>
                                     <th>Số Tiền Nhận</th>
                                     <th>Ngân Hàng</th>

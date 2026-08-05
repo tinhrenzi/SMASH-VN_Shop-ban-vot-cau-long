@@ -84,7 +84,7 @@
                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'hoat_dong' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'ACTIVE')}" class="badge bg-success">Hoạt động</span>
                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'khach_vang_lai' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'GUEST')}" class="badge bg-info text-white">Khách vãng lai</span>
                                         <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'cho_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'PENDING_LOCK')}" class="badge bg-warning text-dark">Chờ khóa</span>
-                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'bi_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'LOCKED')}" class="badge bg-danger">Bị Khóa</span>
+                                        <span th:if="${kh.taiKhoan != null and (kh.taiKhoan.trangThai == 'bi_khoa' or kh.taiKhoan.trangThaiTaiKhoan?.name() == 'LOCKED')}" class="badge bg-danger">Ngừng hoạt động</span>
                                         <span th:if="${kh.taiKhoan == null}" class="badge bg-secondary text-muted">Không có tài khoản</span>
                                     </td>
                                     <td class="text-center">
@@ -98,7 +98,7 @@
                                             <button type="button" 
                                                     class="btn btn-warning text-dark rounded-end ms-1"
                                                     th:onclick="moModalSuaKhachHang([[${kh.id}]], [[${kh.hoTenKh}]], [[${kh.taiKhoan?.username}]], [[${kh.soDienThoaiKh}]], [[${kh.taiKhoan?.trangThai}]])"
-                                                    title="Sửa / Khóa tài khoản">
+                                                    title="Chỉnh sửa tài khoản">
                                                 <i class="fas fa-edit me-1"></i>Sửa
                                             </button>
                                         </div>
@@ -130,11 +130,10 @@
                 <div class="modal-body p-4">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     
-                    <!-- Email đăng nhập -->
+                    <!-- Tên đăng nhập -->
                     <div class="mb-3">
-                        <label for="themEmail" class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
-                        <input type="email" id="themEmail" name="email" class="form-control" placeholder="example@email.com" required>
-                        <div class="form-text text-muted">Email này sẽ dùng làm tên đăng nhập tài khoản và phải là duy nhất.</div>
+                        <label for="themEmail" class="form-label fw-semibold">Tên đăng nhập</label>
+                        <input type="text" id="themEmail" name="email" class="form-control" placeholder="Email">
                     </div>
 
                     <!-- Mật khẩu ban đầu -->
@@ -205,8 +204,8 @@
                     <div class="mb-3">
                         <label for="suaTrangThai" class="form-label fw-semibold">Trạng thái tài khoản <span class="text-danger">*</span></label>
                         <select id="suaTrangThai" name="trangThai" class="form-select" required>
-                            <option value="hoat_dong">Hoạt động (Cho phép đăng nhập)</option>
-                            <option value="bi_khoa">Khóa tài khoản (Cấm truy cập)</option>
+                            <option value="hoat_dong">Hoạt động</option>
+                            <option value="bi_khoa">Ngừng hoạt động</option>
                         </select>
                     </div>
                 </div>
@@ -288,7 +287,7 @@
                                     <span class="fw-bold text-primary fs-6" id="khDetailHoTen">-</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <span class="text-muted small d-block">Tên Đăng Nhập (Email):</span>
+                                    <span class="text-muted small d-block">Tên Đăng Nhập:</span>
                                     <span class="fw-semibold text-secondary" id="khDetailUsername">-</span>
                                 </div>
                                 <div class="col-md-6">

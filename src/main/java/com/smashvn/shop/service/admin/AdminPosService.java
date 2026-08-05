@@ -394,11 +394,6 @@ public class AdminPosService {
             hd.setSoTienGiamVoucher(BigDecimal.ZERO);
         }
 
-        // Generate unique maDonHang for POS orders
-        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        hd.setMaDonHang("HDSVN" + dateStr + "-" + uuidStr);
-
         hd = hoaDonRepository.save(hd);
 
         // 8. Lưu các chi tiết hóa đơn
@@ -410,7 +405,7 @@ public class AdminPosService {
         // 9. Ghi nhật ký kiểm toán
         String ptLabel = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt";
         auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp,
-                "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: HD-" + hd.getId() + ")", nvTk.getVaiTro());
+                "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: " + hd.getMaDonHang() + ")", nvTk.getVaiTro());
 
         return hd;
     }
