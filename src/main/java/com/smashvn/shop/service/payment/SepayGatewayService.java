@@ -246,7 +246,7 @@ public class SepayGatewayService implements PaymentGatewayService {
             // Create system notification
             try {
                 if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
-                    String orderCodeStr = order.getMaDonHang() != null ? order.getMaDonHang() : "DHSVN-" + order.getId();
+                    String orderCodeStr = order.getMaDonHang();
                     ThongBao thongBaoOrder = ThongBao.builder()
                             .taiKhoan(order.getKhachHang().getTaiKhoan())
                             .tieuDe("Đặt hàng thành công")

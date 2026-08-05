@@ -50,7 +50,7 @@
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <div class="row mb-3">
                             <div class="col-md-3">
-                                <label class="form-label">Giá bán (VNĐ) *</label>
+                                <label class="form-label">Giá bán *</label>
                                 <input type="number" name="giaBan" class="form-control" required min="1000" step="1000" placeholder="VD: 2500000">
                             </div>
                             <div class="col-md-3">
@@ -58,7 +58,7 @@
                                 <input type="number" name="soLuongTon" class="form-control" required min="0" value="10">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Hình ảnh sản phẩm (Tùy chọn)</label>
+                                <label class="form-label">Hình ảnh sản phẩm</label>
                                 <input type="file" name="fileAnh" id="fileAnh" class="form-control" accept="image/jpeg, image/png, image/webp">
                                 <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
                                 <div id="imagePreviewContainer" class="mt-3" style="display: none;">
@@ -75,7 +75,7 @@
 
                             <!-- Dành cho Vợt -->
                             <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
-                                <label class="form-label">Trọng lượng (Vợt) *</label>
+                                <label class="form-label">Trọng lượng *</label>
                                 <input type="text" name="trongLuong" class="form-control" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
                             </div>
 

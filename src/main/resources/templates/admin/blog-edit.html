@@ -157,13 +157,13 @@
 
                             <!-- Tags -->
                             <div class="col-md-6">
-                                <label for="tagsInput" class="form-label fw-bold">Thẻ (Tags) <small class="text-muted">(phân tách bằng dấu phẩy)</small></label>
+                                <label for="tagsInput" class="form-label fw-bold">Thẻ Tags </label>
                                 <input type="text" class="form-control" id="tagsInput" name="tags" placeholder="Yonex, Astrox, Hướng dẫn..." th:value="${blog.tags != null ? T(java.lang.String).join(', ', blog.tags) : ''}">
                             </div>
 
                             <!-- Image Cover -->
                             <div class="col-md-8">
-                                <label for="imageFile" class="form-label fw-bold">Hình ảnh bìa bài viết <span class="text-muted">(để trống nếu muốn giữ nguyên ảnh cũ)</span></label>
+                                <label for="imageFile" class="form-label fw-bold">Hình ảnh bìa bài viết </label>
                                 <input type="file" class="form-control" id="imageFile" name="imageFile" accept="image/jpeg,image/png,image/webp" onchange="previewImage(event)">
                                 <div class="form-text">Định dạng chấp nhận: JPG, JPEG, PNG, WEBP. Dung lượng tối đa: 5MB.</div>
                             </div>

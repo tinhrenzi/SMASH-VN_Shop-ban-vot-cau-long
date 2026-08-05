@@ -235,7 +235,7 @@ public class AdminPosController {
             response.put("success", true);
             response.put("message", "Thanh toán thành công!");
             response.put("hoaDonId", hd.getId());
-            response.put("maHoaDon", hd.getMaDonHang() != null ? hd.getMaDonHang() : "HD-" + hd.getId());
+            response.put("maHoaDon", hd.getMaDonHang());
             response.put("paymentMethod", req.phuongThucPos);
             response.put("tongTien", hd.getTongTien());
             return ResponseEntity.ok(response);
@@ -292,7 +292,7 @@ public class AdminPosController {
         }
 
         model.addAttribute("hoaDon", hd);
-        model.addAttribute("maHoaDon", "HD-" + hd.getId());
+        model.addAttribute("maHoaDon", hd.getMaDonHang());
         model.addAttribute("items", items);
         model.addAttribute("tongTienTruocGiam", tongTienTruocGiam);
         model.addAttribute("tienGiam", tienGiam);

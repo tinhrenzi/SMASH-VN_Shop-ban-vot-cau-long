@@ -10,93 +10,105 @@ Dưới đây là sơ đồ cấu trúc thư mục chính của dự án Maven S
 
 ```text
 SMASH-VN_Shop-ban-vot-cau-long/
-├── .env                         # Lưu trữ các biến môi trường cấu hình (DB, API Keys, SMTP...)
-├── pom.xml                      # Cấu hình các dependencies Maven
-├── SQLQuery1.sql                # File thiết lập cơ sở dữ liệu SQL Server ban đầu
-├── reseed_utility.sql           # File utility hỗ trợ reset/reseed cơ sở dữ liệu
-├── src/
-│   ├── main/
-│   │   ├── java/com/smashvn/shop/   # Mã nguồn Backend (Java Spring Boot)
-│   │   │   ├── SmashVnApplication.java # Class chạy chính của ứng dụng
-│   │   │   │
-│   │   │   ├── config/              # Các cấu hình hệ thống
-│   │   │   │   ├── AdminInterceptor.java        # Kiểm tra quyền truy cập Admin
-│   │   │   │   ├── SecurityConfig.java          # Cấu hình Spring Security (Spring Security, Google OAuth2)
-│   │   │   │   ├── WebMvcConfig.java            # Cấu hình tài nguyên tĩnh và Interceptors
-│   │   │   │   ├── GhnConfig.java               # Cấu hình kết nối API Giao Hàng Nhanh
-│   │   │   │   ├── SepayConfig.java             # Cấu hình tích hợp thanh toán SePay
-│   │   │   │   ├── ZaloPayConfig.java           # Cấu hình tích hợp ví điện tử ZaloPay
-│   │   │   │   └── UploadSecurityFilter.java    # Bảo mật tệp tin upload tránh mã độc
-│   │   │   │
-│   │   │   ├── controller/          # Các tầng tiếp nhận và điều hướng Request (MVC Controllers)
-│   │   │   │   ├── admin/           # Controllers dành cho Admin & Staff
-│   │   │   │   │   ├── AdminController.java         # Trang quản trị tổng quát
-│   │   │   │   │   ├── AdminPosController.java      # Quản lý bán hàng tại quầy (POS)
-│   │   │   │   │   ├── AdminSanPhamController.java  # Quản lý Sản phẩm
-│   │   │   │   │   ├── AdminBienTheController.java  # Quản lý Biến thể (Kích cỡ, màu sắc, số lượng)
-│   │   │   │   │   ├── AdminKhuyenMaiController.java# Quản lý Phiếu giảm giá và Đợt giảm giá
-│   │   │   │   │   ├── AdminThongKeController.java  # Quản lý thống kê & doanh thu
-│   │   │   │   │   └── CommentModerationAdminController.java # Quản trị kiểm duyệt bình luận
-│   │   │   │   ├── api/             # REST Controllers cung cấp API cho Client/Frontend
-│   │   │   │   │   ├── LocationRestController.java  # Lấy danh mục Tỉnh/Huyện/Xã
-│   │   │   │   │   ├── ShippingApiController.java   # Tính toán phí vận chuyển
-│   │   │   │   │   └── SearchApiController.java     # API tìm kiếm nhanh sản phẩm
-│   │   │   │   ├── blog/            # Controller quản lý bài viết tin tức
-│   │   │   │   ├── chatbot/         # API Chatbot tư vấn khách hàng qua Gemini AI
-│   │   │   │   ├── home/            # Controller giao diện trang chủ, shop, liên hệ
-│   │   │   │   ├── order/           # Controller Giỏ hàng (Cart) và Thanh toán (Checkout)
-│   │   │   │   ├── payment/         # Controller nhận Webhook/IPN thanh toán (SePay, ZaloPay)
-│   │   │   │   ├── product/         # Controller trang chi tiết sản phẩm và yêu thích
-│   │   │   │   └── user/            # Controller thông tin cá nhân, sổ địa chỉ, lịch sử đơn hàng
-│   │   │   │
-│   │   │   ├── entity/              # Các Entity ánh xạ các bảng CSDL (JPA Hibernate)
-│   │   │   │   ├── TaiKhoan.java, KhachHang.java, NhanVien.java # Thông tin người dùng
-│   │   │   │   ├── SanPham.java, SanPhamChiTiet.java            # Thông tin sản phẩm & biến thể
-│   │   │   │   ├── HoaDon.java, HoaDonChiTiet.java              # Đơn hàng & chi tiết đơn hàng
-│   │   │   │   ├── PhieuGiamGia.java, DotGiamGia.java           # Khuyến mãi & Giảm giá
-│   │   │   │   └── PaymentTransaction.java                      # Giao dịch thanh toán trực tuyến
-│   │   │   │
-│   │   │   ├── repository/          # Tầng tương tác trực tiếp với Database (Spring Data JPA)
-│   │   │   │
-│   │   │   ├── security/            # Tầng bảo mật nâng cao chống spam/tấn công brute force
-│   │   │   │   ├── LoginRateLimiter.java        # Giới hạn tần suất đăng nhập sai
-│   │   │   │   ├── RegisterRateLimiter.java     # Giới hạn tần suất đăng ký tài khoản mới
-│   │   │   │   └── ForgotPasswordRateLimiter.java# Giới hạn tần suất gửi yêu cầu quên mật khẩu
-│   │   │   │
-│   │   │   ├── service/             # Tầng xử lý Logic Nghiệp vụ chính của hệ thống
-│   │   │   │   ├── order/
-│   │   │   │   │   ├── GioHangService.java      # Nghiệp vụ xử lý giỏ hàng người dùng
-│   │   │   │   │   ├── GuestCartService.java    # Nghiệp vụ xử lý giỏ hàng khách vãng lai
-│   │   │   │   │   └── GuestCheckoutService.java# Tự động đăng ký và kích hoạt tài khoản khách vãng lai
-│   │   │   │   ├── payment/
-│   │   │   │   │   ├── SepayGatewayService.java # Tích hợp ngân hàng qua SePay IPN
-│   │   │   │   │   └── ZaloPayService.java      # Tích hợp cổng thanh toán ZaloPay
-│   │   │   │   ├── api/
-│   │   │   │   │   ├── GhnService.java          # Đồng bộ tính phí và giao hàng với Giao Hàng Nhanh
-│   │   │   │   │   └── ShippingFeeCalculator.java# Xử lý quy tắc tính phí ship vùng miền
-│   │   │   │   ├── blog/
-│   │   │   │   │   └── CommentModerationService.java # Kiểm duyệt bình luận độc hại tự động
-│   │   │   │   └── chatbot/
-│   │   │   │       └── ChatService.java         # Kết nối gửi prompt và nhận phản hồi từ Gemini API
-│   │   │   │
-│   │   │   └── util/                # Các class tiện ích (Kiểm tra từ tục tĩu, validate dữ liệu...)
-│   │   │       ├── ProfanityFilter.java         # Lọc ngôn từ tục tĩu tiếng Anh và tiếng Việt
-│   │   │       └── VoucherCalculator.java       # Tính toán giá trị giảm giá của Voucher
-│   │   │
-│   │   └── resources/
-│   │       ├── application.properties # File cấu hình hệ thống Spring Boot chính
-│   │       ├── static/              # Các tài nguyên tĩnh (css, js, images, webfonts)
-│   │       └── templates/           # Các file giao diện HTML (Thymeleaf)
-│   │           ├── admin/           # Giao diện trang quản lý của Admin
-│   │           ├── layout/          # Các layout chung (Header, Footer, Modals)
-│   │           ├── index.html       # Trang chủ
-│   │           ├── shop.html        # Trang cửa hàng danh sách sản phẩm
-│   │           ├── product-detail.html # Trang chi tiết sản phẩm
-│   │           ├── cart.html        # Trang giỏ hàng
-│   │           ├── checkout.html    # Trang tiến hành đặt hàng và thanh toán
-│   │           └── dashboard.html   # Trang quản lý tài khoản khách hàng
-│   └── test/                        # Mã nguồn kiểm thử (Unit test và Integration test)
-└── uploads/                         # Thư mục lưu trữ hình ảnh sản phẩm & đánh giá (tải lên động)
+├── .env                         # Lưu trữ các biến môi trường cấu hình (DB, API Keys, SMTP, Webhook Secrets)
+├── .env.example                 # Tệp mẫu khai báo biến môi trường chuẩn
+├── pom.xml                      # Cấu hình Maven Build & Dependencies (Spring Boot, Security, Thymeleaf, JPA, Jsoup, Tika)
+├── deploy.bat                   # Kịch bản tự động hóa Build & Deploy trên Windows
+├── deploy.js                    # Script Node.js tự động kiểm tra cổng dịch vụ & triển khai
+├── docs/                        # Thư mục tài liệu báo cáo kiến trúc tương tác & báo cáo kiểm thử
+│   ├── project-structure.html   # Trang tài liệu kiến trúc tương tác trực quan & Call Flow Map
+│   └── log.html                 # Báo cáo kết quả kiểm thử toàn diện
+├── payment/                     # Script phụ trợ tích hợp cổng thanh toán trực tuyến
+├── uploads/                     # Thư mục lưu trữ hình ảnh tải lên động (Sản phẩm, Đánh giá, Avatar, Banner)
+└── src/
+    ├── main/
+    │   ├── java/com/smashvn/shop/   # Mã nguồn Backend (Java Spring Boot MVC)
+    │   │   ├── SmashVnApplication.java # Lớp khởi chạy chính của ứng dụng
+    │   │   │
+    │   │   ├── config/              # Các cấu hình hệ thống
+    │   │   │   ├── AdminInterceptor.java        # Kiểm tra phiên làm việc & quyền truy cập trang quản trị
+    │   │   │   ├── AsyncConfig.java             # Cấu hình xử lý bất đồng bộ (@EnableAsync)
+    │   │   │   ├── DotenvEnvironmentPostProcessor.java # Tự động nạp biến môi trường từ .env
+    │   │   │   ├── GeminiHttpClientConfig.java   # Cấu hình HTTP Client kết nối Google Gemini AI API
+    │   │   │   ├── GhnConfig.java               # Cấu hình kết nối API Giao Hàng Nhanh
+    │   │   │   ├── PlaintextPasswordMigrator.java # Migration tự động băm mật khẩu cũ sang BCrypt khi boot
+    │   │   │   ├── ProfessionalDataSeeder.java   # Khởi tạo dữ liệu mẫu phong phú khi CSDL trống
+    │   │   │   ├── SecurityConfig.java          # Cấu hình Spring Security (URL Authorization, BCrypt, OAuth2)
+    │   │   │   ├── SepayConfig.java             # Cấu hình tích hợp thanh toán ngân hàng SePay
+    │   │   │   ├── ShopContactProperties.java   # Nạp thông tin liên hệ cửa hàng từ properties
+    │   │   │   ├── SpringContextHelper.java     # Tiện ích truy xuất Spring Beans tĩnh
+    │   │   │   ├── UploadPathVerifier.java      # Tự động tạo và kiểm tra thư mục uploads/
+    │   │   │   ├── UploadSecurityFilter.java    # Bảo mật tệp tin upload tránh mã độc (Shell scripts)
+    │   │   │   └── WebMvcConfig.java            # Cấu hình Spring MVC Interceptors & Resource Handlers
+    │   │   │
+    │   │   ├── constant/            # Các Enum hằng số và cấu hình thuộc tính sản phẩm
+    │   │   │   ├── CategoryType.java            # Enum loại danh mục (Vợt, Giày, Quần áo, Phụ kiện...)
+    │   │   │   ├── DanhMucIds.java              # ID danh mục cố định hệ thống
+    │   │   │   └── SanPhamAttributeConfig.java  # Cấu hình thuộc tính động cho từng loại sản phẩm
+    │   │   │
+    │   │   ├── controller/          # Các tầng tiếp nhận và điều hướng Request (MVC & REST Controllers)
+    │   │   │   ├── admin/           # Controllers dành cho Admin & Staff
+    │   │   │   │   ├── AdminBienTheController.java  # Quản lý Biến thể sản phẩm (SKU, màu, size, tồn kho)
+    │   │   │   │   ├── AdminBlogController.java     # Quản lý bài viết tin tức & kinh nghiệm cầu lông
+    │   │   │   │   ├── AdminController.java         # Dashboard quản trị tổng quát
+    │   │   │   │   ├── AdminDangNhapController.java # Đăng nhập/Đăng xuất Admin & Staff
+    │   │   │   │   ├── AdminDanhGiaController.java  # Quản lý & kiểm duyệt đánh giá sản phẩm
+    │   │   │   │   ├── AdminDanhMucController.java  # Quản lý danh mục sản phẩm (Cha - Con)
+    │   │   │   │   ├── AdminKhuyenMaiController.java# Quản lý Phiếu giảm giá & Đợt giảm giá
+    │   │   │   │   ├── AdminNhanVienController.java # Quản lý tài khoản & phân quyền nhân viên
+    │   │   │   │   ├── AdminPaymentTransactionController.java # Tra cứu lịch sử giao dịch thanh toán
+    │   │   │   │   ├── AdminPosController.java      # Bán hàng trực tiếp tại quầy (POS)
+    │   │   │   │   ├── AdminSanPhamController.java  # Quản lý danh sách sản phẩm & thuộc tính
+    │   │   │   │   ├── AdminThongKeController.java  # Thống kê doanh thu & biểu đồ bán hàng
+    │   │   │   │   └── CommentModerationAdminController.java # Quản trị bình luận bị gắn cờ vi phạm
+    │   │   │   ├── advice/          # Global Notification Advice
+    │   │   │   │   └── GlobalNotificationAdvice.java # Tự động nạp giỏ hàng & thông báo vào Model
+    │   │   │   ├── api/             # REST Controllers cung cấp API cho Client/Frontend
+    │   │   │   │   ├── CategoryAttributeRestController.java # API lấy thuộc tính động theo danh mục
+    │   │   │   │   ├── ChatbotProductsRestController.java # API cung cấp dữ liệu sản phẩm cho AI
+    │   │   │   │   ├── ChatbotRestController.java   # API Chatbot tư vấn qua Google Gemini AI
+    │   │   │   │   ├── GhnRestController.java       # Tích hợp địa giới & tính phí ship Giao Hàng Nhanh
+    │   │   │   │   ├── LocationRestController.java  # Lấy danh mục Tỉnh/Huyện/Xã Việt Nam
+    │   │   │   │   ├── NewsletterApiController.java # Đăng ký nhận email tin tức/khuyến mãi
+    │   │   │   │   ├── SearchApiController.java     # Tìm kiếm nhanh & gợi ý từ khóa sản phẩm
+    │   │   │   │   └── ShippingApiController.java   # Tính toán phí vận chuyển đơn hàng
+    │   │   │   ├── blog/            # Controller bài viết tin tức & bình luận
+    │   │   │   ├── home/            # Controller giao diện trang chủ, banner, khuyến mãi, liên hệ
+    │   │   │   ├── order/           # Controller Giỏ hàng (Cart) & Thanh toán (Checkout)
+    │   │   │   ├── payment/         # Controller nhận Webhook SePay IPN & giả lập giao dịch
+    │   │   │   ├── product/         # Controller danh sách sản phẩm, lọc nâng cao, chi tiết & wishlist
+    │   │   │   └── user/            # Controller hồ sơ khách hàng, sổ địa chỉ, lịch sử đơn hàng, OTP
+    │   │   │
+    │   │   ├── dao/                 # Tầng Data Access Object hỗ trợ các truy vấn dữ liệu thủ công
+    │   │   ├── dto/                 # Data Transfer Objects trao đổi dữ liệu Frontend - Backend
+    │   │   ├── entity/              # Các JPA Entities ánh xạ các bảng CSDL SQL Server (31+ tables)
+    │   │   ├── exception/           # Xử lý ngoại lệ tập trung (GlobalExceptionHandler & Custom Exceptions)
+    │   │   ├── migration/           # Kịch bản chuyển đổi dữ liệu tự động (EmployeeMigrationRunner)
+    │   │   ├── repository/          # Tầng tương tác CSDL Spring Data JPA (31 Repositories)
+    │   │   ├── scheduler/           # Tác vụ lập lịch ngầm tự động (CommentModerationScheduler)
+    │   │   ├── security/            # Tầng bảo mật nâng cao chống SPAM & Brute-force
+    │   │   │   ├── ForgotPasswordRateLimiter.java# Giới hạn tần suất gửi OTP quên mật khẩu
+    │   │   │   ├── LoginRateLimiter.java        # Giới hạn tần suất đăng nhập sai
+    │   │   │   └── RegisterRateLimiter.java     # Giới hạn tần suất đăng ký tài khoản
+    │   │   │
+    │   │   ├── service/             # Tầng xử lý Logic Nghiệp vụ chính của hệ thống
+    │   │   │   ├── admin/           # Nghiệp vụ quản trị (Biến thể, Khách hàng, Khuyến mãi, POS, Thống kê)
+    │   │   │   ├── api/             # Nghiệp vụ API giao hàng GHN & tính phí ship vùng miền
+    │   │   │   ├── blog/            # Nghiệp vụ bài viết & tự động kiểm duyệt bình luận
+    │   │   │   ├── common/          # Nghiệp vụ quản lý lưu trữ tệp tin (FileStorageService)
+    │   │   │   ├── impl/            # Implementations cho Chatbot AI Gemini, Newsletter & Giá
+    │   │   │   ├── order/           # Nghiệp vụ giỏ hàng, Guest Checkout & Đơn hàng
+    │   │   │   ├── payment/         # Nghiệp vụ thanh toán chuyển khoản SePay IPN
+    │   │   │   ├── product/         # Nghiệp vụ sản phẩm, thương hiệu, danh mục, đánh giá, tính khuyến mãi
+    │   │   │   └── user/            # Nghiệp vụ người dùng, sổ địa chỉ, đổi mật khẩu, OTP
+    │   │   │
+    │   │   └── util/                # Các class tiện ích (ProfanityFilter, VoucherCalculator, SpecUtils...)
+    │   │
+    │   └── resources/
+    │       ├── application.properties # File cấu hình hệ thống Spring Boot chính
+    │       ├── static/              # Tài nguyên tĩnh (CSS, JS, Images)
+    │       └── templates/           # Giao diện Thymeleaf HTML (Admin & Customer)
+    └── test/                        # Mã nguồn kiểm thử Unit & Integration test
 ```
 
 ---

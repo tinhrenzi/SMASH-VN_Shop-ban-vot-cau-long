@@ -49,7 +49,7 @@
                                 <!-- Section 1: Giá & Số lượng kho (Cân đối 2 cột 6 - 6) -->
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-semibold">Giá bán <span class="text-danger">*</span></label>
                                         <input type="number" name="giaBan" class="form-control" th:value="${bt.giaBan}" required min="1000" step="1000" placeholder="VD: 2500000">
                                     </div>
                                     <div class="col-md-6">
@@ -66,7 +66,7 @@
                                         <input type="text" name="mauSac" class="form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Trọng lượng (Vợt) <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-semibold">Trọng lượng <span class="text-danger">*</span></label>
                                         <input type="text" name="trongLuong" class="form-control" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
                                     </div>
                                     <div class="col-md-4">
@@ -120,7 +120,7 @@
                                 <!-- Section 3: Hình ảnh sản phẩm (Khu vực xem trước cân đối) -->
                                 <div class="row mb-4">
                                     <div class="col-12">
-                                        <label class="form-label fw-semibold">Hình ảnh biến thể (Để trống nếu giữ ảnh cũ)</label>
+                                        <label class="form-label fw-semibold">Hình ảnh biến thể</label>
                                         <input type="file" name="fileAnh" id="fileAnh" class="form-control" accept="image/jpeg, image/png, image/webp">
                                         <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
 

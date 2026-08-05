@@ -539,11 +539,6 @@ public class GioHangService {
             hd.setSoTienGiamVoucher(BigDecimal.ZERO);
         }
 
-        // Generate secure maDonHang: DHSVN + YYYYMMDDHHMMSS + - + 6 UUID characters
-        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String uuidStr = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        hd.setMaDonHang("DHSVN" + dateStr + "-" + uuidStr);
-
         if ("COD".equalsIgnoreCase(ptttName)) {
             hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
             hd.setPaymentMethod(PaymentMethod.COD.getValue()); // "cod"
@@ -646,7 +641,7 @@ public class GioHangService {
         if ("COD".equalsIgnoreCase(ptttName)) {
             try {
                 if (kh != null && kh.getTaiKhoan() != null) {
-                    String orderCode = hd.getMaDonHang() != null ? hd.getMaDonHang() : "DHSVN-" + hd.getId();
+                    String orderCode = hd.getMaDonHang();
                     ThongBao thongBaoOrder = ThongBao.builder()
                             .taiKhoan(kh.getTaiKhoan())
                             .tieuDe("Đặt hàng thành công")

@@ -373,7 +373,7 @@
                                     </div>
                                     <div class="u-s-m-b-15">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <label class="gl-label" for="ghiChu" style="margin-bottom: 0;">GHI CHÚ ĐƠN HÀNG (TÙY CHỌN)</label>
+                                            <label class="gl-label" for="ghiChu" style="margin-bottom: 0;">GHI CHÚ ĐƠN HÀNG</label>
                                             <span id="ghiChu-counter" style="font-size: 12px; color: #64748b;">0/500</span>
                                         </div>
                                         <textarea class="text-area text-area--primary-style" id="ghiChu" name="ghiChu" placeholder="Lưu ý cho người giao hàng..." maxlength="500"></textarea>
@@ -419,7 +419,7 @@
 
                                         <!-- Voucher Code Section -->
                                         <div class="u-s-m-b-20 pt-3 border-top">
-                                            <label class="gl-label" for="voucher-code-input">MÃ GIẢM GIÁ (VOUCHER)</label>
+                                            <label class="gl-label" for="voucher-code-input">MÃ GIẢM GIÁ</label>
                                             <div style="display: flex; gap: 8px;">
                                                 <input class="input-text input-text--primary-style" type="text" id="voucher-code-input" placeholder="Nhập mã giảm giá..." style="text-transform: uppercase; margin-bottom: 0; flex-grow: 1;">
                                                 <button class="btn btn--e-secondary" type="button" id="btn-apply-voucher" style="padding: 12px 20px; font-weight: 700; border-radius: 6px; white-space: nowrap; font-size: 13px;">Áp dụng</button>
@@ -434,7 +434,7 @@
                                                     <td class="text-right" th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
                                                 </tr>
                                                 <tr id="voucher-discount-row" style="display: none;">
-                                                    <td>GIẢM GIÁ (VOUCHER)</td>
+                                                    <td>GIẢM GIÁ</td>
                                                     <td class="text-right text-danger js-voucher-discount">-0 đ</td>
                                                 </tr>
                                                 <tr>
@@ -604,7 +604,7 @@
                 </p>
                 
                 <div class="u-s-m-b-15">
-                    <label class="gl-label" for="success-password">MẬT KHẨU MỚI (TÙY CHỌN)</label>
+                    <label class="gl-label" for="success-password">MẬT KHẨU MỚI</label>
                     <div style="position: relative; display: block; width: 100%;">
                         <input class="input-text input-text--primary-style" type="password" id="success-password" placeholder="Nhập mật khẩu để kích hoạt tài khoản..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
                         <span class="toggle-password" data-target="success-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">

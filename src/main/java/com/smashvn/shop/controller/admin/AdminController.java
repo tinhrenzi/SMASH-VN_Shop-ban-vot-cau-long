@@ -206,7 +206,7 @@ public class AdminController {
 
     @PostMapping("/khach-hang/them")
     public String xuLyThemKhachHang(
-            @RequestParam("email") String email,
+            @RequestParam(value = "email", required = false) String email,
             @RequestParam("matKhau") String matKhau,
             @RequestParam("hoTenKh") String hoTenKh,
             @RequestParam(value = "soDienThoaiKh", required = false) String soDienThoaiKh,
@@ -288,7 +288,7 @@ public class AdminController {
 
         String trangThai = "Không có tài khoản";
         if (kh.getTaiKhoan() != null) {
-            trangThai = "hoat_dong".equalsIgnoreCase(kh.getTaiKhoan().getTrangThai()) ? "Hoạt động" : "Bị khóa";
+            trangThai = "hoat_dong".equalsIgnoreCase(kh.getTaiKhoan().getTrangThai()) ? "Hoạt động" : "Ngừng hoạt động";
         }
         response.put("trangThaiTaiKhoan", trangThai);
 

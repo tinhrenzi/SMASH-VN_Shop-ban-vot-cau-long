@@ -58,7 +58,7 @@
 
                                 <!-- Mật khẩu mới (Tùy chọn) -->
                                 <div class="col-md-6">
-                                    <label for="newPassword" class="form-label">Mật Khẩu Mới (Không bắt buộc)</label>
+                                    <label for="newPassword" class="form-label">Mật Khẩu Mới</label>
                                     <div class="input-group">
                                         <input type="password" id="newPassword" name="newPassword" class="form-control" placeholder="Để trống nếu giữ nguyên mật khẩu cũ" minlength="8" maxlength="50">
                                         <button class="btn btn-outline-secondary border" type="button" id="togglePassword"
@@ -92,7 +92,7 @@
                                 <!-- Trạng thái tài khoản -->
                                 <div class="col-md-6">
                                     <label class="form-label">Trạng Thái Tài Khoản</label>
-                                    <input type="text" class="form-control bg-light" th:value="${nv.taiKhoan.trangThai == 'hoat_dong' ? 'Hoạt động (Cho phép đăng nhập)' : (nv.taiKhoan.trangThai == 'bi_khoa' ? 'Khóa tài khoản (Cấm truy cập)' : 'Chờ khóa')}" readonly>
+                                    <input type="text" class="form-control bg-light" th:value="${nv.taiKhoan.trangThai == 'hoat_dong' ? 'Hoạt động' : (nv.taiKhoan.trangThai == 'bi_khoa' ? 'Ngừng hoạt động' : 'Chờ khóa')}" readonly>
                                     <input type="hidden" name="trangThai" th:value="${nv.taiKhoan.trangThai}">
                                     <div class="form-text text-muted">Trạng thái tài khoản chỉ hiển thị để xem, không thể thay đổi tại đây.</div>
                                 </div>
