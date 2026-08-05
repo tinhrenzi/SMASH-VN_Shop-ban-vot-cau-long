@@ -112,6 +112,9 @@ public class HoaDon {
     @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id)")
     private String ghnOrderCode;
 
+    @Transient
+    private String ghnReturnOrderCode;
+
     @org.hibernate.annotations.Formula("(SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = id)")
     private String ghnStatus;
 

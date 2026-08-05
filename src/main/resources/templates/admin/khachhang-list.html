@@ -55,9 +55,12 @@
             </div>
 
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-list me-2"></i>Danh Sách Khách Hàng Thành Viên</span>
-                    <span class="badge bg-primary" th:text="${danhSachKhachHang.size()} + ' khách hàng'"></span>
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold"><i class="fas fa-list me-2 text-brand"></i>Danh Sách Khách Hàng Thành Viên</span>
+                        <input type="text" id="customerSearchInput" class="form-control form-control-sm text-white" style="width: 280px; background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);" placeholder="🔍 Tìm kiếm tên, email, sđt..." oninput="filterCustomers()">
+                    </div>
+                    <span class="badge bg-primary" id="customerCountBadge" th:text="${danhSachKhachHang.size()} + ' khách hàng'">0 khách hàng</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive border-0 shadow-none">
@@ -65,7 +68,6 @@
                             <thead>
                                 <tr>
                                     <th style="width: 60px;" class="text-center">STT</th>
-                                    <th>Mã KH</th>
                                     <th>Họ Tên</th>
                                     <th>Tên đăng nhập</th>
                                     <th>Số Điện Thoại</th>
@@ -73,10 +75,9 @@
                                     <th style="width: 170px;" class="text-center">Thao Tác</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tbodyKhachHang">
                                 <tr th:each="kh, iterStat : ${danhSachKhachHang}">
                                     <td class="text-center" th:text="${iterStat.count}">1</td>
-                                    <td class="fw-bold text-dark" th:text="'KH' + ${kh.id}">KH1</td>
                                     <td class="fw-bold text-primary" style="cursor: pointer;" th:onclick="'xemChiTietKhachHang(' + ${kh.id} + ')'" th:text="${kh.hoTenKh != null and kh.hoTenKh != '' ? kh.hoTenKh : (kh.hoKh + ' ' + kh.tenKh)}">John Doe</td>
                                     <td class="fw-semibold text-secondary" th:text="${kh.taiKhoan?.username ?: 'Khách vãng lai / POS'}">john@gmail.com</td>
                                     <td th:text="${kh.soDienThoaiKh != null and kh.soDienThoaiKh != '' ? kh.soDienThoaiKh : 'Chưa cập nhật'}">0909090909</td>
@@ -105,7 +106,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${danhSachKhachHang.isEmpty()}">
-                                    <td colspan="7" class="text-center text-muted py-4">Chưa có khách hàng nào đăng ký hệ thống.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có khách hàng nào đăng ký hệ thống.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -540,6 +541,36 @@ function getBadgePay(st) {
     const s = st.toLowerCase();
     if (s === 'da_thanh_toan' || s === 'paid') return 'bg-success';
     return 'bg-warning text-dark';
+}
+
+function filterCustomers() {
+    const query = document.getElementById('customerSearchInput').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#tbodyKhachHang tr');
+    let visibleCount = 0;
+    let hasRealRows = false;
+    
+    rows.forEach(row => {
+        if (row.cells.length === 1 && row.cells[0].colSpan > 1) {
+            return;
+        }
+        hasRealRows = true;
+        const text = row.textContent.toLowerCase();
+        if (text.includes(query)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    const countBadge = document.getElementById('customerCountBadge');
+    if (countBadge) {
+        if (hasRealRows) {
+            countBadge.textContent = `${visibleCount} khách hàng`;
+        } else {
+            countBadge.textContent = `0 khách hàng`;
+        }
+    }
 }
 </script>
 </body>

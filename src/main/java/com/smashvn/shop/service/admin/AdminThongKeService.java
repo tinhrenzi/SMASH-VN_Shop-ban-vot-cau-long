@@ -87,7 +87,7 @@ public class AdminThongKeService {
 
             if (isCod) {
                 // Đơn hàng COD thì sẽ được tính vào doanh thu tạm thời khi ở các trạng thái hoạt động (chưa hủy, chưa hoàn thành)
-                if ("cho_xac_nhan".equals(status) || "da_xac_nhan".equals(status) || "dang_lay_hang".equals(status) || "dang_giao".equals(status)) {
+                if ("cho_xac_nhan".equals(status) || "da_xac_nhan".equals(status) || "dang_chuan_bi_hang".equals(status) || "san_sang_giao".equals(status) || "da_tao_van_don_ghn".equals(status) || "da_ban_giao_ghn".equals(status) || "dang_lay_hang".equals(status) || "dang_giao".equals(status)) {
                     return RevenueClassification.PROJECTED_REVENUE;
                 }
             } else {
@@ -370,9 +370,9 @@ public class AdminThongKeService {
                     "da_giao";
                 case "da_huy", "cancelled" ->
                     "da_huy";
-                case "dang_giao", "shipping", "dang_lay_hang" ->
+                case "dang_giao", "shipping", "dang_lay_hang", "da_ban_giao_ghn" ->
                     "dang_giao";
-                case "cho_xac_nhan", "processing", "da_xac_nhan" ->
+                case "cho_xac_nhan", "processing", "da_xac_nhan", "dang_chuan_bi_hang", "san_sang_giao", "da_tao_van_don_ghn" ->
                     "cho_xac_nhan";
                 default ->
                     status;

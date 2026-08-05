@@ -45,7 +45,6 @@ public class DonViVanChuyen {
     @Column(name = "phi_toan_quoc")
     private java.math.BigDecimal phiNationwide;
 
-    @Version
     @Column(name = "phien_ban")
     private Long version;
 }

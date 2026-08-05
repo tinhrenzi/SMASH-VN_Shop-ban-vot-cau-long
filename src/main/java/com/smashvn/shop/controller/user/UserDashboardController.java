@@ -525,6 +525,68 @@ public class UserDashboardController {
         return org.springframework.http.ResponseEntity.ok(response);
     }
 
+    @PostMapping("/manage-order/confirm-received/{id}")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> xuLyXacNhanDaNhanHang(
+            @PathVariable("id") Integer idHoaDon,
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            response.put("success", false);
+            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
+            return org.springframework.http.ResponseEntity.ok(response);
+        }
+
+        try {
+            boolean success = orderViewService.xacNhanDaNhanHang(idHoaDon, kh.getId(), request.getRemoteAddr());
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Cảm ơn bạn đã xác nhận đã nhận được hàng!");
+            } else {
+                response.put("success", false);
+                response.put("message", "Không thể xác nhận đơn hàng này. Vui lòng kiểm tra lại trạng thái đơn.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Có lỗi xảy ra: " + e.getMessage());
+        }
+        return org.springframework.http.ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/manage-order/request-return/{id}")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> xuLyYeuCauTraHang(
+            @PathVariable("id") Integer idHoaDon,
+            @RequestParam("lyDo") String lyDo,
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        KhachHang kh = getLoggedInCustomer(session);
+        if (kh == null) {
+            response.put("success", false);
+            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
+            return org.springframework.http.ResponseEntity.ok(response);
+        }
+
+        try {
+            boolean success = orderViewService.yeuCauTraHang(idHoaDon, kh.getId(), lyDo, request.getRemoteAddr());
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Yêu cầu Trả hàng / Hoàn tiền của bạn đã được gửi thành công! Shop sẽ sớm phản hồi.");
+            } else {
+                response.put("success", false);
+                response.put("message", "Không thể gửi yêu cầu trả hàng cho đơn hàng này.");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return org.springframework.http.ResponseEntity.ok(response);
+    }
+
     @GetMapping("/notifications")
     public String hienThiThongBao(HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);

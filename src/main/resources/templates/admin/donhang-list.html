@@ -161,7 +161,6 @@
                                 <table class="table table-hover align-middle mb-0" id="onlineOrderTable">
                                     <colgroup>
                                         <col style="width: 65px;"> <!-- STT -->
-                                        <col style="width: 100px;"> <!-- Mã HĐ -->
                                         <col style="width: 140px;"> <!-- Mã Đơn Hàng -->
                                         <col style="width: 140px;"> <!-- Khách Hàng -->
                                         <col style="width: 110px;"> <!-- Ngày Tạo -->
@@ -174,7 +173,6 @@
                                     <thead>
                                         <tr>
                                             <th style="width: 60px;" class="text-center">STT</th>
-                                            <th>Mã HĐ</th>
                                             <th>Mã Đơn Hàng</th>
                                             <th>Khách Hàng</th>
                                             <th>Ngày Tạo</th>
@@ -188,7 +186,6 @@
                                     <tbody>
                                         <tr th:each="hd, iterStat : ${danhSachDonHangOnline}">
                                             <td class="text-center" th:text="${iterStat.count}">1</td>
-                                            <td class="fw-bold text-dark text-nowrap" th:text="'#' + ${hd.id}">HĐ1</td>
                                             <td class="text-nowrap">
                                                 <code class="text-dark order-code-text" style="font-size: 0.82rem;" th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}" th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
                                             </td>
@@ -215,23 +212,29 @@
                                                                 (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHTK</span>
                                             </td>
                                             <td>
+                                                <span th:if="${hd.trangThaiDonHang == 'hoan_thanh'}" class="badge bg-dark py-2 px-3 fw-bold text-nowrap">
+                                                    <i class="fas fa-check-circle me-1"></i>Hoàn thành
+                                                </span>
                                                 <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="badge bg-success py-2 px-3 fw-bold text-nowrap">
                                                     <i class="fas fa-check-circle me-1"></i>Đã giao
                                                 </span>
                                                 <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="badge bg-warning text-dark py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                 </span>
-                                                <span th:if="${hd.trangThaiDonHang == 'da_giao' || hd.trangThaiDonHang == 'da_huy'}" class="d-none"></span>
                                                 <span th:if="${hd.trangThaiDonHang == 'da_huy' && hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="badge bg-danger py-2 px-3 fw-bold text-nowrap">
                                                      <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                 </span>
-                                                <span th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                <span th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'hoan_thanh' && hd.trangThaiDonHang != 'da_huy'}" 
                                                       th:class="'badge py-2 px-3 fw-bold text-nowrap ' + 
                                                                 (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'bg-secondary' : 
                                                                 (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'bg-warning text-dark' : 
                                                                 (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'bg-primary' : 
+                                                                (${hd.trangThaiDonHang == 'dang_chuan_bi_hang'} ? 'bg-info text-dark' : 
+                                                                (${hd.trangThaiDonHang == 'san_sang_giao'} ? 'bg-primary' : 
+                                                                (${hd.trangThaiDonHang == 'da_tao_van_don_ghn'} ? 'bg-info' : 
+                                                                (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'bg-dark' : 
                                                                 (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'bg-info' : 
-                                                                (${hd.trangThaiDonHang == 'dang_giao'} ? 'bg-info' : 'bg-dark')))))" 
+                                                                (${hd.trangThaiDonHang == 'dang_giao'} ? 'bg-info' : 'bg-dark')))))))))" 
                                                       th:text="${currentStatusLabels[hd.id]}">
                                                 </span>
                                             </td>
@@ -245,7 +248,7 @@
                                                     </button>
                                                     
                                                     <!-- Nút Tiếp theo -->
-                                                    <form th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                    <form th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_ban_giao_ghn' && hd.trangThaiDonHang != 'dang_giao' && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'hoan_thanh' && hd.trangThaiDonHang != 'da_huy' && nextStatusLabels[hd.id] != null}" 
                                                           th:data-next-status-label="${nextStatusLabels[hd.id]}"
                                                           th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
                                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
@@ -258,7 +261,7 @@
                                                     </form>
                                                     
                                                      <!-- Nút Hủy đơn -->
-                                                     <button th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                     <button th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_ban_giao_ghn' && hd.trangThaiDonHang != 'dang_giao' && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'hoan_thanh' && hd.trangThaiDonHang != 'da_huy'}" 
                                                              type="button" class="btn btn-danger btn-action-square"
                                                              th:data-id="${hd.id}"
                                                              th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
@@ -295,7 +298,7 @@
                                             </td>
                                         </tr>
                                         <tr th:if="${danhSachDonHangOnline.isEmpty()}">
-                                            <td colspan="10" class="text-center text-muted py-4">Chưa có đơn đặt hàng online nào trong hệ thống.</td>
+                                            <td colspan="9" class="text-center text-muted py-4">Chưa có đơn đặt hàng online nào trong hệ thống.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -369,8 +372,12 @@
                                                                 (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'bg-secondary' : 
                                                                 (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'bg-warning text-dark' : 
                                                                 (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'bg-primary' : 
+                                                                (${hd.trangThaiDonHang == 'dang_chuan_bi_hang'} ? 'bg-info text-dark' : 
+                                                                (${hd.trangThaiDonHang == 'san_sang_giao'} ? 'bg-primary' : 
+                                                                (${hd.trangThaiDonHang == 'da_tao_van_don_ghn'} ? 'bg-info' : 
+                                                                (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'bg-dark' : 
                                                                 (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'bg-info' : 
-                                                                (${hd.trangThaiDonHang == 'dang_giao'} ? 'bg-info' : 'bg-dark')))))" 
+                                                                (${hd.trangThaiDonHang == 'dang_giao'} ? 'bg-info' : 'bg-dark')))))))))" 
                                                       th:text="${currentStatusLabels[hd.id]}">
                                                 </span>
                                             </td>
@@ -384,7 +391,7 @@
                                                     </button>
                                                     
                                                     <!-- Nút Tiếp theo -->
-                                                    <form th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                    <form th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_ban_giao_ghn' && hd.trangThaiDonHang != 'dang_giao' && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'hoan_thanh' && hd.trangThaiDonHang != 'da_huy' && nextStatusLabels[hd.id] != null}" 
                                                           th:data-next-status-label="${nextStatusLabels[hd.id]}"
                                                           th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
                                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
@@ -397,7 +404,7 @@
                                                     </form>
                                                     
                                                      <!-- Nút Hủy đơn -->
-                                                     <button th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'da_huy'}" 
+                                                     <button th:if="${hd.trangThaiDonHang != null && hd.trangThaiDonHang != 'da_ban_giao_ghn' && hd.trangThaiDonHang != 'dang_giao' && hd.trangThaiDonHang != 'da_giao' && hd.trangThaiDonHang != 'hoan_thanh' && hd.trangThaiDonHang != 'da_huy'}" 
                                                              type="button" class="btn btn-danger btn-action-square"
                                                              th:data-id="${hd.id}"
                                                              th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
@@ -434,7 +441,7 @@
                                             </td>
                                         </tr>
                                         <tr th:if="${danhSachDonHangPos.isEmpty()}">
-                                            <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán tại quầy nào trong hệ thống.</td>
+                                            <td colspan="8" class="text-center text-muted py-4">Chưa có hóa đơn bán tại quầy nào trong hệ thống.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -576,12 +583,7 @@ function filterOrders() {
             return; // skip empty list row
         }
         hasRealRows = true;
-        const idCol = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
-        const codeCol = row.cells[2] ? row.cells[2].textContent.toLowerCase() : '';
-        const customerCol = row.cells[3] ? row.cells[3].textContent.toLowerCase() : '';
-        const paymentCol = row.cells[6] ? row.cells[6].textContent.toLowerCase() : '';
-        
-        const text = `${idCol} ${codeCol} ${customerCol} ${paymentCol}`;
+        const text = row.textContent.toLowerCase();
         if (text.includes(query)) {
             row.style.display = '';
             visibleCount++;
@@ -937,12 +939,16 @@ function openOrderDetailModal(orderId) {
             
             let actionsHtml = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
             
-            if (data.trangThaiRaw && data.trangThaiRaw !== 'da_giao' && data.trangThaiRaw !== 'da_huy') {
+            if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() !== 'da_ban_giao_ghn' && data.trangThaiRaw.toLowerCase() !== 'dang_giao' && data.trangThaiRaw.toLowerCase() !== 'da_giao' && data.trangThaiRaw.toLowerCase() !== 'hoan_thanh' && data.trangThaiRaw.toLowerCase() !== 'da_huy') {
                 let nextStatusLabel = '';
                 switch(data.trangThaiRaw.toLowerCase()) {
                     case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
                     case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
-                    case 'da_xac_nhan': nextStatusLabel = 'Đang giao'; break;
+                    case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
+                    case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
+                    case 'san_sang_giao': nextStatusLabel = 'Đã tạo vận đơn GHN'; break;
+                    case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
+                    case 'da_ban_giao_ghn': nextStatusLabel = ''; break;
                     case 'dang_lay_hang': nextStatusLabel = 'Đang giao'; break;
                     case 'dang_giao': nextStatusLabel = ''; break;
                     case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
@@ -1004,32 +1010,68 @@ function openOrderDetailModal(orderId) {
                 `;
             }
             
-            if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' && data.trangThaiHoanHang === 'PENDING_RETURN') {
+            // ============ State Machine 8 Bước Trả Hàng ============
+            if (data.trangThaiHoanHang === 'PENDING_APPROVAL' || data.trangThaiHoanHang === 'PENDING_RETURN') {
                 actionsHtml += `
-                    <form action="/admin/don-hang/update-return-status" method="post" class="d-inline-block m-0">
+                    <form action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-1">
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
-                        <input type="hidden" name="trangThaiHoanHang" value="RETURNED" />
-                         <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận nhập kho sản phẩm và khôi phục tồn kho cho đơn hàng này?')">
-                            <i class="fas fa-warehouse me-1"></i> Xác nhận nhập kho
+                        <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?')">
+                            <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng & Tạo mã GHN
                         </button>
                     </form>
-                    <form action="/admin/don-hang/update-return-status" method="post" class="d-inline-block m-0">
+                    <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-1">
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
-                        <input type="hidden" name="trangThaiHoanHang" value="LOST" />
-                         <button type="submit" class="btn btn-warning text-dark" onclick="return confirmSubmit(this, 'Xác nhận đánh dấu mất hàng? (Không khôi phục tồn kho)')">
-                            <i class="fas fa-exclamation-triangle me-1"></i> Đánh dấu mất hàng
+                        <button type="submit" class="btn btn-danger" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
+                            <i class="fas fa-times-circle me-1"></i> Từ chối trả hàng
                         </button>
                     </form>
-                    <form action="/admin/don-hang/update-return-status" method="post" class="d-inline-block m-0">
+                `;
+            } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
+                actionsHtml += `
+                    <div class="mb-2 text-primary small font-weight-bold">
+                        <i class="fas fa-shipping-fast me-1"></i> Đã tạo đơn thu hồi GHN: ${data.ghnReturnOrderCode || 'Đang cập nhật...'}
+                    </div>
+                    <form action="/admin/don-hang/cancel-return-pickup" method="post" class="d-inline-block m-1">
                         <input type="hidden" name="_csrf" value="${csrfToken}" />
                         <input type="hidden" name="idHoaDon" value="${data.id}" />
-                        <input type="hidden" name="trangThaiHoanHang" value="DAMAGED" />
-                         <button type="submit" class="btn btn-danger" onclick="return confirmSubmit(this, 'Xác nhận đánh dấu hỏng hàng? (Không khôi phục tồn kho)')">
-                            <i class="fas fa-heart-broken me-1"></i> Đánh dấu hỏng hàng
+                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirmSubmit(this, 'Xác nhận hủy vận đơn thu hồi (khi GHN chưa lấy hàng)?')">
+                            <i class="fas fa-ban me-1"></i> Hủy vận đơn thu hồi
                         </button>
                     </form>
+                `;
+            } else if (data.trangThaiHoanHang === 'PICKED_UP' || data.trangThaiHoanHang === 'RETURNING') {
+                actionsHtml += `
+                    <div class="alert alert-info py-2 px-3 m-1 d-inline-block">
+                        <i class="fas fa-lock me-1"></i> <strong>Khóa thao tác thủ công:</strong> Đơn hàng đã được bàn giao cho GHN (Mã: ${data.ghnReturnOrderCode || 'N/A'}). Trạng thái tự động cập nhật từ GHN.
+                    </div>
+                `;
+            } else if (data.trangThaiHoanHang === 'DELIVERED_TO_SHOP') {
+                actionsHtml += `
+                    <form action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-1">
+                        <input type="hidden" name="_csrf" value="${csrfToken}" />
+                        <input type="hidden" name="idHoaDon" value="${data.id}" />
+                        <button type="submit" class="btn btn-warning text-dark" onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về đến Shop, kiểm tra hàng và nhập kho cộng lại số lượng tồn kho?')">
+                            <i class="fas fa-boxes me-1"></i> Kiểm kiện & Nhập kho sản phẩm
+                        </button>
+                    </form>
+                `;
+            } else if (data.trangThaiHoanHang === 'RETURNED') {
+                actionsHtml += `
+                    <form action="/admin/don-hang/confirm-refund" method="post" class="d-inline-block m-1">
+                        <input type="hidden" name="_csrf" value="${csrfToken}" />
+                        <input type="hidden" name="idHoaDon" value="${data.id}" />
+                        <button type="submit" class="btn btn-success" onclick="return confirmSubmit(this, 'Xác nhận thực sự hoàn tiền thành công cho khách hàng?')">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền cho Khách
+                        </button>
+                    </form>
+                `;
+            } else if (data.trangThaiHoanHang === 'REFUNDED') {
+                actionsHtml += `
+                    <span class="badge bg-success p-2 fs-6">
+                        <i class="fas fa-check-double me-1"></i> Đã hoàn tất Trả hàng & Hoàn tiền
+                    </span>
                 `;
             }
             

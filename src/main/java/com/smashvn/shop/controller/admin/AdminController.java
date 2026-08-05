@@ -745,4 +745,104 @@ public class AdminController {
         return "redirect:/admin/don-hang";
     }
 
+    @PostMapping("/don-hang/approve-return")
+    public String approveReturn(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            String ghnCode = orderViewService.duyetYeuCauTraHangVaTaoDonGhn(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã duyệt yêu cầu trả hàng và tạo vận đơn GHN thu hồi thành công: " + ghnCode);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
+
+    @PostMapping("/don-hang/reject-return")
+    public String rejectReturn(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "lyDoTuChoi", required = false) String lyDoTuChoi,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.tuChoiYeuCauTraHang(idHoaDon, lyDoTuChoi, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối yêu cầu trả hàng.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
+
+    @PostMapping("/don-hang/cancel-return-pickup")
+    public String cancelReturnPickup(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.huyDonThuHoiGhn(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã hủy vận đơn thu hồi GHN thành công.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
+
+    @PostMapping("/don-hang/confirm-restock")
+    public String confirmRestock(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.xacNhanKiemKhoVaNhapKho(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Xác nhận kiểm kiện và nhập kho khôi phục tồn kho thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
+
+    @PostMapping("/don-hang/confirm-refund")
+    public String confirmRefund(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.xacNhanHoanTienChoKhach(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
 }

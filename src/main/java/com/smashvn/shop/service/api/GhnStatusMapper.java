@@ -24,11 +24,13 @@ public class GhnStatusMapper {
 
         switch (ghnStatus.toLowerCase()) {
             case "ready_to_pick":
-            case "picking":
-                return "dang_lay_hang";
+                return "da_tao_van_don_ghn";
 
+            case "picking":
             case "money_collect_picking":
             case "picked":
+                return "da_ban_giao_ghn";
+
             case "storing":
             case "sorting":
             case "transporting":
@@ -75,6 +77,36 @@ public class GhnStatusMapper {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /**
+     * Ánh xạ trạng thái GHN sang ReturnStatus (State Machine 8 bước trả hàng)
+     */
+    public com.smashvn.shop.entity.ReturnStatus mapToReturnStatus(String ghnStatus) {
+        if (ghnStatus == null) return null;
+        switch (ghnStatus.toLowerCase()) {
+            case "ready_to_pick":
+                return com.smashvn.shop.entity.ReturnStatus.WAITING_FOR_PICKUP;
+            case "picking":
+            case "picked":
+                return com.smashvn.shop.entity.ReturnStatus.PICKED_UP;
+            case "storing":
+            case "sorting":
+            case "transporting":
+            case "return":
+            case "returning":
+            case "waiting_to_return":
+                return com.smashvn.shop.entity.ReturnStatus.RETURNING;
+            case "returned":
+            case "returned_to_sender":
+                return com.smashvn.shop.entity.ReturnStatus.DELIVERED_TO_SHOP;
+            case "lost":
+                return com.smashvn.shop.entity.ReturnStatus.LOST;
+            case "damage":
+                return com.smashvn.shop.entity.ReturnStatus.DAMAGED;
+            default:
+                return null;
         }
     }
 }

@@ -237,7 +237,7 @@ public class AdminOrderUpdateTest {
     void testCODOrderDeliveredPaymentUpdate() {
         HoaDon hd = createTestOrder("dang_giao", "COD", "pending", ptttCOD, 1);
 
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_giao", "dang_giao", adminUser.getId(), "127.0.0.1");
+        orderViewService.applyShippingStatus(hd.getId(), "da_giao", "delivered");
 
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertNotNull(updated);
@@ -264,7 +264,7 @@ public class AdminOrderUpdateTest {
     @Test
     void testDoubleDeductionProtection() {
         // Under new logic, stock is deducted immediately on checkout (status = cho_xac_nhan)
-        // Status changes: cho_xac_nhan (deducted) -> da_xac_nhan (deducted) -> dang_giao (deducted) -> da_giao (deducted)
+        // Status changes: cho_xac_nhan (deducted) -> da_xac_nhan (deducted) -> dang_chuan_bi_hang (deducted) -> san_sang_giao (deducted)
         int initialStock = testSpct.getSoLuongTon();
         HoaDon hd = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 2);
         
@@ -279,14 +279,14 @@ public class AdminOrderUpdateTest {
         assertNotNull(updatedSpct);
         assertEquals(initialStock - 2, updatedSpct.getSoLuongTon());
 
-        // Move to dang_giao (deducted -> deducted, no change)
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "dang_giao", "da_xac_nhan", adminUser.getId(), "127.0.0.1");
+        // Move to dang_chuan_bi_hang (deducted -> deducted, no change)
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "dang_chuan_bi_hang", "da_xac_nhan", adminUser.getId(), "127.0.0.1");
         updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(updatedSpct);
         assertEquals(initialStock - 2, updatedSpct.getSoLuongTon());
 
-        // Move to da_giao (deducted -> deducted, no change)
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_giao", "dang_giao", adminUser.getId(), "127.0.0.1");
+        // Move to san_sang_giao (deducted -> deducted, no change)
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "san_sang_giao", "dang_chuan_bi_hang", adminUser.getId(), "127.0.0.1");
         updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(updatedSpct);
         assertEquals(initialStock - 2, updatedSpct.getSoLuongTon());
@@ -398,7 +398,7 @@ public class AdminOrderUpdateTest {
         hd.setPaidAt(LocalDateTime.now().minusHours(1));
         hd = hoaDonRepository.save(hd);
 
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_giao", "dang_giao", adminUser.getId(), "127.0.0.1");
+        orderViewService.applyShippingStatus(hd.getId(), "da_giao", "delivered");
 
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertNotNull(updated);
@@ -445,20 +445,47 @@ public class AdminOrderUpdateTest {
         hd = hoaDonRepository.findById(hd.getId()).get();
         assertEquals("da_xac_nhan", hd.getTrangThaiDonHang());
 
-        // 3. da_xac_nhan -> dang_giao
+        // 3. da_xac_nhan -> dang_chuan_bi_hang
         orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
         hd = hoaDonRepository.findById(hd.getId()).get();
-        assertEquals("dang_giao", hd.getTrangThaiDonHang());
+        assertEquals("dang_chuan_bi_hang", hd.getTrangThaiDonHang());
 
-        // 4. dang_giao -> da_giao
+        // 4. dang_chuan_bi_hang -> san_sang_giao
         orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
         hd = hoaDonRepository.findById(hd.getId()).get();
-        assertEquals("da_giao", hd.getTrangThaiDonHang());
+        assertEquals("san_sang_giao", hd.getTrangThaiDonHang());
 
-        // 5. Try to move beyond da_giao -> expect exception
+        // 5. san_sang_giao -> da_tao_van_don_ghn
+        orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
+        hd = hoaDonRepository.findById(hd.getId()).get();
+        assertEquals("da_tao_van_don_ghn", hd.getTrangThaiDonHang());
+        assertNotNull(hd.getGhnOrderCode());
+
+        // 6. da_tao_van_don_ghn -> da_ban_giao_ghn
+        orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
+        hd = hoaDonRepository.findById(hd.getId()).get();
+        assertEquals("da_ban_giao_ghn", hd.getTrangThaiDonHang());
+
+        // 7. Try to move beyond da_ban_giao_ghn -> expect exception (locked state)
         final Integer orderId = hd.getId();
         assertThrows(IllegalStateException.class, () -> {
             orderViewService.moveOrderToNextStatus(orderId, adminUser.getId(), "127.0.0.1");
+        });
+    }
+
+    @Test
+    void testDaBanGiaoGhnIsLockedForManualUpdate() {
+        HoaDon hd = createTestOrder("da_ban_giao_ghn", "COD", "pending", ptttCOD, 1);
+        final Integer orderId = hd.getId();
+
+        // 1. Trying to move to next status via moveOrderToNextStatus must fail
+        assertThrows(IllegalStateException.class, () -> {
+            orderViewService.moveOrderToNextStatus(orderId, adminUser.getId(), "127.0.0.1");
+        });
+
+        // 2. Trying to update status via updateOrderStatusByAdmin must fail
+        assertThrows(IllegalArgumentException.class, () -> {
+            orderViewService.updateOrderStatusByAdmin(orderId, "da_giao", "da_ban_giao_ghn", adminUser.getId(), "127.0.0.1");
         });
     }
 
