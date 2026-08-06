@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Đơn Hàng - Admin SmashVN</title>
-    
+
     <!-- CSRF Token -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
     <!-- Bootstrap 5.3.0 CSS & JS Bundle -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -16,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Admin Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/admin-custom.css(v='2.1')}">
-    
+
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -26,7 +27,7 @@
             width: 100% !important;
             min-width: 990px;
         }
-        
+
         .order-code-text {
             display: inline-block;
             max-width: 120px;
@@ -47,6 +48,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
+
         .detail-product-img:hover {
             opacity: 0.85;
             transform: scale(1.05);
@@ -58,6 +60,7 @@
         }
     </style>
 </head>
+
 <body class="admin-body">
 
     <!-- Sidebar Layout Fragment -->
@@ -74,24 +77,33 @@
                 <!-- Page Header -->
                 <div class="admin-page-header">
                     <div>
-                        <h1 class="admin-page-title"><i class="fas fa-shopping-cart text-brand me-2"></i>Quản Lý Đơn Hàng &amp; Giao Dịch</h1>
-                        <p class="admin-page-subtitle">Theo dõi trạng thái đơn hàng online, đơn bán tại quầy và quy trình hoàn trả hàng</p>
+                        <h1 class="admin-page-title"><i class="fas fa-shopping-cart text-brand me-2"></i>Quản Lý Đơn
+                            Hàng &amp; Giao Dịch</h1>
+                        <p class="admin-page-subtitle">Theo dõi trạng thái đơn hàng online, đơn bán tại quầy và quy
+                            trình hoàn trả hàng</p>
                     </div>
                     <div class="admin-toolbar">
-                        <span class="admin-status admin-status-info px-3 py-2 fs-6" th:text="${danhSachDonHang.size()} + ' Đơn hàng'"></span>
+                        <span class="admin-status admin-status-info px-3 py-2 fs-6"
+                            th:text="${danhSachDonHang.size()} + ' Đơn hàng'"></span>
                     </div>
                 </div>
 
                 <!-- Alerts -->
-                <div th:if="${warningMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <div th:if="${warningMsg != null}"
+                    class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4"
+                    role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${warningMsg}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <div th:if="${successMsg != null}"
+                    class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4"
+                    role="alert">
                     <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <div th:if="${errorMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <div th:if="${errorMsg != null}"
+                    class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4"
+                    role="alert">
                     <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -101,35 +113,47 @@
                     <div class="admin-card-header flex-wrap gap-2">
                         <ul class="nav nav-tabs border-bottom-0" id="orderTypeTabs" role="tablist">
                             <li class="nav-item text-nowrap" role="presentation">
-                                <button class="nav-link active fw-bold px-3 py-2" id="online-tab" data-bs-toggle="tab" data-bs-target="#online-orders" type="button" role="tab" aria-controls="online-orders" aria-selected="true">
+                                <button class="nav-link active fw-bold px-3 py-2" id="online-tab" data-bs-toggle="tab"
+                                    data-bs-target="#online-orders" type="button" role="tab"
+                                    aria-controls="online-orders" aria-selected="true">
                                     <i class="fas fa-globe me-2"></i>Bán Online
-                                    <span class="admin-status admin-status-info ms-1" th:text="${danhSachDonHangOnline.size()}">0</span>
+                                    <span class="admin-status admin-status-info ms-1"
+                                        th:text="${danhSachDonHangOnline.size()}">0</span>
                                 </button>
                             </li>
                             <li class="nav-item text-nowrap" role="presentation">
-                                <button class="nav-link fw-bold px-3 py-2" id="pos-tab" data-bs-toggle="tab" data-bs-target="#pos-orders" type="button" role="tab" aria-controls="pos-orders" aria-selected="false">
+                                <button class="nav-link fw-bold px-3 py-2" id="pos-tab" data-bs-toggle="tab"
+                                    data-bs-target="#pos-orders" type="button" role="tab" aria-controls="pos-orders"
+                                    aria-selected="false">
                                     <i class="fas fa-desktop me-2"></i>Bán Tại Quầy (POS)
-                                    <span class="admin-status admin-status-info ms-1" th:text="${danhSachDonHangPos.size()}">0</span>
+                                    <span class="admin-status admin-status-info ms-1"
+                                        th:text="${danhSachDonHangPos.size()}">0</span>
                                 </button>
                             </li>
                             <li class="nav-item text-nowrap" role="presentation">
-                                <button class="nav-link fw-bold px-3 py-2" id="return-tab" data-bs-toggle="tab" data-bs-target="#return-orders" type="button" role="tab" aria-controls="return-orders" aria-selected="false">
+                                <button class="nav-link fw-bold px-3 py-2" id="return-tab" data-bs-toggle="tab"
+                                    data-bs-target="#return-orders" type="button" role="tab"
+                                    aria-controls="return-orders" aria-selected="false">
                                     <i class="fas fa-undo me-2"></i>Đơn Hoàn Trả
-                                    <span class="admin-status admin-status-warning ms-1" th:text="${danhSachDonHangReturn != null ? danhSachDonHangReturn.size() : 0}">0</span>
+                                    <span class="admin-status admin-status-warning ms-1"
+                                        th:text="${danhSachDonHangReturn != null ? danhSachDonHangReturn.size() : 0}">0</span>
                                 </button>
                             </li>
                         </ul>
                         <div class="d-flex gap-2 align-items-center">
-                            <input type="text" id="orderSearchInput" class="admin-form-control form-control form-control-sm" style="width: 280px;" placeholder="🔍 Tìm kiếm mã đơn, tên, sđt, PTTT, mã GD..." oninput="filterOrders()">
+                            <input type="text" id="orderSearchInput"
+                                class="admin-form-control form-control form-control-sm" style="width: 280px;"
+                                placeholder="🔍 Tìm kiếm mã đơn, tên, sđt, PTTT, mã GD..." oninput="filterOrders()">
                             <span class="admin-status admin-status-neutral" id="orderCountBadge"></span>
                         </div>
                     </div>
 
                     <div class="admin-card-body p-0">
                         <div class="tab-content" id="orderTypeTabContent">
-                            
+
                             <!-- TAB 1: ONLINE ORDERS -->
-                            <div class="tab-pane fade show active" id="online-orders" role="tabpanel" aria-labelledby="online-tab">
+                            <div class="tab-pane fade show active" id="online-orders" role="tabpanel"
+                                aria-labelledby="online-tab">
                                 <div class="admin-table-wrapper">
                                     <table class="admin-table" id="onlineOrderTable">
                                         <thead>
@@ -149,50 +173,75 @@
                                             <tr th:each="hd, iterStat : ${danhSachDonHangOnline}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
                                                 <td class="text-nowrap">
-                                                    <code class="text-dark order-code-text fw-bold" style="font-size: 0.85rem;" th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}" th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
-                                                    <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}" class="mt-1">
-                                                         <span class="admin-status admin-status-info text-nowrap" style="font-size: 0.7rem;" title="Mã vận đơn GHN thu hồi">
-                                                             <i class="fas fa-shipping-fast me-1"></i>GHN: [[${hd.ghnReturnOrderCode}]]
-                                                         </span>
+                                                    <code class="text-dark order-code-text fw-bold"
+                                                        style="font-size: 0.85rem;"
+                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
+                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
+                                                    <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}"
+                                                        class="mt-1">
+                                                        <span class="admin-status admin-status-info text-nowrap"
+                                                            style="font-size: 0.7rem;" title="Mã vận đơn GHN thu hồi">
+                                                            <i class="fas fa-shipping-fast me-1"></i>GHN:
+                                                            [[${hd.ghnReturnOrderCode}]]
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-bold text-dark text-nowrap" th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}" th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">John Doe</div>
-                                                    <small class="text-muted text-nowrap" th:text="${hd.sdtNhan}"></small>
+                                                    <div class="fw-bold text-dark text-nowrap"
+                                                        th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}"
+                                                        th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">
+                                                        John Doe</div>
+                                                    <small class="text-muted text-nowrap"
+                                                        th:text="${hd.sdtNhan}"></small>
                                                 </td>
-                                                <td class="text-nowrap small" th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
-                                                <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
+                                                <td class="text-nowrap small"
+                                                    th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">
+                                                    26/10/2026</td>
+                                                <td class="text-danger fw-bold text-nowrap"
+                                                    th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">
+                                                    1,000,000 đ</td>
                                                 <td class="text-nowrap">
-                                                    <span class="badge bg-dark text-white" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
-                                                    <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
-                                                           th:class="'admin-status mt-1 ' + ${statusInfo.badgeClass}" 
-                                                           th:text="${statusInfo.label}">Chưa thanh toán</small>
-                                                    <div th:if="${hd.maGiaoDich != null &amp;&amp; !hd.maGiaoDich.isEmpty()}" class="mt-1" style="font-size: 0.75rem;">
-                                                        <span class="text-muted">GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
+                                                    <span class="badge bg-dark text-white"
+                                                        th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
+                                                    <small
+                                                        th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}"
+                                                        th:class="'admin-status mt-1 ' + ${statusInfo.badgeClass}"
+                                                        th:text="${statusInfo.label}">Chưa thanh toán</small>
+                                                    <div th:if="${hd.maGiaoDich != null &amp;&amp; !hd.maGiaoDich.isEmpty()}"
+                                                        class="mt-1" style="font-size: 0.75rem;">
+                                                        <span class="text-muted">GD:</span> <code class="text-dark"
+                                                            th:text="${hd.maGiaoDich}">GD123</code>
                                                     </div>
                                                 </td>
                                                 <td class="text-nowrap">
-                                                    <span class="admin-status admin-status-neutral" 
-                                                          th:text="${hd.donViVanChuyen != null ? 
+                                                    <span class="admin-status admin-status-neutral"
+                                                        th:text="${hd.donViVanChuyen != null ? 
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG NHANH') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG NHANH') ? 'GHN' : 
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG TIẾT KIỆM') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG TIET KIEM') ? 'GHTK' : 
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHN</span>
                                                 </td>
                                                 <td class="text-nowrap">
-                                                    <span th:if="${hd.trangThaiDonHang == 'hoan_thanh'}" class="admin-status admin-status-success">
+                                                    <span th:if="${hd.trangThaiDonHang == 'hoan_thanh'}"
+                                                        class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Hoàn thành
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="admin-status admin-status-success">
+                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}"
+                                                        class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Đã giao
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="admin-status admin-status-warning">
-                                                         <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                        class="admin-status admin-status-warning">
+                                                        <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="admin-status admin-status-danger">
-                                                         <i class="fas fa-times-circle me-1"></i>Đã hủy
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}"
+                                                        class="admin-status admin-status-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}" 
-                                                          th:class="'admin-status ' + 
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
+                                                        th:class="'admin-status ' + 
                                                                     (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'admin-status-neutral' : 
                                                                     (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'admin-status-warning' : 
                                                                     (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'admin-status-info' : 
@@ -202,26 +251,38 @@
                                                                     (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'admin-status-neutral' : 
                                                                     (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'admin-status-info' : 
                                                                     (${hd.trangThaiDonHang == 'dang_giao'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'giao_that_bai'} ? 'admin-status-danger' : 'admin-status-neutral'))))))))))" 
-                                                          th:text="${currentStatusLabels[hd.id]}">
+                                                                    (${hd.trangThaiDonHang == 'giao_that_bai'} ? 'admin-status-danger' : 'admin-status-neutral'))))))))))"
+                                                        th:text="${currentStatusLabels[hd.id]}">
                                                     </span>
 
-                                                     <!-- Trạng thái Trả Hàng -->
-                                                     <div th:if="${hd.trangThaiHoanHang != null}" class="mt-1">
-                                                         <span th:class="'admin-status ' + (${hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN'} ? 'admin-status-warning' : (${hd.trangThaiHoanHang.name() == 'REJECTED'} ? 'admin-status-danger' : (${hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP' or hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'} ? 'admin-status-info' : 'admin-status-success')))" style="font-size:11px;">
-                                                             <i class="fas fa-undo me-1"></i>Trả hàng: <span th:text="${hd.trangThaiHoanHang.label}">Chờ duyệt</span>
-                                                         </span>
-                                                     </div>
+                                                    <!-- Trạng thái Trả Hàng -->
+                                                    <div th:if="${hd.trangThaiHoanHang != null}" class="mt-1">
+                                                        <span
+                                                            th:class="'admin-status ' + (${hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN'} ? 'admin-status-warning' : (${hd.trangThaiHoanHang.name() == 'REJECTED'} ? 'admin-status-danger' : (${hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP' or hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'} ? 'admin-status-info' : 'admin-status-success')))"
+                                                            style="font-size:11px;">
+                                                            <i class="fas fa-undo me-1"></i>Trả hàng: <span
+                                                                th:text="${hd.trangThaiHoanHang.label}">Chờ duyệt</span>
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                          <button type="button" class="admin-btn admin-btn-icon" 
                                                                  th:data-id="${hd.id}"
                                                                  onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                  title="Chi tiết đơn hàng">
                                                              <i class="fas fa-eye text-primary"></i>
                                                          </button>
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
+                                                            title="Chi tiết đơn hàng">
+                                                            <i class="fas fa-eye text-primary"></i>
+                                                        </button>
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
+<<<<<<< HEAD
                                                          <button th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
                                                                  type="button" class="admin-btn admin-btn-sm admin-btn-primary"
                                                                  th:data-id="${hd.id}"
@@ -230,78 +291,117 @@
                                                                  onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
                                                              <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                          </button>
+=======
+                                                        <button
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                            type="button"
+                                                            class="admin-btn admin-btn-sm admin-btn-primary"
+                                                            th:onclick="'moModalConfirmRefund(' + ${hd.id} + ', \'' + ${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id} + '\', ' + ${hd.tongTien} + ')'">
+                                                            <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
+                                                        </button>
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
-                                                         <form th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}" action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" title="Duyệt trả hàng &amp; Tạo mã GHN" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
-                                                                 <i class="fas fa-check text-success"></i>
-                                                             </button>
-                                                         </form>
-                                                         <form th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}" action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon danger" title="Từ chối trả hàng" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
-                                                                 <i class="fas fa-times"></i>
-                                                             </button>
-                                                         </form>
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            action="/admin/don-hang/approve-return" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Duyệt trả hàng &amp; Tạo mã GHN"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
+                                                                <i class="fas fa-check text-success"></i>
+                                                            </button>
+                                                        </form>
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            action="/admin/don-hang/reject-return" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit"
+                                                                class="admin-btn admin-btn-icon danger"
+                                                                title="Từ chối trả hàng"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
 
-                                                         <form th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}" action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" title="Kiểm kiện &amp; Nhập kho" onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập kho?')">
-                                                                 <i class="fas fa-boxes text-warning"></i>
-                                                             </button>
-                                                         </form>
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}"
+                                                            action="/admin/don-hang/confirm-restock" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Kiểm kiện &amp; Nhập kho"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập kho?')">
+                                                                <i class="fas fa-boxes text-warning"></i>
+                                                            </button>
+                                                        </form>
 
-                                                         <form th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}" 
-                                                               th:data-next-status-label="${nextStatusLabels[hd.id]}"
-                                                               th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" 
-                                                                     th:title="'Tiếp theo: ' + ${nextStatusLabels[hd.id]}"
-                                                                     onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
-                                                                 <i class="fas fa-arrow-right text-success"></i>
-                                                             </button>
-                                                         </form>
-                                                         
-                                                         <button th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}" 
-                                                                 type="button" class="admin-btn admin-btn-icon danger"
-                                                                 th:data-id="${hd.id}"
-                                                                 th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                                 th:data-status="${hd.trangThaiDonHang}"
-                                                                 onclick="openAdminCancelModal(this)"
-                                                                 title="Hủy đơn hàng">
-                                                             <i class="fas fa-times"></i>
-                                                         </button>
-                                                         
-                                                        <form th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" 
-                                                              th:action="@{/admin/don-hang/approve-refund-ui}" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" 
-                                                                     title="Xác nhận hoàn tiền"
-                                                                     onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
-                                                                 <i class="fas fa-hand-holding-usd text-success"></i>
-                                                             </button>
-                                                         </form>
-                                                         
-                                                         <form th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" 
-                                                               th:action="@{/admin/don-hang/reject-refund-ui}" method="post" class="d-inline-block m-0">
-                                                              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                              <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                              <button type="submit" class="admin-btn admin-btn-icon danger" 
-                                                                      title="Từ chối hoàn tiền"
-                                                                      onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
-                                                                  <i class="fas fa-ban"></i>
-                                                              </button>
-                                                         </form>
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
+                                                            th:data-next-status-label="${nextStatusLabels[hd.id]}"
+                                                            th:action="@{/admin/don-hang/next-status}" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                th:title="'Tiếp theo: ' + ${nextStatusLabels[hd.id]}"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
+                                                                <i class="fas fa-arrow-right text-success"></i>
+                                                            </button>
+                                                        </form>
+
+                                                        <button
+                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
+                                                            type="button" class="admin-btn admin-btn-icon danger"
+                                                            th:data-id="${hd.id}"
+                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                            th:data-status="${hd.trangThaiDonHang}"
+                                                            onclick="openAdminCancelModal(this)" title="Hủy đơn hàng">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+
+                                                        <form
+                                                            th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                            th:action="@{/admin/don-hang/approve-refund-ui}"
+                                                            method="post" class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Xác nhận hoàn tiền"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
+                                                                <i class="fas fa-hand-holding-usd text-success"></i>
+                                                            </button>
+                                                        </form>
+
+                                                        <form
+                                                            th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                            th:action="@{/admin/don-hang/reject-refund-ui}"
+                                                            method="post" class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit"
+                                                                class="admin-btn admin-btn-icon danger"
+                                                                title="Từ chối hoàn tiền"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
+                                                                <i class="fas fa-ban"></i>
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr th:if="${danhSachDonHangOnline.isEmpty()}">
-                                                <td colspan="9" class="text-center text-muted py-4">Chưa có đơn đặt hàng online nào trong hệ thống.</td>
+                                                <td colspan="9" class="text-center text-muted py-4">Chưa có đơn đặt hàng
+                                                    online nào trong hệ thống.</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -328,38 +428,60 @@
                                         <tbody>
                                             <tr th:each="hd, iterStat : ${danhSachDonHangPos}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
-                                                <td class="fw-bold text-dark text-nowrap" th:text="'#' + ${hd.id}">HĐ1</td>
+                                                <td class="fw-bold text-dark text-nowrap" th:text="'#' + ${hd.id}">HĐ1
+                                                </td>
                                                 <td class="text-nowrap">
-                                                    <code class="text-dark order-code-text fw-bold" style="font-size: 0.85rem;" th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}" th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
+                                                    <code class="text-dark order-code-text fw-bold"
+                                                        style="font-size: 0.85rem;"
+                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
+                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-bold text-dark text-nowrap" th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}" th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">John Doe</div>
-                                                    <small class="text-muted text-nowrap" th:text="${hd.sdtNhan}"></small>
+                                                    <div class="fw-bold text-dark text-nowrap"
+                                                        th:title="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}"
+                                                        th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">
+                                                        John Doe</div>
+                                                    <small class="text-muted text-nowrap"
+                                                        th:text="${hd.sdtNhan}"></small>
                                                 </td>
-                                                <td class="text-nowrap small" th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
-                                                <td class="text-danger fw-bold text-nowrap" th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">1,000,000 đ</td>
+                                                <td class="text-nowrap small"
+                                                    th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">
+                                                    26/10/2026</td>
+                                                <td class="text-danger fw-bold text-nowrap"
+                                                    th:text="${hd.tongTien != null ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">
+                                                    1,000,000 đ</td>
                                                 <td class="text-nowrap">
-                                                    <span class="badge bg-dark text-white" th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
-                                                    <small th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}" 
-                                                           th:class="'admin-status mt-1 ' + ${statusInfo.badgeClass}" 
-                                                           th:text="${statusInfo.label}">Chưa thanh toán</small>
-                                                    <div th:if="${hd.maGiaoDich != null &amp;&amp; !hd.maGiaoDich.isEmpty()}" class="mt-1" style="font-size: 0.75rem;">
-                                                        <span class="text-muted">GD:</span> <code class="text-dark" th:text="${hd.maGiaoDich}">GD123</code>
+                                                    <span class="badge bg-dark text-white"
+                                                        th:text="${hd.phuongThucThanhToan != null ? hd.phuongThucThanhToan.tenPhuongThuc : 'N/A'}">COD</span><br>
+                                                    <small
+                                                        th:with="statusInfo=${orderViewService.getPaymentStatusInfo(hd.trangThaiThanhToan)}"
+                                                        th:class="'admin-status mt-1 ' + ${statusInfo.badgeClass}"
+                                                        th:text="${statusInfo.label}">Chưa thanh toán</small>
+                                                    <div th:if="${hd.maGiaoDich != null &amp;&amp; !hd.maGiaoDich.isEmpty()}"
+                                                        class="mt-1" style="font-size: 0.75rem;">
+                                                        <span class="text-muted">GD:</span> <code class="text-dark"
+                                                            th:text="${hd.maGiaoDich}">GD123</code>
                                                     </div>
                                                 </td>
 
                                                 <td class="text-nowrap">
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}" class="admin-status admin-status-success">
+                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}"
+                                                        class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Hoàn thành
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}" class="admin-status admin-status-warning">
-                                                         <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                        class="admin-status admin-status-warning">
+                                                        <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}" class="admin-status admin-status-danger">
-                                                         <i class="fas fa-times-circle me-1"></i>Đã hủy
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}"
+                                                        class="admin-status admin-status-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}" 
-                                                          th:class="'admin-status ' + 
+                                                    <span
+                                                        th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
+                                                        th:class="'admin-status ' + 
                                                                     (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'admin-status-neutral' : 
                                                                     (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'admin-status-warning' : 
                                                                     (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'admin-status-info' : 
@@ -368,51 +490,61 @@
                                                                     (${hd.trangThaiDonHang == 'da_tao_van_don_ghn'} ? 'admin-status-info' : 
                                                                     (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'admin-status-neutral' : 
                                                                     (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_giao'} ? 'admin-status-info' : 'admin-status-neutral')))))))))" 
-                                                          th:text="${currentStatusLabels[hd.id]}">
+                                                                    (${hd.trangThaiDonHang == 'dang_giao'} ? 'admin-status-info' : 'admin-status-neutral')))))))))"
+                                                        th:text="${currentStatusLabels[hd.id]}">
                                                     </span>
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
+                                                            title="Chi tiết đơn hàng">
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
-                                                        
-                                                        <form th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}" 
-                                                              th:data-next-status-label="${nextStatusLabels[hd.id]}"
-                                                              th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                                                        <form
+                                                            th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
+                                                            th:data-next-status-label="${nextStatusLabels[hd.id]}"
+                                                            th:action="@{/admin/don-hang/next-status}" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon" 
-                                                                    th:title="'Tiếp theo: ' + ${nextStatusLabels[hd.id]}"
-                                                                    onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                th:title="'Tiếp theo: ' + ${nextStatusLabels[hd.id]}"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
                                                                 <i class="fas fa-arrow-right text-success"></i>
                                                             </button>
                                                         </form>
-                                                        
-                                                         <button th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}" 
-                                                                 type="button" class="admin-btn admin-btn-icon danger"
-                                                                 th:data-id="${hd.id}"
-                                                                 th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                                 th:data-status="${hd.trangThaiDonHang}"
-                                                                 onclick="openAdminCancelModal(this)"
-                                                                 title="Hủy đơn hàng">
-                                                             <i class="fas fa-times"></i>
-                                                         </button>
+
+                                                        <button
+                                                            th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
+                                                            type="button" class="admin-btn admin-btn-icon danger"
+                                                            th:data-id="${hd.id}"
+                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                            th:data-status="${hd.trangThaiDonHang}"
+                                                            onclick="openAdminCancelModal(this)" title="Hủy đơn hàng">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr th:if="${danhSachDonHangPos.isEmpty()}">
-                                                <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán tại quầy nào trong hệ thống.</td>
+                                                <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán
+                                                    tại quầy nào trong hệ thống.</td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                            
+
                             <!-- TAB 3: RETURN ORDERS -->
                             <div class="tab-pane fade" id="return-orders" role="tabpanel" aria-labelledby="return-tab">
                                 <div class="admin-table-wrapper">
@@ -433,110 +565,177 @@
                                             <tr th:each="hd, iterStat : ${danhSachDonHangReturn}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
                                                 <td class="text-nowrap">
-                                                     <div class="fw-bold text-primary" th:text="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}">#123</div>
-                                                     <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}" class="mt-1">
-                                                         <span class="admin-status admin-status-info text-nowrap" style="font-size: 0.72rem;" title="Mã vận đơn GHN thu hồi">
-                                                             <i class="fas fa-shipping-fast me-1"></i>GHN: [[${hd.ghnReturnOrderCode}]]
-                                                         </span>
-                                                     </div>
+                                                    <div class="fw-bold text-primary"
+                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}">
+                                                        #123</div>
+                                                    <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}"
+                                                        class="mt-1">
+                                                        <span class="admin-status admin-status-info text-nowrap"
+                                                            style="font-size: 0.72rem;" title="Mã vận đơn GHN thu hồi">
+                                                            <i class="fas fa-shipping-fast me-1"></i>GHN:
+                                                            [[${hd.ghnReturnOrderCode}]]
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-bold text-dark text-nowrap" th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">Nguyễn Văn A</div>
-                                                    <small class="text-muted text-nowrap" th:text="${hd.sdtNhan != null ? hd.sdtNhan : (hd.khachHang != null ? hd.khachHang.sdt : '')}">0901234567</small>
+                                                    <div class="fw-bold text-dark text-nowrap"
+                                                        th:text="${hd.khachHang != null ? (hd.khachHang.hoKh + ' ' + hd.khachHang.tenKh) : 'Khách lẻ'}">
+                                                        Nguyễn Văn A</div>
+                                                    <small class="text-muted text-nowrap"
+                                                        th:text="${hd.sdtNhan != null ? hd.sdtNhan : (hd.khachHang != null ? hd.khachHang.sdt : '')}">0901234567</small>
                                                 </td>
-                                                <td class="text-nowrap small" th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
-                                                <td class="fw-bold text-danger text-nowrap" th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">100.000 đ</td>
+                                                <td class="text-nowrap small"
+                                                    th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}">
+                                                    01/01/2026</td>
+                                                <td class="fw-bold text-danger text-nowrap"
+                                                    th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                                    100.000 đ</td>
                                                 <td class="text-nowrap">
-                                                    <span th:class="'badge ' + (${hd.paymentMethod == 'COD'} ? 'bg-dark' : 'bg-primary')" th:text="${hd.paymentMethod != null ? hd.paymentMethod : 'COD'}">COD</span>
+                                                    <span
+                                                        th:class="'badge ' + (${hd.paymentMethod == 'COD'} ? 'bg-dark' : 'bg-primary')"
+                                                        th:text="${hd.paymentMethod != null ? hd.paymentMethod : 'COD'}">COD</span>
                                                 </td>
                                                 <td class="text-nowrap">
-                                                    <span th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}" class="admin-status admin-status-warning">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                        class="admin-status admin-status-warning">
                                                         <i class="fas fa-clock me-1"></i> Chờ duyệt trả
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REJECTED'}" class="admin-status admin-status-danger">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REJECTED'}"
+                                                        class="admin-status admin-status-danger">
                                                         <i class="fas fa-times-circle me-1"></i> Đã từ chối
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP'}" class="admin-status admin-status-info">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP'}"
+                                                        class="admin-status admin-status-info">
                                                         <i class="fas fa-truck-loading me-1"></i> Chờ lấy hàng trả
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PICKED_UP' or hd.trangThaiHoanHang.name() == 'RETURNING')}" class="admin-status admin-status-info">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PICKED_UP' or hd.trangThaiHoanHang.name() == 'RETURNING')}"
+                                                        class="admin-status admin-status-info">
                                                         <i class="fas fa-shipping-fast me-1"></i> Đang về Shop
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}" class="admin-status admin-status-warning">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}"
+                                                        class="admin-status admin-status-warning">
                                                         <i class="fas fa-store me-1"></i> Đã về Shop - Chờ kiểm
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}" class="admin-status admin-status-success">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                        class="admin-status admin-status-success">
                                                         <i class="fas fa-boxes me-1"></i> Đã kiểm &amp; Nhập kho
                                                     </span>
-                                                    <span th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REFUNDED'}" class="admin-status admin-status-success">
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REFUNDED'}"
+                                                        class="admin-status admin-status-success">
                                                         <i class="fas fa-check-double me-1"></i> Đã hoàn tiền
                                                     </span>
-                                                    <div th:if="${hd.lyDoHoanTien != null and !#strings.isEmpty(hd.lyDoHoanTien)}" class="small text-muted mt-1" style="max-width:200px; font-size:11px;" th:text="'Lý do: ' + ${hd.lyDoHoanTien}"></div>
+                                                    <div th:if="${hd.lyDoHoanTien != null and !#strings.isEmpty(hd.lyDoHoanTien)}"
+                                                        class="small text-muted mt-1"
+                                                        style="max-width:200px; font-size:11px;"
+                                                        th:text="'Lý do: ' + ${hd.lyDoHoanTien}"></div>
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
+                                                            title="Chi tiết đơn hàng">
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
-                                                        <form th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}" action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            action="/admin/don-hang/approve-return" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon" title="Duyệt trả hàng &amp; Tạo mã GHN" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Duyệt trả hàng &amp; Tạo mã GHN"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
                                                                 <i class="fas fa-check text-success"></i>
                                                             </button>
                                                         </form>
-                                                        <form th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}" action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            action="/admin/don-hang/reject-return" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon danger" title="Từ chối trả hàng" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
+                                                            <button type="submit"
+                                                                class="admin-btn admin-btn-icon danger"
+                                                                title="Từ chối trả hàng"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
                                                                 <i class="fas fa-times"></i>
                                                             </button>
                                                         </form>
 
-                                                        <form th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}" action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}"
+                                                            action="/admin/don-hang/confirm-restock" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon" title="Kiểm kiện &amp; Nhập kho" onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập lại tồn kho?')">
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Kiểm kiện &amp; Nhập kho"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập lại tồn kho?')">
                                                                 <i class="fas fa-boxes text-warning"></i>
                                                             </button>
                                                         </form>
 
-                                                        <form th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}" action="/admin/don-hang/confirm-refund" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <form
+                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                            action="/admin/don-hang/confirm-refund" method="post"
+                                                            class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                                th:value="${_csrf.token}" />
                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon" title="Xác nhận hoàn tiền" onclick="return confirmSubmit(this, 'Xác nhận thực sự hoàn tiền thành công cho khách?')">
+                                                            <button type="submit" class="admin-btn admin-btn-icon"
+                                                                title="Xác nhận hoàn tiền"
+                                                                onclick="return confirmSubmit(this, 'Xác nhận thực sự hoàn tiền thành công cho khách?')">
                                                                 <i class="fas fa-hand-holding-usd text-success"></i>
                                                             </button>
                                                         </form>
                                                     </div>
                                                 </td>
                                             </tr>
-                                            <tr th:if="${danhSachDonHangReturn == null or danhSachDonHangReturn.isEmpty()}">
-                                                <td colspan="8" class="text-center text-muted py-4">Chưa có yêu cầu trả hàng nào trong hệ thống.</td>
+                                            <tr
+                                                th:if="${danhSachDonHangReturn == null or danhSachDonHangReturn.isEmpty()}">
+                                                <td colspan="8" class="text-center text-muted py-4">Chưa có yêu cầu trả
+                                                    hàng nào trong hệ thống.</td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
 
+                        </div>
                     </div>
-                </div>
 
-            </div>
+                </div>
         </main>
     </div>
 
     <!-- Modal Chi Tiết Đơn Hàng -->
-    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="orderDetailModalLabel"><i class="fas fa-info-circle me-2"></i>Chi Tiết Đơn Hàng <span id="modal-order-id"></span></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="orderDetailModalLabel"><i class="fas fa-info-circle me-2"></i>Chi Tiết
+                        Đơn Hàng <span id="modal-order-id"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modal-body-content">
                     <div class="text-center py-4">
@@ -558,7 +757,8 @@
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title"><i class="fas fa-code me-2"></i>Raw JSON Callback Payload</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
                     <pre><code id="payloadContent" class="text-dark" style="white-space: pre-wrap; font-family: Consolas, monospace; font-size: 13px;"></code></pre>
@@ -571,12 +771,15 @@
     </div>
 
     <!-- Modal Hủy đơn hàng của Admin -->
-    <div class="modal fade" id="adminCancelOrderModal" tabindex="-1" aria-labelledby="adminCancelOrderModalLabel" aria-hidden="true">
+    <div class="modal fade" id="adminCancelOrderModal" tabindex="-1" aria-labelledby="adminCancelOrderModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="adminCancelOrderModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy đơn hàng</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="adminCancelOrderModalLabel"><i
+                            class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy đơn hàng</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <form id="adminCancelOrderForm" method="post" action="/admin/don-hang/update-status">
                     <input type="hidden" name="_csrf" id="adminCancelCsrf" />
@@ -587,25 +790,34 @@
                     <div class="modal-body">
                         <p>Bạn có chắc chắn muốn hủy đơn hàng <strong id="adminCancelOrderCode"></strong> không?</p>
                         <div class="mb-3">
-                            <label for="adminCancelReasonSelect" class="form-label fw-bold">Vui lòng chọn lý do hủy đơn:</label>
-                            <select class="form-select" id="adminCancelReasonSelect" onchange="toggleAdminCancelReasonTextarea()">
+                            <label for="adminCancelReasonSelect" class="form-label fw-bold">Vui lòng chọn lý do hủy
+                                đơn:</label>
+                            <select class="form-select" id="adminCancelReasonSelect"
+                                onchange="toggleAdminCancelReasonTextarea()">
                                 <option value="Khách hàng yêu cầu hủy">Khách hàng yêu cầu hủy</option>
-                                <option value="Sản phẩm hết hàng / lỗi chất lượng">Sản phẩm hết hàng / lỗi chất lượng</option>
-                                <option value="Không liên hệ được với người nhận">Không liên hệ được với người nhận</option>
+                                <option value="Sản phẩm hết hàng / lỗi chất lượng">Sản phẩm hết hàng / lỗi chất lượng
+                                </option>
+                                <option value="Không liên hệ được với người nhận">Không liên hệ được với người nhận
+                                </option>
                                 <option value="Trùng đơn hàng / sai thông tin">Trùng đơn hàng / sai thông tin</option>
                                 <option value="Khác">Khác (Tự nhập lý do)...</option>
                             </select>
                         </div>
                         <div class="mb-3" id="adminCustomReasonWrapper" style="display: none;">
-                            <textarea class="form-control" id="adminCustomCancelReason" oninput="toggleAdminCancelReasonTextarea()" placeholder="Vui lòng nhập lý do hủy chi tiết tại đây..." rows="3"></textarea>
-                            <div id="adminCancelReasonError" class="text-danger mt-1 fw-bold" style="display: none; font-size: 13px;">
+                            <textarea class="form-control" id="adminCustomCancelReason"
+                                oninput="toggleAdminCancelReasonTextarea()"
+                                placeholder="Vui lòng nhập lý do hủy chi tiết tại đây..." rows="3"></textarea>
+                            <div id="adminCancelReasonError" class="text-danger mt-1 fw-bold"
+                                style="display: none; font-size: 13px;">
                                 ⚠️ Vui lòng điền lý do hủy đơn.
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Quay lại</button>
-                        <button type="submit" class="admin-btn admin-btn-danger" id="adminCancelSubmitBtn">Xác nhận hủy</button>
+                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Quay
+                            lại</button>
+                        <button type="submit" class="admin-btn admin-btn-danger" id="adminCancelSubmitBtn">Xác nhận
+                            hủy</button>
                     </div>
                 </form>
             </div>
@@ -613,20 +825,22 @@
     </div>
 
     <!-- Modal Xác Nhận Hoàn Tiền Chi Tiết -->
-    <div class="modal fade" id="modalConfirmRefund" tabindex="-1" aria-labelledby="modalConfirmRefundLabel" aria-hidden="true">
+    <div class="modal fade" id="modalConfirmRefund" tabindex="-1" aria-labelledby="modalConfirmRefundLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
                 <form action="/admin/don-hang/confirm-refund" method="post" enctype="multipart/form-data">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <input type="hidden" name="idHoaDon" id="refundIdHoaDon" />
-                    
+
                     <div class="modal-header bg-success text-white">
                         <h5 class="modal-title fw-bold" id="modalConfirmRefundLabel">
                             <i class="fas fa-hand-holding-usd me-2"></i>Xác Nhận Hoàn Tiền Cho Khách Hàng
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
-                    
+
                     <div class="modal-body text-dark">
                         <div class="alert alert-info py-2 px-3 small mb-3">
                             <i class="fas fa-info-circle me-1"></i>Đơn hàng: <strong id="refundMaDonHang"></strong>
@@ -634,17 +848,20 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold small">Số tiền hoàn (VNĐ):</label>
-                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan" readonly />
+                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan"
+                                readonly />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold small">Ghi chú hoàn tiền (Tùy chọn):</label>
-                            <textarea class="form-control" name="ghiChu" rows="2" placeholder="Ví dụ: Hoàn tiền qua chuyển khoản ngân hàng..."></textarea>
+                            <textarea class="form-control" name="ghiChu" rows="2"
+                                placeholder="Ví dụ: Hoàn tiền qua chuyển khoản ngân hàng..."></textarea>
                         </div>
                     </div>
-                    
+
                     <div class="modal-footer">
-                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="admin-btn admin-btn-secondary"
+                            data-bs-dismiss="modal">Đóng</button>
                         <button type="submit" class="admin-btn admin-btn-primary">
                             <i class="fas fa-check me-1"></i> Đồng Ý Hoàn Tiền
                         </button>
@@ -655,155 +872,155 @@
     </div>
 
     <script th:inline="none">
-    function confirmSubmit(button, message) {
-        Swal.fire({
-            title: 'Xác nhận hành động',
-            text: message,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Đồng ý',
-            cancelButtonText: 'Hủy'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                button.form.submit();
+        function confirmSubmit(button, message) {
+            Swal.fire({
+                title: 'Xác nhận hành động',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    button.form.submit();
+                }
+            });
+            return false;
+        }
+
+        window.showLargeImage = function (imgPath) {
+            Swal.fire({
+                imageUrl: imgPath,
+                showConfirmButton: false,
+                showCloseButton: true,
+                background: 'rgba(255,255,255,0.95)',
+                backdrop: 'rgba(0,0,0,0.65)',
+                width: 'auto',
+                imageAlt: 'Ảnh sản phẩm'
+            });
+        };
+
+        function filterOrders() {
+            const query = document.getElementById('orderSearchInput').value.toLowerCase().trim();
+            const activePane = document.querySelector('.tab-pane.active');
+            if (!activePane) return;
+            const rows = activePane.querySelectorAll('table tbody tr');
+            let visibleCount = 0;
+            let hasRealRows = false;
+
+            rows.forEach(row => {
+                if (row.cells.length === 1 && row.cells[0].colSpan > 1) {
+                    return;
+                }
+                hasRealRows = true;
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const countBadge = document.getElementById('orderCountBadge');
+            if (countBadge) {
+                countBadge.textContent = hasRealRows ? (visibleCount + ' hóa đơn') : '0 hóa đơn';
             }
-        });
-        return false;
-    }
+        }
 
-    window.showLargeImage = function(imgPath) {
-        Swal.fire({
-            imageUrl: imgPath,
-            showConfirmButton: false,
-            showCloseButton: true,
-            background: 'rgba(255,255,255,0.95)',
-            backdrop: 'rgba(0,0,0,0.65)',
-            width: 'auto',
-            imageAlt: 'Ảnh sản phẩm'
-        });
-    };
+        document.addEventListener("DOMContentLoaded", function () {
+            const tabElList = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabElList.forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    filterOrders();
+                });
+            });
 
-    function filterOrders() {
-        const query = document.getElementById('orderSearchInput').value.toLowerCase().trim();
-        const activePane = document.querySelector('.tab-pane.active');
-        if (!activePane) return;
-        const rows = activePane.querySelectorAll('table tbody tr');
-        let visibleCount = 0;
-        let hasRealRows = false;
-        
-        rows.forEach(row => {
-            if (row.cells.length === 1 && row.cells[0].colSpan > 1) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchVal = urlParams.get('search');
+            if (searchVal) {
+                const input = document.getElementById('orderSearchInput');
+                if (input) input.value = searchVal;
+            }
+            filterOrders();
+        });
+
+        window.openOrderDetailModal = function (orderId) {
+            const modalEl = document.getElementById('orderDetailModal');
+            if (!modalEl) {
+                console.error("Element #orderDetailModal not found in DOM");
                 return;
             }
-            hasRealRows = true;
-            const text = row.textContent.toLowerCase();
-            if (text.includes(query)) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        const countBadge = document.getElementById('orderCountBadge');
-        if (countBadge) {
-            countBadge.textContent = hasRealRows ? (visibleCount + ' hóa đơn') : '0 hóa đơn';
-        }
-    }
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const tabElList = document.querySelectorAll('button[data-bs-toggle="tab"]');
-        tabElList.forEach(tabEl => {
-            tabEl.addEventListener('shown.bs.tab', function (event) {
-                filterOrders();
-            });
-        });
+            const titleEl = document.getElementById('modal-order-id');
+            if (titleEl) titleEl.innerText = 'đang tải...';
+            const body = document.getElementById('modal-body-content');
+            const footer = document.getElementById('modal-footer-actions');
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const searchVal = urlParams.get('search');
-        if (searchVal) {
-            const input = document.getElementById('orderSearchInput');
-            if (input) input.value = searchVal;
-        }
-        filterOrders();
-    });
-
-    window.openOrderDetailModal = function(orderId) {
-        const modalEl = document.getElementById('orderDetailModal');
-        if (!modalEl) {
-            console.error("Element #orderDetailModal not found in DOM");
-            return;
-        }
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-        
-        const titleEl = document.getElementById('modal-order-id');
-        if (titleEl) titleEl.innerText = 'đang tải...';
-        const body = document.getElementById('modal-body-content');
-        const footer = document.getElementById('modal-footer-actions');
-        
-        body.innerHTML = `
+            body.innerHTML = `
             <div class="text-center py-4">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Đang tải...</span>
                 </div>
             </div>
         `;
-        footer.innerHTML = '<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>';
+            footer.innerHTML = '<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>';
 
-        const csrfMeta = document.querySelector('meta[name="_csrf"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-        fetch('/admin/don-hang/detail-json?id=' + orderId, {
-            credentials: 'same-origin'
-        })
-            .then(response => {
-                if (response.status === 401) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-                if (response.status === 403) throw new Error('Bạn không có quyền xem chi tiết đơn hàng này.');
-                if (response.status === 404) throw new Error('Không tìm thấy đơn hàng #' + orderId);
-                if (!response.ok) {
-                    return response.json().then(errData => {
-                        throw new Error(errData.error || ('Lỗi máy chủ: ' + response.status));
-                    }).catch(() => {
-                        throw new Error('Lỗi máy chủ: ' + response.status);
-                    });
-                }
-                return response.json();
+            fetch('/admin/don-hang/detail-json?id=' + orderId, {
+                credentials: 'same-origin'
             })
-            .then(data => {
-                if (data.error) {
-                    body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.error}</div>`;
-                    return;
-                }
-
-                const modalTitleEl = document.getElementById('modal-order-id');
-                if (modalTitleEl) modalTitleEl.innerText = data.maDonHang ? (' - ' + data.maDonHang) : (' #' + orderId);
-
-                let itemsHtml = '';
-                let subtotal = 0;
-                (data.items || []).forEach(item => {
-                    subtotal += item.giaBan * item.soLuong;
-                    function resolveImgPath(raw) {
-                        if (!raw || raw.trim() === '') return '/images/product9.jpg';
-                        const clean = raw.trim();
-                        if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
-                        if (clean.startsWith('/uploads/')) return clean;
-                        if (clean.startsWith('uploads/')) return '/' + clean;
-                        return `/uploads/product/${clean}`;
+                .then(response => {
+                    if (response.status === 401) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    if (response.status === 403) throw new Error('Bạn không có quyền xem chi tiết đơn hàng này.');
+                    if (response.status === 404) throw new Error('Không tìm thấy đơn hàng #' + orderId);
+                    if (!response.ok) {
+                        return response.json().then(errData => {
+                            throw new Error(errData.error || ('Lỗi máy chủ: ' + response.status));
+                        }).catch(() => {
+                            throw new Error('Lỗi máy chủ: ' + response.status);
+                        });
                     }
-                    const imgPath = resolveImgPath(item.hinhAnh);
-                    const hasDiscount = item.giaNiemYet && parseFloat(item.giaNiemYet) > parseFloat(item.giaBan);
-                    const unitPriceHtml = hasDiscount 
-                        ? `<span class="text-decoration-line-through text-muted small me-2">${new Intl.NumberFormat('vi-VN').format(item.giaNiemYet)} đ</span><br><span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`
-                        : `<span class="fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`;
-                    
-                    const lineDiscountInfo = (item.tenDotGiamGia && item.phanTramGiam > 0)
-                        ? `<br><span class="badge bg-danger text-white mt-1" style="font-size: 10px;">${item.tenDotGiamGia} (-${item.phanTramGiam}%)</span>`
-                        : '';
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.error}</div>`;
+                        return;
+                    }
 
-                    itemsHtml += `
+                    const modalTitleEl = document.getElementById('modal-order-id');
+                    if (modalTitleEl) modalTitleEl.innerText = data.maDonHang ? (' - ' + data.maDonHang) : (' #' + orderId);
+
+                    let itemsHtml = '';
+                    let subtotal = 0;
+                    (data.items || []).forEach(item => {
+                        subtotal += item.giaBan * item.soLuong;
+                        function resolveImgPath(raw) {
+                            if (!raw || raw.trim() === '') return '/images/product9.jpg';
+                            const clean = raw.trim();
+                            if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
+                            if (clean.startsWith('/uploads/')) return clean;
+                            if (clean.startsWith('uploads/')) return '/' + clean;
+                            return `/uploads/product/${clean}`;
+                        }
+                        const imgPath = resolveImgPath(item.hinhAnh);
+                        const hasDiscount = item.giaNiemYet && parseFloat(item.giaNiemYet) > parseFloat(item.giaBan);
+                        const unitPriceHtml = hasDiscount
+                            ? `<span class="text-decoration-line-through text-muted small me-2">${new Intl.NumberFormat('vi-VN').format(item.giaNiemYet)} đ</span><br><span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`
+                            : `<span class="fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`;
+
+                        const lineDiscountInfo = (item.tenDotGiamGia && item.phanTramGiam > 0)
+                            ? `<br><span class="badge bg-danger text-white mt-1" style="font-size: 10px;">${item.tenDotGiamGia} (-${item.phanTramGiam}%)</span>`
+                            : '';
+
+                        itemsHtml += `
                         <tr>
                             <td class="text-center" style="width: 90px;">
                                 <img src="${imgPath}" alt="Ảnh sản phẩm" class="img-thumbnail detail-product-img" onclick="showLargeImage('${imgPath}')">
@@ -818,12 +1035,12 @@
                             <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
                         </tr>
                     `;
-                });
-                
-                const isPosOrder = (data.maDonHang && (data.maDonHang.startsWith('HDSVN') || data.maDonHang.startsWith('HD-'))) || 
-                                   (data.diaChi === 'Bán tại quầy');
+                    });
 
-                let detailsContentHtml = `
+                    const isPosOrder = (data.maDonHang && (data.maDonHang.startsWith('HDSVN') || data.maDonHang.startsWith('HD-'))) ||
+                        (data.diaChi === 'Bán tại quầy');
+
+                    let detailsContentHtml = `
                     <div class="row g-3 mb-4" style="font-size: 13px;">
                          <div class="col-md-6">
                             <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin khách hàng &amp; Vận chuyển</h6>
@@ -959,10 +1176,10 @@
                     </div>
                 `;
 
-                if (isPosOrder) {
-                    let posItemsHtml = '';
-                    (data.items || []).forEach(item => {
-                        posItemsHtml += `
+                    if (isPosOrder) {
+                        let posItemsHtml = '';
+                        (data.items || []).forEach(item => {
+                            posItemsHtml += `
                             <tr>
                                 <td style="padding: 4px 0; vertical-align: top;">
                                     <span>${item.tenSanPham || 'N/A'}</span><br>
@@ -972,9 +1189,9 @@
                                 <td style="padding: 4px 0; text-align: right; vertical-align: top;">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
                             </tr>
                         `;
-                    });
+                        });
 
-                    let receiptHtml = `
+                        let receiptHtml = `
                         <div class="p-3 border rounded shadow-sm bg-white" style="font-family: Arial, sans-serif; font-size: 11px; max-width: 100%; color: #000; border-color: #ddd !important;">
                             <div class="text-center mb-3">
                                 <h5 style="font-weight: 800; font-size: 14px; margin-bottom: 2px;">SMASH VN SHOP</h5>
@@ -1038,7 +1255,7 @@
                         </div>
                     `;
 
-                    body.innerHTML = `
+                        body.innerHTML = `
                         <div class="row g-3">
                             <div class="col-md-7">
                                 ${detailsContentHtml}
@@ -1049,35 +1266,35 @@
                             </div>
                         </div>
                     `;
-                } else {
-                    body.innerHTML = `
+                    } else {
+                        body.innerHTML = `
                         <div class="row g-3">
                             <div class="col-md-12">
                                 ${detailsContentHtml}
                             </div>
                         </div>
                     `;
-                }
-                
-                let actionsHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
-                
-                if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() !== 'da_ban_giao_ghn' && data.trangThaiRaw.toLowerCase() !== 'dang_giao' && data.trangThaiRaw.toLowerCase() !== 'da_giao' && data.trangThaiRaw.toLowerCase() !== 'hoan_thanh' && data.trangThaiRaw.toLowerCase() !== 'da_huy') {
-                    let nextStatusLabel = '';
-                    switch(data.trangThaiRaw.toLowerCase()) {
-                        case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
-                        case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
-                        case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
-                        case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
-                        case 'san_sang_giao': nextStatusLabel = 'Đã tạo vận đơn GHN'; break;
-                        case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
-                        case 'da_ban_giao_ghn': nextStatusLabel = ''; break;
-                        case 'dang_lay_hang': nextStatusLabel = 'Đang giao'; break;
-                        case 'dang_giao': nextStatusLabel = ''; break;
-                        case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
                     }
-                    
-                    if (nextStatusLabel) {
-                        actionsHtml += `
+
+                    let actionsHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
+
+                    if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() !== 'da_ban_giao_ghn' && data.trangThaiRaw.toLowerCase() !== 'dang_giao' && data.trangThaiRaw.toLowerCase() !== 'da_giao' && data.trangThaiRaw.toLowerCase() !== 'hoan_thanh' && data.trangThaiRaw.toLowerCase() !== 'da_huy') {
+                        let nextStatusLabel = '';
+                        switch (data.trangThaiRaw.toLowerCase()) {
+                            case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
+                            case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
+                            case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
+                            case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
+                            case 'san_sang_giao': nextStatusLabel = 'Đã tạo vận đơn GHN'; break;
+                            case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
+                            case 'da_ban_giao_ghn': nextStatusLabel = ''; break;
+                            case 'dang_lay_hang': nextStatusLabel = 'Đang giao'; break;
+                            case 'dang_giao': nextStatusLabel = ''; break;
+                            case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
+                        }
+
+                        if (nextStatusLabel) {
+                            actionsHtml += `
                             <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
                                 <input type="hidden" name="_csrf" value="${csrfToken}" />
                                 <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1086,10 +1303,10 @@
                                 </button>
                             </form>
                         `;
-                    }
+                        }
 
-                    if (data.trangThaiRaw.toLowerCase() === 'dang_giao') {
-                        actionsHtml += `
+                        if (data.trangThaiRaw.toLowerCase() === 'dang_giao') {
+                            actionsHtml += `
                             <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
                                 <input type="hidden" name="_csrf" value="${csrfToken}" />
                                 <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1100,9 +1317,9 @@
                                 </button>
                             </form>
                         `;
-                    }
-                    
-                    actionsHtml += `
+                        }
+
+                        actionsHtml += `
                         <button type="button" class="admin-btn admin-btn-danger" 
                                 data-id="${data.id}" 
                                 data-code="${data.maDonHang || ('#' + data.id)}" 
@@ -1111,10 +1328,10 @@
                             <i class="fas fa-times me-1"></i> Hủy đơn
                         </button>
                     `;
-                }
+                    }
 
-                if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' && data.paymentStatus === 'CHO_HOAN_TIEN') {
-                    actionsHtml += `
+                    if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' && data.paymentStatus === 'CHO_HOAN_TIEN') {
+                        actionsHtml += `
                         <form action="/admin/don-hang/approve-refund-ui" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1130,10 +1347,10 @@
                             </button>
                         </form>
                     `;
-                }
-                
-                if (data.trangThaiHoanHang === 'PENDING_APPROVAL' || data.trangThaiHoanHang === 'PENDING_RETURN') {
-                    actionsHtml += `
+                    }
+
+                    if (data.trangThaiHoanHang === 'PENDING_APPROVAL' || data.trangThaiHoanHang === 'PENDING_RETURN') {
+                        actionsHtml += `
                         <form action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-1">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1149,8 +1366,8 @@
                             </button>
                         </form>
                     `;
-                } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
-                    actionsHtml += `
+                    } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
+                        actionsHtml += `
                         <div class="mb-2 text-primary small font-weight-bold">
                             <i class="fas fa-shipping-fast me-1"></i> Đã tạo đơn thu hồi GHN: ${data.ghnReturnOrderCode || 'Đang cập nhật...'}
                         </div>
@@ -1162,14 +1379,14 @@
                             </button>
                         </form>
                     `;
-                } else if (data.trangThaiHoanHang === 'PICKED_UP' || data.trangThaiHoanHang === 'RETURNING') {
-                    actionsHtml += `
+                    } else if (data.trangThaiHoanHang === 'PICKED_UP' || data.trangThaiHoanHang === 'RETURNING') {
+                        actionsHtml += `
                         <div class="alert alert-info py-2 px-3 m-1 d-inline-block">
                             <i class="fas fa-lock me-1"></i> <strong>Khóa thao tác thủ công:</strong> Đơn hàng đã được bàn giao cho GHN (Mã: ${data.ghnReturnOrderCode || 'N/A'}). Trạng thái tự động cập nhật từ GHN.
                         </div>
                     `;
-                } else if (data.trangThaiHoanHang === 'DELIVERED_TO_SHOP') {
-                    actionsHtml += `
+                    } else if (data.trangThaiHoanHang === 'DELIVERED_TO_SHOP') {
+                        actionsHtml += `
                         <form action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-1">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1178,8 +1395,8 @@
                             </button>
                         </form>
                     `;
-                } else if (data.trangThaiHoanHang === 'RETURNED') {
-                    actionsHtml += `
+                    } else if (data.trangThaiHoanHang === 'RETURNED') {
+                        actionsHtml += `
                         <form action="/admin/don-hang/confirm-refund" method="post" class="d-inline-block m-1">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
@@ -1188,239 +1405,240 @@
                             </button>
                         </form>
                     `;
-                } else if (data.trangThaiHoanHang === 'REFUNDED') {
-                    actionsHtml += `
+                    } else if (data.trangThaiHoanHang === 'REFUNDED') {
+                        actionsHtml += `
                         <span class="admin-status admin-status-success">
                             <i class="fas fa-check-double me-1"></i> Đã hoàn tất Trả hàng &amp; Hoàn tiền
                         </span>
                     `;
+                    }
+
+                    footer.innerHTML = actionsHtml;
+                })
+                .catch(err => {
+                    body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi khi tải chi tiết đơn hàng: ${err.message}</div>`;
+                });
+        }
+
+        function showPayloadModal(btn) {
+            const rawJson = btn.getAttribute('data-payload');
+            try {
+                const parsed = JSON.parse(rawJson);
+                document.getElementById('payloadContent').textContent = JSON.stringify(parsed, null, 4);
+            } catch (e) {
+                document.getElementById('payloadContent').textContent = rawJson;
+            }
+            var myModal = new bootstrap.Modal(document.getElementById('payloadModal'));
+            myModal.show();
+        }
+
+        window.toggleAdminCancelReasonTextarea = function () {
+            const select = document.getElementById('adminCancelReasonSelect');
+            const wrapper = document.getElementById('adminCustomReasonWrapper');
+            const textarea = document.getElementById('adminCustomCancelReason');
+            const finalInput = document.getElementById('adminCancelReasonFinal');
+            const errDiv = document.getElementById('adminCancelReasonError');
+            if (errDiv) errDiv.style.display = 'none';
+            if (select && wrapper && finalInput) {
+                if (select.value === 'Khác') {
+                    wrapper.style.display = 'block';
+                    finalInput.value = textarea ? textarea.value.trim() : '';
+                } else {
+                    wrapper.style.display = 'none';
+                    if (textarea) textarea.value = '';
+                    finalInput.value = select.value;
                 }
-                
-                footer.innerHTML = actionsHtml;
-            })
-            .catch(err => {
-                body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi khi tải chi tiết đơn hàng: ${err.message}</div>`;
-            });
-    }
-
-    function showPayloadModal(btn) {
-        const rawJson = btn.getAttribute('data-payload');
-        try {
-            const parsed = JSON.parse(rawJson);
-            document.getElementById('payloadContent').textContent = JSON.stringify(parsed, null, 4);
-        } catch (e) {
-            document.getElementById('payloadContent').textContent = rawJson;
-        }
-        var myModal = new bootstrap.Modal(document.getElementById('payloadModal'));
-        myModal.show();
-    }
-
-    window.toggleAdminCancelReasonTextarea = function() {
-        const select = document.getElementById('adminCancelReasonSelect');
-        const wrapper = document.getElementById('adminCustomReasonWrapper');
-        const textarea = document.getElementById('adminCustomCancelReason');
-        const finalInput = document.getElementById('adminCancelReasonFinal');
-        const errDiv = document.getElementById('adminCancelReasonError');
-        if (errDiv) errDiv.style.display = 'none';
-        if (select && wrapper && finalInput) {
-            if (select.value === 'Khác') {
-                wrapper.style.display = 'block';
-                finalInput.value = textarea ? textarea.value.trim() : '';
-            } else {
-                wrapper.style.display = 'none';
-                if (textarea) textarea.value = '';
-                finalInput.value = select.value;
             }
-        }
-    };
-
-    window.extractCancelReason = function(ghiChu) {
-        if (!ghiChu) return "Không cung cấp lý do";
-        const prefix = "Lý do hủy:";
-        const idx = ghiChu.lastIndexOf(prefix);
-        if (idx !== -1) {
-            const extracted = ghiChu.substring(idx + prefix.length).trim();
-            return extracted || "Không cung cấp lý do";
-        }
-        return ghiChu.trim() || "Không cung cấp lý do";
-    };
-
-    window.openAdminCancelModal = function(btn) {
-        const id = btn.getAttribute('data-id');
-        const code = btn.getAttribute('data-code');
-        const expectedStatus = btn.getAttribute('data-status');
-        
-        document.getElementById('adminCancelId').value = id;
-        document.getElementById('adminCancelOrderCode').textContent = code;
-        document.getElementById('adminCancelExpectedStatus').value = expectedStatus;
-        
-        const csrfMeta = document.querySelector('meta[name="_csrf"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-        document.getElementById('adminCancelCsrf').value = csrfToken;
-        
-        const select = document.getElementById('adminCancelReasonSelect');
-        if (select) select.value = 'Khách hàng yêu cầu hủy';
-        const finalInput = document.getElementById('adminCancelReasonFinal');
-        if (finalInput) finalInput.value = 'Khách hàng yêu cầu hủy';
-        const textarea = document.getElementById('adminCustomCancelReason');
-        if (textarea) textarea.value = '';
-        const wrapper = document.getElementById('adminCustomReasonWrapper');
-        if (wrapper) wrapper.style.display = 'none';
-        const errDiv = document.getElementById('adminCancelReasonError');
-        if (errDiv) errDiv.style.display = 'none';
-        
-        const modal = new bootstrap.Modal(document.getElementById('adminCancelOrderModal'));
-        modal.show();
-    };
-
-    window.closeDetailsAndCancel = function(btn) {
-        const detailModalEl = document.getElementById('orderDetailModal');
-        const detailModal = bootstrap.Modal.getInstance(detailModalEl);
-        if (detailModal) {
-            detailModal.hide();
-        }
-        openAdminCancelModal(btn);
-    };
-
-    document.getElementById('adminCancelOrderForm').addEventListener('submit', function(e) {
-        const select = document.getElementById('adminCancelReasonSelect');
-        const textarea = document.getElementById('adminCustomCancelReason');
-        const finalInput = document.getElementById('adminCancelReasonFinal');
-        const errDiv = document.getElementById('adminCancelReasonError');
-        if (errDiv) errDiv.style.display = 'none';
-
-        let finalReason = select ? select.value : 'Khách hàng yêu cầu hủy';
-        if (finalReason === 'Khác') {
-            finalReason = textarea ? textarea.value.trim() : '';
-            if (!finalReason) {
-                e.preventDefault();
-                if (errDiv) errDiv.style.display = 'block';
-                return;
-            }
-        }
-        finalInput.value = finalReason;
-    });
-
-    window.pushOrderToGhn = function(orderId) {
-        const errorDiv = document.getElementById('ghn-push-error-' + orderId);
-        const pushBox = document.getElementById('ghn-push-box-' + orderId);
-        
-        if (errorDiv) {
-            errorDiv.style.display = 'none';
-            errorDiv.innerText = '';
-        }
-        
-        const buttons = pushBox ? pushBox.querySelectorAll('button') : [];
-        buttons.forEach(btn => btn.disabled = true);
-        
-        const csrfMeta = document.querySelector('meta[name="_csrf"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-        const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
-
-        const headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
         };
-        if (csrfToken) {
-            headers[csrfHeaderName] = csrfToken;
-        }
 
-        fetch('/api/ghn/admin/push/' + orderId, {
-            method: 'POST',
-            headers: headers,
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                Swal.fire({
-                    title: 'Thành công',
-                    text: 'Đã tạo đơn vận chuyển trên GHN Sandbox thành công!',
-                    icon: 'success',
-                    confirmButtonText: 'Đóng'
-                }).then(() => {
-                    if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
-                });
-            } else if (data.status === 'already_exists') {
-                Swal.fire({
-                    title: 'Đã tồn tại',
-                    text: data.message,
-                    icon: 'info',
-                    confirmButtonText: 'Đóng'
-                }).then(() => {
-                    if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
-                });
-            } else {
-                throw new Error(data.message || 'Lỗi không xác định từ GHN Sandbox');
+        window.extractCancelReason = function (ghiChu) {
+            if (!ghiChu) return "Không cung cấp lý do";
+            const prefix = "Lý do hủy:";
+            const idx = ghiChu.lastIndexOf(prefix);
+            if (idx !== -1) {
+                const extracted = ghiChu.substring(idx + prefix.length).trim();
+                return extracted || "Không cung cấp lý do";
             }
-        })
-        .catch(err => {
-            console.error(err);
+            return ghiChu.trim() || "Không cung cấp lý do";
+        };
+
+        window.openAdminCancelModal = function (btn) {
+            const id = btn.getAttribute('data-id');
+            const code = btn.getAttribute('data-code');
+            const expectedStatus = btn.getAttribute('data-status');
+
+            document.getElementById('adminCancelId').value = id;
+            document.getElementById('adminCancelOrderCode').textContent = code;
+            document.getElementById('adminCancelExpectedStatus').value = expectedStatus;
+
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            document.getElementById('adminCancelCsrf').value = csrfToken;
+
+            const select = document.getElementById('adminCancelReasonSelect');
+            if (select) select.value = 'Khách hàng yêu cầu hủy';
+            const finalInput = document.getElementById('adminCancelReasonFinal');
+            if (finalInput) finalInput.value = 'Khách hàng yêu cầu hủy';
+            const textarea = document.getElementById('adminCustomCancelReason');
+            if (textarea) textarea.value = '';
+            const wrapper = document.getElementById('adminCustomReasonWrapper');
+            if (wrapper) wrapper.style.display = 'none';
+            const errDiv = document.getElementById('adminCancelReasonError');
+            if (errDiv) errDiv.style.display = 'none';
+
+            const modal = new bootstrap.Modal(document.getElementById('adminCancelOrderModal'));
+            modal.show();
+        };
+
+        window.closeDetailsAndCancel = function (btn) {
+            const detailModalEl = document.getElementById('orderDetailModal');
+            const detailModal = bootstrap.Modal.getInstance(detailModalEl);
+            if (detailModal) {
+                detailModal.hide();
+            }
+            openAdminCancelModal(btn);
+        };
+
+        document.getElementById('adminCancelOrderForm').addEventListener('submit', function (e) {
+            const select = document.getElementById('adminCancelReasonSelect');
+            const textarea = document.getElementById('adminCustomCancelReason');
+            const finalInput = document.getElementById('adminCancelReasonFinal');
+            const errDiv = document.getElementById('adminCancelReasonError');
+            if (errDiv) errDiv.style.display = 'none';
+
+            let finalReason = select ? select.value : 'Khách hàng yêu cầu hủy';
+            if (finalReason === 'Khác') {
+                finalReason = textarea ? textarea.value.trim() : '';
+                if (!finalReason) {
+                    e.preventDefault();
+                    if (errDiv) errDiv.style.display = 'block';
+                    return;
+                }
+            }
+            finalInput.value = finalReason;
+        });
+
+        window.pushOrderToGhn = function (orderId) {
+            const errorDiv = document.getElementById('ghn-push-error-' + orderId);
+            const pushBox = document.getElementById('ghn-push-box-' + orderId);
+
             if (errorDiv) {
-                errorDiv.style.display = 'block';
-                errorDiv.innerHTML = '<strong>Lỗi đẩy đơn GHN Sandbox:</strong><br>' + err.message;
+                errorDiv.style.display = 'none';
+                errorDiv.innerText = '';
             }
-            buttons.forEach(btn => btn.disabled = false);
-        });
-    };
 
-    window.syncGhnStatus = function(orderId) {
-        const csrfMeta = document.querySelector('meta[name="_csrf"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-        const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+            const buttons = pushBox ? pushBox.querySelectorAll('button') : [];
+            buttons.forEach(btn => btn.disabled = true);
 
-        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-        if (csrfToken) headers[csrfHeaderName] = csrfToken;
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
 
-        fetch('/api/ghn/admin/sync/' + orderId, {
-            method: 'POST',
-            headers: headers,
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                Swal.fire({
-                    title: 'Đồng bộ thành công',
-                    text: (data.message || '') + '\nTrạng thái GHN hiện tại: ' + (data.ghnStatusLabel || data.ghnStatus || ''),
-                    icon: 'success',
-                    confirmButtonText: 'Đóng'
-                }).then(() => {
-                    if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
-                });
-            } else {
-                Swal.fire({
-                    title: 'Không thể đồng bộ',
-                    text: data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Đóng'
-                });
+            const headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
+            if (csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            Swal.fire({
-                title: 'Lỗi',
-                text: err.message,
-                icon: 'error',
-                confirmButtonText: 'Đóng'
-            });
-        });
-    };
 
-    window.moModalConfirmRefund = function(idHoaDon, maDonHang, tongTien) {
-        document.getElementById('refundIdHoaDon').value = idHoaDon;
-        document.getElementById('refundMaDonHang').innerText = maDonHang || ('#' + idHoaDon);
-        document.getElementById('refundSoTienHoan').value = tongTien || 0;
-        
-        var modalEl = document.getElementById('modalConfirmRefund');
-        var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        myModal.show();
-    };
+            fetch('/api/ghn/admin/push/' + orderId, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        Swal.fire({
+                            title: 'Thành công',
+                            text: 'Đã tạo đơn vận chuyển trên GHN Sandbox thành công!',
+                            icon: 'success',
+                            confirmButtonText: 'Đóng'
+                        }).then(() => {
+                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
+                        });
+                    } else if (data.status === 'already_exists') {
+                        Swal.fire({
+                            title: 'Đã tồn tại',
+                            text: data.message,
+                            icon: 'info',
+                            confirmButtonText: 'Đóng'
+                        }).then(() => {
+                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
+                        });
+                    } else {
+                        throw new Error(data.message || 'Lỗi không xác định từ GHN Sandbox');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (errorDiv) {
+                        errorDiv.style.display = 'block';
+                        errorDiv.innerHTML = '<strong>Lỗi đẩy đơn GHN Sandbox:</strong><br>' + err.message;
+                    }
+                    buttons.forEach(btn => btn.disabled = false);
+                });
+        };
+
+        window.syncGhnStatus = function (orderId) {
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+            const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+            fetch('/api/ghn/admin/sync/' + orderId, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        Swal.fire({
+                            title: 'Đồng bộ thành công',
+                            text: (data.message || '') + '\nTrạng thái GHN hiện tại: ' + (data.ghnStatusLabel || data.ghnStatus || ''),
+                            icon: 'success',
+                            confirmButtonText: 'Đóng'
+                        }).then(() => {
+                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Không thể đồng bộ',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonText: 'Đóng'
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire({
+                        title: 'Lỗi',
+                        text: err.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    });
+                });
+        };
+
+        window.moModalConfirmRefund = function (idHoaDon, maDonHang, tongTien) {
+            document.getElementById('refundIdHoaDon').value = idHoaDon;
+            document.getElementById('refundMaDonHang').innerText = maDonHang || ('#' + idHoaDon);
+            document.getElementById('refundSoTienHoan').value = tongTien || 0;
+
+            var modalEl = document.getElementById('modalConfirmRefund');
+            var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            myModal.show();
+        };
     </script>
 
     <!-- Admin Layout JS -->
     <script th:src="@{/js/admin-layout.js(v='2.1')}"></script>
 </body>
+
 </html>
