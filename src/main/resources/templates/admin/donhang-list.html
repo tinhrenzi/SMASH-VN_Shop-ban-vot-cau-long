@@ -267,22 +267,13 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
                                                          <button type="button" class="admin-btn admin-btn-icon" 
                                                                  th:data-id="${hd.id}"
                                                                  onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                  title="Chi tiết đơn hàng">
                                                              <i class="fas fa-eye text-primary"></i>
                                                          </button>
-=======
-                                                        <button type="button" class="admin-btn admin-btn-icon"
-                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
-                                                            title="Chi tiết đơn hàng">
-                                                            <i class="fas fa-eye text-primary"></i>
-                                                        </button>
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
-<<<<<<< HEAD
                                                          <button th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
                                                                  type="button" class="admin-btn admin-btn-sm admin-btn-primary"
                                                                  th:data-id="${hd.id}"
@@ -291,15 +282,6 @@
                                                                  onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
                                                              <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                          </button>
-=======
-                                                        <button
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
-                                                            type="button"
-                                                            class="admin-btn admin-btn-sm admin-btn-primary"
-                                                            th:onclick="'moModalConfirmRefund(' + ${hd.id} + ', \'' + ${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id} + '\', ' + ${hd.tongTien} + ')'">
-                                                            <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
-                                                        </button>
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
                                                         <form
                                                             th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
@@ -496,16 +478,10 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
-=======
-                                                        <button type="button" class="admin-btn admin-btn-icon"
-                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
-                                                            title="Chi tiết đơn hàng">
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
@@ -638,16 +614,10 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
-=======
-                                                        <button type="button" class="admin-btn admin-btn-icon"
-                                                            th:onclick="'openOrderDetailModal(' + ${hd.id} + ')'"
-                                                            title="Chi tiết đơn hàng">
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
@@ -693,19 +663,15 @@
                                                             </button>
                                                         </form>
 
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
-                                                            action="/admin/don-hang/confirm-refund" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Xác nhận hoàn tiền"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận thực sự hoàn tiền thành công cho khách?')">
-                                                                <i class="fas fa-hand-holding-usd text-success"></i>
-                                                            </button>
-                                                        </form>
+                                                        <button th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                             type="button" class="admin-btn admin-btn-icon"
+                                                             th:data-id="${hd.id}"
+                                                             th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                             th:data-total="${hd.tongTien}"
+                                                             onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))"
+                                                             title="Xác nhận hoàn tiền">
+                                                             <i class="fas fa-hand-holding-usd text-success"></i>
+                                                         </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1397,13 +1363,9 @@
                     `;
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
                         actionsHtml += `
-                        <form action="/admin/don-hang/confirm-refund" method="post" class="d-inline-block m-1">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận thực sự hoàn tiền thành công cho khách hàng?')">
-                                <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền cho Khách
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary m-1" onclick="moModalConfirmRefund(${data.id}, '${data.maDonHang || ('#' + data.id)}', ${data.tongTien || 0})">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền cho Khách
+                        </button>
                     `;
                     } else if (data.trangThaiHoanHang === 'REFUNDED') {
                         actionsHtml += `

@@ -94,6 +94,7 @@
                     <!-- Submenu Parent: Bình luận & đánh giá -->
                     <div class="admin-nav-item">
                         <a href="javascript:void(0)" class="admin-nav-link" data-submenu-target="submenuCommentReview" 
+                           th:classappend="${activeTab == 'danhgia' or activeTab == 'viphambinhluan' or activeTab == 'moderationKeywords' ? 'active' : ''}"
                            th:aria-expanded="${activeTab == 'danhgia' or activeTab == 'viphambinhluan' or activeTab == 'moderationKeywords' ? 'true' : 'false'}">
                             <div class="admin-nav-link-content">
                                 <i class="fas fa-comments nav-icon"></i>

@@ -3,44 +3,96 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Sidebar Mobile Toggle & Backdrop handling
+    // 1. Sidebar Mobile Toggle & Desktop Collapse Handling
     const sidebar = document.getElementById('adminSidebar');
-    const toggleBtn = document.getElementById('adminSidebarToggle');
+    const toggleBtn = document.getElementById('adminSidebarToggle') || document.getElementById('sidebarToggle');
     const closeBtn = document.getElementById('adminSidebarClose');
     const backdrop = document.getElementById('adminSidebarBackdrop');
 
-    function openSidebar() {
-        if (sidebar) sidebar.classList.add('show');
+    function isMobile() {
+        return window.innerWidth < 992;
+    }
+
+    // Restore desktop collapsed state from localStorage if on desktop
+    if (!isMobile()) {
+        const isCollapsed = localStorage.getItem('adminSidebarCollapsed') === 'true';
+        if (isCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    }
+
+    function openMobileSidebar() {
+        if (!isMobile()) return;
+        if (sidebar) {
+            sidebar.classList.add('show');
+            sidebar.classList.add('sidebar-open');
+        }
         if (backdrop) backdrop.classList.add('show');
+        document.body.classList.add('sidebar-open');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeSidebar() {
-        if (sidebar) sidebar.classList.remove('show');
+    function closeMobileSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove('show');
+            sidebar.classList.remove('sidebar-open');
+        }
         if (backdrop) backdrop.classList.remove('show');
+        document.body.classList.remove('sidebar-open');
         document.body.style.overflow = '';
+    }
+
+    function toggleDesktopSidebar() {
+        document.body.classList.toggle('sidebar-collapsed');
+        const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+        localStorage.setItem('adminSidebarCollapsed', isCollapsed ? 'true' : 'false');
+        // ABSOLUTELY DO NOT MODIFY body.style.overflow ON DESKTOP
     }
 
     if (toggleBtn) {
         toggleBtn.addEventListener('click', function (e) {
             e.preventDefault();
-            if (sidebar && sidebar.classList.contains('show')) {
-                closeSidebar();
+            if (isMobile()) {
+                if (sidebar && (sidebar.classList.contains('show') || sidebar.classList.contains('sidebar-open'))) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
             } else {
-                openSidebar();
+                toggleDesktopSidebar();
             }
         });
     }
 
-    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeMobileSidebar();
+        });
+    }
 
-    // Auto-close mobile sidebar when clicking navigation links
-    const navLinks = document.querySelectorAll('.admin-sidebar .admin-nav-link:not([data-bs-toggle])');
+    if (backdrop) {
+        backdrop.addEventListener('click', function () {
+            closeMobileSidebar();
+        });
+    }
+
+    // Rule 5: When resizing from mobile to desktop (>= 992px):
+    // - remove sidebar-open
+    // - remove inline overflow style on body
+    // - close backdrop
+    window.addEventListener('resize', function () {
+        if (!isMobile()) {
+            closeMobileSidebar();
+        }
+    });
+
+    // Auto-close mobile sidebar ONLY when clicking direct navigation links (NOT parent submenu toggles)
+    const navLinks = document.querySelectorAll('.admin-sidebar .admin-nav-link:not([data-submenu-target]):not([data-bs-toggle])');
     navLinks.forEach(function (link) {
         link.addEventListener('click', function () {
-            if (window.innerWidth < 992) {
-                closeSidebar();
+            if (isMobile()) {
+                closeMobileSidebar();
             }
         });
     });
@@ -50,11 +102,29 @@ document.addEventListener('DOMContentLoaded', function () {
     submenuToggles.forEach(function (toggle) {
         toggle.addEventListener('click', function (e) {
             e.preventDefault();
+            e.stopPropagation();
+
             const targetId = this.getAttribute('data-submenu-target');
             const targetSubmenu = document.getElementById(targetId);
-            const isExpanded = this.getAttribute('aria-expanded') === 'true';
 
+            if (!isMobile() && document.body.classList.contains('sidebar-collapsed')) {
+                // Rule 1: On desktop when sidebar is collapsed:
+                // 1. Expand sidebar to full width
+                // 2. Then open submenu
+                // 3. Do not lock scrollbar or add sidebar-open / body overflow hidden
+                document.body.classList.remove('sidebar-collapsed');
+                localStorage.setItem('adminSidebarCollapsed', 'false');
+
+                if (targetSubmenu) {
+                    targetSubmenu.classList.add('show');
+                    this.setAttribute('aria-expanded', 'true');
+                }
+                return;
+            }
+
+            // Normal toggle behavior (when desktop is expanded or on mobile)
             if (targetSubmenu) {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true' || targetSubmenu.classList.contains('show');
                 if (isExpanded) {
                     targetSubmenu.classList.remove('show');
                     this.setAttribute('aria-expanded', 'false');
@@ -66,15 +136,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Auto-expand submenu if active item inside
+    // Auto-expand submenu & highlight parent if active sub-item inside
     const activeSubmenuLink = document.querySelector('.admin-nav-submenu .admin-nav-link.active');
     if (activeSubmenuLink) {
         const parentSubmenu = activeSubmenuLink.closest('.admin-nav-submenu');
         if (parentSubmenu) {
             parentSubmenu.classList.add('show');
-            const toggleBtn = document.querySelector(`.admin-nav-link[data-submenu-target="${parentSubmenu.id}"]`);
-            if (toggleBtn) {
-                toggleBtn.setAttribute('aria-expanded', 'true');
+            const toggleSubmenuBtn = document.querySelector(`.admin-nav-link[data-submenu-target="${parentSubmenu.id}"]`);
+            if (toggleSubmenuBtn) {
+                toggleSubmenuBtn.classList.add('active');
+                toggleSubmenuBtn.setAttribute('aria-expanded', 'true');
             }
         }
     }

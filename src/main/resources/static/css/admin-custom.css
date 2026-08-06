@@ -108,7 +108,7 @@ body.admin-body {
     display: flex;
     flex-direction: column;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
 .admin-sidebar-header {
@@ -278,16 +278,62 @@ body.admin-body {
     box-shadow: none;
 }
 
-/* Mobile Sidebar Offcanvas Mode */
+/* Mobile Sidebar Offcanvas Mode & Overflow Locking */
 @media (max-width: 991.98px) {
+    body.sidebar-open {
+        overflow: hidden !important;
+    }
     .admin-sidebar {
         transform: translateX(-100%);
     }
-    .admin-sidebar.show {
+    .admin-sidebar.show,
+    .admin-sidebar.sidebar-open {
         transform: translateX(0);
     }
     .admin-sidebar-close {
         display: block;
+    }
+}
+
+/* Desktop Sidebar Collapsed Mode (>= 992px) */
+@media (min-width: 992px) {
+    body.sidebar-collapsed .admin-sidebar {
+        width: 70px !important;
+    }
+    body.sidebar-collapsed .admin-page {
+        margin-left: 70px !important;
+    }
+    body.sidebar-collapsed .admin-topbar {
+        left: 70px !important;
+    }
+    body.sidebar-collapsed .admin-sidebar-brand span,
+    body.sidebar-collapsed .admin-nav-section-title,
+    body.sidebar-collapsed .admin-nav-link-content > span,
+    body.sidebar-collapsed .admin-nav-link .arrow-icon,
+    body.sidebar-collapsed .admin-nav-submenu {
+        display: none !important;
+    }
+    body.sidebar-collapsed .admin-sidebar-header {
+        padding: 0 0.5rem;
+        justify-content: center;
+    }
+    body.sidebar-collapsed .admin-sidebar-brand {
+        justify-content: center;
+    }
+    body.sidebar-collapsed .admin-sidebar-nav {
+        padding: 1rem 0.4rem;
+    }
+    body.sidebar-collapsed .admin-nav-link {
+        padding: 0.65rem 0;
+        justify-content: center;
+    }
+    body.sidebar-collapsed .admin-nav-link-content {
+        gap: 0;
+        justify-content: center;
+    }
+    body.sidebar-collapsed .admin-nav-link i.nav-icon {
+        margin: 0;
+        font-size: 1.15rem;
     }
 }
 
@@ -314,75 +360,104 @@ body.admin-body {
    TOPBAR COMPONENT
    ========================================================================== */
 
+/* ==========================================================================
+   TOPBAR COMPONENT
+   ========================================================================== */
+
 .admin-topbar {
-    height: var(--admin-topbar-height);
-    position: fixed;
+    position: sticky;
     top: 0;
-    right: 0;
-    left: var(--admin-sidebar-width);
     z-index: 1030;
-    background-color: #ffffff;
+    height: 64px;
+    background: #ffffff;
     border-bottom: 1px solid var(--admin-border);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.admin-topbar-inner {
+    width: 100%;
+    height: 100%;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.5rem;
-    transition: var(--admin-transition);
+    gap: 24px;
 }
 
-@media (max-width: 991.98px) {
-    .admin-topbar {
-        left: 0;
-        padding: 0 1rem;
+@media (max-width: 768px) {
+    .admin-topbar-inner {
+        padding: 0 12px;
+        gap: 12px;
     }
 }
 
-.admin-topbar-left {
+.admin-topbar-left,
+.admin-topbar-right {
     display: flex;
     align-items: center;
-    gap: 1rem;
 }
 
+.admin-topbar-left {
+    min-width: 0;
+    gap: 14px;
+}
+
+.admin-topbar-right {
+    flex-shrink: 0;
+    gap: 10px;
+}
+
+/* Hamburger toggle button */
 .admin-sidebar-toggle {
     background: transparent;
     border: none;
-    color: var(--admin-text-muted);
-    font-size: 1.25rem;
+    color: #475569;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 1.15rem;
     cursor: pointer;
-    padding: 0.35rem 0.5rem;
-    border-radius: var(--admin-radius-sm);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--admin-transition);
+    transition: all 0.2s ease;
 }
 
 .admin-sidebar-toggle:hover {
-    background-color: var(--admin-surface-muted);
+    background-color: rgba(244, 81, 30, 0.08);
     color: var(--admin-primary);
 }
 
-/* Search bar styling */
+/* Global search bar */
 .admin-search-bar {
     position: relative;
-    width: 280px;
+    width: 320px;
+    max-width: 360px;
 }
 
-@media (max-width: 576px) {
+@media (max-width: 768px) {
     .admin-search-bar {
         width: 180px;
     }
 }
 
+@media (max-width: 576px) {
+    .admin-search-bar {
+        width: 130px;
+    }
+}
+
 .admin-search-bar input {
     width: 100%;
-    padding: 0.45rem 2.25rem 0.45rem 0.85rem;
+    height: 40px;
+    padding: 0.45rem 2.5rem 0.45rem 1rem;
     font-size: 0.875rem;
-    border: 1px solid var(--admin-border);
+    border: 1px solid #e2e8f0;
     border-radius: 20px;
-    background-color: var(--admin-surface-muted);
-    transition: var(--admin-transition);
+    background-color: #f8fafc;
+    color: var(--admin-text);
+    transition: all 0.2s ease;
 }
 
 .admin-search-bar input:focus {
@@ -394,68 +469,129 @@ body.admin-body {
 
 .admin-search-bar .search-btn {
     position: absolute;
-    right: 0.5rem;
+    right: 0.6rem;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: var(--admin-text-muted);
+    color: #94a3b8;
     cursor: pointer;
     padding: 4px 6px;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
 }
 
 .admin-search-bar .search-btn:hover {
     color: var(--admin-primary);
 }
 
-.admin-topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
+/* Topbar right action button (Home icon) */
+.admin-topbar-action,
 .nav-home-link {
-    color: var(--admin-text-muted);
-    font-size: 1.2rem;
+    color: #64748b;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 1.15rem;
     text-decoration: none !important;
-    padding: 0.4rem;
-    border-radius: 50%;
-    transition: var(--admin-transition);
+    border-radius: 8px;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+.admin-topbar-action:hover,
 .nav-home-link:hover {
     color: var(--admin-primary);
-    background-color: var(--admin-primary-soft);
+    background-color: rgba(244, 81, 30, 0.08);
 }
 
+/* User Account Dropdown */
 .admin-user-dropdown {
+    position: relative;
+}
+
+.admin-user-btn {
+    background: transparent;
+    border: 1px solid transparent;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
     text-decoration: none !important;
-    color: var(--admin-text);
-    padding: 0.35rem 0.6rem;
-    border-radius: var(--admin-radius-sm);
-    transition: var(--admin-transition);
+    color: #334155;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
 }
 
-.admin-user-dropdown:hover {
-    background-color: var(--admin-surface-muted);
+.admin-user-btn:hover,
+.admin-user-btn:focus {
+    background-color: #f1f5f9;
+    color: var(--admin-primary);
 }
 
-.admin-user-dropdown i.user-avatar {
-    font-size: 1.6rem;
-    color: var(--admin-text-muted);
+.admin-user-btn i.user-avatar {
+    font-size: 1.4rem;
+    color: #64748b;
 }
 
 .admin-user-name {
-    font-size: 0.875rem;
     font-weight: 600;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-user-btn::after {
+    margin-left: 0.25rem;
+    vertical-align: middle;
+}
+
+.admin-user-dropdown .dropdown-menu {
+    border-radius: 12px;
+    margin-top: 8px !important;
+    min-width: 200px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Scroll to Top Floating Button */
+#topScroll {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--admin-primary);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(244, 81, 30, 0.3);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease, background-color 0.2s ease;
+}
+
+#topScroll.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+#topScroll:hover {
+    background-color: #d84315;
+    box-shadow: 0 6px 16px rgba(244, 81, 30, 0.45);
 }
 
 /* ==========================================================================

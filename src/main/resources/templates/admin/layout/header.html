@@ -9,42 +9,42 @@
              th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
              style="display:none;"></div>
 
-        <div class="admin-topbar-left">
-            <!-- Mobile Hamburger Toggle Button -->
-            <button class="admin-sidebar-toggle" id="adminSidebarToggle" type="button" title="Menu quản trị">
-                <i class="fas fa-bars"></i>
-            </button>
+        <div class="admin-topbar-inner">
+            <!-- CỤM BÊN TRÁI: Hamburger toggle + Thanh tìm kiếm -->
+            <div class="admin-topbar-left">
+                <button class="admin-sidebar-toggle" id="adminSidebarToggle" type="button" title="Menu quản trị" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
 
-            <!-- Global Search Bar (CRITICAL BINDING: id="adminGlobalSearch") -->
-            <div class="admin-search-bar">
-                <input type="text" id="adminGlobalSearch" placeholder="Tìm kiếm nhanh...">
-                <button class="search-btn" type="button" onclick="executeSearch()"><i class="fas fa-search"></i></button>
+                <div class="admin-search-bar">
+                    <input type="text" id="adminGlobalSearch" placeholder="Tìm đơn hàng, sản phẩm, khách hàng...">
+                    <button class="search-btn" type="button" onclick="executeSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></button>
+                </div>
             </div>
-        </div>
 
-        <div class="admin-topbar-right">
-            <!-- Return to Storefront Home Icon -->
-            <a th:href="@{/}" class="nav-home-link" title="Trở về trang chủ">
-                <i class="fas fa-home"></i>
-            </a>
-
-            <!-- User Profile & Sign Out Dropdown -->
-            <div class="dropdown">
-                <a href="javascript:void(0)" class="admin-user-dropdown dropdown-toggle" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="far fa-user-circle user-avatar"></i>
-                    <span class="admin-user-name d-none d-sm-inline" th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}">Admin</span>
+            <!-- CỤM BÊN PHẢI: Trang chủ / Tổng quan + Tài khoản User Dropdown -->
+            <div class="admin-topbar-right">
+                <a th:href="@{/admin/all}" class="admin-topbar-action nav-home-link" title="Tổng quan" aria-label="Về trang tổng quan">
+                    <i class="fas fa-home"></i>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown" style="border-radius: 12px; margin-top: 8px; min-width: 200px;">
-                    <li class="dropdown-header text-uppercase fw-bold pb-2" style="font-size: 0.72rem; color: #888;">
-                        <i class="fas fa-user-shield me-1"></i> <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}"></span>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}">
-                            <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                        </a>
-                    </li>
-                </ul>
+
+                <div class="dropdown admin-user-dropdown">
+                    <button class="admin-user-btn dropdown-toggle" id="adminUserDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="far fa-user-circle user-avatar"></i>
+                        <span class="admin-user-name d-none d-sm-inline" th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}">Admin</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="adminUserDropdown">
+                        <li class="dropdown-header text-uppercase fw-bold pb-2" style="font-size: 0.72rem; color: #888;">
+                            <i class="fas fa-user-shield me-1"></i> <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Quản trị'}"></span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger py-2" th:href="@{/admin/dang-xuat}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -57,11 +57,10 @@
         </div>
 
         <!-- Scroll to Top Button (CRITICAL BINDING: id="topScroll") -->
-        <button id="topScroll" type="button" title="Cuộn lên đầu">
+        <button id="topScroll" type="button" title="Cuộn lên đầu" aria-label="Cuộn lên đầu trang">
             <i class="fas fa-long-arrow-alt-up"></i>
         </button>
     </header>
 
 </body>
 </html>
-
