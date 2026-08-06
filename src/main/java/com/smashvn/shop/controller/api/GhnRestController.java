@@ -317,10 +317,12 @@ public class GhnRestController {
                     if (newReturnStatus != null) {
                         orderViewService.updateReturnStatusFromGhn(hd.getId(), newReturnStatus, ghnStatus, "ADMIN_SYNC");
                         log.info("[ADMIN] Đã đồng bộ thủ công ĐƠN HOÀN TRẢ #{}: GHN returnStatus={}, internalReturnStatus={}", orderId, ghnStatus, newReturnStatus.name());
+                        String ghnStatusLabel = ghnStatusMapper.getGhnStatusLabel(ghnStatus);
                         return ResponseEntity.ok(Map.of(
                                 "status", "ok",
                                 "message", "Đồng bộ trạng thái GHN Thu Hồi thành công! Mã: " + returnCode,
                                 "ghnStatus", ghnStatus,
+                                "ghnStatusLabel", ghnStatusLabel,
                                 "internalStatus", newReturnStatus.name()
                         ));
                     }

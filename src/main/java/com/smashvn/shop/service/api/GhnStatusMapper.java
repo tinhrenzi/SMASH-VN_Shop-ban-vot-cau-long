@@ -142,6 +142,7 @@ public class GhnStatusMapper {
         if (ghnStatus == null) return null;
         switch (ghnStatus.toLowerCase()) {
             case "ready_to_pick":
+            case "waiting_to_return":
                 return com.smashvn.shop.entity.ReturnStatus.WAITING_FOR_PICKUP;
             case "picking":
             case "picked":
@@ -150,7 +151,6 @@ public class GhnStatusMapper {
             case "sorting":
             case "transporting":
             case "returning":
-            case "waiting_to_return":
             case "delivery_fail":
                 return com.smashvn.shop.entity.ReturnStatus.RETURNING;
             case "return":

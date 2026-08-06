@@ -1055,3 +1055,481 @@ body.admin-body {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+/* ==========================================================================
+   ORDER DETAIL MODAL DESIGN SYSTEM
+   ========================================================================== */
+
+#orderDetailModal .modal-dialog {
+    max-width: 1100px;
+    width: 95%;
+    margin: 1.5rem auto;
+}
+
+#orderDetailModal .modal-content {
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    background-color: var(--admin-surface);
+    overflow: hidden;
+    max-height: calc(100vh - 48px);
+}
+
+#orderDetailModal .modal-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--admin-border);
+    padding: 1.15rem 1.5rem;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.order-detail-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.order-detail-header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background-color: var(--admin-primary-soft);
+    color: var(--admin-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.order-detail-header-title-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.order-detail-header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--admin-text);
+    margin: 0;
+    line-height: 1.25;
+}
+
+.order-detail-header-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--admin-text-muted);
+}
+
+.order-detail-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--admin-surface-muted);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.order-detail-close-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--admin-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--admin-transition);
+}
+
+.order-detail-close-btn:hover {
+    background-color: var(--admin-surface-muted);
+    color: var(--admin-text);
+    border-color: var(--admin-border);
+}
+
+/* Modal Body */
+#orderDetailModal .modal-body {
+    padding: 1.5rem;
+    background-color: var(--admin-bg);
+    overflow-y: auto;
+}
+
+/* Quick Summary Grid */
+.order-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.order-summary-card {
+    background-color: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    box-shadow: var(--admin-shadow);
+}
+
+.order-summary-label {
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--admin-text-muted);
+}
+
+.order-summary-value {
+    font-size: 0.975rem;
+    font-weight: 700;
+    color: var(--admin-text);
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Section Card */
+.order-detail-card {
+    background-color: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--admin-shadow);
+}
+
+.order-detail-card:last-child {
+    margin-bottom: 0;
+}
+
+.order-detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.order-detail-card-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--admin-text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-detail-card-title i {
+    color: var(--admin-primary);
+    font-size: 1rem;
+}
+
+/* Info Field Row */
+.order-detail-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.order-detail-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.order-detail-label {
+    color: var(--admin-text-muted);
+    font-weight: 500;
+    min-width: 145px;
+    flex-shrink: 0;
+}
+
+.order-detail-value {
+    color: var(--admin-text);
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.order-detail-code-inline {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background-color: var(--admin-surface-muted);
+    border: 1px solid var(--admin-border);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.825rem;
+    color: var(--admin-text);
+    font-weight: 600;
+}
+
+/* Copy Button */
+.btn-copy-code {
+    border: none;
+    background: transparent;
+    color: var(--admin-text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--admin-transition);
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.btn-copy-code:hover {
+    color: var(--admin-primary);
+    background-color: var(--admin-primary-soft);
+}
+
+/* Soft Badges */
+.badge-soft {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.775rem;
+    line-height: 1.25;
+}
+
+.badge-soft-success {
+    background-color: var(--admin-success-soft);
+    color: var(--admin-success);
+    border: 1px solid rgba(21, 128, 61, 0.18);
+}
+
+.badge-soft-warning {
+    background-color: var(--admin-warning-soft);
+    color: var(--admin-warning);
+    border: 1px solid rgba(180, 83, 9, 0.18);
+}
+
+.badge-soft-danger {
+    background-color: var(--admin-danger-soft);
+    color: var(--admin-danger);
+    border: 1px solid rgba(220, 38, 38, 0.18);
+}
+
+.badge-soft-info {
+    background-color: var(--admin-info-soft);
+    color: var(--admin-info);
+    border: 1px solid rgba(3, 105, 161, 0.18);
+}
+
+.badge-soft-secondary {
+    background-color: var(--admin-surface-muted);
+    color: var(--admin-text-muted);
+    border: 1px solid var(--admin-border);
+}
+
+.badge-soft-primary {
+    background-color: var(--admin-primary-soft);
+    color: var(--admin-primary);
+    border: 1px solid rgba(244, 81, 30, 0.2);
+}
+
+/* Tables inside Order Detail */
+.order-detail-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    overflow: hidden;
+}
+
+.order-detail-table thead th {
+    background-color: var(--admin-surface-muted) !important;
+    color: var(--admin-text-muted);
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--admin-border);
+    border-top: none;
+}
+
+.order-detail-table tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--admin-border);
+    color: var(--admin-text);
+    font-size: 0.875rem;
+    vertical-align: middle;
+    background-color: #ffffff;
+}
+
+.order-detail-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.detail-product-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--admin-border);
+    transition: var(--admin-transition);
+    cursor: pointer;
+}
+
+.detail-product-thumb:hover {
+    transform: scale(1.05);
+    box-shadow: var(--admin-shadow);
+}
+
+/* Total Summary Box */
+.order-total-summary {
+    max-width: 420px;
+    width: 100%;
+    margin-left: auto;
+    background-color: var(--admin-surface-muted);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.order-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--admin-text-muted);
+}
+
+.order-total-row .order-total-val {
+    font-weight: 600;
+    color: var(--admin-text);
+}
+
+.order-total-grand {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+    border-top: 2px dashed var(--admin-border);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--admin-primary);
+}
+
+/* Modal Footer */
+#orderDetailModal .modal-footer {
+    background-color: #ffffff;
+    border-top: 1px solid var(--admin-border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.order-detail-footer-info {
+    font-size: 0.85rem;
+    color: var(--admin-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-detail-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+/* Responsive Overrides */
+@media (max-width: 991.98px) {
+    .order-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767.98px) {
+    #orderDetailModal .modal-dialog {
+        width: calc(100% - 1rem);
+        margin: 0.5rem;
+    }
+    #orderDetailModal .modal-body {
+        padding: 1rem;
+    }
+    .order-summary-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .order-detail-field {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+    .order-detail-label {
+        min-width: unset;
+    }
+    .order-detail-value {
+        text-align: left;
+        justify-content: flex-start;
+        width: 100%;
+    }
+    .order-total-summary {
+        max-width: 100%;
+    }
+    #orderDetailModal .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .order-detail-footer-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .order-detail-footer-actions .admin-btn,
+    .order-detail-footer-actions form {
+        width: 100%;
+    }
+    .order-detail-footer-actions .admin-btn {
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+

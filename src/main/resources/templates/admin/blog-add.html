@@ -20,10 +20,53 @@
     <script th:src="@{/vendor/ckeditor/translations/vi.js}"></script>
     
     <style>
-        .ck-editor__editable_inline { min-height: 350px; }
-        body.iframe-mode { background-color: #ffffff !important; padding: 0 !important; margin: 0 !important; }
-        body.iframe-mode .main-content, body.iframe-mode .admin-content { padding: 15px !important; margin: 0 !important; min-height: auto !important; background-color: #ffffff !important; }
-        body.iframe-mode .card, body.iframe-mode .admin-card { box-shadow: none !important; border: none !important; }
+        .ck-editor__editable_inline { min-height: 250px; max-height: 400px; }
+        body.iframe-mode, html.iframe-mode {
+            background-color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        body.iframe-mode .admin-page {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            min-height: auto !important;
+        }
+        body.iframe-mode .admin-content {
+            margin-left: 0 !important;
+            padding-top: 15px !important;
+            padding-bottom: 80px !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+            min-height: auto !important;
+            background-color: #ffffff !important;
+        }
+        body.iframe-mode .admin-container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            max-width: 100% !important;
+        }
+        body.iframe-mode .card, body.iframe-mode .admin-card {
+            box-shadow: none !important;
+            border: none !important;
+            margin-bottom: 0 !important;
+        }
+        body.iframe-mode .admin-card-body {
+            padding: 0 !important;
+        }
+        body.iframe-mode .form-actions-bar {
+            position: sticky;
+            bottom: 0;
+            background: #ffffff;
+            padding: 12px 20px;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+            z-index: 1000;
+            margin-left: -20px;
+            margin-right: -20px;
+            margin-bottom: -80px;
+        }
     </style>
     <script>
         if (window.self !== window.top) {
@@ -31,9 +74,11 @@
             const style = document.createElement('style');
             style.innerHTML = `
                 .sidebar, nav.sidebar, .admin-header, .admin-topbar, .admin-page-header { display: none !important; }
-                body, body.iframe-mode { background-color: #ffffff !important; padding: 0 !important; margin: 0 !important; }
-                main.main-content, .main-content, .admin-content { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; padding: 15px !important; min-height: auto !important; background-color: #ffffff !important; }
-                .card, .admin-card { box-shadow: none !important; border: none !important; }
+                body, body.iframe-mode, html, html.iframe-mode { background-color: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow-x: hidden !important; overflow-y: auto !important; }
+                .admin-page { margin-left: 0 !important; padding-left: 0 !important; min-height: auto !important; }
+                main.main-content, .main-content, .admin-content { margin-left: 0 !important; padding-top: 15px !important; width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; padding: 15px 20px 80px 20px !important; min-height: auto !important; background-color: #ffffff !important; }
+                .admin-container { padding-left: 0 !important; padding-right: 0 !important; max-width: 100% !important; }
+                .card, .admin-card { box-shadow: none !important; border: none !important; margin-bottom: 0 !important; }
                 .btn-back-normal { display: none !important; }
             `;
             document.head.appendChild(style);
@@ -149,10 +194,13 @@
                                     <textarea class="admin-form-control form-control" id="content" th:field="*{content}" placeholder="Viết nội dung bài viết ở đây..."></textarea>
                                 </div>
 
-                                <!-- Form Actions -->
-                                <div class="col-12 border-top pt-4 d-flex justify-content-end gap-2">
-                                    <button type="reset" class="admin-btn admin-btn-secondary">Nhập lại</button>
-                                    <button type="submit" class="admin-btn admin-btn-primary"><i class="fas fa-save me-1"></i>Lưu Bản Nháp</button>
+                                 <!-- Form Actions -->
+                                <div class="col-12 border-top pt-3 d-flex justify-content-end gap-2 form-actions-bar">
+                                    <button type="button" class="admin-btn admin-btn-secondary px-4" th:if="${isIframe}" onclick="window.parent.closeBlogFormModal()">
+                                        <i class="fas fa-times me-1"></i>Hủy
+                                    </button>
+                                    <button type="reset" class="admin-btn admin-btn-secondary px-4" th:unless="${isIframe}">Nhập lại</button>
+                                    <button type="submit" class="admin-btn admin-btn-primary px-4"><i class="fas fa-save me-1"></i>Đăng Bài Viết</button>
                                 </div>
                             </div>
                         </form>

@@ -617,6 +617,14 @@
                                                                     style="background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;"
                                                                     th:text="${order['ghnStatusLabel']}">Đang lấy hàng</span>
                                                           </div>
+                                                          <div th:if="${order['ghnReturnOrderCode'] != null and !#strings.isEmpty(order['ghnReturnOrderCode'])}" 
+                                                               style="font-size: 13px; color: #0288d1; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                                              <i class="fas fa-undo-alt"></i>
+                                                              <span th:text="'Mã GHN Thu Hồi: ' + ${order['ghnReturnOrderCode']}">Mã GHN Thu Hồi: LP290C8B</span>
+                                                              <span th:if="${order['trangThaiHoanHangLabel'] != null and !#strings.isEmpty(order['trangThaiHoanHangLabel'])}" 
+                                                                    style="background: #e1f5fe; color: #0288d1; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;"
+                                                                    th:text="${order['trangThaiHoanHangLabel']}">Hàng đã giao về đến shop</span>
+                                                          </div>
                                                       </div>
                                                   </div>
 

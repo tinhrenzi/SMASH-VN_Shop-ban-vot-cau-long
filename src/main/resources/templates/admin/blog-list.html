@@ -205,15 +205,15 @@
 
     <!-- Modal Blog Form (Add/Edit) -->
     <div class="modal fade" id="blogFormModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden;">
-                <div class="modal-header admin-modal-header py-3">
+        <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1000px; margin: 1.75rem auto;">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden; height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header admin-modal-header py-3" style="flex-shrink: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                     <h5 class="modal-title admin-modal-title" id="blogFormModalLabel">
                         <i class="fas fa-edit text-primary me-2"></i>Tạo Bài Viết Mới
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0" style="height: 80vh;">
+                <div class="modal-body p-0" style="flex: 1; height: calc(100% - 60px); overflow: hidden;">
                     <iframe id="blogFormIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
                 </div>
             </div>
@@ -222,15 +222,15 @@
 
     <!-- Modal Blog Preview -->
     <div class="modal fade" id="blogPreviewModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden;">
-                <div class="modal-header admin-modal-header py-3">
+        <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1050px; margin: 1.75rem auto;">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden; height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header admin-modal-header py-3" style="flex-shrink: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                     <h5 class="modal-title admin-modal-title" id="blogPreviewModalLabel">
                         <i class="fas fa-eye text-primary me-2"></i>Xem Trước Bài Viết
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0" style="height: 80vh; background-color: #ffffff;">
+                <div class="modal-body p-0" style="flex: 1; height: calc(100% - 60px); overflow: hidden; background-color: #ffffff;">
                     <iframe id="blogPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
                 </div>
             </div>

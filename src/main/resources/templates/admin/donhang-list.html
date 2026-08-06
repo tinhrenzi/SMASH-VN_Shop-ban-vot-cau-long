@@ -173,18 +173,33 @@
                                             <tr th:each="hd, iterStat : ${danhSachDonHangOnline}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
                                                 <td class="text-nowrap">
-                                                    <code class="text-dark order-code-text fw-bold"
-                                                        style="font-size: 0.85rem;"
-                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
-                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
-                                                    <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}"
-                                                        class="mt-1">
-                                                        <span class="admin-status admin-status-info text-nowrap"
-                                                            style="font-size: 0.7rem;" title="Mã vận đơn GHN thu hồi">
-                                                            <i class="fas fa-shipping-fast me-1"></i>GHN:
-                                                            [[${hd.ghnReturnOrderCode}]]
-                                                        </span>
-                                                    </div>
+                                                     <div class="d-inline-flex align-items-center gap-1">
+                                                         <code class="text-dark order-code-text fw-bold me-1"
+                                                             style="font-size: 0.85rem; cursor: pointer;"
+                                                             th:title="'Click để sao chép: ' + ${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
+                                                             th:data-code="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
+                                                             onclick="copyToClipboard(this.getAttribute('data-code'), this)"
+                                                             th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
+                                                         <button type="button" class="btn btn-link text-muted p-0 border-0 shadow-none btn-copy-icon"
+                                                             th:data-code="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
+                                                             onclick="copyToClipboard(this.getAttribute('data-code'), this)"
+                                                             title="Sao chép mã đơn hàng"
+                                                             style="font-size: 0.8rem; text-decoration: none; line-height: 1;">
+                                                             <i class="far fa-copy"></i>
+                                                         </button>
+                                                     </div>
+                                                     <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}"
+                                                         class="mt-1">
+                                                         <span class="admin-status admin-status-info text-nowrap d-inline-flex align-items-center gap-1"
+                                                             style="font-size: 0.72rem; cursor: pointer;"
+                                                             th:title="'Click để sao chép mã GHN: ' + ${hd.ghnReturnOrderCode}"
+                                                             th:data-code="${hd.ghnReturnOrderCode}"
+                                                             onclick="copyToClipboard(this.getAttribute('data-code'), this)">
+                                                             <i class="fas fa-shipping-fast me-1"></i>GHN:
+                                                             [[${hd.ghnReturnOrderCode}]]
+                                                             <i class="far fa-copy ms-1 text-muted" style="font-size: 0.65rem;"></i>
+                                                         </span>
+                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark text-nowrap"
@@ -267,32 +282,13 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
-                                                         <button type="button" class="admin-btn admin-btn-icon" 
-                                                                 th:data-id="${hd.id}"
-                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
-                                                                 title="Chi tiết đơn hàng">
-                                                             <i class="fas fa-eye text-primary"></i>
-                                                         </button>
-=======
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                             title="Chi tiết đơn hàng">
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
-<<<<<<< HEAD
-                                                         <button th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
-                                                                 type="button" class="admin-btn admin-btn-sm admin-btn-primary"
-                                                                 th:data-id="${hd.id}"
-                                                                 th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                                 th:data-total="${hd.tongTien}"
-                                                                 onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
-                                                             <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
-                                                         </button>
-=======
                                                         <button
                                                             th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
                                                             type="button"
@@ -303,7 +299,6 @@
                                                             onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
                                                             <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                         </button>
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
                                                         <form
                                                             th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
@@ -500,17 +495,10 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
-                                                        <button type="button" class="admin-btn admin-btn-icon" 
-                                                                th:data-id="${hd.id}"
-                                                                onclick="openOrderDetailModal(this.getAttribute('data-id'))"
-                                                                title="Chi tiết đơn hàng">
-=======
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                             title="Chi tiết đơn hàng">
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
@@ -643,17 +631,10 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
-<<<<<<< HEAD
-                                                        <button type="button" class="admin-btn admin-btn-icon" 
-                                                                th:data-id="${hd.id}"
-                                                                onclick="openOrderDetailModal(this.getAttribute('data-id'))"
-                                                                title="Chi tiết đơn hàng">
-=======
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                             title="Chi tiết đơn hàng">
->>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
@@ -729,29 +710,46 @@
     </div>
 
     <!-- Modal Chi Tiết Đơn Hàng -->
-    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="orderDetailModalLabel"><i class="fas fa-info-circle me-2"></i>Chi Tiết
-                        Đơn Hàng <span id="modal-order-id"></span></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="order-detail-header-brand">
+                        <div class="order-detail-header-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="order-detail-header-title-box">
+                            <h5 class="order-detail-header-title" id="orderDetailModalLabel">Chi Tiết Đơn Hàng</h5>
+                            <div class="order-detail-header-subtitle">
+                                <span>Mã đơn:</span>
+                                <span id="modal-order-id">...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 ms-auto">
+                        <div id="modal-header-status-badge"></div>
+                        <button type="button" class="order-detail-close-btn" data-bs-dismiss="modal" aria-label="Đóng">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body" id="modal-body-content">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary me-2" role="status" style="width: 2.5rem; height: 2.5rem;">
                             <span class="visually-hidden">Đang tải...</span>
                         </div>
+                        <div class="text-muted mt-2 fw-medium">Đang tải thông tin chi tiết đơn hàng...</div>
                     </div>
                 </div>
                 <div class="modal-footer" id="modal-footer-actions">
-                    <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Đóng
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Payload Modal -->
     <div class="modal fade" id="payloadModal" tabindex="-1" aria-hidden="true">
@@ -949,7 +947,139 @@
             filterOrders();
         });
 
-        window.openOrderDetailModal = function (orderId) {
+        // Global Helpers & Formatters
+        window.escapeHtml = function (str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        window.formatDateTime = function (value) {
+            if (!value || typeof value !== 'string' || !value.trim()) {
+                return 'Chưa cập nhật';
+            }
+            const cleanStr = value.trim();
+            const isoMatch = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+            if (isoMatch) {
+                const [, year, month, day, hour, minute] = isoMatch;
+                return `${day}/${month}/${year} ${hour}:${minute}`;
+            }
+            try {
+                const d = new Date(cleanStr);
+                if (isNaN(d.getTime())) return escapeHtml(cleanStr);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                return `${day}/${month}/${year} ${hours}:${minutes}`;
+            } catch (e) {
+                return escapeHtml(cleanStr);
+            }
+        };
+
+        window.formatOrderStatus = function (status) {
+            if (!status) return 'Chưa cập nhật';
+            const s = String(status).toUpperCase();
+            const map = {
+                'CHO_THANH_TOAN': 'Chờ thanh toán',
+                'CHO_XAC_NHAN': 'Chờ xác nhận',
+                'DA_XAC_NHAN': 'Đã xác nhận',
+                'CHO_GIAO': 'Chờ giao hàng',
+                'DANG_CHUAN_BI_HANG': 'Đang chuẩn bị hàng',
+                'SAN_SANG_GIAO': 'Sẵn sàng giao',
+                'DA_TAO_VAN_DON_GHN': 'Đã tạo vận đơn GHN',
+                'DA_BAN_GIAO_GHN': 'Đã bàn giao GHN',
+                'DANG_LAY_HANG': 'Đang lấy hàng',
+                'DANG_GIAO': 'Đang giao hàng',
+                'DA_GIAO': 'Đã giao hàng',
+                'HOAN_THANH': 'Hoàn thành',
+                'DA_HUY': 'Đã hủy',
+                'TRA_HANG': 'Trả hàng',
+                'STOCK_CONFLICT': 'Xung đột tồn kho',
+                'PROCESSING': 'Đang xử lý',
+                'COMPLETED': 'Hoàn thành',
+                'CANCELLED': 'Đã hủy',
+                'CANCELED': 'Đã hủy'
+            };
+            return map[s] || status;
+        };
+
+        window.formatPaymentStatus = function (status) {
+            if (!status) return 'Chưa cập nhật';
+            const s = String(status).toUpperCase();
+            const map = {
+                'CHO_THANH_TOAN': 'Chờ thanh toán',
+                'DA_THANH_TOAN': 'Đã thanh toán',
+                'CHO_HOAN_TIEN': 'Chờ hoàn tiền',
+                'DA_HOAN_TIEN': 'Đã hoàn tiền',
+                'THAT_BAI': 'Thất bại',
+                'REFUNDED': 'Đã hoàn tiền',
+                'PAID': 'Đã thanh toán',
+                'PENDING': 'Đang xử lý',
+                'FAILED': 'Thất bại'
+            };
+            return map[s] || status;
+        };
+
+        window.formatTransactionStatus = function (status) {
+            if (!status) return 'Chưa cập nhật';
+            const s = String(status).toLowerCase();
+            const map = {
+                'success': 'Thành công',
+                'pending': 'Đang xử lý',
+                'failed': 'Thất bại',
+                'cancelled': 'Đã hủy',
+                'canceled': 'Đã hủy',
+                'refunded': 'Đã hoàn tiền',
+                'processing': 'Đang xử lý',
+                'completed': 'Hoàn thành'
+            };
+            return map[s] || status;
+        };
+
+        window.formatReturnStatus = function (status) {
+            if (!status) return 'Chưa có yêu cầu';
+            const s = String(status).toUpperCase();
+            const map = {
+                'PENDING_APPROVAL': 'Chờ duyệt trả hàng',
+                'PENDING_RETURN': 'Chờ trả hàng',
+                'WAITING_FOR_PICKUP': 'Chờ GHN lấy hàng hoàn',
+                'PICKED_UP': 'GHN đã lấy hàng hoàn',
+                'RETURNING': 'Đang vận chuyển hoàn',
+                'DELIVERED_TO_SHOP': 'Đã về đến shop (Chờ kiểm kiện)',
+                'RETURNED': 'Đã nhập kho hoàn (Chờ hoàn tiền)',
+                'REFUNDED': 'Đã hoàn tiền hoàn tất',
+                'REJECTED': 'Từ chối trả hàng',
+                'CANCELLED': 'Đã hủy yêu cầu'
+            };
+            return map[s] || status;
+        };
+
+        let lastFocusedElement = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalEl = document.getElementById('orderDetailModal');
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+                        try { lastFocusedElement.focus(); } catch (e) {}
+                    }
+                });
+            }
+        });
+
+        window.openOrderDetailModal = function (orderId, triggerEl) {
+            if (triggerEl) {
+                lastFocusedElement = triggerEl;
+            } else if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                lastFocusedElement = document.activeElement;
+            }
+
             const modalEl = document.getElementById('orderDetailModal');
             if (!modalEl) {
                 console.error("Element #orderDetailModal not found in DOM");
@@ -959,18 +1089,23 @@
             modal.show();
 
             const titleEl = document.getElementById('modal-order-id');
-            if (titleEl) titleEl.innerText = 'đang tải...';
+            if (titleEl) titleEl.innerHTML = '<span class="text-muted small">Đang tải...</span>';
+            
+            const headerBadgeEl = document.getElementById('modal-header-status-badge');
+            if (headerBadgeEl) headerBadgeEl.innerHTML = '';
+
             const body = document.getElementById('modal-body-content');
             const footer = document.getElementById('modal-footer-actions');
 
             body.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Đang tải...</span>
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary me-2" role="status" style="width: 2.5rem; height: 2.5rem;">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <div class="text-muted mt-2 fw-medium">Đang tải thông tin chi tiết đơn hàng...</div>
                 </div>
-            </div>
-        `;
-            footer.innerHTML = '<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>';
+            `;
+            footer.innerHTML = '<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Đóng</button>';
 
             const csrfMeta = document.querySelector('meta[name="_csrf"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
@@ -993,13 +1128,52 @@
                 })
                 .then(data => {
                     if (data.error) {
-                        body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.error}</div>`;
+                        body.innerHTML = `
+                            <div class="order-detail-card text-center py-5 my-3" style="border-color: var(--admin-danger);">
+                                <div class="text-danger mb-3" style="font-size: 2.5rem;"><i class="fas fa-exclamation-triangle"></i></div>
+                                <h5 class="fw-bold text-danger mb-2">Không thể tải chi tiết đơn hàng</h5>
+                                <p class="text-muted mb-4">${escapeHtml(data.error)}</p>
+                                <button type="button" class="admin-btn admin-btn-primary" onclick="openOrderDetailModal('${orderId}')">
+                                    <i class="fas fa-redo me-1"></i> Thử lại
+                                </button>
+                            </div>
+                        `;
                         return;
                     }
 
-                    const modalTitleEl = document.getElementById('modal-order-id');
-                    if (modalTitleEl) modalTitleEl.innerText = data.maDonHang ? (' - ' + data.maDonHang) : (' #' + orderId);
+                    const codeStr = data.maDonHang ? data.maDonHang : ('#' + orderId);
+                    if (titleEl) {
+                        titleEl.innerHTML = `
+                            <span class="order-detail-code-badge">
+                                ${escapeHtml(codeStr)}
+                                <button type="button" class="btn-copy-code" onclick="copyToClipboard('${escapeHtml(codeStr)}', this)" title="Sao chép mã đơn hàng" aria-label="Sao chép mã đơn hàng">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </span>
+                        `;
+                    }
 
+                    // Helper for badges
+                    function getStatusBadge(label, rawCode) {
+                        if (!label) return '<span class="badge-soft badge-soft-secondary">N/A</span>';
+                        const localizedLabel = formatOrderStatus(label);
+                        const code = (rawCode || label || '').toLowerCase();
+                        let badgeClass = 'badge-soft-info';
+                        if (code.includes('da_giao') || code.includes('hoan_thanh') || code.includes('success') || code.includes('thành công') || code.includes('da_thanh_toan')) {
+                            badgeClass = 'badge-soft-success';
+                        } else if (code.includes('cho') || code.includes('pending') || code.includes('chuan_bi') || code.includes('san_sang')) {
+                            badgeClass = 'badge-soft-warning';
+                        } else if (code.includes('huy') || code.includes('failed') || code.includes('cancel') || code.includes('tu_choi')) {
+                            badgeClass = 'badge-soft-danger';
+                        }
+                        return `<span class="badge-soft ${badgeClass}">${escapeHtml(localizedLabel)}</span>`;
+                    }
+
+                    if (headerBadgeEl) {
+                        headerBadgeEl.innerHTML = getStatusBadge(data.trangThai, data.trangThaiRaw);
+                    }
+
+                    // Items HTML & Subtotal
                     let itemsHtml = '';
                     let subtotal = 0;
                     (data.items || []).forEach(item => {
@@ -1015,26 +1189,26 @@
                         const imgPath = resolveImgPath(item.hinhAnh);
                         const hasDiscount = item.giaNiemYet && parseFloat(item.giaNiemYet) > parseFloat(item.giaBan);
                         const unitPriceHtml = hasDiscount
-                            ? `<span class="text-decoration-line-through text-muted small me-2">${new Intl.NumberFormat('vi-VN').format(item.giaNiemYet)} đ</span><br><span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`
+                            ? `<span class="text-decoration-line-through text-muted small me-1">${new Intl.NumberFormat('vi-VN').format(item.giaNiemYet)} đ</span><br><span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`
                             : `<span class="fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan)} đ</span>`;
 
                         const lineDiscountInfo = (item.tenDotGiamGia && item.phanTramGiam > 0)
-                            ? `<br><span class="badge bg-danger text-white mt-1" style="font-size: 10px;">${item.tenDotGiamGia} (-${item.phanTramGiam}%)</span>`
+                            ? `<br><span class="badge-soft badge-soft-danger mt-1">${escapeHtml(item.tenDotGiamGia)} (-${item.phanTramGiam}%)</span>`
                             : '';
 
                         itemsHtml += `
                         <tr>
-                            <td class="text-center" style="width: 90px;">
-                                <img src="${imgPath}" alt="Ảnh sản phẩm" class="img-thumbnail detail-product-img" onclick="showLargeImage('${imgPath}')">
+                            <td class="text-center">
+                                <img src="${imgPath}" alt="Ảnh sản phẩm" class="detail-product-thumb" onerror="this.src='/images/product9.jpg'" onclick="showLargeImage('${imgPath}')" title="Click để xem ảnh lớn">
                             </td>
                             <td>
-                                <strong>${item.tenSanPham || 'N/A'}</strong><br>
-                                <small class="text-muted">${item.thuocTinh || 'N/A'}</small>
+                                <div class="fw-bold text-dark mb-1">${escapeHtml(item.tenSanPham || 'N/A')}</div>
+                                <div class="text-muted small">${escapeHtml(item.thuocTinh || 'N/A')}</div>
                                 ${lineDiscountInfo}
                             </td>
-                            <td class="text-center">${item.soLuong}</td>
+                            <td class="text-center fw-bold">${item.soLuong}</td>
                             <td class="text-end">${unitPriceHtml}</td>
-                            <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
+                            <td class="text-end text-dark fw-bold">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
                         </tr>
                     `;
                     });
@@ -1042,83 +1216,225 @@
                     const isPosOrder = (data.maDonHang && (data.maDonHang.startsWith('HDSVN') || data.maDonHang.startsWith('HD-'))) ||
                         (data.diaChi === 'Bán tại quầy');
 
-                    let detailsContentHtml = `
-                    <div class="row g-3 mb-4" style="font-size: 13px;">
-                         <div class="col-md-6">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin khách hàng &amp; Vận chuyển</h6>
-                            <p class="mb-1"><strong>Họ tên:</strong> ${data.khachHang || 'N/A'}</p>
-                            <p class="mb-1"><strong>Số điện thoại:</strong> ${data.sdt || 'N/A'}</p>
-                            <p class="mb-1"><strong>Địa chỉ nhận:</strong> ${data.diaChi || 'N/A'}</p>
-                            <p class="mb-1"><strong>Hình thức vận chuyển:</strong> ${data.donViVanChuyen === 'Mua tại quầy' ? 'Tại quầy' : (data.donViVanChuyen || 'N/A')}</p>
-                            ${data.ghnOrderCode ? `
-                                <p class="mb-1 text-success">
-                                    <strong>Mã vận đơn GHN:</strong> <span class="fw-bold me-2">${data.ghnOrderCode}</span>
-                                    ${data.ghnStatusLabel ? `<span class="badge bg-secondary me-2" style="font-size: 11px;">${data.ghnStatusLabel}</span>` : ''}
-                                    <button type="button" class="btn btn-xs btn-outline-success py-0 px-2 shadow-sm" style="font-size: 11px;" onclick="syncGhnStatus(${data.id})" title="Đồng bộ ngay trạng thái mới nhất từ GHN">
-                                        <i class="fas fa-sync-alt me-1"></i>Đồng bộ GHN
-                                    </button>
-                                </p>
-                            ` : (data.donViVanChuyen && (data.donViVanChuyen.toUpperCase().includes('GHN') || data.donViVanChuyen.toUpperCase().includes('GIAO HÀNG NHANH')) ? `
-                                <div class="mt-2 p-2 border border-warning rounded bg-warning-subtle" id="ghn-push-box-${data.id}" style="border-width: 1px !important;">
-                                    <p class="mb-1 text-warning-emphasis fw-bold" style="font-size: 12px;"><i class="fas fa-exclamation-triangle me-1"></i>Chưa gửi đơn lên GHN Sandbox</p>
-                                    <button type="button" class="btn btn-xs btn-warning text-dark fw-bold py-1 px-2" style="font-size: 11px;" onclick="pushOrderToGhn(${data.id})">
-                                        <i class="fas fa-shipping-fast me-1"></i>Gửi đơn sang GHN
-                                    </button>
-                                    <div id="ghn-push-error-${data.id}" class="text-danger mt-2 small" style="display:none; white-space: pre-line; border-top: 1px dashed rgba(220,53,69,0.2); padding-top: 5px; font-size: 11px; text-align: left; line-height: 1.4;"></div>
-                                </div>
-                            ` : '')}
-                            ${data.ghnReturnOrderCode ? `
-                                <p class="mb-1 text-primary">
-                                    <strong>Mã GHN Thu Hồi:</strong> <span class="fw-bold me-2 text-primary">${data.ghnReturnOrderCode}</span>
-                                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 shadow-sm" style="font-size: 11px;" onclick="syncGhnStatus(${data.id})" title="Đồng bộ ngay trạng thái GHN Thu Hồi">
-                                        <i class="fas fa-sync-alt me-1"></i>Đồng bộ GHN
-                                    </button>
-                                </p>
-                            ` : ''}
-                            <p class="mb-1"><strong>Trạng thái đơn hàng:</strong> <span class="badge bg-info">${data.trangThai || 'N/A'}</span></p>
-                            ${data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' ? `
-                                <p class="mb-1 text-danger">
-                                    <strong>Lý do hủy đơn hàng:</strong> 
-                                    <span class="fw-bold">${extractCancelReason(data.ghiChu)}</span>
-                                </p>
-                            ` : ''}
-                            ${data.trangThaiHoanHang ? `
-                                <div class="mt-2 pt-2 border-top">
-                                    <p class="mb-1"><strong>Trạng thái trả hàng:</strong> <span class="badge bg-warning text-dark">${data.trangThaiHoanHangLabel || 'N/A'}</span></p>
-                                    ${data.ngayXacNhanHoanHang ? `<p class="mb-1"><strong>Ngày xác nhận hoàn kho:</strong> ${data.ngayXacNhanHoanHang}</p>` : ''}
-                                    ${data.nhanVienXacNhan ? `<p class="mb-1"><strong>Nhân viên hoàn kho:</strong> ${data.nhanVienXacNhan}</p>` : ''}
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Thông tin thanh toán</h6>
-                            <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${data.paymentMethod || 'N/A'}</p>
-                            <p class="mb-1"><strong>Trạng thái thanh toán:</strong> <span class="badge ${data.paymentStatusBadgeClass || 'bg-secondary'}">${data.paymentStatusLabel || data.paymentStatus || 'Không xác định'}</span></p>
+                    let paymentBadgeClass = 'badge-soft-secondary';
+                    if (data.paymentStatusBadgeClass) {
+                        if (data.paymentStatusBadgeClass.includes('success')) paymentBadgeClass = 'badge-soft-success';
+                        else if (data.paymentStatusBadgeClass.includes('warning')) paymentBadgeClass = 'badge-soft-warning';
+                        else if (data.paymentStatusBadgeClass.includes('danger')) paymentBadgeClass = 'badge-soft-danger';
+                        else if (data.paymentStatusBadgeClass.includes('info')) paymentBadgeClass = 'badge-soft-info';
+                    }
 
-                            ${data.maGiaoDich ? `<p class="mb-1"><strong>Mã giao dịch:</strong> <code class="text-dark">${data.maGiaoDich}</code></p>` : ''}
-                            ${data.thoiGianThanhToan ? `<p class="mb-1"><strong>Thời gian thanh toán:</strong> ${data.thoiGianThanhToan}</p>` : ''}
-                            ${data.transactionId ? `<p class="mb-1"><strong>Transaction ID:</strong> <code class="text-dark">${data.transactionId}</code></p>` : ''}
-                            ${data.gatewayResponse ? `<p class="mb-1"><strong>Ghi chú thanh toán:</strong> <span class="text-muted" style="font-size: 0.82rem;">${data.gatewayResponse}</span></p>` : ''}
-                            ${data.refundStatus ? `
-                                <div class="mt-2 pt-2 border-top">
-                                    <p class="mb-1"><strong>Trạng thái hoàn tiền:</strong> <span class="badge bg-dark text-white">${data.refundStatusLabel || 'N/A'}</span></p>
-                                    ${data.refundTime ? `<p class="mb-1"><strong>Ngày xác nhận hoàn tiền:</strong> ${data.refundTime}</p>` : ''}
-                                    ${data.refundConfirmedBy ? `<p class="mb-1"><strong>Nhân viên hoàn tiền:</strong> ${data.refundConfirmedBy}</p>` : ''}
-                                </div>
-                            ` : ''}
+                    const formattedCreatedDate = formatDateTime(data.ngayTao);
+                    const formattedPaymentTime = formatDateTime(data.thoiGianThanhToan);
+                    const formattedPaymentMethod = escapeHtml(data.paymentMethod || 'Chưa cập nhật');
+                    const formattedPaymentStatusLabel = escapeHtml(formatPaymentStatus(data.paymentStatusLabel || data.paymentStatus));
+
+                    let detailsContentHtml = `
+                    <!-- Quick Summary Grid -->
+                    <div class="order-summary-grid">
+                        <div class="order-summary-card">
+                            <span class="order-summary-label">Ngày tạo đơn</span>
+                            <div class="order-summary-value"><i class="far fa-calendar-alt text-muted me-1"></i>${formattedCreatedDate}</div>
+                        </div>
+                        <div class="order-summary-card">
+                            <span class="order-summary-label">Tổng thanh toán</span>
+                            <div class="order-summary-value text-primary" style="color: var(--admin-primary) !important;">
+                                ${new Intl.NumberFormat('vi-VN').format(data.tongTien || 0)} đ
+                            </div>
+                        </div>
+                        <div class="order-summary-card">
+                            <span class="order-summary-label">Phương thức thanh toán</span>
+                            <div class="order-summary-value">
+                                <span>${formattedPaymentMethod}</span>
+                            </div>
+                        </div>
+                        <div class="order-summary-card">
+                            <span class="order-summary-label">Trạng thái đơn</span>
+                            <div class="order-summary-value">
+                                ${getStatusBadge(data.trangThai, data.trangThaiRaw)}
+                            </div>
                         </div>
                     </div>
-                    
+
+                    <!-- 2 Columns Info Grid -->
+                    <div class="row g-3 mb-3">
+                        <!-- Column 1: Customer & Shipping -->
+                        <div class="col-md-6">
+                            <div class="order-detail-card h-100 mb-0">
+                                <div class="order-detail-card-header">
+                                    <h6 class="order-detail-card-title"><i class="fas fa-truck-fast me-1"></i> Khách hàng &amp; Vận chuyển</h6>
+                                </div>
+                                <div class="order-detail-fields">
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Họ tên khách hàng</span>
+                                        <span class="order-detail-value fw-bold">${escapeHtml(data.khachHang || 'Khách lẻ')}</span>
+                                    </div>
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Số điện thoại</span>
+                                        <span class="order-detail-value">${escapeHtml(data.sdt || 'Chưa cập nhật')}</span>
+                                    </div>
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Địa chỉ nhận hàng</span>
+                                        <span class="order-detail-value" style="font-weight: 500; line-height: 1.5;">${escapeHtml(data.diaChi || 'Chưa cập nhật')}</span>
+                                    </div>
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Hình thức giao hàng</span>
+                                        <span class="order-detail-value">${data.donViVanChuyen === 'Mua tại quầy' ? 'Tại quầy' : escapeHtml(data.donViVanChuyen || 'Chưa cập nhật')}</span>
+                                    </div>
+
+                                    ${data.ghnOrderCode ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Mã vận đơn GHN</span>
+                                        <span class="order-detail-value">
+                                            <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnOrderCode)}</span>
+                                            <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnOrderCode)}', this)" title="Sao chép mã GHN" aria-label="Sao chép mã GHN"><i class="far fa-copy"></i></button>
+                                            ${data.ghnStatusLabel ? `<span class="badge-soft badge-soft-info me-1">${escapeHtml(data.ghnStatusLabel)}</span>` : ''}
+                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this)" title="Đồng bộ ngay từ GHN" aria-label="Đồng bộ ngay từ GHN">
+                                                <i class="fas fa-sync-alt me-1"></i>Đồng bộ
+                                            </button>
+                                        </span>
+                                    </div>
+                                    ` : (data.donViVanChuyen && (data.donViVanChuyen.toUpperCase().includes('GHN') || data.donViVanChuyen.toUpperCase().includes('GIAO HÀNG NHANH')) ? `
+                                    <div class="mt-2 p-2 border border-warning rounded bg-warning-subtle" id="ghn-push-box-${data.id}">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="text-warning-emphasis fw-bold small"><i class="fas fa-exclamation-triangle me-1"></i>Chưa gửi đơn lên GHN Sandbox</span>
+                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-warning text-dark fw-bold py-1 px-2" style="font-size: 0.75rem;" onclick="pushOrderToGhn(${data.id}, this)" title="Gửi đơn sang GHN" aria-label="Gửi đơn sang GHN">
+                                                <i class="fas fa-shipping-fast me-1"></i>Gửi đơn sang GHN
+                                            </button>
+                                        </div>
+                                        <div id="ghn-push-error-${data.id}" class="text-danger mt-2 small" style="display:none; white-space: pre-line; border-top: 1px dashed rgba(220,53,69,0.2); padding-top: 5px; font-size: 11px;"></div>
+                                    </div>
+                                    ` : '')}
+
+                                    ${data.ghnReturnOrderCode ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Mã GHN Thu Hồi</span>
+                                        <span class="order-detail-value">
+                                            <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnReturnOrderCode)}</span>
+                                            <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnReturnOrderCode)}', this)" title="Sao chép mã thu hồi" aria-label="Sao chép mã thu hồi"><i class="far fa-copy"></i></button>
+                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this)" title="Đồng bộ GHN thu hồi" aria-label="Đồng bộ GHN thu hồi">
+                                                <i class="fas fa-sync-alt me-1"></i>Đồng bộ
+                                            </button>
+                                        </span>
+                                    </div>
+                                    ` : ''}
+
+                                    ${data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' ? `
+                                    <div class="p-2 border border-danger-subtle rounded bg-danger-subtle text-danger mt-2 small">
+                                        <strong><i class="fas fa-info-circle me-1"></i>Lý do hủy đơn:</strong> ${escapeHtml(extractCancelReason(data.ghiChu))}
+                                    </div>
+                                    ` : ''}
+
+                                    ${data.trangThaiHoanHang ? `
+                                    <div class="pt-2 border-top mt-2">
+                                        <div class="order-detail-field">
+                                            <span class="order-detail-label">Trạng thái trả hàng</span>
+                                            <span class="order-detail-value"><span class="badge-soft badge-soft-warning">${escapeHtml(formatReturnStatus(data.trangThaiHoanHang))}</span></span>
+                                        </div>
+                                        ${data.ngayXacNhanHoanHang ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Ngày hoàn kho</span>
+                                            <span class="order-detail-value">${formatDateTime(data.ngayXacNhanHoanHang)}</span>
+                                        </div>` : ''}
+                                        ${data.nhanVienXacNhan ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">NV hoàn kho</span>
+                                            <span class="order-detail-value">${escapeHtml(data.nhanVienXacNhan)}</span>
+                                        </div>` : ''}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Payment -->
+                        <div class="col-md-6">
+                            <div class="order-detail-card h-100 mb-0">
+                                <div class="order-detail-card-header">
+                                    <h6 class="order-detail-card-title"><i class="far fa-credit-card me-1"></i> Thông tin thanh toán</h6>
+                                </div>
+                                <div class="order-detail-fields">
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Phương thức thanh toán</span>
+                                        <span class="order-detail-value fw-bold">${formattedPaymentMethod}</span>
+                                    </div>
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Trạng thái thanh toán</span>
+                                        <span class="order-detail-value">
+                                            <span class="badge-soft ${paymentBadgeClass}">
+                                                ${formattedPaymentStatusLabel}
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    ${data.maGiaoDich ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Mã giao dịch</span>
+                                        <span class="order-detail-value">
+                                            <span class="order-detail-code-inline me-1">${escapeHtml(data.maGiaoDich)}</span>
+                                            <button type="button" class="btn-copy-code" onclick="copyToClipboard('${escapeHtml(data.maGiaoDich)}', this)" title="Sao chép mã giao dịch" aria-label="Sao chép mã giao dịch"><i class="far fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    ` : ''}
+
+                                    ${data.transactionId ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Transaction ID</span>
+                                        <span class="order-detail-value">
+                                            <span class="order-detail-code-inline me-1">${escapeHtml(data.transactionId)}</span>
+                                            <button type="button" class="btn-copy-code" onclick="copyToClipboard('${escapeHtml(data.transactionId)}', this)" title="Sao chép transaction ID" aria-label="Sao chép transaction ID"><i class="far fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    ` : ''}
+
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Thời gian thanh toán</span>
+                                        <span class="order-detail-value">${formattedPaymentTime}</span>
+                                    </div>
+
+                                    ${data.gatewayResponse ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Ghi chú thanh toán</span>
+                                        <span class="order-detail-value text-muted font-monospace small">${escapeHtml(data.gatewayResponse)}</span>
+                                    </div>
+                                    ` : ''}
+
+                                    ${data.refundStatus ? `
+                                    <div class="pt-2 border-top mt-2">
+                                        <div class="order-detail-field">
+                                            <span class="order-detail-label">Trạng thái hoàn tiền</span>
+                                            <span class="order-detail-value"><span class="badge-soft badge-soft-info">${escapeHtml(formatPaymentStatus(data.refundStatusLabel || data.refundStatus))}</span></span>
+                                        </div>
+                                        ${data.refundTime ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Ngày hoàn tiền</span>
+                                            <span class="order-detail-value">${formatDateTime(data.refundTime)}</span>
+                                        </div>` : ''}
+                                        ${data.refundConfirmedBy ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">NV xác nhận hoàn</span>
+                                            <span class="order-detail-value">${escapeHtml(data.refundConfirmedBy)}</span>
+                                        </div>` : ''}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Related SePay Transactions Table -->
                     ${data.transactions && data.transactions.length > 0 ? `
-                    <div class="mb-4">
-                        <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Giao dịch SePay liên quan</h6>
+                    <div class="order-detail-card mb-3">
+                        <div class="order-detail-card-header">
+                            <h6 class="order-detail-card-title"><i class="fas fa-university me-1"></i> Giao dịch SePay liên quan</h6>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-bordered table-sm align-middle" style="font-size: 12px; margin-bottom: 0;">
-                                <thead class="table-dark">
+                            <table class="order-detail-table">
+                                <thead>
                                     <tr>
                                         <th>Mã Giao Dịch</th>
                                         <th class="text-end">Số tiền</th>
-                                        <th>Cổng</th>
+                                        <th>Cổng / Ngân hàng</th>
                                         <th>Trạng thái</th>
                                         <th>Thời gian nhận</th>
                                     </tr>
@@ -1126,13 +1442,16 @@
                                 <tbody>
                                     ${data.transactions.map(tx => `
                                         <tr>
-                                            <td><code class="text-dark">${tx.transactionId}</code></td>
-                                            <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(tx.amount)} đ</td>
-                                            <td>${tx.gateway}</td>
                                             <td>
-                                                <span class="badge ${tx.status === 'success' ? 'bg-success' : 'bg-warning text-dark'}">${tx.status}</span>
+                                                <span class="order-detail-code-inline me-1">${escapeHtml(tx.transactionId)}</span>
+                                                <button type="button" class="btn-copy-code" onclick="copyToClipboard('${escapeHtml(tx.transactionId)}', this)" title="Sao chép mã giao dịch" aria-label="Sao chép mã giao dịch"><i class="far fa-copy"></i></button>
                                             </td>
-                                            <td class="text-muted">${tx.createdAt}</td>
+                                            <td class="text-end fw-bold text-success">${new Intl.NumberFormat('vi-VN').format(tx.amount)} đ</td>
+                                            <td><span class="badge-soft badge-soft-secondary">${escapeHtml(tx.gateway || 'SePay')}</span></td>
+                                            <td>
+                                                <span class="badge-soft ${tx.status === 'success' ? 'badge-soft-success' : 'badge-soft-warning'}">${escapeHtml(formatTransactionStatus(tx.status))}</span>
+                                            </td>
+                                            <td class="text-muted small">${formatDateTime(tx.createdAt)}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -1141,40 +1460,49 @@
                     </div>
                     ` : ''}
 
-                    <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px;">Danh sách sản phẩm</h6>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped align-middle mb-0" style="font-size: 13px;">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th class="text-center" style="width: 90px;">Ảnh</th>
-                                    <th>Sản phẩm</th>
-                                    <th class="text-center" style="width: 80px;">SL</th>
-                                    <th class="text-end" style="width: 120px;">Đơn giá</th>
-                                    <th class="text-end" style="width: 140px;">Thành tiền</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsHtml || '<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>'}
-                                <tr class="table-light">
-                                    <td colspan="4" class="text-end fw-bold">Tạm tính (sau giảm SP):</td>
-                                    <td class="text-end fw-bold">${new Intl.NumberFormat('vi-VN').format(subtotal)} đ</td>
-                                </tr>
-                                ${data.soTienGiamVoucher > 0 ? `
-                                <tr class="table-light">
-                                    <td colspan="4" class="text-end fw-bold text-success">Giảm giá Voucher (${data.maVoucherApDung || 'N/A'}):</td>
-                                    <td class="text-end text-success fw-bold">-${new Intl.NumberFormat('vi-VN').format(data.soTienGiamVoucher)} đ</td>
-                                </tr>
-                                ` : ''}
-                                <tr class="table-light">
-                                    <td colspan="4" class="text-end fw-bold">Phí vận chuyển:</td>
-                                    <td class="text-end text-danger fw-bold">${new Intl.NumberFormat('vi-VN').format(data.phiVanChuyen)} đ</td>
-                                </tr>
-                                <tr class="table-light">
-                                    <td colspan="4" class="text-end fw-bold text-primary" style="font-size: 15px;">Tổng cộng:</td>
-                                    <td class="text-end text-primary fw-bold" style="font-size: 15px;">${new Intl.NumberFormat('vi-VN').format(data.tongTien)} đ</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Product List & Total Summary Section -->
+                    <div class="order-detail-card mb-0">
+                        <div class="order-detail-card-header">
+                            <h6 class="order-detail-card-title"><i class="fas fa-box-open me-1"></i> Danh sách sản phẩm</h6>
+                        </div>
+                        <div class="table-responsive mb-3">
+                            <table class="order-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width: 80px;">Ảnh</th>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-center" style="width: 80px;">Số lượng</th>
+                                        <th class="text-end" style="width: 140px;">Đơn giá</th>
+                                        <th class="text-end" style="width: 150px;">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHtml || '<tr><td colspan="5" class="text-center text-muted py-4">Không có sản phẩm trong đơn hàng</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Order Total Summary Box -->
+                        <div class="order-total-summary">
+                            <div class="order-total-row">
+                                <span>Tạm tính (sau giảm SP):</span>
+                                <span class="order-total-val">${new Intl.NumberFormat('vi-VN').format(subtotal)} đ</span>
+                            </div>
+                            ${data.soTienGiamVoucher > 0 ? `
+                            <div class="order-total-row text-success">
+                                <span>Giảm giá Voucher (${escapeHtml(data.maVoucherApDung || 'Voucher')}):</span>
+                                <span class="order-total-val text-success">-${new Intl.NumberFormat('vi-VN').format(data.soTienGiamVoucher)} đ</span>
+                            </div>
+                            ` : ''}
+                            <div class="order-total-row">
+                                <span>Phí vận chuyển:</span>
+                                <span class="order-total-val">${new Intl.NumberFormat('vi-VN').format(data.phiVanChuyen || 0)} đ</span>
+                            </div>
+                            <div class="order-total-grand">
+                                <span>TỔNG THANH TOÁN:</span>
+                                <span>${new Intl.NumberFormat('vi-VN').format(data.tongTien || 0)} đ</span>
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -1184,8 +1512,8 @@
                             posItemsHtml += `
                             <tr>
                                 <td style="padding: 4px 0; vertical-align: top;">
-                                    <span>${item.tenSanPham || 'N/A'}</span><br>
-                                    <span class="item-details" style="font-size: 10px; color: #555;">${item.thuocTinh || 'N/A'}</span>
+                                    <span>${escapeHtml(item.tenSanPham || 'N/A')}</span><br>
+                                    <span class="item-details" style="font-size: 10px; color: #555;">${escapeHtml(item.thuocTinh || 'N/A')}</span>
                                 </td>
                                 <td style="padding: 4px 0; text-align: center; vertical-align: top;">${item.soLuong}</td>
                                 <td style="padding: 4px 0; text-align: right; vertical-align: top;">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
@@ -1202,16 +1530,16 @@
                                 <div style="font-weight: bold; font-size: 12px; margin-top: 10px; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; letter-spacing: 1px;">HÓA ĐƠN BÁN HÀNG</div>
                             </div>
                             <div class="mb-2" style="line-height: 1.4;">
-                                <div><strong>Mã HĐ:</strong> ${data.maDonHang}</div>
-                                <div><strong>Thời gian tạo:</strong> ${data.ngayTao}</div>
-                                <div><strong>Khách hàng:</strong> ${data.khachHang || 'Khách lẻ'}</div>
-                                <div><strong>Số ĐT khách:</strong> ${data.sdt || 'N/A'}</div>
+                                <div><strong>Mã HĐ:</strong> ${escapeHtml(data.maDonHang)}</div>
+                                <div><strong>Thời gian tạo:</strong> ${formattedCreatedDate}</div>
+                                <div><strong>Khách hàng:</strong> ${escapeHtml(data.khachHang || 'Khách lẻ')}</div>
+                                <div><strong>Số ĐT khách:</strong> ${escapeHtml(data.sdt || 'Chưa cập nhật')}</div>
                                 <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
-                                <div><strong>Thanh toán:</strong> ${data.paymentMethod}</div>
-                                <div><strong>Trạng thái:</strong> <span style="font-weight: bold; color: ${data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('success') ? '#198754' : (data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('warning') ? '#ff9800' : '#dc3545')}">${data.paymentStatusLabel || data.paymentStatus || 'Không xác định'}</span></div>
-                                ${data.maGiaoDich ? `<div><strong>Mã giao dịch:</strong> ${data.maGiaoDich}</div>` : ''}
-                                <div><strong>NV xác nhận:</strong> ${data.nguoiXacNhan || 'Nhân viên hệ thống'}</div>
-                                ${data.thoiGianXacNhan ? `<div><strong>Thời gian XN:</strong> ${data.thoiGianXacNhan}</div>` : ''}
+                                <div><strong>Thanh toán:</strong> ${formattedPaymentMethod}</div>
+                                <div><strong>Trạng thái:</strong> <span style="font-weight: bold; color: ${data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('success') ? '#198754' : (data.paymentStatusBadgeClass && data.paymentStatusBadgeClass.includes('warning') ? '#ff9800' : '#dc3545')}">${formattedPaymentStatusLabel}</span></div>
+                                ${data.maGiaoDich ? `<div><strong>Mã giao dịch:</strong> ${escapeHtml(data.maGiaoDich)}</div>` : ''}
+                                <div><strong>NV xác nhận:</strong> ${escapeHtml(data.nguoiXacNhan || 'Nhân viên hệ thống')}</div>
+                                ${data.thoiGianXacNhan ? `<div><strong>Thời gian XN:</strong> ${formatDateTime(data.thoiGianXacNhan)}</div>` : ''}
                             </div>
                             <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 5px;">
@@ -1250,7 +1578,7 @@
                                 <div style="margin-top: 3px; font-style: italic; color: #777;">Powered by SmashVN</div>
                             </div>
                             <div class="text-center mt-3">
-                                <button type="button" class="btn btn-sm btn-dark py-1 px-3 fw-bold" style="font-size: 10px;" onclick="window.open('/admin/pos/print/${data.id}', '_blank')">
+                                <button type="button" class="admin-btn admin-btn-secondary py-1 px-3 fw-bold" style="font-size: 11px;" onclick="window.open('/admin/pos/print/${data.id}', '_blank')" title="Mở trang in K80" aria-label="Mở trang in K80">
                                     <i class="fas fa-print me-1"></i> Mở Trang In K80
                                 </button>
                             </div>
@@ -1259,26 +1587,32 @@
 
                         body.innerHTML = `
                         <div class="row g-3">
-                            <div class="col-md-7">
+                            <div class="col-lg-7">
                                 ${detailsContentHtml}
                             </div>
-                            <div class="col-md-5 border-start">
-                                <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px;"><i class="fas fa-receipt me-1"></i>Hóa đơn in nhiệt (K80)</h6>
-                                ${receiptHtml}
+                            <div class="col-lg-5">
+                                <div class="order-detail-card h-100">
+                                    <div class="order-detail-card-header">
+                                        <h6 class="order-detail-card-title"><i class="fas fa-receipt me-1"></i> Hóa đơn in nhiệt (K80)</h6>
+                                    </div>
+                                    ${receiptHtml}
+                                </div>
                             </div>
                         </div>
                     `;
                     } else {
                         body.innerHTML = `
                         <div class="row g-3">
-                            <div class="col-md-12">
+                            <div class="col-12">
                                 ${detailsContentHtml}
                             </div>
                         </div>
                     `;
                     }
 
-                    let actionsHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>`;
+                    // Build Footer Actions
+                    let actionsLeftHtml = '';
+                    let actionsRightHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Đóng</button>`;
 
                     if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() !== 'da_ban_giao_ghn' && data.trangThaiRaw.toLowerCase() !== 'dang_giao' && data.trangThaiRaw.toLowerCase() !== 'da_giao' && data.trangThaiRaw.toLowerCase() !== 'hoan_thanh' && data.trangThaiRaw.toLowerCase() !== 'da_huy') {
                         let nextStatusLabel = '';
@@ -1296,36 +1630,36 @@
                         }
 
                         if (nextStatusLabel) {
-                            actionsHtml += `
+                            actionsRightHtml += `
                             <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
                                 <input type="hidden" name="_csrf" value="${csrfToken}" />
                                 <input type="hidden" name="idHoaDon" value="${data.id}" />
-                                 <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
-                                    <i class="fas fa-arrow-right me-1"></i> Tiếp theo
+                                <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
+                                    <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${nextStatusLabel})
                                 </button>
                             </form>
                         `;
                         }
 
                         if (data.trangThaiRaw.toLowerCase() === 'dang_giao') {
-                            actionsHtml += `
+                            actionsRightHtml += `
                             <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
                                 <input type="hidden" name="_csrf" value="${csrfToken}" />
                                 <input type="hidden" name="idHoaDon" value="${data.id}" />
                                 <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
                                 <input type="hidden" name="trangThai" value="da_giao" />
-                                 <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
+                                <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
                                     <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
                                 </button>
                             </form>
                         `;
                         }
 
-                        actionsHtml += `
+                        actionsRightHtml += `
                         <button type="button" class="admin-btn admin-btn-danger" 
                                 data-id="${data.id}" 
-                                data-code="${data.maDonHang || ('#' + data.id)}" 
-                                data-status="${data.trangThaiRaw}"
+                                data-code="${escapeHtml(data.maDonHang || ('#' + data.id))}" 
+                                data-status="${escapeHtml(data.trangThaiRaw)}"
                                 onclick="closeDetailsAndCancel(this)">
                             <i class="fas fa-times me-1"></i> Hủy đơn
                         </button>
@@ -1333,18 +1667,18 @@
                     }
 
                     if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' && data.paymentStatus === 'CHO_HOAN_TIEN') {
-                        actionsHtml += `
+                        actionsRightHtml += `
                         <form action="/admin/don-hang/approve-refund-ui" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
-                             <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
+                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này?')">
                                 <i class="fas fa-hand-holding-usd me-1"></i> Hoàn tiền
                             </button>
                         </form>
                         <form action="/admin/don-hang/reject-refund-ui" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
-                             <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
+                            <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền?')">
                                 <i class="fas fa-ban me-1"></i> Từ chối
                             </button>
                         </form>
@@ -1352,15 +1686,15 @@
                     }
 
                     if (data.trangThaiHoanHang === 'PENDING_APPROVAL' || data.trangThaiHoanHang === 'PENDING_RETURN') {
-                        actionsHtml += `
-                        <form action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-1">
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?')">
                                 <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng &amp; Tạo mã GHN
                             </button>
                         </form>
-                        <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-1">
+                        <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
@@ -1369,54 +1703,73 @@
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
-                        actionsHtml += `
-                        <div class="mb-2 text-primary small font-weight-bold">
-                            <i class="fas fa-shipping-fast me-1"></i> Đã tạo đơn thu hồi GHN: ${data.ghnReturnOrderCode || 'Đang cập nhật...'}
-                        </div>
-                        <form action="/admin/don-hang/cancel-return-pickup" method="post" class="d-inline-block m-1">
+                        actionsLeftHtml += `
+                        <span class="text-primary small fw-bold">
+                            <i class="fas fa-shipping-fast me-1"></i> GHN Thu Hồi: ${escapeHtml(data.ghnReturnOrderCode || 'Đang cập nhật...')}
+                        </span>
+                        `;
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/cancel-return-pickup" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận hủy vận đơn thu hồi (khi GHN chưa lấy hàng)?')">
+                            <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận hủy vận đơn thu hồi?')">
                                 <i class="fas fa-ban me-1"></i> Hủy vận đơn thu hồi
                             </button>
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'PICKED_UP' || data.trangThaiHoanHang === 'RETURNING') {
-                        actionsHtml += `
-                        <div class="alert alert-info py-2 px-3 m-1 d-inline-block">
-                            <i class="fas fa-lock me-1"></i> <strong>Khóa thao tác thủ công:</strong> Đơn hàng đã được bàn giao cho GHN (Mã: ${data.ghnReturnOrderCode || 'N/A'}). Trạng thái tự động cập nhật từ GHN.
-                        </div>
-                    `;
+                        actionsLeftHtml += `
+                        <span class="text-info small fw-bold">
+                            <i class="fas fa-lock me-1"></i> Đã giao GHN thu hồi (${escapeHtml(data.ghnReturnOrderCode || 'N/A')}) - Tự động đồng bộ
+                        </span>
+                        `;
                     } else if (data.trangThaiHoanHang === 'DELIVERED_TO_SHOP') {
-                        actionsHtml += `
-                        <form action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-1">
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về đến Shop, kiểm tra hàng và nhập kho cộng lại số lượng tồn kho?')">
-                                <i class="fas fa-boxes me-1"></i> Kiểm kiện &amp; Nhập kho sản phẩm
+                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận kiểm kiện &amp; nhập kho cộng lại số lượng tồn?')">
+                                <i class="fas fa-boxes me-1"></i> Kiểm kiện &amp; Nhập kho
                             </button>
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
-                        actionsHtml += `
-                        <button type="button" class="admin-btn admin-btn-primary m-1" onclick="moModalConfirmRefund(${data.id}, '${data.maDonHang || ('#' + data.id)}', ${data.tongTien || 0})">
-                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền cho Khách
+                        actionsRightHtml += `
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền
                         </button>
                     `;
                     } else if (data.trangThaiHoanHang === 'REFUNDED') {
-                        actionsHtml += `
-                        <span class="admin-status admin-status-success">
+                        actionsLeftHtml += `
+                        <span class="badge-soft badge-soft-success">
                             <i class="fas fa-check-double me-1"></i> Đã hoàn tất Trả hàng &amp; Hoàn tiền
                         </span>
                     `;
                     }
 
-                    footer.innerHTML = actionsHtml;
+                    footer.innerHTML = `
+                        <div class="order-detail-footer-info">
+                            ${actionsLeftHtml}
+                        </div>
+                        <div class="order-detail-footer-actions">
+                            ${actionsRightHtml}
+                        </div>
+                    `;
                 })
                 .catch(err => {
-                    body.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi khi tải chi tiết đơn hàng: ${err.message}</div>`;
+                    console.error('Order Detail Error:', err);
+                    body.innerHTML = `
+                        <div class="order-detail-card text-center py-5 my-3" style="border-color: var(--admin-danger);">
+                            <div class="text-danger mb-3" style="font-size: 2.5rem;"><i class="fas fa-exclamation-triangle"></i></div>
+                            <h5 class="fw-bold text-danger mb-2">Không thể tải chi tiết đơn hàng</h5>
+                            <p class="text-muted mb-4" style="max-width: 480px; margin: 0 auto;">${escapeHtml(err.message || 'Lỗi không xác định khi kết nối với máy chủ')}</p>
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="openOrderDetailModal('${orderId}')">
+                                <i class="fas fa-redo me-1"></i> Thử lại
+                            </button>
+                        </div>
+                    `;
                 });
-        }
+        };
 
         function showPayloadModal(btn) {
             const rawJson = btn.getAttribute('data-payload');
@@ -1579,7 +1932,13 @@
                 });
         };
 
-        window.syncGhnStatus = function (orderId) {
+        window.syncGhnStatus = function (orderId, btn) {
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+            }
+
             const csrfMeta = document.querySelector('meta[name="_csrf"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
@@ -1621,6 +1980,12 @@
                         icon: 'error',
                         confirmButtonText: 'Đóng'
                     });
+                })
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
                 });
         };
 
@@ -1632,6 +1997,63 @@
             var modalEl = document.getElementById('modalConfirmRefund');
             var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
             myModal.show();
+        };
+
+        window.copyToClipboard = function (text, el) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(function () {
+                const icon = el ? (el.querySelector ? (el.querySelector('i') || el) : el) : null;
+                let oldClass = '';
+                if (icon) {
+                    oldClass = icon.className;
+                    icon.className = 'fas fa-check text-success';
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: false
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Đã sao chép: ' + text
+                    });
+                }
+
+                if (icon && oldClass) {
+                    setTimeout(function () {
+                        icon.className = oldClass;
+                    }, 1500);
+                }
+            }).catch(function (err) {
+                console.error('Lỗi khi sao chép:', err);
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    if (typeof Swal !== 'undefined') {
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: false
+                        });
+                        Toast.fire({
+                            icon: 'success',
+                            title: 'Đã sao chép: ' + text
+                        });
+                    }
+                } catch (e) {
+                    console.error('Fallback copy failed', e);
+                }
+                document.body.removeChild(textArea);
+            });
         };
     </script>
 

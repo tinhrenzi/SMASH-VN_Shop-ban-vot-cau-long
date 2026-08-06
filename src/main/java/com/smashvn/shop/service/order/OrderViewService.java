@@ -84,6 +84,8 @@ public class OrderViewService {
                 orderMap.put("total", hd.getTongTien());
                 orderMap.put("paymentMethod", hd.getPaymentMethod());
                 orderMap.put("maDonHang", hd.getMaDonHang());
+                orderMap.put("ghnOrderCode", hd.getGhnOrderCode());
+                orderMap.put("ghnReturnOrderCode", resolveGhnReturnOrderCode(hd.getId(), hd));
 
                 List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
                 List<Map<String, Object>> itemMaps = new ArrayList<>();
@@ -1698,6 +1700,7 @@ public class OrderViewService {
         String ghnReturnCode = ghnService.createReturnShippingOrder(hd, items);
 
         hd.setGhnReturnOrderCode(ghnReturnCode);
+        hd.setGhnStatus("waiting_to_return");
         hd.setTrangThaiHoanHang(ReturnStatus.WAITING_FOR_PICKUP);
         hoaDonRepository.save(hd);
 
