@@ -54,6 +54,7 @@ public class OrderViewService {
     private final NhanVienRepository nhanVienRepository;
     private final com.smashvn.shop.repository.ThongBaoRepository thongBaoRepository;
     private final com.smashvn.shop.service.api.GhnService ghnService;
+    private final com.smashvn.shop.service.api.GhnStatusMapper ghnStatusMapper;
 
     @Value("${app.admin.emails}")
     private String adminEmailsConfig;
@@ -199,6 +200,8 @@ public class OrderViewService {
         map.put("maGiaoDich", hd.getMaGiaoDich());
         map.put("transactionId", hd.getTransactionId());
         map.put("ghnOrderCode", hd.getGhnOrderCode());
+        map.put("ghnStatus", hd.getGhnStatus());
+        map.put("ghnStatusLabel", ghnStatusMapper.getGhnStatusLabel(hd.getGhnStatus()));
 
         map.put("soTienGiamVoucher", hd.getSoTienGiamVoucher() != null ? hd.getSoTienGiamVoucher() : BigDecimal.ZERO);
         map.put("maVoucherApDung", hd.getMaVoucherApDung() != null ? hd.getMaVoucherApDung() : "");

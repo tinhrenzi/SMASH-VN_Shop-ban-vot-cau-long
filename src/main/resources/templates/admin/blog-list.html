@@ -3,178 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Bài Viết & Blogs - Admin SmashVN</title>
+    <title>Quản Lý Bài Viết &amp; Blogs - Admin SmashVN</title>
     
+    <!-- Bootstrap 5.3.0 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Admin Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin-custom.css(v='2.1')}">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
+<body class="admin-body">
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div th:replace="~{admin/layout/sidebar :: sidebar('blog')}"></div>
+    <!-- Sidebar Layout Fragment -->
+    <div th:replace="~{admin/layout/sidebar :: sidebar('blog')}"></div>
+
+    <div class="admin-page">
+        <!-- Topbar Layout Fragment -->
+        <div th:replace="~{admin/layout/header :: header}"></div>
 
         <!-- Main Content -->
-        <main class="col-md-10 main-content">
-            <!-- Header -->
-            <div th:replace="~{admin/layout/header :: header}"></div>
+        <main class="admin-content">
+            <div class="container-fluid admin-container">
 
-            <!-- Toast / Alerts -->
-            <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
-                <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}">Thành công</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${warningMsg != null}" class="alert alert-warning alert-dismissible fade show border-start border-warning border-4 rounded-3 shadow-sm mb-4" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${warningMsg}">Cảnh báo</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
-                <i class="fas fa-times-circle me-2"></i><span th:text="${loi}">Lỗi</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="page-title"><i class="fas fa-newspaper text-brand me-2"></i>Quản Lý Bài Viết & Blogs</h2>
-                <a th:href="@{/admin/blog/add}" class="btn btn-brand text-white shadow-sm px-4 btn-add-blog">
-                    <i class="fas fa-plus-circle me-2"></i>Tạo Bài Viết Mới
-                </a>
-            </div>
-
-            <!-- Search & Filter Panel -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <form th:action="@{/admin/blog}" method="GET" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="q" class="form-label fw-semibold">Tìm kiếm</label>
-                            <input type="text" class="form-control" id="q" name="q" th:value="${query}" placeholder="Tiêu đề, tác giả, nội dung...">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="status" class="form-label fw-semibold">Trạng thái</label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="DRAFT" th:selected="${statusFilter == 'DRAFT'}">Nháp (DRAFT)</option>
-                                <option value="PUBLISHED" th:selected="${statusFilter == 'PUBLISHED'}">Đã xuất bản (PUBLISHED)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="category" class="form-label fw-semibold">Danh mục</label>
-                            <input type="text" class="form-control" id="category" name="category" th:value="${categoryFilter}" placeholder="Hướng Dẫn, Review...">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="author" class="form-label fw-semibold">Tác giả</label>
-                            <input type="text" class="form-control" id="author" name="author" th:value="${authorFilter}" placeholder="Tên tác giả...">
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end justify-content-between">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showDeleted" name="showDeleted" value="true" th:checked="${showDeleted}">
-                                <label class="form-check-label fw-semibold text-danger" for="showDeleted">
-                                    Hiện bài viết đã xóa
-                                </label>
-                            </div>
-                            <button type="submit" class="btn btn-dark px-4"><i class="fas fa-filter me-2"></i>Lọc</button>
-                        </div>
-
-                        <!-- Sorting configuration -->
-                        <div class="col-12 d-flex justify-content-start align-items-center gap-3 border-top pt-3">
-                            <span class="fw-semibold text-muted">Sắp xếp:</span>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="sortDir" id="sortDesc" value="desc" th:checked="${sortDir == 'desc'}">
-                                <label class="form-check-label" for="sortDesc">Mới nhất trước</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="sortDir" id="sortAsc" value="asc" th:checked="${sortDir == 'asc'}">
-                                <label class="form-check-label" for="sortAsc">Cũ nhất trước</label>
-                            </div>
-                            <input type="hidden" name="sortBy" value="publishDate">
-                        </div>
-                    </form>
+                <!-- Page Header -->
+                <div class="admin-page-header">
+                    <div>
+                        <h1 class="admin-page-title"><i class="fas fa-newspaper text-brand me-2"></i>Quản Lý Bài Viết &amp; Blogs</h1>
+                        <p class="admin-page-subtitle">Soạn thảo, quản lý bài viết tin tức, tư vấn và kiểm duyệt nội dung</p>
+                    </div>
+                    <div class="admin-toolbar">
+                        <a th:href="@{/admin/blog/add}" class="admin-btn admin-btn-primary btn-add-blog">
+                            <i class="fas fa-plus-circle me-1"></i>Tạo Bài Viết Mới
+                        </a>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Blog List Section -->
-            <div class="card border-0 shadow-sm mb-5">
-                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
-                    <span><i class="fas fa-list me-2 text-brand"></i>Danh Sách Bài Viết</span>
-                    <span class="badge bg-primary" th:text="${blogsPage.totalElements} + ' bài viết'"></span>
+                <!-- Alert Messages -->
+                <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}">Thành công</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width: 60px;" class="text-center">STT</th>
-                                    <th>Mã BV</th>
-                                    <th>Ảnh</th>
-                                    <th>Tiêu Đề</th>
-                                    <th>Danh Mục</th>
-                                    <th>Tác Giả</th>
-                                    <th>Ngày Đăng</th>
-                                    <th>Trạng Thái</th>
-                                    <th class="text-center">Hành Động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="blog, iterStat : ${blogsPage.content}" th:style="${blog.deleted ? 'background-color: #ffe6e6;' : ''}">
-                                    <td class="text-center" th:text="${blogsPage.number * blogsPage.size + iterStat.count}">1</td>
-                                    <td class="fw-bold text-dark" th:text="'#' + ${blog.id}">#1</td>
-                                    <td>
-                                        <img th:if="${blog.image != null}" 
-                                             th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" 
-                                             alt="Ảnh bìa" class="rounded" style="width: 60px; height: 45px; object-fit: cover;">
-                                        <div th:unless="${blog.image != null}" class="bg-secondary rounded text-center text-white d-flex align-items-center justify-content-center" style="width: 60px; height: 45px;">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-primary" th:text="${blog.title}">Tiêu đề bài viết</div>
-                                        <small class="text-muted d-block" th:text="${#strings.length(blog.summary) > 75 ? #strings.substring(blog.summary, 0, 75) + '...' : blog.summary}"></small>
-                                        <span th:if="${blog.deleted}" class="badge bg-danger">ĐÃ XÓA TẠM THỜI (Chờ xóa vĩnh viễn)</span>
-                                    </td>
-                                    <td th:text="${blog.category}">Hướng dẫn</td>
-                                    <td>
-                                        <span th:text="${blog.author}">Nguyễn Thế Vinh</span>
-                                        <small class="text-muted d-block" th:if="${blog.emailNguoiDang != null}" th:text="'(đăng bởi: ' + ${blog.emailNguoiDang} + ')'"></small>
-                                    </td>
+                <div th:if="${warningMsg != null}" class="alert alert-warning alert-dismissible fade show border-start border-warning border-4 rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${warningMsg}">Cảnh báo</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-times-circle me-2"></i><span th:text="${loi}">Lỗi</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
 
-                                    <td th:text="${blog.publishDate}">17/06/2026</td>
-                                    <td>
-                                        <span th:if="${blog.status == 'DRAFT'}" class="badge bg-warning text-dark px-2.5 py-1.5"><i class="fas fa-edit me-1"></i>Bản Nháp</span>
-                                        <span th:if="${blog.status == 'PUBLISHED'}" class="badge bg-success text-white px-2.5 py-1.5"><i class="fas fa-globe me-1"></i>Đã Xuất Bản</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- Preview -->
-                                        <a th:href="@{/admin/blog/preview/{id}(id=${blog.id})}" target="_blank" class="btn btn-sm btn-outline-info px-2 btn-preview-blog" title="Xem trước">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <!-- Edit -->
-                                        <a th:href="@{/admin/blog/edit/{id}(id=${blog.id})}" class="btn btn-sm btn-outline-primary px-2 ms-1 btn-edit-blog" title="Chỉnh sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <!-- Publish/Unpublish Toggle (QL only) -->
-                                        <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/publish/{id}(id=${blog.id})}" method="POST" style="display: inline;">
-                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                            <button type="submit" class="btn btn-sm px-2 ms-1" 
-                                                    th:classappend="${blog.status == 'DRAFT' ? 'btn-outline-success' : 'btn-outline-warning'}"
-                                                    th:title="${blog.status == 'DRAFT' ? 'Xuất bản' : 'Hủy xuất bản'}">
-                                                <i th:class="${blog.status == 'DRAFT' ? 'fas fa-upload' : 'fas fa-arrow-down'}"></i>
-                                            </button>
-                                        </form>
-                                        <!-- Soft Delete (QL only) -->
-                                        <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/delete/{id}(id=${blog.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn XÓA bài viết này? Bài viết sẽ được lưu trữ 90 ngày trước khi bị xóa vĩnh viễn.');">
-                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 ms-1" title="Xóa tạm thời">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <tr th:if="${blogsPage.content.isEmpty()}">
-                                    <td colspan="9" class="text-center text-muted py-4">Không tìm thấy bài viết nào phù hợp.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- Search & Filter Card -->
+                <div class="admin-card mb-4">
+                    <div class="admin-card-body">
+                        <form th:action="@{/admin/blog}" method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="q" class="admin-form-label">Tìm kiếm</label>
+                                <input type="text" class="admin-form-control form-control" id="q" name="q" th:value="${query}" placeholder="Tiêu đề, tác giả, nội dung...">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="status" class="admin-form-label">Trạng thái</label>
+                                <select class="form-select admin-form-control" id="status" name="status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="DRAFT" th:selected="${statusFilter == 'DRAFT'}">Nháp (DRAFT)</option>
+                                    <option value="PUBLISHED" th:selected="${statusFilter == 'PUBLISHED'}">Đã xuất bản (PUBLISHED)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="category" class="admin-form-label">Danh mục</label>
+                                <input type="text" class="admin-form-control form-control" id="category" name="category" th:value="${categoryFilter}" placeholder="Hướng Dẫn, Review...">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="author" class="admin-form-label">Tác giả</label>
+                                <input type="text" class="admin-form-control form-control" id="author" name="author" th:value="${authorFilter}" placeholder="Tên tác giả...">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end justify-content-between">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="showDeleted" name="showDeleted" value="true" th:checked="${showDeleted}">
+                                    <label class="form-check-label fw-semibold text-danger" for="showDeleted">
+                                        Hiện bài viết đã xóa
+                                    </label>
+                                </div>
+                                <button type="submit" class="admin-btn admin-btn-primary px-4"><i class="fas fa-filter me-1"></i>Lọc</button>
+                            </div>
+
+                            <div class="col-12 d-flex justify-content-start align-items-center gap-3 border-top pt-3">
+                                <span class="fw-semibold text-muted">Sắp xếp:</span>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sortDir" id="sortDesc" value="desc" th:checked="${sortDir == 'desc'}">
+                                    <label class="form-check-label" for="sortDesc">Mới nhất trước</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sortDir" id="sortAsc" value="asc" th:checked="${sortDir == 'asc'}">
+                                    <label class="form-check-label" for="sortAsc">Cũ nhất trước</label>
+                                </div>
+                                <input type="hidden" name="sortBy" value="publishDate">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Blog List Card -->
+                <div class="admin-card mb-5">
+                    <div class="admin-card-header">
+                        <h5 class="admin-card-title"><i class="fas fa-list text-primary me-2"></i>Danh Sách Bài Viết</h5>
+                        <span class="admin-status admin-status-info" th:text="${blogsPage.totalElements} + ' bài viết'"></span>
+                    </div>
+                    <div class="admin-card-body p-0">
+                        <div class="admin-table-wrapper">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;" class="text-center">STT</th>
+                                        <th>Ảnh</th>
+                                        <th>Tiêu Đề</th>
+                                        <th>Danh Mục</th>
+                                        <th>Tác Giả</th>
+                                        <th>Ngày Đăng</th>
+                                        <th>Trạng Thái</th>
+                                        <th class="text-center">Hành Động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="blog, iterStat : ${blogsPage.content}" th:style="${blog.deleted ? 'background-color: #fef2f2;' : ''}">
+                                        <td class="text-center" th:text="${blogsPage.number * blogsPage.size + iterStat.count}">1</td>
+                                        <td>
+                                            <img th:if="${blog.image != null}" 
+                                                 th:src="${#strings.startsWith(blog.image, '/uploads/') ? blog.image : '/images/blog/' + blog.image}" 
+                                                 alt="Ảnh bìa" class="rounded" style="width: 54px; height: 40px; object-fit: cover;">
+                                            <div th:unless="${blog.image != null}" class="bg-light rounded text-center text-muted d-flex align-items-center justify-content-center" style="width: 54px; height: 40px; border: 1px solid #e5e7eb;">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-primary" th:text="${blog.title}">Tiêu đề bài viết</div>
+                                            <small class="text-muted d-block" th:text="${#strings.length(blog.summary) > 75 ? #strings.substring(blog.summary, 0, 75) + '...' : blog.summary}"></small>
+                                            <span th:if="${blog.deleted}" class="admin-status admin-status-danger mt-1">ĐÃ XÓA TẠM THỜI</span>
+                                        </td>
+                                        <td th:text="${blog.category}">Hướng dẫn</td>
+                                        <td>
+                                            <span th:text="${blog.author}">Nguyễn Thế Vinh</span>
+                                            <small class="text-muted d-block" th:if="${blog.emailNguoiDang != null}" th:text="'(' + ${blog.emailNguoiDang} + ')'"></small>
+                                        </td>
+
+                                        <td class="small text-muted" th:text="${blog.publishDate}">17/06/2026</td>
+                                        <td>
+                                            <span th:if="${blog.status == 'DRAFT'}" class="admin-status admin-status-warning"><i class="fas fa-edit me-1"></i>Bản Nháp</span>
+                                            <span th:if="${blog.status == 'PUBLISHED'}" class="admin-status admin-status-success"><i class="fas fa-globe me-1"></i>Đã Xuất Bản</span>
+                                        </td>
+                                        <td class="text-center text-nowrap">
+                                            <a th:href="@{/admin/blog/preview/{id}(id=${blog.id})}" target="_blank" class="admin-btn admin-btn-icon btn-preview-blog" title="Xem trước">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a th:href="@{/admin/blog/edit/{id}(id=${blog.id})}" class="admin-btn admin-btn-icon ms-1 btn-edit-blog" title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/publish/{id}(id=${blog.id})}" method="POST" style="display: inline;">
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                <button type="submit" class="admin-btn admin-btn-icon ms-1" th:title="${blog.status == 'DRAFT' ? 'Xuất bản' : 'Hủy xuất bản'}">
+                                                    <i th:class="${blog.status == 'DRAFT' ? 'fas fa-upload text-success' : 'fas fa-arrow-down text-warning'}"></i>
+                                                </button>
+                                            </form>
+                                            <form th:if="${session.vaiTro == 'QL' and !blog.deleted}" th:action="@{/admin/blog/delete/{id}(id=${blog.id})}" method="POST" style="display: inline;" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn XÓA bài viết này? Bài viết sẽ được lưu trữ 90 ngày trước khi bị xóa vĩnh viễn.');">
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                <button type="submit" class="admin-btn admin-btn-icon danger ms-1" title="Xóa tạm thời">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${blogsPage.content.isEmpty()}">
+                                        <td colspan="8" class="text-center text-muted py-4">Không tìm thấy bài viết nào phù hợp.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     
                     <!-- Pagination -->
@@ -193,127 +198,125 @@
                         </ul>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
-</div>
 
-<!-- Modal Blog Form (Add/Edit) -->
-<div class="modal fade" id="blogFormModal" tabindex="-1" aria-labelledby="blogFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
-            <div class="modal-header bg-dark text-white py-3">
-                <h5 class="modal-title fw-bold" id="blogFormModalLabel">
-                    <i class="fas fa-edit text-brand me-2"></i>Tạo Bài Viết Mới
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0" style="height: 80vh;">
-                <iframe id="blogFormIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Blog Preview -->
-<div class="modal fade" id="blogPreviewModal" tabindex="-1" aria-labelledby="blogPreviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
-            <div class="modal-header bg-dark text-white py-3">
-                <h5 class="modal-title fw-bold" id="blogPreviewModalLabel">
-                    <i class="fas fa-eye text-brand me-2"></i>Xem Trước Bài Viết
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0" style="height: 80vh; background-color: #ffffff;">
-                <iframe id="blogPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const blogFormModalEl = document.getElementById('blogFormModal');
-        const blogFormModal = new bootstrap.Modal(blogFormModalEl);
-        const blogFormIframe = document.getElementById('blogFormIframe');
-        const blogFormModalLabel = document.getElementById('blogFormModalLabel');
-
-        const blogPreviewModalEl = document.getElementById('blogPreviewModal');
-        const blogPreviewModal = new bootstrap.Modal(blogPreviewModalEl);
-        const blogPreviewIframe = document.getElementById('blogPreviewIframe');
-
-        window.openBlogFormModal = function(url, title) {
-            blogFormModalLabel.innerHTML = `<i class="fas fa-edit text-brand me-2"></i>${title}`;
-            blogFormIframe.src = url;
-            blogFormModal.show();
-        };
-
-        window.closeBlogFormModal = function() {
-            blogFormModal.hide();
-            blogFormIframe.src = '';
-        };
-
-        window.openBlogPreviewModal = function(url) {
-            blogPreviewIframe.src = url;
-            blogPreviewModal.show();
-        };
-
-        window.closeBlogPreviewModal = function() {
-            blogPreviewModal.hide();
-            blogPreviewIframe.src = '';
-        };
-
-        window.handleIframeSuccess = function(msg) {
-            blogFormModal.hide();
-            sessionStorage.setItem('blogSuccessMsg', msg);
-            window.location.reload();
-        };
-
-        // Handle Add link click
-        document.querySelectorAll('.btn-add-blog').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
-                openBlogFormModal(url, 'Tạo Bài Viết Mới');
-            });
-        });
-
-        // Handle Edit link click
-        document.querySelectorAll('.btn-edit-blog').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
-                openBlogFormModal(url, 'Chỉnh Sửa Bài Viết');
-            });
-        });
-
-        // Handle Preview link click
-        document.querySelectorAll('.btn-preview-blog').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.getAttribute('href');
-                openBlogPreviewModal(url);
-            });
-        });
-
-        // Show session storage success message if any
-        const msg = sessionStorage.getItem('blogSuccessMsg');
-        if (msg) {
-            sessionStorage.removeItem('blogSuccessMsg');
-            const alertHtml = `
-                <div class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
-                    <i class="fas fa-check-circle me-2"></i><span>${msg}</span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <!-- Modal Blog Form (Add/Edit) -->
+    <div class="modal fade" id="blogFormModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header admin-modal-header py-3">
+                    <h5 class="modal-title admin-modal-title" id="blogFormModalLabel">
+                        <i class="fas fa-edit text-primary me-2"></i>Tạo Bài Viết Mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            `;
-            const pageTitleContainer = document.querySelector('.main-content > .d-flex');
-            if (pageTitleContainer) {
-                pageTitleContainer.insertAdjacentHTML('beforebegin', alertHtml);
+                <div class="modal-body p-0" style="height: 80vh;">
+                    <iframe id="blogFormIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Blog Preview -->
+    <div class="modal fade" id="blogPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header admin-modal-header py-3">
+                    <h5 class="modal-title admin-modal-title" id="blogPreviewModalLabel">
+                        <i class="fas fa-eye text-primary me-2"></i>Xem Trước Bài Viết
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="height: 80vh; background-color: #ffffff;">
+                    <iframe id="blogPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const blogFormModalEl = document.getElementById('blogFormModal');
+            const blogFormModal = blogFormModalEl ? new bootstrap.Modal(blogFormModalEl) : null;
+            const blogFormIframe = document.getElementById('blogFormIframe');
+            const blogFormModalLabel = document.getElementById('blogFormModalLabel');
+
+            const blogPreviewModalEl = document.getElementById('blogPreviewModal');
+            const blogPreviewModal = blogPreviewModalEl ? new bootstrap.Modal(blogPreviewModalEl) : null;
+            const blogPreviewIframe = document.getElementById('blogPreviewIframe');
+
+            window.openBlogFormModal = function(url, title) {
+                if (blogFormModalLabel) blogFormModalLabel.innerHTML = `<i class="fas fa-edit text-primary me-2"></i>${title}`;
+                if (blogFormIframe) blogFormIframe.src = url;
+                if (blogFormModal) blogFormModal.show();
+            };
+
+            window.closeBlogFormModal = function() {
+                if (blogFormModal) blogFormModal.hide();
+                if (blogFormIframe) blogFormIframe.src = '';
+            };
+
+            window.openBlogPreviewModal = function(url) {
+                if (blogPreviewIframe) blogPreviewIframe.src = url;
+                if (blogPreviewModal) blogPreviewModal.show();
+            };
+
+            window.closeBlogPreviewModal = function() {
+                if (blogPreviewModal) blogPreviewModal.hide();
+                if (blogPreviewIframe) blogPreviewIframe.src = '';
+            };
+
+            window.handleIframeSuccess = function(msg) {
+                if (blogFormModal) blogFormModal.hide();
+                sessionStorage.setItem('blogSuccessMsg', msg);
+                window.location.reload();
+            };
+
+            document.querySelectorAll('.btn-add-blog').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
+                    openBlogFormModal(url, 'Tạo Bài Viết Mới');
+                });
+            });
+
+            document.querySelectorAll('.btn-edit-blog').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href') + (this.getAttribute('href').includes('?') ? '&' : '?') + 'iframe=true';
+                    openBlogFormModal(url, 'Chỉnh Sửa Bài Viết');
+                });
+            });
+
+            document.querySelectorAll('.btn-preview-blog').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    openBlogPreviewModal(url);
+                });
+            });
+
+            const msg = sessionStorage.getItem('blogSuccessMsg');
+            if (msg) {
+                sessionStorage.removeItem('blogSuccessMsg');
+                const alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
+                        <i class="fas fa-check-circle me-2"></i><span>${msg}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                const pageHeader = document.querySelector('.admin-page-header');
+                if (pageHeader) pageHeader.insertAdjacentHTML('afterend', alertHtml);
             }
-        }
-    });
-</script>
+        });
+    </script>
+
+    <!-- Bootstrap 5.3.0 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Admin Layout JS -->
+    <script th:src="@{/js/admin-layout.js(v='2.1')}"></script>
 </body>
 </html>

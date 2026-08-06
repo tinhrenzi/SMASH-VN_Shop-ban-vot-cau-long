@@ -28,6 +28,8 @@ public class GhnStatusMapper {
 
             case "picking":
             case "money_collect_picking":
+                return "dang_lay_hang";
+
             case "picked":
                 return "da_ban_giao_ghn";
 
@@ -54,6 +56,58 @@ public class GhnStatusMapper {
 
             default:
                 return null;
+        }
+    }
+
+    /**
+     * Trả về nhãn tiếng Việt tương ứng cho mã trạng thái GHN
+     */
+    public String getGhnStatusLabel(String ghnStatus) {
+        if (ghnStatus == null || ghnStatus.isBlank()) {
+            return "Chưa có trạng thái GHN";
+        }
+
+        switch (ghnStatus.toLowerCase()) {
+            case "ready_to_pick":
+                return "Sẵn sàng lấy hàng";
+            case "picking":
+                return "Đang lấy hàng";
+            case "money_collect_picking":
+                return "Đang lấy hàng & thu tiền người gửi";
+            case "picked":
+                return "Đã lấy hàng (Bàn giao GHN)";
+            case "storing":
+                return "Đã nhập kho GHN";
+            case "sorting":
+                return "Đang phân loại tại kho GHN";
+            case "transporting":
+                return "Đang luân chuyển kho";
+            case "delivering":
+                return "Đang giao hàng";
+            case "money_collect_delivering":
+                return "Đang giao hàng & thu tiền COD";
+            case "delivered":
+                return "Giao hàng thành công";
+            case "delivery_fail":
+                return "Giao hàng thất bại";
+            case "waiting_to_return":
+                return "Chờ trả hàng";
+            case "return":
+            case "returning":
+                return "Đang trả hàng về shop";
+            case "returned":
+            case "returned_to_sender":
+                return "Đã trả hàng về shop";
+            case "cancel":
+                return "Đã hủy vận đơn GHN";
+            case "exception":
+                return "Sự cố vận chuyển";
+            case "lost":
+                return "Hàng bị thất lạc";
+            case "damage":
+                return "Hàng bị hư hỏng";
+            default:
+                return ghnStatus;
         }
     }
 

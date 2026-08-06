@@ -346,10 +346,12 @@ public class GhnRestController {
             orderViewService.applyShippingStatus(hd.getId(), internalStatus, ghnStatus);
             log.info("[ADMIN] Đã đồng bộ thủ công đơn #{}: GHN status={}, internalStatus={}", orderId, ghnStatus, internalStatus);
 
+            String ghnStatusLabel = ghnStatusMapper.getGhnStatusLabel(ghnStatus);
             return ResponseEntity.ok(Map.of(
                     "status", "ok",
                     "message", "Đồng bộ trạng thái GHN thành công!",
                     "ghnStatus", ghnStatus,
+                    "ghnStatusLabel", ghnStatusLabel,
                     "internalStatus", internalStatus
             ));
         } catch (Exception e) {

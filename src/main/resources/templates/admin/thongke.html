@@ -5,818 +5,673 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thống Kê Doanh Thu - Admin SmashVN</title>
     
+    <!-- Bootstrap 5.3.0 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link th:href="@{/css/admin-custom.css}" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Admin Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin-custom.css(v='2.1')}">
     
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .filter-btn {
             border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 0.88rem;
+            padding: 5px 14px;
+            font-size: 0.85rem;
             font-weight: 600;
             transition: all 0.2s ease;
-            border: 1.5px solid rgba(21, 23, 28, 0.12);
-            background-color: #ffffff;
-            color: var(--brand-primary);
+            border: 1px solid var(--admin-border);
+            background-color: var(--admin-surface);
+            color: var(--admin-text);
         }
         .filter-btn:hover, .filter-btn.active {
-            background-color: var(--brand-accent) !important;
-            border-color: var(--brand-accent) !important;
+            background-color: var(--admin-primary) !important;
+            border-color: var(--admin-primary) !important;
             color: #ffffff !important;
-            box-shadow: 0 4px 10px rgba(255, 69, 0, 0.2);
+            box-shadow: 0 4px 10px rgba(244, 81, 30, 0.2);
         }
-        
-        .metric-value {
-            font-size: 1.85rem;
-            font-weight: 800;
-            color: var(--brand-primary);
-            letter-spacing: -0.02em;
-        }
-        
         .no-data-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            border-radius: 12px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 5; border-radius: 12px;
         }
-        
         .chart-container-relative {
             position: relative;
             min-height: 320px;
         }
     </style>
 </head>
-<body>
+<body class="admin-body">
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar layout dùng chung -->
-        <div th:replace="~{admin/layout/sidebar :: sidebar('thongke')}"></div>
+    <!-- Sidebar Layout Fragment -->
+    <div th:replace="~{admin/layout/sidebar :: sidebar('thongke')}"></div>
+
+    <div class="admin-page">
+        <!-- Topbar Layout Fragment -->
+        <div th:replace="~{admin/layout/header :: header}"></div>
 
         <!-- Main Content -->
-        <main class="col-md-10 main-content">
-            <!-- Header layout dùng chung -->
-            <div th:replace="~{admin/layout/header :: header}"></div>
+        <main class="admin-content">
+            <div class="container-fluid admin-container">
 
-            <!-- Page Title & Export Block -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-                <div>
-                    <h2 class="page-title"><i class="fas fa-chart-line text-brand me-2"></i>Báo Cáo Thống Kê</h2>
-                    <p class="text-muted mb-0">Theo dõi doanh thu, hiệu suất đơn hàng và các sản phẩm bán chạy.</p>
-                </div>
-                <div>
-                    <button id="btnExportExcel" class="btn btn-success shadow-sm px-4">
-                        <i class="fas fa-file-excel me-2"></i> Xuất Excel Báo Cáo
-                    </button>
-                </div>
-            </div>
-
-            <!-- Filters Section -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-3">
-                        <!-- Quick Presets -->
-                        <div class="col-xl-7 col-lg-12 d-flex flex-wrap gap-2">
-                            <button type="button" class="filter-btn" data-preset="today">Hôm nay</button>
-                            <button type="button" class="filter-btn" data-preset="this_week">Tuần này</button>
-                            <button type="button" class="filter-btn active" data-preset="last_30_days">30 ngày qua</button>
-                            <button type="button" class="filter-btn" data-preset="this_month">Tháng này</button>
-                            <button type="button" class="filter-btn" data-preset="this_year">Năm nay</button>
-                            <button type="button" class="filter-btn" data-preset="all_time">Tất cả</button>
-                            <button type="button" class="filter-btn" data-preset="custom">Tùy chỉnh</button>
-                        </div>
-                        
-                        <!-- Custom Date Picker Forms -->
-                        <div class="col-xl-5 col-lg-12">
-                            <form id="customDateForm" class="row g-2 align-items-center justify-content-xl-end d-none">
-                                <div class="col-auto">
-                                    <input type="date" id="inputStartDate" class="form-control form-control-sm" required>
-                                </div>
-                                <div class="col-auto text-muted fw-bold">đến</div>
-                                <div class="col-auto">
-                                    <input type="date" id="inputEndDate" class="form-control form-control-sm" required>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-sm btn-brand text-white py-2 px-3">Lọc</button>
-                                </div>
-                            </form>
-                        </div>
+                <!-- Page Header -->
+                <div class="admin-page-header">
+                    <div>
+                        <h1 class="admin-page-title"><i class="fas fa-chart-line text-brand me-2"></i>Báo Cáo Thống Kê</h1>
+                        <p class="admin-page-subtitle">Theo dõi doanh thu, hiệu suất đơn hàng và sản phẩm bán chạy</p>
+                    </div>
+                    <div class="admin-toolbar">
+                        <button id="btnExportExcel" class="admin-btn admin-btn-primary">
+                            <i class="fas fa-file-excel me-1"></i> Xuất Excel Báo Cáo
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Loading Spinner -->
-            <div id="statsLoader" class="text-center py-5 d-none">
-                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem; color: #ff4500 !important;">
-                    <span class="visually-hidden">Đang tải...</span>
-                </div>
-                <h6 class="mt-3 text-muted">Đang cập nhật số liệu...</h6>
-            </div>
-
-            <!-- Stats Metrics Content -->
-            <div id="statsContent">
-                <!-- Row 1: KPI Cards (2 hàng, mỗi hàng 3 card) -->
-                <div class="row g-3 mb-4">
-                    <!-- Doanh thu thực tế -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-danger d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Doanh Thu Thực Tế</h6>
-                                <h2 class="mb-0 metric-value text-danger" id="valRevenue" style="font-size: 1.35rem;">0 đ</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Đơn giao thành công</small>
+                <!-- Filters Section -->
+                <div class="admin-card mb-4">
+                    <div class="admin-card-body py-3">
+                        <div class="row align-items-center g-3">
+                            <!-- Quick Presets -->
+                            <div class="col-xl-7 col-lg-12 d-flex flex-wrap gap-2">
+                                <button type="button" class="filter-btn" data-preset="today">Hôm nay</button>
+                                <button type="button" class="filter-btn" data-preset="this_week">Tuần này</button>
+                                <button type="button" class="filter-btn active" data-preset="last_30_days">30 ngày qua</button>
+                                <button type="button" class="filter-btn" data-preset="this_month">Tháng này</button>
+                                <button type="button" class="filter-btn" data-preset="this_year">Năm nay</button>
+                                <button type="button" class="filter-btn" data-preset="all_time">Tất cả</button>
+                                <button type="button" class="filter-btn" data-preset="custom">Tùy chỉnh</button>
                             </div>
-                            <div class="stat-icon-wrapper bg-danger bg-opacity-10">
-                                <i class="fas fa-wallet stat-icon text-danger"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Doanh thu dự kiến -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-warning d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Doanh Thu Dự Kiến</h6>
-                                <h2 class="mb-0 metric-value text-warning" id="valExpectedRevenue" style="font-size: 1.35rem;">0 đ</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Đơn hàng đang giao</small>
-                            </div>
-                            <div class="stat-icon-wrapper bg-warning bg-opacity-10">
-                                <i class="fas fa-truck stat-icon text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Doanh thu đã hoàn -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-secondary d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Doanh Thu Đã Hoàn</h6>
-                                <h2 class="mb-0 metric-value text-secondary" id="valRefundedRevenue" style="font-size: 1.35rem;">0 đ</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Đơn giao đã hoàn trả tiền</small>
-                            </div>
-                            <div class="stat-icon-wrapper bg-secondary bg-opacity-10">
-                                <i class="fas fa-undo-alt stat-icon text-secondary"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Đơn hàng thành công -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-success d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Đơn Thành Công</h6>
-                                <h2 class="mb-0 metric-value text-success" id="valSuccessOrders" style="font-size: 1.35rem;">0</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Tổng số đơn thành công</small>
-                            </div>
-                            <div class="stat-icon-wrapper bg-success bg-opacity-10">
-                                <i class="fas fa-check-double stat-icon text-success"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Tổng sản phẩm đã bán -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-primary d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Sản Phẩm Đã Bán</h6>
-                                <h2 class="mb-0 metric-value text-primary" id="valProductsSold" style="font-size: 1.35rem;">0</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Sản phẩm giao thành công</small>
-                            </div>
-                            <div class="stat-icon-wrapper bg-primary bg-opacity-10">
-                                <i class="fas fa-shopping-bag stat-icon text-primary"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Giá trị trung bình đơn -->
-                    <div class="col-lg-4 col-md-6 col-sm-6">
-                        <div class="stat-card-premium accent-info d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-muted fw-bold" style="letter-spacing: 0.05em; font-size: 0.78rem;">Giá Trị TB Đơn</h6>
-                                <h2 class="mb-0 metric-value text-info" id="valAvgOrderValue" style="font-size: 1.35rem;">0 đ</h2>
-                                <small class="text-muted" style="font-size: 0.75rem;">Doanh thu / số đơn thành</small>
-                            </div>
-                            <div class="stat-icon-wrapper bg-info bg-opacity-10">
-                                <i class="fas fa-calculator stat-icon text-info"></i>
+                            
+                            <!-- Custom Date Picker Forms -->
+                            <div class="col-xl-5 col-lg-12">
+                                <form id="customDateForm" class="row g-2 align-items-center justify-content-xl-end d-none">
+                                    <div class="col-auto">
+                                        <input type="date" id="inputStartDate" class="admin-form-control form-control form-control-sm" required>
+                                    </div>
+                                    <div class="col-auto text-muted fw-bold">đến</div>
+                                    <div class="col-auto">
+                                        <input type="date" id="inputEndDate" class="admin-form-control form-control form-control-sm" required>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm py-1.5">Lọc</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 1.5: Extra KPIs -->
-                <div class="row g-3 mb-4">
-                    <!-- Khách hàng mới -->
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm h-100 py-2 px-3" style="border-left: 4px solid #0ea5e9 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge bg-info bg-opacity-10 text-info">
-                                    <i class="fas fa-user-plus"></i>
+                <!-- Loading Spinner -->
+                <div id="statsLoader" class="text-center py-5 d-none">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <h6 class="mt-3 text-muted">Đang cập nhật số liệu...</h6>
+                </div>
+
+                <!-- Stats Metrics Content -->
+                <div id="statsContent">
+                    <!-- Row 1: KPI Cards -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Doanh Thu Thực Tế</div>
+                                    <div class="stat-value text-danger" id="valRevenue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn giao thành công</small>
                                 </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Khách Hàng Mới Trong Kỳ</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valNewCustomers">0</h4>
-                                    <small class="text-muted">Có đơn hàng hoàn thành đầu tiên</small>
+                                <div class="admin-stat-icon danger">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Doanh Thu Dự Kiến</div>
+                                    <div class="stat-value text-warning" id="valExpectedRevenue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn hàng đang giao</small>
+                                </div>
+                                <div class="admin-stat-icon warning">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Doanh Thu Đã Hoàn</div>
+                                    <div class="stat-value text-secondary" id="valRefundedRevenue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn hoàn trả tiền</small>
+                                </div>
+                                <div class="admin-stat-icon info">
+                                    <i class="fas fa-undo-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Đơn Thành Công</div>
+                                    <div class="stat-value text-success" id="valSuccessOrders" style="font-size: 1.35rem;">0</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Tổng đơn hoàn thành</small>
+                                </div>
+                                <div class="admin-stat-icon success">
+                                    <i class="fas fa-check-double"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Sản Phẩm Đã Bán</div>
+                                    <div class="stat-value text-primary" id="valProductsSold" style="font-size: 1.35rem;">0</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Số lượng bán ra</small>
+                                </div>
+                                <div class="admin-stat-icon primary">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Giá Trị TB Đơn</div>
+                                    <div class="stat-value text-info" id="valAvgOrderValue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Doanh thu / đơn</small>
+                                </div>
+                                <div class="admin-stat-icon info">
+                                    <i class="fas fa-calculator"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Đơn hàng đã hủy -->
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm h-100 py-2 px-3" style="border-left: 4px solid #ef4444 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge bg-danger bg-opacity-10 text-danger">
-                                    <i class="fas fa-times-circle"></i>
+
+                    <!-- Row 1.5: Extra KPIs -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Khách Hàng Mới Trong Kỳ</div>
+                                <div class="stat-value text-dark mt-1" id="valNewCustomers" style="font-size: 1.35rem;">0</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Đơn Hàng Đã Hủy</div>
+                                <div class="stat-value text-danger mt-1" id="valCancelledOrders" style="font-size: 1.35rem;">0</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Tỷ Lệ Hủy Đơn Hàng</div>
+                                <div class="stat-value text-warning mt-1" id="valCancellationRate" style="font-size: 1.35rem;">0.0%</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Tiền Chờ Hoàn</div>
+                                <div class="stat-value text-info mt-1" id="valPendingRefund" style="font-size: 1.35rem;">0 đ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 1.8: Online Payment Statistics -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Tổng Giao Dịch Online</div>
+                                <div class="stat-value text-dark mt-1" id="valOnlineTotal" style="font-size: 1.35rem;">0</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Thanh Toán Online Thành Công</div>
+                                <div class="stat-value text-success mt-1" id="valOnlineSuccess" style="font-size: 1.35rem;">0</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Thất Bại / Đang Chờ</div>
+                                <div class="stat-value text-danger mt-1" id="valOnlineFailedPending" style="font-size: 1.35rem;">0 / 0</div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 col-sm-6">
+                            <div class="admin-card mb-0 p-3">
+                                <div class="stat-label">Doanh Thu Online</div>
+                                <div class="stat-value text-primary mt-1" id="valOnlineRevenue" style="font-size: 1.35rem;">0 đ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Charts -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-8">
+                            <div class="admin-card">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title"><i class="fas fa-chart-area text-primary me-2"></i>Biểu Đồ Doanh Thu</h5>
+                                    <span class="admin-status admin-status-info" id="lblGroupingType">Theo Ngày</span>
                                 </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Đơn Hàng Đã Hủy</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valCancelledOrders">0</h4>
-                                    <small class="text-muted">Tổng đơn hàng bị hủy bỏ</small>
+                                <div class="admin-card-body chart-container-relative">
+                                    <div id="noDataOverlayRevenue" class="no-data-overlay d-none">
+                                        <i class="fas fa-chart-line fa-3x text-muted mb-2"></i>
+                                        <span class="fw-semibold text-muted">Không có dữ liệu trong khoảng thời gian đã chọn</span>
+                                    </div>
+                                    <canvas id="chartRevenue"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="admin-card">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title"><i class="fas fa-chart-pie text-primary me-2"></i>Trạng Thái Đơn Hàng</h5>
+                                </div>
+                                <div class="admin-card-body chart-container-relative">
+                                    <div id="noDataOverlayStatus" class="no-data-overlay d-none">
+                                        <i class="fas fa-pie-chart fa-3x text-muted mb-2"></i>
+                                        <span class="fw-semibold text-muted">Không có dữ liệu đơn hàng</span>
+                                    </div>
+                                    <canvas id="chartStatus"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Tỷ lệ hủy đơn -->
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm h-100 py-2 px-3" style="border-left: 4px solid #6c757d !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge bg-secondary bg-opacity-10 text-secondary">
-                                    <i class="fas fa-ban"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Tỷ Lệ Hủy Đơn Hàng</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valCancellationRate">0.0%</h4>
-                                    <small class="text-muted">Tổng đơn hàng đã hủy / Tổng đơn tạo</small>
+
+                    <!-- Row 3: Top Selling Products -->
+                    <div class="admin-card mb-4">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title"><i class="fas fa-trophy text-warning me-2"></i>Sản Phẩm Bán Chạy Nhất</h5>
+                            <span class="admin-status admin-status-info">Top 5</span>
+                        </div>
+                        <div class="admin-card-body p-0">
+                            <div class="admin-table-wrapper">
+                                <table class="admin-table" id="tableTopProducts">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;" class="text-center">Hạng</th>
+                                            <th style="width: 100px;">Ảnh</th>
+                                            <th>Tên Sản Phẩm</th>
+                                            <th>Danh Mục</th>
+                                            <th class="text-center">Số Lượng Bán</th>
+                                            <th class="text-end">Doanh Thu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                                <div id="noDataOverlayProducts" class="text-center py-5 text-muted d-none">
+                                    <i class="fas fa-box-open fa-3x mb-2 text-muted"></i>
+                                    <p class="fw-semibold mb-0">Không có sản phẩm nào được bán thành công trong khoảng thời gian đã chọn</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Tiền chờ hoàn -->
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm h-100 py-2 px-3" style="border-left: 4px solid #ff9f43 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge bg-warning bg-opacity-10 text-warning">
-                                    <i class="fas fa-hand-holding-usd"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.78rem;">Tiền Chờ Hoàn</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valPendingRefund">0 đ</h4>
-                                    <small class="text-muted">Đang chờ hoàn trả khách</small>
+
+                    <!-- Row 4: Transaction History -->
+                    <div class="admin-card mb-4">
+                        <div class="admin-card-header">
+                            <h5 class="admin-card-title"><i class="fas fa-history text-primary me-2"></i>Lịch Sử Giao Dịch</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="admin-status admin-status-neutral">Tổng giao dịch: <strong id="lblTotalTxCount">0</strong></span>
+                                <span class="admin-status admin-status-info">Đang hiển thị: <strong id="lblShowingTxCount">0</strong></span>
+                            </div>
+                        </div>
+                        <div class="admin-card-body p-0">
+                            <div class="admin-table-wrapper" style="max-height: 450px; overflow-y: auto;">
+                                <table class="admin-table" id="tableTransactions">
+                                    <thead style="position: sticky; top: 0; z-index: 2;">
+                                        <tr>
+                                            <th style="width: 100px;" class="text-center">Mã HĐ</th>
+                                            <th>Khách Hàng</th>
+                                            <th>Thời Gian</th>
+                                            <th>Phương Thức</th>
+                                            <th>Mã Giao Dịch</th>
+                                            <th class="text-end">Số Tiền</th>
+                                            <th class="text-center">Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                                <div id="noDataOverlayTransactions" class="text-center py-5 text-muted d-none">
+                                    <i class="fas fa-receipt fa-3x mb-2 text-muted"></i>
+                                    <p class="fw-semibold mb-0">Không có giao dịch nào phát sinh trong khoảng thời gian đã chọn</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 1.8: Online Payment Statistics -->
-                <div class="row g-3 mb-4">
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #0084ff !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge-sm bg-info bg-opacity-10 text-info">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Tổng Giao Dịch Online</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineTotal" style="font-size: 1.35rem; font-weight: 800;">0</h4>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng số lượt khởi tạo</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #10b981 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge-sm bg-success bg-opacity-10 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Thanh Toán Online Thành Công</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineSuccess" style="font-size: 1.35rem; font-weight: 800;">0</h4>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Đã nhận được tiền</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #ef4444 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge-sm bg-danger bg-opacity-10 text-danger">
-                                    <i class="fas fa-times-circle"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Thất Bại / Đang Chờ</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineFailedPending" style="font-size: 1.35rem; font-weight: 800;">0 / 0</h4>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Hủy, lỗi / chưa thanh toán</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6 col-sm-6">
-                        <div class="card border-0 shadow-sm py-2 px-3 h-100" style="border-left: 4px solid #ff4500 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="stat-icon-badge-sm bg-warning bg-opacity-10 text-warning">
-                                    <i class="fas fa-coins"></i>
-                                </div>
-                                <div>
-                                    <h6 class="text-uppercase mb-1 text-muted fw-bold" style="font-size: 0.72rem;">Doanh Thu Online</h6>
-                                    <h4 class="mb-0 fw-extrabold text-dark" id="valOnlineRevenue" style="font-size: 1.35rem; font-weight: 800;">0 đ</h4>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Tổng doanh thu qua ví/chuyển khoản</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 2: Charts -->
-                <div class="row g-4 mb-4">
-                    <!-- Revenue Chart -->
-                    <div class="col-lg-8">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-dark text-white py-3">
-                                <span><i class="fas fa-chart-area text-brand me-2"></i>Biểu Đồ Doanh Thu</span>
-                                <span class="badge bg-primary" id="lblGroupingType">Theo Ngày</span>
-                            </div>
-                            <div class="card-body chart-container-relative">
-                                <div id="noDataOverlayRevenue" class="no-data-overlay d-none">
-                                    <i class="fas fa-chart-line fa-3x text-muted mb-2"></i>
-                                    <span class="fw-semibold text-muted">Không có dữ liệu trong khoảng thời gian đã chọn</span>
-                                </div>
-                                <canvas id="chartRevenue"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Order Status Doughnut -->
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-dark text-white py-3">
-                                <span><i class="fas fa-chart-pie text-brand me-2"></i>Trạng Thái Đơn Hàng</span>
-                            </div>
-                            <div class="card-body chart-container-relative">
-                                <div id="noDataOverlayStatus" class="no-data-overlay d-none">
-                                    <i class="fas fa-pie-chart fa-3x text-muted mb-2"></i>
-                                    <span class="fw-semibold text-muted">Không có dữ liệu đơn hàng</span>
-                                </div>
-                                <canvas id="chartStatus"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 3: Top Selling Products -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-                        <span><i class="fas fa-trophy text-brand me-2"></i>Sản Phẩm Bán Chạy Nhất</span>
-                        <span class="badge bg-primary">Top 5</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive border-0 shadow-none">
-                            <table class="table table-hover align-middle mb-0" id="tableTopProducts">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 80px;" class="text-center">Hạng</th>
-                                        <th style="width: 100px;">Ảnh</th>
-                                        <th>Tên Sản Phẩm</th>
-                                        <th>Danh Mục</th>
-                                        <th class="text-center">Số Lượng Bán</th>
-                                        <th class="text-end">Doanh Thu</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Dynamic rows from JS -->
-                                </tbody>
-                            </table>
-                            <div id="noDataOverlayProducts" class="text-center py-5 text-muted d-none">
-                                <i class="fas fa-box-open fa-3x mb-2 text-muted"></i>
-                                <p class="fw-semibold mb-0">Không có sản phẩm nào được bán thành công trong khoảng thời gian đã chọn</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 4: Transaction History -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center py-3 gap-2">
-                        <div>
-                            <span><i class="fas fa-history text-brand me-2"></i>Lịch Sử Giao Dịch</span>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2" style="font-size: 0.85rem;">
-                            <span class="badge bg-secondary">Tổng giao dịch: <strong id="lblTotalTxCount">0</strong></span>
-                            <span class="badge bg-primary">Đang hiển thị: <strong id="lblShowingTxCount">0</strong> giao dịch gần nhất</span>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive border-0 shadow-none" style="max-height: 450px; overflow-y: auto;">
-                            <table class="table table-hover align-middle mb-0" id="tableTransactions">
-                                <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 2;">
-                                    <tr>
-                                        <th style="width: 100px;" class="text-center">Mã HĐ</th>
-                                        <th>Khách Hàng</th>
-                                        <th>Thời Gian</th>
-                                        <th>Phương Thức</th>
-                                        <th>Mã Giao Dịch</th>
-                                        <th class="text-end">Số Tiền</th>
-                                        <th class="text-center">Trạng Thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Dynamic rows from JS -->
-                                </tbody>
-                            </table>
-                            <div id="noDataOverlayTransactions" class="text-center py-5 text-muted d-none">
-                                <i class="fas fa-receipt fa-3x mb-2 text-muted"></i>
-                                <p class="fw-semibold mb-0">Không có giao dịch nào phát sinh trong khoảng thời gian đã chọn</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Thư viện Chart.js vẽ biểu đồ tương tác -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let currentPreset = "last_30_days";
+        let chartRevenueInstance = null;
+        let chartStatusInstance = null;
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    let currentPreset = "last_30_days";
-    let chartRevenueInstance = null;
-    let chartStatusInstance = null;
+        const quickFilters = document.querySelectorAll(".filter-btn");
+        const customDateForm = document.getElementById("customDateForm");
+        const inputStartDate = document.getElementById("inputStartDate");
+        const inputEndDate = document.getElementById("inputEndDate");
+        const loader = document.getElementById("statsLoader");
+        const statsContent = document.getElementById("statsContent");
+        const btnExportExcel = document.getElementById("btnExportExcel");
 
-    // Element references
-    const quickFilters = document.querySelectorAll(".filter-btn");
-    const customDateForm = document.getElementById("customDateForm");
-    const inputStartDate = document.getElementById("inputStartDate");
-    const inputEndDate = document.getElementById("inputEndDate");
-    const loader = document.getElementById("statsLoader");
-    const statsContent = document.getElementById("statsContent");
-    const btnExportExcel = document.getElementById("btnExportExcel");
-
-    // Lắng nghe click nút lọc nhanh
-    quickFilters.forEach(btn => {
-        btn.addEventListener("click", function() {
-            quickFilters.forEach(b => b.classList.remove("active"));
-            this.classList.add("active");
-            
-            const preset = this.getAttribute("data-preset");
-            currentPreset = preset;
-            
-            if (preset === "custom") {
-                customDateForm.classList.remove("d-none");
-            } else {
-                customDateForm.classList.add("d-none");
-                loadStatistics(preset, "", "");
-            }
-        });
-    });
-
-    // Submit form lọc ngày tùy chỉnh
-    customDateForm.addEventListener("submit", function(e) {
-        e.preventDefault();
-        loadStatistics("custom", inputStartDate.value, inputEndDate.value);
-    });
-
-    // Click nút xuất Excel
-    btnExportExcel.addEventListener("click", function() {
-        let url = `/admin/thong-ke/export?preset=${currentPreset}`;
-        if (currentPreset === "custom") {
-            url += `&startDate=${inputStartDate.value}&endDate=${inputEndDate.value}`;
-        }
-        window.location.href = url;
-    });
-
-    // Hàm gọi AJAX tải dữ liệu thống kê
-    function loadStatistics(preset, start, end) {
-        loader.classList.remove("d-none");
-        statsContent.style.opacity = "0.5";
-
-        let url = `/admin/thong-ke/api?preset=${preset}`;
-        if (preset === "custom") {
-            url += `&startDate=${start}&endDate=${end}`;
-        }
-
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                updateMetrics(data);
-                updateCharts(data);
-                updateTopProducts(data);
-                updateTransactions(data);
-            })
-            .catch(err => {
-                console.error("Lỗi khi tải dữ liệu thống kê: ", err);
-            })
-            .finally(() => {
-                loader.classList.add("d-none");
-                statsContent.style.opacity = "1";
+        quickFilters.forEach(btn => {
+            btn.addEventListener("click", function() {
+                quickFilters.forEach(b => b.classList.remove("active"));
+                this.classList.add("active");
+                
+                const preset = this.getAttribute("data-preset");
+                currentPreset = preset;
+                
+                if (preset === "custom") {
+                    customDateForm.classList.remove("d-none");
+                } else {
+                    customDateForm.classList.add("d-none");
+                    loadStatistics(preset, "", "");
+                }
             });
-    }
+        });
 
-    // Cập nhật các thẻ số liệu KPI
-    function updateMetrics(data) {
-        const m = data.metrics;
-        
-        document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
-        document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
-        document.getElementById("valRefundedRevenue").textContent = formatVND(data.refundedRevenue);
-        document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
-        document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
-        document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
-        document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
-        document.getElementById("valCancelledOrders").textContent = formatNumber(m.cancelledOrders);
-        document.getElementById("valCancellationRate").textContent = data.cancellationRate.toFixed(1) + "%";
-        document.getElementById("valPendingRefund").textContent = formatVND(data.pendingRefund);
-
-        // Cập nhật Online Payment KPI
-        document.getElementById("valOnlineTotal").textContent = formatNumber(data.onlineTotal);
-        document.getElementById("valOnlineSuccess").textContent = formatNumber(data.onlineSuccess);
-        document.getElementById("valOnlineFailedPending").textContent = formatNumber(data.onlineFailed) + " / " + formatNumber(data.onlinePending);
-        document.getElementById("valOnlineRevenue").textContent = formatVND(data.onlineRevenue);
-    }
-
-    // Cập nhật và khởi tạo biểu đồ
-    function updateCharts(data) {
-        const labels = data.chartLabels || [];
-        const values = data.chartValues || [];
-        const isRevenueEmpty = values.length === 0 || values.every(v => v === 0);
-
-        // 1. Biểu đồ doanh thu
-        const overlayRevenue = document.getElementById("noDataOverlayRevenue");
-        if (isRevenueEmpty) {
-            overlayRevenue.classList.remove("d-none");
-        } else {
-            overlayRevenue.classList.add("d-none");
+        if (customDateForm) {
+            customDateForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                loadStatistics("custom", inputStartDate.value, inputEndDate.value);
+            });
         }
 
-        // Đổi nhãn gom nhóm
-        const lblGrouping = document.getElementById("lblGroupingType");
-        if (data.grouping === "HOUR") {
-            lblGrouping.textContent = "Theo Giờ";
-        } else if (data.grouping === "DAY") {
-            lblGrouping.textContent = "Theo Ngày";
-        } else {
-            lblGrouping.textContent = "Theo Tháng";
+        if (btnExportExcel) {
+            btnExportExcel.addEventListener("click", function() {
+                let url = `/admin/thong-ke/export?preset=${currentPreset}`;
+                if (currentPreset === "custom") {
+                    url += `&startDate=${inputStartDate.value}&endDate=${inputEndDate.value}`;
+                }
+                window.location.href = url;
+            });
         }
 
-        if (chartRevenueInstance) {
-            chartRevenueInstance.destroy();
+        function loadStatistics(preset, start, end) {
+            if (loader) loader.classList.remove("d-none");
+            if (statsContent) statsContent.style.opacity = "0.5";
+
+            let url = `/admin/thong-ke/api?preset=${preset}`;
+            if (preset === "custom") {
+                url += `&startDate=${start}&endDate=${end}`;
+            }
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    updateMetrics(data);
+                    updateCharts(data);
+                    updateTopProducts(data);
+                    updateTransactions(data);
+                })
+                .catch(err => {
+                    console.error("Lỗi khi tải dữ liệu thống kê: ", err);
+                })
+                .finally(() => {
+                    if (loader) loader.classList.add("d-none");
+                    if (statsContent) statsContent.style.opacity = "1";
+                });
         }
 
-        const ctxRev = document.getElementById("chartRevenue").getContext("2d");
-        chartRevenueInstance = new Chart(ctxRev, {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Doanh thu (VND)",
-                    data: values,
-                    borderColor: "#ff4500",
-                    backgroundColor: "rgba(255, 69, 0, 0.08)",
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.35,
-                    pointBackgroundColor: "#ff4500",
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString("vi-VN") + " đ";
+        function updateMetrics(data) {
+            const m = data.metrics || {};
+            
+            document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
+            document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
+            document.getElementById("valRefundedRevenue").textContent = formatVND(data.refundedRevenue);
+            document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
+            document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
+            document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
+            document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
+            document.getElementById("valCancelledOrders").textContent = formatNumber(m.cancelledOrders);
+            document.getElementById("valCancellationRate").textContent = (data.cancellationRate || 0).toFixed(1) + "%";
+            document.getElementById("valPendingRefund").textContent = formatVND(data.pendingRefund);
+
+            document.getElementById("valOnlineTotal").textContent = formatNumber(data.onlineTotal);
+            document.getElementById("valOnlineSuccess").textContent = formatNumber(data.onlineSuccess);
+            document.getElementById("valOnlineFailedPending").textContent = formatNumber(data.onlineFailed) + " / " + formatNumber(data.onlinePending);
+            document.getElementById("valOnlineRevenue").textContent = formatVND(data.onlineRevenue);
+        }
+
+        function updateCharts(data) {
+            const labels = data.chartLabels || [];
+            const values = data.chartValues || [];
+            const isRevenueEmpty = values.length === 0 || values.every(v => v === 0);
+
+            const overlayRevenue = document.getElementById("noDataOverlayRevenue");
+            if (overlayRevenue) {
+                if (isRevenueEmpty) overlayRevenue.classList.remove("d-none");
+                else overlayRevenue.classList.add("d-none");
+            }
+
+            const lblGrouping = document.getElementById("lblGroupingType");
+            if (lblGrouping) {
+                if (data.grouping === "HOUR") lblGrouping.textContent = "Theo Giờ";
+                else if (data.grouping === "DAY") lblGrouping.textContent = "Theo Ngày";
+                else lblGrouping.textContent = "Theo Tháng";
+            }
+
+            if (chartRevenueInstance) chartRevenueInstance.destroy();
+
+            const ctxRev = document.getElementById("chartRevenue");
+            if (ctxRev) {
+                chartRevenueInstance = new Chart(ctxRev.getContext("2d"), {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Doanh thu (VND)",
+                            data: values,
+                            borderColor: "#f4511e",
+                            backgroundColor: "rgba(244, 81, 30, 0.08)",
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: "#f4511e",
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(val) { return val.toLocaleString("vi-VN") + " đ"; }
+                                }
                             }
                         }
                     }
-                }
+                });
             }
-        });
 
-        // 2. Biểu đồ trạng thái đơn hàng
-        const sd = data.statusDistribution;
-        const statusLabels = ["Chờ xác nhận", "Đang giao", "Đã giao", "Đã hủy"];
-        const statusValues = [
-            sd.cho_xac_nhan || 0,
-            sd.dang_giao || 0,
-            sd.da_giao || 0,
-            sd.da_huy || 0
-        ];
-        const isStatusEmpty = statusValues.every(v => v === 0);
+            const sd = data.statusDistribution || {};
+            const statusLabels = ["Chờ xác nhận", "Đang giao", "Đã giao", "Đã hủy"];
+            const statusValues = [
+                sd.cho_xac_nhan || 0,
+                sd.dang_giao || 0,
+                sd.da_giao || 0,
+                sd.da_huy || 0
+            ];
+            const isStatusEmpty = statusValues.every(v => v === 0);
 
-        const overlayStatus = document.getElementById("noDataOverlayStatus");
-        if (isStatusEmpty) {
-            overlayStatus.classList.remove("d-none");
-        } else {
-            overlayStatus.classList.add("d-none");
-        }
+            const overlayStatus = document.getElementById("noDataOverlayStatus");
+            if (overlayStatus) {
+                if (isStatusEmpty) overlayStatus.classList.remove("d-none");
+                else overlayStatus.classList.add("d-none");
+            }
 
-        if (chartStatusInstance) {
-            chartStatusInstance.destroy();
-        }
+            if (chartStatusInstance) chartStatusInstance.destroy();
 
-        const ctxStatus = document.getElementById("chartStatus").getContext("2d");
-        chartStatusInstance = new Chart(ctxStatus, {
-            type: "doughnut",
-            data: {
-                labels: statusLabels,
-                datasets: [{
-                    data: statusValues,
-                    backgroundColor: ["#ffc107", "#0dcaf0", "#198754", "#dc3545"],
-                    borderWidth: 2,
-                    borderColor: "#ffffff"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: "bottom",
-                        labels: { boxWidth: 12, font: { weight: "600" } }
+            const ctxStatus = document.getElementById("chartStatus");
+            if (ctxStatus) {
+                chartStatusInstance = new Chart(ctxStatus.getContext("2d"), {
+                    type: "doughnut",
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusValues,
+                            backgroundColor: ["#b45309", "#0369a1", "#15803d", "#dc2626"],
+                            borderWidth: 2,
+                            borderColor: "#ffffff"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom", labels: { boxWidth: 12, font: { weight: "600" } } }
+                        },
+                        cutout: "70%"
                     }
-                },
-                cutout: "70%"
+                });
             }
-        });
-    }
-
-    // Cập nhật bảng Sản phẩm bán chạy
-    function updateTopProducts(data) {
-        const list = data.topProducts || [];
-        const tbody = document.querySelector("#tableTopProducts tbody");
-        const noDataOverlayProducts = document.getElementById("noDataOverlayProducts");
-        const table = document.getElementById("tableTopProducts");
-
-        tbody.innerHTML = "";
-
-        if (list.length === 0) {
-            noDataOverlayProducts.classList.remove("d-none");
-            table.classList.add("d-none");
-            return;
-        } else {
-            noDataOverlayProducts.classList.add("d-none");
-            table.classList.remove("d-none");
         }
 
-        list.forEach((p, idx) => {
-            const tr = document.createElement("tr");
-            
-            // Huy hiệu hạng 1, 2, 3
-            let rankHtml = "";
-            if (idx === 0) {
-                rankHtml = `<span class="badge bg-warning text-dark"><i class="fas fa-medal"></i> 1</span>`;
-            } else if (idx === 1) {
-                rankHtml = `<span class="badge bg-light text-dark border"><i class="fas fa-medal"></i> 2</span>`;
-            } else if (idx === 2) {
-                rankHtml = `<span class="badge bg-light text-muted border"><i class="fas fa-medal"></i> 3</span>`;
+        function updateTopProducts(data) {
+            const list = data.topProducts || [];
+            const tbody = document.querySelector("#tableTopProducts tbody");
+            const noDataOverlayProducts = document.getElementById("noDataOverlayProducts");
+            const table = document.getElementById("tableTopProducts");
+
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (list.length === 0) {
+                if (noDataOverlayProducts) noDataOverlayProducts.classList.remove("d-none");
+                if (table) table.classList.add("d-none");
+                return;
             } else {
-                rankHtml = `<span class="fw-bold">${idx + 1}</span>`;
+                if (noDataOverlayProducts) noDataOverlayProducts.classList.add("d-none");
+                if (table) table.classList.remove("d-none");
             }
 
-            // Ảnh mặc định nếu trống
-            const imgSrc = p.image ? p.image : '/images/default-product.png';
+            list.forEach((p, idx) => {
+                const tr = document.createElement("tr");
+                let rankHtml = idx === 0 ? `<span class="admin-status admin-status-warning"><i class="fas fa-medal"></i> 1</span>`
+                            : (idx === 1 ? `<span class="admin-status admin-status-neutral"><i class="fas fa-medal"></i> 2</span>`
+                            : (idx === 2 ? `<span class="admin-status admin-status-neutral"><i class="fas fa-medal"></i> 3</span>`
+                            : `<span class="fw-bold">${idx + 1}</span>`));
+                const imgSrc = p.image ? p.image : '/images/default-product.png';
 
-            tr.innerHTML = `
-                <td class="text-center">${rankHtml}</td>
-                <td>
-                    <img src="${imgSrc}" class="img-thumbnail rounded" style="width: 48px; height: 48px; object-fit: cover;" onerror="this.src='https://placehold.co/48x48/f4f6fa/15171c?text=No+Img'">
-                </td>
-                <td class="fw-bold text-dark">${p.productName}</td>
-                <td class="text-secondary fw-semibold">${p.categoryName}</td>
-                <td class="text-center fw-bold text-primary">${formatNumber(p.soldQuantity)}</td>
-                <td class="text-end fw-bold text-danger">${formatVND(p.revenue)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    // Helper to escape HTML characters securely
-    function escapeHtml(str) {
-        if (str === null || str === undefined) return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    // Cập nhật bảng Lịch sử giao dịch
-    function updateTransactions(data) {
-        const list = data.transactions || [];
-        const tbody = document.querySelector("#tableTransactions tbody");
-        const noDataOverlayTransactions = document.getElementById("noDataOverlayTransactions");
-        const table = document.getElementById("tableTransactions");
-
-        // Cập nhật metrics giao dịch riêng biệt
-        document.getElementById("lblTotalTxCount").textContent = formatNumber(data.totalTransactions);
-        document.getElementById("lblShowingTxCount").textContent = formatNumber(data.displayedTransactions);
-
-        tbody.innerHTML = "";
-
-        if (list.length === 0) {
-            noDataOverlayTransactions.classList.remove("d-none");
-            table.classList.add("d-none");
-            return;
-        } else {
-            noDataOverlayTransactions.classList.add("d-none");
-            table.classList.remove("d-none");
+                tr.innerHTML = `
+                    <td class="text-center">${rankHtml}</td>
+                    <td>
+                        <img src="${imgSrc}" class="img-thumbnail rounded" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.src='https://placehold.co/44x44/f4f6fa/15171c?text=No+Img'">
+                    </td>
+                    <td class="fw-bold text-dark">${escapeHtml(p.productName)}</td>
+                    <td class="text-secondary fw-semibold">${escapeHtml(p.categoryName)}</td>
+                    <td class="text-center fw-bold text-primary">${formatNumber(p.soldQuantity)}</td>
+                    <td class="text-end fw-bold text-danger">${formatVND(p.revenue)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        list.forEach(tx => {
-            const tr = document.createElement("tr");
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
 
-            // Bản đồ ánh xạ nhãn Badge tường minh
-            let badgeClass = "secondary";
-            let badgeText = tx.paymentStatus;
-            if (tx.paymentStatus === "PAID") {
-                badgeClass = "success";
-                badgeText = "Thành công";
-            } else if (tx.paymentStatus === "PENDING") {
-                badgeClass = "warning";
-                badgeText = "Chờ thanh toán";
-            } else if (tx.paymentStatus === "FAILED") {
-                badgeClass = "danger";
-                badgeText = "Thất bại";
-            } else if (tx.paymentStatus === "REFUNDED") {
-                badgeClass = "info";
-                badgeText = "Hoàn tiền";
-            } else if (tx.paymentStatus === "CANCELLED") {
-                badgeClass = "secondary";
-                badgeText = "Đã hủy";
-            }
-            const statusBadge = `<span class="badge bg-${badgeClass}-subtle text-${badgeClass} border border-${badgeClass}-subtle py-1.5 px-2.5 rounded-pill">${badgeText}</span>`;
+        function updateTransactions(data) {
+            const list = data.transactions || [];
+            const tbody = document.querySelector("#tableTransactions tbody");
+            const noDataOverlayTransactions = document.getElementById("noDataOverlayTransactions");
+            const table = document.getElementById("tableTransactions");
 
-            // Chuẩn hóa phương thức thanh toán hiển thị kèm Icon
-            let methodHtml = "";
-            if (tx.paymentMethod === "ZALOPAY") {
-                methodHtml = `<span class="fw-semibold text-primary"><i class="fas fa-wallet me-1 text-primary"></i>ZaloPay</span>`;
-            } else if (tx.paymentMethod === "SEPAY") {
-                methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1 text-info"></i>SePay</span>`;
-            } else if (tx.paymentMethod === "CASH") {
-                methodHtml = `<span class="fw-semibold text-success"><i class="fas fa-money-bill-wave me-1 text-success"></i>Tiền mặt</span>`;
-            } else if (tx.paymentMethod === "BANK_TRANSFER") {
-                methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1 text-info"></i>Chuyển khoản</span>`;
-            } else if (tx.paymentMethod === "COD") {
-                methodHtml = `<span class="fw-semibold text-warning"><i class="fas fa-truck me-1 text-warning"></i>COD</span>`;
+            const lblTotal = document.getElementById("lblTotalTxCount");
+            const lblShowing = document.getElementById("lblShowingTxCount");
+            if (lblTotal) lblTotal.textContent = formatNumber(data.totalTransactions);
+            if (lblShowing) lblShowing.textContent = formatNumber(data.displayedTransactions);
+
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (list.length === 0) {
+                if (noDataOverlayTransactions) noDataOverlayTransactions.classList.remove("d-none");
+                if (table) table.classList.add("d-none");
+                return;
             } else {
-                methodHtml = `<span class="fw-semibold text-dark">${escapeHtml(tx.paymentMethod)}</span>`;
+                if (noDataOverlayTransactions) noDataOverlayTransactions.classList.add("d-none");
+                if (table) table.classList.remove("d-none");
             }
 
-            // Định dạng thời gian LocalDateTime sang định dạng dd/MM/yyyy HH:mm:ss
-            let formattedTime = "";
-            if (tx.transactionTime) {
-                const dt = new Date(tx.transactionTime);
-                if (!isNaN(dt.getTime())) {
-                    const day = String(dt.getDate()).padStart(2, '0');
-                    const month = String(dt.getMonth() + 1).padStart(2, '0');
-                    const year = dt.getFullYear();
-                    const hours = String(dt.getHours()).padStart(2, '0');
-                    const minutes = String(dt.getMinutes()).padStart(2, '0');
-                    const seconds = String(dt.getSeconds()).padStart(2, '0');
-                    formattedTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+            list.forEach(tx => {
+                const tr = document.createElement("tr");
+                let badgeClass = "admin-status-neutral";
+                let badgeText = tx.paymentStatus;
+                if (tx.paymentStatus === "PAID") { badgeClass = "admin-status-success"; badgeText = "Thành công"; }
+                else if (tx.paymentStatus === "PENDING") { badgeClass = "admin-status-warning"; badgeText = "Chờ thanh toán"; }
+                else if (tx.paymentStatus === "FAILED") { badgeClass = "admin-status-danger"; badgeText = "Thất bại"; }
+                else if (tx.paymentStatus === "REFUNDED") { badgeClass = "admin-status-info"; badgeText = "Hoàn tiền"; }
+
+                const statusBadge = `<span class="admin-status ${badgeClass}">${badgeText}</span>`;
+
+                let methodHtml = `<span class="fw-semibold text-dark">${escapeHtml(tx.paymentMethod)}</span>`;
+                if (tx.paymentMethod === "ZALOPAY") methodHtml = `<span class="fw-semibold text-primary"><i class="fas fa-wallet me-1"></i>ZaloPay</span>`;
+                else if (tx.paymentMethod === "SEPAY") methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1"></i>SePay</span>`;
+                else if (tx.paymentMethod === "CASH") methodHtml = `<span class="fw-semibold text-success"><i class="fas fa-money-bill-wave me-1"></i>Tiền mặt</span>`;
+                else if (tx.paymentMethod === "BANK_TRANSFER") methodHtml = `<span class="fw-semibold text-info"><i class="fas fa-university me-1"></i>Chuyển khoản</span>`;
+                else if (tx.paymentMethod === "COD") methodHtml = `<span class="fw-semibold text-warning"><i class="fas fa-truck me-1"></i>COD</span>`;
+
+                let formattedTime = "";
+                if (tx.transactionTime) {
+                    const dt = new Date(tx.transactionTime);
+                    if (!isNaN(dt.getTime())) {
+                        const day = String(dt.getDate()).padStart(2, '0');
+                        const month = String(dt.getMonth() + 1).padStart(2, '0');
+                        const year = dt.getFullYear();
+                        const hours = String(dt.getHours()).padStart(2, '0');
+                        const minutes = String(dt.getMinutes()).padStart(2, '0');
+                        const seconds = String(dt.getSeconds()).padStart(2, '0');
+                        formattedTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+                    }
                 }
-            }
 
-            tr.innerHTML = `
-                <td class="text-center fw-bold text-secondary">${escapeHtml(tx.invoiceCode)}</td>
-                <td><div class="fw-bold text-dark">${escapeHtml(tx.customerName)}</div></td>
-                <td class="text-muted" style="font-size: 0.85rem;">${formattedTime}</td>
-                <td>${methodHtml}</td>
-                <td><code class="text-dark bg-light px-2 py-1 rounded" style="font-size: 0.8rem;">${escapeHtml(tx.transactionId)}</code></td>
-                <td class="text-end fw-bold text-danger">${formatVND(tx.amount)}</td>
-                <td class="text-center">${statusBadge}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+                tr.innerHTML = `
+                    <td class="text-center fw-bold text-secondary">${escapeHtml(tx.invoiceCode)}</td>
+                    <td><div class="fw-bold text-dark">${escapeHtml(tx.customerName)}</div></td>
+                    <td class="text-muted small">${formattedTime}</td>
+                    <td>${methodHtml}</td>
+                    <td><code class="text-dark bg-light px-2 py-1 rounded small">${escapeHtml(tx.transactionId)}</code></td>
+                    <td class="text-end fw-bold text-danger">${formatVND(tx.amount)}</td>
+                    <td class="text-center">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-    // Helper format tiền tệ
-    function formatVND(value) {
-        if (value === null || value === undefined) return "0 đ";
-        return Math.round(value).toLocaleString("vi-VN") + " đ";
-    }
+        function formatVND(value) {
+            if (value === null || value === undefined) return "0 đ";
+            return Math.round(value).toLocaleString("vi-VN") + " đ";
+        }
 
-    // Helper format số lượng
-    function formatNumber(value) {
-        if (value === null || value === undefined) return "0";
-        return value.toLocaleString("vi-VN");
-    }
+        function formatNumber(value) {
+            if (value === null || value === undefined) return "0";
+            return value.toLocaleString("vi-VN");
+        }
 
-    // Load mặc định 30 ngày qua
-    loadStatistics("last_30_days", "", "");
-});
-</script>
+        loadStatistics("last_30_days", "", "");
+    });
+    </script>
 
+    <!-- Bootstrap 5.3.0 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Admin Layout JS -->
+    <script th:src="@{/js/admin-layout.js(v='2.1')}"></script>
 </body>
 </html>
