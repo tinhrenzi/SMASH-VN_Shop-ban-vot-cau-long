@@ -267,13 +267,23 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                          <button type="button" class="admin-btn admin-btn-icon" 
                                                                  th:data-id="${hd.id}"
                                                                  onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                  title="Chi tiết đơn hàng">
                                                              <i class="fas fa-eye text-primary"></i>
                                                          </button>
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:data-id="${hd.id}"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            title="Chi tiết đơn hàng">
+                                                            <i class="fas fa-eye text-primary"></i>
+                                                        </button>
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
+<<<<<<< HEAD
                                                          <button th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
                                                                  type="button" class="admin-btn admin-btn-sm admin-btn-primary"
                                                                  th:data-id="${hd.id}"
@@ -282,6 +292,18 @@
                                                                  onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
                                                              <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                          </button>
+=======
+                                                        <button
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                            type="button"
+                                                            class="admin-btn admin-btn-sm admin-btn-primary"
+                                                            th:data-id="${hd.id}"
+                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                            th:data-total="${hd.tongTien}"
+                                                            onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
+                                                            <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
+                                                        </button>
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
 
                                                         <form
                                                             th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
@@ -478,10 +500,17 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:data-id="${hd.id}"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            title="Chi tiết đơn hàng">
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
@@ -614,10 +643,17 @@
                                                 </td>
                                                 <td class="text-center text-nowrap">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+<<<<<<< HEAD
                                                         <button type="button" class="admin-btn admin-btn-icon" 
                                                                 th:data-id="${hd.id}"
                                                                 onclick="openOrderDetailModal(this.getAttribute('data-id'))"
                                                                 title="Chi tiết đơn hàng">
+=======
+                                                        <button type="button" class="admin-btn admin-btn-icon"
+                                                            th:data-id="${hd.id}"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            title="Chi tiết đơn hàng">
+>>>>>>> branch 'tinh' of https://github.com/tinhrenzi/SMASH-VN_Shop-ban-vot-cau-long.git
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
 
