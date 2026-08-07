@@ -44,15 +44,26 @@ class GioHangControllerTest {
     private TaiKhoanRepository taiKhoanRepository;
 
     @Mock
+    private com.smashvn.shop.service.order.CheckoutContextService checkoutContextService;
+
+    @Mock
     private HttpSession session;
+
+    @Mock
+    private com.smashvn.shop.repository.GioHangChiTietRepository gioHangChiTietRepository;
 
     private GioHangController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new GioHangController(gioHangService, pricingService, guestCartService, sanPhamChiTietRepository, taiKhoanRepository);
+        controller = new GioHangController(gioHangService, pricingService, guestCartService, sanPhamChiTietRepository, taiKhoanRepository, checkoutContextService, gioHangChiTietRepository);
+        com.smashvn.shop.dto.order.CheckoutContext dummyContext = com.smashvn.shop.dto.order.CheckoutContext.builder().token("dummy-token").build();
+        when(checkoutContextService.createQuickAddContext(any(), any(), any(), any(), any())).thenReturn(dummyContext);
     }
+
+
+
 
     @Test
     void guestDoesNotUseDbBackedCartWhenAddingItem() {

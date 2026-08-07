@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.smashvn.shop.dto.cart.CartItemView;
 import com.smashvn.shop.entity.GioHangChiTiet;
+import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.order.GioHangService;
@@ -35,6 +37,8 @@ public class GioHangController {
     private final GuestCartService guestCartService;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final com.smashvn.shop.service.order.CheckoutContextService checkoutContextService;
+    private final GioHangChiTietRepository gioHangChiTietRepository;
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -79,6 +83,12 @@ public class GioHangController {
                 data.put("giaBan", pricingService.calculateCurrentSellingPrice(spct));
                 data.put("hinhAnh", spct.getHinhAnhSanPham());
                 data.put("soLuongThem", soLuong);
+
+                // Create Quick Add CheckoutContext backend token
+                com.smashvn.shop.dto.order.CheckoutContext quickAddCtx = checkoutContextService.createQuickAddContext(session, null, idSanPhamChiTiet, soLuong, null);
+                data.put("checkoutToken", quickAddCtx.getToken());
+                data.put("quickAddCheckoutUrl", "/checkout?token=" + quickAddCtx.getToken());
+
                 return ResponseEntity.ok(data);
             } catch (RuntimeException e) {
                 return ResponseEntity.status(400).body(e.getMessage());
@@ -89,6 +99,12 @@ public class GioHangController {
             // Service xử lý và trả về luôn dữ liệu hiển thị Modal
             Map<String, Object> data = gioHangService.themVaoGio(idNguoiDung, idSanPhamChiTiet, soLuong);
             data.put("trangThai", "ok");
+
+            Integer cartItemId = (Integer) data.get("cartItemId");
+            com.smashvn.shop.dto.order.CheckoutContext quickAddCtx = checkoutContextService.createQuickAddContext(session, idNguoiDung, idSanPhamChiTiet, soLuong, cartItemId);
+            data.put("checkoutToken", quickAddCtx.getToken());
+            data.put("quickAddCheckoutUrl", "/checkout?token=" + quickAddCtx.getToken());
+
             return ResponseEntity.ok(data);
 
         } catch (RuntimeException e) {
@@ -108,7 +124,6 @@ public class GioHangController {
             return ResponseEntity.ok(response);
         }
 
-        // Controller chỉ việc gọi 1 dòng duy nhất!
         Map<String, Object> response = gioHangService.layDuLieuMiniCart(idNguoiDung);
         return ResponseEntity.ok(response);
     }
@@ -119,48 +134,99 @@ public class GioHangController {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
 
-        List<GioHangChiTiet> danhSachChiTiet = new java.util.ArrayList<>();
+        List<CartItemView> danhSachCartView = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
 
         if (!activeAccount) {
-            List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
-            for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
+            List<GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
+            for (GuestCartService.GuestCartItem item : guestItems) {
                 com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
-                if (spct == null) {
-                    continue;
+                CartItemView view = buildCartItemView(item.getIdSanPhamChiTiet(), spct, item.getSoLuong(), true);
+                if (view.isHopLe() && view.getThanhTien() != null) {
+                    tongTien = tongTien.add(view.getThanhTien());
                 }
-
-                GioHangChiTiet detail = new GioHangChiTiet();
-                detail.setId(spct.getId()); // Sử dụng ID SPCT làm ID chi tiết tạm thời
-                detail.setSanPhamChiTiet(spct);
-                detail.setSoLuong(item.getSoLuong());
-
-                int tonKho = spct.getSoLuongTon();
-                boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(spct) && item.getSoLuong() != null && item.getSoLuong() > 0;
-                if (hopLe) {
-                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
-                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
-                }
-                danhSachChiTiet.add(detail);
+                danhSachCartView.add(view);
             }
         } else {
-            danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
-            for (GioHangChiTiet item : danhSachChiTiet) {
-                int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-                boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(item.getSanPhamChiTiet()) && item.getSoLuong() != null && item.getSoLuong() > 0;
-                if (hopLe) {
-                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
-                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+            List<GioHangChiTiet> dbCartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+            for (GioHangChiTiet item : dbCartItems) {
+                CartItemView view = buildCartItemView(item.getId(), item.getSanPhamChiTiet(), item.getSoLuong(), false);
+                if (view.isHopLe() && view.getThanhTien() != null) {
+                    tongTien = tongTien.add(view.getThanhTien());
                 }
+                danhSachCartView.add(view);
             }
         }
 
-        model.addAttribute("danhSachCart", danhSachChiTiet);
+        model.addAttribute("danhSachCart", danhSachCartView);
         model.addAttribute("tongTien", tongTien);
         return "cart";
     }
 
-    // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX (Chuyển sang POST để chống CSRF)
+    private CartItemView buildCartItemView(Integer cartItemId, com.smashvn.shop.entity.SanPhamChiTiet spct, Integer soLuong, boolean isGuest) {
+        if (spct == null) {
+            return CartItemView.builder()
+                    .cartItemId(cartItemId)
+                    .soLuong(soLuong)
+                    .hopLe(false)
+                    .guestItem(isGuest)
+                    .build();
+        }
+
+        com.smashvn.shop.entity.SanPham sp = spct.getSanPham();
+        String tenSp = sp != null ? sp.getTenSanPham() : "Sản phẩm";
+        String anhSp = spct.getHinhAnhUrl() != null && !spct.getHinhAnhUrl().isBlank() ? spct.getHinhAnhUrl() : spct.getHinhAnhSanPham();
+        String danhMuc = (sp != null && sp.getDanhMuc() != null) ? sp.getDanhMuc().getTenDanhMuc() : "";
+
+        List<String> thuocTinhList = new java.util.ArrayList<>();
+        if (spct.getSanPhamChiTietThuocTinhs() != null) {
+            for (com.smashvn.shop.entity.SanPhamChiTietThuocTinh tt : spct.getSanPhamChiTietThuocTinhs()) {
+                if (tt.getThuocTinh() != null && tt.getGiaTri() != null) {
+                    thuocTinhList.add(tt.getThuocTinh().getTenThuocTinh() + ": " + tt.getGiaTri());
+                }
+            }
+        }
+        if (thuocTinhList.isEmpty()) {
+            String sizeOrWeight = spct.getTrongLuong() != null && !spct.getTrongLuong().isBlank() ? spct.getTrongLuong() : (spct.getKichThuoc() != null ? spct.getKichThuoc() : "");
+            if (spct.getMauSac() != null || !sizeOrWeight.isEmpty()) {
+                String str = (spct.getMauSac() != null ? spct.getMauSac() : "") + (!sizeOrWeight.isEmpty() ? " | " + sizeOrWeight : "");
+                thuocTinhList.add(str);
+            }
+        }
+
+        int tonKho = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
+        boolean hetHang = tonKho <= 0;
+        boolean ngungBanSp = sp != null && !isDangBan(sp.getTrangThai());
+        boolean ngungBanBienThe = !isDangBan(spct.getTrangThai());
+        boolean ngungBan = ngungBanSp || ngungBanBienThe;
+        boolean hopLe = !hetHang && !ngungBan && soLuong != null && soLuong > 0;
+
+        BigDecimal donGia = pricingService.calculateCurrentSellingPrice(spct);
+        if (donGia == null) {
+            donGia = spct.getGiaBan() != null ? spct.getGiaBan() : BigDecimal.ZERO;
+        }
+        BigDecimal thanhTien = donGia.multiply(new BigDecimal(soLuong != null ? soLuong : 0));
+
+        return CartItemView.builder()
+                .cartItemId(cartItemId)
+                .idSanPhamChiTiet(spct.getId())
+                .sanPhamId(sp != null ? sp.getId() : null)
+                .tenSanPham(tenSp)
+                .anhSanPham(anhSp)
+                .danhMuc(danhMuc)
+                .thuocTinh(thuocTinhList)
+                .soLuong(soLuong)
+                .soLuongTon(tonKho)
+                .donGia(donGia)
+                .thanhTien(thanhTien)
+                .hetHang(hetHang)
+                .ngungBan(ngungBan)
+                .hopLe(hopLe)
+                .guestItem(isGuest)
+                .build();
+    }
+
+    // HÀM 4 MỚI: XÓA SẢN PHẨM BẰNG AJAX
     @PostMapping("/api/xoa/{id}")
     @ResponseBody
     public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
@@ -185,7 +251,8 @@ public class GioHangController {
     // HÀM 5: CẬP NHẬT SỐ LƯỢNG (Dùng cho AJAX trong cart.html)
     @PostMapping("/cap-nhat")
     @ResponseBody
-    public ResponseEntity<String> capNhatSoLuong(@RequestParam(value = "idChiTiet", required = false) Integer idChiTiet,
+    public ResponseEntity<?> capNhatSoLuong(
+            @RequestParam(value = "idChiTiet", required = false) Integer idChiTiet,
             @RequestParam(value = "soLuong", required = false) Integer soLuong,
             HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
@@ -199,12 +266,39 @@ public class GioHangController {
         }
 
         try {
+            com.smashvn.shop.entity.SanPhamChiTiet spct = null;
+            Integer updatedQty = soLuong;
+            Integer cartItemId = idChiTiet;
+
             if (!activeAccount) {
                 guestCartService.updateGuestCartQuantity(session, idChiTiet, soLuong);
+                spct = sanPhamChiTietRepository.findById(idChiTiet).orElse(null);
             } else {
                 gioHangService.capNhatSoLuong(idChiTiet, soLuong, idNguoiDung);
+                GioHangChiTiet item = gioHangChiTietRepository.findById(idChiTiet).orElse(null);
+                if (item != null) {
+                    spct = item.getSanPhamChiTiet();
+                    updatedQty = item.getSoLuong();
+                }
             }
-            return ResponseEntity.ok("ok");
+
+            BigDecimal unitPrice = pricingService.calculateCurrentSellingPrice(spct);
+            if (unitPrice == null && spct != null) {
+                unitPrice = spct.getGiaBan();
+            }
+            if (unitPrice == null) unitPrice = BigDecimal.ZERO;
+
+            BigDecimal lineTotal = unitPrice.multiply(new BigDecimal(updatedQty != null ? updatedQty : 0));
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("trangThai", "ok");
+            resp.put("cartItemId", cartItemId);
+            resp.put("quantity", updatedQty);
+            resp.put("unitPrice", unitPrice);
+            resp.put("lineTotal", lineTotal);
+            resp.put("stockQuantity", spct != null && spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 999);
+
+            return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
@@ -220,3 +314,4 @@ public class GioHangController {
                 && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 }
+

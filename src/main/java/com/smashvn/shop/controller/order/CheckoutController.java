@@ -37,7 +37,12 @@ import com.smashvn.shop.service.order.GuestCheckoutService;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.service.user.UserDangNhapService;
+import com.smashvn.shop.dto.order.*;
+import com.smashvn.shop.repository.GioHangChiTietRepository;
+import com.smashvn.shop.service.order.CheckoutContextService;
+import com.smashvn.shop.service.order.PendingCheckoutRegistry;
 import com.smashvn.shop.util.VoucherCalculator;
+
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -63,7 +68,11 @@ public class CheckoutController {
     private final TaiKhoanRepository taiKhoanRepository;
     private final TokenKhoiPhucRepository tokenRepository;
     private final SoDiaChiRepository soDiaChiRepository;
+    private final CheckoutContextService checkoutContextService;
+    private final PendingCheckoutRegistry pendingCheckoutRegistry;
+    private final GioHangChiTietRepository gioHangChiTietRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -76,115 +85,229 @@ public class CheckoutController {
                 && isDangBan(spct.getTrangThai());
     }
 
-    @GetMapping({"/checkout", "/checkout.html"})
-    public String viewCheckout(HttpSession session, Model model) {
+    @PostMapping("/checkout/start")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> startCheckout(
+            @RequestParam(value = "selectedItemIds", required = false) List<Integer> selectedItemIds,
+            HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
+        if (selectedItemIds == null || selectedItemIds.isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+            return ResponseEntity.ok(response);
+        }
+
+        List<Integer> distinctIds = selectedItemIds.stream().distinct().collect(java.util.stream.Collectors.toList());
+        if (distinctIds.size() > 100) {
+            response.put("trangThai", "loi");
+            response.put("message", "Số lượng sản phẩm thanh toán không được vượt quá 100 sản phẩm.");
+            return ResponseEntity.ok(response);
+        }
+
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
+
+        List<CheckoutItemContext> contextItems = new java.util.ArrayList<>();
+
+        if (!activeAccount) {
+            List<GuestCartService.GuestCartItem> guestCart = guestCartService.getGuestCartItems(session);
+            for (Integer spctId : distinctIds) {
+                GuestCartService.GuestCartItem match = guestCart.stream()
+                        .filter(item -> item.getIdSanPhamChiTiet().equals(spctId))
+                        .findFirst()
+                        .orElse(null);
+                if (match == null || match.getSoLuong() == null || match.getSoLuong() <= 0) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Một số sản phẩm đã chọn không còn tồn tại trong giỏ hàng. Vui lòng tải lại giỏ hàng!");
+                    return ResponseEntity.ok(response);
+                }
+
+                com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(spctId).orElse(null);
+                if (spct == null) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm đã chọn không tồn tại trong hệ thống.");
+                    return ResponseEntity.ok(response);
+                }
+                boolean dangBan = isSanPhamChiTietDangBan(spct);
+                if (!dangBan) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm \"" + (spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "") + "\" đã ngừng kinh doanh.");
+                    return ResponseEntity.ok(response);
+                }
+                int tonKho = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
+                if (match.getSoLuong() > tonKho) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm \"" + spct.getSanPham().getTenSanPham() + "\" số lượng (" + match.getSoLuong() + ") vượt quá tồn kho (" + tonKho + "). Vui lòng điều chỉnh lại!");
+                    return ResponseEntity.ok(response);
+                }
+
+                contextItems.add(CheckoutItemContext.builder()
+                        .cartItemId(null)
+                        .idSanPhamChiTiet(spctId)
+                        .soLuong(match.getSoLuong())
+                        .fromCart(true)
+                        .build());
+            }
+        } else {
+            com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+            if (kh == null) {
+                response.put("trangThai", "loi");
+                response.put("message", "Thông tin tài khoản không hợp lệ.");
+                return ResponseEntity.ok(response);
+            }
+            List<GioHangChiTiet> dbCartItems = gioHangChiTietRepository.findAllByIdInAndGioHang_KhachHang_Id(distinctIds, kh.getId());
+            if (dbCartItems.size() != distinctIds.size()) {
+                response.put("trangThai", "loi");
+                response.put("message", "Một số sản phẩm đã chọn không còn tồn tại trong giỏ hàng. Vui lòng tải lại giỏ hàng!");
+                return ResponseEntity.ok(response);
+            }
+
+            for (GioHangChiTiet item : dbCartItems) {
+                com.smashvn.shop.entity.SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                if (spct == null) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm trong giỏ không hợp lệ.");
+                    return ResponseEntity.ok(response);
+                }
+                boolean dangBan = isSanPhamChiTietDangBan(spct);
+                if (!dangBan) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm \"" + (spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "") + "\" đã ngừng kinh doanh.");
+                    return ResponseEntity.ok(response);
+                }
+                int tonKho = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
+                if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Số lượng sản phẩm trong giỏ hàng không hợp lệ.");
+                    return ResponseEntity.ok(response);
+                }
+                if (item.getSoLuong() > tonKho) {
+                    response.put("trangThai", "loi");
+                    response.put("message", "Sản phẩm \"" + spct.getSanPham().getTenSanPham() + "\" số lượng (" + item.getSoLuong() + ") vượt quá tồn kho (" + tonKho + "). Vui lòng điều chỉnh lại!");
+                    return ResponseEntity.ok(response);
+                }
+
+                contextItems.add(CheckoutItemContext.builder()
+                        .cartItemId(item.getId())
+                        .idSanPhamChiTiet(spct.getId())
+                        .soLuong(item.getSoLuong())
+                        .fromCart(true)
+                        .build());
+            }
+        }
+
+
+        if (contextItems.isEmpty()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Không tìm thấy sản phẩm hợp lệ trong giỏ hàng để thanh toán!");
+            return ResponseEntity.ok(response);
+        }
+
+        CheckoutContext context = checkoutContextService.createCartContext(session, idNguoiDung, contextItems);
+        response.put("trangThai", "ok");
+        response.put("checkoutToken", context.getToken());
+        response.put("checkoutUrl", "/checkout?token=" + context.getToken());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/checkout/buy-now")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> buyNow(
+            @RequestParam(value = "idSanPhamChiTiet", required = false) Integer idSanPhamChiTiet,
+            @RequestParam(value = "soLuong", required = false, defaultValue = "1") Integer soLuong,
+            HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
+        if (idSanPhamChiTiet == null) {
+            response.put("trangThai", "loi");
+            response.put("message", "Sản phẩm không hợp lệ.");
+            return ResponseEntity.ok(response);
+        }
+        if (soLuong == null || soLuong <= 0) {
+            response.put("trangThai", "loi");
+            response.put("message", "Số lượng mua không hợp lệ.");
+            return ResponseEntity.ok(response);
+        }
+
+        com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet).orElse(null);
+        if (spct == null || !isSanPhamChiTietDangBan(spct)) {
+            response.put("trangThai", "loi");
+            response.put("message", "Sản phẩm hoặc phân loại đã ngưng kinh doanh.");
+            return ResponseEntity.ok(response);
+        }
+        if (spct.getSoLuongTon() < soLuong) {
+            response.put("trangThai", "loi");
+            response.put("message", "Số lượng tồn kho không đủ (Còn lại: " + spct.getSoLuongTon() + ").");
+            return ResponseEntity.ok(response);
+        }
+
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        CheckoutContext context = checkoutContextService.createBuyNowContext(session, idNguoiDung, idSanPhamChiTiet, soLuong);
+
+        response.put("trangThai", "ok");
+        response.put("checkoutToken", context.getToken());
+        response.put("checkoutUrl", "/checkout?token=" + context.getToken());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping({"/checkout", "/checkout.html"})
+    public String viewCheckout(
+            @RequestParam(value = "token", required = false) String token,
+            HttpSession session,
+            Model model) {
+
+        if (token == null || token.isBlank()) {
+            return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Vui lòng chọn sản phẩm để thanh toán!", java.nio.charset.StandardCharsets.UTF_8);
+        }
+
+        CheckoutContext context = checkoutContextService.getContext(session, token);
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+
+
+        if (context == null || !checkoutContextService.validateOwnership(context, idNguoiDung, session.getId())) {
+            return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phiên thanh toán không hợp lệ hoặc đã hết hạn!", java.nio.charset.StandardCharsets.UTF_8);
+        }
 
         List<GioHangChiTiet> danhSachChiTiet = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
 
-        if (!activeAccount) {
-            if (idNguoiDung != null) {
-                com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
-                if (kh != null) {
-                    guestCartService.transferGuestCartToDb(session, kh.getId());
-                }
-            }
-            List<com.smashvn.shop.service.order.GuestCartService.GuestCartItem> guestItems = guestCartService.getGuestCartItems(session);
-            if (!guestItems.isEmpty()) {
-                for (com.smashvn.shop.service.order.GuestCartService.GuestCartItem item : guestItems) {
-                    com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
-                    if (spct == null) {
-                        continue;
-                    }
-
-                    GioHangChiTiet detail = new GioHangChiTiet();
-                    detail.setId(spct.getId());
-                    detail.setSanPhamChiTiet(spct);
-                    detail.setSoLuong(item.getSoLuong());
-
-                    SanPham sp = spct.getSanPham();
-                    int tonKho = spct.getSoLuongTon();
-
-                    if (!isSanPhamChiTietDangBan(spct)) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    if (tonKho <= 0) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    if (item.getSoLuong() > tonKho) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-
-                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
-                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
-                    danhSachChiTiet.add(detail);
-                }
-            } else if (idNguoiDung != null) {
-                // If guest session cart was transferred to DB cart, load from DB cart
-                danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
-                if (danhSachChiTiet.isEmpty()) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-
-                for (GioHangChiTiet item : danhSachChiTiet) {
-                    if (item.getSanPhamChiTiet() == null || item.getSanPhamChiTiet().getSanPham() == null) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng chứa sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    SanPham sp = item.getSanPhamChiTiet().getSanPham();
-                    int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-
-                    if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm trong giỏ hàng không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    if (!isSanPhamChiTietDangBan(item.getSanPhamChiTiet())) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    if (tonKho <= 0) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    if (item.getSoLuong() > tonKho) {
-                        return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                    BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
-                    tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
-                }
-            } else {
-                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
-            }
-        } else {
-            // Clean up any old unpaid pending orders when loading the checkout page
-            gioHangService.cleanPendingOrders(idNguoiDung);
-
-            danhSachChiTiet = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
-            if (danhSachChiTiet.isEmpty()) {
-                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng của bạn đang trống!", java.nio.charset.StandardCharsets.UTF_8);
+        for (CheckoutItemContext itemCtx : context.getItems()) {
+            com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(itemCtx.getIdSanPhamChiTiet()).orElse(null);
+            if (spct == null) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng chứa sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
             }
 
-            for (GioHangChiTiet item : danhSachChiTiet) {
-                if (item.getSanPhamChiTiet() == null || item.getSanPhamChiTiet().getSanPham() == null) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Giỏ hàng chứa sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                SanPham sp = item.getSanPhamChiTiet().getSanPham();
-                int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
+            SanPham sp = spct.getSanPham();
+            int tonKho = spct.getSoLuongTon();
+            int reqQty = itemCtx.getSoLuong() != null ? itemCtx.getSoLuong() : 0;
 
-                if (item.getSoLuong() == null || item.getSoLuong() <= 0) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm trong giỏ hàng không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                if (!isSanPhamChiTietDangBan(item.getSanPhamChiTiet())) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                if (tonKho <= 0) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                if (item.getSoLuong() > tonKho) {
-                    return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
-                }
-                BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
-                tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+            if (reqQty <= 0) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
             }
+            if (!isSanPhamChiTietDangBan(spct)) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (tonKho <= 0) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' đã hết hàng!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (reqQty > tonKho) {
+                return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Sản phẩm '" + sp.getTenSanPham() + "' không đủ số lượng tồn kho (Còn lại: " + tonKho + ")!", java.nio.charset.StandardCharsets.UTF_8);
+            }
+
+            GioHangChiTiet detail = new GioHangChiTiet();
+            detail.setId(itemCtx.getCartItemId() != null ? itemCtx.getCartItemId() : spct.getId());
+            detail.setSanPhamChiTiet(spct);
+            detail.setSoLuong(reqQty);
+
+            BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
+            tongTien = tongTien.add(giaBanSauGiam.multiply(new BigDecimal(reqQty)));
+            danhSachChiTiet.add(detail);
         }
+
+        model.addAttribute("checkoutToken", token);
+
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll().stream()
                 .filter(dv -> {
@@ -295,8 +418,11 @@ public class CheckoutController {
     }
 
     @PostMapping("/checkout/submit")
+
+
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitCheckout(
+            @RequestParam(value = "checkoutToken", required = false) String checkoutToken,
             @RequestParam(value = "hoTenNhan", required = false) String hoTenNhan,
             @RequestParam(value = "sdtNhan", required = false) String sdtNhan,
             @RequestParam(value = "diaChiNhan", required = false) String diaChiNhan,
@@ -319,6 +445,53 @@ public class CheckoutController {
 
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+
+        CheckoutContext context = null;
+        if (checkoutToken != null && !checkoutToken.isBlank()) {
+            context = checkoutContextService.getContext(session, checkoutToken);
+        }
+
+        if (context == null) {
+            List<CheckoutItemContext> contextItems = new java.util.ArrayList<>();
+            if (idNguoiDung != null) {
+                com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
+                if (kh != null) {
+                    List<GioHangChiTiet> dbCartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+                    for (GioHangChiTiet item : dbCartItems) {
+                        if (item.getSoLuong() != null && item.getSoLuong() > 0) {
+                            contextItems.add(CheckoutItemContext.builder()
+                                    .cartItemId(item.getId())
+                                    .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                                    .soLuong(item.getSoLuong())
+                                    .fromCart(true)
+                                    .build());
+                        }
+                    }
+                }
+            } else {
+                List<GuestCartService.GuestCartItem> guestCart = guestCartService.getGuestCartItems(session);
+                for (GuestCartService.GuestCartItem item : guestCart) {
+                    if (item.getSoLuong() != null && item.getSoLuong() > 0) {
+                        contextItems.add(CheckoutItemContext.builder()
+                                .cartItemId(null)
+                                .idSanPhamChiTiet(item.getIdSanPhamChiTiet())
+                                .soLuong(item.getSoLuong())
+                                .fromCart(true)
+                                .build());
+                    }
+                }
+            }
+            context = checkoutContextService.createCartContext(session, idNguoiDung, contextItems);
+        }
+
+        if (!context.tryClaim()) {
+            response.put("trangThai", "loi");
+            response.put("message", "Yêu cầu thanh toán đang được xử lý hoặc đã hoàn tất. Vui lòng không gửi lại.");
+            return ResponseEntity.ok(response);
+        }
+
+
+
         boolean startedAsAnonymousGuest = (idNguoiDung == null);
         String emailStatus = "NEW";
         String activationToken = null;
@@ -620,9 +793,43 @@ public class CheckoutController {
 
         try {
             long startOrder = System.currentTimeMillis();
-            HoaDon hd = gioHangService.createOrder(idNguoiDung, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, resolvedDiaChiLuuId, voucherCode);
+            OrderCreationResult orderResult;
+            boolean isCod = "COD".equalsIgnoreCase(phuongThucThanhToan);
+
+            if (isCod) {
+                orderResult = gioHangService.submitCodOrder(
+                        idNguoiDung, context, session,
+                        hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved,
+                        ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId,
+                        resolvedDiaChiLuuId, voucherCode);
+            } else {
+                orderResult = gioHangService.createSepayPendingOrder(
+                        idNguoiDung, context,
+                        hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved,
+                        ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId,
+                        resolvedDiaChiLuuId, voucherCode);
+
+                HoaDon hdPending = orderResult.getHoaDon();
+                CheckoutExecutionSnapshot snapshot = CheckoutExecutionSnapshot.builder()
+                        .orderId(hdPending.getId())
+                        .maDonHang(hdPending.getMaDonHang())
+                        .source(context.getSource())
+                        .status(PendingCheckoutStatus.READY)
+                        .customerId(idNguoiDung)
+                        .sessionId(session.getId())
+                        .createdAt(LocalDateTime.now())
+                        .expiresAt(LocalDateTime.now().plusMinutes(30))
+                        .items(orderResult.getPurchasedItems())
+                        .build();
+
+                pendingCheckoutRegistry.registerSnapshot(snapshot);
+            }
+
+            context.consume();
+            HoaDon hd = orderResult.getHoaDon();
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
+
 
             TaiKhoan checkoutTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
             boolean isGuestCheckout = checkoutTk != null && checkoutTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST;
@@ -644,10 +851,10 @@ public class CheckoutController {
                 }
             }
 
-            boolean isCod = "COD".equalsIgnoreCase(phuongThucThanhToan);
             if (isCod) {
                 guestCheckoutService.incrementPurchaseCount(idNguoiDung);
             }
+
 
             TaiKhoan tk = (checkoutTk != null) ? checkoutTk : taiKhoanRepository.findById(idNguoiDung).orElse(null);
             if (tk != null) {
@@ -731,7 +938,9 @@ public class CheckoutController {
             response.put("ghnToWardCode", hd.getGhnToWardCode());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            context.release();
             long endPipeline = System.currentTimeMillis();
+
             log.error("[GuestCheckout] Guest checkout pipeline failed in {}ms. Exception: {}", (endPipeline - startPipeline), e.getMessage(), e);
             response.put("trangThai", "loi");
             if (isPhoneUniqueConstraintViolation(e)) {
@@ -863,30 +1072,44 @@ public class CheckoutController {
     public ResponseEntity<Map<String, Object>> verifyPassword(
             @RequestParam("email") String email,
             @RequestParam("password") String password,
+            @RequestParam(value = "checkoutToken", required = false) String checkoutToken,
             HttpSession session,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         try {
             com.smashvn.shop.entity.TaiKhoan tk = userDangNhapService.kiemTraDangNhap(email, password);
 
+            HttpSession oldSession = session;
             request.changeSessionId();
-            session = request.getSession(true);
+            HttpSession newSession = request.getSession(true);
 
-            session.setAttribute("nguoiDungDangNhap", tk.getUsername());
-            session.setAttribute("idNguoiDung", tk.getId());
-            session.setAttribute("vaiTro", "KH");
+            newSession.setAttribute("nguoiDungDangNhap", tk.getUsername());
+            newSession.setAttribute("idNguoiDung", tk.getId());
+            newSession.setAttribute("vaiTro", "KH");
 
             com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
             if (kh != null) {
-                session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
-                guestCartService.transferGuestCartToDb(session, kh.getId());
+                newSession.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
+                guestCartService.transferGuestCartToDb(newSession, kh.getId());
             } else {
-                session.setAttribute("tenHienThi", "Khách hàng");
+                newSession.setAttribute("tenHienThi", "Khách hàng");
             }
 
+            if (checkoutToken != null && !checkoutToken.isBlank()) {
+                checkoutContextService.promoteGuestContextToAuthenticatedUser(
+                        checkoutToken, oldSession, newSession, tk.getId());
+                response.put("redirectUrl", "/checkout?token=" + java.net.URLEncoder.encode(checkoutToken.trim(), java.nio.charset.StandardCharsets.UTF_8));
+            } else {
+                response.put("redirectUrl", "/checkout");
+            }
+
+            response.put("trangThai", "ok");
+            response.put("authenticated", true);
+            response.put("reloadAddresses", true);
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            response.put("trangThai", "loi");
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.ok(response);
@@ -898,14 +1121,17 @@ public class CheckoutController {
     public ResponseEntity<Map<String, Object>> setPassword(
             @RequestParam("password") String password,
             @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "checkoutToken", required = false) String checkoutToken,
             HttpSession session,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
+        HttpSession oldSession = session;
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         boolean activeAccount = isActiveAccount(idNguoiDung);
         if (activeAccount) {
+            response.put("trangThai", "loi");
             response.put("success", false);
-            response.put("message", "Phien khach vang lai khong hop le. Vui long dung lien ket thiet lap mat khau trong email.");
+            response.put("message", "Phiên khách vãng lai không hợp lệ. Vui lòng dùng liên kết thiết lập mật khẩu trong email.");
             return ResponseEntity.ok(response);
         }
         if (idNguoiDung == null) {
@@ -913,6 +1139,7 @@ public class CheckoutController {
             String targetEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : sessionEmail;
 
             if (targetEmail == null || targetEmail.trim().isEmpty()) {
+                response.put("trangThai", "loi");
                 response.put("success", false);
                 response.put("message", "Chưa đăng nhập và không xác định được email đặt hàng.");
                 return ResponseEntity.ok(response);
@@ -920,12 +1147,14 @@ public class CheckoutController {
 
             TaiKhoan tk = taiKhoanRepository.findByUsername(targetEmail.trim());
             if (tk == null) {
+                response.put("trangThai", "loi");
                 response.put("success", false);
                 response.put("message", "Không tìm thấy tài khoản");
                 return ResponseEntity.ok(response);
             }
 
             if (tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST) {
+                response.put("trangThai", "loi");
                 response.put("success", false);
                 response.put("message", "Tài khoản đã được kích hoạt trước đó, vui lòng đăng nhập bằng mật khẩu");
                 return ResponseEntity.ok(response);
@@ -936,11 +1165,14 @@ public class CheckoutController {
 
         TaiKhoan sessionTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
         String sessionEmail = (String) session.getAttribute("guestCheckoutEmail");
+        String effectiveEmail = (sessionEmail != null && !sessionEmail.isBlank()) ? sessionEmail : email;
         if (sessionTk == null
                 || sessionTk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST
-                || sessionEmail == null
-                || !sessionEmail.equalsIgnoreCase(sessionTk.getUsername())
+                || effectiveEmail == null
+                || !effectiveEmail.equalsIgnoreCase(sessionTk.getUsername())
                 || (email != null && !email.trim().isEmpty() && !email.trim().equalsIgnoreCase(sessionTk.getUsername()))) {
+
+            response.put("trangThai", "loi");
             response.put("success", false);
             response.put("message", "Phiên khách vãng lai không hợp lệ hoặc không khớp email đặt hàng.");
             return ResponseEntity.ok(response);
@@ -949,16 +1181,27 @@ public class CheckoutController {
         try {
             guestCheckoutService.setPasswordForGuest(idNguoiDung, password);
 
-            // Success! Rotate Session ID to prevent session fixation
             TaiKhoan activatedTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
 
-            // Invalidate the old guest session completely (clears guestCheckoutEmail, allowedGuestOrderAccesses)
-            session.removeAttribute("guestCheckoutEmail");
-            session.removeAttribute("allowedGuestOrderAccesses");
-            session.invalidate();
+            @SuppressWarnings("unchecked")
+            Map<String, com.smashvn.shop.dto.order.CheckoutContext> oldContextsMap =
+                    oldSession != null ? (Map<String, com.smashvn.shop.dto.order.CheckoutContext>) oldSession.getAttribute(CheckoutContextService.SESSION_CONTEXTS_KEY) : null;
 
-            // Create a brand new authenticated session
+            if (oldSession != null) {
+                oldSession.removeAttribute("guestCheckoutEmail");
+                oldSession.removeAttribute("allowedGuestOrderAccesses");
+                try {
+                    oldSession.invalidate();
+                } catch (Exception e) {
+                    // Ignore
+                }
+            }
+
             HttpSession newSession = request.getSession(true);
+            if (oldContextsMap != null) {
+                Map<String, com.smashvn.shop.dto.order.CheckoutContext> newMap = new HashMap<>(oldContextsMap);
+                newSession.setAttribute(CheckoutContextService.SESSION_CONTEXTS_KEY, newMap);
+            }
 
             if (activatedTk != null) {
                 newSession.setAttribute("nguoiDungDangNhap", activatedTk.getUsername());
@@ -974,14 +1217,27 @@ public class CheckoutController {
                 }
             }
 
+            if (checkoutToken != null && !checkoutToken.isBlank()) {
+                checkoutContextService.promoteGuestContextToAuthenticatedUser(
+                        checkoutToken, oldSession, newSession, activatedTk != null ? activatedTk.getId() : idNguoiDung);
+                response.put("redirectUrl", "/checkout?token=" + java.net.URLEncoder.encode(checkoutToken.trim(), java.nio.charset.StandardCharsets.UTF_8));
+            } else {
+                response.put("redirectUrl", "/checkout");
+            }
+
+            response.put("trangThai", "ok");
+            response.put("authenticated", true);
+            response.put("reloadAddresses", true);
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            response.put("trangThai", "loi");
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.ok(response);
         }
     }
+
 
     @GetMapping("/user/thiet-lap-mat-khau")
     public String viewThietLapMatKhau(@RequestParam("token") String token, Model model) {

@@ -45,12 +45,21 @@ import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.service.admin.AdminShippingService;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.api.ShippingFeeCalculator;
+import com.smashvn.shop.dto.order.CheckoutContext;
+import com.smashvn.shop.dto.order.CheckoutItemContext;
+import com.smashvn.shop.dto.order.CheckoutSource;
+import com.smashvn.shop.dto.order.OrderCreationResult;
+
+import com.smashvn.shop.dto.order.PurchasedItemSnapshot;
+
 import com.smashvn.shop.service.product.PriceSnapshot;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.util.PhoneUtils;
 import com.smashvn.shop.util.VoucherCalculator;
-
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+
+
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -77,6 +86,7 @@ public class GioHangService {
     private final PricingService pricingService;
     private final TaiKhoanRepository taiKhoanRepository;
     private final ThongBaoRepository thongBaoRepository;
+    private final GuestCartService guestCartService;
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -191,9 +201,11 @@ public class GioHangService {
         result.put("phanLoai", phanLoaiStr);
         result.put("giaBan", pricingService.calculateCurrentSellingPrice(spct));
         result.put("hinhAnh", spct.getHinhAnhSanPham());
+        result.put("cartItemId", chiTiet.getId());
         result.put("soLuongThem", soLuong);
 
         return result;
+
     }
 
     public List<GioHangChiTiet> layDanhSachSanPhamTrongGio(Integer idTaiKhoan) {
@@ -336,15 +348,59 @@ public class GioHangService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
+    public void removePurchasedItemsFromCart(Integer idTaiKhoan, List<PurchasedItemSnapshot> purchasedItems) {
+        if (idTaiKhoan == null || purchasedItems == null || purchasedItems.isEmpty()) {
+            return;
+        }
+        KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (khachHang == null) return;
+        GioHang gioHang = gioHangRepository.findByKhachHang_Id(khachHang.getId());
+        if (gioHang == null) return;
+
+        for (PurchasedItemSnapshot purchased : purchasedItems) {
+            if (purchased == null || !purchased.isFromCart()) {
+                continue;
+            }
+            GioHangChiTiet chiTiet = null;
+            if (purchased.getCartItemId() != null) {
+                chiTiet = gioHangChiTietRepository.findById(purchased.getCartItemId()).orElse(null);
+            }
+            if (chiTiet == null && purchased.getIdSanPhamChiTiet() != null) {
+                chiTiet = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(gioHang.getId(), purchased.getIdSanPhamChiTiet());
+            }
+            if (chiTiet != null && chiTiet.getGioHang().getId().equals(gioHang.getId())) {
+                int currentQty = chiTiet.getSoLuong() != null ? chiTiet.getSoLuong() : 0;
+                int purchasedQty = purchased.getSoLuongDaMua() != null ? purchased.getSoLuongDaMua() : 0;
+                int newQty = currentQty - purchasedQty;
+                if (newQty <= 0) {
+                    gioHangChiTietRepository.delete(chiTiet);
+                } else {
+                    chiTiet.setSoLuong(newQty);
+                    gioHangChiTietRepository.save(chiTiet);
+                }
+            }
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public OrderCreationResult createOrderFromCheckout(
+            Integer idTaiKhoan,
+            CheckoutContext context,
+            String hoTenNhan, String sdtNhan, String diaChiNhan,
             Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
             Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
             Integer idDiaChiLuu, String voucherCode) {
+
         String cleanGhiChu = sanitizeInput(ghiChu);
         if (cleanGhiChu != null && cleanGhiChu.length() > 500) {
             log.warn("[SECURITY_ALERT] Invalid note length for user: {}", idTaiKhoan);
             throw new IllegalArgumentException("Ghi chú đơn hàng tối đa 500 ký tự.");
         }
+
+        if (context == null || context.getItems() == null || context.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Danh sách sản phẩm thanh toán không hợp lệ.");
+        }
+
 
         KhachHang kh = getOrCreateKhachHang(idTaiKhoan);
 
@@ -358,7 +414,6 @@ public class GioHangService {
         SoDiaChi finalDiaChi = null;
 
         if (idDiaChiLuu != null) {
-            // Reload & validate inside same transaction
             SoDiaChi soDiaChi = soDiaChiRepository.findById(idDiaChiLuu)
                     .orElseThrow(() -> new IllegalArgumentException("Địa chỉ đã lưu không tồn tại."));
             finalDiaChi = soDiaChi;
@@ -367,7 +422,6 @@ public class GioHangService {
                 throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền sử dụng địa chỉ này.");
             }
 
-            // Auto-heal / update saved address with GHN IDs from frontend if missing
             if (soDiaChi.getProvinceId() == null || soDiaChi.getDistrictId() == null || soDiaChi.getWardCode() == null || soDiaChi.getWardCode().trim().isEmpty()) {
                 if (ghnProvinceId != null && ghnToDistrictId != null && ghnToWardCode != null && !ghnToWardCode.trim().isEmpty()) {
                     soDiaChi.setProvinceId(ghnProvinceId);
@@ -379,7 +433,6 @@ public class GioHangService {
                 }
             }
 
-            // Resolve GHN mapping on server
             GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(soDiaChi);
             if (mapping == null || mapping.getDistrictId() == null || mapping.getWardCode() == null) {
                 throw new IllegalArgumentException("Địa chỉ đã lưu của bạn chưa được chuẩn hóa địa chỉ GHN. Vui lòng cập nhật sổ địa chỉ hoặc chọn \"Nhập địa chỉ mới\".");
@@ -397,9 +450,10 @@ public class GioHangService {
             if (soDiaChi.getTinhThanh() != null && !soDiaChi.getTinhThanh().trim().isEmpty() && !fullAddress.contains(soDiaChi.getTinhThanh())) {
                 fullAddress += ", " + soDiaChi.getTinhThanh().trim();
             }
-            if (soDiaChi.getQuocGia() != null && !soDiaChi.getQuocGia().trim().isEmpty() && !fullAddress.contains(soDiaChi.getQuocGia())) {
+            if (soDiaChi.getQuocGia() != null && !soDiaChi.getQuocGia().trim().isEmpty() && !"Việt Nam".equalsIgnoreCase(soDiaChi.getQuocGia().trim()) && !fullAddress.contains(soDiaChi.getQuocGia())) {
                 fullAddress += ", " + soDiaChi.getQuocGia().trim();
             }
+
             finalDiaChiNhan = fullAddress;
             finalDistrictId = mapping.getDistrictId();
             finalWardCode = mapping.getWardCode();
@@ -432,37 +486,57 @@ public class GioHangService {
             }
         }
 
-        // Clean up previous unpaid/pending orders for this customer to prevent duplicate display in Order History
         cleanPendingOrders(idTaiKhoan);
 
-        List<GioHangChiTiet> cartItems = layDanhSachSanPhamTrongGio(idTaiKhoan);
-        if (cartItems.isEmpty()) {
-            throw new RuntimeException("Giỏ hàng trống!");
-        }
-
-        // Validate items eligibility (stock & status) with lock
         BigDecimal tamTinh = BigDecimal.ZERO;
-        for (GioHangChiTiet item : cartItems) {
-            SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(item.getSanPhamChiTiet().getId())
+        List<PurchasedItemSnapshot> purchasedSnapshots = new ArrayList<>();
+        List<Map<String, Object>> validatedItems = new ArrayList<>();
+
+        for (CheckoutItemContext itemCtx : context.getItems()) {
+            Integer spctId = itemCtx.getIdSanPhamChiTiet();
+            if (spctId == null && itemCtx.getCartItemId() != null && idTaiKhoan != null) {
+                GioHangChiTiet ghct = gioHangChiTietRepository.findById(itemCtx.getCartItemId()).orElse(null);
+                if (ghct != null) {
+                    spctId = ghct.getSanPhamChiTiet().getId();
+                }
+            }
+            if (spctId == null) {
+                throw new IllegalArgumentException("Sản phẩm thanh toán không hợp lệ.");
+            }
+
+            SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spctId)
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
             SanPham sp = lockedSpct.getSanPham();
             int tonKho = lockedSpct.getSoLuongTon();
-            boolean hopLe = item.getSoLuong() != null && item.getSoLuong() > 0 && tonKho >= item.getSoLuong() && isSanPhamChiTietDangBan(lockedSpct);
+            int buyQty = itemCtx.getSoLuong() != null ? itemCtx.getSoLuong() : 0;
+
+            boolean hopLe = buyQty > 0 && tonKho >= buyQty && isSanPhamChiTietDangBan(lockedSpct);
             if (!hopLe) {
                 throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc phân loại đã ngưng kinh doanh!");
             }
+
             BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(lockedSpct);
-            tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+            tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(buyQty)));
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("spct", lockedSpct);
+            map.put("soLuong", buyQty);
+            validatedItems.add(map);
+
+            purchasedSnapshots.add(PurchasedItemSnapshot.builder()
+                    .cartItemId(itemCtx.getCartItemId())
+                    .idSanPhamChiTiet(lockedSpct.getId())
+                    .soLuongDaMua(buyQty)
+                    .fromCart(itemCtx.isFromCart())
+                    .build());
         }
 
-        // Load carrier using cached list
         DonViVanChuyen dvvc = adminShippingService.getAllCarriers().stream()
                 .filter(c -> c.getId().equals(idDonViVanChuyen))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị vận chuyển"));
 
-        // Server-side validation: enforce GHN location selection if GHN carrier is selected
         String carrierName = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toUpperCase() : "";
         boolean isGhn = carrierName.contains("GIAO HÀNG NHANH") || carrierName.contains("GHN");
         if (isGhn) {
@@ -473,7 +547,6 @@ public class GioHangService {
 
         BigDecimal phiShip = shippingFeeCalculator.calculateFee(dvvc, finalDistrictId, finalWardCode, finalDiaChiNhan);
 
-        // Voucher discount calculation
         BigDecimal giamGia = BigDecimal.ZERO;
         PhieuGiamGia appliedVoucher = null;
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
@@ -507,7 +580,6 @@ public class GioHangService {
 
         BigDecimal totalAmount = tamTinh.subtract(giamGia).add(phiShip);
 
-        // Find or create Payment Method
         String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "SePay";
         List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
         PhuongThucThanhToan pttt = allPttt.stream()
@@ -528,8 +600,8 @@ public class GioHangService {
         hd.setTongTien(totalAmount);
         hd.setPhiVanChuyen(phiShip);
         hd.setPhieuGiamGia(appliedVoucher);
-
         hd.setSoTienGiamVoucher(giamGia);
+
         if (appliedVoucher != null) {
             hd.setMaVoucherApDung(appliedVoucher.getMaPhieu());
             hd.setTenVoucherApDung("Voucher " + appliedVoucher.getMaPhieu());
@@ -540,11 +612,11 @@ public class GioHangService {
         }
 
         if ("COD".equalsIgnoreCase(ptttName)) {
-            hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
-            hd.setPaymentMethod(PaymentMethod.COD.getValue()); // "cod"
+            hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue());
+            hd.setPaymentMethod(PaymentMethod.COD.getValue());
         } else {
-            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
-            hd.setPaymentMethod(PaymentMethod.SEPAY.getValue()); // "sepay"
+            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue());
+            hd.setPaymentMethod(PaymentMethod.SEPAY.getValue());
         }
 
         hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
@@ -558,9 +630,8 @@ public class GioHangService {
         hd.setTenNguoiNhan(resolvedTenNguoiNhan);
 
         hd.setGhiChu(cleanGhiChu);
-        hd.setPaymentStatus(PaymentStatus.PENDING.getValue()); // "pending"
+        hd.setPaymentStatus(PaymentStatus.PENDING.getValue());
 
-        // Lưu thông tin địa chỉ GHN để tạo đơn vận chuyển sau này
         if (finalDistrictId != null) {
             hd.setGhnToDistrictId(finalDistrictId);
         }
@@ -570,27 +641,24 @@ public class GioHangService {
 
         hd = hoaDonRepository.save(hd);
 
-        // Create HoaDonChiTiet
-        for (GioHangChiTiet item : cartItems) {
-            SanPhamChiTiet spct = item.getSanPhamChiTiet();
-            SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+        for (Map<String, Object> itemMap : validatedItems) {
+            SanPhamChiTiet lockedSpct = (SanPhamChiTiet) itemMap.get("spct");
+            Integer qty = (Integer) itemMap.get("soLuong");
 
             if ("COD".equalsIgnoreCase(ptttName)) {
-                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - item.getSoLuong());
+                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - qty);
                 sanPhamChiTietRepository.save(lockedSpct);
             }
 
-            PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
+            com.smashvn.shop.service.product.PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
 
             HoaDonChiTiet hdct = new HoaDonChiTiet();
             hdct.setHoaDon(hd);
             hdct.setSanPhamChiTiet(lockedSpct);
-            hdct.setSoLuong(item.getSoLuong());
+            hdct.setSoLuong(qty);
             hdct.setDonGia(priceSnapshot.giaBanSauGiam());
             hdct.setGiaGoc(priceSnapshot.giaNiemYet());
             hdct.setGiaSauGiam(priceSnapshot.giaBanSauGiam());
-
             hdct.setTenSanPhamSnapshot(lockedSpct.getSanPham().getTenSanPham());
 
             String sku = null;
@@ -605,60 +673,118 @@ public class GioHangService {
             }
             hdct.setSkuSnapshot(sku);
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
-
-            // Freeze variant attributes as a display string at time of purchase
             hdct.setThuocTinhSnapshot(lockedSpct.getPhanLoaiHienThi());
 
             hoaDonChiTietRepository.save(hdct);
         }
 
-        // For COD orders: clear cart + tạo đơn GHN
-        if ("COD".equalsIgnoreCase(ptttName)) {
-            xoaTatCa(idTaiKhoan);
+        return OrderCreationResult.builder()
+                .hoaDon(hd)
+                .purchasedItems(purchasedSnapshots)
+                .build();
+    }
 
-            // Tạo đơn vận chuyển GHN (nếu có thông tin địa chỉ GHN)
-            if (finalDistrictId != null && finalWardCode != null && !finalWardCode.isBlank()) {
-                final HoaDon finalHd = hd;
-                final List<HoaDonChiTiet> savedItems = hoaDonChiTietRepository.findByHoaDon_Id(finalHd.getId());
-                try {
-                    String ghnCode = ghnService.createShippingOrder(finalHd, savedItems, finalDistrictId, finalWardCode);
-                    if (ghnCode != null) {
-                        finalHd.setGhnOrderCode(ghnCode);
-                        finalHd.setGhnStatus("ready_to_pick");
-                        finalHd.setGhnToDistrictId(finalDistrictId);
-                        finalHd.setGhnToWardCode(finalWardCode);
-                        hd = hoaDonRepository.save(finalHd);
-                        log.info("[GHN] Tạo đơn vận chuyển thành công cho HoaDon #{}: {}", finalHd.getId(), ghnCode);
-                    }
-                } catch (Exception e) {
-                    log.error("[GHN] Lỗi tạo đơn GHN cho HoaDon #{}: {}", finalHd.getId(), e.getMessage());
-                    // Không throw – lỗi GHN không làm hỏng đơn hàng
-                }
+    @org.springframework.transaction.annotation.Transactional
+    public OrderCreationResult submitCodOrder(
+            Integer idTaiKhoan,
+            CheckoutContext context,
+            HttpSession session,
+            String hoTenNhan, String sdtNhan, String diaChiNhan,
+            Integer idDonViVanChuyen, String ghiChu,
+            Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+            Integer idDiaChiLuu, String voucherCode) {
+
+        OrderCreationResult result = createOrderFromCheckout(
+                idTaiKhoan, context, hoTenNhan, sdtNhan, diaChiNhan,
+                idDonViVanChuyen, "COD", ghiChu,
+                ghnToDistrictId, ghnToWardCode, ghnProvinceId,
+                idDiaChiLuu, voucherCode);
+
+        HoaDon hd = result.getHoaDon();
+
+        if (context.getSource() == CheckoutSource.CART || context.getSource() == CheckoutSource.QUICK_ADD) {
+            if (idTaiKhoan != null) {
+                removePurchasedItemsFromCart(idTaiKhoan, result.getPurchasedItems());
+            } else if (session != null) {
+                guestCartService.removePurchasedItemsFromGuestCart(session, result.getPurchasedItems());
             }
         }
 
-        // Tạo thông báo đơn hàng hệ thống (Chỉ dành cho COD, SePay sẽ tạo khi thanh toán thành công)
-        if ("COD".equalsIgnoreCase(ptttName)) {
+        if (hd.getGhnToDistrictId() != null && hd.getGhnToWardCode() != null && !hd.getGhnToWardCode().isBlank()) {
+            List<HoaDonChiTiet> savedItems = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
             try {
-                if (kh != null && kh.getTaiKhoan() != null) {
-                    String orderCode = hd.getMaDonHang();
-                    ThongBao thongBaoOrder = ThongBao.builder()
-                            .taiKhoan(kh.getTaiKhoan())
-                            .tieuDe("Đặt hàng thành công")
-                            .noiDung("Đơn hàng #" + orderCode + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
-                            .daDoc(false)
-                            .loaiThongBao("don_hang")
-                            .ngayTao(LocalDateTime.now())
-                            .build();
-                    thongBaoRepository.save(thongBaoOrder);
-                    log.info("[GioHangService] Saved order notification for TaiKhoan ID {}", kh.getTaiKhoan().getId());
+                String ghnCode = ghnService.createShippingOrder(hd, savedItems, hd.getGhnToDistrictId(), hd.getGhnToWardCode());
+                if (ghnCode != null) {
+                    hd.setGhnOrderCode(ghnCode);
+                    hd.setGhnStatus("ready_to_pick");
+                    hd = hoaDonRepository.save(hd);
                 }
             } catch (Exception e) {
-                log.error("[GioHangService] Failed to save order notification: {}", e.getMessage());
+                log.error("[GHN] Lỗi tạo đơn GHN cho COD HoaDon #{}: {}", hd.getId(), e.getMessage());
             }
         }
 
-        return hd;
+        try {
+            if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+                ThongBao thongBaoOrder = ThongBao.builder()
+                        .taiKhoan(hd.getKhachHang().getTaiKhoan())
+                        .tieuDe("Đặt hàng thành công")
+                        .noiDung("Đơn hàng #" + hd.getMaDonHang() + " của bạn đã được hệ thống ghi nhận thành công. Cảm ơn bạn đã mua sắm tại Smash VN!")
+                        .daDoc(false)
+                        .loaiThongBao("don_hang")
+                        .ngayTao(LocalDateTime.now())
+                        .build();
+                thongBaoRepository.save(thongBaoOrder);
+            }
+        } catch (Exception e) {
+            log.error("[GioHangService] Failed to save order notification: {}", e.getMessage());
+        }
+
+        return result;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public OrderCreationResult createSepayPendingOrder(
+            Integer idTaiKhoan,
+            CheckoutContext context,
+            String hoTenNhan, String sdtNhan, String diaChiNhan,
+            Integer idDonViVanChuyen, String ghiChu,
+            Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+            Integer idDiaChiLuu, String voucherCode) {
+
+        return createOrderFromCheckout(
+                idTaiKhoan, context, hoTenNhan, sdtNhan, diaChiNhan,
+                idDonViVanChuyen, "SePay", ghiChu,
+                ghnToDistrictId, ghnToWardCode, ghnProvinceId,
+                idDiaChiLuu, voucherCode);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public HoaDon createOrder(Integer idTaiKhoan, String hoTenNhan, String sdtNhan, String diaChiNhan,
+            Integer idDonViVanChuyen, String phuongThucThanhToan, String ghiChu,
+            Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+            Integer idDiaChiLuu, String voucherCode) {
+
+        List<GioHangChiTiet> cartItems = layDanhSachSanPhamTrongGio(idTaiKhoan);
+        List<CheckoutItemContext> itemContexts = new ArrayList<>();
+        for (GioHangChiTiet item : cartItems) {
+            itemContexts.add(CheckoutItemContext.builder()
+                    .cartItemId(item.getId())
+                    .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                    .soLuong(item.getSoLuong())
+                    .fromCart(true)
+                    .build());
+        }
+        CheckoutContext context = CheckoutContext.builder()
+                .source(CheckoutSource.CART)
+                .items(itemContexts)
+                .build();
+
+        OrderCreationResult result = createOrderFromCheckout(idTaiKhoan, context, hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyen, phuongThucThanhToan, ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId, idDiaChiLuu, voucherCode);
+        if ("COD".equalsIgnoreCase(phuongThucThanhToan)) {
+            removePurchasedItemsFromCart(idTaiKhoan, result.getPurchasedItems());
+        }
+        return result.getHoaDon();
     }
 
     private String sanitizeInput(String input) {
@@ -668,3 +794,4 @@ public class GioHangService {
         return Jsoup.clean(input, Safelist.none()).trim();
     }
 }
+

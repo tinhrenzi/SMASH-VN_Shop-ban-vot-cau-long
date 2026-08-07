@@ -285,4 +285,38 @@ public class GuestCartService {
         clearGuestCart(session);
         log.info("[GUEST_CART] Successfully merged guest session cart into database cart for KhachHang ID {}.", idKhachHang);
     }
+
+    public void removePurchasedItemsFromGuestCart(HttpSession session, List<com.smashvn.shop.dto.order.PurchasedItemSnapshot> purchasedItems) {
+        if (session == null || purchasedItems == null || purchasedItems.isEmpty()) {
+            return;
+        }
+        List<GuestCartItem> cart = getGuestCartItems(session);
+        if (cart.isEmpty()) return;
+
+        for (com.smashvn.shop.dto.order.PurchasedItemSnapshot purchased : purchasedItems) {
+            if (purchased == null || !purchased.isFromCart()) {
+                continue;
+            }
+            GuestCartItem target = null;
+            for (GuestCartItem item : cart) {
+                if (item.getIdSanPhamChiTiet().equals(purchased.getIdSanPhamChiTiet())) {
+                    target = item;
+                    break;
+                }
+            }
+            if (target != null) {
+                int currentQty = target.getSoLuong() != null ? target.getSoLuong() : 0;
+                int purchasedQty = purchased.getSoLuongDaMua() != null ? purchased.getSoLuongDaMua() : 0;
+                int newQty = currentQty - purchasedQty;
+                if (newQty <= 0) {
+                    cart.remove(target);
+                } else {
+                    target.setSoLuong(newQty);
+                }
+            }
+        }
+        session.setAttribute(SESSION_CART_KEY, cart);
+        log.info("[GUEST_CART] Removed purchased items from guest session cart.");
+    }
 }
+

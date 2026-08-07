@@ -2803,6 +2803,16 @@ input::-ms-clear {
   width: 100%;
   border: 1px solid #eee;
   border-collapse: collapse; }
+  .table-p thead th {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.4;
+    color: #333333;
+    padding: 15px 20px;
+    background-color: #fafafa;
+    border-bottom: 1px solid #eee; }
   .table-p tr {
     position: relative;
     border-top: 1px solid #eee; }
