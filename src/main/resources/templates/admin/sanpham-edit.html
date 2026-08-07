@@ -232,11 +232,17 @@
                                             <i class="fas fa-plus-circle me-1"></i>+ Nhập Lô Mới
                                         </button>
                                     </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link px-3 py-1.5 fw-bold text-info" id="pills-danhsachlo-tab" data-bs-toggle="pill" data-bs-target="#pills-danhsachlo" type="button" role="tab">
+                                            <i class="fas fa-history me-1"></i>Xem Lô Hàng
+                                        </button>
+                                    </li>
                                     <li class="nav-item" role="presentation" th:if="${categoryIds['HOP_CAU'] == null or sp.danhMuc.id != categoryIds['HOP_CAU']}">
                                         <button class="nav-link px-3 py-1.5 fw-bold" id="pills-add-tab" data-bs-toggle="pill" data-bs-target="#pills-add" type="button" role="tab">
                                             <i class="fas fa-plus me-1"></i>Thêm Mới
                                         </button>
                                     </li>
+
                                 </ul>
                             </div>
 
@@ -481,9 +487,49 @@
                                                 </button>
                                             </div>
                                         </form>
-                                    </div>
+                                     </div>
 
-                                </div>
+                                     <!-- TAB 4: LỊCH SỬ XEM LÔ HÀNG CHI TIẾT -->
+                                     <div class="tab-pane fade" id="pills-danhsachlo" role="tabpanel">
+                                         <div class="p-3 mb-3 bg-light rounded-3 border border-start border-4 border-info">
+                                             <h6 class="fw-bold text-info mb-1"><i class="fas fa-history me-2"></i>Chi Tiết Các Đợt Nhập Lô</h6>
+                                             <p class="small text-muted mb-0">Theo dõi toàn bộ các đợt nhập kho chi tiết theo thời gian, số lượng và giá vốn ban đầu.</p>
+                                         </div>
+                                         <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                                             <table class="table table-sm table-bordered align-middle mb-0">
+                                                 <thead class="table-light sticky-top">
+                                                     <tr class="small text-muted text-uppercase">
+                                                         <th class="text-center" style="width: 40px;">STT</th>
+                                                         <th>Phân Loại Biến Thể</th>
+                                                         <th>Thời Gian Nhập</th>
+                                                         <th class="text-center">Tồn Lô</th>
+                                                         <th class="text-end">Giá Nhập Lô</th>
+                                                     </tr>
+                                                 </thead>
+                                                 <tbody>
+                                                     <th:block th:each="lot : ${lotSummaries}">
+                                                         <tr th:each="spctItem, iter : ${lot.danhSachSpctInLot}" class="small">
+                                                             <td class="text-center" th:text="${iter.count}">1</td>
+                                                             <td>
+                                                                 <strong class="text-dark d-block" th:text="${spctItem.phanLoaiHienThi}">Size XL</strong>
+                                                             </td>
+                                                             <td th:text="${spctItem.ngayTao != null ? #temporals.format(spctItem.ngayTao, 'dd/MM/yyyy HH:mm:ss') : lot.thoiGianHienThi}">07/08/2026 11:00:00</td>
+
+                                                             <td class="text-center">
+                                                                 <span class="badge bg-success" th:text="${spctItem.soLuongTon} + ' chiếc'">10 chiếc</span>
+                                                             </td>
+                                                             <td class="text-end fw-bold text-dark" th:text="${spctItem.giaNhap != null ? #numbers.formatDecimal(spctItem.giaNhap, 0, 'COMMA', 0, 'POINT') + ' đ' : 'N/A'}">2.500.000 đ</td>
+                                                         </tr>
+                                                     </th:block>
+                                                     <tr th:if="${lotSummaries == null or #lists.isEmpty(lotSummaries)}">
+                                                         <td colspan="5" class="text-center text-muted py-3">Chưa có lịch sử nhập lô.</td>
+                                                     </tr>
+                                                 </tbody>
+                                             </table>
+                                         </div>
+                                     </div>
+
+                                 </div>
                             </div>
                         </div>
                     </div>

@@ -29,7 +29,23 @@ public class AuditService {
         }
         log.setTenBang(tenBang);
         log.setIdBanGhi(idBanGhi != null ? idBanGhi.intValue() : 0);
-        log.setHanhDong(hanhDong);
+
+        String cleanHanhDong = "UPDATE";
+        if (hanhDong != null) {
+            String upper = hanhDong.toUpperCase().trim();
+            if (upper.contains("INSERT") || upper.contains("CREATE") || upper.contains("ADD")) {
+                cleanHanhDong = "INSERT";
+            } else if (upper.contains("DELETE") || upper.contains("REMOVE") || upper.contains("CANCEL")) {
+                cleanHanhDong = "DELETE";
+            } else {
+                cleanHanhDong = "UPDATE";
+            }
+        }
+        if (hanhDong != null && !hanhDong.equalsIgnoreCase(cleanHanhDong)) {
+            ghiChu = "[" + hanhDong + "] " + (ghiChu != null ? ghiChu : "");
+        }
+
+        log.setHanhDong(cleanHanhDong);
         log.setGiaTriCu(giaTriCu);
         log.setGiaTriMoi(giaTriMoi);
         log.setThoiGian(LocalDateTime.now());
@@ -39,4 +55,5 @@ public class AuditService {
 
         editLogRepository.save(log);
     }
+
 }

@@ -56,6 +56,8 @@ public class AdminBienTheService {
         return sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
     }
 
+
+
     // 2. Thêm biến thể mới
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,

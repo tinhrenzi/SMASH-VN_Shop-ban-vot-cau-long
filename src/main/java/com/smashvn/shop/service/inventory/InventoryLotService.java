@@ -199,6 +199,23 @@ public class InventoryLotService {
         newLotSpct.setNgayTao(thoiGianNhap);
         newLotSpct.setNgayCapNhat(thoiGianNhap);
 
+        // Tự động kế thừa hình ảnh từ biến thể đại diện
+        String mainImg = repSpct.getHinhAnhSanPham();
+        if (mainImg != null && !mainImg.isBlank()) {
+            newLotSpct.setHinhAnhSanPham(mainImg);
+        }
+
+        if (repSpct.getHinhAnhSanPhams() != null && !repSpct.getHinhAnhSanPhams().isEmpty()) {
+            for (com.smashvn.shop.entity.HinhAnhSanPham oldImg : repSpct.getHinhAnhSanPhams()) {
+                com.smashvn.shop.entity.HinhAnhSanPham newImg = new com.smashvn.shop.entity.HinhAnhSanPham();
+                newImg.setSanPhamChiTiet(newLotSpct);
+                newImg.setUrlHinhAnh(oldImg.getUrlHinhAnh());
+                newImg.setLaAnhChinh(oldImg.getLaAnhChinh());
+                newImg.setThuTu(oldImg.getThuTu());
+                newLotSpct.getHinhAnhSanPhams().add(newImg);
+            }
+        }
+
         // Copy thuộc tính từ representativeSpct
         Set<SanPhamChiTietThuocTinh> newAttrSet = new java.util.LinkedHashSet<>();
         if (repSpct.getSanPhamChiTietThuocTinhs() != null) {
@@ -214,12 +231,14 @@ public class InventoryLotService {
 
         SanPhamChiTiet savedSpct = sanPhamChiTietRepository.save(newLotSpct);
 
+
         if (idNguoiDung != null) {
             String note = String.format("Nhập lô mới cho SP '%s' (Rep ID: %d): SL=%d, Giá nhập=%s",
                     sanPham.getTenSanPham(), representativeSpctId, soLuongNhap, giaNhap);
             Long recId = savedSpct.getId() != null ? savedSpct.getId().longValue() : 0L;
-            auditService.log(idNguoiDung, "SanPhamChiTiet", recId, "INSERT_LOT",
+            auditService.log(idNguoiDung, "SanPhamChiTiet", recId, "INSERT",
                     "", giaNhap != null ? giaNhap.toString() : "", "127.0.0.1", note, "ADMIN");
+
         }
 
 
@@ -315,11 +334,11 @@ public class InventoryLotService {
             boolean isLegacy = "LEGACY_LOT".equals(lotKey);
             int minSpctId = lotSpcts.stream().mapToInt(SanPhamChiTiet::getId).min().orElse(0);
 
-            LocalDateTime ngayTaoLo = isLegacy ? null : lotSpcts.get(0).getNgayTao();
-            String maLoDisplay = isLegacy ? "LÔ KHỞI TẠO (KHO BAN ĐẦU)" :
+            LocalDateTime ngayTaoLo = (lotSpcts != null && !lotSpcts.isEmpty()) ? lotSpcts.get(0).getNgayTao() : null;
+            String maLoDisplay = isLegacy ? "LÔ BAN ĐẦU" :
                     String.format("LO-%d-%s-%d", idSanPham, lotKey, minSpctId);
-            String thoiGianHienThi = isLegacy ? "Kho khởi tạo ban đầu" :
-                    (ngayTaoLo != null ? ngayTaoLo.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "N/A");
+            String thoiGianHienThi = ngayTaoLo != null ? ngayTaoLo.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "N/A";
+
 
             int totalVariants = (int) lotSpcts.stream().map(this::buildAttributeKey).distinct().count();
             int inStockVariants = (int) lotSpcts.stream()
