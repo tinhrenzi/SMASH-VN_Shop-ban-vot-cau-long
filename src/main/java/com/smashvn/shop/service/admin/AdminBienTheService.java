@@ -282,8 +282,33 @@ public class AdminBienTheService {
         if (spct.getSanPhamChiTietThuocTinhs() == null) {
             spct.setSanPhamChiTietThuocTinhs(new java.util.LinkedHashSet<>());
         }
+
+        String targetName = tenThuocTinh;
+        ThuocTinh catTT = null;
+        if (spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null && spct.getSanPham().getDanhMuc().getThuocTinhList() != null) {
+            for (ThuocTinh att : spct.getSanPham().getDanhMuc().getThuocTinhList()) {
+                if (att.getTenThuocTinh() != null) {
+                    if (att.getTenThuocTinh().equalsIgnoreCase(tenThuocTinh)) {
+                        targetName = att.getTenThuocTinh();
+                        catTT = att;
+                        break;
+                    } else if (("Kích thước".equalsIgnoreCase(tenThuocTinh) || "Size".equalsIgnoreCase(tenThuocTinh))
+                            && ("Kích thước".equalsIgnoreCase(att.getTenThuocTinh()) || "Size".equalsIgnoreCase(att.getTenThuocTinh()))) {
+                        targetName = att.getTenThuocTinh();
+                        catTT = att;
+                        break;
+                    }
+                }
+            }
+        }
+
+        final String finalTargetName = targetName;
+        final ThuocTinh finalCatTT = catTT;
+
         SanPhamChiTietThuocTinh existing = spct.getSanPhamChiTietThuocTinhs().stream()
-                .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
+                .filter(tt -> tt.getThuocTinh() != null && (finalTargetName.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())
+                        || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
+                        && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
                 .findFirst()
                 .orElse(null);
 
@@ -296,12 +321,18 @@ public class AdminBienTheService {
 
         if (existing != null) {
             existing.setGiaTri(giaTri.trim());
+            if (finalCatTT != null && !existing.getThuocTinh().getId().equals(finalCatTT.getId())) {
+                existing.setThuocTinh(finalCatTT);
+            }
         } else {
-            ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(tenThuocTinh)
-                    .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
-                            .tenThuocTinh(tenThuocTinh.trim())
-                            .trangThai(true)
-                            .build()));
+            ThuocTinh tt = finalCatTT;
+            if (tt == null) {
+                tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(finalTargetName)
+                        .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
+                                .tenThuocTinh(finalTargetName.trim())
+                                .trangThai(true)
+                                .build()));
+            }
             SanPhamChiTietThuocTinh val = SanPhamChiTietThuocTinh.builder()
                     .sanPhamChiTiet(spct)
                     .thuocTinh(tt)
@@ -310,6 +341,7 @@ public class AdminBienTheService {
             spct.getSanPhamChiTietThuocTinhs().add(val);
         }
     }
+
 
     private void updateMucCangAllVariants(Integer idSanPham, String cleanMucCang) {
         List<SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);

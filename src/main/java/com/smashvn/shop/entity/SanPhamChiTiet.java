@@ -134,11 +134,21 @@ public class SanPhamChiTiet {
      */
     public String getGiaTriThuocTinh(String tenThuocTinh) {
         if (sanPhamChiTietThuocTinhs == null || tenThuocTinh == null) return null;
-        return sanPhamChiTietThuocTinhs.stream()
+        String val = sanPhamChiTietThuocTinhs.stream()
                 .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
                 .map(SanPhamChiTietThuocTinh::getGiaTri)
                 .findFirst()
                 .orElse(null);
+        if (val != null) return val;
+
+        if ("Kích thước".equalsIgnoreCase(tenThuocTinh) || "Size".equalsIgnoreCase(tenThuocTinh)) {
+            return sanPhamChiTietThuocTinhs.stream()
+                    .filter(tt -> tt.getThuocTinh() != null && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))
+                    .map(SanPhamChiTietThuocTinh::getGiaTri)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
     }
 
     public String getMauSac() {
@@ -193,8 +203,28 @@ public class SanPhamChiTiet {
         if (this.sanPhamChiTietThuocTinhs == null) {
             this.sanPhamChiTietThuocTinhs = new java.util.LinkedHashSet<>();
         }
+
+        String targetName = tenThuocTinh;
+        if (this.sanPham != null && this.sanPham.getDanhMuc() != null && this.sanPham.getDanhMuc().getThuocTinhList() != null) {
+            for (ThuocTinh catAtt : this.sanPham.getDanhMuc().getThuocTinhList()) {
+                if (catAtt.getTenThuocTinh() != null) {
+                    if (catAtt.getTenThuocTinh().equalsIgnoreCase(tenThuocTinh)) {
+                        targetName = catAtt.getTenThuocTinh();
+                        break;
+                    } else if (("Kích thước".equalsIgnoreCase(tenThuocTinh) || "Size".equalsIgnoreCase(tenThuocTinh))
+                            && ("Kích thước".equalsIgnoreCase(catAtt.getTenThuocTinh()) || "Size".equalsIgnoreCase(catAtt.getTenThuocTinh()))) {
+                        targetName = catAtt.getTenThuocTinh();
+                        break;
+                    }
+                }
+            }
+        }
+
+        final String finalTargetName = targetName;
         SanPhamChiTietThuocTinh existing = this.sanPhamChiTietThuocTinhs.stream()
-                .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
+                .filter(tt -> tt.getThuocTinh() != null && (finalTargetName.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())
+                        || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
+                        && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
                 .findFirst()
                 .orElse(null);
 
@@ -212,9 +242,9 @@ public class SanPhamChiTiet {
             try {
                 com.smashvn.shop.repository.ThuocTinhRepository repo = com.smashvn.shop.config.SpringContextHelper.getBean(com.smashvn.shop.repository.ThuocTinhRepository.class);
                 if (repo != null) {
-                    tt = repo.findByTenThuocTinhIgnoreCase(tenThuocTinh.trim())
+                    tt = repo.findByTenThuocTinhIgnoreCase(finalTargetName.trim())
                             .orElseGet(() -> repo.save(ThuocTinh.builder()
-                                    .tenThuocTinh(tenThuocTinh.trim())
+                                    .tenThuocTinh(finalTargetName.trim())
                                     .trangThai(true)
                                     .build()));
                 }
@@ -222,7 +252,7 @@ public class SanPhamChiTiet {
 
             if (tt == null) {
                 tt = ThuocTinh.builder()
-                        .tenThuocTinh(tenThuocTinh.trim())
+                        .tenThuocTinh(finalTargetName.trim())
                         .trangThai(true)
                         .build();
             }
@@ -236,15 +266,61 @@ public class SanPhamChiTiet {
         }
     }
 
+    public String getDisplayNameForAttribute(SanPhamChiTietThuocTinh tt) {
+        if (tt == null || tt.getThuocTinh() == null) return "";
+        String dbName = tt.getThuocTinh().getTenThuocTinh();
+        if (dbName == null) return "";
+
+        if (this.sanPham != null && this.sanPham.getDanhMuc() != null && this.sanPham.getDanhMuc().getThuocTinhList() != null) {
+            for (ThuocTinh catAtt : this.sanPham.getDanhMuc().getThuocTinhList()) {
+                if (catAtt.getTenThuocTinh() != null) {
+                    if (catAtt.getTenThuocTinh().equalsIgnoreCase(dbName)) {
+                        return catAtt.getTenThuocTinh();
+                    }
+                    if (("Kích thước".equalsIgnoreCase(dbName) || "Size".equalsIgnoreCase(dbName))
+                            && ("Kích thước".equalsIgnoreCase(catAtt.getTenThuocTinh()) || "Size".equalsIgnoreCase(catAtt.getTenThuocTinh()))) {
+                        return catAtt.getTenThuocTinh();
+                    }
+                }
+            }
+        }
+        return dbName;
+    }
+
     public String getPhanLoaiHienThi() {
         if (sanPhamChiTietThuocTinhs == null || sanPhamChiTietThuocTinhs.isEmpty()) {
             return "Mặc định";
         }
-        return sanPhamChiTietThuocTinhs.stream()
+        com.smashvn.shop.constant.CategoryType catType = (sanPham != null && sanPham.getDanhMuc() != null)
+                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(sanPham.getDanhMuc(), sanPham.getDanhMuc().getId())
+                : com.smashvn.shop.constant.CategoryType.OTHER;
+
+        List<SanPhamChiTietThuocTinh> validAttrs = sanPhamChiTietThuocTinhs.stream()
                 .filter(tt -> tt.getThuocTinh() != null && tt.getGiaTri() != null && !tt.getGiaTri().isBlank())
-                .map(tt -> tt.getThuocTinh().getTenThuocTinh() + ": " + tt.getGiaTri())
+                .filter(tt -> {
+                    String tenTT = tt.getThuocTinh().getTenThuocTinh().trim().toLowerCase();
+                    if (catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC || catType == com.smashvn.shop.constant.CategoryType.GIAY) {
+                        if (tenTT.contains("căng") || tenTT.contains("trọng lượng") || tenTT.contains("weight")) {
+                            return false;
+                        }
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
+                        if (tenTT.contains("kích thước") || tenTT.contains("size")) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        if (validAttrs.isEmpty()) {
+            return "Mặc định";
+        }
+
+        return validAttrs.stream()
+                .map(tt -> getDisplayNameForAttribute(tt) + ": " + tt.getGiaTri())
                 .collect(Collectors.joining(", "));
     }
+
 
     public void setTrangThai(String trangThai) {
         this.trangThaiValue = !"ngung_ban".equalsIgnoreCase(String.valueOf(trangThai))
@@ -256,7 +332,27 @@ public class SanPhamChiTiet {
         return Boolean.FALSE.equals(trangThaiValue) ? "ngung_kinh_doanh" : "dang_ban";
     }
 
+    public String getThuocTinhMapJson() {
+        if (sanPhamChiTietThuocTinhs == null || sanPhamChiTietThuocTinhs.isEmpty()) {
+            return "{}";
+        }
+        java.util.Map<String, String> map = new java.util.LinkedHashMap<>();
+        for (SanPhamChiTietThuocTinh tt : sanPhamChiTietThuocTinhs) {
+            if (tt.getThuocTinh() != null && tt.getGiaTri() != null && !tt.getGiaTri().isBlank()) {
+                String displayName = getDisplayNameForAttribute(tt);
+                map.put(displayName.trim(), tt.getGiaTri().trim());
+            }
+        }
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(map);
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+
     public boolean isDangBan() {
         return !Boolean.FALSE.equals(trangThaiValue);
     }
 }
+

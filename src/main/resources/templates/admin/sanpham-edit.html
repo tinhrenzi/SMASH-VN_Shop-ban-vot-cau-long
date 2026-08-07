@@ -167,6 +167,7 @@
                                                                 th:attr="
                                                                     data-bt-id=${bt.id},
                                                                     data-sp-id=${sp.id},
+                                                                    data-attrs-json=${bt.thuocTinhMapJson},
                                                                     data-gia-ban=${bt.giaBan},
                                                                     data-so-luong=${bt.soLuongTon},
                                                                     data-mau-sac=${bt.mauSac},
@@ -567,18 +568,41 @@
                 const kichThuoc  = selectedOpt.dataset.kichThuoc || '';
                 const mucCang    = selectedOpt.dataset.mucCang || '';
                 const hinhAnh    = selectedOpt.dataset.hinhAnh || '';
+                const attrsJson  = selectedOpt.dataset.attrsJson || '{}';
 
                 document.getElementById('directGiaBan').value = giaBan;
                 document.getElementById('directSoLuong').value = soLuong;
 
-                let cleanMauSacVal = mauSac;
-                if (spDanhMucId != catIds.HOP_CAU && cleanMauSacVal) {
-                    cleanMauSacVal = cleanMauSacVal.replace(/,\s*Mặc\s*định/gi, '').trim();
+                let attrsMap = {};
+                try { attrsMap = JSON.parse(attrsJson); } catch(e) {}
+
+                if (!attrsMap['Màu sắc'] && mauSac) attrsMap['Màu sắc'] = mauSac;
+                if (!attrsMap['Kích thước'] && kichThuoc) attrsMap['Kích thước'] = kichThuoc;
+                if (!attrsMap['Trọng lượng'] && trongLuong) attrsMap['Trọng lượng'] = trongLuong;
+                if (!attrsMap['Sức căng'] && mucCang) attrsMap['Sức căng'] = mucCang;
+
+                document.querySelectorAll('.direct-attr-input').forEach(input => {
+                    const attrName = input.dataset.attrName || '';
+                    let val = attrsMap[attrName] || '';
+                    if (!val && attrName) {
+                        const foundKey = Object.keys(attrsMap).find(k => k.toLowerCase() === attrName.toLowerCase());
+                        if (foundKey) val = attrsMap[foundKey];
+                    }
+                    if (attrName.toLowerCase().includes('màu') && spDanhMucId != catIds.HOP_CAU && val) {
+                        val = val.replace(/,\s*Mặc\s*định/gi, '').trim();
+                    }
+                    input.value = val || '';
+                });
+
+                if (document.getElementById('directMauSac')) {
+                    let cleanMau = mauSac;
+                    if (spDanhMucId != catIds.HOP_CAU && cleanMau) cleanMau = cleanMau.replace(/,\s*Mặc\s*định/gi, '').trim();
+                    document.getElementById('directMauSac').value = cleanMau || attrsMap['Màu sắc'] || '';
                 }
-                document.getElementById('directMauSac').value = cleanMauSacVal;
-                document.getElementById('directTrongLuong').value = trongLuong;
-                document.getElementById('directKichThuoc').value  = kichThuoc;
-                document.getElementById('directMucCang').value    = mucCang;
+                if (document.getElementById('directTrongLuong')) document.getElementById('directTrongLuong').value = trongLuong || attrsMap['Trọng lượng'] || '';
+                if (document.getElementById('directKichThuoc')) document.getElementById('directKichThuoc').value = kichThuoc || attrsMap['Kích thước'] || '';
+                if (document.getElementById('directMucCang')) document.getElementById('directMucCang').value = mucCang || attrsMap['Sức căng'] || '';
+
 
                 const currentImgWrap = document.getElementById('directCurrentImgWrap');
                 if (hinhAnh) {
@@ -613,16 +637,19 @@
                 pillsContainer.innerHTML = '';
 
                 if (isGiay) {
-                    document.getElementById('directLblKichThuoc').textContent = 'Size giày *';
-                    document.getElementById('directKichThuoc').placeholder = 'VD: 36, 37... 46';
-                    const shoeSizes = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
-                    pillsContainer.innerHTML = shoeSizes.map(sz => `<button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'directKichThuoc')">${sz}</button>`).join('');
+                    if (document.getElementById('directKichThuoc')) document.getElementById('directKichThuoc').placeholder = 'VD: 36, 37... 46';
+                    if (pillsContainer) {
+                        const shoeSizes = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
+                        pillsContainer.innerHTML = shoeSizes.map(sz => `<button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'directKichThuoc')">${sz}</button>`).join('');
+                    }
                 } else if (isPhuc || showKichThuoc) {
-                    document.getElementById('directLblKichThuoc').textContent = 'Size trang phục *';
-                    document.getElementById('directKichThuoc').placeholder = 'VD: XS, S, M, L...';
-                    const clothSizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
-                    pillsContainer.innerHTML = clothSizes.map(sz => `<button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'directKichThuoc')">${sz}</button>`).join('');
+                    if (document.getElementById('directKichThuoc')) document.getElementById('directKichThuoc').placeholder = 'VD: XS, S, M, L...';
+                    if (pillsContainer) {
+                        const clothSizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
+                        pillsContainer.innerHTML = clothSizes.map(sz => `<button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'directKichThuoc')">${sz}</button>`).join('');
+                    }
                 }
+
 
                 btnSubmit.innerHTML = '<i class="fas fa-save me-1"></i>Lưu Thay Đổi Biến Thể #' + btId;
             }
@@ -721,12 +748,86 @@
             }
         }
 
+        function renderDynamicEditAttributes() {
+            const attrWrap = document.getElementById('directAttrWrap');
+            if (!attrWrap || !spDanhMucId) return;
+
+            fetch('/api/categories/' + spDanhMucId + '/attributes')
+                .then(res => res.json())
+                .then(attributes => {
+                    if (!attributes || attributes.length === 0) return;
+
+                    attrWrap.innerHTML = '';
+                    const catType = (catIds && Object.keys(catIds).find(k => catIds[k] == spDanhMucId)) || 'OTHER';
+                    const dmLower = (spDanhMucTen || '').toLowerCase();
+
+                    attributes.forEach((att, idx) => {
+                        const attName = att.tenThuocTinh || '';
+                        const lowerName = attName.toLowerCase();
+                        const colDiv = document.createElement('div');
+                        colDiv.className = 'col-12 attr-group-box mb-2';
+                        colDiv.dataset.attrName = attName;
+
+                        let fieldName = 'kichThuoc';
+                        let inputId = 'directAttr_' + idx;
+                        let presetItems = [];
+                        let placeholderText = '';
+
+                        if (lowerName.includes('màu')) {
+                            fieldName = 'mauSac';
+                            inputId = 'directMauSac';
+                            presetItems = ["Đỏ", "Xanh dương", "Xanh lá", "Đen", "Trắng", "Vàng", "Cam", "Tím", "Hồng", "Ghi/Xám"];
+                            placeholderText = 'VD: Đỏ / Xanh / Đen';
+                        } else if (lowerName.includes('trọng lượng')) {
+                            fieldName = 'trongLuong';
+                            inputId = 'directTrongLuong';
+                            presetItems = ["3U", "4U", "5U"];
+                            placeholderText = 'VD: 3U / 4U / 5U';
+                        } else if (lowerName.includes('căng')) {
+                            fieldName = 'mucCang';
+                            inputId = 'directMucCang';
+                            presetItems = ["20 - 28 lbs", "22 - 30 lbs", "24 - 32 lbs"];
+                            placeholderText = 'VD: 20 - 28 lbs';
+                        } else if (lowerName.includes('size') || lowerName.includes('kích thước')) {
+                            fieldName = 'kichThuoc';
+                            inputId = 'directKichThuoc';
+                            if (catType === 'GIAY' || dmLower.includes('giày') || dmLower.includes('giay')) {
+                                presetItems = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
+                                placeholderText = 'VD: 36, 37... 46';
+                            } else {
+                                presetItems = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
+                                placeholderText = 'VD: XS, S, M, L...';
+                            }
+                        }
+
+                        let pillsHtml = presetItems.map(item =>
+                            `<button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, '${inputId}')">${item}</button>`
+                        ).join('');
+
+                        colDiv.innerHTML = `
+                            <label class="admin-form-label">${attName} <span class="text-danger">*</span></label>
+                            <input type="text" id="${inputId}" name="${fieldName}" class="admin-form-control form-control mb-2 direct-attr-input" data-attr-name="${attName}" maxlength="50" placeholder="${placeholderText}">
+                            <div class="d-flex flex-wrap gap-1 pills-box">${pillsHtml}</div>
+                        `;
+                        attrWrap.appendChild(colDiv);
+                    });
+
+                    const select = document.getElementById('selectDoiTuongSua');
+                    if (select && select.value && select.value !== '0') {
+                        xuLyChonDoiTuongSua(select.value);
+                    }
+                })
+                .catch(err => console.error("Error loading category attributes:", err));
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
+            renderDynamicEditAttributes();
             const select = document.getElementById('selectDoiTuongSua');
             if (select) {
                 xuLyChonDoiTuongSua(select.value);
             }
         });
+
 
 
     </script>

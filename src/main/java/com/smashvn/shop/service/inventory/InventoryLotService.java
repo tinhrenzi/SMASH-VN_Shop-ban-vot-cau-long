@@ -368,9 +368,27 @@ public class InventoryLotService {
         Collection<SanPhamChiTietThuocTinh> attrs = spct.getSanPhamChiTietThuocTinhs();
         if (attrs == null || attrs.isEmpty()) return "DEFAULT";
 
-        return attrs.stream()
-                .filter(a -> a.getThuocTinh() != null)
+        com.smashvn.shop.constant.CategoryType catType = (spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null)
+                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId())
+                : com.smashvn.shop.constant.CategoryType.OTHER;
+
+        List<SanPhamChiTietThuocTinh> validAttrs = attrs.stream()
+                .filter(a -> a.getThuocTinh() != null && a.getGiaTri() != null && !a.getGiaTri().isBlank())
+                .filter(a -> {
+                    String tenTT = a.getThuocTinh().getTenThuocTinh().trim().toLowerCase();
+                    if (catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC || catType == com.smashvn.shop.constant.CategoryType.GIAY) {
+                        if (tenTT.contains("căng") || tenTT.contains("trọng lượng") || tenTT.contains("weight")) return false;
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
+                        if (tenTT.contains("kích thước") || tenTT.contains("size")) return false;
+                    }
+                    return true;
+                })
                 .sorted(Comparator.comparing(a -> a.getThuocTinh().getTenThuocTinh() != null ? a.getThuocTinh().getTenThuocTinh() : ""))
+                .collect(Collectors.toList());
+
+        if (validAttrs.isEmpty()) return "DEFAULT";
+
+        return validAttrs.stream()
                 .map(a -> a.getThuocTinh().getTenThuocTinh() + "=" + a.getGiaTri())
                 .collect(Collectors.joining("|"));
     }
@@ -383,10 +401,29 @@ public class InventoryLotService {
         Collection<SanPhamChiTietThuocTinh> attrs = spct.getSanPhamChiTietThuocTinhs();
         if (attrs == null || attrs.isEmpty()) return spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "";
 
-        return attrs.stream()
+        com.smashvn.shop.constant.CategoryType catType = (spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null)
+                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId())
+                : com.smashvn.shop.constant.CategoryType.OTHER;
+
+        List<String> values = attrs.stream()
+                .filter(a -> a.getThuocTinh() != null && a.getGiaTri() != null && !a.getGiaTri().isBlank())
+                .filter(a -> {
+                    String tenTT = a.getThuocTinh().getTenThuocTinh().trim().toLowerCase();
+                    if (catType == com.smashvn.shop.constant.CategoryType.TRANG_PHUC || catType == com.smashvn.shop.constant.CategoryType.GIAY) {
+                        if (tenTT.contains("căng") || tenTT.contains("trọng lượng") || tenTT.contains("weight")) return false;
+                    } else if (catType == com.smashvn.shop.constant.CategoryType.VOT) {
+                        if (tenTT.contains("kích thước") || tenTT.contains("size")) return false;
+                    }
+                    return true;
+                })
                 .map(a -> a.getGiaTri() != null ? a.getGiaTri() : "")
-                .collect(Collectors.joining(" - "));
+                .collect(Collectors.toList());
+
+        if (values.isEmpty()) return spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "";
+
+        return String.join(" - ", values);
     }
+
 
 
     /**
