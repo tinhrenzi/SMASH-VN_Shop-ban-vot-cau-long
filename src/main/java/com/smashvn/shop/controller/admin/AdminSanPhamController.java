@@ -119,6 +119,7 @@ public class AdminSanPhamController {
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(id));
         model.addAttribute("groupVariants", inventoryLotService.calculateAggregatedVariants(id));
         model.addAttribute("lotSummaries", inventoryLotService.calculateLotSummaries(id));
+        model.addAttribute("categoryAttributes", sp.getDanhMuc().getThuocTinhList());
 
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {

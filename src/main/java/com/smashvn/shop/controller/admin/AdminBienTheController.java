@@ -116,17 +116,14 @@ public class AdminBienTheController {
                         bt.setGiaBan(giaBan);
                         updated = true;
                     }
-                    if (soLuongTon != null && soLuongTon >= 0) {
-                        bt.setSoLuongTon(soLuongTon);
-                        updated = true;
-                    }
                     sanPhamChiTietRepository.save(bt);
                 }
                 if (updated) {
                     redirectAttributes.addFlashAttribute("success", "Cập nhật đồng loạt tất cả biến thể thành công!");
                 } else {
-                    redirectAttributes.addFlashAttribute("error", "Vui lòng nhập giá bán hợp lệ (> 0) hoặc số lượng kho (>= 0) để cập nhật đồng loạt.");
+                    redirectAttributes.addFlashAttribute("error", "Vui lòng nhập giá bán hợp lệ (> 0) để cập nhật đồng loạt.");
                 }
+
                 return "redirect:/admin/san-pham/sua/" + idSanPham;
             }
 

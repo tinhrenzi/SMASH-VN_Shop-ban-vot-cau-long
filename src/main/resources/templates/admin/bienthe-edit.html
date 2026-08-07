@@ -65,7 +65,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Số lượng kho <span class="text-danger">*</span></label>
-                                            <input type="number" name="soLuongTon" class="admin-form-control form-control" th:value="${bt.soLuongTon}" required min="0" placeholder="VD: 10">
+                                            <input type="number" name="soLuongTon" class="admin-form-control form-control bg-light" th:value="${bt.soLuongTon}" readonly disabled>
                                         </div>
                                     </div>
 
@@ -73,37 +73,71 @@
                                     <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đỏ</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Xanh dương</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Xanh lá</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đen</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Trắng</button>
+                                            </div>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Trọng lượng <span class="text-danger">*</span></label>
-                                            <input type="text" name="trongLuong" class="admin-form-control form-control" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
+                                            <input type="text" name="trongLuong" class="admin-form-control form-control mb-2" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">3U</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">4U</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">5U</button>
+                                            </div>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Sức căng khuyến nghị</label>
-                                            <input type="text" name="mucCang" class="admin-form-control form-control" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 20 - 28 lbs">
+                                            <input type="text" name="mucCang" class="admin-form-control form-control mb-2" th:value="${bt.mucCang}" maxlength="50" placeholder="VD: 20 - 28 lbs">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">20 - 28 lbs</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">22 - 30 lbs</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">24 - 32 lbs</button>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['GIAY']}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Trắng</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đen</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đỏ</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Xanh dương</button>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Size giày <span class="text-danger">*</span></label>
-                                            <input type="text" name="kichThuoc" class="admin-form-control form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)" th:each="sz : ${listKichThuocGiay}" th:text="${sz}">36</button>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['TRANG_PHUC']}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đen</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đỏ</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Trắng</button>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Size trang phục <span class="text-danger">*</span></label>
-                                            <input type="text" name="kichThuoc" class="admin-form-control form-control" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L, XL...">
+                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L, XL...">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)" th:each="sz : ${listKichThuocTrangPhuc}" th:text="${sz}">M</button>
+                                            </div>
                                         </div>
                                     </div>
 
