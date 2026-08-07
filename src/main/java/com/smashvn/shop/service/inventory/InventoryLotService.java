@@ -129,11 +129,17 @@ public class InventoryLotService {
         return new AllocationResult(AllocationStatus.SUCCESS, plannedAllocations, "Phân bổ tồn kho FIFO thành công");
     }
 
+    @Transactional
+    public void hoanKho(List<RestockItemRequest> requests) {
+        hoanKhoHangLoat(requests);
+    }
+
     /**
      * Hoàn kho hàng loạt: Sắp xếp idSanPham tăng dần, khóa PESSIMISTIC_WRITE, cộng lại tồn kho.
      */
     @Transactional
     public void hoanKhoHangLoat(List<RestockItemRequest> requests) {
+
         if (requests == null || requests.isEmpty()) return;
 
         List<RestockItemRequest> validRequests = requests.stream()
@@ -335,7 +341,8 @@ public class InventoryLotService {
             int minSpctId = lotSpcts.stream().mapToInt(SanPhamChiTiet::getId).min().orElse(0);
 
             LocalDateTime ngayTaoLo = (lotSpcts != null && !lotSpcts.isEmpty()) ? lotSpcts.get(0).getNgayTao() : null;
-            String maLoDisplay = isLegacy ? "LÔ BAN ĐẦU" :
+            String maLoDisplay = isLegacy ? "LÔ KHỞI TẠO (KHO BAN ĐẦU)" :
+
                     String.format("LO-%d-%s-%d", idSanPham, lotKey, minSpctId);
             String thoiGianHienThi = ngayTaoLo != null ? ngayTaoLo.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "N/A";
 

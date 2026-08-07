@@ -87,6 +87,8 @@ public class GioHangService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final ThongBaoRepository thongBaoRepository;
     private final GuestCartService guestCartService;
+    private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -646,9 +648,15 @@ public class GioHangService {
             Integer qty = (Integer) itemMap.get("soLuong");
 
             if ("COD".equalsIgnoreCase(ptttName)) {
-                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() - qty);
-                sanPhamChiTietRepository.save(lockedSpct);
+                List<com.smashvn.shop.dto.inventory.OrderItemRequest> reqs = new ArrayList<>();
+                reqs.add(com.smashvn.shop.dto.inventory.OrderItemRequest.builder()
+                        .representativeSpctId(lockedSpct.getId())
+                        .quantity(qty)
+                        .build());
+                inventoryLotService.allocateFifo(reqs);
             }
+
+
 
             com.smashvn.shop.service.product.PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
 

@@ -22,7 +22,10 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.dto.inventory.OrderItemRequest;
+import com.smashvn.shop.dto.inventory.RestockItemRequest;
 import com.smashvn.shop.entity.PaymentMethod;
+
 import com.smashvn.shop.entity.PaymentStatus;
 import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.entity.ReturnStatus;
@@ -275,19 +278,21 @@ public class OrderViewService {
 
                 if (stockWasDeducted) {
                     List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+                    List<RestockItemRequest> restockReqs = new ArrayList<>();
                     for (HoaDonChiTiet item : items) {
-                        SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                        if (spct != null) {
-                            // Khóa ghi và tăng tồn kho
-                            Optional<SanPhamChiTiet> lockedSpctOpt = sanPhamChiTietRepository.findByIdWithLock(spct.getId());
-                            if (lockedSpctOpt.isPresent()) {
-                                SanPhamChiTiet lockedSpct = lockedSpctOpt.get();
-                                lockedSpct.setSoLuongTon(lockedSpct.getSoLuongTon() + item.getSoLuong());
-                                sanPhamChiTietRepository.save(lockedSpct);
-                            }
+                        if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                            restockReqs.add(RestockItemRequest.builder()
+                                    .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                                    .quantityToRestock(item.getSoLuong())
+                                    .conBanDuoc(true)
+                                    .build());
                         }
                     }
+                    if (!restockReqs.isEmpty()) {
+                        inventoryLotService.hoanKho(restockReqs);
+                    }
                 }
+
 
                 // Cập nhật trạng thái đơn hàng
                 hd.setTrangThaiDonHang(OrderStatus.DA_HUY.getValue()); // "da_huy"
@@ -486,43 +491,44 @@ public class OrderViewService {
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
 
         if (!oldIsDeducted && newIsDeducted) {
-            // Deduct stock: lock variants, validate, deduct
+            List<OrderItemRequest> reqs = new ArrayList<>();
             for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                    if (locked.getSoLuongTon() < item.getSoLuong()) {
-                        throw new IllegalArgumentException("Sản phẩm '" + locked.getSanPham().getTenSanPham() + "' không đủ hàng tồn kho để kích hoạt đơn hàng!");
-                    }
+                if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                    reqs.add(OrderItemRequest.builder()
+                            .representativeSpctId(item.getSanPhamChiTiet().getId())
+                            .quantity(item.getSoLuong())
+                            .build());
                 }
             }
-            for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).get();
-                    locked.setSoLuongTon(locked.getSoLuongTon() - item.getSoLuong());
-                    sanPhamChiTietRepository.save(locked);
+            if (!reqs.isEmpty()) {
+                com.smashvn.shop.dto.inventory.AllocationResult allocResult = inventoryLotService.allocateFifo(reqs);
+                if (allocResult != null && allocResult.status() == com.smashvn.shop.dto.inventory.AllocationStatus.INSUFFICIENT_STOCK) {
+                    throw new IllegalArgumentException(allocResult.message() != null ? allocResult.message() : "Sản phẩm không đủ hàng tồn kho để kích hoạt đơn hàng!");
                 }
             }
         } else if (oldIsDeducted && !newIsDeducted) {
             boolean restoreStock = true;
-            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus)) {
+            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus) || "da_ban_giao_ghn".equalsIgnoreCase(currentStatus)) {
                 restoreStock = false;
                 hd.setTrangThaiHoanHang(ReturnStatus.PENDING_RETURN);
             }
             if (restoreStock) {
+                List<RestockItemRequest> restockReqs = new ArrayList<>();
                 for (HoaDonChiTiet item : items) {
-                    SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                    if (spct != null) {
-                        SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                        locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
-                        sanPhamChiTietRepository.save(locked);
+                    if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                        restockReqs.add(RestockItemRequest.builder()
+                                .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                                .quantityToRestock(item.getSoLuong())
+                                .conBanDuoc(true)
+                                .build());
                     }
+                }
+                if (!restockReqs.isEmpty()) {
+                    inventoryLotService.hoanKho(restockReqs);
                 }
             }
         }
+
 
         // 8. Payment Method Logic & Cancellation Rules
         String roleStr = "QL".equals(actingUser.getVaiTro()) ? "QUAN_LY" : "NHAN_VIEN";
@@ -776,39 +782,46 @@ public class OrderViewService {
 
         boolean restoreStock = false;
         if (!oldIsDeducted && newIsDeducted) {
-            // Deduct stock: lock variants, deduct
+            List<OrderItemRequest> reqs = new ArrayList<>();
             for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                    locked.setSoLuongTon(Math.max(0, locked.getSoLuongTon() - item.getSoLuong()));
-                    sanPhamChiTietRepository.save(locked);
+                if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                    reqs.add(OrderItemRequest.builder()
+                            .representativeSpctId(item.getSanPhamChiTiet().getId())
+                            .quantity(item.getSoLuong())
+                            .build());
+                }
+            }
+            if (!reqs.isEmpty()) {
+                com.smashvn.shop.dto.inventory.AllocationResult allocResult = inventoryLotService.allocateFifo(reqs);
+                if (allocResult != null && allocResult.status() == com.smashvn.shop.dto.inventory.AllocationStatus.INSUFFICIENT_STOCK) {
+                    throw new IllegalArgumentException(allocResult.message() != null ? allocResult.message() : "Sản phẩm không đủ hàng tồn kho để kích hoạt đơn hàng!");
                 }
             }
         } else if (oldIsDeducted && !newIsDeducted) {
-            // If cancellation, check if already shipped
-            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus)) {
-                // Shipped cancellation -> do NOT restore stock, set return status
+            if ("dang_giao".equalsIgnoreCase(currentStatus) || "dang_lay_hang".equalsIgnoreCase(currentStatus) || "da_ban_giao_ghn".equalsIgnoreCase(currentStatus)) {
                 restoreStock = false;
                 hd.setTrangThaiHoanHang(targetReturnStatus);
             } else {
-                // Not yet shipped -> restore stock immediately
                 restoreStock = true;
             }
         }
 
         if (restoreStock) {
+            List<RestockItemRequest> restockReqs = new ArrayList<>();
             for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
-                    sanPhamChiTietRepository.save(locked);
+                if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                    restockReqs.add(RestockItemRequest.builder()
+                            .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                            .quantityToRestock(item.getSoLuong())
+                            .conBanDuoc(true)
+                            .build());
                 }
             }
+            if (!restockReqs.isEmpty()) {
+                inventoryLotService.hoanKho(restockReqs);
+            }
         }
+
 
         // Cập nhật trạng thái thanh toán và refund status
         String pm = hd.getPaymentMethod();
@@ -1379,22 +1392,26 @@ public class OrderViewService {
         String adjustmentDetails = "Không có điều chỉnh kho";
         if (newReturnStatus == ReturnStatus.RETURNED) {
             List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+            List<RestockItemRequest> restockReqs = new ArrayList<>();
             StringBuilder detailsBuilder = new StringBuilder("Chi tiết điều chỉnh tồn kho:\n");
             for (HoaDonChiTiet item : items) {
-                SanPhamChiTiet spct = item.getSanPhamChiTiet();
-                if (spct != null) {
-                    SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                    locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
-                    sanPhamChiTietRepository.save(locked);
-
-                    detailsBuilder.append(String.format("SPCT-%d : +%d\n", spct.getId(), item.getSoLuong()));
+                if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                    restockReqs.add(RestockItemRequest.builder()
+                            .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                            .quantityToRestock(item.getSoLuong())
+                            .conBanDuoc(true)
+                            .build());
+                    detailsBuilder.append(String.format("SPCT-%d : +%d\n", item.getSanPhamChiTiet().getId(), item.getSoLuong()));
                 }
+            }
+            if (!restockReqs.isEmpty()) {
+                inventoryLotService.hoanKho(restockReqs);
             }
             adjustmentDetails = detailsBuilder.toString().trim();
         } else if (newReturnStatus == ReturnStatus.LOST || newReturnStatus == ReturnStatus.DAMAGED) {
             adjustmentDetails = "Không hoàn trả tồn kho (Hàng bị mất/hỏng)";
         }
+
 
         // 5. Update Audit Information
         hd.setTrangThaiHoanHang(newReturnStatus);
@@ -1841,17 +1858,22 @@ public class OrderViewService {
         }
 
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+        List<RestockItemRequest> restockReqs = new ArrayList<>();
         StringBuilder detailsBuilder = new StringBuilder("Chi tiết nhập kho lại sản phẩm:\n");
         for (HoaDonChiTiet item : items) {
-            SanPhamChiTiet spct = item.getSanPhamChiTiet();
-            if (spct != null) {
-                SanPhamChiTiet locked = sanPhamChiTietRepository.findByIdWithLock(spct.getId())
-                        .orElseThrow(() -> new IllegalArgumentException("Sản phẩm chi tiết không tồn tại."));
-                locked.setSoLuongTon(locked.getSoLuongTon() + item.getSoLuong());
-                sanPhamChiTietRepository.save(locked);
-                detailsBuilder.append(String.format("SPCT-%d : +%d\n", spct.getId(), item.getSoLuong()));
+            if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                restockReqs.add(RestockItemRequest.builder()
+                        .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                        .quantityToRestock(item.getSoLuong())
+                        .conBanDuoc(true)
+                        .build());
+                detailsBuilder.append(String.format("SPCT-%d : +%d\n", item.getSanPhamChiTiet().getId(), item.getSoLuong()));
             }
         }
+        if (!restockReqs.isEmpty()) {
+            inventoryLotService.hoanKho(restockReqs);
+        }
+
 
         ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
         hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
