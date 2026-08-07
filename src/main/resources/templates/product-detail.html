@@ -184,12 +184,14 @@
 								                        <span class="input-counter__plus fas fa-plus"></span>
 								                    </div>
 								                </div>
-								                <div class="pd-detail-action-row__btn">
+								                <div class="pd-detail-action-row__btn" style="display: flex; gap: 8px;">
 								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit">THÊM VÀO GIỎ</button>
+								                    <button class="js-btn-buy-now btn btn--e-brand-b-2" type="button" style="background-color: #e65100; border-color: #e65100;">MUA NGAY</button>
 								                </div>
 								            </div>
 								        </form>
 								    </div>
+
 								    
 								    <div class="u-s-m-b-15">
 								        <span class="pd-detail__label u-s-m-b-8">Chính sách mua hàng:</span>
@@ -803,7 +805,42 @@
                     document.body.style.overflow = "";
                 }
             });
+
+            $('.js-btn-buy-now').on('click', function(e) {
+                e.preventDefault();
+                let $form = $(this).closest('form');
+                let spctId = $form.find('.js-variant-id').val();
+                let qty = $form.find('.js-quantity-input').val() || 1;
+
+                if (!spctId) {
+                    Swal.fire({ icon: 'warning', title: 'Chưa chọn phân loại', text: 'Vui lòng chọn đầy đủ thuộc tính phân loại sản phẩm!' });
+                    return;
+                }
+
+                let token = $('meta[name="_csrf"]').attr('content');
+                let header = $('meta[name="_csrf_header"]').attr('content');
+
+                $.ajax({
+                    url: '/checkout/buy-now',
+                    type: 'POST',
+                    data: { idSanPhamChiTiet: parseInt(spctId), soLuong: parseInt(qty) },
+                    beforeSend: function(xhr) {
+                        if (token && header) xhr.setRequestHeader(header, token);
+                    },
+                    success: function(res) {
+                        if (res.trangThai === 'ok' && res.checkoutUrl) {
+                            window.location.href = res.checkoutUrl;
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Lỗi', text: res.message || 'Không thể thực hiện mua ngay.' });
+                        }
+                    },
+                    error: function(err) {
+                        Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: 'Có lỗi xảy ra, vui lòng thử lại.' });
+                    }
+                });
+            });
         });
     </script>
 </body>
+
 </html>

@@ -74,6 +74,15 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
 
+    @Mock
+    private com.smashvn.shop.service.order.CheckoutContextService checkoutContextService;
+
+    @Mock
+    private com.smashvn.shop.service.order.PendingCheckoutRegistry pendingCheckoutRegistry;
+
+    @Mock
+    private com.smashvn.shop.repository.GioHangChiTietRepository gioHangChiTietRepository;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -98,7 +107,10 @@ public class CheckoutControllerTest {
                 sanPhamChiTietRepository,
                 taiKhoanRepository,
                 tokenKhoiPhucRepository,
-                soDiaChiRepository
+                soDiaChiRepository,
+                checkoutContextService,
+                pendingCheckoutRegistry,
+                gioHangChiTietRepository
         );
 
         when(pricingService.calculateCurrentSellingPrice(any())).thenAnswer(invocation -> {
@@ -123,6 +135,7 @@ public class CheckoutControllerTest {
         mockCartItems = new ArrayList<>();
         GioHangChiTiet item = new GioHangChiTiet();
         SanPhamChiTiet spct = new SanPhamChiTiet();
+        spct.setId(99);
         spct.setSoLuongTon(10);
         spct.setGiaBan(new BigDecimal("100000"));
         SanPham sp = new SanPham();
@@ -141,14 +154,36 @@ public class CheckoutControllerTest {
 
         when(gioHangService.layDanhSachSanPhamTrongGio(123)).thenReturn(mockCartItems);
         when(donViVanChuyenDAO.findAll()).thenReturn(mockDvvcs);
+        when(sanPhamChiTietRepository.findById(99)).thenReturn(java.util.Optional.of(spct));
+
+        com.smashvn.shop.dto.order.CheckoutItemContext itemCtx = com.smashvn.shop.dto.order.CheckoutItemContext.builder()
+                .cartItemId(1)
+                .idSanPhamChiTiet(99)
+                .soLuong(2)
+                .fromCart(true)
+                .build();
+
+        com.smashvn.shop.dto.order.CheckoutContext dummyCtx = com.smashvn.shop.dto.order.CheckoutContext.builder()
+                .token("valid-token")
+                .source(com.smashvn.shop.dto.order.CheckoutSource.CART)
+                .status(com.smashvn.shop.dto.order.CheckoutContextStatus.READY)
+                .customerId(123)
+                .sessionId(session.getId())
+                .items(java.util.List.of(itemCtx))
+                .build();
+
+        when(checkoutContextService.getContext(any(), eq("valid-token"))).thenReturn(dummyCtx);
+        when(checkoutContextService.validateOwnership(any(), any(), any())).thenReturn(true);
     }
+
 
     @Test
     void testViewCheckout_NoSavedAddresses() {
         when(userAddressService.layDanhSachDiaChi(123)).thenReturn(new ArrayList<>());
 
         Model model = new ConcurrentModel();
-        String view = checkoutController.viewCheckout(session, model);
+        String view = checkoutController.viewCheckout("valid-token", session, model);
+
 
         assertEquals("checkout", view);
         assertTrue(model.containsAttribute("listDiaChi"));
@@ -176,7 +211,8 @@ public class CheckoutControllerTest {
         when(userAddressService.layDanhSachDiaChi(123)).thenReturn(addresses);
 
         Model model = new ConcurrentModel();
-        String view = checkoutController.viewCheckout(session, model);
+        String view = checkoutController.viewCheckout("valid-token", session, model);
+
 
         assertEquals("checkout", view);
         assertEquals(false, model.getAttribute("hasDefaultAddress"));
@@ -221,7 +257,8 @@ public class CheckoutControllerTest {
         when(userAddressService.layDanhSachDiaChi(123)).thenReturn(addresses);
 
         Model model = new ConcurrentModel();
-        String view = checkoutController.viewCheckout(session, model);
+        String view = checkoutController.viewCheckout("valid-token", session, model);
+
 
         assertEquals("checkout", view);
         assertEquals(true, model.getAttribute("hasDefaultAddress"));
@@ -265,7 +302,8 @@ public class CheckoutControllerTest {
         when(sanPhamChiTietRepository.findById(99)).thenReturn(java.util.Optional.of(spct));
 
         Model model = new ConcurrentModel();
-        String view = checkoutController.viewCheckout(session, model);
+        String view = checkoutController.viewCheckout("valid-token", session, model);
+
 
         assertEquals("checkout", view);
         assertEquals(true, model.getAttribute("isGuest"));

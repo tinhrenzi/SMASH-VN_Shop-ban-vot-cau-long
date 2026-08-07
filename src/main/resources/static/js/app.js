@@ -1144,8 +1144,12 @@ function checkAndApplyVariant(container) {
                   // 2. Ẩn modal Quick Look nếu khách đang thao tác từ Quick Look
                   $('#quick-look').modal('hide');
 
+                  if (response.quickAddCheckoutUrl) {
+                      $('#js-quick-add-checkout-btn').attr('href', response.quickAddCheckoutUrl);
+                  }
                   // 3. Hiển thị modal thông báo thành công
                   $('#add-to-cart').modal('show');
+
 
                   // 4. Update tự động Mini Cart trên thanh Header
                   if (typeof loadMiniCart === 'function') {
@@ -1195,32 +1199,24 @@ function checkAndApplyVariant(container) {
                       if (row.length) {
                           row.fadeOut(300, function() {
                               $(this).remove(); // Cắt bỏ thẻ <tr> khỏi giao diện
+
+                              if (typeof recalculateSelectedCartSummary === 'function') {
+                                  recalculateSelectedCartSummary();
+                              }
                               
                               // Nếu bảng trống trơn, hiển thị thông báo "Giỏ hàng trống"
-                              if ($('table.table-p tbody tr').length === 0) {
-                                  $('table.table-p tbody').html('<tr><td colspan="4" class="text-center u-s-p-y-30">Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm vào giỏ nhé!</td></tr>');
+                              if ($('table.table-p tbody tr.js-cart-row').length === 0) {
+                                  $('table.table-p tbody').html('<tr><td colspan="5" class="text-center u-s-p-y-30">Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm vào giỏ nhé!</td></tr>');
                                   $('.f-cart').fadeOut(); // Ẩn luôn khu vực Tạm tính tiền
                               }
                           });
                       }
 
+
                       // 2. Tái sử dụng lại API loadMiniCart để nó tự lo việc tính toán TỔNG TIỀN và SỐ LƯỢNG MỚI
                       if (typeof loadMiniCart === 'function') {
                           loadMiniCart();
                       }
-                      
-                      // 3. Nếu ở trang cart.html, cập nhật luôn số TỔNG CỘNG bự chà bá
-                      $.ajax({
-                          url: '/gio-hang/api/mini-cart',
-                          type: 'GET',
-                          success: function(res) {
-                              if (res.trangThai === 'ok') {
-                                  var formattedTotal = new Intl.NumberFormat('vi-VN').format(res.tongTien) + ' đ';
-                                  $('.js-cart-summary-subtotal').text(formattedTotal);
-                                  $('.js-cart-summary-total').text(formattedTotal);
-                              }
-                          }
-                      });
 
                   } else {
                       showToast("Có lỗi xảy ra khi xóa!", "error");
@@ -1261,8 +1257,12 @@ function checkAndApplyVariant(container) {
                   $('#js-modal-cart-price').text(formattedPrice);
                   $('#js-modal-cart-img').attr('src', resolveImageUrl(response.hinhAnh));
 
+                  if (response.quickAddCheckoutUrl) {
+                      $('#js-quick-add-checkout-btn').attr('href', response.quickAddCheckoutUrl);
+                  }
                   // Hiển thị modal thông báo thành công
                   $('#add-to-cart').modal('show');
+
 
                   // Load lại Mini Cart trên Header
                   if (typeof loadMiniCart === 'function') {
@@ -2294,7 +2294,6 @@ function checkAndApplyVariant(container) {
                           }
                       });
                   } else {
-                      // Báo lỗi (Ví dụ: Lỗi cố tình xóa địa chỉ mặc định)
                       showToast(response.message, "error");
                       tr.css('opacity', '1'); // Khôi phục lại hiển thị
                   }
@@ -2306,3 +2305,432 @@ function checkAndApplyVariant(container) {
           });
       }
   });
+
+/* ==============================================================
+   # SMASH CART PAGE MANAGEMENT & SUMMARY LOGIC
+   ============================================================== */
+
+const cartQuantityStates = new Map();
+
+function getQuantityState(row) {
+    const itemId = row.getAttribute('data-item-id');
+    if (!cartQuantityStates.has(itemId)) {
+        const initialQty = parseInt(row.getAttribute('data-quantity')) || 1;
+        cartQuantityStates.set(itemId, {
+            desiredQuantity: initialQty,
+            confirmedQuantity: initialQty,
+            requestVersion: 0,
+            debounceTimer: null,
+            pendingPromise: null
+        });
+    }
+    return cartQuantityStates.get(itemId);
+}
+
+function formatVnd(amount) {
+    return new Intl.NumberFormat('vi-VN').format(amount || 0) + ' đ';
+}
+
+function recalculateSelectedCartSummary() {
+    const rows = Array.from(document.querySelectorAll('.js-cart-row'));
+    const validRows = rows.filter(row => {
+        const val = row.getAttribute('data-valid') || row.dataset.valid;
+        return val === 'true' || val === true;
+    });
+    const totalValidCount = validRows.length;
+
+    let selectedItemCount = 0;
+    let selectedSubtotal = 0;
+
+    validRows.forEach(row => {
+        const checkbox = row.querySelector('.js-cart-item-checkbox');
+        if (checkbox && checkbox.checked) {
+            selectedItemCount++;
+            const lineTotalAttr = row.getAttribute('data-line-total') || row.dataset.lineTotal;
+            const lineTotal = parseFloat(lineTotalAttr) || 0;
+            selectedSubtotal += lineTotal;
+        }
+    });
+
+    const formattedSubtotal = formatVnd(selectedSubtotal);
+
+    const subtotalEl = document.querySelector('.js-cart-summary-subtotal');
+    if (subtotalEl) subtotalEl.textContent = formattedSubtotal;
+
+    const totalEl = document.querySelector('.js-cart-summary-total');
+    if (totalEl) totalEl.textContent = formattedSubtotal;
+
+    const selectedCountEl = document.querySelector('#js-selected-count') || document.getElementById('js-selected-count');
+    if (selectedCountEl) selectedCountEl.textContent = selectedItemCount;
+
+    const summarySelectedCountEl = document.querySelector('#js-summary-selected-count') || document.getElementById('js-summary-selected-count');
+    if (summarySelectedCountEl) summarySelectedCountEl.textContent = selectedItemCount;
+
+    const totalValidCountEl = document.querySelector('#js-total-valid-count') || document.getElementById('js-total-valid-count');
+    if (totalValidCountEl) totalValidCountEl.textContent = totalValidCount;
+
+    const selectAllEl = document.querySelector('#js-cart-select-all') || document.querySelector('.js-cart-select-all');
+    if (selectAllEl) {
+        if (totalValidCount === 0) {
+            selectAllEl.checked = false;
+            selectAllEl.indeterminate = false;
+            selectAllEl.disabled = true;
+        } else if (selectedItemCount === 0) {
+            selectAllEl.checked = false;
+            selectAllEl.indeterminate = false;
+            selectAllEl.disabled = false;
+        } else if (selectedItemCount === totalValidCount) {
+            selectAllEl.checked = true;
+            selectAllEl.indeterminate = false;
+            selectAllEl.disabled = false;
+        } else {
+            selectAllEl.checked = false;
+            selectAllEl.indeterminate = true;
+            selectAllEl.disabled = false;
+        }
+    }
+
+    const checkoutBtn = document.querySelector('#js-start-checkout-btn') || document.getElementById('js-start-checkout-btn');
+    if (checkoutBtn) {
+        if (selectedItemCount > 0) {
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('btn-disabled', 'opacity-50');
+            checkoutBtn.style.cursor = 'pointer';
+            checkoutBtn.style.pointerEvents = 'auto';
+        } else {
+            checkoutBtn.disabled = true;
+            checkoutBtn.classList.add('btn-disabled', 'opacity-50');
+            checkoutBtn.style.cursor = 'not-allowed';
+        }
+    }
+}
+
+window.recalculateSelectedCartSummary = recalculateSelectedCartSummary;
+
+function updateQuantityUiImmediately(row, newQuantity) {
+    const input = row.querySelector('.js-cart-qty-input');
+    if (input) {
+        input.value = newQuantity;
+    }
+
+    const unitPrice = parseFloat(row.getAttribute('data-unit-price')) || 0;
+    const tempLineTotal = unitPrice * newQuantity;
+
+    row.setAttribute('data-quantity', newQuantity);
+    row.setAttribute('data-line-total', tempLineTotal);
+    row.dataset.quantity = String(newQuantity);
+    row.dataset.lineTotal = String(tempLineTotal);
+
+    const lineTotalEl = row.querySelector('.js-cart-line-total');
+    if (lineTotalEl) {
+        lineTotalEl.textContent = formatVnd(tempLineTotal);
+    }
+
+    recalculateSelectedCartSummary();
+}
+
+function persistQuantity(row, quantityToSave, state) {
+    const itemId = row.getAttribute('data-item-id');
+    const version = ++state.requestVersion;
+
+    const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: '/gio-hang/cap-nhat',
+            type: 'POST',
+            data: { idChiTiet: parseInt(itemId), soLuong: quantityToSave },
+            beforeSend: function(xhr) {
+                if (token && header) xhr.setRequestHeader(header, token);
+            },
+            success: function(res) {
+                // Latest-write-wins check
+                if (version !== state.requestVersion) {
+                    resolve(res);
+                    return;
+                }
+
+                if (res && res.trangThai === 'ok') {
+                    const serverQty = res.quantity != null ? res.quantity : quantityToSave;
+                    const unitPrice = res.unitPrice != null ? res.unitPrice : (parseFloat(row.getAttribute('data-unit-price')) || 0);
+                    const lineTotal = res.lineTotal != null ? res.lineTotal : (unitPrice * serverQty);
+
+                    state.confirmedQuantity = serverQty;
+                    state.desiredQuantity = serverQty;
+
+                    const input = row.querySelector('.js-cart-qty-input');
+                    if (input) input.value = serverQty;
+
+                    row.setAttribute('data-quantity', serverQty);
+                    row.setAttribute('data-unit-price', unitPrice);
+                    row.setAttribute('data-line-total', lineTotal);
+                    row.dataset.quantity = String(serverQty);
+                    row.dataset.unitPrice = String(unitPrice);
+                    row.dataset.lineTotal = String(lineTotal);
+
+                    const lineTotalEl = row.querySelector('.js-cart-line-total');
+                    if (lineTotalEl) lineTotalEl.textContent = formatVnd(lineTotal);
+
+                    recalculateSelectedCartSummary();
+                    resolve(res);
+                } else {
+                    // Rollback to confirmedQuantity
+                    const rollbackQty = state.confirmedQuantity;
+                    state.desiredQuantity = rollbackQty;
+
+                    updateQuantityUiImmediately(row, rollbackQty);
+
+                    const msg = (res && res.message) || 'Không thể cập nhật số lượng.';
+                    if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Cập nhật thất bại', text: msg });
+                    else alert(msg);
+                    reject(new Error(msg));
+                }
+            },
+            error: function(err) {
+                if (version !== state.requestVersion) {
+                    reject(err);
+                    return;
+                }
+
+                const rollbackQty = state.confirmedQuantity;
+                state.desiredQuantity = rollbackQty;
+
+                updateQuantityUiImmediately(row, rollbackQty);
+
+                const msg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Đã xảy ra lỗi khi cập nhật số lượng.';
+                if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
+                else alert(msg);
+                reject(err);
+            }
+        });
+    });
+}
+
+function scheduleQuantityUpdate(row, quantity) {
+    const state = getQuantityState(row);
+
+    if (state.debounceTimer) {
+        clearTimeout(state.debounceTimer);
+        state.debounceTimer = null;
+    }
+
+    state.debounceTimer = setTimeout(() => {
+        state.debounceTimer = null;
+        state.pendingPromise = persistQuantity(row, quantity, state);
+    }, 800);
+}
+
+function changeDesiredQuantity(row, delta) {
+    const state = getQuantityState(row);
+    const min = 1;
+    const input = row.querySelector('.js-cart-qty-input');
+    const max = Number(row.getAttribute('data-max-quantity') || (input ? input.getAttribute('data-max') : 999) || 999);
+
+    const nextQuantity = Math.min(max, Math.max(min, state.desiredQuantity + delta));
+
+    if (nextQuantity === state.desiredQuantity) {
+        return;
+    }
+
+    state.desiredQuantity = nextQuantity;
+    updateQuantityUiImmediately(row, nextQuantity);
+    scheduleQuantityUpdate(row, nextQuantity);
+}
+
+function setDesiredQuantity(row, targetQuantity) {
+    const state = getQuantityState(row);
+    const min = 1;
+    const input = row.querySelector('.js-cart-qty-input');
+    const max = Number(row.getAttribute('data-max-quantity') || (input ? input.getAttribute('data-max') : 999) || 999);
+
+    let nextQuantity = parseInt(targetQuantity);
+    if (isNaN(nextQuantity) || nextQuantity < min) nextQuantity = min;
+    if (nextQuantity > max) nextQuantity = max;
+
+    if (nextQuantity === state.desiredQuantity) {
+        updateQuantityUiImmediately(row, nextQuantity);
+        return;
+    }
+
+    state.desiredQuantity = nextQuantity;
+    updateQuantityUiImmediately(row, nextQuantity);
+    scheduleQuantityUpdate(row, nextQuantity);
+}
+
+async function flushAllQuantityUpdates() {
+    const promises = [];
+
+    for (const [itemId, state] of cartQuantityStates) {
+        const row = document.querySelector(`.js-cart-row[data-item-id="${itemId}"]`);
+        if (state.debounceTimer) {
+            clearTimeout(state.debounceTimer);
+            state.debounceTimer = null;
+
+            if (row) {
+                const promise = persistQuantity(row, state.desiredQuantity, state);
+                state.pendingPromise = promise;
+                promises.push(promise);
+            }
+        } else if (state.pendingPromise) {
+            promises.push(state.pendingPromise);
+        }
+    }
+
+    if (promises.length > 0) {
+        await Promise.all(promises);
+    }
+}
+
+function initializeCartPage() {
+    if (window.__smashCartInitialized) {
+        return;
+    }
+
+    const selectAllBtn = document.querySelector('#js-cart-select-all') || document.querySelector('.js-cart-select-all');
+    const checkoutBtn = document.querySelector('#js-start-checkout-btn') || document.getElementById('js-start-checkout-btn');
+    const hasCartRows = document.querySelectorAll('.js-cart-row').length > 0;
+
+    if (!selectAllBtn && !checkoutBtn && !hasCartRows) {
+        return;
+    }
+
+    window.__smashCartInitialized = true;
+
+    // Disable template RESHOP.initInputCounter for cart items to prevent duplicate handlers
+    $('.js-cart-row .input-counter').find('.input-counter__plus, .input-counter__minus').off('click');
+    $('.js-cart-row .input-counter').find('input').off('change');
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('change', function() {
+            const checked = this.checked;
+            const validRows = Array.from(document.querySelectorAll('.js-cart-row')).filter(r => (r.getAttribute('data-valid') || r.dataset.valid) === 'true');
+            validRows.forEach(row => {
+                const cb = row.querySelector('.js-cart-item-checkbox');
+                if (cb && !cb.disabled) {
+                    cb.checked = checked;
+                }
+            });
+            recalculateSelectedCartSummary();
+        });
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('js-cart-item-checkbox')) {
+            recalculateSelectedCartSummary();
+        }
+    });
+
+    // Event delegation for Quantity Plus / Minus buttons
+    document.addEventListener('click', function(e) {
+        const plusBtn = e.target.closest('.js-cart-qty-plus') || (e.target.classList.contains('input-counter__plus') ? e.target : null);
+        const minusBtn = e.target.closest('.js-cart-qty-minus') || (e.target.classList.contains('input-counter__minus') ? e.target : null);
+
+        if (plusBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const row = plusBtn.closest('.js-cart-row');
+            if (row) changeDesiredQuantity(row, 1);
+        } else if (minusBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const row = minusBtn.closest('.js-cart-row');
+            if (row) changeDesiredQuantity(row, -1);
+        }
+    });
+
+    // Direct input typing change
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('js-cart-qty-input')) {
+            const row = e.target.closest('.js-cart-row');
+            if (row) setDesiredQuantity(row, e.target.value);
+        }
+    });
+
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            checkoutBtn.disabled = true;
+            checkoutBtn.classList.add('btn-disabled', 'opacity-50');
+            const originalText = checkoutBtn.textContent;
+            checkoutBtn.textContent = 'ĐANG CẬP NHẬT...';
+
+            try {
+                await flushAllQuantityUpdates();
+            } catch (err) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Chưa thể thanh toán', text: 'Vui lòng kiểm tra lại số lượng sản phẩm.' });
+                }
+                checkoutBtn.textContent = originalText;
+                recalculateSelectedCartSummary();
+                return;
+            }
+
+            const validSelectedRows = Array.from(document.querySelectorAll('.js-cart-row'))
+                .filter(row => (row.getAttribute('data-valid') || row.dataset.valid) === 'true');
+
+            const selectedIds = [];
+            validSelectedRows.forEach(row => {
+                const cb = row.querySelector('.js-cart-item-checkbox');
+                if (cb && cb.checked && cb.value) {
+                    selectedIds.push(parseInt(cb.value));
+                }
+            });
+
+            if (selectedIds.length === 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Chưa chọn sản phẩm',
+                        text: 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.'
+                    });
+                } else {
+                    alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+                }
+                checkoutBtn.textContent = originalText;
+                recalculateSelectedCartSummary();
+                return;
+            }
+
+            checkoutBtn.textContent = 'ĐANG CHUYỂN HƯỚNG...';
+
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+            $.ajax({
+                url: '/checkout/start',
+                type: 'POST',
+                data: { selectedItemIds: selectedIds.join(',') },
+                beforeSend: function(xhr) {
+                    if (token && header) xhr.setRequestHeader(header, token);
+                },
+                success: function(res) {
+                    if (res && res.trangThai === 'ok' && res.checkoutUrl) {
+                        window.location.href = res.checkoutUrl;
+                    } else {
+                        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: (res && res.message) || 'Không thể khởi tạo thanh toán.' });
+                        else alert((res && res.message) || 'Không thể khởi tạo thanh toán.');
+                        checkoutBtn.textContent = originalText;
+                        recalculateSelectedCartSummary();
+                    }
+                },
+                error: function(err) {
+                    const msg = (err.responseJSON && err.responseJSON.message) || 'Có lỗi xảy ra, vui lòng thử lại.';
+                    if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
+                    else alert(msg);
+                    checkoutBtn.textContent = originalText;
+                    recalculateSelectedCartSummary();
+                }
+            });
+        });
+    }
+
+    recalculateSelectedCartSummary();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCartPage);
+} else {
+    initializeCartPage();
+}

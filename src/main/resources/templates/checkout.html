@@ -275,6 +275,8 @@
                 <div class="section__content">
                     <div class="container">
                         <form id="checkout-form" class="checkout-f" novalidate>
+                            <input type="hidden" name="checkoutToken" id="checkoutToken" th:value="${checkoutToken}">
+
                             <div class="row">
                                 <!-- Form details -->
                                 <div class="col-lg-6 col-md-12 col-sm-12">
@@ -1131,6 +1133,7 @@
                 e.preventDefault();
                 const email = $('#email').val().trim();
                 const password = $('#guest-password-input').val();
+                const checkoutToken = $('input[name="checkoutToken"]').val() || '';
                 
                 if (!password) {
                     $('#guest-password-error').text('Vui lòng nhập mật khẩu.').show();
@@ -1142,13 +1145,19 @@
                 $.ajax({
                     url: '/checkout/api/verify-password',
                     type: 'POST',
-                    data: { email: email, password: password },
+                    data: { email: email, password: password, checkoutToken: checkoutToken },
                     success: function(resp) {
                         $('#btn-guest-verify-password').prop('disabled', false).text('XÁC NHẬN ĐĂNG NHẬP');
                         if (resp.success) {
                             showToast('Xác thực thành công!', 'success');
                             $('#guest-auth-overlay').removeClass('active');
-                            window.location.reload();
+                            if (resp.redirectUrl) {
+                                window.location.href = resp.redirectUrl;
+                            } else if (checkoutToken) {
+                                window.location.href = '/checkout?token=' + encodeURIComponent(checkoutToken);
+                            } else {
+                                window.location.reload();
+                            }
                         } else {
                             $('#guest-password-error').text(resp.message || 'Mật khẩu không đúng. Vui lòng kiểm tra lại.').show();
                         }
@@ -1166,6 +1175,7 @@
                 const email = $('#email').val().trim();
                 const password = $('#guest-new-password').val();
                 const confirmPassword = $('#guest-confirm-password').val();
+                const checkoutToken = $('input[name="checkoutToken"]').val() || '';
 
                 if (!password || password.length < 8) {
                     $('#guest-new-password-error').text('Mật khẩu tối thiểu phải 8 ký tự.').show();
@@ -1183,13 +1193,19 @@
                 $.ajax({
                     url: '/checkout/api/set-password',
                     type: 'POST',
-                    data: { email: email, password: password },
+                    data: { email: email, password: password, checkoutToken: checkoutToken },
                     success: function(resp) {
                         $('#btn-guest-setup-password').prop('disabled', false).text('KÍCH HOẠT & TIẾP TỤC');
                         if (resp.success) {
                             showToast('Kích hoạt tài khoản thành công!', 'success');
                             $('#guest-auth-overlay').removeClass('active');
-                            window.location.reload();
+                            if (resp.redirectUrl) {
+                                window.location.href = resp.redirectUrl;
+                            } else if (checkoutToken) {
+                                window.location.href = '/checkout?token=' + encodeURIComponent(checkoutToken);
+                            } else {
+                                window.location.reload();
+                            }
                         } else {
                             $('#guest-new-password-error').text(resp.message || 'Lỗi thiết lập mật khẩu.').show();
                         }
@@ -1200,6 +1216,7 @@
                     }
                 });
             });
+
 
             // Autofill registered address or toggle new address
             $('#selectDiaChiLuu').on('change', function() {
@@ -1341,7 +1358,11 @@
                 $.ajax({
                     url: '/api/voucher/apply',
                     type: 'POST',
-                    data: { voucherCode: code },
+                    data: { 
+                        voucherCode: code,
+                        checkoutToken: $('#checkoutToken').val() || ''
+                    },
+
                     success: function(response) {
                         $btn.prop('disabled', false);
                         if (response.trangThai === 'ok') {
@@ -1699,7 +1720,9 @@
 
                 // Call submitCheckout
                 const submitData = {
+                    checkoutToken: $('#checkoutToken').val() || '',
                     hoTenNhan: hoTen,
+
                     sdtNhan: sdt,
                     diaChiNhan: diaChi,
                     idDonViVanChuyen: parseInt(dvvcId),
