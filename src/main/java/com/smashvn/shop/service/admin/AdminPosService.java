@@ -56,6 +56,8 @@ public class AdminPosService {
     private final AuditService auditService;
     private final PricingService pricingService;
     private final PasswordEncoder passwordEncoder;
+    private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
 
 
     private boolean isDangBan(String trangThai) {
@@ -247,63 +249,48 @@ public class AdminPosService {
                     });
         }
 
-        // 5. Khóa và kiểm tra tồn kho các sản phẩm chi tiết bằng Pessimistic Write
-        BigDecimal tongTienHang = BigDecimal.ZERO;
-        List<HoaDonChiTiet> listCt = new java.util.ArrayList<>();
-
+        // 5. Phân bổ tồn kho FIFO bằng InventoryLotService (Đã khóa idSanPham theo thứ tự ASC)
+        List<com.smashvn.shop.dto.inventory.OrderItemRequest> itemRequests = new java.util.ArrayList<>();
         for (PosItem item : items) {
             if (item.soLuong == null || item.soLuong <= 0) {
                 throw new RuntimeException("Số lượng sản phẩm không hợp lệ!");
             }
-            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(item.idSanPhamChiTiet)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể sản phẩm ID: " + item.idSanPhamChiTiet));
+            itemRequests.add(com.smashvn.shop.dto.inventory.OrderItemRequest.builder()
+                    .representativeSpctId(item.idSanPhamChiTiet)
+                    .quantity(item.soLuong)
+                    .build());
+        }
 
-            if (!isDangBan(spct.getSanPham().getTrangThai()) || !isDangBan(spct.getTrangThai())) {
-                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + "' hoặc phân loại này hiện đã ngưng kinh doanh!");
-            }
+        com.smashvn.shop.dto.inventory.AllocationResult allocResult = inventoryLotService.allocateFifo(itemRequests);
+        if (allocResult.status() != com.smashvn.shop.dto.inventory.AllocationStatus.SUCCESS) {
+            throw new RuntimeException(allocResult.message());
+        }
 
-            if (spct.getSoLuongTon() < item.soLuong) {
-                throw new RuntimeException("Sản phẩm '" + spct.getSanPham().getTenSanPham() + " [" + spct.getMauSac() + "]' không đủ hàng tồn kho! Còn lại: " + spct.getSoLuongTon());
-            }
+        BigDecimal tongTienHang = BigDecimal.ZERO;
+        List<HoaDonChiTiet> listCt = new java.util.ArrayList<>();
 
-            // Trừ tồn kho
-            spct.setSoLuongTon(spct.getSoLuongTon() - item.soLuong);
-            sanPhamChiTietRepository.save(spct);
-
-            // Tính tiền thông qua PricingService (giá đã chiết khấu theo DotGiamGia)
+        for (com.smashvn.shop.dto.inventory.LotAllocation alloc : allocResult.allocations()) {
+            SanPhamChiTiet spct = alloc.allocatedSpct();
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(spct);
             BigDecimal sellingPrice = priceSnapshot.giaBanSauGiam();
-            BigDecimal itemTotal = sellingPrice.multiply(new BigDecimal(item.soLuong));
+            BigDecimal itemTotal = sellingPrice.multiply(new BigDecimal(alloc.quantityAllocated()));
             tongTienHang = tongTienHang.add(itemTotal);
 
-            // Lưu tạm chi tiết kèm Snapshot dữ liệu
             HoaDonChiTiet hdct = new HoaDonChiTiet();
             hdct.setSanPhamChiTiet(spct);
-            hdct.setSoLuong(item.soLuong);
+            hdct.setSoLuong(alloc.quantityAllocated());
             hdct.setDonGia(sellingPrice);
             hdct.setGiaGoc(priceSnapshot.giaNiemYet());
             hdct.setGiaSauGiam(sellingPrice);
             hdct.setTenSanPhamSnapshot(spct.getSanPham().getTenSanPham());
 
-            // SKU Snapshot
-            String sku = null;
-            try {
-                java.lang.reflect.Method getSkuMethod = spct.getClass().getMethod("getSku");
-                sku = (String) getSkuMethod.invoke(spct);
-            } catch (Exception e) {
-                // ignore
-            }
-            if (sku == null || sku.isBlank()) {
-                sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
-            }
+            String sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
             hdct.setSkuSnapshot(sku);
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
-
-            hdct.setThuocTinhSnapshot(spct.getPhanLoaiHienThi());
-
+            hdct.setThuocTinhSnapshot(inventoryLotService.getDisplayTitle(spct));
             listCt.add(hdct);
-
         }
+
 
         // 6. Xử lý Voucher và Khóa Pessimistic Write voucher
         PhieuGiamGia phieu = null;

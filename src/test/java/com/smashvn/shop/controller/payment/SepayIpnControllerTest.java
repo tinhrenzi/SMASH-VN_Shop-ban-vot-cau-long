@@ -53,10 +53,16 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.payment.SepayGatewayService;
+import com.smashvn.shop.service.payment.SepayOrderPaymentService;
 
 public class SepayIpnControllerTest {
 
+
     private MockMvc mockMvc;
+
+    @Mock
+    private SepayOrderPaymentService sepayOrderPaymentService;
+
 
     @Mock
     private SepayConfig sepayConfig;
@@ -132,8 +138,10 @@ public class SepayIpnControllerTest {
                 ghnService,
                 guestCheckoutService,
                 phieuGiamGiaRepository,
-                thongBaoRepository
+                thongBaoRepository,
+                sepayOrderPaymentService
         );
+
     }
 
     // ==========================================

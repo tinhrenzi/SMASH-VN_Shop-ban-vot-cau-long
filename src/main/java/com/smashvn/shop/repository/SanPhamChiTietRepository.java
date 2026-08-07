@@ -21,6 +21,17 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
 
     @Query("""
             SELECT DISTINCT spct FROM SanPhamChiTiet spct
+            LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
+            LEFT JOIN FETCH spct.hinhAnhSanPhams ha
+            WHERE spct.sanPham.id = :sanPhamId
+              AND spct.trangThaiValue = true
+            ORDER BY spct.id ASC
+            """)
+    List<SanPhamChiTiet> findActiveCandidatesBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
+
+
+    @Query("""
+            SELECT DISTINCT spct FROM SanPhamChiTiet spct
             JOIN FETCH spct.sanPham sp
             LEFT JOIN FETCH sp.danhMuc dm
             LEFT JOIN FETCH sp.thuongHieu th

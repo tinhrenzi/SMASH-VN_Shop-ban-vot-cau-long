@@ -290,6 +290,8 @@ public class AdminSanPhamService {
             Set<String> checkDuplicates = new HashSet<>();
             int savedCount = 0;
 
+            LocalDateTime thoiGianNhap = LocalDateTime.now();
+
             if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
                 BigDecimal gNhap = request.getGiaNhapDefault() != null ? request.getGiaNhapDefault() : BigDecimal.ZERO;
                 BigDecimal gBan = request.getGiaBanDefault();
@@ -305,6 +307,9 @@ public class AdminSanPhamService {
                 spct.setSoLuongTon(sTon);
                 spct.setTrangThai("dang_ban");
                 spct.setHinhAnhSanPham(secureMainFileName);
+                spct.setNgayTao(thoiGianNhap);
+                spct.setNgayCapNhat(thoiGianNhap);
+
 
                 saveVariantAttribute(spct, "Màu sắc", "Mặc định");
                 sanPhamChiTietRepository.save(spct);
@@ -351,6 +356,9 @@ public class AdminSanPhamService {
                     spct.setSoLuongTon(sTon);
                     spct.setTrangThai("dang_ban");
                     spct.setHinhAnhSanPham(variantFileName);
+                    spct.setNgayTao(thoiGianNhap);
+                    spct.setNgayCapNhat(thoiGianNhap);
+
 
                     if (v.getAttributes() != null && !v.getAttributes().isEmpty()) {
                         for (AttributeValueRequest attrReq : v.getAttributes()) {

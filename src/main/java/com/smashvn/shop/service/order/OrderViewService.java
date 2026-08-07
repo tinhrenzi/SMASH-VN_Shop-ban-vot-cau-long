@@ -55,6 +55,8 @@ public class OrderViewService {
     private final com.smashvn.shop.repository.ThongBaoRepository thongBaoRepository;
     private final com.smashvn.shop.service.api.GhnService ghnService;
     private final com.smashvn.shop.service.api.GhnStatusMapper ghnStatusMapper;
+    private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
 
     @Value("${app.admin.emails}")
     private String adminEmailsConfig;

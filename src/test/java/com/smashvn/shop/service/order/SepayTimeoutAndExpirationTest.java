@@ -93,6 +93,9 @@ public class SepayTimeoutAndExpirationTest {
     @InjectMocks
     private OrderViewService orderViewService;
 
+    @Mock
+    private com.smashvn.shop.service.payment.SepayOrderPaymentService sepayOrderPaymentService;
+
     private SepayGatewayService sepayGatewayService;
 
     @BeforeEach
@@ -111,9 +114,11 @@ public class SepayTimeoutAndExpirationTest {
                 ghnService,
                 guestCheckoutService,
                 phieuGiamGiaRepository,
-                thongBaoRepository
+                thongBaoRepository,
+                sepayOrderPaymentService
         );
     }
+
 
     @Test
     void testExpirePendingOrder_UpdatesStatusToDaHuyAndExpired() {

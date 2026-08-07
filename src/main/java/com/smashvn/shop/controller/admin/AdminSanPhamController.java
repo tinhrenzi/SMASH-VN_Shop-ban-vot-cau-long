@@ -17,6 +17,8 @@ import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.admin.AdminSanPhamService;
 import com.smashvn.shop.service.admin.AdminBienTheService;
+import com.smashvn.shop.service.inventory.InventoryLotService;
+
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -90,6 +92,8 @@ public class AdminSanPhamController {
         model.addAttribute("listKichThuocTrangPhuc", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_KICH_THUOC_TRANG_PHUC);
     }
 
+    private final InventoryLotService inventoryLotService;
+
     @GetMapping("/sua/{id}")
     public String hienThiFormSua(@PathVariable("id") Integer id, Model model) {
         SanPham sp = sanPhamRepository.findById(id).orElseThrow();
@@ -111,8 +115,11 @@ public class AdminSanPhamController {
         }
         model.addAttribute("listThuongHieu", activeBrands);
 
-        // Tải thêm danh sách biến thể và categoryIds cho phần quản lý biến thể tích hợp
+        // Tải 3 Tab dữ liệu (Thông tin SP, Biến thể gom nhóm, Lô hàng)
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(id));
+        model.addAttribute("groupVariants", inventoryLotService.calculateAggregatedVariants(id));
+        model.addAttribute("lotSummaries", inventoryLotService.calculateLotSummaries(id));
+
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {
             com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
@@ -124,6 +131,7 @@ public class AdminSanPhamController {
 
         return "admin/sanpham-edit";
     }
+
 
     @PostMapping("/sua/{id}")
     public String xuLySuaSanPham(@PathVariable("id") Integer idSanPham,

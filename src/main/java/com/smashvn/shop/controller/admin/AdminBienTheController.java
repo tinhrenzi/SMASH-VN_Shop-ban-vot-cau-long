@@ -25,6 +25,8 @@ public class AdminBienTheController {
     private final DanhMucRepository danhMucRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final AdminBienTheService adminBienTheService;
+    private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
 
     // 1. Hiển thị Trang Quản lý Biến thể (Gồm cả Form Thêm + Bảng Danh sách)
     @GetMapping
@@ -140,6 +142,26 @@ public class AdminBienTheController {
             return "redirect:/admin/san-pham/sua/" + idSanPham;
         }
     }
+
+    // 6. API Nhập Lô Mới Cho Biến Thể Đã Tồn Tại
+    @PostMapping("/nhap-lo")
+    public String xuLyNhapLoMoi(@PathVariable("idSanPham") Integer idSanPham,
+                                @RequestParam("representativeSpctId") Integer representativeSpctId,
+                                @RequestParam("soLuongNhap") Integer soLuongNhap,
+                                @RequestParam("giaNhap") BigDecimal giaNhap,
+                                jakarta.servlet.http.HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            inventoryLotService.nhapLoMoi(representativeSpctId, soLuongNhap, giaNhap, idNguoiDung);
+            redirectAttributes.addFlashAttribute("success", "Nhập lô mới thành công!");
+            return "redirect:/admin/san-pham/sua/" + idSanPham + "?tab=lo";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi nhập lô: " + e.getMessage());
+            return "redirect:/admin/san-pham/sua/" + idSanPham + "?tab=lo";
+        }
+    }
+
 
     private void populateCategoryIds(Model model) {
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();

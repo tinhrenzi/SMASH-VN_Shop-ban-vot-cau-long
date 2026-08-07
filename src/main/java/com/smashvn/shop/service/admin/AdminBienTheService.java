@@ -26,7 +26,9 @@ import com.smashvn.shop.entity.ThuocTinh;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuocTinhRepository;
+import com.smashvn.shop.service.inventory.InventoryLotService;
 import com.smashvn.shop.util.RacketSpecUtils;
+
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +42,8 @@ public class AdminBienTheService {
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final ThuocTinhRepository thuocTinhRepository;
     private final HinhAnhSanPhamDAO hinhAnhSanPhamDAO;
+    private final InventoryLotService inventoryLotService;
+
 
     private static final String TRANG_THAI_DANG_BAN = "dang_ban";
     private static final String TRANG_THAI_NGUNG_KINH_DOANH = "ngung_kinh_doanh";
@@ -230,28 +234,12 @@ public class AdminBienTheService {
             throw new IllegalArgumentException("Màu sắc không được để trống!");
         }
 
-        validateBasicFinancial(giaBan, soLuongTon);
+        validateBasicFinancial(giaBan, null);
 
-        final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
-        final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
-        final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
-
-        boolean exists = sanPhamChiTietRepository.findBySanPham_Id(spct.getSanPham().getId()).stream()
-                .anyMatch(bt -> !bt.getId().equals(idBienThe)
-                        && (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
-                        && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
-                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich));
-        if (exists) {
-            throw new IllegalArgumentException("Biến thể với thuộc tính này đã tồn tại!");
-        }
-
-        spct.setGiaBan(giaBan);
-        spct.setSoLuongTon(soLuongTon);
-
-        saveOrUpdateAttribute(spct, "Màu sắc", cleanMauSac);
-        saveOrUpdateAttribute(spct, "Trọng lượng", cleanTrongLuong);
-        saveOrUpdateAttribute(spct, "Kích thước", cleanKichThuoc);
-        saveOrUpdateAttribute(spct, "Sức căng", cleanMucCang);
+        String targetAttrKey = inventoryLotService.buildAttributeKey(spct);
+        List<SanPhamChiTiet> sameKeySpcts = sanPhamChiTietRepository.findBySanPham_Id(spct.getSanPham().getId()).stream()
+                .filter(s -> inventoryLotService.buildAttributeKey(s).equals(targetAttrKey))
+                .toList();
 
         List<Path> uploadedFiles = new ArrayList<>();
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -274,23 +262,21 @@ public class AdminBienTheService {
         }
 
         String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
-        if (secureFileName != null) {
-            String oldFileName = spct.getHinhAnhSanPham();
-            spct.setHinhAnhSanPham(secureFileName);
-        } else {
-            if (spct.getHinhAnhSanPhams() != null) {
-                for (com.smashvn.shop.entity.HinhAnhSanPham hasp : spct.getHinhAnhSanPhams()) {
-                    hasp.setMauSac(cleanMauSac);
-                }
-            }
-        }
 
-        sanPhamChiTietRepository.save(spct);
+        // Đồng bộ giá bán và hình ảnh cho tất cả SPCT cùng nhóm AttributeKey (không sửa soLuongTon)
+        for (SanPhamChiTiet member : sameKeySpcts) {
+            member.setGiaBan(giaBan);
+            if (secureFileName != null) {
+                member.setHinhAnhSanPham(secureFileName);
+            }
+            sanPhamChiTietRepository.save(member);
+        }
 
         if (catType == com.smashvn.shop.constant.CategoryType.VOT && cleanMucCang != null) {
             updateMucCangAllVariants(spct.getSanPham().getId(), cleanMucCang);
         }
     }
+
 
     private void saveOrUpdateAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
         if (spct.getSanPhamChiTietThuocTinhs() == null) {
