@@ -1949,10 +1949,11 @@
                 }
 
                 $.ajax({
-                    url: '/api/payment/sepay/query/' + maDonHang,
+                    url: '/api/payment/sepay/query/' + encodeURIComponent(maDonHang),
                     type: 'GET',
                     success: function(resp) {
-                        if (resp && resp.paymentStatus === 'paid') {
+                        window.queryConsecutiveErrors = 0;
+                        if (resp && (resp.paymentStatus === 'paid' || resp.paymentStatus === 'DA_THANH_TOAN')) {
                             if (pollingInterval) clearInterval(pollingInterval);
                             $('#zp-spinner-loading').hide();
                             $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
@@ -1973,7 +1974,12 @@
                         }
                     },
                     error: function() {
-                        console.warn('Query transaction error, retrying...');
+                        window.queryConsecutiveErrors = (window.queryConsecutiveErrors || 0) + 1;
+                        console.warn('Query transaction error count:', window.queryConsecutiveErrors);
+                        if (window.queryConsecutiveErrors >= 5) {
+                            if (pollingInterval) clearInterval(pollingInterval);
+                            console.error('Stopped payment polling due to 5 consecutive network errors.');
+                        }
                     }
                 });
             }

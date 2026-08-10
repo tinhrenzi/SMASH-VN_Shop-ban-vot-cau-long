@@ -1087,6 +1087,12 @@ public class CheckoutController {
             newSession.setAttribute("idNguoiDung", tk.getId());
             newSession.setAttribute("vaiTro", "KH");
 
+            if (oldSession != null) {
+                oldSession.setAttribute("nguoiDungDangNhap", tk.getUsername());
+                oldSession.setAttribute("idNguoiDung", tk.getId());
+                oldSession.setAttribute("vaiTro", "KH");
+            }
+
             com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
             if (kh != null) {
                 newSession.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());

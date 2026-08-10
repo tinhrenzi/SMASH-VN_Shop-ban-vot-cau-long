@@ -242,21 +242,29 @@ public class CartCheckoutFlowTest {
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
         tk = taiKhoanRepository.saveAndFlush(tk);
 
-        CheckoutContext context = checkoutContextService.createBuyNowContext(session, null, 1, 1);
+        com.smashvn.shop.entity.SanPhamChiTiet validSpct = sanPhamChiTietRepository.findAll().stream()
+                .filter(s -> s.getSoLuongTon() != null && s.getSoLuongTon() > 0)
+                .findFirst().orElse(null);
+        Integer spctId = (validSpct != null) ? validSpct.getId() : 1;
+
+        CheckoutContext context = checkoutContextService.createBuyNowContext(session, null, spctId, 1);
         String token = context.getToken();
 
-        mockMvc.perform(post("/checkout/api/verify-password")
+        org.springframework.test.web.servlet.MvcResult mvcResult = mockMvc.perform(post("/checkout/api/verify-password")
                 .param("email", tk.getUsername())
                 .param("password", "Password123")
                 .param("checkoutToken", token)
                 .session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.redirectUrl").value("/checkout?token=" + token));
+                .andExpect(jsonPath("$.redirectUrl").value("/checkout?token=" + token))
+                .andReturn();
+
+        org.springframework.mock.web.MockHttpSession activeSession = (org.springframework.mock.web.MockHttpSession) mvcResult.getRequest().getSession();
 
         mockMvc.perform(get("/checkout")
                 .param("token", token)
                 .requestAttr("_csrf", new org.springframework.security.web.csrf.DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token-123"))
-                .session(session))
+                .session(activeSession != null ? activeSession : session))
                 .andExpect(status().isOk());
     }
 
@@ -356,20 +364,28 @@ public class CartCheckoutFlowTest {
         kh.setSoDienThoaiKh("0987654321");
         kh = khachHangRepository.saveAndFlush(kh);
 
-        CheckoutContext context = checkoutContextService.createBuyNowContext(session, null, 1, 1);
+        com.smashvn.shop.entity.SanPhamChiTiet validSpct = sanPhamChiTietRepository.findAll().stream()
+                .filter(s -> s.getSoLuongTon() != null && s.getSoLuongTon() > 0)
+                .findFirst().orElse(null);
+        Integer spctId = (validSpct != null) ? validSpct.getId() : 1;
+
+        CheckoutContext context = checkoutContextService.createBuyNowContext(session, null, spctId, 1);
         String token = context.getToken();
 
-        mockMvc.perform(post("/checkout/api/verify-password")
+        org.springframework.test.web.servlet.MvcResult mvcResult = mockMvc.perform(post("/checkout/api/verify-password")
                 .param("email", tk.getUsername())
                 .param("password", "Password123")
                 .param("checkoutToken", token)
                 .session(session))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn();
+
+        org.springframework.mock.web.MockHttpSession activeSession = (org.springframework.mock.web.MockHttpSession) mvcResult.getRequest().getSession();
 
         mockMvc.perform(get("/checkout")
                 .param("token", token)
                 .requestAttr("_csrf", new org.springframework.security.web.csrf.DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token-123"))
-                .session(session))
+                .session(activeSession != null ? activeSession : session))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("listDiaChi"));
     }

@@ -156,7 +156,21 @@ public class SepayIpnController {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         String sessionRole = (String) session.getAttribute("vaiTro");
         boolean isStaff = "NV".equals(sessionRole) || "QL".equals(sessionRole);
-        boolean isGuestOrder = order.getKhachHang() == null || order.getKhachHang().getTaiKhoan() == null;
+        boolean isGuestOrder = order.getKhachHang() == null 
+                || order.getKhachHang().getTaiKhoan() == null
+                || order.getKhachHang().getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST;
+
+        Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
+        if (allowedAccessesAttr instanceof java.util.List<?>) {
+            for (Object item : (java.util.List<?>) allowedAccessesAttr) {
+                if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
+                    if (access.getOrderId().equals(order.getId()) && !access.isExpired()) {
+                        isGuestOrder = true;
+                        break;
+                    }
+                }
+            }
+        }
 
         if (!isDebug && !isStaff && idNguoiDung == null && !isGuestOrder) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Unauthorized session. Please login."));

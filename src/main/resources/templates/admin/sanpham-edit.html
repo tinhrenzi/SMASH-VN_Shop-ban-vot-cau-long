@@ -432,11 +432,15 @@
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                                             <div class="row g-3 mb-3">
-                                                <div class="col-6">
+                                                <div class="col-4">
+                                                    <label class="admin-form-label">Giá nhập lô <span class="text-muted">(Giá vốn)</span></label>
+                                                    <input type="number" name="giaNhap" class="admin-form-control form-control" min="0" step="1000" placeholder="VD: 1800000">
+                                                </div>
+                                                <div class="col-4">
                                                     <label class="admin-form-label">Giá bán <span class="text-danger">*</span></label>
                                                     <input type="number" name="giaBan" class="admin-form-control form-control" required min="1000" step="1000" placeholder="VD: 2500000">
                                                 </div>
-                                                <div class="col-6">
+                                                <div class="col-4">
                                                     <label class="admin-form-label">Số lượng kho <span class="text-danger">*</span></label>
                                                     <input type="number" name="soLuongTon" class="admin-form-control form-control" required min="0" value="10">
                                                 </div>

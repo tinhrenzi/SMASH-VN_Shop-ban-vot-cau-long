@@ -42,15 +42,18 @@ public class AdminBienTheController {
     @PostMapping("/them")
     public String xuLyThemBienThe(@PathVariable("idSanPham") Integer idSanPham,
                                   @RequestParam(value = "giaBan", required = false) BigDecimal giaBan,
+                                  @RequestParam(value = "giaNhap", required = false) BigDecimal giaNhap,
                                   @RequestParam(value = "soLuongTon", required = false) Integer soLuongTon,
                                   @RequestParam(value = "mauSac", required = false) String mauSac,
                                   @RequestParam(value = "trongLuong", required = false) String trongLuong,
                                   @RequestParam(value = "kichThuoc", required = false) String kichThuoc,
                                   @RequestParam(value = "mucCang", required = false) String mucCang,
                                   @RequestParam(value = "fileAnh", required = false) MultipartFile fileAnh,
+                                  jakarta.servlet.http.HttpSession session,
                                   RedirectAttributes redirectAttributes) {
         try {
-            adminBienTheService.themBienThe(idSanPham, giaBan, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh);
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            adminBienTheService.themBienThe(idSanPham, giaBan, giaNhap, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh, idNguoiDung);
             redirectAttributes.addFlashAttribute("success", "Thêm biến thể mới thành công!");
             return "redirect:/admin/san-pham/sua/" + idSanPham;
         } catch (IllegalArgumentException | SecurityException e) {

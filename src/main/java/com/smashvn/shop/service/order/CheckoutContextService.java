@@ -137,7 +137,10 @@ public class CheckoutContextService {
             return false;
         }
         if (context.getCustomerId() != null) {
-            return context.getCustomerId().equals(currentUserId);
+            if (currentUserId != null) {
+                return context.getCustomerId().equals(currentUserId);
+            }
+            return context.getSessionId() != null && context.getSessionId().equals(currentSessionId);
         }
         return context.getSessionId() != null && context.getSessionId().equals(currentSessionId);
     }
@@ -191,6 +194,14 @@ public class CheckoutContextService {
             context.setSessionId(newSession.getId());
             Map<String, CheckoutContext> newMap = getContextMap(newSession);
             newMap.put(cleanToken, context);
+        }
+        if (oldSession != null) {
+            try {
+                Map<String, CheckoutContext> oldMap = getContextMap(oldSession);
+                oldMap.put(cleanToken, context);
+            } catch (Exception e) {
+                // Ignore if oldSession is invalidated
+            }
         }
 
         log.info("[CHECKOUT_CONTEXT] Successfully promoted token {} to customerId {} for session {}",

@@ -292,6 +292,26 @@ public class UserDashboardController {
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
+            Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
+            if (allowedAccessesAttr instanceof java.util.List<?> list && !list.isEmpty()) {
+                List<Map<String, Object>> guestOrdersList = new java.util.ArrayList<>();
+                for (Object item : list) {
+                    if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access && !access.isExpired()) {
+                        Map<String, Object> orderDetail = orderViewService.layChiTietDonHangChoCustomer(access.getOrderId(), null);
+                        if (orderDetail != null) {
+                            guestOrdersList.add(orderDetail);
+                        }
+                    }
+                }
+                if (!guestOrdersList.isEmpty()) {
+                    model.addAttribute("orders", guestOrdersList);
+                    model.addAttribute("orderPlaced", guestOrdersList.size());
+                    model.addAttribute("cancelOrders", 0);
+                    model.addAttribute("wishlist", 0);
+                    model.addAttribute("isGuestView", true);
+                    return "dash-my-order";
+                }
+            }
             return "redirect:/user/dang-nhap";
         }
 

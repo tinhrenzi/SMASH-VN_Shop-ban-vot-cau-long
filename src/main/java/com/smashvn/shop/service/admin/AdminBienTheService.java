@@ -58,10 +58,16 @@ public class AdminBienTheService {
 
 
 
-    // 2. Thêm biến thể mới
+    // 2. Thêm biến thể mới (hoặc tự động nhập lô mới nếu biến thể đã tồn tại)
     @Transactional
     public void themBienThe(Integer idSanPham, BigDecimal giaBan, Integer soLuongTon,
             String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh) throws Exception {
+        themBienThe(idSanPham, giaBan, null, soLuongTon, mauSac, trongLuong, kichThuoc, mucCang, fileAnh, null);
+    }
+
+    @Transactional
+    public void themBienThe(Integer idSanPham, BigDecimal giaBan, BigDecimal giaNhap, Integer soLuongTon,
+            String mauSac, String trongLuong, String kichThuoc, String mucCang, MultipartFile fileAnh, Integer idNguoiDung) throws Exception {
 
         SanPham sp = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm gốc"));
@@ -105,12 +111,19 @@ public class AdminBienTheService {
         final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
         final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
 
-        boolean exists = sanPhamChiTietRepository.findBySanPham_Id(idSanPham).stream()
-                .anyMatch(bt -> (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
+        SanPhamChiTiet existingVariant = sanPhamChiTietRepository.findBySanPham_Id(idSanPham).stream()
+                .filter(bt -> (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
                         && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
-                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich));
-        if (exists) {
-            throw new IllegalArgumentException("Biến thể với thuộc tính này đã tồn tại!");
+                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich))
+                .findFirst()
+                .orElse(null);
+
+        BigDecimal actualGiaNhap = (giaNhap != null && giaNhap.compareTo(BigDecimal.ZERO) > 0) ? giaNhap : giaBan;
+
+        if (existingVariant != null) {
+            // Biến thể đã tồn tại -> Nhập lô hàng mới cho biến thể này thay vì ném ngoại lệ
+            inventoryLotService.nhapLoMoi(existingVariant.getId(), soLuongTon != null ? soLuongTon : 0, actualGiaNhap, idNguoiDung);
+            return;
         }
 
         List<Path> uploadedFiles = new ArrayList<>();
@@ -154,6 +167,7 @@ public class AdminBienTheService {
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setSanPham(sp);
         spct.setGiaBan(giaBan);
+        spct.setGiaNhap(actualGiaNhap);
         spct.setSoLuongTon(soLuongTon);
         spct.setTrangThai(TRANG_THAI_DANG_BAN);
 
@@ -265,7 +279,16 @@ public class AdminBienTheService {
 
         String secureFileName = saveImageSecurely(fileAnh, false, uploadedFiles);
 
-        // Đồng bộ giá bán và hình ảnh cho tất cả SPCT cùng nhóm AttributeKey (không sửa soLuongTon)
+        if (soLuongTon != null) {
+            spct.setSoLuongTon(soLuongTon);
+        }
+
+        saveOrUpdateAttribute(spct, "Màu sắc", cleanMauSac);
+        saveOrUpdateAttribute(spct, "Trọng lượng", cleanTrongLuong);
+        saveOrUpdateAttribute(spct, "Kích thước", cleanKichThuoc);
+        saveOrUpdateAttribute(spct, "Sức căng", cleanMucCang);
+
+        // Đồng bộ giá bán và hình ảnh cho tất cả SPCT cùng nhóm AttributeKey
         for (SanPhamChiTiet member : sameKeySpcts) {
             member.setGiaBan(giaBan);
             if (secureFileName != null) {
@@ -273,6 +296,7 @@ public class AdminBienTheService {
             }
             sanPhamChiTietRepository.save(member);
         }
+        sanPhamChiTietRepository.save(spct);
 
         if (catType == com.smashvn.shop.constant.CategoryType.VOT && cleanMucCang != null) {
             updateMucCangAllVariants(spct.getSanPham().getId(), cleanMucCang);
@@ -368,7 +392,7 @@ public class AdminBienTheService {
         if (giaBan == null || giaBan.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Giá bán phải lớn hơn 0.");
         }
-        if (soLuongTon == null || soLuongTon < 0) {
+        if (soLuongTon != null && soLuongTon < 0) {
             throw new IllegalArgumentException("Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
         }
     }

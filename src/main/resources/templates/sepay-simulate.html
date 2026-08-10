@@ -413,7 +413,8 @@
                     url: '/api/payment/sepay/query/' + encodeURIComponent(orderCode),
                     type: 'GET',
                     success: function(response) {
-                        if (response && response.success && response.paymentStatus === 'paid') {
+                        window.simPollConsecutiveErrors = 0;
+                        if (response && response.success && (response.paymentStatus === 'paid' || response.paymentStatus === 'DA_THANH_TOAN')) {
                             stopPolling();
                             $('#overlayTitle').text('Thanh toán thành công!');
                             $('#overlayMsg').text('Hệ thống đã nhận được thanh toán. Đang chuyển hướng...');
@@ -428,7 +429,12 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.warn('Error polling payment status:', status, error);
+                        window.simPollConsecutiveErrors = (window.simPollConsecutiveErrors || 0) + 1;
+                        console.warn('Error polling payment status count:', window.simPollConsecutiveErrors);
+                        if (window.simPollConsecutiveErrors >= 5) {
+                            stopPolling();
+                            console.error('Stopped simulation payment polling after 5 consecutive network errors.');
+                        }
                     }
                 });
             }, 2000);
