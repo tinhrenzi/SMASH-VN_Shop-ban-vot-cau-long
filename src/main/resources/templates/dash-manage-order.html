@@ -540,12 +540,12 @@
                                                      </div>
                                                  </div>
 
-                                                 <!-- Step 7 & 8: RETURNED / REFUNDED -->
-                                                 <div th:if="${order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED'}"
+                                                 <!-- Step 7 & 8: RETURNED / REFUNDED / EXCHANGE -->
+                                                 <div th:if="${order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED' or order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' or order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' or order['trangThaiHoanHang'] == 'EXCHANGED'}"
                                                       style="padding: 14px 18px; background: #f4fbf7; border-left: 4px solid #198754; border-radius: 8px; font-size: 13px; color: #198754; line-height: 1.6;">
                                                      <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
                                                          <i class="fas fa-check-double" style="font-size: 16px;"></i>
-                                                         <span th:text="${order['trangThaiHoanHang'] == 'REFUNDED' ? 'Shop đã hoàn tất thủ tục Trả hàng & Hoàn tiền thành công cho bạn!' : 'Shop đã kiểm tra kiện hàng và nhập kho thành công. Đang tiến hành hoàn tiền.'}"></span>
+                                                         <span th:text="${order['trangThaiHoanHang'] == 'EXCHANGED' ? 'Đã hoàn tất đổi hàng thành công!' : (order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' ? 'Sản phẩm thay thế đang trên đường giao tới bạn!' : (order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' ? 'Shop đã chuẩn bị sản phẩm thay thế và đang tạo đơn giao hàng.' : (order['trangThaiHoanHang'] == 'REFUNDED' ? 'Shop đã hoàn tất thủ tục Trả hàng & Hoàn tiền thành công cho bạn!' : (order['loaiYeuCauDoiTra'] == 'DOI' ? 'Shop đã kiểm tra kiện hàng và chuẩn bị sản phẩm đổi.' : 'Shop đã kiểm tra kiện hàng và nhập kho thành công. Đang tiến hành hoàn tiền.'))))}"></span>
                                                      </div>
                                                      <div th:if="${order['trangThaiHoanHang'] == 'REFUNDED'}" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(25, 135, 84, 0.3); font-size: 12px; color: #145a32;">
                                                          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">

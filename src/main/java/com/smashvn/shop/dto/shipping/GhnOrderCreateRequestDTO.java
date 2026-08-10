@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class GhnOrderCreateRequestDTO {
+    private String client_order_code;
     private Integer payment_type_id = 2; // 2 = Người mua trả
     private String note;
     private String required_note = "KHONGCHOXEMHANG"; // Không cho xem hàng

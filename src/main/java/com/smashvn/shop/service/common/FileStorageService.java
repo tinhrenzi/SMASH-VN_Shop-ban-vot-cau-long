@@ -140,6 +140,13 @@ public class FileStorageService {
         return savedFileNames;
     }
 
+    public void deleteFiles(List<String> fileNames, String folderName) {
+        if (fileNames == null || fileNames.isEmpty()) return;
+        for (String name : fileNames) {
+            deleteImage(name, folderName);
+        }
+    }
+
     /**
      * Xóa tệp hình ảnh vật lý trên đĩa
      */

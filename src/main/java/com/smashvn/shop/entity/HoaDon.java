@@ -75,8 +75,18 @@ public class HoaDon {
     @Column(name = "ly_do_huy", length = 500)
     private String lyDoHuy;
 
-    @Column(name = "ly_do_hoan_tien", length = 500)
-    private String lyDoHoanTien;
+    @Column(name = "ly_do_hoan_tra", length = 500)
+    private String lyDoHoanTra;
+
+    @Deprecated
+    public String getLyDoHoanTien() {
+        return lyDoHoanTra;
+    }
+
+    @Deprecated
+    public void setLyDoHoanTien(String lyDoHoanTien) {
+        this.lyDoHoanTra = lyDoHoanTien;
+    }
 
     @Transient
     private String maDonHang;
@@ -109,13 +119,13 @@ public class HoaDon {
     @Transient
     private String gatewayResponse;
 
-    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id)")
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC)")
     private String ghnOrderCode;
 
-    @Transient
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN_RETURN' ORDER BY t.id DESC)")
     private String ghnReturnOrderCode;
 
-    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = id)")
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC)")
     private String ghnStatus;
 
     @Transient
@@ -142,8 +152,19 @@ public class HoaDon {
     @Column(name = "thoi_gian_xac_nhan")
     private LocalDateTime thoiGianXacNhan;
 
-    @Transient
+    @Column(name = "trang_thai_hoan_hang", length = 50)
+    @Enumerated(EnumType.STRING)
     private ReturnStatus trangThaiHoanHang;
+
+    @Column(name = "loai_yeu_cau_doi_tra", length = 20)
+    private String loaiYeuCauDoiTra;
+
+    @Column(name = "bang_chung_hoan_tra", columnDefinition = "NVARCHAR(MAX)")
+    private String bangChungHoanTra;
+
+    @Column(name = "trang_thai_xu_ly_hang_hoan", length = 50)
+    @Enumerated(EnumType.STRING)
+    private ReturnInventoryStatus trangThaiXuLyHangHoan;
 
     @Transient
     private LocalDateTime ngayXacNhanHoanHang;

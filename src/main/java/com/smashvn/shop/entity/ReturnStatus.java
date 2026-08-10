@@ -11,7 +11,10 @@ public enum ReturnStatus {
     REFUNDED("REFUNDED", "Đã hoàn tiền cho khách"),
     LOST("LOST", "Mất hàng (Không hoàn kho)"),
     DAMAGED("DAMAGED", "Hỏng hàng (Không hoàn kho)"),
-    PENDING_RETURN("PENDING_RETURN", "Chờ nhập kho");
+    PENDING_RETURN("PENDING_RETURN", "Chờ nhập kho"),
+    EXCHANGE_STOCK_ALLOCATED("EXCHANGE_STOCK_ALLOCATED", "Đã phân bổ tồn kho hàng đổi"),
+    EXCHANGE_SHIPPING("EXCHANGE_SHIPPING", "Đang giao sản phẩm đổi mới"),
+    EXCHANGED("EXCHANGED", "Đã hoàn tất đổi hàng");
 
     private final String value;
     private final String label;

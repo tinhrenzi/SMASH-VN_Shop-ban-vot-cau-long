@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +43,9 @@ import com.smashvn.shop.service.AuditService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+import com.smashvn.shop.entity.ReturnInventoryStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Service
 @RequiredArgsConstructor
 @lombok.extern.slf4j.Slf4j
@@ -59,6 +63,11 @@ public class OrderViewService {
     private final com.smashvn.shop.service.api.GhnService ghnService;
     private final com.smashvn.shop.service.api.GhnStatusMapper ghnStatusMapper;
     private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final com.smashvn.shop.service.api.GhnShipmentPersistenceService ghnShipmentPersistenceService;
+    private final com.smashvn.shop.repository.PaymentTransactionRepository paymentTransactionRepository;
+    private final ExchangeStockReservationService exchangeStockReservationService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Value("${app.admin.emails}")
@@ -989,19 +998,22 @@ public class OrderViewService {
             for (com.smashvn.shop.entity.EditLog log : logs) {
                 String giaTriMoi = log.getGiaTriMoi();
                 if (giaTriMoi != null) {
-                    if (giaTriMoi.contains("status=da_xac_nhan")) {
+                    if (giaTriMoi.contains("status=da_xac_nhan") || giaTriMoi.contains("trangThaiDonHang=da_xac_nhan")) {
                         times.put("da_xac_nhan", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=dang_lay_hang")) {
+                    if (giaTriMoi.contains("status=dang_lay_hang") || giaTriMoi.contains("trangThaiDonHang=dang_lay_hang")) {
                         times.put("dang_lay_hang", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=dang_giao")) {
+                    if (giaTriMoi.contains("status=dang_giao") || giaTriMoi.contains("trangThaiDonHang=dang_giao")) {
                         times.put("dang_giao", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=da_giao")) {
+                    if (giaTriMoi.contains("status=da_giao") || giaTriMoi.contains("trangThaiDonHang=da_giao")) {
                         times.put("da_giao", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=da_huy")) {
+                    if (giaTriMoi.contains("status=hoan_thanh") || giaTriMoi.contains("trangThaiDonHang=hoan_thanh")) {
+                        times.put("hoan_thanh", log.getThoiGian());
+                    }
+                    if (giaTriMoi.contains("status=da_huy") || giaTriMoi.contains("trangThaiDonHang=da_huy")) {
                         times.put("da_huy", log.getThoiGian());
                     }
                 }
@@ -1539,9 +1551,24 @@ public class OrderViewService {
     }
 
     public String resolveGhnReturnOrderCode(Integer idHoaDon, HoaDon hd) {
+        // 1. Prioritize TichHopVanChuyen database table as provider-specific shipment source of truth (GHN_RETURN)
+        if (idHoaDon != null) {
+            try {
+                List<String> codes = jdbcTemplate.queryForList(
+                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_RETURN' ORDER BY id DESC",
+                    String.class,
+                    idHoaDon
+                );
+                if (codes != null && !codes.isEmpty() && codes.get(0) != null && !codes.get(0).isBlank()) {
+                    return codes.get(0);
+                }
+            } catch (Exception ignored) {}
+        }
+        // 2. Fallback to HoaDon entity formula field
         if (hd != null && hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().isEmpty()) {
             return hd.getGhnReturnOrderCode();
         }
+        // 2. Fallback to EditLog audit trail
         try {
             List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
             for (int i = logs.size() - 1; i >= 0; i--) {
@@ -1658,30 +1685,133 @@ public class OrderViewService {
         return true;
     }
 
+    public LocalDateTime getDeliveredTimestamp(HoaDon hd) {
+        if (hd == null || hd.getId() == null) {
+            return null;
+        }
+        Map<String, LocalDateTime> times = getStatusTransitionTimes(hd.getId());
+        if (times != null) {
+            if (times.get("da_giao") != null) {
+                return times.get("da_giao");
+            }
+            // Chỉ dùng hoan_thanh nếu EditLog chứng minh rõ transition đến từ hành động khách xác nhận nhận hàng
+            if (times.get("hoan_thanh") != null && isConfirmedByCustomerInEditLog(hd.getId())) {
+                return times.get("hoan_thanh");
+            }
+        }
+        return null;
+    }
+
+    private boolean isConfirmedByCustomerInEditLog(Integer idHoaDon) {
+        try {
+            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
+            for (com.smashvn.shop.entity.EditLog log : logs) {
+                if ("KHACH_HANG".equalsIgnoreCase(log.getVaiTroThucHien()) && log.getGiaTriMoi() != null &&
+                        (log.getGiaTriMoi().contains("status=hoan_thanh") || log.getGiaTriMoi().contains("trangThaiDonHang=hoan_thanh"))) {
+                    return true;
+                }
+                if (log.getGhiChu() != null && log.getGhiChu().contains("[KHACH_XAC_NHAN_DA_NHAN_HANG]")) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    public LocalDateTime getReturnDeadline(HoaDon hd) {
+        LocalDateTime deliveredAt = getDeliveredTimestamp(hd);
+        if (deliveredAt == null) {
+            return null;
+        }
+        return deliveredAt.plusDays(7);
+    }
+
+    public boolean isWithinReturnWindow(HoaDon hd) {
+        LocalDateTime deadline = getReturnDeadline(hd);
+        if (deadline == null) {
+            return false;
+        }
+        return !LocalDateTime.now().isAfter(deadline);
+    }
+
+    @Deprecated
     @Transactional
     public boolean yeuCauTraHang(Integer idHoaDon, Integer idKhachHang, String lyDo, String clientIp) {
+        return yeuCauTraHang(idHoaDon, idKhachHang, "TRA", lyDo, null, clientIp);
+    }
+
+    @Transactional
+    public boolean yeuCauTraHang(Integer idHoaDon, Integer idKhachHang, String loaiYeuCauInput, String lyDoInput, List<String> bangChungPaths, String clientIp) {
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon).orElse(null);
         if (hd == null || hd.getKhachHang() == null || !hd.getKhachHang().getId().equals(idKhachHang)) {
-            return false;
+            throw new IllegalArgumentException("Đơn hàng không tồn tại hoặc không thuộc về tài khoản này.");
         }
 
         String st = hd.getTrangThaiDonHang();
-        if (!"da_giao".equalsIgnoreCase(st) && !"hoan_thanh".equalsIgnoreCase(st)) {
-            throw new IllegalStateException("Chỉ đơn hàng đã giao thành công mới có thể gửi yêu cầu Trả hàng / Hoàn tiền.");
+        if (!OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(st) && !"hoan_thanh".equalsIgnoreCase(st)) {
+            throw new IllegalStateException("Chỉ đơn hàng đã giao thành công mới có thể gửi yêu cầu Đổi/Trả.");
         }
 
-        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
-        if (currentReturn != null && currentReturn != ReturnStatus.REJECTED) {
-            throw new IllegalStateException("Đơn hàng này đã có yêu cầu trả hàng đang được xử lý.");
+        // Rule 7 ngày: Lấy deliveredAt từ timestamp transition da_giao (hoặc hoan_thanh khi khách xác nhận). KHÔNG fallback ngayTao/ngayThanhToan
+        LocalDateTime deliveredAt = getDeliveredTimestamp(hd);
+        if (deliveredAt == null) {
+            throw new IllegalStateException("Không xác định được thời điểm giao hàng thành công để tính hạn 7 ngày, vui lòng liên hệ Admin.");
         }
 
-        String sanitizedLyDo = lyDo != null ? org.jsoup.Jsoup.clean(lyDo.trim(), org.jsoup.safety.Safelist.none()) : "Không cung cấp lý do";
+        if (!isWithinReturnWindow(hd)) {
+            throw new IllegalStateException("Đã hết thời hạn 7 ngày đổi/trả kể từ khi giao hàng thành công.");
+        }
+
+        // Validate loaiYeuCau: Chỉ chấp nhận chính xác 'DOI' hoặc 'TRA'
+        if (loaiYeuCauInput == null || loaiYeuCauInput.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn loại yêu cầu (ĐỔI HÀNG hoặc TRẢ HÀNG).");
+        }
+        String normalizedLoaiYeuCau = loaiYeuCauInput.trim().toUpperCase();
+        if (!"DOI".equals(normalizedLoaiYeuCau) && !"TRA".equals(normalizedLoaiYeuCau)) {
+            throw new IllegalArgumentException("Loại yêu cầu đổi/trả không hợp lệ. Chỉ chấp nhận ĐỔI hoặc TRẢ.");
+        }
+
+        // Validate lyDoHoanTra: Không null, không blank
+        if (lyDoInput == null || lyDoInput.trim().isEmpty()) {
+            throw new IllegalArgumentException("Lý do đổi/trả không được để trống.");
+        }
+        String sanitizedLyDo = org.jsoup.Jsoup.clean(lyDoInput.trim(), org.jsoup.safety.Safelist.none());
+        if (sanitizedLyDo.isBlank()) {
+            throw new IllegalArgumentException("Lý do đổi/trả không được để trống.");
+        }
         if (sanitizedLyDo.length() > 500) {
             sanitizedLyDo = sanitizedLyDo.substring(0, 500);
         }
 
-        hd.setLyDoHoanTien(sanitizedLyDo);
+        // Chống duplicate request nâng cao: Kết hợp trangThaiHoanHang + trangThaiXuLyHangHoan
+        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
+        if (currentReturn != null) {
+            if (currentReturn == ReturnStatus.REJECTED) {
+                // Trường hợp B: Bị từ chối sau khi hàng về shop và sản phẩm đang được gửi trả lại khách -> CHẶN
+                ReturnInventoryStatus inventoryStatus = hd.getTrangThaiXuLyHangHoan();
+                if (inventoryStatus == ReturnInventoryStatus.DANG_TRA_LAI_KHACH) {
+                    throw new IllegalStateException("Sản phẩm của yêu cầu trước đó đang được gửi trả lại cho bạn. Vui lòng chờ nhận lại sản phẩm.");
+                }
+            } else {
+                throw new IllegalStateException("Đơn hàng này đã có yêu cầu đổi/trả đang được xử lý.");
+            }
+        }
+
+        // JSON Serialization danh sách bangChungPaths
+        String bangChungJson = null;
+        if (bangChungPaths != null && !bangChungPaths.isEmpty()) {
+            try {
+                bangChungJson = objectMapper.writeValueAsString(bangChungPaths);
+            } catch (Exception e) {
+                log.error("Lỗi serialize danh sách bằng chứng JSON: {}", e.getMessage());
+            }
+        }
+
+        hd.setLoaiYeuCauDoiTra(normalizedLoaiYeuCau);
+        hd.setLyDoHoanTra(sanitizedLyDo);
+        hd.setBangChungHoanTra(bangChungJson);
         hd.setTrangThaiHoanHang(ReturnStatus.PENDING_APPROVAL);
+        hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.CHUA_XU_LY);
         hoaDonRepository.save(hd);
 
         auditService.log(
@@ -1690,9 +1820,9 @@ public class OrderViewService {
             Long.valueOf(hd.getId()),
             "UPDATE",
             "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "NULL"),
-            "trangThaiHoanHang=PENDING_APPROVAL",
+            "trangThaiHoanHang=PENDING_APPROVAL, loaiYeuCau=" + normalizedLoaiYeuCau,
             clientIp,
-            "[KHACH_YEU_CAU_TRA_HANG] Lý do: " + sanitizedLyDo,
+            "[KHACH_YEU_CAU_DOI_TRA] Loại: " + normalizedLoaiYeuCau + ", Lý do: " + sanitizedLyDo,
             "KHACH_HANG"
         );
         return true;
@@ -1711,13 +1841,53 @@ public class OrderViewService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
         ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
-        if (currentReturn != ReturnStatus.PENDING_APPROVAL && currentReturn != ReturnStatus.PENDING_RETURN && currentReturn != null) {
-            throw new IllegalStateException("Chỉ đơn hàng ở trạng thái [Chờ duyệt trả hàng] mới có thể duyệt.");
+        if (currentReturn != ReturnStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Chỉ yêu cầu đang ở trạng thái Chờ duyệt (PENDING_APPROVAL) mới có thể thực hiện thao tác duyệt.");
         }
 
-        List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
-        String ghnReturnCode = ghnService.createReturnShippingOrder(hd, items);
+        // 1. Check tổng tồn kho nếu là yêu cầu ĐỔI HÀNG (DOI) - Gom tổng số lượng theo từng biến thể SPCT
+        if ("DOI".equalsIgnoreCase(hd.getLoaiYeuCauDoiTra())) {
+            List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+            Map<Integer, Integer> requiredQtyMap = new HashMap<>();
+            Map<Integer, SanPhamChiTiet> variantMap = new HashMap<>();
 
+            for (HoaDonChiTiet item : items) {
+                if (item.getSanPhamChiTiet() != null) {
+                    Integer spctId = item.getSanPhamChiTiet().getId();
+                    int qty = item.getSoLuong() != null ? item.getSoLuong() : 0;
+                    requiredQtyMap.put(spctId, requiredQtyMap.getOrDefault(spctId, 0) + qty);
+                    variantMap.put(spctId, item.getSanPhamChiTiet());
+                }
+            }
+
+            for (Map.Entry<Integer, Integer> entry : requiredQtyMap.entrySet()) {
+                Integer spctId = entry.getKey();
+                int totalRequired = entry.getValue();
+                SanPhamChiTiet spct = variantMap.get(spctId);
+                int tonKho = (spct != null && spct.getSoLuongTon() != null) ? spct.getSoLuongTon() : 0;
+                if (tonKho < totalRequired) {
+                    String tenSp = (spct != null && spct.getSanPham() != null && spct.getSanPham().getTenSanPham() != null)
+                            ? spct.getSanPham().getTenSanPham()
+                            : ("biến thể #" + spctId);
+                    throw new IllegalStateException("Sản phẩm [" + tenSp + "] không đủ tồn kho để thực hiện đổi hàng. Tồn kho hiện tại: " + tonKho + ", Yêu cầu: " + totalRequired);
+                }
+            }
+        }
+
+        // 2. Reconcile / Chống Double GHN Order: Tra cứu xem đã có vận đơn hoàn trong TichHopVanChuyen / EditLog chưa
+        String existingReturnCode = resolveGhnReturnOrderCode(idHoaDon, hd);
+        String ghnReturnCode;
+        if (existingReturnCode != null && !existingReturnCode.trim().isEmpty()) {
+            // Trường hợp Reconcile: Vận đơn đã được tạo thành công ở lần thử trước, tái sử dụng mã cũ mà không gọi GHN API lại
+            log.info("Reconciling existing return shipment code {} for HoaDon #{}", existingReturnCode, idHoaDon);
+            ghnReturnCode = existingReturnCode;
+        } else {
+            // Tạo vận đơn GHN thu hồi mới
+            List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+            ghnReturnCode = ghnService.createReturnShippingOrder(hd, items);
+        }
+
+        // 3. Cập nhật WAITING_FOR_PICKUP
         hd.setGhnReturnOrderCode(ghnReturnCode);
         hd.setGhnStatus("waiting_to_return");
         hd.setTrangThaiHoanHang(ReturnStatus.WAITING_FOR_PICKUP);
@@ -1770,6 +1940,61 @@ public class OrderViewService {
     }
 
     @Transactional
+    public void updateExchangeStatusFromGhn(Integer idHoaDon, ReturnStatus newReturnStatus, String ghnStatus, String source) {
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        ReturnStatus currentReturn = hd.getTrangThaiHoanHang();
+        if (currentReturn == ReturnStatus.EXCHANGED) {
+            log.info("[{}] Idempotent guard: Đơn hàng #{} đã ở trạng thái EXCHANGED terminal trước đó.", source, idHoaDon);
+            return;
+        }
+
+        hd.setTrangThaiHoanHang(newReturnStatus);
+        hoaDonRepository.save(hd);
+
+        auditService.log(
+            null,
+            "HoaDon",
+            Long.valueOf(hd.getId()),
+            "UPDATE",
+            "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "NULL"),
+            "trangThaiHoanHang=" + newReturnStatus.name() + ", ghnStatus=" + ghnStatus,
+            "127.0.0.1",
+            "[" + source + "] Cập nhật trạng thái giao hàng đổi từ GHN (" + ghnStatus + ") -> " + newReturnStatus.name(),
+            "SYSTEM"
+        );
+    }
+    @Transactional
+    public void handleRejectReturnDeliveryFromGhn(Integer idHoaDon, String ghnStatus, String source) {
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        if (hd.getTrangThaiXuLyHangHoan() == ReturnInventoryStatus.DA_TRA_LAI_KHACH) {
+            log.info("[{}] Idempotent guard: Đơn hàng #{} đã ở trạng thái DA_TRA_LAI_KHACH", source, idHoaDon);
+            return;
+        }
+
+        hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.DA_TRA_LAI_KHACH);
+        if (hd.getTrangThaiHoanHang() == null) {
+            hd.setTrangThaiHoanHang(ReturnStatus.REJECTED);
+        }
+        hoaDonRepository.save(hd);
+
+        auditService.log(
+            null,
+            "HoaDon",
+            Long.valueOf(hd.getId()),
+            "UPDATE",
+            "trangThaiXuLyHangHoan=" + (hd.getTrangThaiXuLyHangHoan() != null ? hd.getTrangThaiXuLyHangHoan().name() : "NULL"),
+            "trangThaiXuLyHangHoan=DA_TRA_LAI_KHACH, ghnStatus=" + ghnStatus,
+            "127.0.0.1",
+            "[" + source + "] GHN xác nhận đã giao sản phẩm bị từ chối thành công về lại khách hàng.",
+            "SYSTEM"
+        );
+    }
+
+    @Transactional
     public void tuChoiYeuCauTraHang(Integer idHoaDon, String lyDoTuChoi, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
@@ -1782,12 +2007,24 @@ public class OrderViewService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
         ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
-        if (currentReturn != ReturnStatus.PENDING_APPROVAL && currentReturn != ReturnStatus.PENDING_RETURN) {
-            throw new IllegalStateException("Chỉ yêu cầu đang chờ duyệt mới có thể từ chối.");
+        if (currentReturn != ReturnStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Chỉ yêu cầu đang ở trạng thái Chờ duyệt (PENDING_APPROVAL) mới có thể từ chối.");
         }
 
-        String reason = lyDoTuChoi != null ? lyDoTuChoi.trim() : "Không đạt điều kiện trả hàng";
+        if (lyDoTuChoi == null || lyDoTuChoi.trim().isEmpty()) {
+            throw new IllegalArgumentException("Lý do từ chối không được để trống.");
+        }
+        String sanitizedReason = org.jsoup.Jsoup.clean(lyDoTuChoi.trim(), org.jsoup.safety.Safelist.none());
+        if (sanitizedReason.isBlank()) {
+            throw new IllegalArgumentException("Lý do từ chối không được để trống.");
+        }
+        if (sanitizedReason.length() > 500) {
+            sanitizedReason = sanitizedReason.substring(0, 500);
+        }
+
+        // Tuyệt đối không overwrite lyDoHoanTra của khách hàng
         hd.setTrangThaiHoanHang(ReturnStatus.REJECTED);
+        hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.CHUA_XU_LY);
         hoaDonRepository.save(hd);
 
         auditService.log(
@@ -1798,7 +2035,7 @@ public class OrderViewService {
             "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "PENDING_APPROVAL"),
             "trangThaiHoanHang=REJECTED",
             clientIp,
-            "[ADMIN_TU_CHOI_TRA_HANG] Lý do từ chối: " + reason,
+            "[ADMIN_TU_CHOI_YEU_CAU_DOI_TRA] Lý do từ chối ban đầu: " + sanitizedReason,
             roleStr
         );
     }
@@ -1840,8 +2077,45 @@ public class OrderViewService {
         );
     }
 
+    public String resolveGhnRejectReturnCode(Integer idHoaDon) {
+        if (idHoaDon != null) {
+            try {
+                List<String> codes = jdbcTemplate.queryForList(
+                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_REJECT_RETURN'",
+                    String.class,
+                    idHoaDon
+                );
+                if (codes != null && !codes.isEmpty() && codes.get(0) != null && !codes.get(0).isBlank()) {
+                    return codes.get(0);
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    public String resolveGhnExchangeOrderCode(Integer idHoaDon) {
+        if (idHoaDon != null) {
+            try {
+                List<String> codes = jdbcTemplate.queryForList(
+                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_EXCHANGE' ORDER BY id DESC",
+                    String.class,
+                    idHoaDon
+                );
+                if (codes != null && !codes.isEmpty() && codes.get(0) != null && !codes.get(0).isBlank()) {
+                    return codes.get(0);
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
     @Transactional
     public void xacNhanKiemKhoVaNhapKho(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
+        xacNhanKiemKhoVaNhapKho(idHoaDon, "BAN_LAI", null, actingTaiKhoanId, clientIp);
+    }
+
+    @Transactional
+    public void xacNhanKiemKhoVaNhapKho(Integer idHoaDon, String ketQuaInput, String lyDoTuChoiInput, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
         }
@@ -1849,58 +2123,153 @@ public class OrderViewService {
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
         String roleStr = "QL".equals(actingUser.getVaiTro()) ? "QUAN_LY" : "NHAN_VIEN";
 
+        // 1. Lock HoaDon
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
-        if (isDaNhapKhoHoan(idHoaDon, hd)) {
-            log.warn("[IDEMPOTENT_GUARD] Đơn hàng ID {} đã được kiểm hàng và nhập kho trước đó.", idHoaDon);
-            return;
+        // 2. State Guard: Chỉ được xử lý khi trangThaiHoanHang == DELIVERED_TO_SHOP và trangThaiXuLyHangHoan == CHUA_XU_LY (hoặc NULL)
+        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
+        if (currentReturn != ReturnStatus.DELIVERED_TO_SHOP) {
+            throw new IllegalStateException("Chỉ hàng đổi/trả đã giao về shop (DELIVERED_TO_SHOP) mới có thể thực hiện kiểm hàng.");
         }
 
+        ReturnInventoryStatus currentInvStatus = hd.getTrangThaiXuLyHangHoan();
+        if (currentInvStatus != null && currentInvStatus != ReturnInventoryStatus.CHUA_XU_LY) {
+            throw new IllegalStateException("Hàng hoàn cho đơn hàng này đã được kiểm định và xử lý trước đó (" + currentInvStatus.getLabel() + ").");
+        }
+
+        if (ketQuaInput == null || ketQuaInput.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn kết quả kiểm định hàng hoàn (BAN_LAI, HANG_LOI, hoặc TU_CHOI).");
+        }
+        String ketQua = ketQuaInput.trim().toUpperCase();
+
+        // 3. Gom tổng số lượng theo SPCT ID
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
-        List<RestockItemRequest> restockReqs = new ArrayList<>();
-        StringBuilder detailsBuilder = new StringBuilder("Chi tiết nhập kho lại sản phẩm:\n");
+        Map<Integer, Integer> groupedQtyMap = new HashMap<>();
         for (HoaDonChiTiet item : items) {
             if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
-                restockReqs.add(RestockItemRequest.builder()
-                        .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
-                        .quantityToRestock(item.getSoLuong())
-                        .conBanDuoc(true)
-                        .build());
-                detailsBuilder.append(String.format("SPCT-%d : +%d\n", item.getSanPhamChiTiet().getId(), item.getSoLuong()));
+                Integer spctId = item.getSanPhamChiTiet().getId();
+                groupedQtyMap.put(spctId, groupedQtyMap.getOrDefault(spctId, 0) + item.getSoLuong());
             }
         }
-        if (!restockReqs.isEmpty()) {
-            inventoryLotService.hoanKho(restockReqs);
+
+        if ("BAN_LAI".equals(ketQua)) {
+            // Outcome A: HÀNG CÓ THỂ BÁN LẠI ➔ Hoàn tồn kho bán (so_luong_ton += quantity)
+            List<RestockItemRequest> restockReqs = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry : groupedQtyMap.entrySet()) {
+                restockReqs.add(RestockItemRequest.builder()
+                        .idSanPhamChiTiet(entry.getKey())
+                        .quantityToRestock(entry.getValue())
+                        .conBanDuoc(true)
+                        .build());
+            }
+            if (!restockReqs.isEmpty()) {
+                inventoryLotService.hoanKho(restockReqs);
+            }
+
+            hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.DA_HOAN_KHO);
+            hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
+            hd.setNgayXacNhanHoanHang(LocalDateTime.now());
+            hd.setDaNhapKhoHoan(true);
+            hoaDonRepository.save(hd);
+
+            auditService.log(
+                actingTaiKhoanId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                "trangThaiHoanHang=DELIVERED_TO_SHOP, trangThaiXuLyHangHoan=CHUA_XU_LY",
+                "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_HOAN_KHO",
+                clientIp,
+                "[KIEM_HANG_BAN_LAI] Kiểm hàng hoàn thành công: Sản phẩm đủ điều kiện bán lại ➔ Đã hoàn kho bán (so_luong_ton).",
+                roleStr
+            );
+
+        } else if ("HANG_LOI".equals(ketQua)) {
+            // Outcome B: HÀNG LỖI NHƯNG ĐỦ ĐIỀU KIỆN ĐỔI/TRẢ ➔ Cộng kho hàng lỗi (so_luong_sp_loi += quantity, KHÔNG cộng so_luong_ton)
+            List<Integer> sortedSpctIds = new ArrayList<>(groupedQtyMap.keySet());
+            Collections.sort(sortedSpctIds);
+
+            for (Integer spctId : sortedSpctIds) {
+                SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(spctId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy SPCT ID: " + spctId));
+                int qtyToFaulty = groupedQtyMap.get(spctId);
+                int currentFaulty = spct.getSoLuongSpLoi() != null ? spct.getSoLuongSpLoi() : 0;
+                spct.setSoLuongSpLoi(currentFaulty + qtyToFaulty);
+                sanPhamChiTietRepository.save(spct);
+                log.info("[Phase 4] Chuyển kho lỗi SPCT #{}: {} -> {}", spct.getId(), currentFaulty, spct.getSoLuongSpLoi());
+            }
+
+            hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.DA_CHUYEN_KHO_LOI);
+            hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
+            hd.setNgayXacNhanHoanHang(LocalDateTime.now());
+            hd.setDaNhapKhoHoan(true);
+            hoaDonRepository.save(hd);
+
+            auditService.log(
+                actingTaiKhoanId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                "trangThaiHoanHang=DELIVERED_TO_SHOP, trangThaiXuLyHangHoan=CHUA_XU_LY",
+                "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_CHUYEN_KHO_LOI",
+                clientIp,
+                "[KIEM_HANG_HANG_LOI] Kiểm hàng hoàn thành công: Sản phẩm bị lỗi ➔ Đã chuyển vào kho hàng lỗi (so_luong_sp_loi).",
+                roleStr
+            );
+
+        } else if ("TU_CHOI".equals(ketQua)) {
+            // Outcome C: HÀNG KHÔNG ĐẠT ĐIỀU KIỆN ĐỔI/TRẢ ➔ KHÔNG cộng kho bán, KHÔNG cộng kho lỗi, KHÔNG overwrite lyDoHoanTra
+            if (lyDoTuChoiInput == null || lyDoTuChoiInput.trim().isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng nhập lý do từ chối sau khi kiểm tra hàng.");
+            }
+            String sanitizedReason = org.jsoup.Jsoup.clean(lyDoTuChoiInput.trim(), org.jsoup.safety.Safelist.none());
+            if (sanitizedReason.isBlank()) {
+                throw new IllegalArgumentException("Lý do từ chối sau khi kiểm tra hàng không được để trống.");
+            }
+            if (sanitizedReason.length() > 500) {
+                sanitizedReason = sanitizedReason.substring(0, 500);
+            }
+
+            hd.setTrangThaiHoanHang(ReturnStatus.REJECTED);
+            hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.DANG_TRA_LAI_KHACH);
+            hoaDonRepository.save(hd);
+
+            // Tạo vận đơn GHN_REJECT_RETURN gửi hàng từ shop về lại cho khách
+            String rejectShipmentCode = resolveGhnRejectReturnCode(idHoaDon);
+            if (rejectShipmentCode == null) {
+                try {
+                    rejectShipmentCode = ghnService.createReturnShippingOrder(hd, items);
+                    ghnShipmentPersistenceService.saveShipment(idHoaDon, rejectShipmentCode, "GHN_REJECT_RETURN", "waiting_to_return");
+                } catch (Exception e) {
+                    log.warn("GHN createRejectReturnShippingOrder API failed/simulated: {}", e.getMessage());
+                }
+            }
+
+            auditService.log(
+                actingTaiKhoanId,
+                "HoaDon",
+                Long.valueOf(hd.getId()),
+                "UPDATE",
+                "trangThaiHoanHang=DELIVERED_TO_SHOP, trangThaiXuLyHangHoan=CHUA_XU_LY",
+                "trangThaiHoanHang=REJECTED, trangThaiXuLyHangHoan=DANG_TRA_LAI_KHACH",
+                clientIp,
+                "[KIEM_HANG_TU_CHOI] Kiểm hàng hoàn KHÔNG ĐẠT. Lý do từ chối: " + sanitizedReason + ". Đang gửi trả lại sản phẩm cho khách.",
+                roleStr
+            );
+
+        } else {
+            throw new IllegalArgumentException("Kết quả kiểm định không hợp lệ. Chỉ chấp nhận BAN_LAI, HANG_LOI, hoặc TU_CHOI.");
         }
-
-
-        ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
-        hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
-        hd.setNgayXacNhanHoanHang(LocalDateTime.now());
-        hd.setDaNhapKhoHoan(true);
-        hoaDonRepository.save(hd);
-
-        auditService.log(
-            actingTaiKhoanId,
-            "HoaDon",
-            Long.valueOf(hd.getId()),
-            "UPDATE",
-            "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "DELIVERED_TO_SHOP"),
-            "trangThaiHoanHang=RETURNED, daNhapKhoHoan=true",
-            clientIp,
-            "[KIEM_KHO_NHAP_KHO] Shop đã kiểm kiện hàng và nhập kho thành công. " + detailsBuilder.toString().trim(),
-            roleStr
-        );
     }
 
     @Transactional
     public void xacNhanHoanTienChoKhach(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
-        xacNhanHoanTienChoKhach(idHoaDon, "Chuyển khoản", null, null, null, null, actingTaiKhoanId, clientIp);
+        xacNhanHoanTienChoKhach(idHoaDon, "CHUYEN_KHOAN", null, null, null, null, actingTaiKhoanId, clientIp);
     }
 
     @Transactional
-    public void xacNhanHoanTienChoKhach(Integer idHoaDon, String phuongThucHoanTien, BigDecimal soTienHoan, String maGiaoDichHoanTien, String ghiChuHoanTien, String anhChungTuHoanTien, Integer actingTaiKhoanId, String clientIp) {
+    public void xacNhanHoanTienChoKhach(Integer idHoaDon, String phuongThucHoanTienInput, BigDecimal soTienHoanInput, String maGiaoDichHoanTienInput, String ghiChuHoanTienInput, String anhChungTuHoanTienInput, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
         }
@@ -1908,51 +2277,198 @@ public class OrderViewService {
                 .orElseThrow(() -> new AccessDeniedException("Tài khoản người thực hiện không tồn tại."));
         String roleStr = "QL".equals(actingUser.getVaiTro()) ? "QUAN_LY" : "NHAN_VIEN";
 
+        // 1. Lock HoaDon bằng Pessimistic Write Lock
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
+        // 2. Guard: Chỉ cho phép refund với đơn TRẢ HÀNG (loaiYeuCauDoiTra == "TRA")
+        if (!"TRA".equalsIgnoreCase(hd.getLoaiYeuCauDoiTra())) {
+            throw new IllegalStateException("Chỉ yêu cầu TRẢ HÀNG mới có thể thực hiện hoàn tiền.");
+        }
+
+        // 3. Double Refund Layer 1: Check ReturnStatus == REFUNDED
         ReturnStatus currentReturn = resolveReturnStatus(idHoaDon, hd);
         if (currentReturn == ReturnStatus.REFUNDED) {
-            log.warn("[IDEMPOTENT_GUARD] Đơn hàng ID {} đã hoàn tiền xong trước đó.", idHoaDon);
+            log.warn("[DOUBLE_REFUND_GUARD_LAYER1] Đơn hàng #{} đã ở trạng thái REFUNDED trước đó.", idHoaDon);
             return;
         }
 
-        BigDecimal finalSoTienHoan = (soTienHoan != null && soTienHoan.compareTo(BigDecimal.ZERO) > 0) ? soTienHoan : hd.getTongTien();
-        String finalPhuongThuc = (phuongThucHoanTien != null && !phuongThucHoanTien.isBlank()) ? phuongThucHoanTien : "Chuyển khoản ngân hàng";
-        String finalMaGD = (maGiaoDichHoanTien != null) ? maGiaoDichHoanTien.trim() : "";
-        String finalGhiChu = (ghiChuHoanTien != null) ? ghiChuHoanTien.trim() : "";
-        String finalAnhChungTu = (anhChungTuHoanTien != null) ? anhChungTuHoanTien.trim() : "";
+        // 4. Guard: Phải đang ở trạng thái RETURNED
+        if (currentReturn != ReturnStatus.RETURNED) {
+            throw new IllegalStateException("Chỉ đơn hàng ở trạng thái Đã nhận hàng về shop (RETURNED) mới được phép hoàn tiền. Trạng thái hiện tại: " + (currentReturn != null ? currentReturn.name() : "NULL"));
+        }
 
+        // 5. Guard: Trạng thái xử lý kho phải là DA_HOAN_KHO hoặc DA_CHUYEN_KHO_LOI
+        ReturnInventoryStatus invStatus = hd.getTrangThaiXuLyHangHoan();
+        if (invStatus != ReturnInventoryStatus.DA_HOAN_KHO && invStatus != ReturnInventoryStatus.DA_CHUYEN_KHO_LOI) {
+            throw new IllegalStateException("Hàng hoàn phải được kiểm định và xử lý kho trước khi hoàn tiền. Trạng thái kho hiện tại: " + (invStatus != null ? invStatus.getLabel() : "CHUA_XU_LY"));
+        }
+
+        // 6. Double Refund Layer 2 + Reconcile: Check GiaoDichThanhToan xem đã có transaction REFUND_SUCCESS chưa
+        boolean existingRefundTx = paymentTransactionRepository.existsByOrder_IdAndStatus(idHoaDon, "REFUND_SUCCESS");
+        if (existingRefundTx) {
+            log.info("[REFUND_RECONCILE] HoaDon #{} đã có bản ghi REFUND_SUCCESS trong CSDL. Thực hiện Reconcile trạng thái sang REFUNDED & DA_HOAN_TIEN.", idHoaDon);
+            hd.setTrangThaiHoanHang(ReturnStatus.REFUNDED);
+            hd.setTrangThaiThanhToan("DA_HOAN_TIEN");
+            hd.setRefundStatus(RefundStatus.COMPLETED);
+            hd.setRefundTime(LocalDateTime.now());
+            hoaDonRepository.save(hd);
+
+            auditService.log(actingTaiKhoanId, "HoaDon", (long) hd.getId(), "UPDATE",
+                    "trangThaiHoanHang=RETURNED", "trangThaiHoanHang=REFUNDED, trangThaiThanhToan=DA_HOAN_TIEN",
+                    clientIp, "[REFUND_RECONCILE] Reconcile trạng thái đơn hàng do đã tồn tại bản ghi hoàn tiền trong CSDL.", roleStr);
+            return;
+        }
+
+        // 7. Validate & Normalize Phương Thức Hoàn Tiền (CHUYEN_KHOAN / TIEN_MAT)
+        if (phuongThucHoanTienInput == null || phuongThucHoanTienInput.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn phương thức hoàn tiền (CHUYEN_KHOAN hoặc TIEN_MAT).");
+        }
+        String phuongThuc = phuongThucHoanTienInput.trim().toUpperCase();
+        if (!"CHUYEN_KHOAN".equals(phuongThuc) && !"TIEN_MAT".equals(phuongThuc)) {
+            throw new IllegalArgumentException("Phương thức hoàn tiền không hợp lệ. Chỉ chấp nhận CHUYEN_KHOAN hoặc TIEN_MAT.");
+        }
+
+        // 8. Validate Số Tiền Hoàn
+        BigDecimal totalOrderAmount = hd.getTongTien() != null ? hd.getTongTien() : BigDecimal.ZERO;
+        BigDecimal finalSoTienHoan = (soTienHoanInput != null) ? soTienHoanInput : totalOrderAmount;
+
+        if (finalSoTienHoan.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Số tiền hoàn phải lớn hơn 0.");
+        }
+
+        if (finalSoTienHoan.compareTo(totalOrderAmount) > 0) {
+            throw new IllegalArgumentException("Số tiền hoàn không được lớn hơn tổng số tiền khách thực trả (Tối đa: " + totalOrderAmount + " VNĐ).");
+        }
+
+        String finalGhiChu = (ghiChuHoanTienInput != null) ? ghiChuHoanTienInput.trim() : "";
+        if (finalSoTienHoan.compareTo(totalOrderAmount) < 0 && finalGhiChu.isBlank()) {
+            throw new IllegalArgumentException("Khi hoàn số tiền nhỏ hơn tổng tiền đơn hàng, vui lòng nhập ghi chú lý do hoàn thiếu.");
+        }
+
+        // 9. Validate Mã Giao Dịch
+        String finalMaGD;
+        if ("CHUYEN_KHOAN".equals(phuongThuc)) {
+            if (maGiaoDichHoanTienInput == null || maGiaoDichHoanTienInput.trim().isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.");
+            }
+            finalMaGD = maGiaoDichHoanTienInput.trim();
+            if (paymentTransactionRepository.findByTransactionId(finalMaGD).isPresent()) {
+                throw new IllegalArgumentException("Mã giao dịch hoàn tiền [" + finalMaGD + "] đã tồn tại trên hệ thống.");
+            }
+        } else {
+            // TIEN_MAT: Tự sinh mã internal nếu Admin để trống
+            if (maGiaoDichHoanTienInput != null && !maGiaoDichHoanTienInput.trim().isEmpty()) {
+                finalMaGD = maGiaoDichHoanTienInput.trim();
+                if (paymentTransactionRepository.findByTransactionId(finalMaGD).isPresent()) {
+                    throw new IllegalArgumentException("Mã giao dịch hoàn tiền [" + finalMaGD + "] đã tồn tại trên hệ thống.");
+                }
+            } else {
+                finalMaGD = "REFUND-CASH-HD" + idHoaDon + "-" + System.currentTimeMillis();
+            }
+        }
+
+        // 10. Tạo chuỗi JSON du_lieu_tho
+        Map<String, Object> payloadMap = new java.util.LinkedHashMap<>();
+        payloadMap.put("transactionType", "REFUND");
+        payloadMap.put("phuongThucHoanTien", phuongThuc);
+        payloadMap.put("ghiChu", finalGhiChu);
+        if (anhChungTuHoanTienInput != null && !anhChungTuHoanTienInput.isBlank()) {
+            payloadMap.put("anhChungTu", List.of(anhChungTuHoanTienInput.trim()));
+        } else {
+            payloadMap.put("anhChungTu", List.of());
+        }
+        payloadMap.put("nguoiThucHien", actingUser.getUsername());
+        payloadMap.put("thoiGianHoanTien", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+        String rawPayloadJson = "";
+        try {
+            rawPayloadJson = objectMapper.writeValueAsString(payloadMap);
+        } catch (Exception e) {
+            log.warn("Failed to serialize refund rawPayload JSON: {}", e.getMessage());
+        }
+
+        // 11. Tạo và Save PaymentTransaction
+        com.smashvn.shop.entity.PaymentTransaction tx = new com.smashvn.shop.entity.PaymentTransaction();
+        tx.setOrder(hd);
+        tx.setTransactionId(finalMaGD);
+        tx.setAmount(finalSoTienHoan);
+        tx.setGateway("MANUAL_REFUND");
+        tx.setStatus("REFUND_SUCCESS");
+        tx.setRawPayload(rawPayloadJson);
+        tx.setCreatedAt(LocalDateTime.now());
+
+        try {
+            paymentTransactionRepository.saveAndFlush(tx);
+        } catch (org.springframework.dao.DataIntegrityViolationException dbEx) {
+            log.error("Failed to save PaymentTransaction due to constraint: {}", dbEx.getMessage());
+            throw new IllegalArgumentException("Mã giao dịch hoàn tiền đã tồn tại trên hệ thống.");
+        }
+
+        // 12. Cập nhật HoaDon sang REFUNDED & DA_HOAN_TIEN (CHỈ SAU KHI PaymentTransaction save THÀNH CÔNG!)
         hd.setTrangThaiHoanHang(ReturnStatus.REFUNDED);
         hd.setTrangThaiThanhToan("DA_HOAN_TIEN");
-        hd.setPaymentStatus("REFUNDED");
         hd.setRefundStatus(RefundStatus.COMPLETED);
         hd.setRefundTime(LocalDateTime.now());
-
-        hd.setPhuongThucHoanTien(finalPhuongThuc);
-        hd.setSoTienHoan(finalSoTienHoan);
-        hd.setMaGiaoDichHoanTien(finalMaGD);
-        hd.setGhiChuHoanTien(finalGhiChu);
-        hd.setAnhChungTuHoanTien(finalAnhChungTu);
-        hd.setThoiGianHoanTien(LocalDateTime.now());
-        hd.setNguoiThucHienHoanTien(actingUser.getUsername());
-
         hoaDonRepository.save(hd);
 
-        String logStr = String.format("trangThaiHoanHang=REFUNDED, trangThaiThanhToan=DA_HOAN_TIEN, phuongThucHoanTien=%s, soTienHoan=%s, maGiaoDichHoanTien=%s, ghiChuHoanTien=%s, anhChungTuHoanTien=%s, nguoiThucHienHoanTien=%s",
-                finalPhuongThuc, finalSoTienHoan, finalMaGD, finalGhiChu, finalAnhChungTu, actingUser.getUsername());
-
+        // 13. Audit log
         auditService.log(
             actingTaiKhoanId,
             "HoaDon",
             Long.valueOf(hd.getId()),
             "UPDATE",
-            "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "RETURNED"),
-            logStr,
+            "trangThaiHoanHang=RETURNED, trangThaiThanhToan=" + hd.getTrangThaiThanhToan(),
+            "trangThaiHoanHang=REFUNDED, trangThaiThanhToan=DA_HOAN_TIEN, maGiaoDich=" + finalMaGD + ", soTienHoan=" + finalSoTienHoan,
             clientIp,
-            "[HOAN_TIEN_KHACH_HANG] Admin đã hoàn tiền thành công cho khách hàng. Phương thức: " + finalPhuongThuc + ", Số tiền: " + finalSoTienHoan + "đ",
+            "[HOAN_TIEN_KHACH_HANG] Admin đã hoàn tiền thành công cho khách hàng. Phương thức: " + phuongThuc + ", Số tiền: " + finalSoTienHoan + " VNĐ, Mã GD: " + finalMaGD,
             roleStr
         );
+    }
+
+    /**
+     * Non-transactional Orchestrator cho Phase 6: Giao sản phẩm đổi mới cho khách hàng.
+     * Bước 1: Gọi exchangeStockReservationService.reserveReplacementStock (Transaction A - REQUIRES_NEW) ➔ Commit EXCHANGE_STOCK_ALLOCATED.
+     * Bước 2: Kiểm tra nếu chưa có mã GHN_EXCHANGE ➔ Gọi GHN API với COD = 0.
+     * Bước 3: Lưu mã GHN_EXCHANGE qua ghnShipmentPersistenceService.saveShipment (REQUIRES_NEW).
+     * Bước 4: Gọi exchangeStockReservationService.completeExchangeShipping (Transaction B - REQUIRES_NEW) ➔ Commit EXCHANGE_SHIPPING.
+     */
+    public void xacNhanGiaoHangDoiMoiChoKhach(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
+        if (actingTaiKhoanId == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
+        }
+
+        // Bước 1: Transaction A - Phân bổ tồn kho exact SPCT & lưu trạng thái EXCHANGE_STOCK_ALLOCATED (REQUIRES_NEW commit DB)
+        exchangeStockReservationService.reserveReplacementStock(idHoaDon, actingTaiKhoanId, clientIp);
+
+        // Đọc lại thông tin đơn hàng sau khi Transaction A đã commit
+        HoaDon hd = hoaDonRepository.findById(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        // Kiểm tra xem đã có mã GHN_EXCHANGE trong TichHopVanChuyen chưa
+        String existingOrderCode = jdbcTemplate.query(
+                "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_EXCHANGE'",
+                rs -> rs.next() ? rs.getString("ma_van_don") : null,
+                idHoaDon
+        );
+
+        String finalOrderCode = existingOrderCode;
+        if (finalOrderCode == null || finalOrderCode.isBlank()) {
+            List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
+            try {
+                // Gọi GHN API với COD = 0 và KHÔNG tự MERGE CSDL bên trong GhnService
+                finalOrderCode = ghnService.createExchangeShippingOrderOrThrow(hd, items, null, null);
+            } catch (Exception e) {
+                log.error("GHN exchange shipment API call failed for order #{}: {}", idHoaDon, e.getMessage(), e);
+                throw new RuntimeException("Tạo vận đơn GHN cho đơn đổi hàng thất bại: " + e.getMessage(), e);
+            }
+
+            // Persist shipment local qua service REQUIRES_NEW riêng
+            ghnShipmentPersistenceService.saveShipment(idHoaDon, finalOrderCode, "GHN_EXCHANGE", "ready_to_pick");
+        }
+
+        // Bước 4: Transaction B - Chuyển sang EXCHANGE_SHIPPING (REQUIRES_NEW commit DB)
+        exchangeStockReservationService.completeExchangeShipping(idHoaDon, actingTaiKhoanId, clientIp);
     }
 }
 

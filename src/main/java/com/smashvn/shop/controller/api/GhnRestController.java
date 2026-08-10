@@ -389,12 +389,26 @@ public class GhnRestController {
             // 1. Tìm đơn hàng theo mã vận đơn thu hồi hoặc mã vận đơn xuôi
             HoaDon hd = null;
             boolean isReturnOrderWebhook = false;
+            boolean isRejectReturnOrderWebhook = false;
+            boolean isExchangeOrderWebhook = false;
 
             for (HoaDon h : hoaDonRepository.findAll()) {
+                String exCode = orderViewService.resolveGhnExchangeOrderCode(h.getId());
+                if (exCode != null && exCode.equalsIgnoreCase(orderCode)) {
+                    hd = h;
+                    isExchangeOrderWebhook = true;
+                    break;
+                }
                 String rCode = orderViewService.resolveGhnReturnOrderCode(h.getId(), h);
                 if (rCode != null && rCode.equalsIgnoreCase(orderCode)) {
                     hd = h;
                     isReturnOrderWebhook = true;
+                    break;
+                }
+                String rejectCode = orderViewService.resolveGhnRejectReturnCode(h.getId());
+                if (rejectCode != null && rejectCode.equalsIgnoreCase(orderCode)) {
+                    hd = h;
+                    isRejectReturnOrderWebhook = true;
                     break;
                 }
             }
@@ -407,7 +421,8 @@ public class GhnRestController {
                 String clientOrderCode = (String) payload.get("ClientOrderCode");
                 if (clientOrderCode != null && !clientOrderCode.isBlank()) {
                     try {
-                        hd = hoaDonRepository.findById(Integer.parseInt(clientOrderCode)).orElse(null);
+                        String idStr = clientOrderCode.startsWith("EXCHANGE-HD-") ? clientOrderCode.substring(12) : clientOrderCode;
+                        hd = hoaDonRepository.findById(Integer.parseInt(idStr)).orElse(null);
                     } catch (NumberFormatException e) {
                         // ignore
                     }
@@ -415,6 +430,23 @@ public class GhnRestController {
             }
 
             if (hd != null) {
+                if (isExchangeOrderWebhook || (hd.getTrangThaiHoanHang() != null && (hd.getTrangThaiHoanHang() == com.smashvn.shop.entity.ReturnStatus.EXCHANGE_STOCK_ALLOCATED || hd.getTrangThaiHoanHang() == com.smashvn.shop.entity.ReturnStatus.EXCHANGE_SHIPPING || hd.getTrangThaiHoanHang() == com.smashvn.shop.entity.ReturnStatus.EXCHANGED))) {
+                    com.smashvn.shop.entity.ReturnStatus targetExchangeStatus = "delivered".equalsIgnoreCase(status)
+                            ? com.smashvn.shop.entity.ReturnStatus.EXCHANGED
+                            : com.smashvn.shop.entity.ReturnStatus.EXCHANGE_SHIPPING;
+                    orderViewService.updateExchangeStatusFromGhn(hd.getId(), targetExchangeStatus, status, "GHN_WEBHOOK");
+                    log.info("[GHN_WEBHOOK] Updated ExchangeStatus for HoaDon #{}: ghnStatus={} -> targetExchangeStatus={}", hd.getId(), status, targetExchangeStatus.name());
+                    return ResponseEntity.ok(Map.of("status", "ok", "message", "Exchange status update success"));
+                }
+
+                if (isRejectReturnOrderWebhook) {
+                    if ("delivered".equalsIgnoreCase(status) || "returned".equalsIgnoreCase(status) || "returned_to_sender".equalsIgnoreCase(status)) {
+                        orderViewService.handleRejectReturnDeliveryFromGhn(hd.getId(), status, "GHN_WEBHOOK");
+                        log.info("[GHN_WEBHOOK] Updated RejectReturnDelivery for HoaDon #{}: ghnStatus={}", hd.getId(), status);
+                        return ResponseEntity.ok(Map.of("status", "ok", "message", "Reject return delivery status update success"));
+                    }
+                }
+
                 if (isReturnOrderWebhook || orderViewService.resolveReturnStatus(hd.getId(), hd) != null) {
                     com.smashvn.shop.entity.ReturnStatus newReturnStatus = ghnStatusMapper.mapToReturnStatus(status);
                     if (newReturnStatus != null) {

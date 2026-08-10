@@ -500,11 +500,15 @@ CREATE TABLE [dbo].[HoaDon](
 	[sdt_nhan] [nvarchar](15) NOT NULL,
 	[dia_chi_nhan] [nvarchar](500) NOT NULL,
 	[ly_do_huy] [nvarchar](500) NULL,
-	[ly_do_hoan_tien] [nvarchar](500) NULL,
+	[ly_do_hoan_tra] [nvarchar](500) NULL,
 	[ghi_chu] [nvarchar](500) NULL,
 	[ma_giao_dich] [nvarchar](100) NULL,
 	[nguoi_xac_nhan_thanh_toan] [nvarchar](100) NULL,
 	[thoi_gian_xac_nhan] [datetime] NULL,
+	[trang_thai_hoan_hang] [nvarchar](50) NULL,
+	[loai_yeu_cau_doi_tra] [nvarchar](20) NULL,
+	[bang_chung_hoan_tra] [nvarchar](max) NULL,
+	[trang_thai_xu_ly_hang_hoan] [nvarchar](50) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
@@ -716,6 +720,7 @@ CREATE TABLE [dbo].[SanPhamChiTiet](
 	[gia_nhap] [decimal](18, 2) NULL,
 	[gia_ban] [decimal](18, 2) NOT NULL,
 	[so_luong_ton] [int] NOT NULL,
+	[so_luong_sp_loi] [int] NOT NULL DEFAULT ((0)),
 	[trang_thai] [bit] NOT NULL,
 	[ngay_tao] [datetime] NOT NULL,
 	[ngay_cap_nhat] [datetime] NULL,

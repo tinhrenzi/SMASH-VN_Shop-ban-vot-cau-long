@@ -14,6 +14,10 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     List<PaymentTransaction> findByOrder_Id(Integer orderId);
 
+    List<PaymentTransaction> findByOrder_IdAndStatus(Integer orderId, String status);
+
+    boolean existsByOrder_IdAndStatus(Integer orderId, String status);
+
     @Query("SELECT pt FROM PaymentTransaction pt LEFT JOIN pt.order o WHERE " +
            "(:orderCode IS NULL OR CAST(o.id AS string) LIKE %:orderCode% OR :orderCode LIKE CONCAT('%', o.id, '%')) AND " +
            "(:transactionId IS NULL OR pt.transactionId LIKE %:transactionId%) AND " +

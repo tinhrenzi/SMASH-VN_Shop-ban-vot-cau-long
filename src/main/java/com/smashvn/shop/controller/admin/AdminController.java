@@ -25,10 +25,12 @@ import com.smashvn.shop.service.order.OrderViewService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminController {
 
     private final TaiKhoanRepository taiKhoanRepository;
@@ -822,6 +824,8 @@ public class AdminController {
     @PostMapping("/don-hang/confirm-restock")
     public String confirmRestock(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "ketQua", required = false, defaultValue = "BAN_LAI") String ketQua,
+            @RequestParam(value = "lyDoTuChoi", required = false) String lyDoTuChoi,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
@@ -831,8 +835,14 @@ public class AdminController {
         }
 
         try {
-            orderViewService.xacNhanKiemKhoVaNhapKho(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Xác nhận kiểm kiện và nhập kho khôi phục tồn kho thành công!");
+            orderViewService.xacNhanKiemKhoVaNhapKho(idHoaDon, ketQua, lyDoTuChoi, actingTaiKhoanId, request.getRemoteAddr());
+            if ("TU_CHOI".equalsIgnoreCase(ketQua)) {
+                redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối nhận hàng hoàn và tạo vận đơn gửi trả lại cho khách hàng thành công!");
+            } else if ("HANG_LOI".equalsIgnoreCase(ketQua)) {
+                redirectAttributes.addFlashAttribute("successMsg", "Đã kiểm hàng thành công và chuyển sản phẩm vào kho hàng lỗi!");
+            } else {
+                redirectAttributes.addFlashAttribute("successMsg", "Đã kiểm hàng thành công và hoàn lại tồn kho bán!");
+            }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
         }
@@ -855,11 +865,12 @@ public class AdminController {
             return "redirect:/admin/dang-nhap";
         }
 
+        java.util.List<String> savedNames = null;
         try {
             String anhChungTuUrl = null;
             if (fileChungTu != null && !fileChungTu.isEmpty()) {
-                java.util.List<String> savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
-                if (!savedNames.isEmpty()) {
+                savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
+                if (savedNames != null && !savedNames.isEmpty()) {
                     anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
                 }
             }
@@ -876,7 +887,38 @@ public class AdminController {
             );
             redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            if (savedNames != null && !savedNames.isEmpty()) {
+                try {
+                    fileStorageService.deleteFiles(savedNames, "refunds");
+                } catch (Exception cleanupEx) {
+                    log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
+                }
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hoàn tiền: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
+    }
+
+    /**
+     * Endpoint Admin xác nhận phân bổ kho và tạo vận đơn giao sản phẩm đổi mới cho khách hàng (Phase 6)
+     */
+    @PostMapping("/don-hang/confirm-exchange-shipment")
+    public String confirmExchangeShipment(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.xacNhanGiaoHangDoiMoiChoKhach(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã phân bổ kho và khởi tạo vận đơn giao hàng đổi thành công!");
+        } catch (Exception e) {
+            log.error("Lỗi chuẩn bị/giao hàng đổi cho đơn #{}: {}", idHoaDon, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi xử lý giao hàng đổi: " + e.getMessage());
         }
         return "redirect:/admin/don-hang";
     }

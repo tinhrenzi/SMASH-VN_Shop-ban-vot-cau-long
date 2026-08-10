@@ -53,6 +53,10 @@ public class SanPhamChiTiet {
     @Builder.Default
     private Integer soLuongTon = 0;
 
+    @Column(name = "so_luong_sp_loi", nullable = false)
+    @Builder.Default
+    private Integer soLuongSpLoi = 0;
+
     @Column(name = "gia_nhap")
     private BigDecimal giaNhap;
 

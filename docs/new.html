@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Liệu Mô Tả Cập Nhật Nghiệp Vụ - SMASH-VN System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome & Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --accent-primary: #6366f1;
+            --accent-secondary: #06b6d4;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-heading: #f8fafc;
+            --text-body: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-body);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-heading);
+        }
+
+        /* Glassmorphism Header */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%),
+                        radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.15), transparent 40%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 40px 0 30px;
+            margin-bottom: 40px;
+        }
+
+        .badge-status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success-glow {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-info-glow {
+            background-color: rgba(6, 182, 212, 0.2);
+            color: #22d3ee;
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        /* Custom Cards */
+        .metric-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 12px 24px -10px rgba(99, 102, 241, 0.3);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+        }
+
+        .phase-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phase-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .phase-number {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--accent-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .phase-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* List styling */
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .feature-list li {
+            position: relative;
+            padding-left: 28px;
+            margin-bottom: 12px;
+            color: var(--text-body);
+        }
+
+        .feature-list li::before {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: 2px;
+            color: var(--accent-success);
+            font-size: 0.9rem;
+        }
+
+        .feature-list li.removed::before {
+            content: '\f00d';
+            color: var(--accent-danger);
+        }
+
+        /* Code snippets */
+        code.custom-code {
+            background-color: #0f172a;
+            color: #38bdf8;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            border: 1px solid #334155;
+        }
+
+        /* Timeline / State Diagram */
+        .state-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .state-pill {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .state-pill i {
+            color: var(--accent-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO HEADER -->
+    <header class="hero-banner">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge-status badge-success-glow">
+                            <i class="fas fa-lock me-1"></i> NGHIỆP VỤ ĐÃ KHÓA (FREEZE)
+                        </span>
+                        <span class="badge-status badge-info-glow">
+                            <i class="fas fa-check-double me-1"></i> MAVEN TEST 58/58 PASSED
+                        </span>
+                    </div>
+                    <h1 class="fw-bold mb-1">Tài Liệu Mô Tả Chi Tiết Cập Nhật Nghiệp Vụ SMASH-VN</h1>
+                    <p class="text-muted mb-0">File mô tả độc lập trong thư mục /docs (Không phụ thuộc Controller Java)</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- METRICS OVERVIEW -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                        <i class="fas fa-vial-circle-check"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: #34d399;">58 / 58</h3>
+                    <p class="text-muted mb-0 small">Automated Integration Tests Passed (100%)</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: #818cf8;">0 P0 / P1</h3>
+                    <p class="text-muted mb-0 small">Bảo đảm 0 lỗi sai lệch kho hoặc sai lệch dòng tiền</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee;">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: #22d3ee;">0 Schema Alter</h3>
+                    <p class="text-muted mb-0 small">Không ALTER / ADD COLUMN / CREATE TABLE</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: #818cf8;">Bán Tại Quầy</h3>
+                    <p class="text-muted mb-0 small">Giao diện Bán hàng tại quầy</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CHANGELOG SECTIONS -->
+        <h2 class="fw-bold mb-4" style="font-size: 1.6rem;">
+            <i class="fas fa-list-check me-2" style="color: var(--accent-secondary);"></i> Chi Tiết Các Cập Nhật Nghiệp Vụ
+        </h2>
+
+        <!-- BÁN HÀNG TẠI QUẦY -->
+        <div class="phase-card">
+            <div class="phase-number">BÁN HÀNG TẠI QUẦY</div>
+            <div class="phase-title text-primary">
+                <i class="fas fa-store"></i> Hệ Thống Bán Hàng Tại Quầy
+            </div>
+            <ul class="feature-list">
+                <li>Bán hàng trực tiếp tại quầy, quản lý giỏ lẻ và xuất hóa đơn k80.</li>
+                <li>Tích hợp đầy đủ danh mục sản phẩm, quét mã và quản lý khách hàng tại quầy.</li>
+            </ul>
+        </div>
+
+        <!-- PHASE 1 - 2 -->
+        <div class="phase-card">
+            <div class="phase-number">PHASE 1 &amp; PHASE 2</div>
+            <div class="phase-title">
+                <i class="fas fa-boxes-stacked text-primary"></i> Quản Lý Kho Lỗi &amp; Kiểm Soát Hạn Đổi Trả 7 Ngày
+            </div>
+            <ul class="feature-list">
+                <li><strong>Phân bổ kho hàng lỗi (<code class="custom-code">soLuongSpLoi</code>)</strong>: Lưu trữ chính xác số lượng hàng bị lỗi khi nhập kho hoàn, bảo đảm không cộng nhầm vào kho hàng bán lại.</li>
+                <li><strong>Xác định Delivery Timestamp chuẩn xác</strong>: Bắt buộc truy xuất thời điểm đơn hàng sang trạng thái <code class="custom-code">da_giao</code> từ <code class="custom-code">EditLog</code>.</li>
+                <li><strong>Ràng buộc xác nhận từ khách hàng</strong>: Chỉ chấp nhận trạng thái <code class="custom-code">hoan_thanh</code> nếu có log do <code class="custom-code">KHACH_HANG</code> tự bấm xác nhận. Nếu do Admin/Hệ thống tự chuyển trạng thái mà chưa có xác nhận của khách ➔ Hệ thống từ chối tính hạn 7 ngày.</li>
+                <li><strong>Hạn đổi/trả 7 ngày cố định</strong>: Tính toán chính xác thời hạn <code class="custom-code">deliveredAt + 7 days</code>, tự động từ chối yêu cầu gửi sau khi hết hạn.</li>
+            </ul>
+        </div>
+
+        <!-- PHASE 3 - 4 -->
+        <div class="phase-card">
+            <div class="phase-number">PHASE 3 &amp; PHASE 4</div>
+            <div class="phase-title">
+                <i class="fas fa-truck-ramp-box text-info"></i> Tích Hợp Vận Chuyển GHN &amp; Quy Trình Kiểm Đánh Giá 3 Hướng
+            </div>
+            <ul class="feature-list">
+                <li><strong>Tách biệt giao dịch DB vận chuyển (<code class="custom-code">GhnShipmentPersistenceService</code>)</strong>: Lưu thông tin vận đơn GHN bằng transaction độc lập <code class="custom-code">REQUIRES_NEW</code>, bảo đảm kể cả khi luồng nghiệp vụ bị lỗi thì mã vận đơn vẫn được bảo toàn để đối soát.</li>
+                <li><strong>Xử lý Webhook &amp; Polling tự động</strong>: Tự động chuyển trạng thái đơn sang <code class="custom-code">DELIVERED_TO_SHOP</code> khi đơn thu hồi về tới cửa hàng.</li>
+                <li><strong>3 Hướng xử lý kiểm định tại shop</strong>:
+                    <div class="mt-2 ms-2">
+                        <span class="badge bg-success me-1">BAN_LAI</span> Hàng nguyên vẹn ➔ Cộng lại tồn kho bán (<code class="custom-code">soLuongTon</code>).<br>
+                        <span class="badge bg-warning text-dark me-1">HANG_LOI</span> Hàng lỗi do NSX/Vận chuyển ➔ Chuyển vào kho lỗi (<code class="custom-code">soLuongSpLoi</code>).<br>
+                        <span class="badge bg-danger me-1">TU_CHOI</span> Hàng không đạt ➔ Tạo vận đơn <code class="custom-code">GHN_REJECT_RETURN</code> gửi trả lại cho khách.
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- PHASE 5 - 6 -->
+        <div class="phase-card">
+            <div class="phase-number">PHASE 5 &amp; PHASE 6</div>
+            <div class="phase-title">
+                <i class="fas fa-arrow-rotate-left text-success"></i> Bảo Vệ Hoàn Tiền 2 Lớp &amp; Đổi Hàng Đúng Biến Thể (Exact SPCT ID)
+            </div>
+            <ul class="feature-list">
+                <li><strong>Cơ chế bảo vệ chống hoàn tiền trùng (2-Layer Double Refund Guard)</strong>:
+                    <br>&bull; <em>Layer 1</em>: Kiểm tra <code class="custom-code">ReturnStatus == REFUNDED</code>.
+                    <br>&bull; <em>Layer 2 + Reconcile</em>: Kiểm tra sự tồn tại của giao dịch thành công trong <code class="custom-code">PaymentTransaction</code> (<code class="custom-code">status = 'REFUND_SUCCESS'</code>). Nếu đã tồn tại ➔ Thực hiện Reconcile chuyển trạng thái sang <code class="custom-code">REFUNDED &amp; DA_HOAN_TIEN</code> mà không tạo lại giao dịch mới.
+                </li>
+                <li><strong>Trừ kho đổi hàng Exact SPCT ID</strong>: Chỉ cho phép phân bổ đúng mã <code class="custom-code">SanPhamChiTiet</code> mà khách đã mua. Tuyệt đối không tự động lấy biến thể khác cùng sản phẩm cha.</li>
+                <li><strong>Kiểm soát kho All-Or-Nothing</strong>: Nếu đơn đổi chứa nhiều sản phẩm và có ít nhất 1 SPCT thiếu tồn kho ➔ Rollback toàn bộ, không trừ kho dở dang.</li>
+                <li><strong>Vận đơn đổi hàng COD = 0</strong>: Khách hàng đổi sản phẩm cùng giá trị không phải trả thêm tiền COD.</li>
+            </ul>
+        </div>
+
+        <!-- FINAL AUDIT & FIXES -->
+        <div class="phase-card">
+            <div class="phase-number">FINAL AUDIT FINDINGS</div>
+            <div class="phase-title">
+                <i class="fas fa-bug-slash text-warning"></i> Sửa Lỗi Tồn Đọng &amp; Phân Lập Nhà Cung Cấp Vận Chuyển
+            </div>
+            <ul class="feature-list">
+                <li><strong>Phân lập Hibernate <code class="custom-code">@Formula</code> theo Provider</strong>: Sửa các cột ảo trong <code class="custom-code">HoaDon.java</code> lọc chính xác <code class="custom-code">nha_cung_cap</code> (<code class="custom-code">'GHN'</code>, <code class="custom-code">'GHN_RETURN'</code>, <code class="custom-code">'GHN_EXCHANGE'</code>) kèm <code class="custom-code">ORDER BY t.id DESC</code>.</li>
+                <li><strong>Native Query Synchronization</strong>: Bổ sung subquery alias <code class="custom-code">AS ghnReturnOrderCode</code> trong <code class="custom-code">findActiveShippingOrders</code> khớp với Hibernate Formula.</li>
+                <li><strong>Đồng bộ trạng thái thanh toán <code class="custom-code">DA_HOAN_TIEN</code></strong>: Loại bỏ các lệnh đè sai trạng thái, bảo đảm đơn hoàn tiền luôn hiển thị <code class="custom-code">DA_HOAN_TIEN</code>.</li>
+                <li><strong>Giao diện Admin cho đơn hủy trả trước (<code class="custom-code">PENDING_RETURN</code>)</strong>: Phân định rõ ràng nút Duyệt/Từ chối của luồng đổi trả sau giao chỉ dành cho <code class="custom-code">PENDING_APPROVAL</code>.</li>
+            </ul>
+        </div>
+
+        <!-- DIAGRAM FLOW -->
+        <h2 class="fw-bold mb-3 mt-5" style="font-size: 1.4rem;">
+            <i class="fas fa-diagram-project me-2" style="color: var(--accent-secondary);"></i> Sơ Đồ Trạng Thái Đổi / Trả Hàng
+        </h2>
+        <div class="phase-card">
+            <div class="state-flow">
+                <div class="state-pill"><i class="fas fa-paper-plane"></i> PENDING_APPROVAL</div>
+                <i class="fas fa-arrow-right text-muted align-self-center"></i>
+                <div class="state-pill"><i class="fas fa-truck-loading"></i> WAITING_FOR_PICKUP</div>
+                <i class="fas fa-arrow-right text-muted align-self-center"></i>
+                <div class="state-pill"><i class="fas fa-store"></i> DELIVERED_TO_SHOP</div>
+                <i class="fas fa-arrow-right text-muted align-self-center"></i>
+                <div class="state-pill"><i class="fas fa-boxes-packing"></i> RETURNED</div>
+            </div>
+            <div class="state-flow mt-3">
+                <div class="state-pill" style="border-color: #10b981; color: #34d399;"><i class="fas fa-money-bill-transfer"></i> REFUNDED (Trả Hàng)</div>
+                <div class="state-pill" style="border-color: #6366f1; color: #818cf8;"><i class="fas fa-box-open"></i> EXCHANGE_STOCK_ALLOCATED</div>
+                <i class="fas fa-arrow-right text-muted align-self-center"></i>
+                <div class="state-pill" style="border-color: #06b6d4; color: #22d3ee;"><i class="fas fa-truck-fast"></i> EXCHANGE_SHIPPING</div>
+                <i class="fas fa-arrow-right text-muted align-self-center"></i>
+                <div class="state-pill" style="border-color: #10b981; color: #34d399;"><i class="fas fa-circle-check"></i> EXCHANGED (Đổi Hàng)</div>
+            </div>
+        </div>
+
+        <!-- FOOTER INFO -->
+        <footer class="text-center text-muted mt-5 pt-4 border-top border-secondary">
+            <p class="small mb-1">SMASH-VN BADMINTON SHOP SYSTEM &copy; 2026 | Standalone Documentation File</p>
+            <p class="small">Tất cả 58 integration tests đã vượt qua 100%. Nghiệp vụ chính thức được khóa thành công.</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>

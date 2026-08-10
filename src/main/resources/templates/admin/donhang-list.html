@@ -125,9 +125,9 @@
                                 <button class="nav-link fw-bold px-3 py-2" id="pos-tab" data-bs-toggle="tab"
                                     data-bs-target="#pos-orders" type="button" role="tab" aria-controls="pos-orders"
                                     aria-selected="false">
-                                    <i class="fas fa-desktop me-2"></i>Bán Tại Quầy (POS)
+                                    <i class="fas fa-desktop me-2"></i>Bán hàng tại quầy
                                     <span class="admin-status admin-status-info ms-1"
-                                        th:text="${danhSachDonHangPos.size()}">0</span>
+                                        th:text="${danhSachDonHangPos != null ? danhSachDonHangPos.size() : 0}">0</span>
                                 </button>
                             </li>
                             <li class="nav-item text-nowrap" role="presentation">
@@ -290,7 +290,7 @@
                                                         </button>
 
                                                         <button
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED' &amp;&amp; hd.loaiYeuCauDoiTra == 'TRA'}"
                                                             type="button"
                                                             class="admin-btn admin-btn-sm admin-btn-primary"
                                                             th:data-id="${hd.id}"
@@ -300,8 +300,18 @@
                                                             <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
                                                         </button>
 
+                                                        <form th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'RETURNED' or hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED') &amp;&amp; hd.loaiYeuCauDoiTra == 'DOI'}"
+                                                              action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-success"
+                                                                    th:title="${hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED' ? 'Thử lại tạo vận đơn GHN hàng đổi' : 'Phân bổ tồn kho & Giao hàng đổi mới'}">
+                                                                <i class="fas fa-shipping-fast"></i> <span th:text="${hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED' ? 'Thử lại vận đơn GHN' : 'Giao hàng đổi'}">Giao hàng đổi</span>
+                                                            </button>
+                                                        </form>
+
                                                         <form
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
                                                             action="/admin/don-hang/approve-return" method="post"
                                                             class="d-inline-block m-0">
                                                             <input type="hidden" th:name="${_csrf.parameterName}"
@@ -314,7 +324,7 @@
                                                             </button>
                                                         </form>
                                                         <form
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
                                                             action="/admin/don-hang/reject-return" method="post"
                                                             class="d-inline-block m-0">
                                                             <input type="hidden" th:name="${_csrf.parameterName}"
@@ -432,8 +442,8 @@
                                                 <td class="text-nowrap">
                                                     <code class="text-dark order-code-text fw-bold"
                                                         style="font-size: 0.85rem;"
-                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}"
-                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : 'POS#' + hd.id}">DHSVN...</code>
+                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}">DHSVN...</code>
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark text-nowrap"
@@ -529,7 +539,7 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                            <tr th:if="${danhSachDonHangPos.isEmpty()}">
+                                            <tr th:if="${danhSachDonHangPos == null || danhSachDonHangPos.isEmpty()}">
                                                 <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán
                                                     tại quầy nào trong hệ thống.</td>
                                             </tr>
@@ -639,7 +649,7 @@
                                                         </button>
 
                                                         <form
-                                                            th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
                                                             action="/admin/don-hang/approve-return" method="post"
                                                             class="d-inline-block m-0">
                                                             <input type="hidden" th:name="${_csrf.parameterName}"
@@ -652,7 +662,7 @@
                                                             </button>
                                                         </form>
                                                         <form
-                                                            th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
+                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
                                                             action="/admin/don-hang/reject-return" method="post"
                                                             class="d-inline-block m-0">
                                                             <input type="hidden" th:name="${_csrf.parameterName}"
@@ -847,15 +857,32 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small">Số tiền hoàn (VNĐ):</label>
-                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan"
-                                readonly />
+                            <label class="form-label fw-bold small">Phương thức hoàn tiền <span class="text-danger">*</span>:</label>
+                            <select class="form-select" name="phuongThucHoanTien" id="refundPhuongThuc" onchange="toggleRefundMaGDRequirement()">
+                                <option value="CHUYEN_KHOAN" selected>Chuyển khoản ngân hàng</option>
+                                <option value="TIEN_MAT">Tiền mặt</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small">Ghi chú hoàn tiền (Tùy chọn):</label>
-                            <textarea class="form-control" name="ghiChu" rows="2"
-                                placeholder="Ví dụ: Hoàn tiền qua chuyển khoản ngân hàng..."></textarea>
+                            <label class="form-label fw-bold small">Số tiền hoàn (VNĐ) <span class="text-danger">*</span>:</label>
+                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan" placeholder="Nhập số tiền hoàn..." required />
+                        </div>
+
+                        <div class="mb-3" id="groupMaGiaoDich">
+                            <label class="form-label fw-bold small">Mã giao dịch hoàn tiền <span class="text-danger" id="reqMaGDMark">*</span>:</label>
+                            <input type="text" class="form-control" name="maGiaoDichHoanTien" id="refundMaGiaoDich" placeholder="Ví dụ: FT240810123456" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Ghi chú hoàn tiền (Tùy chọn / Bắt buộc nếu hoàn thiếu):</label>
+                            <textarea class="form-control" name="ghiChuHoanTien" id="refundGhiChu" rows="2"
+                                placeholder="Nhập ghi chú hoàn tiền..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Ảnh / Chứng từ hoàn tiền (Tùy chọn):</label>
+                            <input type="file" class="form-control" name="fileChungTu" accept="image/*" />
                         </div>
                     </div>
 
@@ -872,6 +899,19 @@
     </div>
 
     <script th:inline="none">
+        function toggleRefundMaGDRequirement() {
+            var method = document.getElementById('refundPhuongThuc').value;
+            var reqMark = document.getElementById('reqMaGDMark');
+            var maGDInput = document.getElementById('refundMaGiaoDich');
+            if (method === 'CHUYEN_KHOAN') {
+                if (reqMark) reqMark.style.display = 'inline';
+                if (maGDInput) maGDInput.setAttribute('required', 'required');
+            } else {
+                if (reqMark) reqMark.style.display = 'none';
+                if (maGDInput) maGDInput.removeAttribute('required');
+            }
+        }
+
         function confirmSubmit(button, message) {
             Swal.fire({
                 title: 'Xác nhận hành động',
