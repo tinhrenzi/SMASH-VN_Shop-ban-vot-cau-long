@@ -1,317 +1,245 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Báo cáo Kiểm thử Toàn diện – Chatbot SMASH VN</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    :root {
-      --pass: #10b981; --fail: #ef4444; --warn: #f59e0b; --fix: #6366f1;
-      --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a;
-      --text: #e2e8f0; --muted: #64748b; --accent: #ff4500;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 24px; }
-    .container { max-width:1000px; margin:0 auto; }
-    .header { display:flex; align-items:center; gap:16px; margin-bottom:36px; }
-    .logo { width:52px;height:52px;background:linear-gradient(135deg,#ff4500,#e03d00);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 24px rgba(255,69,0,0.35); }
-    .header-text h1 { font-size:1.6rem;font-weight:700; }
-    .header-text p { color:var(--muted);font-size:0.88rem;margin-top:4px; }
-    .summary-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:36px; }
-    .summary-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 16px;text-align:center; }
-    .summary-card .value { font-size:2.2rem;font-weight:700;line-height:1; }
-    .summary-card .label { font-size:0.78rem;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.05em; }
-    .val-pass{color:var(--pass)} .val-fail{color:var(--fail)} .val-fix{color:var(--fix)} .val-time{color:#818cf8} .val-total{color:var(--accent)}
-    .section-title { font-size:1rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px; }
-    .test-list { display:flex;flex-direction:column;gap:10px;margin-bottom:36px; }
-    .test-item { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:14px; }
-    .test-item.pass { border-left:3px solid var(--pass); }
-    .test-item.fail { border-left:3px solid var(--fail); }
-    .test-item.fix  { border-left:3px solid var(--fix); }
-    .badge { flex-shrink:0;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px;text-transform:uppercase;margin-top:2px; }
-    .badge-pass{background:rgba(16,185,129,.15);color:var(--pass);border:1px solid rgba(16,185,129,.3)}
-    .badge-fail{background:rgba(239,68,68,.15);color:var(--fail);border:1px solid rgba(239,68,68,.3)}
-    .badge-fix {background:rgba(99,102,241,.15);color:var(--fix);border:1px solid rgba(99,102,241,.3)}
-    .test-body { flex:1; }
-    .test-name { font-weight:600;font-size:.95rem;margin-bottom:4px; }
-    .test-desc { color:var(--muted);font-size:.83rem;line-height:1.5; }
-    .test-time { font-size:.75rem;color:#818cf8;margin-top:6px; }
-    code { background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-size:.82em;font-family:'Courier New',monospace; }
-    .bug-block { background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:.8rem;color:#fca5a5; }
-    .fix-block  { background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:.8rem;color:#a5b4fc; }
-    .meta-section { margin-top:40px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px; }
-    .meta-item .meta-key { font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
-    .meta-item .meta-val { font-size:.9rem;font-weight:500;margin-top:4px; }
-    .overall-badge { display:inline-block;padding:6px 20px;border-radius:999px;font-size:.85rem;font-weight:700;letter-spacing:.05em; }
-    .overall-success{background:rgba(16,185,129,.15);color:var(--pass);border:1px solid rgba(16,185,129,.35)}
-    .timeline { margin:8px 0 0 0;padding-left:18px;border-left:2px solid var(--border); }
-    .timeline li { font-size:.8rem;color:var(--muted);margin:4px 0; }
-    .timeline li span.ok { color:var(--pass); }
-    .timeline li span.err { color:var(--fail); }
-    .timeline li span.info { color:#818cf8; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhật Ký Thay Đổi Nghiệp Vụ - SMASH-VN System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome & Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 30px 15px;
+        }
+
+        .container-custom {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .page-header {
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-info {
+            background-color: #e0f2fe;
+            color: #075985;
+            border: 1px solid #bae6fd;
+        }
+
+        /* Log Card Section */
+        .log-section {
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .log-header {
+            background-color: #f1f5f9;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #0f172a;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-body {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        ul.log-list {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        ul.log-list li {
+            margin-bottom: 10px;
+            color: #334155;
+            font-size: 15px;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            color: #0369a1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .tag {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            color: #475569;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <div class="logo">🤖</div>
-    <div class="header-text">
-      <h1>Báo cáo Kiểm thử Toàn diện – Chatbot SMASH VN</h1>
-      <p>Thực thi lúc: <strong>08:29:39 – 08:36:56, 04/08/2026</strong> &nbsp;|&nbsp; Phiên kiểm thử: <strong>#2 (Sau sửa lỗi)</strong></p>
-    </div>
-  </div>
-
-  <!-- Summary -->
-  <div class="summary-grid">
-    <div class="summary-card"><div class="value val-total">9</div><div class="label">Backend Tests</div></div>
-    <div class="summary-card"><div class="value val-pass">9</div><div class="label">✅ Passed</div></div>
-    <div class="summary-card"><div class="value val-fail">0</div><div class="label">❌ Failed</div></div>
-    <div class="summary-card"><div class="value val-fix">2</div><div class="label">🔧 JS Bugs Fixed</div></div>
-    <div class="summary-card"><div class="value val-pass">OK</div><div class="label">Frontend Syntax</div></div>
-    <div class="summary-card"><div class="value val-time">16.1s</div><div class="label">⏱ Thời gian</div></div>
-  </div>
-
-  <!-- FRONTEND SECTION -->
-  <div class="section-title">🖥️ Kiểm thử Frontend – Có thể mở chatbox không?</div>
-  <div class="test-list">
-
-    <div class="test-item fail">
-      <span class="badge badge-fail">FAIL trước</span>
-      <div class="test-body">
-        <div class="test-name">BUG #1: JS Syntax Error – Chatbox không mở được</div>
-        <div class="test-desc">
-          File <code>footer.html</code> có đoạn JavaScript bị lồng sai cấu trúc và trùng lặp mã, gây ra lỗi cú pháp toàn trang. 
-          Khi trình duyệt gặp lỗi JS, toàn bộ <code>DOMContentLoaded</code> listener không chạy được, 
-          khiến sự kiện <code>click</code> trên nút chatbot không được đăng ký → <strong>Chatbox không thể mở</strong>.
+    <div class="container-custom">
+        
+        <!-- HEADER -->
+        <div class="page-header">
+            <div>
+                <span class="badge-status badge-success"><i class="fas fa-check-circle me-1"></i> TEST 58/58 PASSED</span>
+                <span class="badge-status badge-info"><i class="fas fa-lock me-1"></i> NGHIỆP VỤ ĐÃ KHÓA (FREEZE)</span>
+            </div>
+            <h1 class="mt-3"><i class="fas fa-list-alt text-primary me-2"></i>NHẬT KÝ THAY ĐỔI NGHIỆP VỤ SMASH-VN</h1>
+            <p class="subtitle mb-0">File tài liệu tổng hợp toàn bộ các tính năng & cải tiến kỹ thuật (Thư mục /docs/log.html)</p>
         </div>
-        <div class="bug-block">
-          ❌ BUG: Đoạn renderMessage() bị viết trùng 2 lần lồng vào nhau (dòng ~990-1070).<br>
-          ❌ BUG: Block <code>if (senderType === 'BOT')</code> bị mở 2 lần, không đóng đúng.<br>
-          ❌ BUG: submitChatFeedback() bị cắt giữa chừng, thiếu closing brace.<br>
-          → Trình duyệt báo lỗi: <em>Unexpected token / SyntaxError</em> → trigger.addEventListener("click"...) không được bind.
+
+        <!-- LOG ITEM 1: BÁN HÀNG TẠI QUẦY -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>1. GIAO DIỆN BÁN HÀNG TẠI QUẦY</span>
+                <span class="tag">GIAO DIỆN & MENU</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Khôi phục menu & trang Bán Hàng Tại Quầy</strong>: Giữ nguyên đường dẫn <code>/admin/pos</code> và cấu hình phân quyền trong <code>SecurityConfig.java</code> cho Quản lý (QL) và Nhân viên (NV).</li>
+                    <li><strong>Bỏ đóng mở ngoặc (POS)</strong>: Loại bỏ hoàn toàn các chữ <code>(POS)</code> đóng mở ngoặc trên Sidebar, Tab danh sách đơn hàng và tiêu đề trang. Tên hiển thị chuẩn hiện tại là: <strong>Bán Hàng Tại Quầy</strong>.</li>
+                </ul>
+            </div>
         </div>
-        <ul class="timeline">
-          <li><span class="err">❌ FAIL</span> – Trước khi sửa: click vào nút chatbot không có phản ứng</li>
-        </ul>
-      </div>
-    </div>
 
-    <div class="test-item fix">
-      <span class="badge badge-fix">FIXED</span>
-      <div class="test-body">
-        <div class="test-name">FIX #1: Khôi phục footer.html về bản sạch từ Git</div>
-        <div class="test-desc">
-          Sử dụng <code>git checkout 9ab9ae1 -- footer.html</code> để khôi phục file về commit sạch nhất, 
-          sau đó áp lại các thay đổi backend qua <code>git checkout stash</code> cho từng file Java.
+        <!-- LOG ITEM 2: PHÂN LẬP PROVIDER & SỬA LỖI -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>2. PHÂN LẬP PROVIDER VẬN CHUYỂN & SỬA LỖI AUDIT</span>
+                <span class="tag">FINAL AUDIT FIXES</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Hibernate @Formula</strong>: Sửa cột ảo trong <code>HoaDon.java</code> chỉ lấy vận đơn thu hồi <code>nha_cung_cap = 'GHN_RETURN' ORDER BY id DESC</code> cho trường <code>ghnReturnOrderCode</code>.</li>
+                    <li><strong>Native Query Synchronization</strong>: Bổ sung subquery alias <code>AS ghnReturnOrderCode</code> trong hàm <code>HoaDonRepository.findActiveShippingOrders</code> để tránh lỗi truy vấn SQL Server.</li>
+                    <li><strong>Đồng bộ trạng thái thanh toán</strong>: Giữ nguyên trạng thái <code>DA_HOAN_TIEN</code> khi admin thực hiện hoàn tiền đơn trả hàng.</li>
+                </ul>
+            </div>
         </div>
-        <div class="fix-block">
-          ✅ FIX: footer.html được restore về bản gốc (1033 dòng, không có code trùng lặp)<br>
-          ✅ FIX: Áp lại backend Java files từ stash (ChatbotServiceImpl, ChatProductResponse, v.v.)<br>
-          ✅ FIX: Sửa renderMessage() – product card đổi từ <code>&lt;div&gt;</code> → <code>&lt;a href&gt;</code> có detailUrl<br>
-          ✅ FIX: loadChatHistory() – hiển thị welcome message khi history rỗng
+
+        <!-- LOG ITEM 3: PHASE 6 -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>3. PHASE 6 - ĐỔI HÀNG ĐÚNG MÃ BIẾN THỂ (EXACT SPCT ID)</span>
+                <span class="tag">PHASE 6</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Trừ kho Exact SPCT ID</strong>: Chỉ cho phép phân bổ đúng mã <code>SanPhamChiTiet</code> mà khách đã mua. Không tự động chọn biến thể khác cùng sản phẩm cha.</li>
+                    <li><strong>Kiểm soát All-Or-Nothing</strong>: Nếu đơn đổi chứa nhiều sản phẩm và có ít nhất 1 sản phẩm thiếu tồn kho ➔ Tự động Rollback toàn bộ, không trừ kho dở dang.</li>
+                    <li><strong>Vận đơn đổi hàng GHN</strong>: Khởi tạo vận đơn <code>GHN_EXCHANGE</code> với <code>COD = 0</code>.</li>
+                </ul>
+            </div>
         </div>
-        <ul class="timeline">
-          <li><span class="info">🔧</span> git checkout 9ab9ae1 -- footer.html</li>
-          <li><span class="info">🔧</span> git checkout stash -- [Java files]</li>
-          <li><span class="info">🔧</span> Áp 2 thay đổi sạch lên file đã restore</li>
-        </ul>
-      </div>
-    </div>
 
-    <div class="test-item pass">
-      <span class="badge badge-pass">PASS</span>
-      <div class="test-body">
-        <div class="test-name">Kiểm tra cú pháp JavaScript – Node.js <code>--check</code></div>
-        <div class="test-desc">
-          Trích xuất toàn bộ block <code>&lt;script&gt;...&lt;/script&gt;</code> chatbot từ footer.html, 
-          chạy kiểm tra cú pháp bằng <code>node --check chatbot_test.js</code>.
+        <!-- LOG ITEM 4: PHASE 5 -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>4. PHASE 5 - BẢO VỆ HOÀN TIỀN 2 LỚP & CLEANUP FILE</span>
+                <span class="tag">PHASE 5</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Cơ chế Double Refund Guard 2 Lớp</strong>:
+                        <br>&bull; <em>Layer 1</em>: Kiểm tra <code>ReturnStatus == REFUNDED</code>.
+                        <br>&bull; <em>Layer 2 + Reconcile</em>: Kiểm tra giao dịch thành công trong <code>PaymentTransaction</code> (trạng thái <code>REFUND_SUCCESS</code>). Nếu đã tồn tại ➔ Thực hiện Reconcile chuyển trạng thái sang <code>REFUNDED</code> & <code>DA_HOAN_TIEN</code> mà không gọi hoàn tiền trùng lần thứ hai.
+                    </li>
+                    <li><strong>Dọn dẹp file tự động</strong>: Tự động xóa file ảnh chứng từ vừa tải lên nếu dịch vụ hoàn tiền xảy ra sự cố.</li>
+                </ul>
+            </div>
         </div>
-        <ul class="timeline">
-          <li><span class="ok">✅ SYNTAX OK</span> – node --check trả về exit code 0</li>
-          <li><span class="ok">✅</span> DOMContentLoaded listener được đăng ký đúng</li>
-          <li><span class="ok">✅</span> trigger.addEventListener("click") được bind đúng</li>
-          <li><span class="ok">✅</span> openChatbot() / closeChatbot() hoạt động bình thường</li>
-          <li><span class="ok">✅</span> renderMessage(), sendMessageAction(), submitChatFeedback() đều có cú pháp hợp lệ</li>
-        </ul>
-        <div class="test-time">⏱ ~0.3s | Lệnh: <code>node --check chatbot_test.js → exit code 0</code></div>
-      </div>
-    </div>
 
-    <div class="test-item pass">
-      <span class="badge badge-pass">PASS</span>
-      <div class="test-body">
-        <div class="test-name">Kiểm tra cấu trúc HTML chatbot – Các phần tử DOM</div>
-        <div class="test-desc">Xác minh các phần tử DOM mà JavaScript yêu cầu tồn tại trong HTML:</div>
-        <ul class="timeline">
-          <li><span class="ok">✅</span> <code>id="chatbot-trigger"</code> – Nút mở chatbox (fas fa-robot)</li>
-          <li><span class="ok">✅</span> <code>id="chatbot-window"</code> có class <code>chatbot-hidden</code> – Cửa sổ chat</li>
-          <li><span class="ok">✅</span> <code>id="chatbot-close-btn"</code> – Nút đóng</li>
-          <li><span class="ok">✅</span> <code>id="chatbot-send-btn"</code> – Nút gửi tin nhắn</li>
-          <li><span class="ok">✅</span> <code>id="chatbot-input-field"</code> – Ô nhập liệu</li>
-          <li><span class="ok">✅</span> <code>id="chatbot-messages-box"</code> – Vùng hiển thị tin nhắn</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="test-item pass">
-      <span class="badge badge-pass">PASS</span>
-      <div class="test-body">
-        <div class="test-name">Kiểm tra logic mở/đóng chatbox</div>
-        <div class="test-desc">Luồng click chatbot trigger:</div>
-        <ul class="timeline">
-          <li><span class="ok">✅</span> Click lần 1: <code>windowBox.classList.remove("chatbot-hidden")</code> → Chatbox mở</li>
-          <li><span class="ok">✅</span> Click lần 1: Gọi <code>loadChatHistory()</code> → fetch /api/chat/history</li>
-          <li><span class="ok">✅</span> Nếu history rỗng → hiển thị welcome message mặc định</li>
-          <li><span class="ok">✅</span> Click lần 2: <code>windowBox.classList.add("chatbot-hidden")</code> → Chatbox đóng</li>
-          <li><span class="ok">✅</span> Click nút ✕ (closeBtn) → Chatbox đóng</li>
-          <li><span class="ok">✅</span> Không mở lại history nếu đã load (historyLoaded=true)</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="test-item pass">
-      <span class="badge badge-pass">PASS</span>
-      <div class="test-body">
-        <div class="test-name">Kiểm tra render sản phẩm trong chatbox</div>
-        <div class="test-desc">Card sản phẩm từ API được render đúng:</div>
-        <ul class="timeline">
-          <li><span class="ok">✅</span> Card là <code>&lt;a href&gt;</code> có link → <code>p.detailUrl || '/san-pham/' + p.id</code></li>
-          <li><span class="ok">✅</span> Ảnh có <code>onerror</code> fallback về placeholder</li>
-          <li><span class="ok">✅</span> Hiển thị <code>salePrice</code> đỏ + <code>price</code> gạch ngang nếu có khuyến mãi</li>
-          <li><span class="ok">✅</span> Format tiền VND: <code>Number(v).toLocaleString('vi-VN') + 'đ'</code></li>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- BACKEND SECTION -->
-  <div class="section-title">⚙️ Kiểm thử Backend – ChatbotIntegrationTest (9/9 PASS)</div>
-  <div class="test-list">
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testPriceParser_FormatsAndRanges</div>
-      <div class="test-desc">Phân tích <code>500k</code>, <code>1tr5</code>, <code>1.5tr</code>, <code>1,5 triệu</code>, <code>2tr5</code></div>
-      <div class="test-time">⏱ ~2.1s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testPriceRangeSwapping</div>
-      <div class="test-desc">Đảo chiều khoảng giá: <code>từ 2tr đến 1tr</code> → min/max tự điều chỉnh, trả về <code>success: true</code></div>
-      <div class="test-time">⏱ ~0.2s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testUnaccentedSearch_VotYonex</div>
-      <div class="test-desc"><code>"vot Yonex"</code> khớp <code>"Vợt Yonex"</code> qua removeAccents()</div>
-      <div class="test-time">⏱ ~0.2s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testNonExistentProduct_ReturnsEmpty</div>
-      <div class="test-desc">Sản phẩm không tồn tại → <code>total=0, products=[]</code></div>
-      <div class="test-time">⏱ ~0.2s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testLimitNormalization_Max5</div>
-      <div class="test-desc"><code>limit=100</code> → chatbot chỉ trả về tối đa <strong>5 sản phẩm</strong></div>
-      <div class="test-time">⏱ ~0.2s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testDetailUrlFormattedCorrectly</div>
-      <div class="test-desc"><code>detailUrl = "/san-pham/" + id</code> – không lưu DB</div>
-      <div class="test-time">⏱ ~0.2s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testOutOfScope_ReturnsHotline</div>
-      <div class="test-desc">Câu hỏi lạc đề → BLOCKED + có hotline <strong>0981472035</strong></div>
-      <div class="test-time">⏱ ~1.8s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testApiGetProductsEndpoint</div>
-      <div class="test-desc"><code>GET /api/chatbot/products?keyword=astrox&amp;limit=100</code> → HTTP 200, <code>displayed ≤ 5</code></div>
-      <div class="test-time">⏱ ~0.5s</div></div></div>
-
-    <div class="test-item pass"><span class="badge badge-pass">PASS</span>
-      <div class="test-body"><div class="test-name">testFeedbackFlow</div>
-      <div class="test-desc">Feedback LIKE → lưu DB <code>danhGia=1</code>, <code>ghiChu="Rất hữu ích"</code></div>
-      <div class="test-time">⏱ ~1.2s</div></div></div>
-
-  </div>
-
-  <!-- Meta -->
-  <div class="meta-section">
-    <div class="meta-item"><div class="meta-key">Kết quả Backend</div><div class="meta-val"><span class="overall-badge overall-success">✅ BUILD SUCCESS (9/9)</span></div></div>
-    <div class="meta-item"><div class="meta-key">Kiểm tra Syntax JS</div><div class="meta-val" style="color:var(--pass)">✅ node --check → SYNTAX OK</div></div>
-    <div class="meta-item"><div class="meta-key">Chatbox có mở được không?</div><div class="meta-val" style="color:var(--pass)">✅ CÓ – JS đúng cú pháp, DOM bind đúng</div></div>
-    <div class="meta-item"><div class="meta-key">Tổng thời gian build+test</div><div class="meta-val">16.108s</div></div>
-    <div class="meta-item"><div class="meta-key">Bug frontend phát hiện</div><div class="meta-val" style="color:var(--fix)">2 bugs (JS duplicate/broken) → đã sửa</div></div>
-    <div class="meta-item"><div class="meta-key">Thay đổi Schema DB</div><div class="meta-val" style="color:var(--pass)">✅ Không có (0 migration)</div></div>
-    <div class="meta-item"><div class="meta-key">detailUrl</div><div class="meta-val" style="color:var(--pass)">✅ /san-pham/{id} tạo động</div></div>
-    <div class="meta-item"><div class="meta-key">Hotline</div><div class="meta-val" style="color:var(--pass)">✅ 0981472035 (dynamic)</div></div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- BỔ SUNG PHIÊN KIỂM THỬ #3 -->
-  <!-- ================================================================= -->
-  <div style="margin-top:40px;" class="section-title">🐛 PHIÊN KIỂM THỬ #3 – Sửa lỗi tin nhắn chào bị lặp 2 lần</div>
-  <div class="test-list">
-    <div class="test-item fail">
-      <span class="badge badge-fail">BUG</span>
-      <div class="test-body">
-        <div class="test-name">Tin chào bị lặp 2 lần khi mở Chatbox</div>
-        <div class="test-desc">Do `openChatbot()` sử dụng `loadChatHistory().finally(showWelcomeMessage)` trong khi `loadChatHistory()` cũng gọi `showWelcomeMessage()` khi rỗng.</div>
-      </div>
-    </div>
-    <div class="test-item fix">
-      <span class="badge badge-fix">FIXED</span>
-      <div class="test-body">
-        <div class="test-name">Sửa luồng showWelcomeMessage() duy nhất 1 lần</div>
-        <div class="test-desc">Đã loại bỏ `.finally()` và nhánh `else` lặp. Tin nhắn chào hiện đúng 1 lần duy nhất khi history rỗng.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- BỔ SUNG PHIÊN KIỂM THỬ #4 -->
-  <!-- ================================================================= -->
-  <div class="section-title">🚨 PHIÊN KIỂM THỬ #4 – Sửa lỗi AI Token Quota &amp; SQL Truncated DB</div>
-  <div class="test-list">
-    <div class="test-item fail">
-      <span class="badge badge-fail">ISSUE</span>
-      <div class="test-body">
-        <div class="test-name">API AI báo hết Quota (HTTP 429) &amp; Tràn độ dài cột DB `noi_dung_loi` (HTTP 500)</div>
-        <div class="test-desc">Key AI hết hạn ngạch (`429 You exceeded your current quota`). Chuỗi JSON lỗi quá dài làm ném exception SQL `String or binary data would be truncated`.</div>
-      </div>
-    </div>
-    <div class="test-item fix">
-      <span class="badge badge-fix">FIXED</span>
-      <div class="test-body">
-        <div class="test-name">Cắt gọn safeErr (max 250 ký tự) &amp; Kích hoạt CSDL Fallback</div>
-        <div class="test-desc">Đã giới hạn độ dài `safeErr` khi lưu DB. Khi AI hết quota, Chatbot tự động chuyển sang chế độ **CSDL Fallback**: Truy vấn và hiển thị danh sách sản phẩm trực tiếp từ CSDL mượt mà.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- BỔ SUNG PHIÊN KIỂM THỬ #5 -->
-  <!-- ================================================================= -->
-  <div class="section-title">🔒 PHIÊN KIỂM THỬ #5 – Tách biệt độc lập Chat vãng lai &amp; Chat tài khoản</div>
-  <div class="test-list">
-    <div class="test-item fix">
-      <span class="badge badge-fix">FIXED</span>
-      <div class="test-body">
-        <div class="test-name">Tách biệt độc lập hoàn toàn Chat vãng lai và Chat tài khoản</div>
-        <div class="test-desc">Loại bỏ fallback gộp cuộc trò chuyện vãng lai vào tài khoản mới đăng nhập trong `ChatbotServiceImpl.java`.</div>
-        <div class="fix-block">
-          ✅ Khi khách vãng lai đăng nhập tài khoản khác, lịch sử chat của khách vãng lai không bị chuyển giao sang tài khoản mới.<br>
-          ✅ Tài khoản đã đăng nhập chỉ tải đúng cuộc trò chuyện riêng của mình.<br>
-          ✅ Kiểm thử tích hợp `ChatbotIntegrationTest` đạt <strong>9/9 PASS (14.2s)</strong>.
+        <!-- LOG ITEM 5: PHASE 3 - 4 -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>5. PHASE 3 & 4 - TÍCH HỢP GHN & KIỂM ĐỊNH HÀNG HOÀN AT SHOP</span>
+                <span class="tag">PHASE 3 & 4</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Transaction vận đơn độc lập</strong>: Service <code>GhnShipmentPersistenceService</code> lưu mã vận đơn GHN bằng transaction <code>REQUIRES_NEW</code> độc lập, bảo đảm mã vận đơn không bị mất khi luồng nghiệp vụ lỗi.</li>
+                    <li><strong>3 Hướng xử lý kiểm định tại cửa hàng</strong>:
+                        <br>&bull; <code>BAN_LAI</code>: Cộng lại tồn kho bán (<code>soLuongTon</code>).
+                        <br>&bull; <code>HANG_LOI</code>: Chuyển vào kho lỗi (<code>soLuongSpLoi</code>).
+                        <br>&bull; <code>TU_CHOI</code>: Tạo vận đơn <code>GHN_REJECT_RETURN</code> gửi trả lại sản phẩm cho khách hàng.
+                    </li>
+                </ul>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-</div>
+        <!-- LOG ITEM 6: PHASE 1 - 2 -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>6. PHASE 1 & 2 - RÀNG BUỘC HẠN ĐỔI TRẢ 7 NGÀY & KHO LỖI</span>
+                <span class="tag">PHASE 1 & 2</span>
+            </div>
+            <div class="log-body">
+                <ul class="log-list">
+                    <li><strong>Quản lý kho lỗi</strong>: Lưu trường <code>soLuongSpLoi</code> trong <code>SanPhamChiTiet</code> không thay đổi cấu trúc bảng CSDL (0 ALTER TABLE).</li>
+                    <li><strong>Hạn đổi trả 7 ngày</strong>: Lấy mốc thời gian giao hàng từ <code>EditLog</code> và chỉ tính hạn 7 ngày nếu có log do khách hàng (<code>KHACH_HANG</code>) tự bấm xác nhận <code>hoan_thanh</code>.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="text-center text-muted mt-4 pt-3 border-top" style="font-size: 13px;">
+            <p class="mb-0">Dự Án SMASH-VN Badminton Shop &copy; 2026 | Tệp nhật ký hiển thị rõ ràng, dễ đọc.</p>
+        </div>
+
+    </div>
+
 </body>
 </html>
-
