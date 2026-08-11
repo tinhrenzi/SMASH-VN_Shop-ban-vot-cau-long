@@ -136,7 +136,7 @@
                                     <tr th:each="bt, iterStat : ${danhSachBienThe}">
                                          <td class="text-center" th:text="${iterStat.count}">1</td>
                                          <td class="text-center">
-                                             <img th:src="@{'/uploads/product/' + ${bt.hinhAnhSanPham}}" alt="Ảnh SP" style="width: 50px; height: 50px; object-fit: contain; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff;">
+                                              <img th:src="@{${bt.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh SP" style="width: 50px; height: 50px; object-fit: contain; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff;">
                                          </td>
                                         <td>
                                             <strong class="text-primary" th:text="${bt.phanLoaiHienThi}">Mặc định</strong>

@@ -810,7 +810,8 @@
                                                          <div class="description__container" style="display: flex; align-items: center;">
                                                              <div class="description__img-wrap" style="width: 80px; height: 80px; margin-right: 15px; border-radius: 6px; overflow: hidden; border: 1px solid #eee;">
                                                                  <img class="u-img-fluid"
-                                                                      th:src="@{'/uploads/product/' + ${item.sanPhamChiTiet.sanPham.moTa}}"
+                                                                      th:src="@{${item.sanPhamChiTiet.hinhAnhUrl}}"
+                                                                      onerror="this.onerror=null; this.src='/images/placeholder.png';"
                                                                       alt="Product Image"
                                                                       style="width: 100%; height: 100%; object-fit: cover;">
                                                              </div>

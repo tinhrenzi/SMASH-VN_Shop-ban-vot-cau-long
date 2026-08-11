@@ -10,5 +10,7 @@ public interface EditLogRepository extends JpaRepository<EditLog, Integer> {
 
     List<EditLog> findByTenBangAndIdBanGhiOrderByThoiGianAsc(String tenBang, Integer idBanGhi);
 
+    List<EditLog> findByTenBangAndIdBanGhiInOrderByThoiGianDesc(String tenBang, List<Integer> idBanGhis);
+
     List<EditLog> findByTaiKhoan_Id(Integer id);
 }

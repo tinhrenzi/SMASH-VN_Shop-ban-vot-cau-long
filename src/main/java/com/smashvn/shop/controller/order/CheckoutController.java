@@ -355,7 +355,7 @@ public class CheckoutController {
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
         boolean hasDefaultAddress = false;
-        if (idNguoiDung != null) {
+        if (activeAccount && idNguoiDung != null) {
             com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
             Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
             listDiaChi = userAddressService.layDanhSachDiaChi(idKhachHang);

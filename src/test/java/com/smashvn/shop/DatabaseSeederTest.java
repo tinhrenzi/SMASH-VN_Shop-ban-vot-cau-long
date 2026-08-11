@@ -62,6 +62,9 @@ public class DatabaseSeederTest {
     @Autowired
     private HoaDonRepository hoaDonRepository;
 
+    @Autowired
+    private com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
+
     private final Map<String, ThuongHieu> brandCache = new HashMap<>();
     private final Map<String, DanhMuc> categoryCache = new HashMap<>();
     private final Map<String, ThuocTinh> attributeCache = new HashMap<>();
@@ -684,6 +687,11 @@ public class DatabaseSeederTest {
                         allGioHang.stream()
                                 .filter(ghct -> ghct.getSanPhamChiTiet() != null && ghct.getSanPhamChiTiet().getId().equals(spct.getId()))
                                 .forEach(gioHangChiTietRepository::delete);
+
+                        List<HoaDonChiTiet> hdcts = hoaDonChiTietRepository.findAll().stream()
+                                .filter(hdct -> hdct.getSanPhamChiTiet() != null && hdct.getSanPhamChiTiet().getId().equals(spct.getId()))
+                                .collect(Collectors.toList());
+                        hoaDonChiTietRepository.deleteAll(hdcts);
 
                         sanPhamChiTietRepository.delete(spct);
                     }

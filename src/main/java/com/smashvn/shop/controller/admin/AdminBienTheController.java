@@ -143,22 +143,48 @@ public class AdminBienTheController {
         }
     }
 
-    // 6. API Nhập Lô Mới Cho Biến Thể Đã Tồn Tại
+    // 6. API Nhập Hàng Cho Biến Thể Đã Tồn Tại
     @PostMapping("/nhap-lo")
     public String xuLyNhapLoMoi(@PathVariable("idSanPham") Integer idSanPham,
                                 @RequestParam("representativeSpctId") Integer representativeSpctId,
                                 @RequestParam("soLuongNhap") Integer soLuongNhap,
                                 @RequestParam("giaNhap") BigDecimal giaNhap,
+                                @RequestParam(value = "ghiChu", required = false) String ghiChu,
                                 jakarta.servlet.http.HttpSession session,
                                 RedirectAttributes redirectAttributes) {
         try {
             Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-            inventoryLotService.nhapLoMoi(representativeSpctId, soLuongNhap, giaNhap, idNguoiDung);
-            redirectAttributes.addFlashAttribute("success", "Nhập lô mới thành công!");
+            inventoryLotService.nhapLoMoi(representativeSpctId, soLuongNhap, giaNhap, idNguoiDung, ghiChu);
+            redirectAttributes.addFlashAttribute("success", "Nhập hàng thành công và đã cập nhật giá vốn bình quân!");
             return "redirect:/admin/san-pham/sua/" + idSanPham + "?tab=lo";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi nhập lô: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Lỗi nhập hàng: " + e.getMessage());
             return "redirect:/admin/san-pham/sua/" + idSanPham + "?tab=lo";
+        }
+    }
+
+    // 7. API Lấy Chi Tiết Phếu Nhập Dùng Cho Modal Admin
+    @org.springframework.web.bind.annotation.GetMapping("/phieu-nhap/{idPhieuNhap}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<?> getChiTietPhieuNhap(@PathVariable("idPhieuNhap") Integer idPhieuNhap) {
+        try {
+            com.smashvn.shop.dto.inventory.PhieuNhapDetailDTO dto = inventoryLotService.getPhieuNhapDetail(idPhieuNhap);
+            return org.springframework.http.ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // 8. API Lấy Lịch Sử Nhập Hàng & Summary Cho 1 Biến Thể Cụ Thể
+    @org.springframework.web.bind.annotation.GetMapping("/bien-the/{idSpct}/lich-su-nhap")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<?> getLichSuNhapBySpct(@PathVariable("idSpct") Integer idSpct) {
+        try {
+            com.smashvn.shop.dto.inventory.BienTheImportSummaryDTO summary = inventoryLotService.getSummaryBySpct(idSpct);
+            java.util.List<com.smashvn.shop.dto.inventory.PhieuNhapChiTietDTO> history = inventoryLotService.getLichSuPhieuNhapBySpct(idSpct);
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of("summary", summary, "history", history));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }
     }
 

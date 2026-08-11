@@ -105,6 +105,28 @@ public class SanPham {
                 .orElse("2027/01/01 00:00:00");
     }
 
+    public java.math.BigDecimal getMinGiaBan() {
+        if (sanPhamChiTiets == null || sanPhamChiTiets.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        return sanPhamChiTiets.stream()
+                .map(SanPhamChiTiet::getGiaBan)
+                .filter(java.util.Objects::nonNull)
+                .min(java.math.BigDecimal::compareTo)
+                .orElse(java.math.BigDecimal.ZERO);
+    }
+
+    public java.math.BigDecimal getMinGiaNhap() {
+        if (sanPhamChiTiets == null || sanPhamChiTiets.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        return sanPhamChiTiets.stream()
+                .map(SanPhamChiTiet::getGiaNhap)
+                .filter(java.util.Objects::nonNull)
+                .min(java.math.BigDecimal::compareTo)
+                .orElse(java.math.BigDecimal.ZERO);
+    }
+
     @Column(name = "so_luot_danh_gia", nullable = false)
     private Integer soDanhGia = 0;
 

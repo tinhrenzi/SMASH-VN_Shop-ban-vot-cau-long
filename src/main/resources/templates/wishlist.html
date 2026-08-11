@@ -101,7 +101,7 @@
 								    <div class="w-r__container">
 								        <div class="w-r__wrap-1">
 								            <div class="table-p__img-wrap">
-								                <img class="u-img-fluid" th:src="@{'/uploads/product/' + ${item.hinhAnh}}" alt="">
+								                <img class="u-img-fluid" th:src="@{${item.hinhAnh != null && (item.hinhAnh.startsWith('/') || item.hinhAnh.startsWith('http')) ? item.hinhAnh : (item.hinhAnh != null && item.hinhAnh.startsWith('uploads/') ? '/' + item.hinhAnh : '/uploads/product/' + item.hinhAnh)}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="">
 								            </div>
 								            <div class="w-r__info">
 								                <span class="w-r__name">

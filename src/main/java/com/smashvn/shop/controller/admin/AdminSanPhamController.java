@@ -1,5 +1,7 @@
 package com.smashvn.shop.controller.admin;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,17 +10,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import java.util.List;
 
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
-import com.smashvn.shop.service.admin.AdminSanPhamService;
 import com.smashvn.shop.service.admin.AdminBienTheService;
+import com.smashvn.shop.service.admin.AdminSanPhamService;
 import com.smashvn.shop.service.inventory.InventoryLotService;
-
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -34,6 +34,7 @@ public class AdminSanPhamController {
     private final ThuongHieuRepository thuongHieuRepository;
     private final AdminSanPhamService adminSanPhamService;
     private final AdminBienTheService adminBienTheService;
+    private final InventoryLotService inventoryLotService;
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
@@ -92,8 +93,6 @@ public class AdminSanPhamController {
         model.addAttribute("listKichThuocTrangPhuc", com.smashvn.shop.constant.SanPhamAttributeConfig.WHITELIST_KICH_THUOC_TRANG_PHUC);
     }
 
-    private final InventoryLotService inventoryLotService;
-
     @GetMapping("/sua/{id}")
     public String hienThiFormSua(@PathVariable("id") Integer id, Model model) {
         SanPham sp = sanPhamRepository.findById(id).orElseThrow();
@@ -119,6 +118,7 @@ public class AdminSanPhamController {
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(id));
         model.addAttribute("groupVariants", inventoryLotService.calculateAggregatedVariants(id));
         model.addAttribute("lotSummaries", inventoryLotService.calculateLotSummaries(id));
+        model.addAttribute("lichSuNhapHang", inventoryLotService.getLichSuNhapHang(id));
         model.addAttribute("categoryAttributes", sp.getDanhMuc().getThuocTinhList());
 
         java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
@@ -132,7 +132,6 @@ public class AdminSanPhamController {
 
         return "admin/sanpham-edit";
     }
-
 
     @PostMapping("/sua/{id}")
     public String xuLySuaSanPham(@PathVariable("id") Integer idSanPham,
@@ -173,6 +172,36 @@ public class AdminSanPhamController {
             return "redirect:/admin/san-pham?moBanLaiThanhCong";
         } catch (Exception e) {
             return "redirect:/admin/san-pham?loiMoBanLai";
+        }
+    }
+
+    // ─── API: lịch sử nhập hàng theo biến thể ───────────────────────────────
+    @GetMapping("/bien-the/{idSpct}/lich-su-nhap")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<?> getLichSuNhapBySpct(
+            @PathVariable("idSpct") Integer idSpct) {
+        try {
+            var summary = inventoryLotService.getSummaryBySpct(idSpct);
+            var history = inventoryLotService.getLichSuPhieuNhapBySpct(idSpct);
+            return org.springframework.http.ResponseEntity.ok(
+                    java.util.Map.of("summary", summary, "history", history));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ─── API: chi tiết phiếu nhập ────────────────────────────────────────────
+    @GetMapping("/phieu-nhap/{idPhieuNhap}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<?> getChiTietPhieuNhap(
+            @PathVariable("idPhieuNhap") Integer idPhieuNhap) {
+        try {
+            var dto = inventoryLotService.getPhieuNhapDetail(idPhieuNhap);
+            return org.springframework.http.ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", e.getMessage()));
         }
     }
 }

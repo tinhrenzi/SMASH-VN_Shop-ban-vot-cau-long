@@ -167,7 +167,7 @@
                                             <div class="mt-3 p-3 bg-light rounded-3 border d-flex align-items-center gap-4" th:if="${bt.hinhAnhSanPham != null}">
                                                 <div th:if="${bt.hinhAnhSanPham != null}" id="currentImageArea" class="d-flex align-items-center gap-2">
                                                     <small class="text-muted fw-semibold">Ảnh hiện tại:</small>
-                                                    <img th:src="@{'/uploads/product/' + ${bt.hinhAnhSanPham}}" alt="Ảnh SP" style="height: 70px; width: 70px; object-fit: contain; padding: 4px; background: #fff; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                    <img th:src="@{${bt.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh SP" style="height: 70px; width: 70px; object-fit: contain; padding: 4px; background: #fff; border-radius: 8px; border: 1px solid #e5e7eb;">
                                                 </div>
                                                 <div id="imagePreviewContainer" style="display: none;" class="d-flex align-items-center gap-2">
                                                     <small class="text-muted fw-semibold">Xem trước ảnh mới:</small>

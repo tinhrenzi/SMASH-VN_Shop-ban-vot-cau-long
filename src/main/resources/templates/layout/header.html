@@ -451,7 +451,7 @@
             html += '<div class="popular-title"><i class="fas fa-star"></i> Sản phẩm được tìm nhiều</div>';
             data.sanPhamNoiBat.forEach(function(sp) {
                 html += '<a href="/san-pham/' + sp.id + '" class="autocomplete-item">' +
-                    '<img src="/uploads/product/' + (sp.hinhAnh || 'default.png') + '" onerror="this.src=\'/images/placeholder.png\'">' +
+                    '<img src="' + resolveHeaderImg(sp.hinhAnh) + '" onerror="this.src=\'/images/placeholder.png\'">' +
                     '<div class="autocomplete-info">' +
                         '<div class="autocomplete-name">' + sp.tenSanPham + '</div>' +
                         '<div class="autocomplete-brand">' + sp.thuongHieu + ' · ' + sp.danhMuc + '</div>' +
@@ -497,8 +497,7 @@
                     }
                     var html = data.map(function(item) {
                         return '<a href="/san-pham/' + item.id + '" class="autocomplete-item">' +
-                            '<img src="/uploads/product/' + (item.hinhAnh || 'default.png') +
-                            '" onerror="this.src=\'/images/placeholder.png\'">' +
+                            '<img src="' + resolveHeaderImg(item.hinhAnh) + '" onerror="this.src=\'/images/placeholder.png\'">' +
                             '<div class="autocomplete-info">' +
                                 '<div class="autocomplete-name">' + highlightMatch(item.tenSanPham, query) + '</div>' +
                                 '<div class="autocomplete-brand">' + item.thuongHieu + ' \u00b7 ' + item.danhMuc + '</div>' +

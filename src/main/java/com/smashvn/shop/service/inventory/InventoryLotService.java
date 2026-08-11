@@ -26,15 +26,31 @@ public class InventoryLotService {
 
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final com.smashvn.shop.repository.EditLogRepository editLogRepository;
+    private final com.smashvn.shop.repository.PhieuNhapRepository phieuNhapRepository;
+    private final com.smashvn.shop.repository.PhieuNhapChiTietRepository phieuNhapChiTietRepository;
+    private final com.smashvn.shop.repository.NhanVienRepository nhanVienRepository;
     private final AuditService auditService;
 
     @Value("${inventory.lot.enabled-from:2026-08-07T08:30:00}")
     private String enabledFromStr;
 
     /**
-     * Phân bổ tồn kho FIFO hai giai đoạn (Two-Phase Allocation):
-     * Giai đoạn 1: Sắp xếp idSanPham tăng dần, khóa PESSIMISTIC_WRITE, lập kế hoạch phân bổ trong bộ nhớ.
-     * Giai đoạn 2: Nếu TẤT CẢ mặt hàng ĐỦ TỒN mới thực hiện trừ kho DB. Nếu thiếu kho, trả INSUFFICIENT_STOCK và giữ nguyên DB.
+     * Sinh mã phiếu nhập tự động theo định dạng PN000001, PN000002...
+     */
+    public synchronized String generateMaPhieuNhap() {
+        Integer maxId = phieuNhapRepository.findMaxId();
+        int nextId = (maxId != null) ? maxId + 1 : 1;
+        String code = String.format("PN%06d", nextId);
+        while (phieuNhapRepository.findByMaPhieuNhap(code).isPresent()) {
+            nextId++;
+            code = String.format("PN%06d", nextId);
+        }
+        return code;
+    }
+
+    /**
+     * Phân bổ tồn kho FIFO hai giai đoạn (Two-Phase Allocation)
      */
     @Transactional
     public AllocationResult allocateFifo(List<OrderItemRequest> itemRequests) {
@@ -42,7 +58,6 @@ public class InventoryLotService {
             return new AllocationResult(AllocationStatus.SUCCESS, Collections.emptyList(), "Danh sách yêu cầu rỗng");
         }
 
-        // Step 1: Tra cứu SPCT đại diện để lấy danh sách idSanPham
         Map<Integer, SanPhamChiTiet> repSpctMap = new HashMap<>();
         for (OrderItemRequest req : itemRequests) {
             SanPhamChiTiet rep = sanPhamChiTietRepository.findById(req.getRepresentativeSpctId())
@@ -50,14 +65,12 @@ public class InventoryLotService {
             repSpctMap.put(req.getRepresentativeSpctId(), rep);
         }
 
-        // Step 2: Sắp xếp danh sách idSanPham tăng dần để tránh Deadlock
         List<Integer> sortedProductIds = repSpctMap.values().stream()
                 .map(spct -> spct.getSanPham().getId())
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
 
-        // Step 3: Khóa PESSIMISTIC_WRITE từng SanPham cha theo thứ tự ID tăng dần
         Map<Integer, SanPham> lockedProductMap = new HashMap<>();
         for (Integer spId : sortedProductIds) {
             SanPham sp = sanPhamRepository.findByIdWithLock(spId)
@@ -65,7 +78,6 @@ public class InventoryLotService {
             lockedProductMap.put(spId, sp);
         }
 
-        // Step 4: GIAI ĐOẠN 1 - Lập kế hoạch phân bổ trong bộ nhớ (Memory Allocation Plan)
         List<LotAllocation> plannedAllocations = new ArrayList<>();
         boolean hasInsufficientStock = false;
         StringBuilder errorMessageBuilder = new StringBuilder();
@@ -75,11 +87,10 @@ public class InventoryLotService {
             String targetAttrKey = buildAttributeKey(repSpct);
             Integer productId = repSpct.getSanPham().getId();
 
-            // Tải danh sách kandidat SPCT còn bán thuộc sản phẩm đó
             List<SanPhamChiTiet> candidates = sanPhamChiTietRepository.findActiveCandidatesBySanPhamId(productId);
             List<SanPhamChiTiet> matchingCandidates = candidates.stream()
                     .filter(c -> buildAttributeKey(c).equals(targetAttrKey))
-                    .sorted(Comparator.comparing(SanPhamChiTiet::getId)) // FIFO theo ID (Lô cũ tạo trước có ID nhỏ hơn)
+                    .sorted(Comparator.comparing(SanPhamChiTiet::getId))
                     .collect(Collectors.toList());
 
             int totalAvailableStock = matchingCandidates.stream()
@@ -93,7 +104,6 @@ public class InventoryLotService {
                 continue;
             }
 
-            // Lập kế hoạch phân bổ từng lô cho mặt hàng này
             int remainingNeeded = req.getQuantity();
             for (SanPhamChiTiet candidate : matchingCandidates) {
                 if (remainingNeeded <= 0) break;
@@ -111,13 +121,11 @@ public class InventoryLotService {
             }
         }
 
-        // GIAI ĐOẠN 2: Kiểm tra kết quả lập kế hoạch
         if (hasInsufficientStock) {
             log.warn("[InventoryLotService] Phân bổ FIFO thất bại do thiếu kho: {}", errorMessageBuilder.toString());
             return new AllocationResult(AllocationStatus.INSUFFICIENT_STOCK, Collections.emptyList(), errorMessageBuilder.toString().trim());
         }
 
-        // Áp dụng trừ tồn kho thực tế vào Database nếu TẤT CẢ mặt hàng đủ tồn
         for (LotAllocation alloc : plannedAllocations) {
             SanPhamChiTiet spct = alloc.allocatedSpct();
             int newStock = spct.getSoLuongTon() - alloc.quantityAllocated();
@@ -134,12 +142,8 @@ public class InventoryLotService {
         hoanKhoHangLoat(requests);
     }
 
-    /**
-     * Hoàn kho hàng loạt: Sắp xếp idSanPham tăng dần, khóa PESSIMISTIC_WRITE, cộng lại tồn kho.
-     */
     @Transactional
     public void hoanKhoHangLoat(List<RestockItemRequest> requests) {
-
         if (requests == null || requests.isEmpty()) return;
 
         List<RestockItemRequest> validRequests = requests.stream()
@@ -148,7 +152,6 @@ public class InventoryLotService {
 
         if (validRequests.isEmpty()) return;
 
-        // Step 1: Tra cứu danh sách SPCT
         Map<Integer, SanPhamChiTiet> spctMap = new HashMap<>();
         for (RestockItemRequest req : validRequests) {
             SanPhamChiTiet spct = sanPhamChiTietRepository.findById(req.getIdSanPhamChiTiet())
@@ -156,19 +159,16 @@ public class InventoryLotService {
             spctMap.put(req.getIdSanPhamChiTiet(), spct);
         }
 
-        // Step 2: Sắp xếp danh sách idSanPham tăng dần
         List<Integer> sortedProductIds = spctMap.values().stream()
                 .map(spct -> spct.getSanPham().getId())
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
 
-        // Step 3: Khóa PESSIMISTIC_WRITE từng sản phẩm cha
         for (Integer spId : sortedProductIds) {
             sanPhamRepository.findByIdWithLock(spId);
         }
 
-        // Step 4: Thực hiện cộng hoàn tồn kho
         for (RestockItemRequest req : validRequests) {
             SanPhamChiTiet spct = spctMap.get(req.getIdSanPhamChiTiet());
             int oldStock = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
@@ -179,80 +179,204 @@ public class InventoryLotService {
     }
 
     /**
-     * Nhập lô mới cho biến thể đã tồn tại: Lấy LocalDateTime.now() 1 lần duy nhất cho toàn bộ SPCT đợt này.
+     * Nhập hàng cho biến thể: Tạo PhieuNhap + PhieuNhapChiTiet và tính lại Giá vốn bình quân (Weighted Average Cost)
      */
     @Transactional
     public SanPhamChiTiet nhapLoMoi(Integer representativeSpctId, int soLuongNhap, BigDecimal giaNhap, Integer idNguoiDung) {
+        return nhapLoMoi(representativeSpctId, soLuongNhap, giaNhap, idNguoiDung, null);
+    }
+
+    @Transactional
+    public SanPhamChiTiet nhapLoMoi(Integer representativeSpctId, int soLuongNhap, BigDecimal giaNhap, Integer idNguoiDung, String ghiChu) {
         if (soLuongNhap <= 0) {
             throw new IllegalArgumentException("Số lượng nhập phải lớn hơn 0");
         }
+        if (giaNhap == null || giaNhap.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Giá nhập phải lớn hơn 0");
+        }
 
-        SanPhamChiTiet repSpct = sanPhamChiTietRepository.findById(representativeSpctId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể đại diện ID: " + representativeSpctId));
+        SanPhamChiTiet targetSpct = sanPhamChiTietRepository.findById(representativeSpctId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể ID: " + representativeSpctId));
 
-        SanPham sanPham = repSpct.getSanPham();
-        // Khóa sản phẩm cha
+        SanPham sanPham = targetSpct.getSanPham();
         sanPhamRepository.findByIdWithLock(sanPham.getId());
 
-        LocalDateTime thoiGianNhap = LocalDateTime.now();
-
-        SanPhamChiTiet newLotSpct = new SanPhamChiTiet();
-        newLotSpct.setSanPham(sanPham);
-        newLotSpct.setGiaBan(repSpct.getGiaBan());
-        newLotSpct.setGiaNhap(giaNhap);
-        newLotSpct.setSoLuongTon(soLuongNhap);
-        newLotSpct.setTrangThaiValue(repSpct.getTrangThaiValue() != null ? repSpct.getTrangThaiValue() : true);
-        newLotSpct.setNgayTao(thoiGianNhap);
-        newLotSpct.setNgayCapNhat(thoiGianNhap);
-
-        // Tự động kế thừa hình ảnh từ biến thể đại diện
-        String mainImg = repSpct.getHinhAnhSanPham();
-        if (mainImg != null && !mainImg.isBlank()) {
-            newLotSpct.setHinhAnhSanPham(mainImg);
+        // Lấy NhanVien
+        NhanVien nhanVien = null;
+        if (idNguoiDung != null) {
+            nhanVien = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
         }
-
-        if (repSpct.getHinhAnhSanPhams() != null && !repSpct.getHinhAnhSanPhams().isEmpty()) {
-            for (com.smashvn.shop.entity.HinhAnhSanPham oldImg : repSpct.getHinhAnhSanPhams()) {
-                com.smashvn.shop.entity.HinhAnhSanPham newImg = new com.smashvn.shop.entity.HinhAnhSanPham();
-                newImg.setSanPhamChiTiet(newLotSpct);
-                newImg.setUrlHinhAnh(oldImg.getUrlHinhAnh());
-                newImg.setLaAnhChinh(oldImg.getLaAnhChinh());
-                newImg.setThuTu(oldImg.getThuTu());
-                newLotSpct.getHinhAnhSanPhams().add(newImg);
+        if (nhanVien == null) {
+            List<NhanVien> allNv = nhanVienRepository.findAll();
+            if (!allNv.isEmpty()) {
+                nhanVien = allNv.get(0);
             }
         }
-
-        // Copy thuộc tính từ representativeSpct
-        Set<SanPhamChiTietThuocTinh> newAttrSet = new java.util.LinkedHashSet<>();
-        if (repSpct.getSanPhamChiTietThuocTinhs() != null) {
-            for (SanPhamChiTietThuocTinh oldAttr : repSpct.getSanPhamChiTietThuocTinhs()) {
-                SanPhamChiTietThuocTinh newAttr = new SanPhamChiTietThuocTinh();
-                newAttr.setSanPhamChiTiet(newLotSpct);
-                newAttr.setThuocTinh(oldAttr.getThuocTinh());
-                newAttr.setGiaTri(oldAttr.getGiaTri());
-                newAttrSet.add(newAttr);
-            }
+        if (nhanVien == null) {
+            throw new IllegalStateException("Không tìm thấy nhân viên thực hiện nhập hàng");
         }
-        newLotSpct.setSanPhamChiTietThuocTinhs(newAttrSet);
 
-        SanPhamChiTiet savedSpct = sanPhamChiTietRepository.save(newLotSpct);
+        LocalDateTime now = LocalDateTime.now();
+        String maPN = generateMaPhieuNhap();
 
+        BigDecimal thanhTien = giaNhap.multiply(BigDecimal.valueOf(soLuongNhap));
+
+        PhieuNhap phieuNhap = PhieuNhap.builder()
+                .maPhieuNhap(maPN)
+                .nhanVien(nhanVien)
+                .ngayNhap(now)
+                .tongTien(thanhTien)
+                .ghiChu((ghiChu != null && !ghiChu.isBlank()) ? ghiChu : ("Nhập hàng cho SP " + sanPham.getTenSanPham()))
+                .ngayTao(now)
+                .ngayCapNhat(now)
+                .build();
+
+        PhieuNhapChiTiet pnct = PhieuNhapChiTiet.builder()
+                .phieuNhap(phieuNhap)
+                .sanPhamChiTiet(targetSpct)
+                .soLuong(soLuongNhap)
+                .giaNhap(giaNhap)
+                .thanhTien(thanhTien)
+                .build();
+
+        phieuNhap.getChiTietList().add(pnct);
+        PhieuNhap savedPN = phieuNhapRepository.save(phieuNhap);
+
+        // Tính Giá Vốn Bình Quân Gia Quyền (Weighted Average Purchase Cost)
+        int tonCu = targetSpct.getSoLuongTon() != null ? targetSpct.getSoLuongTon() : 0;
+        int tonMoi = tonCu + soLuongNhap;
+        BigDecimal giaVonCu = targetSpct.getGiaNhap() != null ? targetSpct.getGiaNhap() : BigDecimal.ZERO;
+
+        BigDecimal giaVonMoi;
+        if (tonCu > 0 && giaVonCu.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal totalOldCost = giaVonCu.multiply(BigDecimal.valueOf(tonCu));
+            BigDecimal totalNewCost = giaNhap.multiply(BigDecimal.valueOf(soLuongNhap));
+            giaVonMoi = totalOldCost.add(totalNewCost).divide(BigDecimal.valueOf(tonMoi), 2, java.math.RoundingMode.HALF_UP);
+        } else {
+            giaVonMoi = giaNhap;
+        }
+
+        targetSpct.setSoLuongTon(tonMoi);
+        targetSpct.setGiaNhap(giaVonMoi);
+        targetSpct.setNgayCapNhat(now);
+
+        SanPhamChiTiet savedSpct = sanPhamChiTietRepository.save(targetSpct);
 
         if (idNguoiDung != null) {
-            String note = String.format("Nhập lô mới cho SP '%s' (Rep ID: %d): SL=%d, Giá nhập=%s",
-                    sanPham.getTenSanPham(), representativeSpctId, soLuongNhap, giaNhap);
-            Long recId = savedSpct.getId() != null ? savedSpct.getId().longValue() : 0L;
-            auditService.log(idNguoiDung, "SanPhamChiTiet", recId, "INSERT",
-                    "", giaNhap != null ? giaNhap.toString() : "", "127.0.0.1", note, "ADMIN");
-
+            String note = String.format("Nhập hàng [%s] cho biến thể #%d SP '%s': Thêm SL=%d (Tồn cũ=%d -> Tồn mới=%d), Giá nhập=%s, Giá vốn bình quân mới=%s",
+                    maPN, representativeSpctId, sanPham.getTenSanPham(), soLuongNhap, tonCu, tonMoi, giaNhap, giaVonMoi);
+            auditService.log(idNguoiDung, "SanPhamChiTiet", representativeSpctId.longValue(), "UPDATE",
+                    String.valueOf(tonCu), String.valueOf(tonMoi), "127.0.0.1", note, "ADMIN");
         }
 
-
-
-        log.info("[InventoryLotService] Đã nhập lô mới SPCT #{} cho sản phẩm #{} với timestamp {}",
-                savedSpct.getId(), sanPham.getId(), thoiGianNhap);
+        log.info("[InventoryLotService] Đã nhập hàng [{}] SPCT #{}: SL nhập={}, Giá nhập={}, Tồn cũ {} -> {}, Giá vốn cũ {} -> mới {}",
+                maPN, savedSpct.getId(), soLuongNhap, giaNhap, tonCu, tonMoi, giaVonCu, giaVonMoi);
 
         return savedSpct;
+    }
+
+    /**
+     * Lấy lịch sử các đợt nhập hàng theo PhieuNhapChiTiet cho 1 biến thể cụ thể
+     */
+    @Transactional(readOnly = true)
+    public List<PhieuNhapChiTietDTO> getLichSuPhieuNhapBySpct(Integer idSpct) {
+        if (idSpct == null) return Collections.emptyList();
+
+        List<PhieuNhapChiTiet> list = phieuNhapChiTietRepository.findBySpctIdWithReceiptDetails(idSpct);
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        List<PhieuNhapChiTietDTO> dtos = new ArrayList<>();
+
+        for (PhieuNhapChiTiet pnct : list) {
+            PhieuNhap pn = pnct.getPhieuNhap();
+            SanPhamChiTiet spct = pnct.getSanPhamChiTiet();
+            String phanLoai = spct != null ? spct.getPhanLoaiHienThi() : "";
+            String nhanVienName = (pn != null && pn.getNhanVien() != null) ? pn.getNhanVien().getHoTen() : "N/A";
+
+            PhieuNhapChiTietDTO dto = PhieuNhapChiTietDTO.builder()
+                    .id(pnct.getId())
+                    .idPhieuNhap(pn != null ? pn.getId() : null)
+                    .maPhieuNhap(pn != null ? pn.getMaPhieuNhap() : "N/A")
+                    .ngayNhap(pn != null ? pn.getNgayNhap() : null)
+                    .ngayNhapHienThi(pn != null && pn.getNgayNhap() != null ? pn.getNgayNhap().format(dtf) : "N/A")
+                    .idSpct(idSpct)
+                    .phanLoaiHienThi(phanLoai)
+                    .soLuongNhap(pnct.getSoLuong())
+                    .giaNhap(pnct.getGiaNhap())
+                    .thanhTien(pnct.getThanhTien())
+                    .tenNhanVien(nhanVienName)
+                    .ghiChu(pn != null ? pn.getGhiChu() : "")
+                    .build();
+            dtos.add(dto);
+        }
+        return dtos;
+    }
+
+    /**
+     * Lấy tổng quan (Summary) về tồn kho và lịch sử nhập hàng cho 1 biến thể cụ thể
+     */
+    @Transactional(readOnly = true)
+    public BienTheImportSummaryDTO getSummaryBySpct(Integer idSpct) {
+        if (idSpct == null) return new BienTheImportSummaryDTO(0, BigDecimal.ZERO, BigDecimal.ZERO, 0L, 0L);
+
+        Optional<SanPhamChiTiet> spctOpt = sanPhamChiTietRepository.findById(idSpct);
+        if (spctOpt.isEmpty()) return new BienTheImportSummaryDTO(0, BigDecimal.ZERO, BigDecimal.ZERO, 0L, 0L);
+
+        SanPhamChiTiet spct = spctOpt.get();
+        Long totalImported = phieuNhapChiTietRepository.sumSoLuongNhapBySpctId(idSpct);
+        Long countImportTimes = phieuNhapChiTietRepository.countSoLanNhapBySpctId(idSpct);
+
+        int currentStock = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
+        long sumImported = (totalImported != null && totalImported > 0) ? totalImported : (long) currentStock;
+        long importTimes = (countImportTimes != null && countImportTimes > 0) ? countImportTimes : (currentStock > 0 ? 1L : 0L);
+
+        return BienTheImportSummaryDTO.builder()
+                .tonKhoHienTai(currentStock)
+                .giaVonBinhQuan(spct.getGiaNhap() != null ? spct.getGiaNhap() : BigDecimal.ZERO)
+                .giaBanHienTai(spct.getGiaBan() != null ? spct.getGiaBan() : BigDecimal.ZERO)
+                .tongSoLuongTungNhap(sumImported)
+                .soLanNhapHang(importTimes)
+                .build();
+    }
+
+    /**
+     * Lấy thông tin chi tiết một phiếu nhập (dùng cho Modal xem chi tiết phiếu nhập)
+     */
+    @Transactional(readOnly = true)
+    public PhieuNhapDetailDTO getPhieuNhapDetail(Integer idPhieuNhap) {
+        PhieuNhap pn = phieuNhapRepository.findById(idPhieuNhap)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nhập ID: " + idPhieuNhap));
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String nvName = (pn.getNhanVien() != null) ? pn.getNhanVien().getHoTen() : "N/A";
+
+        List<PhieuNhapDetailDTO.ItemDetail> items = new ArrayList<>();
+        if (pn.getChiTietList() != null) {
+            for (PhieuNhapChiTiet pnct : pn.getChiTietList()) {
+                SanPhamChiTiet spct = pnct.getSanPhamChiTiet();
+                String tenSP = (spct != null && spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "";
+                String phanLoai = spct != null ? spct.getPhanLoaiHienThi() : "";
+
+                items.add(PhieuNhapDetailDTO.ItemDetail.builder()
+                        .idSpct(spct != null ? spct.getId() : null)
+                        .tenSanPham(tenSP)
+                        .phanLoaiHienThi(phanLoai)
+                        .soLuong(pnct.getSoLuong())
+                        .giaNhap(pnct.getGiaNhap())
+                        .thanhTien(pnct.getThanhTien())
+                        .build());
+            }
+        }
+
+        return PhieuNhapDetailDTO.builder()
+                .id(pn.getId())
+                .maPhieuNhap(pn.getMaPhieuNhap())
+                .ngayNhap(pn.getNgayNhap())
+                .ngayNhapHienThi(pn.getNgayNhap() != null ? pn.getNgayNhap().format(dtf) : "N/A")
+                .tenNhanVien(nvName)
+                .ghiChu(pn.getGhiChu())
+                .tongTien(pn.getTongTien())
+                .chiTietList(items)
+                .build();
     }
 
     /**
@@ -381,6 +505,149 @@ public class InventoryLotService {
                     .build();
 
             result.add(dto);
+        }
+
+        return result;
+    }
+
+    /**
+     * Lấy lịch sử nhập hàng thực tế từ PhieuNhapChiTiet hoặc EditLog audit trail cho sản phẩm
+     */
+    @Transactional(readOnly = true)
+    public List<LichSuNhapHangDTO> getLichSuNhapHang(Integer idSanPham) {
+        List<SanPhamChiTiet> spcts = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
+        if (spcts.isEmpty()) return Collections.emptyList();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+        // 1. Ưu tiên lấy dữ liệu từ PhieuNhapChiTiet
+        List<PhieuNhapChiTiet> pncts = phieuNhapChiTietRepository.findBySanPhamIdWithReceiptDetails(idSanPham);
+        if (!pncts.isEmpty()) {
+            List<LichSuNhapHangDTO> result = new ArrayList<>();
+            for (PhieuNhapChiTiet pnct : pncts) {
+                PhieuNhap pn = pnct.getPhieuNhap();
+                SanPhamChiTiet spct = pnct.getSanPhamChiTiet();
+                String phanLoai = spct != null ? spct.getPhanLoaiHienThi() : "";
+                String nvName = (pn != null && pn.getNhanVien() != null) ? pn.getNhanVien().getHoTen() : "Admin";
+
+                LichSuNhapHangDTO dto = LichSuNhapHangDTO.builder()
+                        .id(pnct.getId())
+                        .idPhieuNhap(pn != null ? pn.getId() : null)
+                        .maPhieuNhap(pn != null ? pn.getMaPhieuNhap() : "PN-LEGACY")
+                        .idSpct(spct != null ? spct.getId() : null)
+                        .phanLoaiHienThi(phanLoai)
+                        .thoiGianNhap(pn != null ? pn.getNgayNhap() : null)
+                        .thoiGianHienThi((pn != null && pn.getNgayNhap() != null) ? pn.getNgayNhap().format(dtf) : "N/A")
+                        .soLuongNhap(pnct.getSoLuong())
+                        .giaNhap(pnct.getGiaNhap())
+                        .nguoiThucHien(nvName)
+                        .ghiChu(pn != null ? pn.getGhiChu() : "")
+                        .build();
+                result.add(dto);
+            }
+            return result;
+        }
+
+        // 2. Fallback: Parse dữ liệu từ EditLog
+        Map<Integer, SanPhamChiTiet> spctMap = spcts.stream()
+                .collect(Collectors.toMap(SanPhamChiTiet::getId, s -> s, (s1, s2) -> s1));
+        List<Integer> spctIds = new ArrayList<>(spctMap.keySet());
+
+        List<EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiInOrderByThoiGianDesc("SanPhamChiTiet", spctIds);
+        List<LichSuNhapHangDTO> result = new ArrayList<>();
+
+        for (EditLog logItem : logs) {
+            SanPhamChiTiet spct = spctMap.get(logItem.getIdBanGhi());
+            if (spct == null) continue;
+
+            String phanLoai = spct.getPhanLoaiHienThi();
+            String ghiChu = logItem.getGhiChu() != null ? logItem.getGhiChu() : "";
+
+            int soLuongNhap = 0;
+            Integer tonCu = null;
+            Integer tonMoi = null;
+            BigDecimal giaNhap = spct.getGiaNhap();
+            String maPN = "PN-LEGACY";
+
+            if (ghiChu.contains("[") && ghiChu.contains("]")) {
+                try {
+                    String extracted = ghiChu.substring(ghiChu.indexOf("[") + 1, ghiChu.indexOf("]")).trim();
+                    if (extracted.startsWith("PN")) {
+                        maPN = extracted;
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            try {
+                if (logItem.getGiaTriCu() != null && !logItem.getGiaTriCu().isBlank()
+                        && logItem.getGiaTriMoi() != null && !logItem.getGiaTriMoi().isBlank()) {
+                    tonCu = Integer.parseInt(logItem.getGiaTriCu().trim());
+                    tonMoi = Integer.parseInt(logItem.getGiaTriMoi().trim());
+                    soLuongNhap = Math.max(0, tonMoi - tonCu);
+                }
+            } catch (Exception ignored) {}
+
+            if (ghiChu.contains("Giá nhập=")) {
+                try {
+                    String sub = ghiChu.substring(ghiChu.indexOf("Giá nhập=") + 9).trim();
+                    if (sub.contains(",")) sub = sub.substring(0, sub.indexOf(",")).trim();
+                    if (sub.contains(" ")) sub = sub.substring(0, sub.indexOf(" ")).trim();
+                    if (!sub.isEmpty() && !sub.equalsIgnoreCase("null")) {
+                        giaNhap = new BigDecimal(sub);
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (soLuongNhap <= 0 && ghiChu.contains("SL=")) {
+                try {
+                    String sub = ghiChu.substring(ghiChu.indexOf("SL=") + 3);
+                    if (sub.contains(",")) sub = sub.substring(0, sub.indexOf(","));
+                    if (sub.contains(" ")) sub = sub.substring(0, sub.indexOf(" "));
+                    soLuongNhap = Integer.parseInt(sub.trim());
+                } catch (Exception ignored) {}
+            }
+
+            String nguoiThucHien = logItem.getTaiKhoan() != null ? logItem.getTaiKhoan().getUsername() : "Admin";
+
+            LichSuNhapHangDTO dto = LichSuNhapHangDTO.builder()
+                    .id(logItem.getId())
+                    .idPhieuNhap(null)
+                    .maPhieuNhap(maPN)
+                    .idSpct(spct.getId())
+                    .phanLoaiHienThi(phanLoai)
+                    .thoiGianNhap(logItem.getThoiGian())
+                    .thoiGianHienThi(logItem.getThoiGian() != null ? logItem.getThoiGian().format(dtf) : "N/A")
+                    .soLuongNhap(soLuongNhap > 0 ? soLuongNhap : (tonMoi != null ? tonMoi : (spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)))
+                    .tonCu(tonCu)
+                    .tonMoi(tonMoi)
+                    .giaNhap(giaNhap)
+                    .nguoiThucHien(nguoiThucHien)
+                    .ghiChu(ghiChu)
+                    .build();
+
+            result.add(dto);
+        }
+
+        if (result.isEmpty()) {
+            for (SanPhamChiTiet spct : spcts) {
+                LocalDateTime time = spct.getNgayTao() != null ? spct.getNgayTao() : LocalDateTime.now();
+                LichSuNhapHangDTO dto = LichSuNhapHangDTO.builder()
+                        .id(spct.getId())
+                        .idPhieuNhap(null)
+                        .maPhieuNhap("PN-LEGACY")
+                        .idSpct(spct.getId())
+                        .phanLoaiHienThi(spct.getPhanLoaiHienThi())
+                        .thoiGianNhap(time)
+                        .thoiGianHienThi(time.format(dtf))
+                        .soLuongNhap(spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
+                        .tonCu(0)
+                        .tonMoi(spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
+                        .giaNhap(spct.getGiaNhap())
+                        .nguoiThucHien("Hệ thống")
+                        .ghiChu("Khởi tạo ban đầu")
+                        .build();
+                result.add(dto);
+            }
         }
 
         return result;
