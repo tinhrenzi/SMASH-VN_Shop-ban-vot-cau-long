@@ -310,36 +310,24 @@ public class CheckoutController {
 
 
         List<DonViVanChuyen> listDvvc = donViVanChuyenDAO.findAll().stream()
-                .filter(dv -> {
-                    if (dv.getTenDonVi() == null) {
-                        return false;
-                    }
-                    String tenLower = dv.getTenDonVi().toLowerCase();
-                    return tenLower.contains("giao hàng nhanh") || tenLower.contains("ghn");
-                })
+                .filter(dv -> DonViVanChuyen.isGhnCarrier(dv))
                 .collect(java.util.stream.Collectors.toList());
 
-        // Fallback for tests if Giao Hang Nhanh is not found in database
         if (listDvvc.isEmpty()) {
             listDvvc = donViVanChuyenDAO.findAll().stream()
-                    .filter(dv -> {
-                        if (dv.getTenDonVi() == null) {
-                            return false;
-                        }
-                        String tenLower = dv.getTenDonVi().toLowerCase();
-                        return !tenLower.contains("quầy")
-                                && !tenLower.contains("quay")
-                                && !tenLower.contains("chỗ")
-                                && !tenLower.contains("cho")
-                                && !tenLower.contains("mua")
-                                && !tenLower.contains("tại")
-                                && !tenLower.contains("tai")
-                                && !tenLower.contains("tiết kiệm")
-                                && !tenLower.contains("tiet kiem")
-                                && !tenLower.contains("tietkiem")
-                                && !tenLower.contains("ghtk");
-                    })
+                    .filter(dv -> !DonViVanChuyen.isCounterCarrier(dv))
                     .collect(java.util.stream.Collectors.toList());
+        }
+
+        if (listDvvc.isEmpty()) {
+            DonViVanChuyen defaultGhn = new DonViVanChuyen();
+            defaultGhn.setMaDonVi("GHN");
+            defaultGhn.setTenDonVi("Giao Hàng Nhanh (GHN)");
+            defaultGhn.setHotline("1900 636677");
+            defaultGhn.setWebsite("https://ghn.vn");
+            defaultGhn.setPhiLocal(new java.math.BigDecimal("25000"));
+            defaultGhn.setPhiNationwide(new java.math.BigDecimal("38000"));
+            listDvvc = java.util.List.of(donViVanChuyenDAO.save(defaultGhn));
         }
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
@@ -625,32 +613,32 @@ public class CheckoutController {
             }
         }
 
-        if (idDonViVanChuyen == null) {
-            response.put("trangThai", "loi");
-            response.put("message", "Vui lòng chọn đơn vị vận chuyển.");
-            return ResponseEntity.ok(response);
-        }
-        // Force Giao Hàng Nhanh (GHN) carrier for online orders
-        DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream()
-                .filter(c -> c.getTenDonVi() != null && (
-                        c.getTenDonVi().toLowerCase().contains("giao hàng nhanh") ||
-                        c.getTenDonVi().toLowerCase().contains("ghn")
-                ))
-                .findFirst()
-                .orElse(null);
-        if (dvvc == null) {
+        // Resolve Giao Hàng Nhanh (GHN) carrier for online orders
+        DonViVanChuyen dvvc = null;
+        if (idDonViVanChuyen != null) {
             dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen).orElse(null);
         }
-        if (dvvc == null) {
-            response.put("trangThai", "loi");
-            response.put("message", "Đơn vị vận chuyển không tồn tại.");
-            return ResponseEntity.ok(response);
+        if (dvvc == null || DonViVanChuyen.isCounterCarrier(dvvc)) {
+            dvvc = donViVanChuyenDAO.findAll().stream()
+                    .filter(c -> DonViVanChuyen.isGhnCarrier(c))
+                    .findFirst()
+                    .orElse(null);
         }
-        String tenDv = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toLowerCase() : "";
-        if (tenDv.contains("quầy") || tenDv.contains("quay") || tenDv.contains("chỗ") || tenDv.contains("cho") || tenDv.contains("mua") || tenDv.contains("tại") || tenDv.contains("tai")) {
-            response.put("trangThai", "loi");
-            response.put("message", "Phương thức vận chuyển này không áp dụng cho mua hàng online.");
-            return ResponseEntity.ok(response);
+        if (dvvc == null) {
+            dvvc = donViVanChuyenDAO.findAll().stream()
+                    .filter(c -> !DonViVanChuyen.isCounterCarrier(c))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (dvvc == null) {
+            DonViVanChuyen defaultGhn = new DonViVanChuyen();
+            defaultGhn.setMaDonVi("GHN");
+            defaultGhn.setTenDonVi("Giao Hàng Nhanh (GHN)");
+            defaultGhn.setHotline("1900 636677");
+            defaultGhn.setWebsite("https://ghn.vn");
+            defaultGhn.setPhiLocal(new java.math.BigDecimal("25000"));
+            defaultGhn.setPhiNationwide(new java.math.BigDecimal("38000"));
+            dvvc = donViVanChuyenDAO.save(defaultGhn);
         }
         Integer idDonViVanChuyenResolved = dvvc.getId();
 

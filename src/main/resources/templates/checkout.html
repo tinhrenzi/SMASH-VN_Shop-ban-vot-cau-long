@@ -2169,16 +2169,20 @@
             // Auto-select shipping carrier (GHN) to reduce user steps
             const $carrierSelect = $('#idDonViVanChuyen');
             if ($carrierSelect.length > 0) {
-                const optionsCount = $carrierSelect.find('option:not([disabled])').length;
-                if (optionsCount === 1) {
-                    $carrierSelect.val($carrierSelect.find('option:not([disabled])').first().val()).trigger('change');
-                } else {
-                    const ghnOption = $carrierSelect.find('option').filter(function() {
+                const options = $carrierSelect.find('option');
+                if (options.length > 0) {
+                    let selectedVal = null;
+                    const ghnOption = options.filter(function() {
                         const txt = $(this).text().toUpperCase();
                         return txt.includes('GIAO HÀNG NHANH') || txt.includes('GHN');
                     });
                     if (ghnOption.length > 0) {
-                        $carrierSelect.val(ghnOption.val()).trigger('change');
+                        selectedVal = ghnOption.first().val();
+                    } else {
+                        selectedVal = options.first().val();
+                    }
+                    if (selectedVal) {
+                        $carrierSelect.val(selectedVal).trigger('change');
                     }
                 }
             }

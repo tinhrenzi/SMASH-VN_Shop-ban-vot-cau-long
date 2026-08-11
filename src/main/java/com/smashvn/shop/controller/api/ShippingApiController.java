@@ -38,22 +38,22 @@ public class ShippingApiController {
 
         log.debug("Received request to calculate shipping fee: carrierId={}, districtId={}, wardCode={}, address={}", carrierId, districtId, wardCode, address);
 
-        DonViVanChuyen carrier = adminShippingService.getAllCarriers().stream()
-                .filter(c -> c.getTenDonVi() != null && (
-                        c.getTenDonVi().toLowerCase().contains("giao hàng nhanh") ||
-                        c.getTenDonVi().toLowerCase().contains("ghn")
-                ))
-                .findFirst()
-                .orElse(null);
-        if (carrier == null && carrierId != null) {
+        DonViVanChuyen carrier = null;
+        if (carrierId != null) {
             try {
                 carrier = adminShippingService.getAllCarriers().stream()
                         .filter(c -> c.getId().equals(carrierId))
                         .findFirst()
                         .orElse(null);
             } catch (Exception e) {
-                log.warn("Invalid or errored carrierId: {}, using null default", carrierId, e);
+                log.warn("Invalid or errored carrierId: {}", carrierId, e);
             }
+        }
+        if (carrier == null) {
+            carrier = adminShippingService.getAllCarriers().stream()
+                    .filter(c -> DonViVanChuyen.isGhnCarrier(c))
+                    .findFirst()
+                    .orElse(null);
         }
 
         BigDecimal fee;

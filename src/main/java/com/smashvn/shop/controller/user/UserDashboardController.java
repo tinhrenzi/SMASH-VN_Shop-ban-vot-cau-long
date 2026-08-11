@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import com.smashvn.shop.entity.HoaDon;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.dto.user.UserProfileEditDto;
+import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.ThongBao;
@@ -30,9 +32,6 @@ import com.smashvn.shop.service.user.UserDashboardService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 @RequestMapping("/user")
@@ -79,8 +78,8 @@ public class UserDashboardController {
 
         List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "webp", "mp4", "webm", "mov");
         List<String> allowedMimeTypes = List.of(
-            "image/jpeg", "image/png", "image/webp",
-            "video/mp4", "video/webm", "video/quicktime"
+                "image/jpeg", "image/png", "image/webp",
+                "video/mp4", "video/webm", "video/quicktime"
         );
 
         long maxFileSize = 10 * 1024 * 1024; // 10MB per file
@@ -297,7 +296,7 @@ public class UserDashboardController {
                 List<Map<String, Object>> guestOrdersList = new java.util.ArrayList<>();
                 for (Object item : list) {
                     if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access && !access.isExpired()) {
-                        Map<String, Object> orderDetail = orderViewService.layChiTietDonHangChoCustomer(access.getOrderId(), null);
+                        Map<String, Object> orderDetail = orderViewService.layChiTietOrder(access.getOrderId(), null);
                         if (orderDetail != null) {
                             guestOrdersList.add(orderDetail);
                         }
@@ -466,8 +465,8 @@ public class UserDashboardController {
 
             // Successfully validated: grant guest access in session
             synchronized (session) {
-                List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses =
-                        (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
+                List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses
+                        = (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
                 if (allowedAccesses == null) {
                     allowedAccesses = new java.util.ArrayList<>();
                 }

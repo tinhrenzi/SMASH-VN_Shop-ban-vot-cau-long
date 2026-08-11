@@ -51,9 +51,7 @@ public class GhnService {
     private DonViVanChuyen getGhnCarrier() {
         try {
             return donViVanChuyenDAO.findAll().stream()
-                    .filter(dv -> dv.getTenDonVi() != null && 
-                            (dv.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH") || 
-                             dv.getTenDonVi().toUpperCase().contains("GHN")))
+                    .filter(dv -> DonViVanChuyen.isGhnCarrier(dv))
                     .findFirst()
                     .orElse(null);
         } catch (Exception e) {

@@ -47,4 +47,34 @@ public class DonViVanChuyen {
 
     @Column(name = "phien_ban")
     private Long version;
+
+    public static boolean isGhnCarrier(DonViVanChuyen dv) {
+        if (dv == null) {
+            return false;
+        }
+        if (dv.getMaDonVi() != null && dv.getMaDonVi().trim().equalsIgnoreCase("GHN")) {
+            return true;
+        }
+        if (dv.getTenDonVi() != null) {
+            String norm = java.text.Normalizer.normalize(dv.getTenDonVi().toLowerCase(), java.text.Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "");
+            return norm.contains("ghn") || norm.contains("giao hang nhanh");
+        }
+        return false;
+    }
+
+    public static boolean isCounterCarrier(DonViVanChuyen dv) {
+        if (dv == null) {
+            return false;
+        }
+        if (dv.getMaDonVi() != null && dv.getMaDonVi().trim().equalsIgnoreCase("TAIQUAY")) {
+            return true;
+        }
+        if (dv.getTenDonVi() != null) {
+            String norm = java.text.Normalizer.normalize(dv.getTenDonVi().toLowerCase(), java.text.Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "");
+            return norm.contains("quay") || norm.contains("cho") || norm.contains("tai quay") || norm.contains("mua tai quay");
+        }
+        return false;
+    }
 }

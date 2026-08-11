@@ -11,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
+import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.GioHang;
@@ -78,6 +79,7 @@ public class GioHangService {
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PhuongThucThanhToanDAO phuongThucThanhToanDAO;
+    private final DonViVanChuyenDAO donViVanChuyenDAO;
     private final ShippingFeeCalculator shippingFeeCalculator;
     private final AdminShippingService adminShippingService;
     private final GhnService ghnService;
@@ -534,13 +536,40 @@ public class GioHangService {
                     .build());
         }
 
-        DonViVanChuyen dvvc = adminShippingService.getAllCarriers().stream()
-                .filter(c -> c.getId().equals(idDonViVanChuyen))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị vận chuyển"));
+        DonViVanChuyen dvvc = null;
+        if (idDonViVanChuyen != null) {
+            dvvc = donViVanChuyenDAO.findById(idDonViVanChuyen).orElse(null);
+        }
+        if (dvvc == null && idDonViVanChuyen != null) {
+            dvvc = adminShippingService.getAllCarriers().stream()
+                    .filter(c -> c.getId().equals(idDonViVanChuyen))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (dvvc == null || DonViVanChuyen.isCounterCarrier(dvvc)) {
+            dvvc = donViVanChuyenDAO.findAll().stream()
+                    .filter(c -> DonViVanChuyen.isGhnCarrier(c))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (dvvc == null) {
+            dvvc = donViVanChuyenDAO.findAll().stream()
+                    .filter(c -> !DonViVanChuyen.isCounterCarrier(c))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (dvvc == null) {
+            DonViVanChuyen defaultGhn = new DonViVanChuyen();
+            defaultGhn.setMaDonVi("GHN");
+            defaultGhn.setTenDonVi("Giao Hàng Nhanh (GHN)");
+            defaultGhn.setHotline("1900 636677");
+            defaultGhn.setWebsite("https://ghn.vn");
+            defaultGhn.setPhiLocal(new BigDecimal("25000"));
+            defaultGhn.setPhiNationwide(new BigDecimal("38000"));
+            dvvc = donViVanChuyenDAO.save(defaultGhn);
+        }
 
-        String carrierName = dvvc.getTenDonVi() != null ? dvvc.getTenDonVi().toUpperCase() : "";
-        boolean isGhn = carrierName.contains("GIAO HÀNG NHANH") || carrierName.contains("GHN");
+        boolean isGhn = DonViVanChuyen.isGhnCarrier(dvvc);
         if (isGhn) {
             if (finalDistrictId == null || finalWardCode == null || finalWardCode.trim().isEmpty()) {
                 throw new IllegalArgumentException("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã (GHN) để sử dụng đơn vị vận chuyển Giao Hàng Nhanh.");
