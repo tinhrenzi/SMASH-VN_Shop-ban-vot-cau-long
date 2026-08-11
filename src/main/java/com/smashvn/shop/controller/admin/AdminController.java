@@ -58,7 +58,7 @@ public class AdminController {
         model.addAttribute("soLuongTaiKhoanNhanVien", nvAccounts.size());
         model.addAttribute("soLuongTaiKhoanKhachHang", khAccounts.size());
 
-        model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
+        model.addAttribute("danhSachSanPham", sanPhamRepository.findAllByOrderByIdDesc());
         model.addAttribute("danhSachChoKhoa", nhanVienRepository.findPendingLockEmployees());
         return "admin/admin-dashboard";
     }

@@ -69,6 +69,29 @@
         .badge--delivered { background-color: #d4edda !important; color: #155724 !important; }
         .badge--cancelled { background-color: #f8d7da !important; color: #721c24 !important; }
         .badge--conflict  { background-color: #ffe5b4 !important; color: #7a4500 !important; }
+
+        /* ===== Table Responsive Fixes ===== */
+        .dash__table-2-wrap {
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+        }
+        .dash__table-2 {
+            width: 100% !important;
+            min-width: 720px !important;
+            border-collapse: collapse !important;
+            table-layout: auto !important;
+        }
+        .dash__table-2 th, .dash__table-2 td {
+            padding: 12px 10px !important;
+            min-width: auto !important;
+            vertical-align: middle !important;
+        }
+        .dash__table-2 th:nth-child(1), .dash__table-2 td:nth-child(1) { width: 15%; white-space: nowrap; }
+        .dash__table-2 th:nth-child(2), .dash__table-2 td:nth-child(2) { width: 17%; white-space: nowrap; }
+        .dash__table-2 th:nth-child(3), .dash__table-2 td:nth-child(3) { width: 33%; }
+        .dash__table-2 th:nth-child(4), .dash__table-2 td:nth-child(4) { width: 12%; white-space: nowrap; }
+        .dash__table-2 th:nth-child(5), .dash__table-2 td:nth-child(5) { width: 13%; white-space: nowrap; }
+        .dash__table-2 th:nth-child(6), .dash__table-2 td:nth-child(6) { width: 10%; white-space: nowrap; text-align: center; }
     </style>
 </head>
 <body class="config">
@@ -217,21 +240,39 @@
                                                     <tbody>
                                                         <tr th:each="order, iterStat : ${orders}">
                                                             <td>
-                                                                <span class="manage-o__text-2 u-c-secondary" th:text="${order.maDonHang != null ? order.maDonHang : '#' + order.id}">DHSVN...</span>
+                                                                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                                                    <span class="manage-o__text-2 u-c-secondary"
+                                                                          th:text="${order.maDonHang != null ? order.maDonHang : '#' + order.id}"
+                                                                          th:data-code="${order.maDonHang != null ? order.maDonHang : '#' + order.id}"
+                                                                          onclick="copyOrderCodeToClipboard(this.getAttribute('data-code'), this)"
+                                                                          th:title="'Click để sao chép: ' + ${order.maDonHang != null ? order.maDonHang : '#' + order.id}"
+                                                                          style="cursor: pointer; font-weight: 700;">DHSVN...</span>
+                                                                    <button type="button"
+                                                                            class="btn-copy-code"
+                                                                            th:data-code="${order.maDonHang != null ? order.maDonHang : '#' + order.id}"
+                                                                            onclick="copyOrderCodeToClipboard(this.getAttribute('data-code'), this)"
+                                                                            title="Sao chép mã đơn hàng"
+                                                                            style="background: none; border: none; padding: 2px 4px; cursor: pointer; color: #888; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;">
+                                                                        <i class="far fa-copy"></i>
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                             <td>
                                                                 <span class="manage-o__text u-c-silver" th:text="${order.date}">26 Oct 2016 09:08:37</span>
                                                             </td>
                                                             <td>
-                                                                <div class="manage-o__products-list">
-                                                                    <div class="manage-o__product-item" th:each="item : ${order.items}" style="display: flex; align-items: center; margin-bottom: 8px; gap: 10px;">
-                                                                        <img th:src="@{${item.imageUrl != null ? item.imageUrl : '/images/' + item.image}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #eee;">
-                                                                        <div style="display: flex; flex-direction: column;">
-                                                                            <span th:text="${item.title}" style="font-size: 13px; font-weight: 600; color: #333; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Product Name</span>
-                                                                            <span style="font-size: 12px; color: #888;" th:text="'Số lượng: ' + ${item.quantity}">Số lượng: 1</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+                                                                 <div class="manage-o__products-list">
+                                                                     <div class="manage-o__product-item" th:each="item : ${order.items}" style="display: flex; align-items: center; margin-bottom: 6px; gap: 10px;">
+                                                                         <img th:src="@{${item.imageUrl != null and !#strings.isEmpty(item.imageUrl) ? item.imageUrl : (item.image != null ? item.image : '/images/placeholder.png')}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh sản phẩm" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; flex-shrink: 0;">
+                                                                         <div style="display: flex; flex-direction: column; min-width: 0;">
+                                                                             <span th:text="${item.title}" th:title="${item.title}" style="font-size: 13px; font-weight: 600; color: #333; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Product Name</span>
+                                                                             <span style="font-size: 12px; color: #888;" th:text="'Số lượng: ' + ${item.quantity}">Số lượng: 1</span>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div th:if="${order.items == null or #lists.isEmpty(order.items)}" style="font-size: 12px; color: #94a3b8; font-style: italic;">
+                                                                         Chi tiết đơn hàng
+                                                                     </div>
+                                                                 </div>
                                                             </td>
                                                             <td>
                                                                 <span class="manage-o__text-2 u-c-secondary" th:text="${#numbers.formatDecimal(order.total, 0, 'COMMA', 0, 'POINT')} + ' đ'">16.000 đ</span>
@@ -423,6 +464,34 @@
             setTimeout(function () {
                 toast.classList.remove('show');
             }, 4000);
+        }
+
+        function copyOrderCodeToClipboard(text, el) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(function() {
+                const icon = el ? (el.querySelector ? (el.querySelector('i') || el) : el) : null;
+                const oldClass = icon ? icon.className : '';
+                if (icon) icon.className = 'fas fa-check text-success';
+                
+                hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                
+                if (icon && oldClass) {
+                    setTimeout(function() {
+                        icon.className = oldClass;
+                    }, 1500);
+                }
+            }).catch(function(err) {
+                console.error('Lỗi khi sao chép:', err);
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                } catch(e) {}
+                document.body.removeChild(textArea);
+            });
         }
     </script>
 

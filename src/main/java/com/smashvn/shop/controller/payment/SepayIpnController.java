@@ -192,8 +192,9 @@ public class SepayIpnController {
         String paymentStatus = order.getPaymentStatus();
         String trangThaiThanhToan = order.getTrangThaiThanhToan();
 
-        // Check 180s expiration for pending orders
-        if ("cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()) || "pending".equalsIgnoreCase(paymentStatus)) {
+        // Check 180s expiration for pending orders (Skip if already paid)
+        boolean isAlreadyPaid = "DA_THANH_TOAN".equalsIgnoreCase(trangThaiThanhToan) || "paid".equalsIgnoreCase(paymentStatus);
+        if (!isAlreadyPaid && ("cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()) || "pending".equalsIgnoreCase(paymentStatus))) {
             if (order.getNgayTao() != null && LocalDateTime.now().isAfter(order.getNgayTao().plusSeconds(180))) {
                 gioHangService.expirePendingOrder(order);
                 paymentStatus = "expired";

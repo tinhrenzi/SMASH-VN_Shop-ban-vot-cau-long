@@ -248,6 +248,32 @@ public class GioHangController {
         return ResponseEntity.ok(response);
     }
 
+    // HÀM 4.5 MỚI: XÓA NHIỀU SẢN PHẨM BẰNG AJAX
+    @PostMapping("/api/xoa-nhieu")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> xoaNhieuSanPhamAjax(
+            @RequestParam(value = "selectedItemIds", required = false) List<Integer> selectedItemIds,
+            HttpSession session) {
+
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+
+        try {
+            Map<String, Object> result;
+            if (!activeAccount) {
+                result = guestCartService.xoaNhieuKhoiGuestCart(session, selectedItemIds);
+            } else {
+                result = gioHangService.xoaNhieuSanPhamKhoiGio(selectedItemIds, idNguoiDung);
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> errResp = new HashMap<>();
+            errResp.put("trangThai", "error");
+            errResp.put("thongBao", "Không thể xóa các sản phẩm đã chọn");
+            return ResponseEntity.ok(errResp);
+        }
+    }
+
     // HÀM 5: CẬP NHẬT SỐ LƯỢNG (Dùng cho AJAX trong cart.html)
     @PostMapping("/cap-nhat")
     @ResponseBody

@@ -1,13 +1,91 @@
         <header class="header--style-1">
-            <style>
-                .gl-inline {
-                    align-items: flex-start !important;
-                }
-            </style>
+            <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+            <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" />
             <div id="csrf-token-holder" 
                  th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 
                  th:data-csrf-header="${_csrf != null ? _csrf.headerName : ''}" 
                  style="display:none;"></div>
+            <style>
+                .gl-inline {
+                    align-items: flex-start !important;
+                }
+
+                .has-dropdown > .mini-cart,
+                .floating-cart-dropdown {
+                    max-height: 460px !important;
+                    width: 380px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    padding: 16px !important;
+                    box-sizing: border-box !important;
+                }
+
+                .mini-product-container {
+                    overflow-y: auto !important;
+                    min-height: 0 !important;
+                    max-height: 220px !important;
+                    padding-right: 4px !important;
+                }
+
+                .card-mini-product {
+                    padding: 10px 12px !important;
+                    margin-bottom: 10px !important;
+                    border-radius: 6px !important;
+                }
+
+                .mini-product-stat {
+                    flex: 0 0 auto !important;
+                    background: #fff !important;
+                    padding-top: 10px !important;
+                    border-top: 1px solid #f0f0f0 !important;
+                }
+
+                .mini-action {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 8px !important;
+                    width: 100% !important;
+                    margin: 0 auto !important;
+                }
+
+                .mini-action > * {
+                    width: 100% !important;
+                    box-sizing: border-box !important;
+                }
+
+                .mini-cart .js-mini-cart-checkout-btn,
+                .mini-cart .mini-link,
+                .mini-cart .btn--e-brand-b-2,
+                .mini-cart .btn--e-transparent-secondary-b-2 {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                    min-height: 40px !important;
+                    padding: 10px 16px !important;
+                    box-sizing: border-box !important;
+                    font-family: inherit !important;
+                    font-size: 13px !important;
+                    font-weight: 700 !important;
+                    line-height: 1.2 !important;
+                    text-align: center !important;
+                    cursor: pointer !important;
+                    border-radius: 6px !important;
+                    margin-bottom: 0 !important;
+                }
+
+                .js-mini-cart-checkout-btn {
+                    appearance: none;
+                    -webkit-appearance: none;
+                    border: 0 !important;
+                    background-color: #ff4500 !important;
+                    color: #ffffff !important;
+                }
+
+                .js-mini-cart-checkout-btn:hover {
+                    background-color: #e03d00 !important;
+                }
+            </style>
 
             <!--====== Điều hướng 1 ======-->
             <nav class="primary-nav primary-nav-wrapper--border">
@@ -278,7 +356,7 @@
 									                <span class="subtotal-value" id="mini-cart-total">0 đ</span>
 									            </div>
 									            <div class="mini-action">
-									                <a class="mini-link btn--e-brand-b-2" th:href="@{/checkout}">THANH TOÁN</a>
+									                <button type="button" class="mini-link btn--e-brand-b-2 js-mini-cart-checkout-btn">THANH TOÁN</button>
 									                <a class="mini-link btn--e-transparent-secondary-b-2" th:href="@{/gio-hang}">XEM GIỎ HÀNG</a>
 									            </div>
 									        </div>
@@ -310,7 +388,7 @@
 			                <span class="subtotal-value" id="floating-mini-cart-total">0 đ</span>
 			            </div>
 			            <div class="mini-action">
-			                <a class="mini-link btn--e-brand-b-2" th:href="@{/checkout}">THANH TOÁN</a>
+			                <button type="button" class="mini-link btn--e-brand-b-2 js-mini-cart-checkout-btn">THANH TOÁN</button>
 			                <a class="mini-link btn--e-transparent-secondary-b-2" th:href="@{/gio-hang}">XEM GIỎ HÀNG</a>
 			            </div>
 			        </div>

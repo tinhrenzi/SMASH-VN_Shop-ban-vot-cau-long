@@ -435,7 +435,21 @@
                                         <div class="dash__pad-2">
                                             <div class="order-header-section">
                                                 <div class="order-meta-group">
-                                                    <div class="manage-o__text-2 u-c-secondary" th:text="'Mã đơn hàng: ' + ${order.maDonHang}">Mã đơn hàng: DHSVN...</div>
+                                                     <div class="manage-o__text-2 u-c-secondary" style="display: flex; align-items: center; gap: 6px;">
+                                                         <span th:text="'Mã đơn hàng: ' + ${order.maDonHang}"
+                                                               th:data-code="${order.maDonHang}"
+                                                               onclick="copyOrderCodeToClipboard(this.getAttribute('data-code'), this)"
+                                                               th:title="'Click để sao chép: ' + ${order.maDonHang}"
+                                                               style="cursor: pointer; font-weight: 700;">Mã đơn hàng: DHSVN...</span>
+                                                         <button type="button"
+                                                                 class="btn-copy-code"
+                                                                 th:data-code="${order.maDonHang}"
+                                                                 onclick="copyOrderCodeToClipboard(this.getAttribute('data-code'), this)"
+                                                                 title="Sao chép mã đơn hàng"
+                                                                 style="background: none; border: none; padding: 2px 4px; cursor: pointer; color: #888; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;">
+                                                             <i class="far fa-copy"></i>
+                                                         </button>
+                                                     </div>
                                                     <div class="manage-o__text u-c-silver" th:text="'Đặt ngày ' + ${#temporals.format(order.ngayDat, 'dd/MM/yyyy HH:mm:ss')}">Đặt ngày 26 Oct 2016 09:08:37</div>
                                                     <div style="margin-top: 6px;">
                                                          <a th:href="@{/user/order/invoice/{id}(id=${order.id})}" target="_blank" class="btn btn-sm" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border: 1px solid #e02424; color: #e02424; background: transparent; cursor: pointer;">
@@ -1251,6 +1265,34 @@
                 toast.classList.remove('show');
             }, 3500);
         }
+
+        window.copyOrderCodeToClipboard = function(text, el) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(function() {
+                const icon = el ? (el.querySelector ? (el.querySelector('i') || el) : el) : null;
+                const oldClass = icon ? icon.className : '';
+                if (icon) icon.className = 'fas fa-check text-success';
+                
+                hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                
+                if (icon && oldClass) {
+                    setTimeout(function() {
+                        icon.className = oldClass;
+                    }, 1500);
+                }
+            }).catch(function(err) {
+                console.error('Lỗi khi sao chép:', err);
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                } catch(e) {}
+                document.body.removeChild(textArea);
+            });
+        };
 
         // ============ Đóng modal bằng phím ESC ============
         document.addEventListener('keydown', function (e) {

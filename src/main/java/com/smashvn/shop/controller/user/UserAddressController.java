@@ -308,7 +308,27 @@ public class UserAddressController {
             response.put("trangThai", "ok");
         } catch (RuntimeException e) {
             response.put("trangThai", "loi");
-            response.put("message", e.getMessage());
+            
+            // Check if it's a data integrity / constraint violation / database exception
+            Throwable cause = e;
+            boolean isConstraintViolation = false;
+            while (cause != null) {
+                String name = cause.getClass().getName();
+                if (name.contains("ConstraintViolationException") || name.contains("DataIntegrityViolationException") || name.contains("SQLServerException")) {
+                    isConstraintViolation = true;
+                    break;
+                }
+                cause = cause.getCause();
+            }
+            
+            if (isConstraintViolation) {
+                response.put("message", "Không thể xóa địa chỉ này vì đang được sử dụng cho các đơn hàng. Vui lòng giữ lại để lưu trữ lịch sử giao hàng!");
+            } else {
+                response.put("message", e.getMessage());
+            }
+        } catch (Exception e) {
+            response.put("trangThai", "loi");
+            response.put("message", "Đã xảy ra lỗi hệ thống khi xóa địa chỉ.");
         }
         return ResponseEntity.ok(response);
     }

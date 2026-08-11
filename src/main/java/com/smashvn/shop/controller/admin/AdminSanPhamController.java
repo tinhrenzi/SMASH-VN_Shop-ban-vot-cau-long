@@ -37,7 +37,7 @@ public class AdminSanPhamController {
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
-        model.addAttribute("danhSachSanPham", sanPhamRepository.findAll());
+        model.addAttribute("danhSachSanPham", sanPhamRepository.findAllByOrderByIdDesc());
         return "admin/sanpham-list";
     }
 

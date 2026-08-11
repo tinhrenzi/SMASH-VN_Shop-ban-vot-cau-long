@@ -380,4 +380,89 @@ public class GioHangValidationIntegrationTest {
         assertEquals("", kh.getSoDienThoaiKh());
         assertTrue("QL".equals(kh.getTaiKhoan().getVaiTro())); // QL is an internal account
     }
+
+    @Test
+    void testBulkDelete_AllOrNothing_ForeignItem() throws Exception {
+        // User A adds an item
+        mockMvc.perform(post("/gio-hang/them")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .sessionAttr("vaiTro", "KH")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
+                        .param("soLuong", "2"))
+                .andExpect(status().isOk());
+
+        GioHang gioHangA = gioHangRepository.findByKhachHang_Id(testKhachHang.getId());
+        List<GioHangChiTiet> detailsA = gioHangChiTietRepository.findByGioHang_Id(gioHangA.getId());
+        Integer itemA = detailsA.get(0).getId();
+
+        // Create User B with an item
+        TaiKhoan userB = new TaiKhoan();
+        userB.setUsername("userB_tester@gmail.com");
+        userB.setMatKhau("testpass123");
+        userB.setVaiTro("KH");
+        userB.setTrangThai("hoat_dong");
+        userB = taiKhoanRepository.save(userB);
+
+        KhachHang khB = new KhachHang();
+        khB.setTaiKhoan(userB);
+        khB.setHoKh("User");
+        khB.setTenKh("B");
+        khB.setSoDienThoaiKh("0987654322");
+        khB = khachHangRepository.save(khB);
+
+        GioHang gioHangB = new GioHang();
+        gioHangB.setKhachHang(khB);
+        gioHangB = gioHangRepository.save(gioHangB);
+
+        GioHangChiTiet itemBObj = new GioHangChiTiet();
+        itemBObj.setGioHang(gioHangB);
+        itemBObj.setSanPhamChiTiet(testSpct);
+        itemBObj.setSoLuong(1);
+        itemBObj = gioHangChiTietRepository.save(itemBObj);
+        Integer itemB = itemBObj.getId();
+
+        // User A attempts bulk delete containing User B's itemB (IDOR attempt)
+        mockMvc.perform(post("/gio-hang/api/xoa-nhieu")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .sessionAttr("vaiTro", "KH")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("selectedItemIds", String.valueOf(itemA))
+                        .param("selectedItemIds", String.valueOf(itemB)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("error"));
+
+        // All-or-Nothing check: User A's itemA must NOT be deleted!
+        assertTrue(gioHangChiTietRepository.existsById(itemA), "Owned item A should remain untouched when request includes a foreign ID.");
+        assertTrue(gioHangChiTietRepository.existsById(itemB), "Foreign item B should remain untouched.");
+    }
+
+    @Test
+    void testBulkDelete_DuplicateIds() throws Exception {
+        // User adds an item
+        mockMvc.perform(post("/gio-hang/them")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .sessionAttr("vaiTro", "KH")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("idSanPhamChiTiet", String.valueOf(testSpct.getId()))
+                        .param("soLuong", "2"))
+                .andExpect(status().isOk());
+
+        GioHang gioHang = gioHangRepository.findByKhachHang_Id(testKhachHang.getId());
+        List<GioHangChiTiet> details = gioHangChiTietRepository.findByGioHang_Id(gioHang.getId());
+        Integer item1 = details.get(0).getId();
+
+        // Send duplicate ID [item1, item1]
+        mockMvc.perform(post("/gio-hang/api/xoa-nhieu")
+                        .sessionAttr("idNguoiDung", testUser.getId())
+                        .sessionAttr("vaiTro", "KH")
+                        .requestAttr("_csrf", csrfToken)
+                        .param("selectedItemIds", String.valueOf(item1))
+                        .param("selectedItemIds", String.valueOf(item1)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trangThai").value("ok"))
+                .andExpect(jsonPath("$.deletedCount").value(1));
+
+        assertFalse(gioHangChiTietRepository.existsById(item1));
+    }
 }

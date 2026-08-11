@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -433,7 +434,7 @@ public class AdminSanPhamService {
     }
 
     public List<SanPham> layTatCaSanPham() {
-        return sanPhamRepository.findAll();
+        return sanPhamRepository.findAllByOrderByIdDesc();
     }
 
     public SanPham layTheoId(Integer id) {

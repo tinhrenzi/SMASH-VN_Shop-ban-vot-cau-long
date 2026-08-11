@@ -14,6 +14,8 @@ import java.util.Optional;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
+    List<SanPham> findAllByOrderByIdDesc();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT sp FROM SanPham sp WHERE sp.id = :id")
     Optional<SanPham> findByIdWithLock(@Param("id") Integer id);
