@@ -176,6 +176,44 @@ public class GuestCartService {
         log.info("[GUEST_CART] Removed product details ID {} from session cart.", idSanPhamChiTiet);
     }
 
+    public Map<String, Object> xoaNhieuKhoiGuestCart(HttpSession session, List<Integer> selectedItemIds) {
+        Map<String, Object> response = new HashMap<>();
+
+        if (selectedItemIds == null || selectedItemIds.isEmpty()) {
+            response.put("trangThai", "ok");
+            response.put("deletedCount", 0);
+            Map<String, Object> miniCartData = layDuLieuMiniCart(session);
+            response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+            response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+            response.put("cartTotal", miniCartData.get("tongTien"));
+            return response;
+        }
+
+        List<Integer> distinctIds = selectedItemIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+
+        List<GuestCartItem> cart = getGuestCartItems(session);
+        int initialSize = cart.size();
+
+        // Checkbox value for guest cart is idSanPhamChiTiet
+        cart.removeIf(item -> item.getIdSanPhamChiTiet() != null && distinctIds.contains(item.getIdSanPhamChiTiet()));
+
+        int deletedCount = initialSize - cart.size();
+        session.setAttribute(SESSION_CART_KEY, cart);
+
+        response.put("trangThai", "ok");
+        response.put("deletedCount", deletedCount);
+
+        Map<String, Object> miniCartData = layDuLieuMiniCart(session);
+        response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+        response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+        response.put("cartTotal", miniCartData.get("tongTien"));
+
+        return response;
+    }
+
     public void clearGuestCart(HttpSession session) {
         session.removeAttribute(SESSION_CART_KEY);
         log.info("[GUEST_CART] Cleared guest session cart.");

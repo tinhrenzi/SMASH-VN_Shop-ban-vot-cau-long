@@ -15,11 +15,24 @@ import com.smashvn.shop.dto.order.CheckoutItemContext;
 import com.smashvn.shop.dto.order.CheckoutSource;
 
 import jakarta.servlet.http.HttpSession;
+import com.smashvn.shop.dto.order.FullCartCheckoutResult;
+import com.smashvn.shop.dto.order.InvalidCartItemView;
+import com.smashvn.shop.repository.SanPhamChiTietRepository;
+import com.smashvn.shop.repository.TaiKhoanRepository;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class CheckoutContextService {
+
+    private final GuestCartService guestCartService;
+    private final GioHangService gioHangService;
+    private final SanPhamChiTietRepository sanPhamChiTietRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+
 
     public static final String SESSION_CONTEXTS_KEY = "checkoutContexts";
     public static final int MAX_CONTEXTS_PER_SESSION = 10;
@@ -209,5 +222,224 @@ public class CheckoutContextService {
 
         return context;
     }
+
+    public boolean isActiveAccount(Integer idNguoiDung) {
+        if (idNguoiDung == null) {
+            return false;
+        }
+        com.smashvn.shop.entity.TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+        return tk != null
+                && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty()
+                && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
+    }
+
+    private boolean isDangBan(String trangThai) {
+        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
+    }
+
+    public boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
+        return spct != null
+                && spct.getSanPham() != null
+                && isDangBan(spct.getSanPham().getTrangThai())
+                && isDangBan(spct.getTrangThai());
+    }
+
+    public FullCartCheckoutResult createFullCartContext(HttpSession session, Integer idNguoiDung) {
+        boolean activeAccount = isActiveAccount(idNguoiDung);
+
+        List<CheckoutItemContext> contextItems = new ArrayList<>();
+        List<InvalidCartItemView> invalidItems = new ArrayList<>();
+        int totalQuantity = 0;
+
+        if (!activeAccount) {
+            List<GuestCartService.GuestCartItem> guestCart = guestCartService.getGuestCartItems(session);
+            if (guestCart.isEmpty()) {
+                return FullCartCheckoutResult.builder()
+                        .trangThai("error")
+                        .thongBao("Giỏ hàng của bạn đang trống.")
+                        .message("Giỏ hàng của bạn đang trống.")
+                        .build();
+            }
+
+            for (GuestCartService.GuestCartItem item : guestCart) {
+                Integer spctId = item.getIdSanPhamChiTiet();
+                Integer reqQty = item.getSoLuong();
+
+                if (spctId == null || reqQty == null || reqQty <= 0) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spctId)
+                            .tenSanPham("Sản phẩm chưa xác định")
+                            .requestedQuantity(reqQty)
+                            .reason("Số lượng sản phẩm không hợp lệ.")
+                            .build());
+                    continue;
+                }
+
+                com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(spctId).orElse(null);
+                if (spct == null) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spctId)
+                            .tenSanPham("Sản phẩm ID " + spctId)
+                            .requestedQuantity(reqQty)
+                            .reason("Sản phẩm không còn tồn tại trong hệ thống.")
+                            .build());
+                    continue;
+                }
+
+                String tenSp = (spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "Sản phẩm";
+                if (!isSanPhamChiTietDangBan(spct)) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spctId)
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(spct.getSoLuongTon())
+                            .reason("Sản phẩm hoặc phân loại đã ngừng kinh doanh.")
+                            .build());
+                    continue;
+                }
+
+                int tonKho = (spct.getSoLuongTon() != null) ? spct.getSoLuongTon() : 0;
+                if (tonKho <= 0) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spctId)
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(0)
+                            .reason("Sản phẩm đã hết hàng.")
+                            .build());
+                    continue;
+                }
+
+                if (reqQty > tonKho) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spctId)
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(tonKho)
+                            .reason("Số lượng trong giỏ vượt tồn kho")
+                            .build());
+                    continue;
+                }
+
+                contextItems.add(CheckoutItemContext.builder()
+                        .cartItemId(null)
+                        .idSanPhamChiTiet(spctId)
+                        .soLuong(reqQty)
+                        .fromCart(true)
+                        .build());
+                totalQuantity += reqQty;
+            }
+        } else {
+            List<com.smashvn.shop.entity.GioHangChiTiet> dbCartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+            if (dbCartItems.isEmpty()) {
+                return FullCartCheckoutResult.builder()
+                        .trangThai("error")
+                        .thongBao("Giỏ hàng của bạn đang trống.")
+                        .message("Giỏ hàng của bạn đang trống.")
+                        .build();
+            }
+
+            for (com.smashvn.shop.entity.GioHangChiTiet item : dbCartItems) {
+                com.smashvn.shop.entity.SanPhamChiTiet spct = item.getSanPhamChiTiet();
+                Integer reqQty = item.getSoLuong();
+
+                if (spct == null) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(null)
+                            .tenSanPham("Sản phẩm trong giỏ")
+                            .requestedQuantity(reqQty)
+                            .reason("Sản phẩm không hợp lệ.")
+                            .build());
+                    continue;
+                }
+
+                String tenSp = (spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "Sản phẩm";
+                if (!isSanPhamChiTietDangBan(spct)) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spct.getId())
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(spct.getSoLuongTon())
+                            .reason("Sản phẩm hoặc phân loại đã ngừng kinh doanh.")
+                            .build());
+                    continue;
+                }
+
+                if (reqQty == null || reqQty <= 0) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spct.getId())
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(spct.getSoLuongTon())
+                            .reason("Số lượng sản phẩm trong giỏ không hợp lệ.")
+                            .build());
+                    continue;
+                }
+
+                int tonKho = (spct.getSoLuongTon() != null) ? spct.getSoLuongTon() : 0;
+                if (tonKho <= 0) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spct.getId())
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(0)
+                            .reason("Sản phẩm đã hết hàng.")
+                            .build());
+                    continue;
+                }
+
+                if (reqQty > tonKho) {
+                    invalidItems.add(InvalidCartItemView.builder()
+                            .idSanPhamChiTiet(spct.getId())
+                            .tenSanPham(tenSp)
+                            .requestedQuantity(reqQty)
+                            .stockQuantity(tonKho)
+                            .reason("Số lượng trong giỏ vượt tồn kho")
+                            .build());
+                    continue;
+                }
+
+                contextItems.add(CheckoutItemContext.builder()
+                        .cartItemId(item.getId())
+                        .idSanPhamChiTiet(spct.getId())
+                        .soLuong(reqQty)
+                        .fromCart(true)
+                        .build());
+                totalQuantity += reqQty;
+            }
+        }
+
+        if (!invalidItems.isEmpty()) {
+            String firstErrMsg = invalidItems.get(0).getTenSanPham() + ": " + invalidItems.get(0).getLyDo();
+            return FullCartCheckoutResult.builder()
+                    .trangThai("error")
+                    .thongBao("Giỏ hàng chứa sản phẩm không hợp lệ: " + firstErrMsg)
+                    .message("Giỏ hàng chứa sản phẩm không hợp lệ: " + firstErrMsg)
+                    .invalidItems(invalidItems)
+                    .build();
+        }
+
+        if (contextItems.isEmpty()) {
+            return FullCartCheckoutResult.builder()
+                    .trangThai("error")
+                    .thongBao("Giỏ hàng không có sản phẩm hợp lệ để thanh toán.")
+                    .message("Giỏ hàng không có sản phẩm hợp lệ để thanh toán.")
+                    .build();
+        }
+
+        CheckoutContext context = createCartContext(session, activeAccount ? idNguoiDung : null, contextItems);
+
+        return FullCartCheckoutResult.builder()
+                .trangThai("ok")
+                .thongBao("Khởi tạo thanh toán thành công.")
+                .message("Khởi tạo thanh toán thành công.")
+                .checkoutToken(context.getToken())
+                .checkoutUrl("/checkout?token=" + context.getToken())
+                .itemCount(contextItems.size())
+                .totalQuantity(totalQuantity)
+                .build();
+    }
 }
+
 

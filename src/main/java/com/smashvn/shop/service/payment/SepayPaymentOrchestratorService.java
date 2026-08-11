@@ -33,6 +33,7 @@ public class SepayPaymentOrchestratorService {
     private final GioHangService gioHangService;
     private final GuestCartService guestCartService;
     private final HoaDonRepository hoaDonRepository;
+    private final com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
 
     public Map<String, Object> orchestrateSimulatedPayment(
             String maDonHang,
@@ -53,11 +54,21 @@ public class SepayPaymentOrchestratorService {
         // 1. Try atomic claim on snapshot
         CheckoutExecutionSnapshot snapshot = pendingCheckoutRegistry.claimSnapshot(maDonHang);
 
-        if (snapshot == null && order != null && "CHO_THANH_TOAN".equalsIgnoreCase(order.getTrangThaiThanhToan())) {
+        if (snapshot == null && order != null && ("CHO_THANH_TOAN".equalsIgnoreCase(order.getTrangThaiThanhToan()) || "cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()))) {
             // In debug/test mode, create dynamic fallback snapshot from saved HoaDonChiTiet
             List<com.smashvn.shop.dto.order.PurchasedItemSnapshot> fallbackItems = new java.util.ArrayList<>();
-            List<com.smashvn.shop.entity.HoaDonChiTiet> hdcts = com.smashvn.shop.repository.HoaDonChiTietRepository.class.isInstance(this) ? null : null;
-            // Build fallback items from order details if available
+            List<com.smashvn.shop.entity.HoaDonChiTiet> hdcts = hoaDonChiTietRepository.findByHoaDon_Id(order.getId());
+            if (hdcts != null) {
+                for (com.smashvn.shop.entity.HoaDonChiTiet item : hdcts) {
+                    if (item.getSanPhamChiTiet() != null) {
+                        fallbackItems.add(com.smashvn.shop.dto.order.PurchasedItemSnapshot.builder()
+                                .idSanPhamChiTiet(item.getSanPhamChiTiet().getId())
+                                .soLuongDaMua(item.getSoLuong())
+                                .fromCart(true)
+                                .build());
+                    }
+                }
+            }
             snapshot = CheckoutExecutionSnapshot.builder()
                     .orderId(order.getId())
                     .maDonHang(order.getMaDonHang())

@@ -85,54 +85,70 @@ public class OrderViewService {
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         if (realOrders != null && !realOrders.isEmpty()) {
-            // CÓ ĐƠN HÀNG THẬT
             for (HoaDon hd : realOrders) {
-                Map<String, Object> orderMap = new HashMap<>();
-                orderMap.put("id", hd.getId());
-                orderMap.put("date", hd.getNgayTao().format(formatter));
-
-                // Ánh xạ trạng thái hiển thị
-                String statusText = getFrontendStatusLabel(hd.getTrangThaiDonHang());
-                orderMap.put("status", statusText);
-                orderMap.put("rawStatus", hd.getTrangThaiDonHang());
-                orderMap.put("total", hd.getTongTien());
-                orderMap.put("paymentMethod", hd.getPaymentMethod());
-                orderMap.put("maDonHang", hd.getMaDonHang());
-                orderMap.put("ghnOrderCode", hd.getGhnOrderCode());
-                orderMap.put("ghnReturnOrderCode", resolveGhnReturnOrderCode(hd.getId(), hd));
-
-                List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
-                List<Map<String, Object>> itemMaps = new ArrayList<>();
-                for (HoaDonChiTiet ct : items) {
-                    Map<String, Object> itemMap = new HashMap<>();
-                    SanPhamChiTiet spct = ct.getSanPhamChiTiet();
-
-                    // Lấy ảnh hiển thị
-                    String imgUrl = (spct != null) ? spct.getHinhAnhUrl() : "/images/placeholder.png";
-                    String imgName = "product9.jpg"; // fallback
-                    if (spct != null && spct.getHinhAnhSanPham() != null && !spct.getHinhAnhSanPham().isEmpty()) {
-                        imgName = spct.getHinhAnhSanPham();
-                    }
-
-                    String title = ct.getTenSanPhamSnapshot();
-                    if (title == null || title.isBlank()) {
-                        title = (spct != null && spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "N/A";
-                    }
-                    String attr = (spct != null) ? spct.getMauSac() : "N/A";
-
-                    itemMap.put("imageUrl", imgUrl);
-                    itemMap.put("image", "../uploads/product/" + imgName); // do path ở uploads
-                    itemMap.put("title", title + " [" + attr + "]");
-                    itemMap.put("quantity", ct.getSoLuong());
-                    itemMap.put("total", (ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO).multiply(new BigDecimal(ct.getSoLuong())));
-                    itemMaps.add(itemMap);
-                }
-                orderMap.put("items", itemMaps);
-                resultList.add(orderMap);
+                resultList.add(mapSingleOrderToMap(hd));
             }
         }
 
         return resultList;
+    }
+
+    public Map<String, Object> layChiTietDonHangChoCustomer(Integer idHoaDon, Integer idKhachHang) {
+        Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+        if (hdOpt.isEmpty()) {
+            return null;
+        }
+        HoaDon hd = hdOpt.get();
+        if (idKhachHang != null && (hd.getKhachHang() == null || !hd.getKhachHang().getId().equals(idKhachHang))) {
+            return null;
+        }
+        return mapSingleOrderToMap(hd);
+    }
+
+    private Map<String, Object> mapSingleOrderToMap(HoaDon hd) {
+        Map<String, Object> orderMap = new HashMap<>();
+        orderMap.put("id", hd.getId());
+        orderMap.put("date", hd.getNgayTao() != null ? hd.getNgayTao().format(formatter) : "");
+
+        String statusText = getFrontendStatusLabel(hd.getTrangThaiDonHang());
+        orderMap.put("status", statusText);
+        orderMap.put("rawStatus", hd.getTrangThaiDonHang());
+        orderMap.put("total", hd.getTongTien());
+        orderMap.put("paymentMethod", hd.getPaymentMethod());
+        orderMap.put("maDonHang", hd.getMaDonHang());
+        orderMap.put("ghnOrderCode", hd.getGhnOrderCode());
+        orderMap.put("ghnReturnOrderCode", resolveGhnReturnOrderCode(hd.getId(), hd));
+
+        List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
+        List<Map<String, Object>> itemMaps = new ArrayList<>();
+        for (HoaDonChiTiet ct : items) {
+            Map<String, Object> itemMap = new HashMap<>();
+            SanPhamChiTiet spct = ct.getSanPhamChiTiet();
+
+            String imgUrl = (spct != null && spct.getHinhAnhUrl() != null) ? spct.getHinhAnhUrl() : "/images/placeholder.png";
+            String imgName = "product9.jpg";
+            if (spct != null && spct.getHinhAnhSanPham() != null && !spct.getHinhAnhSanPham().isEmpty()) {
+                imgName = spct.getHinhAnhSanPham();
+            }
+
+            String title = ct.getTenSanPhamSnapshot();
+            if (title == null || title.isBlank()) {
+                title = (spct != null && spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "Sản phẩm";
+            }
+            String attr = (spct != null) ? spct.getMauSac() : null;
+            if (attr != null && !attr.isBlank() && !"N/A".equalsIgnoreCase(attr.trim())) {
+                title += " [" + attr.trim() + "]";
+            }
+
+            itemMap.put("imageUrl", imgUrl);
+            itemMap.put("image", "../uploads/product/" + imgName);
+            itemMap.put("title", title);
+            itemMap.put("quantity", ct.getSoLuong() != null ? ct.getSoLuong() : 1);
+            itemMap.put("total", (ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO).multiply(new BigDecimal(ct.getSoLuong() != null ? ct.getSoLuong() : 1)));
+            itemMaps.add(itemMap);
+        }
+        orderMap.put("items", itemMaps);
+        return orderMap;
     }
 
     /**

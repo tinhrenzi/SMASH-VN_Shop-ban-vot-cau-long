@@ -85,6 +85,29 @@ public class CheckoutController {
                 && isDangBan(spct.getTrangThai());
     }
 
+    @PostMapping("/checkout/start-all")
+    @ResponseBody
+    public ResponseEntity<FullCartCheckoutResult> startAllCheckout(HttpSession session) {
+        try {
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+            FullCartCheckoutResult result = checkoutContextService.createFullCartContext(session, idNguoiDung);
+
+            if (result.isSuccess()) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(result);
+            }
+        } catch (Exception e) {
+            log.error("Error in startAllCheckout", e);
+            FullCartCheckoutResult errorResult = FullCartCheckoutResult.builder()
+                    .trangThai("error")
+                    .thongBao("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.")
+                    .message("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.")
+                    .build();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResult);
+        }
+    }
+
     @PostMapping("/checkout/start")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> startCheckout(
@@ -344,7 +367,7 @@ public class CheckoutController {
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
         boolean hasDefaultAddress = false;
-        if (activeAccount) {
+        if (idNguoiDung != null) {
             com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
             Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
             listDiaChi = userAddressService.layDanhSachDiaChi(idKhachHang);

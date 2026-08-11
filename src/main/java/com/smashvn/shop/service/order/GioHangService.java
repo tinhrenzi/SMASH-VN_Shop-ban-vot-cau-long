@@ -283,6 +283,60 @@ public class GioHangService {
     }
 
     @org.springframework.transaction.annotation.Transactional
+    public Map<String, Object> xoaNhieuSanPhamKhoiGio(List<Integer> selectedItemIds, Integer idTaiKhoan) {
+        Map<String, Object> response = new HashMap<>();
+
+        if (selectedItemIds == null || selectedItemIds.isEmpty()) {
+            response.put("trangThai", "ok");
+            response.put("deletedCount", 0);
+            Map<String, Object> miniCartData = layDuLieuMiniCart(idTaiKhoan);
+            response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+            response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+            response.put("cartTotal", miniCartData.get("tongTien"));
+            return response;
+        }
+
+        KhachHang khachHang = getOrCreateKhachHang(idTaiKhoan);
+
+        List<Integer> distinctIds = selectedItemIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+
+        if (distinctIds.isEmpty()) {
+            response.put("trangThai", "ok");
+            response.put("deletedCount", 0);
+            Map<String, Object> miniCartData = layDuLieuMiniCart(idTaiKhoan);
+            response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+            response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+            response.put("cartTotal", miniCartData.get("tongTien"));
+            return response;
+        }
+
+        // All-or-nothing IDOR validation:
+        // Query ALL items belonging to this khachHang for the distinct requested IDs
+        List<GioHangChiTiet> ownedItems = gioHangChiTietRepository.findAllByIdInAndGioHang_KhachHang_Id(distinctIds, khachHang.getId());
+
+        // If count of owned items does not equal total distinct requested IDs -> payload contains foreign or invalid ID!
+        if (ownedItems.size() != distinctIds.size()) {
+            throw new org.springframework.security.access.AccessDeniedException("Một số sản phẩm không tồn tại hoặc không thuộc giỏ hàng của bạn!");
+        }
+
+        gioHangChiTietRepository.deleteAll(ownedItems);
+        gioHangChiTietRepository.flush();
+
+        response.put("trangThai", "ok");
+        response.put("deletedCount", ownedItems.size());
+
+        Map<String, Object> miniCartData = layDuLieuMiniCart(idTaiKhoan);
+        response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+        response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+        response.put("cartTotal", miniCartData.get("tongTien"));
+
+        return response;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public void capNhatSoLuong(Integer idGioHangChiTiet, Integer soLuongMoi, Integer idTaiKhoan) {
         if (soLuongMoi == null || soLuongMoi <= 0) {
             throw new IllegalArgumentException("Số lượng sản phẩm trong giỏ hàng phải lớn hơn 0.");

@@ -116,6 +116,53 @@ class GioHangControllerTest {
         verify(gioHangService, never()).layDuLieuMiniCart(12);
     }
 
+    @Test
+    void testBulkDeleteLoggedInUser() {
+        TaiKhoan active = account(20, AccountStatus.ACTIVE, "hoat_dong");
+        when(session.getAttribute("idNguoiDung")).thenReturn(20);
+        when(taiKhoanRepository.findById(20)).thenReturn(Optional.of(active));
+        java.util.List<Integer> ids = java.util.List.of(10, 11);
+        when(gioHangService.xoaNhieuSanPhamKhoiGio(ids, 20)).thenReturn(Map.of("trangThai", "ok", "deletedCount", 2));
+
+        ResponseEntity<Map<String, Object>> response = controller.xoaNhieuSanPhamAjax(ids, session);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("ok", response.getBody().get("trangThai"));
+        assertEquals(2, response.getBody().get("deletedCount"));
+        verify(gioHangService).xoaNhieuSanPhamKhoiGio(ids, 20);
+    }
+
+    @Test
+    void testBulkDeleteGuest() {
+        TaiKhoan guest = account(21, AccountStatus.GUEST, "hoat_dong");
+        when(session.getAttribute("idNguoiDung")).thenReturn(21);
+        when(taiKhoanRepository.findById(21)).thenReturn(Optional.of(guest));
+        java.util.List<Integer> ids = java.util.List.of(101, 103);
+        when(guestCartService.xoaNhieuKhoiGuestCart(session, ids)).thenReturn(Map.of("trangThai", "ok", "deletedCount", 2));
+
+        ResponseEntity<Map<String, Object>> response = controller.xoaNhieuSanPhamAjax(ids, session);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("ok", response.getBody().get("trangThai"));
+        assertEquals(2, response.getBody().get("deletedCount"));
+        verify(guestCartService).xoaNhieuKhoiGuestCart(session, ids);
+    }
+
+    @Test
+    void testBulkDeleteEmptySelection() {
+        TaiKhoan active = account(22, AccountStatus.ACTIVE, "hoat_dong");
+        when(session.getAttribute("idNguoiDung")).thenReturn(22);
+        when(taiKhoanRepository.findById(22)).thenReturn(Optional.of(active));
+        java.util.List<Integer> ids = java.util.Collections.emptyList();
+        when(gioHangService.xoaNhieuSanPhamKhoiGio(ids, 22)).thenReturn(Map.of("trangThai", "ok", "deletedCount", 0));
+
+        ResponseEntity<Map<String, Object>> response = controller.xoaNhieuSanPhamAjax(ids, session);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("ok", response.getBody().get("trangThai"));
+        assertEquals(0, response.getBody().get("deletedCount"));
+    }
+
     private TaiKhoan account(Integer id, AccountStatus status, String trangThai) {
         TaiKhoan tk = new TaiKhoan();
         tk.setId(id);

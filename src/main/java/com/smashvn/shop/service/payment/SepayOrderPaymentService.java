@@ -125,10 +125,13 @@ public class SepayOrderPaymentService {
 
             // Cập nhật trạng thái đơn hàng
             order.setTrangThaiThanhToan("DA_THANH_TOAN");
+            order.setPaymentStatus("paid");
+            order.setPaidAt(now);
             order.setNgayThanhToan(now);
             order.setMaGiaoDich(maGiaoDich);
-            if ("CHO_THANH_TOAN".equals(order.getTrangThaiDonHang())) {
-                order.setTrangThaiDonHang("DA_THANH_TOAN");
+            order.setTransactionId(maGiaoDich);
+            if ("cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()) || "CHO_THANH_TOAN".equalsIgnoreCase(order.getTrangThaiDonHang())) {
+                order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
             }
             hoaDonRepository.save(order);
 
