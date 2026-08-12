@@ -107,7 +107,7 @@ public class AdminController {
         for (com.smashvn.shop.entity.HoaDon hd : orders) {
             if (hd.getTrangThaiDonHang() != null) {
                 currentStatusLabels.put(hd.getId(), orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
-                String nextStatus = orderViewService.getNextStatus(hd.getTrangThaiDonHang());
+                String nextStatus = orderViewService.getNextStatus(hd);
                 if (nextStatus != null) {
                     nextStatusLabels.put(hd.getId(), orderViewService.getStatusLabel(nextStatus));
                 }

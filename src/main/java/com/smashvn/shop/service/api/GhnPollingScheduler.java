@@ -71,24 +71,29 @@ public class GhnPollingScheduler {
                 try {
                     String orderCode = hd.getGhnOrderCode();
                     if (orderCode != null && !orderCode.isBlank()) {
-                        Map<String, Object> trackingData = ghnService.trackOrder(orderCode);
-                        if (trackingData != null) {
-                            String ghnStatus = (String) trackingData.get("status");
-                            String currentGhnStatus = hd.getGhnStatus();
+                        if (orderCode.startsWith("DEMO-GHN-")) {
+                            log.debug("[GHN_POLLING] Skip polling GHN API for DEMO Fallback order #{}: {}", hd.getId(), orderCode);
+                            skipped++;
+                        } else {
+                            Map<String, Object> trackingData = ghnService.trackOrder(orderCode);
+                            if (trackingData != null) {
+                                String ghnStatus = (String) trackingData.get("status");
+                                String currentGhnStatus = hd.getGhnStatus();
 
-                            if (ghnStatus != null && !ghnStatus.equalsIgnoreCase(currentGhnStatus)) {
-                                String internalStatus = ghnStatusMapper.mapToInternalStatus(ghnStatus);
-                                if (internalStatus != null) {
-                                    orderViewService.applyShippingStatus(hd.getId(), internalStatus, ghnStatus);
-                                    log.info("[GHN_POLLING] Cập nhật đơn #{}: {} → {} (GHN: {} → {})",
-                                            hd.getId(), hd.getTrangThaiDonHang(), internalStatus,
-                                            currentGhnStatus, ghnStatus);
-                                    updated++;
+                                if (ghnStatus != null && !ghnStatus.equalsIgnoreCase(currentGhnStatus)) {
+                                    String internalStatus = ghnStatusMapper.mapToInternalStatus(ghnStatus);
+                                    if (internalStatus != null) {
+                                        orderViewService.applyShippingStatus(hd.getId(), internalStatus, ghnStatus);
+                                        log.info("[GHN_POLLING] Cập nhật đơn #{}: {} → {} (GHN: {} → {})",
+                                                hd.getId(), hd.getTrangThaiDonHang(), internalStatus,
+                                                currentGhnStatus, ghnStatus);
+                                        updated++;
+                                    } else {
+                                        skipped++;
+                                    }
                                 } else {
                                     skipped++;
                                 }
-                            } else {
-                                skipped++;
                             }
                         }
                     } else {
@@ -99,12 +104,16 @@ public class GhnPollingScheduler {
                     try {
                         String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
                         if (returnCode != null && !returnCode.isBlank()) {
-                            Map<String, Object> rData = ghnService.trackOrder(returnCode);
-                            if (rData != null) {
-                                String rStatus = (String) rData.get("status");
-                                com.smashvn.shop.entity.ReturnStatus newRetStatus = ghnStatusMapper.mapToReturnStatus(rStatus);
-                                if (newRetStatus != null) {
-                                    orderViewService.updateReturnStatusFromGhn(hd.getId(), newRetStatus, rStatus, "GHN_POLLING");
+                            if (returnCode.startsWith("DEMO-GHN-RETURN-")) {
+                                log.debug("[GHN_RETURN_FALLBACK] Skip GHN tracking for Demo Return code {} for HoaDon #{}", returnCode, hd.getId());
+                            } else {
+                                Map<String, Object> rData = ghnService.trackOrder(returnCode);
+                                if (rData != null) {
+                                    String rStatus = (String) rData.get("status");
+                                    com.smashvn.shop.entity.ReturnStatus newRetStatus = ghnStatusMapper.mapToReturnStatus(rStatus);
+                                    if (newRetStatus != null) {
+                                        orderViewService.updateReturnStatusFromGhn(hd.getId(), newRetStatus, rStatus, "GHN_POLLING");
+                                    }
                                 }
                             }
                         }

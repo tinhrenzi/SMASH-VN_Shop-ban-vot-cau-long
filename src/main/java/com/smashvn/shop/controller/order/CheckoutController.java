@@ -355,17 +355,29 @@ public class CheckoutController {
 
         List<SoDiaChi> listDiaChi = new java.util.ArrayList<>();
         boolean hasDefaultAddress = false;
-        if (activeAccount && idNguoiDung != null) {
+        if (idNguoiDung != null) {
             com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
-            Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
-            listDiaChi = userAddressService.layDanhSachDiaChi(idKhachHang);
-            hasDefaultAddress = listDiaChi.stream().anyMatch(SoDiaChi::isDefaultShipping);
+            if (khachHang == null) {
+                khachHang = khachHangRepository.findById(idNguoiDung).orElse(null);
+            }
+            if (khachHang != null) {
+                listDiaChi = userAddressService.layDanhSachDiaChi(khachHang.getId());
+                if (listDiaChi != null && !listDiaChi.isEmpty()) {
+                    hasDefaultAddress = listDiaChi.stream().anyMatch(SoDiaChi::isDefaultShipping);
+                    if (!hasDefaultAddress) {
+                        listDiaChi.get(0).setDefaultShipping(true);
+                        hasDefaultAddress = true;
+                    }
+                }
+            }
         }
 
         Map<Integer, Map<String, Object>> addressMap = new java.util.HashMap<>();
         for (SoDiaChi dc : listDiaChi) {
             Map<String, Object> details = new java.util.HashMap<>();
-            details.put("hoTen", dc.getHoNguoiNhan() + " " + dc.getTenNguoiNhan());
+            String hoTenNguoiNhan = (dc.getHoNguoiNhan() != null && !dc.getHoNguoiNhan().isBlank() ? dc.getHoNguoiNhan().trim() + " " : "")
+                    + (dc.getTenNguoiNhan() != null ? dc.getTenNguoiNhan().trim() : "");
+            details.put("hoTen", hoTenNguoiNhan.trim());
             details.put("sdt", dc.getSdtNguoiNhan());
             details.put("diaChiCuThe", dc.getDiaChiCuThe());
             details.put("tinhThanh", dc.getProvinceName());

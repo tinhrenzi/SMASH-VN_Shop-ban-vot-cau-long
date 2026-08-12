@@ -20,13 +20,17 @@ public class HoaDonEntityListener {
             String ghnOrderCode = hd.getGhnOrderCode();
             String ghnStatus = hd.getGhnStatus();
             if (ghnOrderCode != null || ghnStatus != null) {
+                // Defensive guard: Do not create/update a 'GHN' provider record when handling a DEMO fallback order code
+                if (ghnOrderCode != null && ghnOrderCode.startsWith("DEMO-GHN-")) {
+                    return;
+                }
                 JdbcTemplate jdbcTemplate = SpringContextHelper.getBean(JdbcTemplate.class);
                 if (jdbcTemplate != null) {
                     try {
                         jdbcTemplate.update(
                             "MERGE INTO TichHopVanChuyen WITH (HOLDLOCK) AS target " +
                             "USING (SELECT ? AS id_hoa_don, ? AS ma_van_don, ? AS trang_thai) AS source " +
-                            "ON target.id_hoa_don = source.id_hoa_don " +
+                            "ON target.id_hoa_don = source.id_hoa_don AND target.nha_cung_cap = 'GHN' " +
                             "WHEN MATCHED THEN UPDATE SET ma_van_don = COALESCE(source.ma_van_don, target.ma_van_don), " +
                             "                             ma_don_hang_ngoai = COALESCE(source.ma_van_don, target.ma_don_hang_ngoai), " +
                             "                             trang_thai = COALESCE(source.trang_thai, target.trang_thai) " +

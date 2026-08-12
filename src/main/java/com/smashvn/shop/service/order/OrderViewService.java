@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -437,9 +438,9 @@ public class OrderViewService {
             case "san_sang_giao" ->
                 "Sẵn sàng giao";
             case "da_tao_van_don_ghn" ->
-                "Đã tạo vận đơn GHN";
+                "Đã tạo đơn vận chuyển";
             case "da_ban_giao_ghn" ->
-                "Đã bàn giao GHN";
+                "Đã lấy hàng";
             case "dang_lay_hang" ->
                 "Đang lấy hàng";
             case "dang_giao" ->
@@ -489,13 +490,17 @@ public class OrderViewService {
             throw new IllegalStateException("Đơn hàng đã được người khác cập nhật. Vui lòng tải lại trang.");
         }
 
+        boolean hasGhnCode = (hd.getGhnOrderCode() != null && !hd.getGhnOrderCode().trim().isEmpty())
+                || (hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().trim().isEmpty());
+
         // 4. Delivered, Completed, Handed over to GHN, and Cancelled orders are immutable for manual admin update
         if (OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(currentStatus)
                 || OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)
                 || OrderStatus.DA_BAN_GIAO_GHN.getValue().equalsIgnoreCase(currentStatus)
                 || "dang_giao".equalsIgnoreCase(currentStatus)
-                || "hoan_thanh".equalsIgnoreCase(currentStatus)) {
-            throw new IllegalArgumentException("Không thể chỉnh sửa đơn hàng đã bàn giao GHN, hoàn thành, đang giao hoặc đã hủy!");
+                || "hoan_thanh".equalsIgnoreCase(currentStatus)
+                || (hasGhnCode && ("dang_lay_hang".equalsIgnoreCase(currentStatus) || "da_tao_van_don_ghn".equalsIgnoreCase(currentStatus)))) {
+            throw new IllegalArgumentException("Không thể chỉnh sửa hoặc chuyển trạng thái thủ công cho đơn hàng đã có mã vận đơn GHN / đã bàn giao GHN / đang giao hàng!");
         }
 
         // 5. If status is the same, no transition is needed
@@ -709,8 +714,105 @@ public class OrderViewService {
         );
     }
 
+    /**
+     * Mô phỏng chuyển trạng thái kế tiếp cho vận đơn GHN Fallback (Demo Simulator).
+     * Chỉ áp dụng cho đơn hàng có bản ghi provider = 'GHN_FALLBACK' trong DB TichHopVanChuyen.
+     */
+    @Transactional
+    public Map<String, Object> advanceDemoShippingStatus(Integer idHoaDon, Integer actorAccountId, String actorName, String clientIp) {
+        HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
+
+        // 1. Kiểm tra trong DB TichHopVanChuyen xem có đúng provider GHN_FALLBACK hay không
+        String sql = "SELECT TOP 1 nha_cung_cap, ma_van_don, trang_thai FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_FALLBACK' ORDER BY id DESC";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, idHoaDon);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Đơn hàng #" + idHoaDon + " không có vận đơn Demo Fallback (GHN_FALLBACK) để mô phỏng.");
+        }
+
+        Map<String, Object> record = rows.get(0);
+        String provider = (String) record.get("nha_cung_cap");
+        String orderCode = (String) record.get("ma_van_don");
+        String dbGhnStatus = (String) record.get("trang_thai");
+
+        if (!"GHN_FALLBACK".equalsIgnoreCase(provider) || orderCode == null || !orderCode.startsWith("DEMO-GHN-")) {
+            throw new IllegalArgumentException("Đơn hàng #" + idHoaDon + " không phải là vận đơn Demo Fallback hợp lệ.");
+        }
+
+        String currentGhnStatus = dbGhnStatus != null ? dbGhnStatus : (hd.getGhnStatus() != null ? hd.getGhnStatus() : "ready_to_pick");
+
+        // 2. State Machine xác định trạng thái kế tiếp trong luồng Demo (Forward-only)
+        String nextGhnStatus;
+        switch (currentGhnStatus.toLowerCase()) {
+            case "ready_to_pick":
+                nextGhnStatus = "picking";
+                break;
+            case "picking":
+            case "money_collect_picking":
+            case "picked":
+                nextGhnStatus = "transporting";
+                break;
+            case "storing":
+            case "sorting":
+            case "transporting":
+                nextGhnStatus = "delivering";
+                break;
+            case "delivering":
+            case "money_collect_delivering":
+                nextGhnStatus = "delivered";
+                break;
+            case "delivered":
+                throw new IllegalStateException("Vận đơn Demo (" + orderCode + ") đã ở trạng thái Giao hàng thành công (delivered), không thể chuyển tiếp.");
+            default:
+                if (ghnStatusMapper.isTerminalGhnStatus(currentGhnStatus)) {
+                    throw new IllegalStateException("Vận đơn Demo (" + orderCode + ") đã ở trạng thái kết thúc (" + currentGhnStatus + "), không thể chuyển tiếp.");
+                } else {
+                    throw new IllegalArgumentException("Trạng thái vận đơn hiện tại (" + currentGhnStatus + ") không nằm trong luồng mô phỏng Demo.");
+                }
+        }
+
+        // 3. Map sang trạng thái đơn hàng nội bộ qua GhnStatusMapper
+        String internalStatus = ghnStatusMapper.mapToInternalStatus(nextGhnStatus);
+        if (internalStatus == null) {
+            internalStatus = hd.getTrangThaiDonHang();
+        }
+
+        // 4. Compare-and-Set SQL update để chống double-click / concurrent transitions
+        String updateSql = "UPDATE TichHopVanChuyen SET trang_thai = ? WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_FALLBACK' AND ma_van_don = ? AND (trang_thai = ? OR (trang_thai IS NULL AND ? = 'ready_to_pick'))";
+        int rowsUpdated = jdbcTemplate.update(updateSql, nextGhnStatus, idHoaDon, orderCode, currentGhnStatus, currentGhnStatus);
+        if (rowsUpdated != 1) {
+            throw new IllegalStateException("Trạng thái vận đơn đã bị thay đổi bởi một thao tác khác hoặc không còn hợp lệ. Vui lòng làm mới trang.");
+        }
+
+        // 5. Cập nhật HoaDon và thực thi các side-effects (Stock, Payment, ThongBao, EditLog duy nhất)
+        String actor = actorName != null ? actorName : "Admin";
+        String demoLogNote = String.format("[GHN_DEMO_SIMULATOR] Admin %s chuyển trạng thái vận chuyển Demo: %s -> %s. Mã vận đơn: %s",
+                actor, currentGhnStatus, nextGhnStatus, orderCode);
+
+        applyShippingStatus(idHoaDon, internalStatus, nextGhnStatus, actorAccountId, actor, demoLogNote, clientIp);
+
+        log.info("[GHN_DEMO_SIMULATOR] Đơn #{}: Chuyển trạng thái Demo thành công: GHN ({}) -> ({}), Nội bộ ({}) -> ({})",
+                idHoaDon, currentGhnStatus, nextGhnStatus, hd.getTrangThaiDonHang(), internalStatus);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("orderId", idHoaDon);
+        response.put("ghnOrderCode", orderCode);
+        response.put("ghnStatus", nextGhnStatus);
+        response.put("ghnStatusLabel", ghnStatusMapper.getGhnStatusLabel(nextGhnStatus));
+        response.put("trangThaiDonHang", internalStatus);
+        response.put("message", "Đã chuyển trạng thái Demo thành công: " + ghnStatusMapper.getGhnStatusLabel(nextGhnStatus));
+        return response;
+    }
+
     @Transactional
     public void applyShippingStatus(Integer idHoaDon, String newStatus, String ghnStatus) {
+        applyShippingStatus(idHoaDon, newStatus, ghnStatus, null, "SYSTEM", null, "127.0.0.1");
+    }
+
+    @Transactional
+    public void applyShippingStatus(Integer idHoaDon, String newStatus, String ghnStatus, Integer actorAccountId, String actorName, String customLogNote, String clientIp) {
         HoaDon hd = hoaDonRepository.findByIdWithLock(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
@@ -773,15 +875,15 @@ public class OrderViewService {
                     String giaTriMoi = String.format("status=%s, trangThaiHoanHang=%s", newStatus, targetReturnStatus != null ? targetReturnStatus.name() : "NULL");
                     String ghiChuLog = String.format("[GHN_WEBHOOK] Cập nhật trạng thái hoàn hàng từ webhook GHN. Mã vận đơn: %s, Trạng thái GHN: %s, Trạng thái hoàn hàng mới: %s", hd.getGhnOrderCode(), ghnStatus, targetReturnStatus != null ? targetReturnStatus.name() : "NULL");
                     auditService.log(
-                            null,
+                            actorAccountId,
                             "HoaDon",
                             Long.valueOf(hd.getId()),
                             "UPDATE",
                             giaTriCu,
                             giaTriMoi,
-                            "127.0.0.1",
+                            clientIp != null ? clientIp : "127.0.0.1",
                             ghiChuLog,
-                            "SYSTEM"
+                            actorName != null ? actorName : "SYSTEM"
                     );
                 }
             } else {
@@ -844,7 +946,6 @@ public class OrderViewService {
                 inventoryLotService.hoanKho(restockReqs);
             }
         }
-
 
         // Cập nhật trạng thái thanh toán và refund status
         String pm = hd.getPaymentMethod();
@@ -919,18 +1020,20 @@ public class OrderViewService {
                 hd.getRefundStatus() != null ? hd.getRefundStatus().name() : "NULL",
                 hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "NULL");
 
-        String ghiChuLog = String.format("[GHN_WEBHOOK] Cập nhật trạng thái tự động từ webhook GHN. Mã vận đơn: %s, Trạng thái GHN: %s", hd.getGhnOrderCode(), ghnStatus);
+        String ghiChuLog = customLogNote != null ? customLogNote : String.format("[GHN_WEBHOOK] Cập nhật trạng thái tự động từ webhook GHN. Mã vận đơn: %s, Trạng thái GHN: %s", hd.getGhnOrderCode(), ghnStatus);
+        String actor = actorName != null ? actorName : "SYSTEM";
+        String ip = clientIp != null ? clientIp : "127.0.0.1";
 
         auditService.log(
-                null,
+                actorAccountId,
                 "HoaDon",
                 Long.valueOf(hd.getId()),
                 "UPDATE",
                 giaTriCu,
                 giaTriMoi,
-                "127.0.0.1",
+                ip,
                 ghiChuLog,
-                "SYSTEM"
+                actor
         );
     }
 
@@ -959,6 +1062,24 @@ public class OrderViewService {
         return false;
     }
 
+    public String getNextStatus(HoaDon hd) {
+        if (hd == null || hd.getTrangThaiDonHang() == null) {
+            return null;
+        }
+        boolean hasGhnCode = (hd.getGhnOrderCode() != null && !hd.getGhnOrderCode().trim().isEmpty())
+                || (hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().trim().isEmpty());
+        String currentStatus = hd.getTrangThaiDonHang().toLowerCase();
+
+        // Đơn hàng đã có mã GHN hoặc đã bàn giao GHN/đang lấy hàng/đang giao -> Ngăn chặn chuyển tiếp thủ công
+        if (hasGhnCode || "da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus)) {
+            if ("da_tao_van_don_ghn".equals(currentStatus) || "da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus)) {
+                return null;
+            }
+        }
+
+        return getNextStatus(currentStatus);
+    }
+
     public String getNextStatus(String currentStatus) {
         if (currentStatus == null) {
             return null;
@@ -979,9 +1100,9 @@ public class OrderViewService {
             case "da_ban_giao_ghn" ->
                 null;
             case "dang_lay_hang" ->
-                "dang_giao";
+                null; // Tự động cập nhật bởi GHN Webhook
             case "dang_giao" ->
-                "da_giao";
+                null; // Tự động cập nhật bởi GHN Webhook
             case "stock_conflict" ->
                 "cho_xac_nhan";
             default ->
@@ -995,9 +1116,9 @@ public class OrderViewService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
 
         String currentStatus = hd.getTrangThaiDonHang();
-        String nextStatus = getNextStatus(currentStatus);
+        String nextStatus = getNextStatus(hd);
         if (nextStatus == null) {
-            throw new IllegalStateException("Đơn hàng đã ở trạng thái cuối cùng hoặc không thể tự chuyển tiếp.");
+            throw new IllegalStateException("Đơn hàng đã nhận mã vận đơn GHN / ở trạng thái cuối cùng và không thể chuyển trạng thái thủ công.");
         }
 
         updateOrderStatusByAdmin(orderId, nextStatus, currentStatus, actingUserId, clientIp);
@@ -1566,37 +1687,25 @@ public class OrderViewService {
         if (idHoaDon != null) {
             try {
                 List<String> codes = jdbcTemplate.queryForList(
-                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN_RETURN' ORDER BY id DESC",
+                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap IN ('GHN_RETURN', 'GHN_RETURN_FALLBACK') ORDER BY id DESC",
                     String.class,
                     idHoaDon
                 );
-                if (codes != null && !codes.isEmpty() && codes.get(0) != null && !codes.get(0).isBlank()) {
-                    return codes.get(0);
+                if (codes != null && !codes.isEmpty()) {
+                    for (String code : codes) {
+                        if (code != null && !code.isBlank() && !code.startsWith("GHN-RETURN-SIMULATED-") && !code.startsWith("GHNRET")) {
+                            return code.trim();
+                        }
+                    }
                 }
             } catch (Exception ignored) {}
         }
-        // 2. Fallback to HoaDon entity formula field
-        if (hd != null && hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().isEmpty()) {
-            return hd.getGhnReturnOrderCode();
-        }
-        // 2. Fallback to EditLog audit trail
-        try {
-            List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
-            for (int i = logs.size() - 1; i >= 0; i--) {
-                String giaTriMoi = logs.get(i).getGiaTriMoi();
-                if (giaTriMoi != null && giaTriMoi.contains("ghnReturnOrderCode=")) {
-                    String codeStr = giaTriMoi.substring(giaTriMoi.indexOf("ghnReturnOrderCode=") + 19);
-                    if (codeStr.contains(",")) {
-                        codeStr = codeStr.substring(0, codeStr.indexOf(","));
-                    }
-                    codeStr = codeStr.trim();
-                    if (!"NULL".equalsIgnoreCase(codeStr) && !codeStr.isEmpty()) {
-                        return codeStr;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fallback
+        // 2. Fallback to HoaDon entity formula field (strictly provider-isolated)
+        if (hd != null && hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().isBlank()
+                && !hd.getGhnReturnOrderCode().startsWith("GHN-RETURN-SIMULATED-")
+                && !hd.getGhnReturnOrderCode().startsWith("GHNRET")
+                && (hd.getGhnOrderCode() == null || !hd.getGhnReturnOrderCode().equals(hd.getGhnOrderCode()))) {
+            return hd.getGhnReturnOrderCode().trim();
         }
         return null;
     }
@@ -1773,9 +1882,9 @@ public class OrderViewService {
             throw new IllegalStateException("Đã hết thời hạn 7 ngày đổi/trả kể từ khi giao hàng thành công.");
         }
 
-        // Validate loaiYeuCau: Chỉ chấp nhận chính xác 'DOI' hoặc 'TRA'
+        // Validate loaiYeuCau: Mặc định là 'TRA' nếu trống (Trả hàng / Hoàn tiền)
         if (loaiYeuCauInput == null || loaiYeuCauInput.trim().isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng chọn loại yêu cầu (ĐỔI HÀNG hoặc TRẢ HÀNG).");
+            loaiYeuCauInput = "TRA";
         }
         String normalizedLoaiYeuCau = loaiYeuCauInput.trim().toUpperCase();
         if (!"DOI".equals(normalizedLoaiYeuCau) && !"TRA".equals(normalizedLoaiYeuCau)) {
@@ -1888,21 +1997,58 @@ public class OrderViewService {
         // 2. Reconcile / Chống Double GHN Order: Tra cứu xem đã có vận đơn hoàn trong TichHopVanChuyen / EditLog chưa
         String existingReturnCode = resolveGhnReturnOrderCode(idHoaDon, hd);
         String ghnReturnCode;
-        if (existingReturnCode != null && !existingReturnCode.trim().isEmpty()) {
+        boolean isFallback = false;
+        if (existingReturnCode != null && !existingReturnCode.trim().isEmpty() && !existingReturnCode.startsWith("GHN-RETURN-SIMULATED-") && !existingReturnCode.startsWith("GHNRET")) {
             // Trường hợp Reconcile: Vận đơn đã được tạo thành công ở lần thử trước, tái sử dụng mã cũ mà không gọi GHN API lại
             log.info("Reconciling existing return shipment code {} for HoaDon #{}", existingReturnCode, idHoaDon);
             ghnReturnCode = existingReturnCode;
+            if (existingReturnCode.startsWith("DEMO-GHN-RETURN-")) {
+                isFallback = true;
+            }
         } else {
             // Tạo vận đơn GHN thu hồi mới
             List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(idHoaDon);
-            ghnReturnCode = ghnService.createReturnShippingOrder(hd, items);
+            try {
+                ghnReturnCode = ghnService.createReturnShippingOrder(hd, items);
+                // Lưu GHN_RETURN vào TichHopVanChuyen trong CÙNG transaction để đảm bảo nguyên tố
+                String mergeSql = "MERGE INTO TichHopVanChuyen WITH (HOLDLOCK) AS target " +
+                        "USING (SELECT ? AS id_hoa_don, ? AS ma_van_don, ? AS nha_cung_cap, ? AS trang_thai) AS source " +
+                        "ON target.id_hoa_don = source.id_hoa_don AND target.nha_cung_cap = source.nha_cung_cap " +
+                        "WHEN MATCHED THEN UPDATE SET ma_van_don = source.ma_van_don, ma_don_hang_ngoai = source.ma_van_don, trang_thai = source.trang_thai " +
+                        "WHEN NOT MATCHED THEN INSERT (id_hoa_don, nha_cung_cap, ma_don_hang_ngoai, ma_van_don, trang_thai, ngay_tao) " +
+                        "VALUES (source.id_hoa_don, source.nha_cung_cap, source.ma_van_don, source.ma_van_don, source.trang_thai, GETDATE());";
+                jdbcTemplate.update(mergeSql, idHoaDon, ghnReturnCode, "GHN_RETURN", "waiting_to_return");
+            } catch (Exception e) {
+                if (ghnService.isEligibleForSandboxFallback(e)) {
+                    String timestampStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                    String uniqueId = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+                    ghnReturnCode = String.format("DEMO-GHN-RETURN-%s-%d-%s", timestampStr, idHoaDon, uniqueId);
+
+                    // Lưu GHN_RETURN_FALLBACK vào TichHopVanChuyen trong CÙNG transaction để đảm bảo nguyên tố
+                    String mergeSql = "MERGE INTO TichHopVanChuyen WITH (HOLDLOCK) AS target " +
+                            "USING (SELECT ? AS id_hoa_don, ? AS ma_van_don, ? AS nha_cung_cap, ? AS trang_thai) AS source " +
+                            "ON target.id_hoa_don = source.id_hoa_don AND target.nha_cung_cap = source.nha_cung_cap " +
+                            "WHEN MATCHED THEN UPDATE SET ma_van_don = source.ma_van_don, ma_don_hang_ngoai = source.ma_van_don, trang_thai = source.trang_thai " +
+                            "WHEN NOT MATCHED THEN INSERT (id_hoa_don, nha_cung_cap, ma_don_hang_ngoai, ma_van_don, trang_thai, ngay_tao) " +
+                            "VALUES (source.id_hoa_don, source.nha_cung_cap, source.ma_van_don, source.ma_van_don, source.trang_thai, GETDATE());";
+                    jdbcTemplate.update(mergeSql, idHoaDon, ghnReturnCode, "GHN_RETURN_FALLBACK", "ready_to_pick");
+
+                    isFallback = true;
+                    log.info("[GHN_RETURN_FALLBACK] Đã sinh mã Smart Fallback thu hồi: {} cho HoaDon #{}", ghnReturnCode, idHoaDon);
+                } else {
+                    throw e;
+                }
+            }
         }
 
         // 3. Cập nhật WAITING_FOR_PICKUP
         hd.setGhnReturnOrderCode(ghnReturnCode);
-        hd.setGhnStatus("waiting_to_return");
         hd.setTrangThaiHoanHang(ReturnStatus.WAITING_FOR_PICKUP);
         hoaDonRepository.save(hd);
+
+        String auditNote = isFallback
+                ? "[ADMIN_DUYET_TRA_HANG] Đã duyệt yêu cầu trả hàng. GHN Sandbox không tạo được đơn thu hồi. Hệ thống tạo Demo Return Fallback: " + ghnReturnCode
+                : "[ADMIN_DUYET_TRA_HANG] Đã duyệt yêu cầu và tạo vận đơn GHN thu hồi: " + ghnReturnCode;
 
         auditService.log(
             actingTaiKhoanId,
@@ -1912,7 +2058,7 @@ public class OrderViewService {
             "trangThaiHoanHang=" + (currentReturn != null ? currentReturn.name() : "PENDING_APPROVAL"),
             "trangThaiHoanHang=WAITING_FOR_PICKUP, ghnReturnOrderCode=" + ghnReturnCode,
             clientIp,
-            "[ADMIN_DUYET_TRA_HANG] Đã duyệt yêu cầu và tạo vận đơn GHN thu hồi: " + ghnReturnCode,
+            auditNote,
             roleStr
         );
 
@@ -2562,9 +2708,10 @@ public class OrderViewService {
                 return "Đã nhận sản phẩm " + tenNghiepVu;
             case EXCHANGE_STOCK_ALLOCATED:
                 return "Sản phẩm đổi mới đã sẵn sàng";
-            case COMPLETED:
+            case REFUNDED:
+            case EXCHANGED:
                 return "Yêu cầu " + tenNghiepVu + " đã hoàn tất";
-            case CANCELLED:
+            case REJECTED:
                 return "Yêu cầu " + tenNghiepVu + " đã bị hủy";
             default:
                 return "Yêu cầu " + tenNghiepVu;
@@ -2582,9 +2729,10 @@ public class OrderViewService {
                 return "Cửa hàng đã nhận được sản phẩm " + tenNghiepVu + " của đơn hàng " + maDon + ".";
             case EXCHANGE_STOCK_ALLOCATED:
                 return "Sản phẩm đổi mới cho đơn hàng " + maDon + " của bạn đã được chuẩn bị xong.";
-            case COMPLETED:
+            case REFUNDED:
+            case EXCHANGED:
                 return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn đã hoàn tất. Cảm ơn bạn!";
-            case CANCELLED:
+            case REJECTED:
                 return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn đã bị từ chối hoặc hủy.";
             default:
                 return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " hiện ở trạng thái: " + returnStatus.getLabel() + ".";

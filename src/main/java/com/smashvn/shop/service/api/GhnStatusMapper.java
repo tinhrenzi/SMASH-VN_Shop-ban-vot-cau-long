@@ -75,7 +75,7 @@ public class GhnStatusMapper {
             case "money_collect_picking":
                 return "Đang lấy hàng & thu tiền người gửi";
             case "picked":
-                return "Đã lấy hàng (Bàn giao GHN)";
+                return "Đã lấy hàng";
             case "storing":
                 return "Đã nhập kho GHN";
             case "sorting":
