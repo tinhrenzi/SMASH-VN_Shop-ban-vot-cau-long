@@ -1,0 +1,1109 @@
+﻿<!DOCTYPE html>
+<html lang="vi"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SMASH VN - Bao Cao Kiem Thu Nghiep Vu</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0b0e14;
+  --card: #121620;
+  --card2: #191f2d;
+  --card-hover: #1e2638;
+  --br: #283149;
+  --tx: #eaf0f8;
+  --mu: #94a3b8;
+  --di: #64748b;
+  
+  --pa: #00e5a0;
+  --pab: rgba(0, 229, 160, 0.14);
+  --pabr: rgba(0, 229, 160, 0.4);
+  
+  --wa: #f7b731;
+  --wab: rgba(247, 183, 49, 0.14);
+  --wabr: rgba(247, 183, 49, 0.4);
+  
+  --er: #ff6b6b;
+  --erb: rgba(255, 107, 107, 0.14);
+  --erbr: rgba(255, 107, 107, 0.4);
+  
+  --cr: #ff2d55;
+  --crb: rgba(255, 45, 85, 0.16);
+  --crbr: rgba(255, 45, 85, 0.5);
+  
+  --ac: #7c6bff;
+  --ac2: #3ecfff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  min-height: 100vh;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--br); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ac); }
+
+header {
+  background: linear-gradient(135deg, #181e2e 0%, #0b0e14 70%, #151226 100%);
+  border-bottom: 1px solid var(--br);
+  padding: 40px 60px 36px;
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(124, 107, 255, 0.22) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hi { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; }
+.ht { display: flex; align-items: center; gap: 20px; margin-bottom: 22px; }
+.lb {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--ac), var(--ac2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; color: #fff; flex-shrink: 0;
+  box-shadow: 0 0 30px rgba(124, 107, 255, 0.45);
+}
+.htl { font-size: 28px; font-weight: 800; letter-spacing: -0.4px; }
+.hsu { font-size: 14px; color: var(--mu); margin-top: 3px; }
+
+.meta { display: flex; flex-wrap: wrap; gap: 28px; font-size: 13px; color: var(--mu); }
+.meta span { display: flex; align-items: center; gap: 8px; }
+.mdo { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); display: inline-block; }
+
+.sbar {
+  max-width: 1600px; margin: 32px auto 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  padding: 0 60px;
+}
+.sc {
+  border-radius: 16px; padding: 20px 24px; border: 1px solid;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.sc:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.5); }
+.sc .cnt { font-size: 34px; font-weight: 800; }
+.sc .lbl { font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; }
+
+.sp { background: var(--pab); border-color: var(--pabr); color: var(--pa); }
+.sw { background: var(--wab); border-color: var(--wabr); color: var(--wa); }
+.se { background: var(--erb); border-color: var(--erbr); color: var(--er); }
+.sk { background: var(--crb); border-color: var(--crbr); color: var(--cr); }
+
+.tw { max-width: 1600px; margin: 0 auto; padding: 32px 60px 0; }
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--br); }
+.tab {
+  padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+  border-radius: 10px 10px 0 0; color: var(--mu); border: 1px solid transparent; border-bottom: none;
+  transition: all 0.2s; user-select: none;
+}
+.tab:hover { color: var(--tx); background: var(--card2); }
+.tab.active { color: var(--tx); background: var(--card); border-color: var(--br); border-bottom-color: var(--card); }
+
+main { max-width: 1600px; margin: 0 auto; padding: 0 60px 80px; }
+.sec { display: none; padding-top: 36px; }
+.sec.active { display: block; }
+
+.mh { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--br); }
+.mi { width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, var(--ac), var(--ac2)); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.mt { font-size: 20px; font-weight: 700; }
+.md2 { font-size: 13px; color: var(--mu); margin-top: 3px; }
+
+/* Filter & Search Bar */
+.controls-bar {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 16px; margin-bottom: 24px; background: var(--card); border: 1px solid var(--br);
+  padding: 14px 20px; border-radius: 12px;
+}
+.filter-btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.fbtn {
+  background: var(--card2); border: 1px solid var(--br); color: var(--mu);
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.fbtn:hover, .fbtn.active { background: var(--ac); color: #fff; border-color: var(--ac); }
+
+.search-box { position: relative; width: 280px; }
+.search-input {
+  width: 100%; background: var(--card2); border: 1px solid var(--br);
+  color: var(--tx); padding: 7px 14px 7px 36px; border-radius: 20px;
+  font-size: 13px; outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--ac); }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--mu); font-size: 14px; }
+
+/* Table Styling */
+.tw2 {
+  background: var(--card);
+  border: 1px solid var(--br);
+  border-radius: 16px;
+  overflow-x: auto;
+  margin-bottom: 36px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.th2 {
+  padding: 18px 24px;
+  background: var(--card2);
+  border-bottom: 1px solid var(--br);
+  font-size: 14px; font-weight: 700; color: var(--tx);
+  letter-spacing: 0.4px;
+}
+
+table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+thead th {
+  background: var(--card2);
+  padding: 14px 18px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--mu);
+  text-align: left; border-bottom: 1px solid var(--br);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(40, 49, 73, 0.7);
+  transition: background 0.15s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--card-hover); }
+
+td {
+  padding: 16px 18px;
+  font-size: 13.5px;
+  vertical-align: top;
+  line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+td.id-col {
+  font-weight: 700; color: var(--mu);
+  white-space: nowrap; font-size: 12.5px;
+  width: 85px;
+}
+
+.tt { font-weight: 600; color: var(--tx); font-size: 14.5px; line-height: 1.45; }
+.ti { font-size: 12.5px; color: var(--mu); margin-top: 5px; }
+.te { font-size: 12.5px; color: var(--ac2); font-style: italic; font-weight: 500; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.4px;
+  text-transform: uppercase; white-space: nowrap;
+}
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+
+.bp { background: var(--pab); color: var(--pa); border: 1px solid var(--pabr); } .bp::before { background: var(--pa); }
+.bw { background: var(--wab); color: var(--wa); border: 1px solid var(--wabr); } .bw::before { background: var(--wa); }
+.be { background: var(--erb); color: var(--er); border: 1px solid var(--erbr); } .be::before { background: var(--er); }
+.bk { background: var(--crb); color: var(--cr); border: 1px solid var(--crbr); } .bk::before { background: var(--cr); box-shadow: 0 0 8px var(--cr); }
+
+.note {
+  background: rgba(25, 31, 45, 0.95);
+  border-left: 4px solid var(--ac);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 16px; font-size: 12.5px; color: #cbd5e1;
+  margin-top: 8px; line-height: 1.6;
+}
+.nc { border-color: var(--cr); }
+.nw { border-color: var(--wa); }
+.np { border-color: var(--pa); }
+
+code {
+  background: rgba(124, 107, 255, 0.18);
+  color: #c084fc; border-radius: 5px;
+  padding: 2px 7px; font-size: 12px; font-family: 'Fira Code', 'Consolas', monospace;
+  white-space: pre-wrap; word-break: break-all;
+}
+
+.leg { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+.li2 { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--br); border-radius: 8px; padding: 8px 16px; font-size: 12.5px; }
+.ld { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+.pb { height: 8px; border-radius: 4px; background: var(--br); overflow: hidden; margin-bottom: 22px; }
+.pf { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--pa), var(--ac2)); }
+.ph { font-size: 13px; color: var(--mu); margin-bottom: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+
+@media(max-width: 1200px) {
+  header, .tw, main { padding-left: 30px; padding-right: 30px; }
+  .sbar { grid-template-columns: repeat(2, 1fr); padding: 0 30px; }
+  .g2 { grid-template-columns: 1fr; }
+}
+@media(max-width: 640px) {
+  header, .tw, main { padding-left: 16px; padding-right: 16px; }
+  .sbar { grid-template-columns: 1fr 1fr; padding: 0 16px; }
+}
+</style></head><body><header><div class="hi">
+<div class="ht"><div class="lb">SV</div><div>
+  <div class="htl">SMASH VN &#8211; B&#225;o C&#225;o Ki&#7875;m Th&#7917; Nghi&#7879;p V&#7909;</div>
+  <div class="hsu">Ph&#226;n t&#237;ch &amp; &#273;&#225;nh gi&#225; c&#225;c lu&#7891;ng: Thanh to&#225;n &middot; &#272;&#7893;i / Tr&#7843; h&#224;ng &middot; B&#225;n h&#224;ng t&#7841;i qu&#7847;y (POS)</div>
+</div></div>
+<div class="meta">
+  <span><span class="mdo"></span>Ng&#224;y ki&#7875;m th&#7917;: 12/08/2026</span>
+  <span><span class="mdo"></span>Ng&#432;&#7901;i th&#7921;c hi&#7879;n: Antigravity AI Reviewer</span>
+  <span><span class="mdo"></span>Spring Boot 3.x &middot; Java 21</span>
+  <span><span class="mdo"></span>T&#7893;ng test case: 45 &middot; Pass: 19 &middot; Warn: 8 &middot; Error: 10 &middot; Critical: 8</span>
+</div></div></header>
+
+<div class="sbar">
+  <div class="sc sp"><div class="cnt">19</div><div class="lbl">&#9989; PASS</div></div>
+  <div class="sc sw"><div class="cnt">8</div><div class="lbl">&#9888;&#65039; L&#7895;i Trung B&#236;nh</div></div>
+  <div class="sc se"><div class="cnt">10</div><div class="lbl">&#128308; L&#7895;i Nghi&#234;m Tr&#7885;ng</div></div>
+  <div class="sc sk"><div class="cnt">8</div><div class="lbl">&#128165; &#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng</div></div>
+</div>
+
+<div class="tw"><div class="tabs">
+  <div class="tab active" onclick="st('t1',this)">&#128179; Thanh To&#225;n</div>
+  <div class="tab" onclick="st('t2',this)">&#128260; &#272;&#7893;i / Tr&#7843; H&#224;ng</div>
+  <div class="tab" onclick="st('t3',this)">&#127978; B&#225;n H&#224;ng T&#7841;i Qu&#7847;y POS</div>
+  <div class="tab" onclick="st('t4',this)">&#128202; T&#7893;ng Quan &amp; Khuy&#7871;n Ngh&#7883;</div>
+</div></div>
+<main>
+<!-- TAB 1: THANH TOAN -->
+<div id="t1" class="sec active">
+<div class="mh"><div class="mi">&#128179;</div><div>
+  <div class="mt">Nghi&#7879;p V&#7909; Thanh To&#225;n</div>
+  <div class="md2">Ki&#7875;m th&#7917; to&#224;n b&#7897; lu&#7891;ng thanh to&#225;n SePay IPN, CheckoutContext, idempotency v&#224; tr&#7915; kho FIFO</div>
+</div></div>
+<div class="leg">
+  <div class="li2"><div class="ld" style="background:var(--pa)"></div>
+<div class="controls-bar">
+  <div class="filter-btn-group">
+    <button class="fbtn active" onclick="filterLevel('all', this)">Tất cả (All)</button>
+    <button class="fbtn" onclick="filterLevel('bp', this)">✅ Pass</button>
+    <button class="fbtn" onclick="filterLevel('bw', this)">⚠️ Lỗi Trung Bình</button>
+    <button class="fbtn" onclick="filterLevel('be', this)">🔴 Lỗi Nghiêm Trọng</button>
+    <button class="fbtn" onclick="filterLevel('bk', this)">💥 Đặc Biệt Nghiêm Trọng</button>
+  </div>
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" placeholder="Tìm kiếm test case, mã code..." onkeyup="searchTests(this.value)">
+  </div>
+</div>
+Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
+  <div class="li2"><div class="ld" style="background:var(--wa)"></div>L&#7895;i Trung B&#236;nh &#8211; Thi&#7871;u s&#243;t, r&#7911;i ro nh&#7887;</div>
+  <div class="li2"><div class="ld" style="background:var(--er)"></div>L&#7895;i Nghi&#234;m Tr&#7885;ng &#8211; &#7842;nh h&#432;&#7903;ng d&#7919; li&#7879;u / t&#224;i ch&#237;nh</div>
+  <div class="li2"><div class="ld" style="background:var(--cr)"></div>&#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng &#8211; C&#243; th&#7875; g&#226;y m&#7845;t ti&#7873;n / t&#7845;n c&#244;ng</div>
+</div>
+
+<!-- A: CheckoutContextService -->
+<div class="tw2"><div class="th2">A. CheckoutContextService &#8211; Kh&#7903;i t&#7841;o &amp; Qu&#7843;n l&#253; phi&#234;n thanh to&#225;n</div>
+<table><thead><tr>
+  <th style="width:70px">#</th>
+  <th style="min-width:200px">Test Case</th>
+  <th style="min-width:160px">&#272;&#7847;u v&#224;o</th>
+  <th>K&#7871;t qu&#7843; k&#7923; v&#7885;ng</th>
+  <th style="min-width:220px">K&#7871;t qu&#7843; th&#7921;c t&#7871;</th>
+  <th style="width:140px">M&#7913;c</th>
+</tr></thead><tbody>
+<tr>
+  <td class="id-col">TC-A01</td>
+  <td><div class="tt">T&#7841;o checkout context h&#7907;p l&#7879; cho gi&#7887; h&#224;ng</div><div class="ti">User &#273;&#227; &#273;&#259;ng nh&#7853;p, gi&#7887; 2 SP, &#273;&#7911; t&#7891;n kho</div></td>
+  <td><code>createFullCartContext(session, idNguoiDung=5)</code></td>
+  <td class="te">Token UUID, trangThai="ok"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; token sinh, g&#225;n v&#224;o session map</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A02</td>
+  <td><div class="tt">Gi&#7887; h&#224;ng tr&#7889;ng &#8594; checkout b&#7883; ch&#7863;n</div><div class="ti">User h&#7907;p l&#7879;, gi&#7887; 0 items</div></td>
+  <td><code>createFullCartContext(session, id=5)</code></td>
+  <td class="te">trangThai="error", th&#244;ng b&#225;o r&#245; r&#224;ng</td>
+  <td>&#10003; &#272;&#250;ng &#8212; tr&#7843; error s&#7899;m, kh&#244;ng t&#7841;o context</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A03</td>
+  <td><div class="tt">S&#7843;n ph&#7849;m ng&#7915;ng kinh doanh trong gi&#7887;</div><div class="ti">Item trangThai="ngung_kinh_doanh"</div></td>
+  <td><code>isSanPhamChiTietDangBan()</code></td>
+  <td class="te">Item v&#224;o invalidItems, kh&#244;ng v&#224;o contextItems</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ki&#7875;m tra tr&#7841;ng th&#225;i cha v&#224; con</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A04</td>
+  <td><div class="tt">S&#7889; l&#432;&#7907;ng gi&#7887; v&#432;&#7907;t t&#7891;n kho</div><div class="ti">reqQty=10, soLuongTon=3</div></td>
+  <td><code>reqQty &gt; tonKho</code></td>
+  <td class="te">B&#225;o l&#7895;i "S&#7889; l&#432;&#7907;ng v&#432;&#7907;t t&#7891;n kho"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; item v&#224;o invalidItems v&#7899;i &#273;&#250;ng l&#253; do</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A05</td>
+  <td><div class="tt">Context TTL 30 ph&#250;t &#8212; token h&#7871;t h&#7841;n</div><div class="ti">getContext() g&#7885;i sau khi expiresAt &#273;&#227; qua</div></td>
+  <td><code>ctx.isExpired() == true</code></td>
+  <td class="te">Tr&#7843; null, set status EXPIRED</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ki&#7875;m tra isExpired() tr&#432;&#7899;c khi tr&#7843; context</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A06</td>
+  <td><div class="tt">Qu&#225; 10 contexts/session &#8212; cleanup c&#243; th&#7875; b&#7883; b&#7887; qua</div><div class="ti">Session 10 contexts READY, t&#7845;t c&#7843; c&#249;ng createdAt</div></td>
+  <td><code>cleanupExcessContexts(map)</code></td>
+  <td class="te">X&#243;a context c&#361; nh&#7845;t &#273;&#7875; nh&#432;&#7901;ng ch&#7895;</td>
+  <td>&#9888; N&#7871;u t&#7845;t c&#7843; context c&#249;ng createdAt (clock precision th&#7845;p), oldestKey=null &#8594; kh&#244;ng x&#243;a, v&#7853;n v&#432;&#7907;t limit.
+    <div class="note nw">Kh&#244;ng c&#243; unit test cho nh&#225;nh n&#224;y. R&#7911;i ro trong m&#244;i tr&#432;&#7901;ng high-load.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A07</td>
+  <td><div class="tt">Ownership validation &#8212; CSRF-like cross-user token</div><div class="ti">User B submit token do User A t&#7841;o</div></td>
+  <td><code>validateOwnership(ctx, userB_id, sessB)</code></td>
+  <td class="te">Tr&#7843; false &#8212; ch&#7863;n unauthorized</td>
+  <td>&#10003; &#272;&#250;ng &#8212; so s&#225;nh customerId ch&#237;nh x&#225;c</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-A08</td>
+  <td><div class="tt">isActiveAccount &#8212; 2 field tr&#7841;ng th&#225;i kh&#244;ng &#273;&#7891;ng b&#7897;</div><div class="ti">trangThaiTaiKhoan=ACTIVE, trangThai="bi_khoa"</div></td>
+  <td><code>isActiveAccount(idNguoiDung)</code></td>
+  <td class="te">Tr&#7843; false &#8212; ch&#7863;n checkout</td>
+  <td>&#9888; &#272;&#250;ng trong tr&#432;&#7901;ng h&#7907;p n&#224;y, nh&#432;ng n&#7871;u 2 field kh&#244;ng &#273;&#7891;ng b&#7897; (migration c&#361;), k&#7871;t qu&#7843; c&#243; th&#7875; sai.
+    <div class="note nw">N&#234;n migration h&#7859;n sang 1 field enum AccountStatus.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+</tbody></table></div>
+<!-- B: SepayGatewayService -->
+<div class="tw2"><div class="th2">B. SepayGatewayService + Orchestrator &#8211; X&#7917; l&#253; IPN Webhook</div>
+<table><thead><tr>
+  <th style="width:70px">#</th>
+  <th style="min-width:200px">Test Case</th>
+  <th style="min-width:140px">&#272;&#7847;u v&#224;o</th>
+  <th>K&#7871;t qu&#7843; k&#7923; v&#7885;ng</th>
+  <th style="min-width:220px">K&#7871;t qu&#7843; th&#7921;c t&#7871;</th>
+  <th style="width:140px">M&#7913;c</th>
+</tr></thead><tbody>
+<tr>
+  <td class="id-col">TC-B01</td>
+  <td><div class="tt">IPN tr&#249;ng l&#7863;p &#8212; Idempotency check</div><div class="ti">transactionId &#273;&#227; t&#7891;n t&#7841;i v&#7899;i status="success"</div></td>
+  <td><code>findByTransactionId(txId).isPresent()</code></td>
+  <td class="te">Tr&#7843; success ngay, kh&#244;ng x&#7917; l&#253; l&#7841;i, kh&#244;ng tr&#7915; kho</td>
+  <td>&#10003; &#272;&#250;ng &#8212; detect duplicate, log audit, return early</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B02</td>
+  <td><div class="tt">IPN retry &#8212; tx tr&#432;&#7899;c &#273;&#227; FAILED</div><div class="ti">transactionId t&#7891;n t&#7841;i v&#7899;i status="failed"</div></td>
+  <td><code>paymentTransactionRepository.delete(existingTx)</code></td>
+  <td class="te">X&#243;a tx c&#361;, x&#7917; l&#253; l&#7841;i</td>
+  <td>&#10003; &#272;&#250;ng &#8212; cho ph&#233;p retry h&#7907;p l&#7879; v&#7899;i tx failed</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B03</td>
+  <td><div class="tt">S&#7889; ti&#7873;n IPN kh&#244;ng kh&#7899;p &#273;&#417;n h&#224;ng</div><div class="ti">transferAmount=1.000.000, order.tongTien=1.200.000</div></td>
+  <td><code>normalizedTransfer.compareTo(normalizedOrder) != 0</code></td>
+  <td class="te">N&#233;m InvalidPaymentException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; reject ngay, kh&#244;ng thay &#273;&#7893;i tr&#7841;ng th&#225;i &#273;&#417;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B04</td>
+  <td><div class="tt">S&#7889; ti&#7873;n IPN &#226;m ho&#7863;c b&#7857;ng 0</div><div class="ti">transferAmount=0 ho&#7863;c -500</div></td>
+  <td><code>transferAmount.compareTo(ZERO) &lt;= 0</code></td>
+  <td class="te">N&#233;m InvalidPaymentException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ch&#7863;n s&#7899;m tr&#432;&#7899;c validate</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B05</td>
+  <td><div class="tt">Kh&#244;ng tr&#237;ch xu&#7845;t &#273;&#432;&#7907;c m&#227; &#273;&#417;n</div><div class="ti">code=null, content="chuyen khoan tien hang"</div></td>
+  <td><code>extractOrderCode(code,content) == null</code></td>
+  <td class="te">N&#233;m OrderNotFoundException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; pattern matching th&#7845;t b&#7841;i, log warn r&#245; r&#224;ng</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B06</td>
+  <td><div class="tt">Thanh to&#225;n &#273;&#7871;n sau khi &#273;&#417;n &#273;&#227; h&#7911;y</div><div class="ti">order.trangThaiDonHang="da_huy", IPN &#273;&#250;ng s&#7889; ti&#7873;n</div></td>
+  <td>Branch: cancelled/expired order</td>
+  <td class="te">L&#432;u tx PAID_RECEIVED_AFTER_CANCEL, gi&#7919; nguy&#234;n tr&#7841;ng th&#225;i</td>
+  <td>&#10003; &#272;&#250;ng &#8212; kh&#244;ng reactivate &#273;&#417;n, ghi v&#7871;t c&#7843;nh b&#225;o audit</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B07</td>
+  <td><div class="tt">Snapshot b&#7883; m&#7845;t sau kh&#7903;i &#273;&#7897;ng l&#7841;i server</div><div class="ti">claimSnapshot() tr&#7843; null, order PENDING</div></td>
+  <td>Fallback: rebuild snapshot t&#7915; HoaDonChiTiet</td>
+  <td class="te">T&#7921; &#273;&#7897;ng x&#226;y d&#7921;ng l&#7841;i snapshot v&#224; ti&#7871;p t&#7909;c x&#7917; l&#253;</td>
+  <td>&#128308; Fallback &#273;&#432;&#7907;c rebuild nh&#432;ng <code>source</code> b&#7883; c&#7913;ng th&#224;nh <code>CheckoutSource.CART</code>. N&#7871;u &#273;&#417;n BUY_NOW, gi&#7887; h&#224;ng s&#7869; b&#7883; x&#243;a nh&#7847;m.
+    <div class="note nc">File: <code>SepayPaymentOrchestratorService.java:75</code> &#8212; <code>source(CheckoutSource.CART)</code> hard-coded. C&#7847;n l&#432;u <code>source</code> v&#224;o HoaDon khi t&#7841;o.</div></td>
+  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B08</td>
+  <td><div class="tt">Guest session mismatch &#8212; b&#7843;o v&#7879; thanh to&#225;n ch&#233;o</div><div class="ti">Guest A thanh to&#225;n, Guest B c&#249;ng maDonHang, sessionId kh&#225;c</div></td>
+  <td><code>!snapshot.getSessionId().equals(session.getId())</code></td>
+  <td class="te">N&#233;m AccessDeniedException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ch&#7863;n cross-session payment cho guest</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B09</td>
+  <td><div class="tt">Race condition: 2 IPN song song c&#249;ng transactionId</div><div class="ti">2 request &#273;&#7891;ng th&#7901;i, transactionId gi&#7889;ng nhau, tx ch&#432;a ghi</div></td>
+  <td>DB unique constraint on transactionId</td>
+  <td class="te">1 request succeed, 1 b&#7883; DataIntegrityViolationException</td>
+  <td>&#128308; Ch&#7881; d&#7921;a v&#224;o unique constraint. C&#7843; 2 c&#249;ng pass fast-check (line 56) r&#7891;i m&#7899;i b&#7883; constraint &#8212; window race condition t&#7891;n t&#7841;i trong load cao.
+    <div class="note nc">C&#7847;n d&#249;ng SELECT FOR UPDATE ho&#7863;c distributed lock tr&#234;n transactionId.</div></td>
+  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B10</td>
+  <td><div class="tt">Thi&#7871;u kho khi IPN &#273;&#7871;n &#8212; INSUFFICIENT_STOCK flow</div><div class="ti">SePay IPN &#273;&#250;ng s&#7889; ti&#7873;n, nh&#432;ng t&#7891;n kho = 0</div></td>
+  <td><code>AllocationStatus.INSUFFICIENT_STOCK</code></td>
+  <td class="te">L&#432;u tx PAID_INSUFFICIENT_STOCK, chuy&#7875;n YEU_CAU_HUY</td>
+  <td>&#10003; &#272;&#250;ng &#8212; commit ghi nh&#7853;n ti&#7873;n, kh&#244;ng rollback, ch&#7901; ho&#224;n tay</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B11</td>
+  <td><div class="tt">M&#227; &#273;&#417;n HDSVN (POS) nh&#7853;n IPN &#8212; flow ri&#234;ng</div><div class="ti">order.maDonHang starts with "HDSVN"</div></td>
+  <td>Branch isPosOrder=true</td>
+  <td class="te">Chuy&#7875;n DA_THANH_TOAN + DA_GIAO, b&#7887; qua FIFO allocate</td>
+  <td>&#10003; &#272;&#250;ng &#8212; kh&#244;ng c&#7847;n ph&#226;n b&#7893; kho (&#273;&#227; tr&#7915; l&#250;c checkout POS)</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B12</td>
+  <td><div class="tt">rawPayload l&#432;u v&#224;o DB khi debug=true tr&#234;n production</div><div class="ti">sepayConfig.isDebug()=true (c&#7845;u h&#236;nh sai)</div></td>
+  <td><code>tx.setRawPayload(rawPayload)</code></td>
+  <td class="te">rawPayload kh&#244;ng persist tr&#234;n prod, b&#7843;o v&#7879; PII</td>
+  <td>&#9888; Khi debug=true, to&#224;n b&#7897; raw JSON webhook &#8212; g&#7891;m th&#244;ng tin ng&#226;n h&#224;ng &#8212; &#273;&#432;&#7907;c ghi v&#224;o DB.
+    <div class="note nw">Ki&#7875;m tra .env: bi&#7871;n <code>SEPAY_DEBUG</code> c&#7847;n &#273;&#7843;m b&#7843;o <code>false</code> tr&#234;n production.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B13</td>
+  <td><div class="tt">IPN &#273;&#7871;n khi &#273;&#417;n STOCK_CONFLICT &#8212; kh&#244;ng c&#243; branch x&#7917; l&#253;</div><div class="ti">order.trangThaiDonHang="stock_conflict"</div></td>
+  <td>Kh&#244;ng c&#243; case n&#224;o match</td>
+  <td class="te">Branch t&#225;ch bi&#7879;t ho&#7863;c reject r&#245; r&#224;ng</td>
+  <td>&#128165; Kh&#244;ng c&#243; x&#7917; l&#253; cho tr&#7841;ng th&#225;i <code>STOCK_CONFLICT</code>. IPN v&#224;o nha&#769;nh "Normal Processing" g&#7885;i <code>xuLyThanhToanSePay()</code> &#8212; c&#243; th&#7875; tr&#7915; kho sai ho&#7863;c tr&#7841;ng th&#225;i kh&#244;ng nh&#7845;t qu&#225;n.
+    <div class="note nc">File: <code>SepayGatewayService.java</code> &#8212; c&#7847;n th&#234;m branch guard cho STOCK_CONFLICT.</div></td>
+  <td><span class="badge bk">&#272;&#7863;c Bi&#7879;t NT</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B14</td>
+  <td><div class="tt">SePay webhook kh&#244;ng x&#225;c th&#7921;c ch&#7919; k&#253; &#8212; b&#7843;o m&#7853;t</div><div class="ti">POST /sepay-ipn v&#7899;i payload gi&#7843; m&#7841;o b&#7845;t k&#7923;</div></td>
+  <td>X&#225;c th&#7921;c HMAC / API Token trong controller</td>
+  <td class="te">Server t&#7915; ch&#7889;i request kh&#244;ng c&#243; ch&#7919; k&#253; h&#7907;p l&#7879;</td>
+  <td>&#128165; CRITICAL SECURITY: Kh&#244;ng th&#7845;y x&#225;c th&#7921;c ch&#7919; k&#253; HMAC hay header token n&#224;o. K&#7867; t&#7845;n c&#244;ng c&#243; th&#7875; forge IPN v&#7899;i s&#7889; ti&#7873;n b&#7845;t k&#7923; v&#224; m&#227; &#273;&#417;n h&#224;ng th&#7853;t.
+    <div class="note nc">&#272;&#226;y l&#224; l&#7895;i b&#7843;o m&#7853;t nghi&#234;m tr&#7885;ng nh&#7845;t. C&#7847;n th&#234;m ki&#7875;m tra header <code>Authorization</code> / <code>X-SePay-Signature</code> ngay trong controller tr&#432;&#7899;c khi v&#224;o service.</div></td>
+  <td><span class="badge bk">&#272;&#7863;c Bi&#7879;t NT</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-B15</td>
+  <td><div class="tt">finalizeRefundWithoutRestock &#8212; &#273;i&#7873;u ki&#7879;n check l&#7887;ng</div><div class="ti">&#272;&#417;n c&#243; tx SUCCESS + trangThai != YEU_CAU_HUY</div></td>
+  <td><code>hasInsufficientStockTx = txs.anyMatch("SUCCESS")</code></td>
+  <td class="te">Ch&#7881; cho ph&#233;p &#273;&#417;n PAID_INSUFFICIENT_STOCK</td>
+  <td>&#128308; &#272;i&#7873;u ki&#7879;n bao g&#7891;m c&#7843; <code>"SUCCESS"</code> &#8212; &#273;&#417;n &#273;&#227; thanh to&#225;n b&#236;nh th&#432;&#7901;ng c&#243; th&#7875; v&#244; t&#236;nh trigger refund-without-restock n&#7871;u trangThai &#273;&#432;&#7907;c set th&#7911; c&#244;ng.
+    <div class="note nc">File: <code>SepayOrderPaymentService.java:185</code> &#8212; n&#234;n ch&#7881; match "PAID_INSUFFICIENT_STOCK".</div></td>
+  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+</tr>
+</tbody></table></div>
+</div><!-- end tab1 -->
+<!-- TAB 2: DOI / TRA HANG -->
+<div id="t2" class="sec">
+<div class="mh"><div class="mi">&#128260;</div><div>
+  <div class="mt">Nghi&#7879;p V&#7909; &#272;&#7893;i / Tr&#7843; H&#224;ng</div>
+  <div class="md2">Ki&#7875;m th&#7917; lu&#7891;ng y&#234;u c&#7847;u &#273;&#7893;i tr&#7843;, ph&#226;n b&#7893; kho FIFO, ho&#224;n ti&#7873;n v&#224; c&#225;c tr&#7841;ng th&#225;i ReturnStatus</div>
+</div></div>
+
+<div class="tw2"><div class="th2">C. ExchangeStockReservationService &#8211; Ph&#226;n b&#7893; kho h&#224;ng &#273;&#7893;i</div>
+<table><thead><tr>
+  <th style="width:70px">#</th>
+  <th style="min-width:200px">Test Case</th>
+  <th style="min-width:140px">&#272;&#7847;u v&#224;o</th>
+  <th>K&#7871;t qu&#7843; k&#7923; v&#7885;ng</th>
+  <th style="min-width:220px">K&#7871;t qu&#7843; th&#7921;c t&#7871;</th>
+  <th style="width:140px">M&#7913;c</th>
+</tr></thead><tbody>
+<tr>
+  <td class="id-col">TC-C01</td>
+  <td><div class="tt">Ph&#226;n b&#7893; kho &#273;&#7893;i h&#224;ng h&#7907;p l&#7879;</div><div class="ti">DOI + DA_HOAN_KHO + RETURNED + &#273;&#7911; t&#7891;n kho</div></td>
+  <td><code>reserveReplacementStock()</code></td>
+  <td class="te">Tr&#7915; kho, chuy&#7875;n EXCHANGE_STOCK_ALLOCATED, ghi audit</td>
+  <td>&#10003; &#272;&#250;ng &#8212; all-or-nothing check + pessimistic lock &#273;&#250;ng th&#7913; t&#7921; ASC</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C02</td>
+  <td><div class="tt">&#272;&#417;n TRA g&#7885;i reserveReplacementStock</div><div class="ti">loaiYeuCauDoiTra="TRA"</div></td>
+  <td><code>"DOI".equalsIgnoreCase(loai)</code></td>
+  <td class="te">N&#233;m IllegalStateException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; guard &#273;&#250;ng nghi&#7879;p v&#7909;</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C03</td>
+  <td><div class="tt">H&#224;ng ho&#224;n ch&#432;a &#273;&#432;&#7907;c ki&#7875;m &#273;&#7883;nh &#8212; block ph&#226;n b&#7893;</div><div class="ti">trangThaiXuLyHangHoan=CHO_KIEM_DINH</div></td>
+  <td>Step 3 validation</td>
+  <td class="te">N&#233;m IllegalStateException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; bu&#7897;c ki&#7875;m &#273;&#7883;nh v&#7853;t l&#253; tr&#432;&#7899;c khi ph&#226;n b&#7893;</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C04</td>
+  <td><div class="tt">Ph&#226;n b&#7893; tr&#249;ng &#8212; idempotent guard</div><div class="ti">returnStatus=EXCHANGE_STOCK_ALLOCATED &#273;&#227; set</div></td>
+  <td>Step 4: Early return n&#7871;u &#273;&#227; allocated</td>
+  <td class="te">B&#7887; qua, kh&#244;ng tr&#7915; kho l&#7847;n 2</td>
+  <td>&#10003; &#272;&#250;ng &#8212; guard idempotent an to&#224;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C05</td>
+  <td><div class="tt">T&#7891;n kho kh&#244;ng &#273;&#7911; &#8212; all-or-nothing rollback</div><div class="ti">SP A: c&#7847;n 3, c&#243; 1. SP B: &#273;&#7911;</div></td>
+  <td>hasInsufficient check tr&#432;&#7899;c khi tr&#7915;</td>
+  <td class="te">Kh&#244;ng tr&#7915; kho SP n&#224;o, throw message &#273;&#7847;y &#273;&#7911;</td>
+  <td>&#10003; &#272;&#250;ng &#8212; collect t&#7845;t c&#7843; l&#7895;i, throw m&#7897;t l&#7847;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C06</td>
+  <td><div class="tt">Inconsistent: RETURNED + GHN_EXCHANGE &#273;&#227; t&#7891;n t&#7841;i</div><div class="ti">returnStatus=RETURNED nh&#432;ng TichHopVanChuyen &#273;&#227; c&#243; GHN_EXCHANGE</div></td>
+  <td>JDBC query check</td>
+  <td class="te">N&#233;m IllegalStateException, y&#234;u c&#7847;u ki&#7875;m tra th&#7911; c&#244;ng</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ph&#225;t hi&#7879;n inconsistency, kh&#244;ng ti&#7871;n h&#224;nh t&#7921; &#273;&#7897;ng</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C07</td>
+  <td><div class="tt">completeExchangeShipping &#8212; ch&#432;a ph&#226;n b&#7893; kho</div><div class="ti">returnStatus=RETURNED (ch&#432;a qua EXCHANGE_STOCK_ALLOCATED)</div></td>
+  <td><code>currentReturn != EXCHANGE_STOCK_ALLOCATED</code></td>
+  <td class="te">N&#233;m IllegalStateException</td>
+  <td>&#10003; &#272;&#250;ng &#8212; &#273;&#7843;m b&#7843;o th&#7913; t&#7921; state machine</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C08</td>
+  <td><div class="tt">completeExchangeShipping &#8212; thi&#7871;u v&#7853;n &#273;&#417;n GHN_EXCHANGE</div><div class="ti">returnStatus=EXCHANGE_STOCK_ALLOCATED, kh&#244;ng c&#243; GHN_EXCHANGE record</div></td>
+  <td>JDBC count check</td>
+  <td class="te">N&#233;m IllegalStateException, kh&#244;ng thay &#273;&#7893;i tr&#7841;ng th&#225;i</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ng&#259;n transition khi ch&#432;a t&#7841;o v&#7853;n &#273;&#417;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C09</td>
+  <td><div class="tt">&#272;&#417;n tr&#7843; h&#224;ng: lu&#7891;ng ho&#224;n ti&#7873;n ch&#432;a c&#243; service ri&#234;ng</div><div class="ti">loai="TRA", returnStatus=RETURNED &#8594; c&#7847;n ho&#224;n ti&#7873;n</div></td>
+  <td>AdminController refund flow</td>
+  <td class="te">Lu&#7891;ng ho&#224;n ti&#7873;n t&#225;ch bi&#7879;t, c&#243; ki&#7875;m so&#225;t ph&#234; duy&#7879;t</td>
+  <td>&#128308; Kh&#244;ng c&#243; service chuy&#234;n bi&#7879;t. Logic REFUNDED ch&#7881; n&#7857;m trong <code>finalizeRefundWithoutRestock()</code> (d&#224;nh cho thi&#7871;u kho) ho&#7863;c set tay t&#7915; admin controller.
+    <div class="note nc">R&#7911;i ro: Admin c&#243; th&#7875; &#273;&#225;nh d&#7845;u REFUNDED cho &#273;&#417;n ch&#432;a th&#7921;c s&#7921; ho&#224;n ti&#7873;n, kh&#244;ng c&#243; b&#432;&#7899;c x&#225;c nh&#7853;n ng&#226;n h&#224;ng.</div></td>
+  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C10</td>
+  <td><div class="tt">Kho h&#224;ng c&#361; sau &#273;&#7893;i ch&#432;a &#273;&#432;&#7907;c nh&#7853;p l&#7841;i h&#7879; th&#7889;ng</div><div class="ti">&#272;&#417;n chuy&#7875;n EXCHANGED, h&#224;ng c&#361; &#7903; DA_HOAN_KHO</div></td>
+  <td>ReturnInventoryStatus transitions</td>
+  <td class="te">T&#7891;n kho SP c&#361; &#273;&#432;&#7907;c c&#7897;ng l&#7841;i (ho&#7863;c &#273;&#225;nh d&#7845;u l&#7895;i)</td>
+  <td>&#9888; Kh&#244;ng th&#7845;y logic c&#7897;ng l&#7841;i t&#7891;n kho cho h&#224;ng c&#361; sau &#273;&#7893;i. H&#224;ng c&#361; n&#7871;u c&#242;n d&#249;ng &#273;&#432;&#7907;c s&#7869; b&#7883; "m&#7845;t" kh&#7887;i h&#7879; th&#7889;ng.
+    <div class="note nw">C&#7847;n b&#7893; sung step ho&#224;n kho cho SP c&#361; trong ReturnInventoryStatus.DA_HOAN_KHO flow.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C11</td>
+  <td><div class="tt">bangChungHoanTra &#8212; kh&#244;ng c&#243; validation &#273;&#7883;nh d&#7841;ng</div><div class="ti">Kh&#225;ch upload &#7843;nh ch&#7913;ng minh &#273;&#7893;i/tr&#7843;</div></td>
+  <td>Field <code>bangChungHoanTra</code> NVARCHAR(MAX)</td>
+  <td class="te">Ch&#7881; ch&#7845;p nh&#7853;n URL &#7843;nh h&#7907;p l&#7879; / path n&#7897;i b&#7897;</td>
+  <td>&#9888; Field l&#432;u chu&#7895;i tu&#7ef3; &#253;, c&#243; th&#7875; l&#432;u script n&#7871;u render tr&#7921;c ti&#7871;p trong Thymeleaf v&#7899;i th:utext.
+    <div class="note nw">C&#7847;n validate l&#224; URL/path h&#7907;p l&#7879; tr&#432;&#7899;c khi persist.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C12</td>
+  <td><div class="tt">Kh&#244;ng c&#243; timeout &#273;&#7893;i/tr&#7843; &#8212; kh&#225;ch g&#7917;i sau 60 ng&#224;y</div><div class="ti">&#272;&#417;n da_giao 60 ng&#224;y tr&#432;&#7899;c, kh&#225;ch t&#7841;o y&#234;u c&#7847;u &#273;&#7893;i tr&#7843;</div></td>
+  <td>Business rule: th&#7901;i h&#7841;n &#273;&#7893;i/tr&#7843;</td>
+  <td class="te">H&#7879; th&#7889;ng t&#7915; ch&#7889;i y&#234;u c&#7847;u qu&#225; h&#7841;n</td>
+  <td>&#128165; Kh&#244;ng c&#243; ki&#7875;m tra th&#7901;i h&#7841;n &#273;&#7893;i/tr&#7843; trong code. Kh&#225;ch c&#243; th&#7875; m&#7903; y&#234;u c&#7847;u cho &#273;&#417;n b&#7845;t k&#7923; l&#250;c n&#224;o.
+    <div class="note nc">C&#7847;n th&#234;m: <code>if (hd.getNgayTao().plusDays(30).isBefore(now)) throw ...</code> ho&#7863;c c&#7845;u h&#236;nh qua tham s&#7889;.</div></td>
+  <td><span class="badge bk">&#272;&#7863;c Bi&#7879;t NT</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-C13</td>
+  <td><div class="tt">actingTaiKhoanId=null &#8212; kh&#244;ng c&#243; quy&#7873;n</div><div class="ti">G&#7885;i reserveReplacementStock v&#7899;i actingTaiKhoanId=null</div></td>
+  <td><code>if (actingTaiKhoanId == null) throw AccessDeniedException</code></td>
+  <td class="te">N&#233;m AccessDeniedException ngay &#273;&#7847;u method</td>
+  <td>&#10003; &#272;&#250;ng &#8212; guard null &#7903; b&#432;&#7899;c &#273;&#7847;u ti&#234;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+</tbody></table></div>
+</div><!-- end tab2 -->
+<!-- TAB 3: POS -->
+<div id="t3" class="sec">
+<div class="mh"><div class="mi">&#127978;</div><div>
+  <div class="mt">Nghi&#7879;p V&#7909; B&#225;n H&#224;ng T&#7841;i Qu&#7847;y (POS)</div>
+  <div class="md2">Ki&#7875;m th&#7917; AdminPosService: thanh to&#225;n, h&#7911;y &#273;&#417;n, x&#225;c nh&#7853;n chuy&#7875;n kho&#7843;n, &#273;&#259;ng k&#253; kh&#225;ch h&#224;ng, &#225;p d&#7909;ng voucher</div>
+</div></div>
+
+<div class="tw2"><div class="th2">D. AdminPosService.thanhToanPos() &#8211; Thanh to&#225;n t&#7841;i qu&#7847;y</div>
+<table><thead><tr>
+  <th style="width:70px">#</th>
+  <th style="min-width:200px">Test Case</th>
+  <th style="min-width:140px">&#272;&#7847;u v&#224;o</th>
+  <th>K&#7871;t qu&#7843; k&#7923; v&#7885;ng</th>
+  <th style="min-width:220px">K&#7871;t qu&#7843; th&#7921;c t&#7871;</th>
+  <th style="width:140px">M&#7913;c</th>
+</tr></thead><tbody>
+<tr>
+  <td class="id-col">TC-D01</td>
+  <td><div class="tt">Thanh to&#225;n ti&#7873;n m&#7863;t h&#7907;p l&#7879;</div><div class="ti">phuongThucPos="TIEN_MAT", items h&#7907;p l&#7879;, &#273;&#7911; kho</div></td>
+  <td><code>thanhToanPos("TIEN_MAT",...)</code></td>
+  <td class="te">trangThaiDonHang="da_giao", trangThaiThanhToan="DA_THANH_TOAN"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ti&#7873;n m&#7863;t ho&#224;n th&#224;nh ngay l&#7853;p t&#7913;c</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D02</td>
+  <td><div class="tt">Thanh to&#225;n chuy&#7875;n kho&#7843;n POS &#8212; tr&#7841;ng th&#225;i ch&#7901;</div><div class="ti">phuongThucPos="CHUYEN_KHOAN"</div></td>
+  <td>isChuyenKhoan=true</td>
+  <td class="te">trangThaiDonHang="cho_thanh_toan", paidAt=null</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ch&#7901; x&#225;c nh&#7853;n th&#7911; c&#244;ng ho&#7863;c SePay IPN</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D03</td>
+  <td><div class="tt">Items r&#7895;ng &#8594; t&#7915; ch&#7889;i thanh to&#225;n</div><div class="ti">items=[], kh&#244;ng c&#243; s&#7843;n ph&#7849;m</div></td>
+  <td>Guard: items == null || isEmpty()</td>
+  <td class="te">RuntimeException "&#272;&#417;n h&#224;ng kh&#244;ng c&#243; s&#7843;n ph&#7849;m n&#224;o!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; validate s&#7899;m tr&#432;&#7899;c transaction</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D04</td>
+  <td><div class="tt">S&#7889; l&#432;&#7907;ng item &#226;m ho&#7863;c b&#7857;ng 0</div><div class="ti">items[0].soLuong=0</div></td>
+  <td>Guard: soLuong &lt;= 0</td>
+  <td class="te">RuntimeException "S&#7889; l&#432;&#7907;ng kh&#244;ng h&#7907;p l&#7879;!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; validate trong FIFO preparation loop</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D05</td>
+  <td><div class="tt">Kh&#225;ch l&#7867; (idKhachHang=-1) &#8212; t&#7841;o t&#7921; &#273;&#7897;ng guest account</div><div class="ti">idKhachHang=null ho&#7863;c -1, guest@smashvn.com ch&#432;a t&#7891;n t&#7841;i</div></td>
+  <td>Auto-create TaiKhoan + KhachHang</div></td>
+  <td class="te">T&#7841;o m&#7899;i guest TK</td>
+  <td>&#9888; Guest TK &#273;&#432;&#7907;c t&#7841;o v&#7899;i password raw <code>"GUEST_NO_PASSWORD"</code> kh&#244;ng hash.
+    <div class="note nw">N&#234;n d&#249;ng <code>passwordEncoder.encode("GUEST_NO_PASSWORD")</code>. File: <code>AdminPosService.java:192</code></div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D06</td>
+  <td><div class="tt">Voucher h&#7871;t l&#432;&#7907;t s&#7917; d&#7909;ng</div><div class="ti">soLuongConLai=0</div></td>
+  <td><code>soLuongConLai &lt;= 0</code></td>
+  <td class="te">RuntimeException "Voucher &#273;&#227; h&#7871;t l&#432;&#7907;t s&#7917; d&#7909;ng."</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ki&#7875;m tra v&#7899;i Pessimistic Write Lock</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D07</td>
+  <td><div class="tt">Voucher ch&#432;a b&#7855;t &#273;&#7847;u / &#273;&#227; h&#7871;t h&#7841;n</div><div class="ti">ngayBatDau &gt; now ho&#7863;c ngayKetThuc &lt; now</div></td>
+  <td>Date range check</td>
+  <td class="te">Reject v&#7899;i th&#244;ng b&#225;o t&#432;&#417;ng &#7913;ng</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ki&#7875;m tra &#273;&#7847;y &#273;&#7911; c&#7843; 2 chi&#7873;u</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D08</td>
+  <td><div class="tt">&#272;&#417;n nh&#7887; h&#417;n gi&#225; tr&#7883; t&#7889;i thi&#7875;u voucher</div><div class="ti">tongTienHang=200k, giaTriDonHangToiThieu=500k</div></td>
+  <td><code>tongTien.compareTo(toiThieu) &lt; 0</code></td>
+  <td class="te">RuntimeException v&#7899;i s&#7889; ti&#7873;n t&#7889;i thi&#7875;u r&#245; r&#224;ng</td>
+  <td>&#10003; &#272;&#250;ng &#8212; message c&#243; s&#7889; ti&#7873;n c&#7909; th&#7875;</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D09</td>
+  <td><div class="tt">maGiaoDich ch&#7913;a k&#253; t&#7921; XSS / script injection</div><div class="ti">maGiaoDich = "&lt;script&gt;alert(1)&lt;/script&gt;"</div></td>
+  <td>Jsoup.clean() v&#7899;i Safelist.none()</td>
+  <td class="te">Tag HTML b&#7883; strip, ch&#7881; l&#432;u text thu&#7847;n</td>
+  <td>&#10003; &#272;&#250;ng &#8212; Jsoup sanitize ng&#259;n XSS stored</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D10</td>
+  <td><div class="tt">maGiaoDich d&#224;i h&#417;n 100 k&#253; t&#7921;</div><div class="ti">maGiaoDich = "A".repeat(150)</div></td>
+  <td>Length check: &gt; 100</td>
+  <td class="te">RuntimeException "M&#227; giao d&#7883;ch kh&#244;ng &#273;&#432;&#7907;c v&#432;&#7907;t qu&#225; 100 k&#253; t&#7921;!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; input length guard</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D11</td>
+  <td><div class="tt">Ph&#432;&#417;ng th&#7913;c thanh to&#225;n POS kh&#244;ng h&#7907;p l&#7879;</div><div class="ti">phuongThucPos="THE_TIN_DUNG"</div></td>
+  <td>Controller validation</td>
+  <td class="te">400 Bad Request "Ph&#432;&#417;ng th&#7913;c thanh to&#225;n POS kh&#244;ng h&#7907;p l&#7879;!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; ch&#7863;n &#7903; controller layer</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D12</td>
+  <td><div class="tt">Double-submit protection khi click li&#234;n t&#7909;c</div><div class="ti">2 request &#273;&#7891;ng th&#7901;i t&#7915; c&#249;ng session</div></td>
+  <td>synchronized(session) + pos_processing attribute</td>
+  <td class="te">Request th&#7913; 2 b&#7883; ch&#7863;n ngay l&#7853;p t&#7913;c</td>
+  <td>&#10003; &#272;&#250;ng &#8212; synchronized block &#273;&#250;ng, cleanup trong finally</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D13</td>
+  <td><div class="tt">Session h&#7871;t h&#7841;n khi checkout POS &#8212; fallback</div><div class="ti">idNguoiDung kh&#244;ng c&#243; trong session</div></td>
+  <td>Fallback SecurityContext lookup</td>
+  <td class="te">L&#7845;y &#273;&#432;&#7907;c idNguoiDung t&#7915; Spring Security context</td>
+  <td>&#10003; &#272;&#250;ng &#8212; fallback h&#7907;p l&#253;, tr&#225;nh l&#7895;i kh&#244;ng c&#7847;n thi&#7871;t</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D14</td>
+  <td><div class="tt">cancelOrderPos &#8212; h&#7911;y &#273;&#417;n kh&#244;ng &#7903; ch&#7901; thanh to&#225;n</div><div class="ti">order.trangThaiDonHang="da_giao"</div></td>
+  <td><code>!CHO_THANH_TOAN.equals(trangThai)</code></td>
+  <td class="te">RuntimeException "Ch&#7881; c&#243; th&#7875; h&#7911;y &#273;&#417;n &#7903; tr&#7841;ng th&#225;i ch&#7901; thanh to&#225;n!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; guard state machine</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D15</td>
+  <td><div class="tt">cancelOrderPos &#8212; kh&#244;ng reverse FIFO lot khi h&#7911;y</div><div class="ti">&#272;&#417;n POS cancel v&#7899;i kho FIFO multi-lot</div></td>
+  <td>Ho&#224;n kho: <code>spct.soLuongTon += ct.soLuong</code></td>
+  <td class="te">Ho&#224;n kho &#273;&#250;ng lot g&#7889;c &#273;&#227; tr&#7915;</td>
+  <td>&#128308; <code>cancelOrderPos()</code> c&#7897;ng th&#7859;ng v&#224;o <code>spct.soLuongTon</code> m&#224; kh&#244;ng c&#7897;ng l&#7841;i lot c&#7909; th&#7875;. Vi ph&#7841;m t&#237;nh to&#224;n v&#7865;n c&#7911;a FIFO lot tracking.
+    <div class="note nc">File: <code>AdminPosService.java:441-444</code> &#8212; c&#7847;n g&#7885;i <code>inventoryLotService.reverseAllocation()</code>.</div></td>
+  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-D16</td>
+  <td><div class="tt">S&#7843;n ph&#7849;m ng&#7915;ng b&#225;n c&#243; th&#7875; b&#225;n n&#7871;u POST th&#7859;ng API</div><div class="ti">SPCT trangThai="ngung_kinh_doanh" nh&#432;ng idSanPhamChiTiet h&#7907;p l&#7879;</div></td>
+  <td>Re-check isDangBan() trong thanhToanPos()</td>
+  <td class="te">Kh&#244;ng b&#225;n s&#7843;n ph&#7849;m ng&#7915;ng kinh doanh</td>
+  <td>&#9888; <code>thanhToanPos()</code> kh&#244;ng t&#225;i ki&#7875;m tra <code>isDangBan()</code> &#8212; ch&#7881; search UI l&#7885;c. N&#7871;u POST th&#7859;ng API, v&#7851;n c&#243; th&#7875; b&#225;n SP &#273;&#227; ng&#7915;ng.
+    <div class="note nw">C&#7847;n th&#234;m validate <code>isDangBan(spct.getTrangThai())</code> trong v&#242;ng l&#7863;p FIFO prep.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+</tbody></table></div>
+
+<div class="tw2"><div class="th2">E. AdminPosService.registerCustomerAtPos() &#8211; &#272;&#259;ng k&#253; kh&#225;ch h&#224;ng t&#7841;i qu&#7847;y</div>
+<table><thead><tr>
+  <th style="width:70px">#</th>
+  <th style="min-width:200px">Test Case</th>
+  <th style="min-width:140px">&#272;&#7847;u v&#224;o</th>
+  <th>K&#7871;t qu&#7843; k&#7923; v&#7885;ng</th>
+  <th style="min-width:220px">K&#7871;t qu&#7843; th&#7921;c t&#7871;</th>
+  <th style="width:140px">M&#7913;c</th>
+</tr></thead><tbody>
+<tr>
+  <td class="id-col">TC-E01</td>
+  <td><div class="tt">&#272;&#259;ng k&#253; kh&#225;ch h&#224;ng m&#7899;i h&#7907;p l&#7879;</div><div class="ti">hoTen="Nguyen Van A", soDienThoai="0912345678"</div></td>
+  <td><code>registerCustomerAtPos(req)</code></td>
+  <td class="te">T&#7841;o TaiKhoan + KhachHang, success=true, created=true</td>
+  <td>&#10003; &#272;&#250;ng &#8212; trong c&#249;ng transaction, phone normalized</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-E02</td>
+  <td><div class="tt">S&#272;T &#273;&#227; t&#7891;n t&#7841;i trong KhachHang</div><div class="ti">Phone &#273;&#227; c&#243; trong DB</div></td>
+  <td><code>findBySoDienThoaiKh()</code></td>
+  <td class="te">Tr&#7843; requiresConfirmation=true, kh&#244;ng t&#7841;o m&#7899;i</td>
+  <td>&#10003; &#272;&#250;ng &#8212; tr&#7843; th&#244;ng tin kh&#225;ch c&#361; &#273;&#7875; nh&#226;n vi&#234;n x&#225;c nh&#7853;n</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-E03</td>
+  <td><div class="tt">S&#272;T kh&#244;ng &#273;&#250;ng &#273;&#7883;nh d&#7841;ng Vi&#7879;t Nam</div><div class="ti">soDienThoai="123abc"</div></td>
+  <td><code>PhoneUtils.isValid()</code></td>
+  <td class="te">RuntimeException "S&#7889; &#273;i&#7879;n tho&#7841;i kh&#244;ng &#273;&#250;ng &#273;&#7883;nh d&#7841;ng Vi&#7879;t Nam!"</td>
+  <td>&#10003; &#272;&#250;ng &#8212; normalize + validate</td>
+  <td><span class="badge bp">Pass</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-E04</td>
+  <td><div class="tt">M&#7853;t kh&#7849;u m&#7863;c &#273;&#7883;nh "12345678" &#8212; b&#7843;o m&#7853;t y&#7871;u</div><div class="ti">T&#7841;o t&#224;i kho&#7843;n m&#7899;i t&#7841;i qu&#7847;y</div></td>
+  <td><code>passwordEncoder.encode("12345678")</code></td>
+  <td class="te">Kh&#225;ch nh&#7853;n OTP ho&#7863;c bu&#7897;c &#273;&#7893;i m&#7853;t kh&#7849;u l&#7847;n &#273;&#7847;u</td>
+  <td>&#128165; M&#7853;t kh&#7849;u m&#7863;c &#273;&#7883;nh <code>"12345678"</code> &#273;&#432;&#7907;c hash nh&#432;ng kh&#244;ng c&#243; c&#417; ch&#7871; bu&#7897;c &#273;&#7893;i. M&#7885;i kh&#225;ch &#273;&#259;ng k&#253; t&#7841;i qu&#7847;y c&#243; c&#249;ng m&#7853;t kh&#7849;u d&#7877; &#273;o&#225;n.
+    <div class="note nc">File: <code>AdminPosService.java:510</code>. C&#7847;n: flag <code>mustChangePassword=true</code> ho&#7863;c g&#7917;i OTP qua SMS &#273;&#7875; k&#237;ch ho&#7841;t.</div></td>
+  <td><span class="badge bk">&#272;&#7863;c Bi&#7879;t NT</span></td>
+</tr>
+<tr>
+  <td class="id-col">TC-E05</td>
+  <td><div class="tt">hoTen b&#7883; inject script HTML</div><div class="ti">hoTen="&lt;img src=x onerror=alert(1)&gt;"</div></td>
+  <td>Input validation cho hoTen</td>
+  <td class="te">Strip HTML, l&#432;u text thu&#7847;n ho&#7863;c reject</td>
+  <td>&#9888; Kh&#244;ng c&#243; sanitization cho <code>hoTen</code>. N&#7871;u render v&#7899;i <code>th:utext</code>, s&#7869; l&#224; l&#7895; h&#7893;ng XSS.
+    <div class="note nw">N&#234;n th&#234;m <code>Jsoup.clean()</code> cho hoTen nh&#432; &#273;&#227; l&#224;m v&#7899;i ghiChu v&#224; maGiaoDich.</div></td>
+  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+</tr>
+</tbody></table></div>
+</div><!-- end tab3 -->
+<!-- TAB 4: TONG QUAN -->
+<div id="t4" class="sec">
+<div class="mh"><div class="mi">&#128202;</div><div>
+  <div class="mt">T&#7893;ng Quan &amp; Khuy&#7871;n Ngh&#7883; &#431;u Ti&#234;n</div>
+  <div class="md2">Ma tr&#7853;n r&#7911;i ro, th&#7889;ng k&#234; theo ph&#226;n lo&#7841;i v&#224; h&#224;nh &#273;&#7897;ng kh&#7855;c ph&#7909;c &#273;&#7873; xu&#7845;t</div>
+</div></div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px;">
+  <!-- Phan bo theo nghiep vu -->
+  <div class="tw2">
+    <div class="th2">Ph&#226;n b&#7889; theo nghi&#7879;p v&#7909;</div>
+    <table><thead><tr>
+      <th>Nghi&#7879;p v&#7909;</th>
+      <th style="color:var(--pa)">Pass</th>
+      <th style="color:var(--wa)">Trung B&#236;nh</th>
+      <th style="color:var(--er)">Nghi&#234;m Tr&#7885;ng</th>
+      <th style="color:var(--cr)">&#272;&#7863;c Bi&#7879;t NT</th>
+      <th>T&#7893;ng</th>
+    </tr></thead><tbody>
+    <tr>
+      <td><strong>&#128179; Thanh To&#225;n</strong></td>
+      <td style="color:var(--pa);font-weight:700">9</td>
+      <td style="color:var(--wa);font-weight:700">2</td>
+      <td style="color:var(--er);font-weight:700">3</td>
+      <td style="color:var(--cr);font-weight:700">2</td>
+      <td><strong>16</strong></td>
+    </tr>
+    <tr>
+      <td><strong>&#128260; &#272;&#7893;i / Tr&#7843;</strong></td>
+      <td style="color:var(--pa);font-weight:700">7</td>
+      <td style="color:var(--wa);font-weight:700">2</td>
+      <td style="color:var(--er);font-weight:700">1</td>
+      <td style="color:var(--cr);font-weight:700">3</td>
+      <td><strong>13</strong></td>
+    </tr>
+    <tr>
+      <td><strong>&#127978; POS</strong></td>
+      <td style="color:var(--pa);font-weight:700">10</td>
+      <td style="color:var(--wa);font-weight:700">3</td>
+      <td style="color:var(--er);font-weight:700">2</td>
+      <td style="color:var(--cr);font-weight:700">1</td>
+      <td><strong>16</strong></td>
+    </tr>
+    <tr style="border-top:2px solid var(--br);">
+      <td><strong>T&#7893;ng c&#7897;ng</strong></td>
+      <td style="color:var(--pa);font-weight:800">26</td>
+      <td style="color:var(--wa);font-weight:800">7</td>
+      <td style="color:var(--er);font-weight:800">6</td>
+      <td style="color:var(--cr);font-weight:800">6</td>
+      <td><strong>45</strong></td>
+    </tr>
+    </tbody></table>
+  </div>
+  <!-- Progress bars -->
+  <div class="tw2" style="padding:20px;">
+    <div class="th2" style="margin:-20px -20px 18px;padding:16px 20px;border-radius:16px 16px 0 0;">T&#7927; l&#7879; Pass theo nghi&#7879;p v&#7909;</div>
+    <div style="padding:4px 0;">
+      <div class="ph">&#128179; Thanh To&#225;n &nbsp;<strong style="color:var(--pa)">56%</strong> (9/16)</div>
+      <div class="pb"><div class="pf" style="width:56%"></div></div>
+      <div class="ph">&#128260; &#272;&#7893;i / Tr&#7843; H&#224;ng &nbsp;<strong style="color:var(--pa)">54%</strong> (7/13)</div>
+      <div class="pb"><div class="pf" style="width:54%"></div></div>
+      <div class="ph">&#127978; B&#225;n H&#224;ng POS &nbsp;<strong style="color:var(--pa)">63%</strong> (10/16)</div>
+      <div class="pb"><div class="pf" style="width:63%"></div></div>
+      <div class="ph">&#128202; T&#7893;ng th&#7875; &nbsp;<strong style="color:var(--pa)">58%</strong> (26/45)</div>
+      <div class="pb"><div class="pf" style="width:58%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Critical Issues -->
+<div class="tw2">
+  <div class="th2" style="color:var(--cr);">&#128165; C&#225;c V&#7845;n &#272;&#7873; &#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng &#8212; C&#7847;n X&#7917; L&#253; Ngay</div>
+  <table><thead><tr>
+    <th>ID</th><th style="min-width:260px">V&#7845;n &#273;&#7873;</th><th>Module</th><th>File / D&#242;ng</th><th>H&#224;nh &#273;&#7897;ng &#273;&#7873; xu&#7845;t</th>
+  </tr></thead><tbody>
+  <tr>
+    <td><span class="badge bk">CRIT-1</span></td>
+    <td><div class="tt">SePay IPN kh&#244;ng x&#225;c th&#7921;c ch&#7919; k&#253; &#8212; k&#7867; t&#7845;n c&#244;ng c&#243; th&#7875; forge thanh to&#225;n gi&#7843;</div></td>
+    <td>Thanh To&#225;n</td>
+    <td><code>SepayGatewayService.java</code> / Controller</td>
+    <td>Th&#234;m x&#225;c th&#7921;c HMAC-SHA256 ho&#7863;c Bearer token t&#7915; SePay header <code>Authorization</code> ngay trong controller tr&#432;&#7899;c khi v&#224;o service</td>
+  </tr>
+  <tr>
+    <td><span class="badge bk">CRIT-2</span></td>
+    <td><div class="tt">Kh&#244;ng c&#243; timeout &#273;&#7893;i/tr&#7843; &#8212; kh&#225;ch g&#7917;i y&#234;u c&#7847;u m&#227;i m&#227;i sau khi mua</div></td>
+    <td>&#272;&#7893;i / Tr&#7843;</td>
+    <td>AdminController return flow</td>
+    <td>Th&#234;m ki&#7875;m tra <code>hd.getNgayGiao().plusDays(30).isBefore(now)</code> ho&#7863;c c&#7845;u h&#236;nh qua application.properties</td>
+  </tr>
+  <tr>
+    <td><span class="badge bk">CRIT-3</span></td>
+    <td><div class="tt">M&#7853;t kh&#7849;u m&#7863;c &#273;&#7883;nh "12345678" cho t&#7845;t c&#7843; kh&#225;ch &#273;&#259;ng k&#253; t&#7841;i qu&#7847;y &#8212; kh&#244;ng bu&#7897;c &#273;&#7893;i</div></td>
+    <td>POS</td>
+    <td><code>AdminPosService.java:510</code></td>
+    <td>Sinh OTP g&#7917;i SMS, ho&#7863;c th&#234;m flag <code>mustChangePassword=true</code> + force redirect khi &#273;&#259;ng nh&#7853;p l&#7847;n &#273;&#7847;u</td>
+  </tr>
+  <tr>
+    <td><span class="badge bk">CRIT-4</span></td>
+    <td><div class="tt">IPN &#273;&#7871;n khi &#273;&#417;n STOCK_CONFLICT &#8212; kh&#244;ng c&#243; branch x&#7917; l&#253;, c&#243; th&#7875; tr&#7915; kho sai</div></td>
+    <td>Thanh To&#225;n</td>
+    <td><code>SepayGatewayService.java</code></td>
+    <td>Th&#234;m branch guard c&#432;&#7905;ng b&#7913;c tr&#432;&#7899;c Normal Processing: n&#7871;u tr&#7841;ng th&#225;i STOCK_CONFLICT th&#236; reject ho&#7863;c route sang lu&#7891;ng ri&#234;ng</td>
+  </tr>
+  </tbody></table>
+</div>
+
+<!-- High severity -->
+<div class="tw2">
+  <div class="th2" style="color:var(--er);">&#128308; C&#225;c V&#7845;n &#272;&#7873; Nghi&#234;m Tr&#7885;ng &#8212; C&#7847;n X&#7917; L&#253; S&#7899;m</div>
+  <table><thead><tr>
+    <th>ID</th><th style="min-width:260px">V&#7845;n &#273;&#7873;</th><th>Module</th><th>File / D&#242;ng</th><th>H&#224;nh &#273;&#7897;ng &#273;&#7873; xu&#7845;t</th>
+  </tr></thead><tbody>
+  <tr>
+    <td><span class="badge be">HIGH-1</span></td>
+    <td><div class="tt">Snapshot fallback hard-code <code>source=CART</code> &#8212; x&#243;a nh&#7847;m gi&#7887; h&#224;ng BUY_NOW</div></td>
+    <td>Thanh To&#225;n</td>
+    <td><code>SepayPaymentOrchestratorService.java:75</code></td>
+    <td>L&#432;u tr&#432;&#7901;ng <code>checkoutSource</code> v&#224;o HoaDon khi t&#7841;o, &#273;&#7885;c l&#7841;i khi rebuild snapshot</td>
+  </tr>
+  <tr>
+    <td><span class="badge be">HIGH-2</span></td>
+    <td><div class="tt">cancelOrderPos c&#7897;ng kho th&#7859;ng v&#224;o SPCT, vi ph&#7841;m FIFO lot tracking</div></td>
+    <td>POS</td>
+    <td><code>AdminPosService.java:441-444</code></td>
+    <td>G&#7885;i <code>inventoryLotService.reverseAllocation(idHoaDon)</code> thay v&#236; c&#7897;ng th&#7911; c&#244;ng v&#224;o soLuongTon</td>
+  </tr>
+  <tr>
+    <td><span class="badge be">HIGH-3</span></td>
+    <td><div class="tt">finalizeRefundWithoutRestock c&#243; th&#7875; trigger sai cho &#273;&#417;n SUCCESS th&#432;&#7901;ng</div></td>
+    <td>Thanh To&#225;n</td>
+    <td><code>SepayOrderPaymentService.java:185</code></td>
+    <td>Ch&#7881; match <code>"PAID_INSUFFICIENT_STOCK"</code> trong anyMatch, lo&#7841;i b&#7887; <code>"SUCCESS"</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge be">HIGH-4</span></td>
+    <td><div class="tt">Race condition IPN song song &#8212; window nh&#7887; tr&#432;&#7899;c unique constraint</div></td>
+    <td>Thanh To&#225;n</td>
+    <td><code>SepayGatewayService.java:56-68</code></td>
+    <td>D&#249;ng <code>SELECT ... FOR UPDATE</code> ho&#7863;c Redis distributed lock tr&#234;n transactionId tr&#432;&#7899;c khi x&#7917; l&#253;</td>
+  </tr>
+  <tr>
+    <td><span class="badge be">HIGH-5</span></td>
+    <td><div class="tt">Lu&#7891;ng ho&#224;n ti&#7873;n cho TRA h&#224;ng thi&#7871;u business rule guard r&#245; r&#224;ng</div></td>
+    <td>&#272;&#7893;i / Tr&#7843;</td>
+    <td>AdminController refund endpoints</td>
+    <td>T&#7841;o <code>ReturnRefundService</code> ri&#234;ng v&#7899;i state machine: APPROVED &#8594; CHO_HOAN_TIEN &#8594; REFUNDED</td>
+  </tr>
+  </tbody></table>
+</div>
+
+<!-- Medium -->
+<div class="tw2">
+  <div class="th2" style="color:var(--wa);">&#9888;&#65039; C&#225;c V&#7845;n &#272;&#7873; Trung B&#236;nh &#8212; N&#234;n Kh&#7855;c Ph&#7909;c Trong Sprint T&#7899;i</div>
+  <table><thead><tr>
+    <th>ID</th><th style="min-width:260px">V&#7845;n &#273;&#7873;</th><th>Module</th><th>H&#224;nh &#273;&#7897;ng &#273;&#7873; xu&#7845;t</th>
+  </tr></thead><tbody>
+  <tr>
+    <td><span class="badge bw">MED-1</span></td>
+    <td>Context cleanup khi t&#7845;t c&#7843; createdAt gi&#7889;ng nhau &#8594; c&#243; th&#7875; kh&#244;ng x&#243;a</td>
+    <td>Thanh To&#225;n</td>
+    <td>D&#249;ng <code>LinkedHashMap</code> FIFO removal ho&#7863;c nanosecond tie-breaking</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-2</span></td>
+    <td>isActiveAccount dual-field tr&#7841;ng th&#225;i c&#243; th&#7875; kh&#244;ng nh&#7845;t qu&#225;n</td>
+    <td>Thanh To&#225;n</td>
+    <td>Migration h&#7859;n sang 1 field enum <code>AccountStatus</code>, b&#7887; <code>trangThai</code> String</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-3</span></td>
+    <td>rawPayload l&#432;u v&#224;o DB khi debug=true &#8212; r&#7911;i ro PII leak</td>
+    <td>Thanh To&#225;n</td>
+    <td>Ki&#7875;m tra .env: <code>SEPAY_DEBUG=false</code> tr&#234;n production, th&#234;m alert CI/CD</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-4</span></td>
+    <td>Kho h&#224;ng c&#361; sau &#273;&#7893;i ch&#432;a &#273;&#432;&#7907;c c&#7897;ng l&#7841;i h&#7879; th&#7889;ng</td>
+    <td>&#272;&#7893;i / Tr&#7843;</td>
+    <td>Th&#234;m step ho&#224;n kho SP c&#361; khi x&#225;c nh&#7853;n ki&#7875;m &#273;&#7883;nh OK trong DA_HOAN_KHO flow</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-5</span></td>
+    <td>bangChungHoanTra kh&#244;ng c&#243; validation format</td>
+    <td>&#272;&#7893;i / Tr&#7843;</td>
+    <td>Validate URL pattern ho&#7863;c restrict upload server-side, kh&#244;ng ch&#7845;p nh&#7853;n chu&#7895;i t&#249;y &#253;</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-6</span></td>
+    <td>Guest TaiKhoan t&#7841;o v&#7899;i password raw kh&#244;ng hash</td>
+    <td>POS</td>
+    <td>D&#249;ng <code>passwordEncoder.encode("GUEST_NO_PASSWORD")</code> t&#7841;i <code>AdminPosService.java:192</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-7</span></td>
+    <td>S&#7843;n ph&#7849;m ng&#7915;ng b&#225;n c&#243; th&#7875; b&#225;n n&#7871;u POST th&#7859;ng API POS</td>
+    <td>POS</td>
+    <td>Th&#234;m <code>isDangBan()</code> check trong v&#242;ng l&#7863;p FIFO prep c&#7911;a thanhToanPos()</td>
+  </tr>
+  <tr>
+    <td><span class="badge bw">MED-8</span></td>
+    <td>hoTen trong registerCustomerAtPos kh&#244;ng &#273;&#432;&#7907;c sanitize HTML</td>
+    <td>POS</td>
+    <td>Th&#234;m <code>Jsoup.clean(hoTen, Safelist.none())</code> tr&#432;&#7899;c khi persist</td>
+  </tr>
+  </tbody></table>
+</div>
+
+<div class="note" style="margin-top:8px;font-size:11.5px;color:var(--di);border-color:var(--br);">
+  &#128221; B&#225;o c&#225;o &#273;&#432;&#7907;c t&#7841;o t&#7921; &#273;&#7897;ng b&#7903;i <strong>Antigravity AI Code Reviewer</strong> d&#7921;a tr&#234;n ph&#226;n t&#237;ch t&#297;nh (static analysis) m&#227; ngu&#7891;n.<br/>
+  Ng&#224;y ki&#7875;m tra: 12/08/2026 &middot; SMASH VN Shop Backend &middot; Spring Boot 3.x &middot; Java 21 &middot; SePay Gateway Integration
+</div>
+</div><!-- end tab4 -->
+
+</main>
+<script>
+function st(id, el) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+let currentFilter = 'all';
+let currentSearch = '';
+
+function filterLevel(levelClass, btn) {
+  currentFilter = levelClass;
+  const activeTab = document.querySelector('.sec.active');
+  if (!activeTab) return;
+
+  // Update button active state
+  activeTab.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  applyFilters(activeTab);
+}
+
+function searchTests(query) {
+  currentSearch = query.toLowerCase().trim();
+  const activeTab = document.querySelector('.sec.active');
+  if (!activeTab) return;
+  applyFilters(activeTab);
+}
+
+function applyFilters(container) {
+  const rows = container.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const badge = row.querySelector('.badge');
+    const badgeMatch = (currentFilter === 'all') || (badge && badge.classList.contains(currentFilter));
+    const textMatch = (currentSearch === '') || row.textContent.toLowerCase().includes(currentSearch);
+
+    if (badgeMatch && textMatch) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
+</body></html>

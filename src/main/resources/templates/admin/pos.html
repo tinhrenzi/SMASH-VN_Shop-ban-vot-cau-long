@@ -533,7 +533,7 @@
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title fw-bold"><i class="fas fa-wallet me-2"></i> Xác Nhận Thanh Toán</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" onclick="handlePaymentModalCancel()" aria-label="Close"></button>
                 </div>
                 <div class="modal-body py-4">
                     <div class="bg-light rounded-3 p-3 mb-4 border text-center">
@@ -617,7 +617,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 d-flex gap-2">
-                    <button type="button" class="admin-btn admin-btn-secondary flex-fill py-2" data-bs-dismiss="modal">
+                    <button type="button" id="btnCancelPaymentModal" class="admin-btn admin-btn-secondary flex-fill py-2" onclick="handlePaymentModalCancel()">
                         <i class="fas fa-times me-1"></i> Hủy
                     </button>
                     <button type="button" id="btnConfirmPayment" class="admin-btn admin-btn-primary flex-fill py-2 fw-bold" onclick="executeCheckout()">
@@ -1248,79 +1248,29 @@
                 let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 modal.show();
             } else {
-                const overlay = document.getElementById("posLoadingOverlay");
-                overlay.style.display = "flex";
+                // CHUYEN_KHOAN -> Chưa tạo hóa đơn DB để tránh phình DB. Chỉ tạo khi xác nhận thanh toán!
+                document.getElementById("modalCashSection").classList.add("d-none");
+                document.getElementById("modalBankSection").classList.remove("d-none");
+                document.getElementById("inputTransferRef").value = "";
 
-                const note = document.getElementById("orderNote").value;
-                const bodyData = {
-                    idKhachHang: selectedCustomer ? selectedCustomer.id : -1,
-                    maVoucher: appliedVoucher ? appliedVoucher.maPhieu : "",
-                    items: cart.map(i => ({ idSanPhamChiTiet: i.id, soLuong: i.soLuong })),
-                    phuongThucPos: "CHUYEN_KHOAN",
-                    maGiaoDich: "",
-                    ghiChu: note
+                const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
+                const sepayBank   = /*[[${sepayBankName}]]*/ '';
+                const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
+                const tempMemoCode = "POS" + String(Date.now()).slice(-8);
+                const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + tempMemoCode) : tempMemoCode;
+
+                document.getElementById("txtTransferCode").innerText = finalMemo;
+                document.getElementById("txtTransferAmount").innerText = formatVND(grandTotal);
+                buildPosSePayQr(sepayAcc, sepayBank, grandTotal, finalMemo);
+
+                btnConfirm.innerText = "Xác nhận đã nhận tiền (Chuyển khoản)";
+                btnConfirm.disabled = false;
+                btnConfirm.onclick = () => {
+                    executeCheckout();
                 };
 
-                const csrfMeta = document.querySelector('meta[name="_csrf"]');
-                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-                const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
-
-                const headers = { "Content-Type": "application/json" };
-                if (csrfToken) headers[csrfHeaderName] = csrfToken;
-
-                fetch("/admin/pos/checkout", {
-                    method: "POST",
-                    headers: headers,
-                    body: JSON.stringify(bodyData)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    overlay.style.display = "none";
-                    if (data.success) {
-                        currentCheckoutHoaDonId = data.hoaDonId;
-                        currentCheckoutMaHoaDon = data.maHoaDon;
-                        
-                        document.getElementById("modalCashSection").classList.add("d-none");
-                        document.getElementById("modalBankSection").classList.remove("d-none");
-                        document.getElementById("inputTransferRef").value = "";
-                        
-                        btnConfirm.innerText = "Xác nhận đã nhận tiền (Thủ công)";
-                        btnConfirm.disabled = false;
-                        btnConfirm.onclick = () => {
-                            Swal.fire({
-                                title: 'Xác nhận chuyển khoản',
-                                text: `Xác nhận khách đã chuyển khoản cho đơn ${data.maHoaDon}?`,
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Đồng ý',
-                                cancelButtonText: 'Hủy'
-                            }).then((res) => {
-                                if (res.isConfirmed) confirmPaymentManually(data.hoaDonId);
-                            });
-                        };
-
-                        const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
-                        const sepayBank   = /*[[${sepayBankName}]]*/ '';
-                        const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
-                        const amount      = data.tongTien || grandTotal;
-                        const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + data.maHoaDon) : String(data.maHoaDon);
-
-                        document.getElementById("txtTransferCode").innerText = finalMemo;
-                        document.getElementById("txtTransferAmount").innerText = formatVND(amount);
-                        buildPosSePayQr(sepayAcc, sepayBank, amount, finalMemo);
-
-                        let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                        modal.show();
-                        startPaymentPolling(data.maHoaDon, data.hoaDonId);
-                    } else {
-                        showToast(`Tạo đơn thất bại: ${data.message}`, 'error');
-                    }
-                })
-                .catch(err => {
-                    overlay.style.display = "none";
-                    showToast("Đã xảy ra lỗi kết nối!", "error");
-                });
+                let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.show();
             }
         }
 
@@ -1364,11 +1314,10 @@
         function cancelPendingOrder(hoaDonId) {
             stopPaymentPolling();
             Swal.fire({
-                title: 'Hủy hóa đơn?',
-                text: 'Hành động này sẽ khôi phục tồn kho và voucher.',
+                title: 'Xác nhận hủy?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Hủy hóa đơn',
+                confirmButtonText: 'Xác nhận hủy',
                 cancelButtonText: 'Quay lại'
             }).then((result) => {
                 if (!result.isConfirmed) {
@@ -1441,6 +1390,21 @@
             const modalEl = document.getElementById('paymentConfirmModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
+        }
+
+        function handlePaymentModalCancel() {
+            Swal.fire({
+                title: 'Xác nhận hủy?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận hủy',
+                cancelButtonText: 'Quay lại'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    closePaymentConfirmModal();
+                    showToast("Đã hủy thao tác thanh toán.", "info");
+                }
+            });
         }
 
         function setupQuickCashButtons(total) {

@@ -36,6 +36,7 @@ import com.smashvn.shop.util.PhoneUtils;
 import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.dto.user.PosRegisterCustomerRequest;
 import com.smashvn.shop.dto.user.PosCustomerResponse;
+import com.smashvn.shop.dto.inventory.RestockItemRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
@@ -354,22 +355,13 @@ public class AdminPosService {
         hd.setGhiChu(sanitizedGhiChu);
         hd.setMaGiaoDich(sanitizedGiaoDich);
 
-        boolean isChuyenKhoan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos);
-        if (isChuyenKhoan) {
-            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue()); // "cho_thanh_toan"
-            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
-            hd.setPaymentStatus(PaymentStatus.PENDING.getValue());         // "pending"
-            hd.setNguoiXacNhanThanhToan(null);
-            hd.setThoiGianXacNhan(null);
-            hd.setPaidAt(null);
-        } else {
-            hd.setTrangThaiDonHang("da_giao");                             // Bán tại quầy → hoàn thành ngay
-            hd.setTrangThaiThanhToan("DA_THANH_TOAN");                     // Nhân viên đã xác nhận
-            hd.setPaymentStatus(PaymentStatus.PAID.getValue());            // "paid"
-            hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
-            hd.setThoiGianXacNhan(LocalDateTime.now());
-            hd.setPaidAt(LocalDateTime.now());
-        }
+        // Bán tại quầy → Chỉ tạo hóa đơn khi đã xác nhận thanh toán thành công (hoàn thành ngay)
+        hd.setTrangThaiDonHang("da_giao");
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+        hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+        hd.setThoiGianXacNhan(LocalDateTime.now());
+        hd.setPaidAt(LocalDateTime.now());
 
         hd.setSoTienGiamVoucher(giamGia);
         if (phieu != null) {
@@ -428,21 +420,38 @@ public class AdminPosService {
         HoaDon hd = hoaDonRepository.findById(hoaDonId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn ID: " + hoaDonId));
 
-        if (!OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
+        if (OrderStatus.DA_HUY.getValue().equals(hd.getTrangThaiDonHang())) {
+            throw new RuntimeException("Hóa đơn này đã được hủy trước đó!");
+        }
+
+        boolean isPosOrder = hd.getMaDonHang() != null && hd.getMaDonHang().startsWith("HDSVN");
+        if (!isPosOrder && !OrderStatus.CHO_THANH_TOAN.getValue().equals(hd.getTrangThaiDonHang())) {
             throw new RuntimeException("Chỉ có thể hủy hóa đơn ở trạng thái chờ thanh toán!");
         }
 
         TaiKhoan nvTk = taiKhoanRepository.findById(idNhanVienTaiKhoan)
                 .orElseThrow(() -> new RuntimeException("Nhân viên thực hiện không hợp lệ!"));
 
-        // 1. Hoàn lại tồn kho sản phẩm chi tiết
+        // 1. Hoàn lại tồn kho sản phẩm chi tiết bằng cách reverse chính xác các lô (SPCT) đã được allocate trong HoaDonChiTiet
         List<HoaDonChiTiet> details = hoaDonChiTietRepository.findByHoaDon_Id(hoaDonId);
-        for (HoaDonChiTiet ct : details) {
-            SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(ct.getSanPhamChiTiet().getId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết ID: " + ct.getSanPhamChiTiet().getId()));
-            spct.setSoLuongTon(spct.getSoLuongTon() + ct.getSoLuong());
-            sanPhamChiTietRepository.save(spct);
+        if (details == null || details.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin sản phẩm chi tiết (allocation) của đơn hàng POS ID: " + hoaDonId);
         }
+
+        List<RestockItemRequest> restockReqs = new java.util.ArrayList<>();
+        for (HoaDonChiTiet ct : details) {
+            if (ct.getSanPhamChiTiet() == null || ct.getSoLuong() == null || ct.getSoLuong() <= 0) {
+                throw new RuntimeException("Chi tiết đơn hàng không hợp lệ cho sản phẩm ID: " + (ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getId() : "null"));
+            }
+            restockReqs.add(RestockItemRequest.builder()
+                    .idSanPhamChiTiet(ct.getSanPhamChiTiet().getId())
+                    .quantityToRestock(ct.getSoLuong())
+                    .conBanDuoc(true)
+                    .build());
+        }
+
+        // Thực hiện hoàn kho qua InventoryLotService (Đã thực hiện lock kho theo ID sản phẩm ASC chống deadlock và cập nhật chính xác tồn kho từng SPCT lô đã bán)
+        inventoryLotService.hoanKho(restockReqs);
 
         // 2. Hoàn lại lượt sử dụng Voucher (nếu có)
         if (hd.getPhieuGiamGia() != null) {

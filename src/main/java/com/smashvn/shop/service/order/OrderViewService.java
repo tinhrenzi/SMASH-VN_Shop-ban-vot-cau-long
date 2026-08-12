@@ -653,18 +653,16 @@ public class OrderViewService {
         hd.setTrangThaiDonHang(newStatus);
         hd = hoaDonRepository.save(hd);
 
-        // Generate notification for customer
-        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+        // Generate notification for customer (only when status actually changes)
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null && !Objects.equals(currentStatus, newStatus)) {
             try {
                 String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
-                String labelCu = getStatusLabel(currentStatus);
-                String labelMoi = getStatusLabel(newStatus);
-                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].",
-                        maDon, labelCu, labelMoi);
+                String title = getCustomerOrderTitle(newStatus);
+                String msgContent = buildCustomerOrderNotificationContent(maDon, currentStatus, newStatus);
 
                 ThongBao thongBao = ThongBao.builder()
                         .taiKhoan(hd.getKhachHang().getTaiKhoan())
-                        .tieuDe("Cập nhật trạng thái đơn hàng " + maDon)
+                        .tieuDe(title)
                         .noiDung(msgContent)
                         .daDoc(false)
                         .loaiThongBao("don_hang")
@@ -880,18 +878,16 @@ public class OrderViewService {
         hd.setTrangThaiDonHang(newStatus);
         hd = hoaDonRepository.save(hd);
 
-        // Generate notification for customer from GHN Webhook update
-        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+        // Generate notification for customer from GHN Webhook update (only when status actually changes)
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null && !Objects.equals(currentStatus, newStatus)) {
             try {
                 String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
-                String labelCu = getStatusLabel(currentStatus);
-                String labelMoi = getStatusLabel(newStatus);
-                String msgContent = String.format("Đơn hàng %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].",
-                        maDon, labelCu, labelMoi);
+                String title = getCustomerOrderTitle(newStatus);
+                String msgContent = buildCustomerOrderNotificationContent(maDon, currentStatus, newStatus);
 
                 ThongBao thongBao = ThongBao.builder()
                         .taiKhoan(hd.getKhachHang().getTaiKhoan())
-                        .tieuDe("Cập nhật trạng thái giao hàng " + maDon)
+                        .tieuDe(title)
                         .noiDung(msgContent)
                         .daDoc(false)
                         .loaiThongBao("don_hang")
@@ -1452,18 +1448,17 @@ public class OrderViewService {
 
         hoaDonRepository.save(hd);
 
-        // Generate notification for customer on return status update
-        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
+        // Generate notification for customer on return status update (only when return status actually changes)
+        if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null && currentReturnStatus != newReturnStatus) {
             try {
                 String maDon = hd.getMaDonHang() != null ? hd.getMaDonHang() : "SMASH-" + hd.getId();
-                String labelCu = currentReturnStatus != null ? currentReturnStatus.getLabel() : "Chưa có";
-                String labelMoi = newReturnStatus.getLabel();
-                String msgContent = String.format("Đơn hàng hoàn trả %s của bạn đã được cập nhật trạng thái từ [%s] sang [%s].",
-                        maDon, labelCu, labelMoi);
+                String loaiYeuCau = hd.getLoaiYeuCauDoiTra();
+                String title = getCustomerReturnTitle(newReturnStatus, loaiYeuCau);
+                String msgContent = buildCustomerReturnNotificationContent(maDon, newReturnStatus, loaiYeuCau);
 
                 ThongBao thongBao = ThongBao.builder()
                         .taiKhoan(hd.getKhachHang().getTaiKhoan())
-                        .tieuDe("Cập nhật trạng thái hoàn hàng " + maDon)
+                        .tieuDe(title)
                         .noiDung(msgContent)
                         .daDoc(false)
                         .loaiThongBao("don_hang")
@@ -2485,6 +2480,115 @@ public class OrderViewService {
 
         // Bước 4: Transaction B - Chuyển sang EXCHANGE_SHIPPING (REQUIRES_NEW commit DB)
         exchangeStockReservationService.completeExchangeShipping(idHoaDon, actingTaiKhoanId, clientIp);
+    }
+
+    private String getCustomerOrderTitle(String newStatus) {
+        if (newStatus == null) return "Cập nhật đơn hàng";
+        switch (newStatus.toLowerCase()) {
+            case "cho_thanh_toan":
+                return "Đơn hàng chờ thanh toán";
+            case "cho_xac_nhan":
+                return "Đơn hàng đã được ghi nhận";
+            case "da_xac_nhan":
+                return "Đơn hàng đã được xác nhận";
+            case "dang_chuan_bi_hang":
+                return "Đơn hàng đang được chuẩn bị";
+            case "san_sang_giao":
+                return "Đơn hàng đã sẵn sàng giao";
+            case "da_tao_van_don_ghn":
+                return "Đã tạo mã vận chuyển";
+            case "da_ban_giao_ghn", "dang_lay_hang":
+                return "Đã giao cho đơn vị vận chuyển";
+            case "dang_giao":
+                return "Đơn hàng đang trên đường giao";
+            case "da_giao":
+                return "Đơn hàng đã giao thành công";
+            case "da_huy":
+                return "Đơn hàng đã được hủy";
+            case "yeu_cau_huy":
+                return "Yêu cầu hủy đơn đã ghi nhận";
+            case "cho_hoan_tien":
+                return "Yêu cầu hoàn tiền đang xử lý";
+            case "refunded":
+                return "Hoàn tiền thành công";
+            default:
+                return "Cập nhật đơn hàng";
+        }
+    }
+
+    private String buildCustomerOrderNotificationContent(String maDon, String currentStatus, String newStatus) {
+        if (newStatus == null) return "Đơn hàng " + maDon + " của bạn vừa được cập nhật.";
+        switch (newStatus.toLowerCase()) {
+            case "cho_thanh_toan":
+                return "Đơn hàng " + maDon + " của bạn đang chờ hoàn tất thanh toán.";
+            case "cho_xac_nhan":
+                return "Đơn hàng " + maDon + " của bạn đã được ghi nhận và đang chờ cửa hàng xác nhận.";
+            case "da_xac_nhan":
+                return "Đơn hàng " + maDon + " của bạn đã được cửa hàng xác nhận.";
+            case "dang_chuan_bi_hang":
+                return "Đơn hàng " + maDon + " của bạn đang được chuẩn bị trong kho.";
+            case "san_sang_giao":
+                return "Đơn hàng " + maDon + " của bạn đã sẵn sàng và chờ đơn vị vận chuyển tới lấy.";
+            case "da_tao_van_don_ghn":
+                return "Đơn hàng " + maDon + " của bạn đã được tạo mã vận chuyển.";
+            case "da_ban_giao_ghn", "dang_lay_hang":
+                return "Đơn hàng " + maDon + " của bạn đã được bàn giao cho đơn vị vận chuyển.";
+            case "dang_giao":
+                return "Đơn hàng " + maDon + " của bạn đang trên đường giao tới bạn!";
+            case "da_giao":
+                return "Đơn hàng " + maDon + " của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm tại SMASH VN!";
+            case "da_huy":
+                return "Đơn hàng " + maDon + " của bạn đã được hủy.";
+            case "yeu_cau_huy":
+                return "Yêu cầu hủy cho đơn hàng " + maDon + " của bạn đã được ghi nhận.";
+            case "cho_hoan_tien":
+                return "Khoản hoàn tiền cho đơn hàng " + maDon + " của bạn đã được tiếp nhận và đang xử lý.";
+            case "refunded":
+                return "Khoản hoàn tiền cho đơn hàng " + maDon + " của bạn đã được hoàn tất.";
+            default:
+                String labelMoi = getStatusLabel(newStatus);
+                return "Đơn hàng " + maDon + " hiện ở trạng thái: " + labelMoi + ".";
+        }
+    }
+
+    private String getCustomerReturnTitle(ReturnStatus returnStatus, String loaiYeuCau) {
+        boolean isDoi = "DOI".equalsIgnoreCase(loaiYeuCau);
+        String tenNghiepVu = isDoi ? "đổi hàng" : "trả hàng";
+        if (returnStatus == null) return "Yêu cầu " + tenNghiepVu;
+        switch (returnStatus) {
+            case PENDING_RETURN:
+                return "Yêu cầu " + tenNghiepVu + " đã tiếp nhận";
+            case RETURNED:
+                return "Đã nhận sản phẩm " + tenNghiepVu;
+            case EXCHANGE_STOCK_ALLOCATED:
+                return "Sản phẩm đổi mới đã sẵn sàng";
+            case COMPLETED:
+                return "Yêu cầu " + tenNghiepVu + " đã hoàn tất";
+            case CANCELLED:
+                return "Yêu cầu " + tenNghiepVu + " đã bị hủy";
+            default:
+                return "Yêu cầu " + tenNghiepVu;
+        }
+    }
+
+    private String buildCustomerReturnNotificationContent(String maDon, ReturnStatus returnStatus, String loaiYeuCau) {
+        boolean isDoi = "DOI".equalsIgnoreCase(loaiYeuCau);
+        String tenNghiepVu = isDoi ? "đổi hàng" : "trả hàng";
+        if (returnStatus == null) return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn vừa được cập nhật.";
+        switch (returnStatus) {
+            case PENDING_RETURN:
+                return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn đã được tiếp nhận.";
+            case RETURNED:
+                return "Cửa hàng đã nhận được sản phẩm " + tenNghiepVu + " của đơn hàng " + maDon + ".";
+            case EXCHANGE_STOCK_ALLOCATED:
+                return "Sản phẩm đổi mới cho đơn hàng " + maDon + " của bạn đã được chuẩn bị xong.";
+            case COMPLETED:
+                return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn đã hoàn tất. Cảm ơn bạn!";
+            case CANCELLED:
+                return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " của bạn đã bị từ chối hoặc hủy.";
+            default:
+                return "Yêu cầu " + tenNghiepVu + " cho đơn hàng " + maDon + " hiện ở trạng thái: " + returnStatus.getLabel() + ".";
+        }
     }
 }
 

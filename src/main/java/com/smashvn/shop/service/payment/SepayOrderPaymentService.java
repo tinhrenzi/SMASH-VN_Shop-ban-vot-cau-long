@@ -131,7 +131,12 @@ public class SepayOrderPaymentService {
             order.setMaGiaoDich(maGiaoDich);
             order.setTransactionId(maGiaoDich);
             if ("cho_thanh_toan".equalsIgnoreCase(order.getTrangThaiDonHang()) || "CHO_THANH_TOAN".equalsIgnoreCase(order.getTrangThaiDonHang())) {
-                order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // "cho_xac_nhan"
+                boolean isPosOrder = order.getMaDonHang() != null && order.getMaDonHang().startsWith("HDSVN");
+                if (isPosOrder) {
+                    order.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue()); // Bán tại quầy -> Hoàn thành (Đã giao) ngay khi nhận tiền
+                } else {
+                    order.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue()); // Đơn Online -> Chờ xác nhận đóng gói
+                }
             }
             hoaDonRepository.save(order);
 
