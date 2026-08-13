@@ -66,27 +66,40 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendRedirect(request.getContextPath() + "/admin/dang-nhap");
+                    String requestedWith = request.getHeader("X-Requested-With");
+                    String accept = request.getHeader("Accept");
+                    String uri = request.getRequestURI();
+                    if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)
+                            || (accept != null && accept.contains("application/json"))
+                            || uri.contains("-json")
+                            || uri.contains("/api/")) {
+                        response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"error\":\"Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\"}");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/admin/dang-nhap");
+                    }
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    String ip = request.getRemoteAddr();
+                    String requestedWith = request.getHeader("X-Requested-With");
+                    String accept = request.getHeader("Accept");
                     String uri = request.getRequestURI();
-                    Integer idNguoiDung = (Integer) request.getSession().getAttribute("idNguoiDung");
-                    String role = (String) request.getSession().getAttribute("vaiTro");
-
-                    // Phân biệt CSRF Deny vs Access Deny để ghi log an ninh
-                    if (accessDeniedException instanceof org.springframework.security.web.csrf.CsrfException) {
-                        log.warn("[SECURITY_EVENT] CSRF_DENY: IP: {}, URL: {}, UserID: {}", ip, uri, idNguoiDung);
+                    if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)
+                            || (accept != null && accept.contains("application/json"))
+                            || uri.contains("-json")
+                            || uri.contains("/api/")) {
+                        response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"error\":\"Bạn không có quyền thực hiện thao tác này.\"}");
                     } else {
-                        log.warn("[SECURITY_EVENT] ACCESS_DENY: IP: {}, UserID: {}, URL: {}, Lỗi: {}",
-                                ip, idNguoiDung, uri, accessDeniedException != null ? accessDeniedException.getMessage() : "Unknown error");
-                    }
-
-                    if ("NV".equals(role)) {
-                        request.getSession().setAttribute("warningMsg", "Bạn không có quyền thực hiện chức năng này!");
+                        String ip = request.getRemoteAddr();
+                        Integer idNguoiDung = (Integer) request.getSession().getAttribute("idNguoiDung");
+                        if (accessDeniedException instanceof org.springframework.security.web.csrf.CsrfException) {
+                            log.warn("[SECURITY_EVENT] CSRF_DENY: IP: {}, URL: {}, UserID: {}", ip, uri, idNguoiDung);
+                        } else {
+                            log.warn("[SECURITY_EVENT] ACCESS_DENY: IP: {}, URL: {}, UserID: {}", ip, uri, idNguoiDung);
+                        }
                         response.sendRedirect(request.getContextPath() + "/admin/don-hang");
-                    } else {
-                        response.sendRedirect(request.getContextPath() + "/");
                     }
                 })
                 )

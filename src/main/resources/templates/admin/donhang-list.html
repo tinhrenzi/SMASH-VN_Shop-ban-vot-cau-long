@@ -1164,10 +1164,18 @@
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
             fetch('/admin/don-hang/detail-json?id=' + orderId, {
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
             })
                 .then(response => {
-                    if (response.status === 401) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    const contentType = response.headers.get('content-type') || '';
+                    if (response.status === 401 || (contentType.includes('text/html') && response.redirected)) {
+                        window.location.href = '/admin/dang-nhap?timeout=true';
+                        throw new Error('Phiên làm việc đã hết hạn. Đang chuyển hướng đăng nhập...');
+                    }
                     if (response.status === 403) throw new Error('Bạn không có quyền xem chi tiết đơn hàng này.');
                     if (response.status === 404) throw new Error('Không tìm thấy đơn hàng #' + orderId);
                     if (!response.ok) {
@@ -1176,6 +1184,9 @@
                         }).catch(() => {
                             throw new Error('Lỗi máy chủ: ' + response.status);
                         });
+                    }
+                    if (contentType.includes('text/html')) {
+                        throw new Error('Đã xảy ra lỗi hệ thống khi tải dữ liệu.');
                     }
                     return response.json();
                 })
