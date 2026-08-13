@@ -29,14 +29,36 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     }
 
     static Integer parseIdFromMaDonHang(String code) {
-        if (code == null) {
+        if (code == null || code.trim().isEmpty()) {
             return null;
         }
+        String cleanCode = code.trim().toUpperCase();
+
         try {
+            // 1. If code contains a hyphen like HDSVN20260813-140 or DHSVN20260813-140
+            if (cleanCode.contains("-")) {
+                String lastPart = cleanCode.substring(cleanCode.lastIndexOf("-") + 1).trim();
+                if (lastPart.matches("\\d+")) {
+                    return Integer.valueOf(lastPart);
+                }
+            }
+
+            // 2. If code has no hyphen like HDSVN20260813140 (Prefix HDSVN/DHSVN + 8-digit YYYYMMDD date + Order ID)
+            java.util.regex.Pattern datePattern = java.util.regex.Pattern.compile("(HDSVN|DHSVN)\\d{8}(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+            java.util.regex.Matcher dateMatcher = datePattern.matcher(cleanCode);
+            if (dateMatcher.find()) {
+                return Integer.valueOf(dateMatcher.group(2));
+            }
+
+            // 3. Fallback: match trailing digits if they fit within Integer.MAX_VALUE
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
-            java.util.regex.Matcher matcher = pattern.matcher(code.trim());
+            java.util.regex.Matcher matcher = pattern.matcher(cleanCode);
             if (matcher.find()) {
-                return Integer.valueOf(matcher.group());
+                String digits = matcher.group();
+                long val = Long.parseLong(digits);
+                if (val <= Integer.MAX_VALUE) {
+                    return (int) val;
+                }
             }
         } catch (Exception e) {
             // Ignore

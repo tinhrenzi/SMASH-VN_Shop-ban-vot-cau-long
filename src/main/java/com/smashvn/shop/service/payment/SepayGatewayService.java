@@ -110,7 +110,7 @@ public class SepayGatewayService implements PaymentGatewayService {
             order.setMaGiaoDich(transactionId);
             order.setPaidAt(LocalDateTime.now());
             order.setThoiGianXacNhan(LocalDateTime.now());
-            order.setNguoiXacNhanThanhToan("SePay Gateway (POS)");
+            order.setNguoiXacNhanThanhToan("SePay Gateway");
             order.setTrangThaiDonHang(OrderStatus.DA_GIAO.getValue()); // POS -> hoan thanh luon
             
             if (sepayConfig.isDebug()) {
@@ -218,20 +218,27 @@ public class SepayGatewayService implements PaymentGatewayService {
         if (text == null || text.trim().isEmpty()) {
             return null;
         }
-        // Match HDSVN (POS orders), DHSVN or DH followed by YYYYMMDDHHMMSS date and 6 hex chars
-        Pattern pattern = Pattern.compile("(HDSVN|DHSVN|DH)[-_\\s]*\\d+[-_\\s]*[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(0).replaceAll("\\s+", "").toUpperCase();
+        // 1. Explicitly match HDSVN (POS orders) or DHSVN (Online orders) with digits and hyphens
+        Pattern specificPattern = Pattern.compile("(HDSVN|DHSVN)[-_\\s]*\\d+([-_\\s]*\\d+)?", Pattern.CASE_INSENSITIVE);
+        Matcher specificMatcher = specificPattern.matcher(text);
+        if (specificMatcher.find()) {
+            return specificMatcher.group(0).replaceAll("\\s+", "").toUpperCase();
         }
-        
-        // General fallback to matches beginning with HDSVN, DHSVN or DH and digits/letters (at least 8 chars to avoid collision)
-        Pattern generalPattern = Pattern.compile("(HDSVN|DHSVN|DH)[-_\\s]*[A-Z0-9]{8,}", Pattern.CASE_INSENSITIVE);
-        Matcher generalMatcher = generalPattern.matcher(text);
-        if (generalMatcher.find()) {
-            return generalMatcher.group(0).replaceAll("\\s+", "").toUpperCase();
+
+        // 2. Match HDSVN or DHSVN with alphanumeric codes anywhere in the text
+        Pattern hsvPattern = Pattern.compile("(HDSVN|DHSVN)[-_\\s]*[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+        Matcher hsvMatcher = hsvPattern.matcher(text);
+        if (hsvMatcher.find()) {
+            return hsvMatcher.group(0).replaceAll("\\s+", "").toUpperCase();
         }
-        
+
+        // 3. Fallback match for legacy DH prefix with word boundary (to avoid matching inside bank refs like 220D)
+        Pattern dhPattern = Pattern.compile("\\bDH[-_\\s]*\\d+[-_\\s]*[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+        Matcher dhMatcher = dhPattern.matcher(text);
+        if (dhMatcher.find()) {
+            return dhMatcher.group(0).replaceAll("\\s+", "").toUpperCase();
+        }
+
         return null;
     }
 

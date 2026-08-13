@@ -34,6 +34,7 @@ public class SepayOrderPaymentService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final InventoryLotService inventoryLotService;
     private final AuditService auditService;
+    private final com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
 
     /**
      * Điều phối xử lý IPN Webhook từ SePay trong 1 Transaction kín.
@@ -139,6 +140,29 @@ public class SepayOrderPaymentService {
                 }
             }
             hoaDonRepository.save(order);
+
+            // Gửi email hóa đơn xác nhận thanh toán cho đơn hàng Online
+            boolean isPosOrder = order.getMaDonHang() != null && order.getMaDonHang().startsWith("HDSVN");
+            if (!isPosOrder) {
+                try {
+                    String userEmail = order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null
+                            ? order.getKhachHang().getTaiKhoan().getUsername()
+                            : null;
+                    if (userEmail != null && userEmail.contains("@")) {
+                        final String recipient = userEmail;
+                        final HoaDon orderSnapshot = order;
+                        java.util.concurrent.CompletableFuture.runAsync(() -> {
+                            try {
+                                guestCheckoutService.sendOrderConfirmationEmail(recipient, orderSnapshot, "http://localhost:8080");
+                            } catch (Exception ex) {
+                                log.error("[SepayOrderPaymentService] Lỗi gửi email xác nhận cho đơn {}: {}", orderSnapshot.getMaDonHang(), ex.getMessage());
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    log.error("[SepayOrderPaymentService] Lỗi khởi chạy async email: {}", e.getMessage());
+                }
+            }
 
             String note = String.format("Thanh toán SePay thành công cho đơn #%d, mã GD: %s, số tiền: %s", idHoaDon, maGiaoDich, soTien);
             auditService.log(null, "HoaDon", idHoaDon.longValue(), "SEPAY_PAID_SUCCESS", "", "DA_THANH_TOAN", "127.0.0.1", note, "SYSTEM");

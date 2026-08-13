@@ -233,11 +233,13 @@ public class AdminPosController {
             );
 
             response.put("success", true);
-            response.put("message", "Thanh toán thành công!");
+            boolean isPending = "CHUYEN_KHOAN".equalsIgnoreCase(req.phuongThucPos);
+            response.put("message", isPending ? "Đã khởi tạo đơn hàng chờ thanh toán!" : "Thanh toán thành công!");
             response.put("hoaDonId", hd.getId());
             response.put("maHoaDon", hd.getMaDonHang());
             response.put("paymentMethod", req.phuongThucPos);
             response.put("tongTien", hd.getTongTien());
+            response.put("isPendingPayment", isPending);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

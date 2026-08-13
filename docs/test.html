@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SMASH VN - Bao Cao Kiem Thu Nghiep Vu</title>
@@ -260,14 +260,14 @@ code {
   <span><span class="mdo"></span>Ng&#224;y ki&#7875;m th&#7917;: 12/08/2026</span>
   <span><span class="mdo"></span>Ng&#432;&#7901;i th&#7921;c hi&#7879;n: Antigravity AI Reviewer</span>
   <span><span class="mdo"></span>Spring Boot 3.x &middot; Java 21</span>
-  <span><span class="mdo"></span>T&#7893;ng test case: 45 &middot; Pass: 19 &middot; Warn: 8 &middot; Error: 10 &middot; Critical: 8</span>
+  <span><span class="mdo"></span>T&#7893;ng test case: 45 &middot; Pass: 20 &middot; Warn: 6 &middot; Error: 10 &middot; Critical: 9</span>
 </div></div></header>
 
 <div class="sbar">
-  <div class="sc sp"><div class="cnt">19</div><div class="lbl">&#9989; PASS</div></div>
-  <div class="sc sw"><div class="cnt">8</div><div class="lbl">&#9888;&#65039; L&#7895;i Trung B&#236;nh</div></div>
+  <div class="sc sp"><div class="cnt">20</div><div class="lbl">&#9989; PASS</div></div>
+  <div class="sc sw"><div class="cnt">6</div><div class="lbl">&#9888;&#65039; L&#7895;i Trung B&#236;nh</div></div>
   <div class="sc se"><div class="cnt">10</div><div class="lbl">&#128308; L&#7895;i Nghi&#234;m Tr&#7885;ng</div></div>
-  <div class="sc sk"><div class="cnt">8</div><div class="lbl">&#128165; &#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng</div></div>
+  <div class="sc sk"><div class="cnt">9</div><div class="lbl">&#128165; &#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng</div></div>
 </div>
 
 <div class="tw"><div class="tabs">
@@ -613,9 +613,9 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
   <td><div class="tt">Kho h&#224;ng c&#361; sau &#273;&#7893;i ch&#432;a &#273;&#432;&#7907;c nh&#7853;p l&#7841;i h&#7879; th&#7889;ng</div><div class="ti">&#272;&#417;n chuy&#7875;n EXCHANGED, h&#224;ng c&#361; &#7903; DA_HOAN_KHO</div></td>
   <td>ReturnInventoryStatus transitions</td>
   <td class="te">T&#7891;n kho SP c&#361; &#273;&#432;&#7907;c c&#7897;ng l&#7841;i (ho&#7863;c &#273;&#225;nh d&#7845;u l&#7895;i)</td>
-  <td>&#9888; Kh&#244;ng th&#7845;y logic c&#7897;ng l&#7841;i t&#7891;n kho cho h&#224;ng c&#361; sau &#273;&#7893;i. H&#224;ng c&#361; n&#7871;u c&#242;n d&#249;ng &#273;&#432;&#7907;c s&#7869; b&#7883; "m&#7845;t" kh&#7887;i h&#7879; th&#7889;ng.
-    <div class="note nw">C&#7847;n b&#7893; sung step ho&#224;n kho cho SP c&#361; trong ReturnInventoryStatus.DA_HOAN_KHO flow.</div></td>
-  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+  <td>&#10003; &#272;&#227; x&#225;c nh&#7853;n: ph&#432;&#417;ng th&#7913;c <code>xacNhanKiemKhoVaNhapKho()</code> g&#7885;i <code>inventoryLotService.hoanKho(restockReqs)</code> &#8212; t&#259;ng l&#7841;i <code>soLuongTon</code> trong SPCT khi Admin x&#225;c nh&#7853;n ki&#7875;m &#273;&#7883;nh OK. L&#7895;i &#273;&#227; &#273;&#432;&#7907;c x&#7917; l&#253;.
+    <div class="note np">&#272;&#227; s&#7917;a trong <code>OrderViewService.java#xacNhanKiemKhoVaNhapKho()</code>. Xem x&#233;t n&#226;ng c&#7845;p l&#234;n <code>reverseAllocation()</code> &#273;&#7875; reverse &#273;&#250;ng FIFO lot.</div></td>
+  <td><span class="badge bp">Pass</span></td>
 </tr>
 <tr>
   <td class="id-col">TC-C11</td>
@@ -698,9 +698,9 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
   <td><div class="tt">Kh&#225;ch l&#7867; (idKhachHang=-1) &#8212; t&#7841;o t&#7921; &#273;&#7897;ng guest account</div><div class="ti">idKhachHang=null ho&#7863;c -1, guest@smashvn.com ch&#432;a t&#7891;n t&#7841;i</div></td>
   <td>Auto-create TaiKhoan + KhachHang</div></td>
   <td class="te">T&#7841;o m&#7899;i guest TK</td>
-  <td>&#9888; Guest TK &#273;&#432;&#7907;c t&#7841;o v&#7899;i password raw <code>"GUEST_NO_PASSWORD"</code> kh&#244;ng hash.
-    <div class="note nw">N&#234;n d&#249;ng <code>passwordEncoder.encode("GUEST_NO_PASSWORD")</code>. File: <code>AdminPosService.java:192</code></div></td>
-  <td><span class="badge bw">L&#7895;i Trung B&#236;nh</span></td>
+  <td>&#128165; X&#225;c nh&#7853;n: m&#227; ngu&#7891;n th&#7921;c t&#7871; t&#7841;i d&#242;ng 193 l&#432;u <strong>plaintext</strong> v&#224;o DB: <code>tk.setMatKhau("GUEST_NO_PASSWORD")</code> &#8212; kh&#244;ng qua <code>passwordEncoder</code>. N&#7871;u DB b&#7883; dump, to&#224;n b&#7897; guest account b&#7883; l&#7897; ho&#224;n to&#224;n.
+    <div class="note nc">Nghi&#234;m tr&#7885;ng h&#417;n nh&#7853;n &#273;&#7883;nh ban &#273;&#7847;u: password l&#432;u <strong>plaintext</strong> (kh&#244;ng ph&#7843;i ch&#7881; thi&#7871;u hash). &#272;&#227; n&#226;ng c&#7845;p l&#234;n CRIT-5. File: <code>AdminPosService.java:193</code></div></td>
+  <td><span class="badge bk">&#272;&#7863;c Bi&#7879;t NT</span></td>
 </tr>
 <tr>
   <td class="id-col">TC-D06</td>
@@ -876,8 +876,8 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     </tr>
     <tr>
       <td><strong>&#128260; &#272;&#7893;i / Tr&#7843;</strong></td>
-      <td style="color:var(--pa);font-weight:700">7</td>
-      <td style="color:var(--wa);font-weight:700">2</td>
+      <td style="color:var(--pa);font-weight:700">8</td>
+      <td style="color:var(--wa);font-weight:700">1</td>
       <td style="color:var(--er);font-weight:700">1</td>
       <td style="color:var(--cr);font-weight:700">3</td>
       <td><strong>13</strong></td>
@@ -885,17 +885,17 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     <tr>
       <td><strong>&#127978; POS</strong></td>
       <td style="color:var(--pa);font-weight:700">10</td>
-      <td style="color:var(--wa);font-weight:700">3</td>
+      <td style="color:var(--wa);font-weight:700">2</td>
       <td style="color:var(--er);font-weight:700">2</td>
-      <td style="color:var(--cr);font-weight:700">1</td>
+      <td style="color:var(--cr);font-weight:700">2</td>
       <td><strong>16</strong></td>
     </tr>
     <tr style="border-top:2px solid var(--br);">
       <td><strong>T&#7893;ng c&#7897;ng</strong></td>
-      <td style="color:var(--pa);font-weight:800">26</td>
-      <td style="color:var(--wa);font-weight:800">7</td>
+      <td style="color:var(--pa);font-weight:800">27</td>
+      <td style="color:var(--wa);font-weight:800">5</td>
       <td style="color:var(--er);font-weight:800">6</td>
-      <td style="color:var(--cr);font-weight:800">6</td>
+      <td style="color:var(--cr);font-weight:800">7</td>
       <td><strong>45</strong></td>
     </tr>
     </tbody></table>
@@ -906,12 +906,12 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     <div style="padding:4px 0;">
       <div class="ph">&#128179; Thanh To&#225;n &nbsp;<strong style="color:var(--pa)">56%</strong> (9/16)</div>
       <div class="pb"><div class="pf" style="width:56%"></div></div>
-      <div class="ph">&#128260; &#272;&#7893;i / Tr&#7843; H&#224;ng &nbsp;<strong style="color:var(--pa)">54%</strong> (7/13)</div>
-      <div class="pb"><div class="pf" style="width:54%"></div></div>
+      <div class="ph">&#128260; &#272;&#7893;i / Tr&#7843; H&#224;ng &nbsp;<strong style="color:var(--pa)">62%</strong> (8/13)</div>
+      <div class="pb"><div class="pf" style="width:62%"></div></div>
       <div class="ph">&#127978; B&#225;n H&#224;ng POS &nbsp;<strong style="color:var(--pa)">63%</strong> (10/16)</div>
       <div class="pb"><div class="pf" style="width:63%"></div></div>
-      <div class="ph">&#128202; T&#7893;ng th&#7875; &nbsp;<strong style="color:var(--pa)">58%</strong> (26/45)</div>
-      <div class="pb"><div class="pf" style="width:58%"></div></div>
+      <div class="ph">&#128202; T&#7893;ng th&#7875; &nbsp;<strong style="color:var(--pa)">60%</strong> (27/45)</div>
+      <div class="pb"><div class="pf" style="width:60%"></div></div>
     </div>
   </div>
 </div>
@@ -949,6 +949,14 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     <td>Thanh To&#225;n</td>
     <td><code>SepayGatewayService.java</code></td>
     <td>Th&#234;m branch guard c&#432;&#7905;ng b&#7913;c tr&#432;&#7899;c Normal Processing: n&#7871;u tr&#7841;ng th&#225;i STOCK_CONFLICT th&#236; reject ho&#7863;c route sang lu&#7891;ng ri&#234;ng</td>
+  </tr>
+  <tr>
+    <td><span class="badge bk">CRIT-5</span></td>
+    <td><div class="tt">Guest TaiKhoan l&#432;u password <strong>plaintext</strong> v&#224;o DB &#8212; kh&#244;ng qua passwordEncoder</div>
+      <div class="note nc">X&#225;c nh&#7853;n: <code>tk.setMatKhau("GUEST_NO_PASSWORD")</code> t&#7841;i d&#242;ng 193 l&#432;u plaintext, kh&#244;ng hash. N&#7863;ng h&#417;n nh&#7853;n &#273;&#7883;nh ban &#273;&#7847;u (v&#7889;n &#7903; MED-6).</div></td>
+    <td>POS</td>
+    <td><code>AdminPosService.java:193</code></td>
+    <td>S&#7917;a ngay: <code>tk.setMatKhau(passwordEncoder.encode("GUEST_NO_PASSWORD"))</code></td>
   </tr>
   </tbody></table>
 </div>
@@ -1022,10 +1030,10 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     <td>Ki&#7875;m tra .env: <code>SEPAY_DEBUG=false</code> tr&#234;n production, th&#234;m alert CI/CD</td>
   </tr>
   <tr>
-    <td><span class="badge bw">MED-4</span></td>
-    <td>Kho h&#224;ng c&#361; sau &#273;&#7893;i ch&#432;a &#273;&#432;&#7907;c c&#7897;ng l&#7841;i h&#7879; th&#7889;ng</td>
+    <td><span class="badge bp">MED-4 &#10003;</span></td>
+    <td>Kho h&#224;ng c&#361; sau &#273;&#7893;i ch&#432;a &#273;&#432;&#7907;c c&#7897;ng l&#7841;i h&#7879; th&#7889;ng &#8212; <strong>&#272;&#227; s&#7917;a</strong></td>
     <td>&#272;&#7893;i / Tr&#7843;</td>
-    <td>Th&#234;m step ho&#224;n kho SP c&#361; khi x&#225;c nh&#7853;n ki&#7875;m &#273;&#7883;nh OK trong DA_HOAN_KHO flow</td>
+    <td>&#10003; X&#225;c nh&#7853;n: <code>xacNhanKiemKhoVaNhapKho()</code> g&#7885;i <code>inventoryLotService.hoanKho()</code> &#8212; t&#259;ng l&#7841;i soLuongTon cho SP c&#361; khi ki&#7875;m &#273;&#7883;nh OK.</td>
   </tr>
   <tr>
     <td><span class="badge bw">MED-5</span></td>
@@ -1034,10 +1042,10 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     <td>Validate URL pattern ho&#7863;c restrict upload server-side, kh&#244;ng ch&#7845;p nh&#7853;n chu&#7895;i t&#249;y &#253;</td>
   </tr>
   <tr>
-    <td><span class="badge bw">MED-6</span></td>
-    <td>Guest TaiKhoan t&#7841;o v&#7899;i password raw kh&#244;ng hash</td>
+    <td><span class="badge bk">MED-6 &#8594; CRIT-5</span></td>
+    <td>Guest TaiKhoan l&#432;u password <strong>plaintext</strong> v&#224;o DB (n&#7863;ng h&#417;n nh&#7853;n &#273;&#7883;nh ban &#273;&#7847;u)</td>
     <td>POS</td>
-    <td>D&#249;ng <code>passwordEncoder.encode("GUEST_NO_PASSWORD")</code> t&#7841;i <code>AdminPosService.java:192</code></td>
+    <td>&#8593; N&#226;ng c&#7845;p l&#234;n CRIT-5. D&#242;ng 193: <code>tk.setMatKhau("GUEST_NO_PASSWORD")</code> &#8212; plaintext, kh&#244;ng ph&#7843;i ch&#7881; thi&#7871;u hash. S&#7917;a: <code>passwordEncoder.encode(...)</code></td>
   </tr>
   <tr>
     <td><span class="badge bw">MED-7</span></td>

@@ -969,15 +969,11 @@ public class CheckoutController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> applyVoucher(
             @RequestParam("voucherCode") String voucherCode,
+            @RequestParam(value = "checkoutToken", required = false) String checkoutToken,
             HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (idNguoiDung == null) {
-            response.put("trangThai", "chuadangnhap");
-            response.put("message", "Vui lòng đăng nhập để sử dụng mã giảm giá.");
-            return ResponseEntity.ok(response);
-        }
 
         if (voucherCode == null || voucherCode.trim().isEmpty()) {
             response.put("trangThai", "loi");
@@ -987,20 +983,51 @@ public class CheckoutController {
 
         String uppercaseCode = voucherCode.trim().toUpperCase();
 
-        // Check active cart items to compute server-side tamTinh
-        List<GioHangChiTiet> cartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
-        if (cartItems.isEmpty()) {
-            response.put("trangThai", "loi");
-            response.put("message", "Giỏ hàng trống, không thể áp dụng mã giảm giá.");
-            return ResponseEntity.ok(response);
+        // Calculate server-side tamTinh from CheckoutContext if token exists, otherwise fall back to DB/guest cart
+        BigDecimal tamTinh = BigDecimal.ZERO;
+        boolean hasItems = false;
+
+        if (checkoutToken != null && !checkoutToken.trim().isEmpty()) {
+            CheckoutContext context = checkoutContextService.getContext(session, checkoutToken.trim());
+            if (context != null && context.getItems() != null && !context.getItems().isEmpty()) {
+                for (CheckoutItemContext itemCtx : context.getItems()) {
+                    com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(itemCtx.getIdSanPhamChiTiet()).orElse(null);
+                    if (spct != null && itemCtx.getSoLuong() != null && itemCtx.getSoLuong() > 0) {
+                        BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
+                        tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(itemCtx.getSoLuong())));
+                        hasItems = true;
+                    }
+                }
+            }
         }
 
-        BigDecimal tamTinh = BigDecimal.ZERO;
-        for (GioHangChiTiet item : cartItems) {
-            if (item.getSanPhamChiTiet() != null) {
-                BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
-                tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+        if (!hasItems) {
+            if (idNguoiDung != null) {
+                List<GioHangChiTiet> cartItems = gioHangService.layDanhSachSanPhamTrongGio(idNguoiDung);
+                for (GioHangChiTiet item : cartItems) {
+                    if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                        BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(item.getSanPhamChiTiet());
+                        tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+                        hasItems = true;
+                    }
+                }
+            } else {
+                List<GuestCartService.GuestCartItem> guestCart = guestCartService.getGuestCartItems(session);
+                for (GuestCartService.GuestCartItem item : guestCart) {
+                    com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(item.getIdSanPhamChiTiet()).orElse(null);
+                    if (spct != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                        BigDecimal giaBanSauGiam = pricingService.calculateCurrentSellingPrice(spct);
+                        tamTinh = tamTinh.add(giaBanSauGiam.multiply(new BigDecimal(item.getSoLuong())));
+                        hasItems = true;
+                    }
+                }
             }
+        }
+
+        if (!hasItems || tamTinh.compareTo(BigDecimal.ZERO) <= 0) {
+            response.put("trangThai", "loi");
+            response.put("message", "Giỏ hàng trống hoặc không tìm thấy sản phẩm hợp lệ để áp dụng mã giảm giá.");
+            return ResponseEntity.ok(response);
         }
 
         Optional<PhieuGiamGia> optVoucher = phieuGiamGiaRepository.findByMaPhieu(uppercaseCode);

@@ -1248,29 +1248,8 @@
                 let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 modal.show();
             } else {
-                // CHUYEN_KHOAN -> Chưa tạo hóa đơn DB để tránh phình DB. Chỉ tạo khi xác nhận thanh toán!
-                document.getElementById("modalCashSection").classList.add("d-none");
-                document.getElementById("modalBankSection").classList.remove("d-none");
-                document.getElementById("inputTransferRef").value = "";
-
-                const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
-                const sepayBank   = /*[[${sepayBankName}]]*/ '';
-                const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
-                const tempMemoCode = "POS" + String(Date.now()).slice(-8);
-                const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + tempMemoCode) : tempMemoCode;
-
-                document.getElementById("txtTransferCode").innerText = finalMemo;
-                document.getElementById("txtTransferAmount").innerText = formatVND(grandTotal);
-                buildPosSePayQr(sepayAcc, sepayBank, grandTotal, finalMemo);
-
-                btnConfirm.innerText = "Xác nhận đã nhận tiền (Chuyển khoản)";
-                btnConfirm.disabled = false;
-                btnConfirm.onclick = () => {
-                    executeCheckout();
-                };
-
-                let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                modal.show();
+                // CHUYEN_KHOAN -> Khởi tạo đơn hàng chờ thanh toán trong DB để nhận Webhook SePay tự động
+                executeCheckout();
             }
         }
 
@@ -1494,11 +1473,43 @@
             .then(data => {
                 overlay.style.display = "none";
                 if (data.success) {
-                    pendingPrintUrl = `/admin/pos/print/${data.hoaDonId}`;
-                    document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${data.maHoaDon}`;
-                    const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
-                    myModal.show();
-                    clearPOSState();
+                    if (data.isPendingPayment) {
+                        currentCheckoutHoaDonId = data.hoaDonId;
+                        currentCheckoutMaHoaDon = data.maHoaDon;
+
+                        document.getElementById("modalCashSection").classList.add("d-none");
+                        document.getElementById("modalBankSection").classList.remove("d-none");
+                        document.getElementById("inputTransferRef").value = "";
+
+                        const sepayAcc    = /*[[${sepayBankAccount}]]*/ '';
+                        const sepayBank   = /*[[${sepayBankName}]]*/ '';
+                        const sepayPrefix = /*[[${sepayMemoPrefix}]]*/ '';
+                        const finalMemo   = sepayPrefix ? (sepayPrefix.trim() + ' ' + data.maHoaDon) : data.maHoaDon;
+
+                        document.getElementById("txtTransferCode").innerText = finalMemo;
+                        document.getElementById("txtTransferAmount").innerText = formatVND(data.tongTien);
+                        buildPosSePayQr(sepayAcc, sepayBank, data.tongTien, finalMemo);
+
+                        const btnConfirm = document.getElementById("btnConfirmPayment");
+                        btnConfirm.innerText = "Xác nhận đã nhận tiền (Thủ công)";
+                        btnConfirm.disabled = false;
+                        btnConfirm.onclick = () => {
+                            confirmPaymentManually(data.hoaDonId);
+                        };
+
+                        const modalEl = document.getElementById('paymentConfirmModal');
+                        let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.show();
+
+                        // Lắng nghe Webhook SePay nổ tiền tự động
+                        startPaymentPolling(data.maHoaDon, data.hoaDonId);
+                    } else {
+                        pendingPrintUrl = `/admin/pos/print/${data.hoaDonId}`;
+                        document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${data.maHoaDon}`;
+                        const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
+                        myModal.show();
+                        clearPOSState();
+                    }
                 } else {
                     showToast(`Thanh toán thất bại: ${data.message}`, 'error');
                 }
@@ -1513,6 +1524,9 @@
             cart = [];
             appliedVoucher = null;
             selectedCustomer = null;
+            currentCheckoutHoaDonId = null;
+            currentCheckoutMaHoaDon = null;
+            stopPaymentPolling();
             document.getElementById("voucherInput").value = "";
             document.getElementById("voucherStatus").innerHTML = "";
             document.getElementById("orderNote").value = "";

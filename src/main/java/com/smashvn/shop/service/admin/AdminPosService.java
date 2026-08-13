@@ -355,13 +355,22 @@ public class AdminPosService {
         hd.setGhiChu(sanitizedGhiChu);
         hd.setMaGiaoDich(sanitizedGiaoDich);
 
-        // Bán tại quầy → Chỉ tạo hóa đơn khi đã xác nhận thanh toán thành công (hoàn thành ngay)
-        hd.setTrangThaiDonHang("da_giao");
-        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
-        hd.setPaymentStatus(PaymentStatus.PAID.getValue());
-        hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
-        hd.setThoiGianXacNhan(LocalDateTime.now());
-        hd.setPaidAt(LocalDateTime.now());
+        // Bán tại quầy: Tiền mặt -> Hoàn thành ngay; Chuyển khoản -> Tạo đơn chờ thanh toán để nhận Webhook SePay
+        if ("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos)) {
+            hd.setTrangThaiDonHang(OrderStatus.CHO_THANH_TOAN.getValue());
+            hd.setTrangThaiThanhToan("CHO_THANH_TOAN");
+            hd.setPaymentStatus(PaymentStatus.PENDING.getValue());
+            hd.setNguoiXacNhanThanhToan(null);
+            hd.setThoiGianXacNhan(null);
+            hd.setPaidAt(null);
+        } else {
+            hd.setTrangThaiDonHang("da_giao");
+            hd.setTrangThaiThanhToan("DA_THANH_TOAN");
+            hd.setPaymentStatus(PaymentStatus.PAID.getValue());
+            hd.setNguoiXacNhanThanhToan(nhanVien != null ? nhanVien.getHoTenNv() : "Nhân viên hệ thống");
+            hd.setThoiGianXacNhan(LocalDateTime.now());
+            hd.setPaidAt(LocalDateTime.now());
+        }
 
         hd.setSoTienGiamVoucher(giamGia);
         if (phieu != null) {

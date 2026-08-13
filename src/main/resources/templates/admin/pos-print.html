@@ -162,7 +162,7 @@
             <div><strong>Thanh toán:</strong> <span th:text="${phuongThucLabel}">Tiền mặt</span></div>
             <div><strong>Trạng thái:</strong> <span th:text="${trangThaiLabel}">ĐÃ THANH TOÁN</span></div>
             <div th:if="${hoaDon.maGiaoDich != null and !#strings.isEmpty(hoaDon.maGiaoDich)}"><strong>Mã giao dịch:</strong> <span th:text="${hoaDon.maGiaoDich}">TRF123456</span></div>
-            <div><strong>NV xác nhận:</strong> <span th:text="${hoaDon.nguoiXacNhanThanhToan != null ? hoaDon.nguoiXacNhanThanhToan : 'Nhân viên hệ thống'}">Nguyễn Văn A</span></div>
+            <div><strong>NV xác nhận:</strong> <span th:text="${hoaDon.nguoiXacNhanThanhToan != null ? #strings.replace(hoaDon.nguoiXacNhanThanhToan, ' (POS)', '') : 'Nhân viên hệ thống'}">Nguyễn Văn A</span></div>
             <div><strong>Thời gian xác nhận:</strong> <span th:text="${hoaDon.thoiGianXacNhan != null ? #temporals.format(hoaDon.thoiGianXacNhan, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">01/01/2026 12:00:00</span></div>
             <div th:if="${hoaDon.ghiChu != null and !#strings.isEmpty(hoaDon.ghiChu)}"><strong>Ghi chú:</strong> <span th:text="${hoaDon.ghiChu}">Ghi chú đơn hàng</span></div>
         </div>
@@ -183,9 +183,9 @@
                     <td>
                         <span th:text="${item.sanPhamChiTiet.sanPham.tenSanPham}">Vợt Yonex</span><br>
                         <span class="item-details">
-                            <span th:text="${item.sanPhamChiTiet.mauSac} + ' | ' + ${item.sanPhamChiTiet.trongLuong}">Đỏ | 3U</span>
+                            <span th:text="${item.sanPhamChiTiet.phanLoaiHienThi}">Mặc định</span>
                             <span th:if="${item.sanPhamChiTiet.mucCang != null and !#strings.isEmpty(item.sanPhamChiTiet.mucCang)}"
-                                  th:text="' | Sức căng khuyến nghị: ' + ${item.sanPhamChiTiet.mucCang}"> | Sức căng khuyến nghị: 20 - 28 lbs</span>
+                                  th:text="' | Sức căng: ' + ${item.sanPhamChiTiet.mucCang}"> | Sức căng: 20 - 28 lbs</span>
                         </span>
                     </td>
                     <td style="text-align: center; white-space: nowrap;" th:text="${item.soLuong}">1</td>
@@ -209,7 +209,7 @@
             <tr th:if="${hoaDon.soTienGiamVoucher != null and hoaDon.soTienGiamVoucher.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #000;">
                 <td class="bold" style="white-space: nowrap; width: 60%;">
                     <span th:if="${hoaDon.maVoucherApDung != null and !#strings.isEmpty(#strings.trim(hoaDon.maVoucherApDung))}" 
-                          th:text="'Voucher giảm (' + ${hoaDon.maVoucherApDung} + '):'">Voucher giảm (CODE):</span>
+                          th:text="'Voucher giảm ' + ${hoaDon.maVoucherApDung} + ':'">Voucher giảm CODE:</span>
                     <span th:unless="${hoaDon.maVoucherApDung != null and !#strings.isEmpty(#strings.trim(hoaDon.maVoucherApDung))}">Voucher giảm:</span>
                 </td>
                 <td style="text-align: right; white-space: nowrap; width: 40%;" th:text="'-' + ${#numbers.formatDecimal(hoaDon.soTienGiamVoucher, 0, 'COMMA', 0, 'POINT')} + ' đ'">-100.000 đ</td>
