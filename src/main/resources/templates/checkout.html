@@ -290,7 +290,7 @@
                                                     <option th:each="dc : ${listDiaChi}" 
                                                             th:value="${dc.id}"
                                                             th:selected="${dc.defaultShipping}"
-                                                            th:text="${dc.hoNguoiNhan + ' ' + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.districtName != null and !dc.districtName.isEmpty() ? ', ' + dc.districtName : '') + ', ' + dc.provinceName + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
+                                                            th:text="${(dc.hoNguoiNhan != null and !dc.hoNguoiNhan.isEmpty() ? dc.hoNguoiNhan + ' ' : '') + dc.tenNguoiNhan + ' - ' + dc.sdtNguoiNhan + ' (' + dc.diaChiCuThe + (dc.wardName != null and !dc.wardName.isEmpty() ? ', ' + dc.wardName : '') + (dc.districtName != null and !dc.districtName.isEmpty() ? ', ' + dc.districtName : '') + ', ' + dc.provinceName + ')' + (dc.defaultShipping ? ' [Mặc định]' : '')}">
                                                     </option>
                                                     <option value="new_address">-- Nhập địa chỉ mới --</option>
                                                 </select>
@@ -1306,11 +1306,18 @@
 
             // Initial visibility & trigger on load
             if ($('#selectDiaChiLuu').length > 0) {
-                const initialVal = $('#selectDiaChiLuu').val();
-                if (initialVal) {
+                let initialVal = $('#selectDiaChiLuu').val();
+                if (!initialVal && $('#selectDiaChiLuu option').length > 1) {
+                    const firstVal = $('#selectDiaChiLuu option').eq(1).val();
+                    if (firstVal && firstVal !== 'new_address') {
+                        $('#selectDiaChiLuu').val(firstVal);
+                        initialVal = firstVal;
+                    }
+                }
+                if (initialVal && initialVal !== 'new_address') {
                     $('#selectDiaChiLuu').trigger('change');
                 } else {
-                    $('#manual-address-fields').hide();
+                    $('#manual-address-fields').show();
                 }
             } else {
                 $('#manual-address-fields').show();

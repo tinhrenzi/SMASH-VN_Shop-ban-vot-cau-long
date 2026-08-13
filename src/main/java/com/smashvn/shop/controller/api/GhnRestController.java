@@ -26,6 +26,7 @@ import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.api.GhnStatusMapper;
 import com.smashvn.shop.service.order.OrderViewService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -188,6 +189,20 @@ public class GhnRestController {
                         "trangThaiDonHang", requestedOrder.getTrangThaiDonHang()));
             }
 
+            if (ghnCode.startsWith("DEMO-GHN-")) {
+                Map<String, Object> fallbackData = new HashMap<>();
+                fallbackData.put("order_code", ghnCode);
+                fallbackData.put("status", requestedOrder.getGhnStatus() != null ? requestedOrder.getGhnStatus() : "ready_to_pick");
+                fallbackData.put("log", java.util.List.of());
+                return ResponseEntity.ok(Map.of(
+                        "status", "ok",
+                        "isDemoFallback", true,
+                        "ghnOrderCode", ghnCode,
+                        "data", fallbackData,
+                        "trangThaiDonHang", requestedOrder.getTrangThaiDonHang()
+                ));
+            }
+
             Map<String, Object> trackingData = ghnService.trackOrder(ghnCode);
             Map<String, Object> result = new HashMap<>();
             result.put("status", "ok");
@@ -295,7 +310,10 @@ public class GhnRestController {
      * POST /api/ghn/admin/sync/{orderId}
      */
     @PostMapping("/admin/sync/{orderId}")
-    public ResponseEntity<?> adminSyncGhnStatus(@PathVariable Integer orderId, HttpSession session) {
+    public ResponseEntity<?> adminSyncGhnStatus(
+            @PathVariable Integer orderId,
+            @RequestParam(value = "provider", required = false) String provider,
+            HttpSession session) {
         String role = (String) session.getAttribute("vaiTro");
         if (role == null || (!role.equals("QL") && !role.equals("NV"))) {
             return ResponseEntity.status(403)
@@ -308,30 +326,61 @@ public class GhnRestController {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy đơn hàng ID=" + orderId));
             }
 
-            String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
-            if (returnCode != null && !returnCode.isBlank()) {
-                Map<String, Object> trackingData = ghnService.trackOrder(returnCode);
-                if (trackingData != null && trackingData.get("status") != null) {
-                    String ghnStatus = (String) trackingData.get("status");
-                    com.smashvn.shop.entity.ReturnStatus newReturnStatus = ghnStatusMapper.mapToReturnStatus(ghnStatus);
-                    if (newReturnStatus != null) {
-                        orderViewService.updateReturnStatusFromGhn(hd.getId(), newReturnStatus, ghnStatus, "ADMIN_SYNC");
-                        log.info("[ADMIN] Đã đồng bộ thủ công ĐƠN HOÀN TRẢ #{}: GHN returnStatus={}, internalReturnStatus={}", orderId, ghnStatus, newReturnStatus.name());
-                        String ghnStatusLabel = ghnStatusMapper.getGhnStatusLabel(ghnStatus);
+            boolean syncReturn = "GHN_RETURN".equalsIgnoreCase(provider);
+            boolean syncOutbound = "GHN".equalsIgnoreCase(provider);
+
+            if (!syncOutbound) {
+                String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
+                if (returnCode != null && !returnCode.isBlank()) {
+                    if (returnCode.startsWith("DEMO-GHN-RETURN-")) {
+                        String currentGhnStatus = hd.getGhnStatus() != null ? hd.getGhnStatus() : "ready_to_pick";
+                        String ghnStatusLabel = ghnStatusMapper.getGhnStatusLabel(currentGhnStatus);
                         return ResponseEntity.ok(Map.of(
                                 "status", "ok",
-                                "message", "Đồng bộ trạng thái GHN Thu Hồi thành công! Mã: " + returnCode,
-                                "ghnStatus", ghnStatus,
+                                "message", "Mã vận đơn Demo Return Fallback do SMASH-VN tự quản lý (" + returnCode + ")",
+                                "ghnStatus", currentGhnStatus,
                                 "ghnStatusLabel", ghnStatusLabel,
-                                "internalStatus", newReturnStatus.name()
+                                "internalStatus", hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : "WAITING_FOR_PICKUP"
                         ));
                     }
+                    Map<String, Object> trackingData = ghnService.trackOrder(returnCode);
+                    if (trackingData != null && trackingData.get("status") != null) {
+                        String ghnStatus = (String) trackingData.get("status");
+                        com.smashvn.shop.entity.ReturnStatus newReturnStatus = ghnStatusMapper.mapToReturnStatus(ghnStatus);
+                        if (newReturnStatus != null) {
+                            orderViewService.updateReturnStatusFromGhn(hd.getId(), newReturnStatus, ghnStatus, "ADMIN_SYNC");
+                            log.info("[ADMIN] Đã đồng bộ thủ công ĐƠN HOÀN TRẢ #{}: GHN returnStatus={}, internalReturnStatus={}", orderId, ghnStatus, newReturnStatus.name());
+                            String ghnStatusLabel = ghnStatusMapper.getGhnStatusLabel(ghnStatus);
+                            return ResponseEntity.ok(Map.of(
+                                    "status", "ok",
+                                    "message", "Đồng bộ trạng thái GHN Thu Hồi thành công! Mã: " + returnCode,
+                                    "ghnStatus", ghnStatus,
+                                    "ghnStatusLabel", ghnStatusLabel,
+                                    "internalStatus", newReturnStatus.name()
+                            ));
+                        }
+                    }
+                    if (syncReturn) {
+                        return ResponseEntity.ok(Map.of("status", "error", "message", "Không thể truy vấn thông tin từ GHN API cho mã thu hồi " + returnCode));
+                    }
+                } else if (syncReturn) {
+                    return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng chưa có mã GHN Thu Hồi để đồng bộ"));
                 }
             }
 
             String ghnCode = hd.getGhnOrderCode();
             if (ghnCode == null || ghnCode.isBlank()) {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng chưa có mã GHN để đồng bộ"));
+            }
+
+            if (ghnCode.startsWith("DEMO-GHN-")) {
+                return ResponseEntity.ok(Map.of(
+                        "status", "info",
+                        "message", "Đây là vận đơn Demo Fallback (" + ghnCode + ") do hệ thống SMASH-VN tự quản lý, không thể đồng bộ trực tiếp từ GHN Sandbox.",
+                        "ghnStatus", hd.getGhnStatus() != null ? hd.getGhnStatus() : "ready_to_pick",
+                        "ghnStatusLabel", "Demo GHN Fallback",
+                        "internalStatus", hd.getTrangThaiDonHang()
+                ));
             }
 
             Map<String, Object> trackingData = ghnService.trackOrder(ghnCode);
@@ -359,6 +408,51 @@ public class GhnRestController {
         } catch (Exception e) {
             log.error("[ADMIN] Sync GHN error orderId={}: {}", orderId, e.getMessage(), e);
             return ResponseEntity.ok(Map.of("status", "error", "message", "Lỗi đồng bộ: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * [ADMIN] Mô phỏng chuyển trạng thái kế tiếp cho vận đơn GHN Fallback (Demo Simulator)
+     * POST /api/ghn/admin/demo-next-status/{orderId}
+     */
+    @PostMapping("/admin/demo-next-status/{orderId}")
+    public ResponseEntity<?> advanceDemoNextStatus(
+            @PathVariable Integer orderId,
+            HttpSession session,
+            HttpServletRequest request) {
+
+        String role = (String) session.getAttribute("vaiTro");
+        if (role == null || (!role.equals("QL") && !role.equals("NV"))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("status", "error", "message", "Không có quyền truy cập"));
+        }
+
+        Integer accountId = (Integer) session.getAttribute("idNguoiDung");
+        String actorName = (String) session.getAttribute("tenDangNhap");
+        if (actorName == null) {
+            actorName = "Admin/NV";
+        }
+        String clientIp = request != null ? request.getRemoteAddr() : "127.0.0.1";
+
+        try {
+            Map<String, Object> result = orderViewService.advanceDemoShippingStatus(orderId, accountId, actorName, clientIp);
+            return ResponseEntity.ok(result);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "terminal",
+                    "message", e.getMessage()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("[DEMO_SIMULATOR] Lỗi chuyển trạng thái Demo đơn #{}: {}", orderId, e.getMessage(), e);
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Lỗi mô phỏng trạng thái Demo: " + e.getMessage()
+            ));
         }
     }
 

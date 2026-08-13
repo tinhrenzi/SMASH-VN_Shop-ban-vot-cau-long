@@ -188,6 +188,19 @@
                                                              <i class="far fa-copy"></i>
                                                          </button>
                                                      </div>
+                                                     <div th:if="${hd.ghnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnOrderCode)}"
+                                                          class="mt-1">
+                                                          <span th:class="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'admin-status admin-status-warning text-nowrap d-inline-flex align-items-center gap-1' : 'admin-status admin-status-info text-nowrap d-inline-flex align-items-center gap-1'}"
+                                                              style="font-size: 0.72rem; cursor: pointer;"
+                                                              th:title="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'Mã vận đơn Demo GHN Fallback (Hệ thống SMASH-VN tự quản lý)' : 'Click để sao chép mã GHN: ' + hd.ghnOrderCode}"
+                                                              th:data-code="${hd.ghnOrderCode}"
+                                                              onclick="copyToClipboard(this.getAttribute('data-code'), this)">
+                                                              <i th:class="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'fas fa-flask me-1' : 'fas fa-shipping-fast me-1'}"></i>
+                                                              <span th:text="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'Demo GHN' : 'GHN'}">GHN</span>:
+                                                              [[${hd.ghnOrderCode}]]
+                                                              <i class="far fa-copy ms-1 text-muted" style="font-size: 0.65rem;"></i>
+                                                          </span>
+                                                      </div>
                                                      <div th:if="${hd.ghnReturnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnReturnOrderCode)}"
                                                          class="mt-1">
                                                          <span class="admin-status admin-status-info text-nowrap d-inline-flex align-items-center gap-1"
@@ -353,7 +366,7 @@
                                                         </form>
 
                                                         <form
-                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
+                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_lay_hang' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
                                                             th:data-next-status-label="${nextStatusLabels[hd.id]}"
                                                             th:action="@{/admin/don-hang/next-status}" method="post"
                                                             class="d-inline-block m-0">
@@ -513,7 +526,7 @@
                                                         </button>
 
                                                         <form
-                                                            th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
+                                                            th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_lay_hang' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null}"
                                                             th:data-next-status-label="${nextStatusLabels[hd.id]}"
                                                             th:action="@{/admin/don-hang/next-status}" method="post"
                                                             class="d-inline-block m-0">
@@ -1032,8 +1045,8 @@
                 'CHO_GIAO': 'Chờ giao hàng',
                 'DANG_CHUAN_BI_HANG': 'Đang chuẩn bị hàng',
                 'SAN_SANG_GIAO': 'Sẵn sàng giao',
-                'DA_TAO_VAN_DON_GHN': 'Đã tạo vận đơn GHN',
-                'DA_BAN_GIAO_GHN': 'Đã bàn giao GHN',
+                'DA_TAO_VAN_DON_GHN': 'Đã tạo vận đơn',
+                'DA_BAN_GIAO_GHN': 'Đã lấy hàng',
                 'DANG_LAY_HANG': 'Đang lấy hàng',
                 'DANG_GIAO': 'Đang giao hàng',
                 'DA_GIAO': 'Đã giao hàng',
@@ -1328,10 +1341,21 @@
                                         <span class="order-detail-value">
                                             <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnOrderCode)}</span>
                                             <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnOrderCode)}', this)" title="Sao chép mã GHN" aria-label="Sao chép mã GHN"><i class="far fa-copy"></i></button>
-                                            ${data.ghnStatusLabel ? `<span class="badge-soft badge-soft-info me-1">${escapeHtml(data.ghnStatusLabel)}</span>` : ''}
-                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this)" title="Đồng bộ ngay từ GHN" aria-label="Đồng bộ ngay từ GHN">
-                                                <i class="fas fa-sync-alt me-1"></i>Đồng bộ
-                                            </button>
+                                             ${data.ghnOrderCode.startsWith('DEMO-GHN-') ? `
+                                                 <span class="badge bg-warning text-dark me-1" title="Vận đơn Demo Fallback do SMASH-VN tự quản lý"><i class="fas fa-flask me-1"></i>Demo GHN Fallback</span>
+                                                 ${data.ghnStatus === 'delivered' ? `
+                                                     <span class="badge bg-success me-1" title="Vận đơn Demo đã hoàn tất giao hàng"><i class="fas fa-check-circle me-1"></i>Demo Đã giao</span>
+                                                 ` : `
+                                                     <button type="button" class="admin-btn admin-btn-sm admin-btn-warning text-dark fw-bold py-0 px-2 me-1" style="font-size: 0.75rem;" onclick="advanceDemoStatus(${data.id}, this)" title="Chuyển sang trạng thái tiếp theo trong luồng Demo">
+                                                         <i class="fas fa-step-forward me-1"></i>Chuyển trạng thái Demo (${escapeHtml(data.ghnStatusLabel || data.ghnStatus)})
+                                                     </button>
+                                                 `}
+                                             ` : `
+                                                 ${data.ghnStatusLabel ? `<span class="badge-soft badge-soft-info me-1">${escapeHtml(data.ghnStatusLabel)}</span>` : ''}
+                                                 <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this, 'GHN')" title="Đồng bộ ngay từ GHN" aria-label="Đồng bộ ngay từ GHN">
+                                                     <i class="fas fa-sync-alt me-1"></i>Đồng bộ
+                                                 </button>
+                                             `}
                                         </span>
                                     </div>
                                     ` : (data.donViVanChuyen && (data.donViVanChuyen.toUpperCase().includes('GHN') || data.donViVanChuyen.toUpperCase().includes('GIAO HÀNG NHANH')) ? `
@@ -1346,10 +1370,11 @@
                                     </div>
                                     ` : '')}
 
-                                    ${data.ghnReturnOrderCode ? `
+                                    ${data.ghnReturnOrderCode && data.ghnReturnOrderCode !== data.ghnOrderCode && !data.ghnReturnOrderCode.startsWith('GHN-RETURN-SIMULATED-') && !data.ghnReturnOrderCode.startsWith('GHNRET') ? `
                                     <div class="order-detail-field">
                                         <span class="order-detail-label">Mã GHN Thu Hồi</span>
                                         <span class="order-detail-value">
+                                            ${data.ghnReturnOrderCode.startsWith('DEMO-GHN-RETURN-') ? '<span class="badge bg-warning text-dark me-1"><i class="fas fa-flask me-1"></i>Demo GHN Return Fallback</span>' : ''}
                                             <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnReturnOrderCode)}</span>
                                             <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnReturnOrderCode)}', this)" title="Sao chép mã thu hồi" aria-label="Sao chép mã thu hồi"><i class="far fa-copy"></i></button>
                                             <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this)" title="Đồng bộ GHN thu hồi" aria-label="Đồng bộ GHN thu hồi">
@@ -1654,18 +1679,19 @@
                     let actionsLeftHtml = '';
                     let actionsRightHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Đóng</button>`;
 
-                    if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() !== 'da_ban_giao_ghn' && data.trangThaiRaw.toLowerCase() !== 'dang_giao' && data.trangThaiRaw.toLowerCase() !== 'da_giao' && data.trangThaiRaw.toLowerCase() !== 'hoan_thanh' && data.trangThaiRaw.toLowerCase() !== 'da_huy') {
+                    const hasGhnCode = data.ghnOrderCode && data.ghnOrderCode.trim() !== '';
+                    const stRaw = data.trangThaiRaw ? data.trangThaiRaw.toLowerCase() : '';
+                    const isGhnManaged = hasGhnCode || ['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao'].includes(stRaw);
+
+                    if (stRaw && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw) && !isGhnManaged) {
                         let nextStatusLabel = '';
-                        switch (data.trangThaiRaw.toLowerCase()) {
+                        switch (stRaw) {
                             case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
                             case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
                             case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
                             case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
                             case 'san_sang_giao': nextStatusLabel = 'Đã tạo vận đơn GHN'; break;
                             case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
-                            case 'da_ban_giao_ghn': nextStatusLabel = ''; break;
-                            case 'dang_lay_hang': nextStatusLabel = 'Đang giao'; break;
-                            case 'dang_giao': nextStatusLabel = ''; break;
                             case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
                         }
 
@@ -1681,7 +1707,7 @@
                         `;
                         }
 
-                        if (data.trangThaiRaw.toLowerCase() === 'dang_giao') {
+                        if (stRaw === 'dang_giao' && !hasGhnCode) {
                             actionsRightHtml += `
                             <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
                                 <input type="hidden" name="_csrf" value="${csrfToken}" />
@@ -1743,8 +1769,10 @@
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
+                        const isDemoReturn = data.ghnReturnOrderCode && data.ghnReturnOrderCode.startsWith('DEMO-GHN-RETURN-');
                         actionsLeftHtml += `
                         <span class="text-primary small fw-bold">
+                            ${isDemoReturn ? '<span class="badge bg-warning text-dark me-1"><i class="fas fa-flask me-1"></i>Demo GHN Return Fallback</span>' : ''}
                             <i class="fas fa-shipping-fast me-1"></i> GHN Thu Hồi: ${escapeHtml(data.ghnReturnOrderCode || 'Đang cập nhật...')}
                         </span>
                         `;
@@ -1972,7 +2000,7 @@
                 });
         };
 
-        window.syncGhnStatus = function (orderId, btn) {
+        window.syncGhnStatus = function (orderId, btn, provider) {
             const origHtml = btn ? btn.innerHTML : '';
             if (btn) {
                 btn.disabled = true;
@@ -1987,7 +2015,12 @@
             const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
             if (csrfToken) headers[csrfHeaderName] = csrfToken;
 
-            fetch('/api/ghn/admin/sync/' + orderId, {
+            let syncUrl = '/api/ghn/admin/sync/' + orderId;
+            if (provider) {
+                syncUrl += '?provider=' + encodeURIComponent(provider);
+            }
+
+            fetch(syncUrl, {
                 method: 'POST',
                 headers: headers,
                 credentials: 'same-origin'
@@ -2022,6 +2055,77 @@
                     });
                 })
                 .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                });
+        };
+
+        window.advanceDemoStatus = function (orderId, btn) {
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+            }
+
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+            fetch('/api/ghn/admin/demo-next-status/' + orderId, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        Swal.fire({
+                            title: 'Chuyển trạng thái Demo thành công',
+                            text: data.message || ('Trạng thái mới: ' + data.ghnStatusLabel),
+                            icon: 'success',
+                            confirmButtonText: 'Đóng'
+                        }).then(() => {
+                            if (window.openOrderDetailModal) {
+                                window.openOrderDetailModal(orderId);
+                            } else {
+                                window.location.reload();
+                            }
+                        });
+                    } else if (data.status === 'terminal') {
+                        Swal.fire({
+                            title: 'Thông báo Demo',
+                            text: data.message || 'Vận đơn Demo đã ở trạng thái cuối.',
+                            icon: 'info',
+                            confirmButtonText: 'Đóng'
+                        });
+                        if (btn) btn.disabled = true;
+                    } else {
+                        Swal.fire({
+                            title: 'Lỗi chuyển trạng thái Demo',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonText: 'Đóng'
+                        });
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = origHtml;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Demo Simulator error:', err);
+                    Swal.fire({
+                        title: 'Lỗi hệ thống',
+                        text: 'Không thể kết nối máy chủ',
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    });
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origHtml;

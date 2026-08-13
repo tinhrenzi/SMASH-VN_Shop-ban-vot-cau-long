@@ -371,6 +371,13 @@ public class GhnService {
 
     public String createShippingOrderOrThrow(HoaDon hoaDon, List<HoaDonChiTiet> items,
                                              Integer toDistrictId, String toWardCode) throws Exception {
+        if (hoaDon == null) {
+            throw new IllegalArgumentException("Không thể tạo vận đơn cho đơn hàng null.");
+        }
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("Không thể tạo vận đơn cho đơn hàng không có sản phẩm.");
+        }
+
         if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
             if (hoaDon.getDiaChi() != null && hoaDon.getDiaChi().getDistrictId() != null && hoaDon.getDiaChi().getWardCode() != null) {
                 toDistrictId = hoaDon.getDiaChi().getDistrictId();
@@ -395,11 +402,17 @@ public class GhnService {
                 }
             }
         }
+
+        if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
+            throw new IllegalArgumentException("Đơn hàng #" + hoaDon.getId() + " thiếu mã Quận/Huyện hoặc Phường/Xã GHN hợp lệ.");
+        }
+
         String shopIdStr = getGhnShopId();
         String tokenStr = getGhnToken();
         try {
             return executeCreateOrderCall(shopIdStr, tokenStr, hoaDon, items, toDistrictId, toWardCode);
         } catch (Exception e) {
+            Exception lastException = e;
             if (e.getMessage() != null && (e.getMessage().contains("SERVER_ERR_COMMON") || e.getMessage().contains("không lấy được thông tin kho"))) {
                 log.warn("GHN: Primary Shop ID {} failed with SERVER_ERR_COMMON. Attempting fallback to Hanoi Shop if available...", shopIdStr);
                 String fallbackShopId = findFallbackHanoiShop(tokenStr);
@@ -409,11 +422,127 @@ public class GhnService {
                         return executeCreateOrderCall(fallbackShopId, tokenStr, hoaDon, items, toDistrictId, toWardCode);
                     } catch (Exception ex) {
                         log.error("GHN: Fallback to Hanoi Shop failed: {}", ex.getMessage());
+                        lastException = ex;
                     }
                 }
             }
-            throw e;
+
+            if (isEligibleForSandboxFallback(lastException)) {
+                return createFallbackShippingOrder(hoaDon, lastException);
+            }
+            throw lastException;
         }
+    }
+
+    /**
+     * Kiểm tra xem môi trường hiện tại có phải GHN Sandbox hay không.
+     * Smart Fallback CHỈ được phép kích hoạt trên Sandbox.
+     */
+    public boolean isSandboxEnvironment() {
+        String baseUrl = ghnConfig.getBaseUrl();
+        return baseUrl != null && (baseUrl.contains("dev.ghn.vn") || baseUrl.contains("5sao") || baseUrl.contains("dev-online-gateway"));
+    }
+
+    /**
+     * Phân loại exception: Chỉ cho phép Fallback với lỗi dịch vụ/network/Sandbox của GHN.
+     * KHÔNG fallback với lỗi dữ liệu nội bộ (null address, invalid items, NPE, DB errors, validation errors, 401/403 credentials).
+     */
+    public boolean isEligibleForSandboxFallback(Exception e) {
+        if (!isSandboxEnvironment()) {
+            log.info("GHN: Environment is PRODUCTION. Smart Fallback is disabled.");
+            return false;
+        }
+        if (e == null) {
+            return false;
+        }
+
+        // BỎ QUA không fallback cho các lỗi dữ liệu nội bộ / lập trình / database
+        if (e instanceof IllegalArgumentException ||
+            e instanceof NullPointerException ||
+            e instanceof IllegalStateException ||
+            e instanceof org.springframework.dao.DataAccessException ||
+            e instanceof jakarta.persistence.PersistenceException) {
+            log.warn("GHN: Exception [{}] is internal data/validation error. Skipping Smart Fallback.", e.getClass().getSimpleName());
+            return false;
+        }
+
+        // Phân loại HttpStatusCodeException từ RestTemplate
+        if (e instanceof org.springframework.web.client.HttpStatusCodeException httpEx) {
+            int statusCode = httpEx.getStatusCode().value();
+            // HTTP 401 (Unauthorized), HTTP 403 (Forbidden): Lỗi sai Token / Shop ID / Phân quyền -> KHÔNG FALLBACK
+            if (statusCode == 401 || statusCode == 403) {
+                log.warn("GHN: HttpStatusCodeException [{}] (Unauthorized/Forbidden). Credentials/Permission error. Skipping Smart Fallback.", statusCode);
+                return false;
+            }
+            // HTTP 500, 502, 503, 504: Lỗi máy chủ / dịch vụ GHN không khả dụng -> FALLBACK
+            if (statusCode >= 500) {
+                log.info("GHN: Server Error [{}] detected from GHN Sandbox API. Eligible for Smart Fallback.", statusCode);
+                return true;
+            }
+            // HTTP 400 / 404 / 4xx khác: Chỉ fallback nếu response body chứa lỗi Sandbox kho/tuyến đã biết
+            String responseBody = httpEx.getResponseBodyAsString();
+            if (responseBody != null && (responseBody.contains("SERVER_ERR_COMMON") || responseBody.contains("không lấy được thông tin kho") || responseBody.contains("kho"))) {
+                log.info("GHN: Known Sandbox warehouse bug [{}] in HTTP [{}] response. Eligible for Smart Fallback.", responseBody, statusCode);
+                return true;
+            }
+            log.warn("GHN: HttpStatusCodeException [{}] with body [{}] is request/validation error. Skipping Smart Fallback.", statusCode, responseBody);
+            return false;
+        }
+
+        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi mạng / Timeout kết nối GHN
+        if (e instanceof org.springframework.web.client.ResourceAccessException) {
+            log.info("GHN: ResourceAccessException [{}] detected (Network/Timeout). Eligible for Smart Fallback.", e.getMessage());
+            return true;
+        }
+
+        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi response Sandbox GHN đã biết
+        String msg = e.getMessage() != null ? e.getMessage() : "";
+        if (msg.contains("SERVER_ERR_COMMON") ||
+            msg.contains("không lấy được thông tin kho") ||
+            msg.contains("Lỗi kết nối GHN") ||
+            msg.contains("GHN chưa hỗ trợ tuyến")) {
+            log.info("GHN: Known Sandbox API error message detected [{}] Eligible for Smart Fallback.", msg);
+            return true;
+        }
+
+        Throwable cause = e.getCause();
+        if (cause instanceof org.springframework.web.client.ResourceAccessException) {
+            return true;
+        }
+        if (cause instanceof org.springframework.web.client.HttpStatusCodeException causeHttpEx) {
+            int code = causeHttpEx.getStatusCode().value();
+            return code >= 500;
+        }
+
+        log.warn("GHN: Exception [{}: {}] is not classified for Sandbox Fallback.", e.getClass().getSimpleName(), msg);
+        return false;
+    }
+
+    /**
+     * Sinh mã vận đơn DEMO Fallback và lưu vào bảng TichHopVanChuyen với nha_cung_cap = 'GHN_FALLBACK'.
+     * Tái sử dụng GhnShipmentPersistenceService.saveShipment (với REQUIRES_NEW transaction).
+     */
+    public String createFallbackShippingOrder(HoaDon hoaDon, Exception cause) {
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String uniqueSuffix = String.format("%04d", (int)(Math.random() * 10000));
+        Integer orderId = hoaDon != null ? hoaDon.getId() : 0;
+        String demoCode = "DEMO-GHN-" + timestamp + "-" + orderId + "-" + uniqueSuffix;
+
+        log.warn("[SMART_FALLBACK] GHN Sandbox unavailable for HoaDon #{}. Generating Fallback Code: {} (Reason: {})",
+                orderId, demoCode, cause != null ? cause.getMessage() : "Unknown");
+
+        try {
+            ghnShipmentPersistenceService.saveShipment(orderId, demoCode, "GHN_FALLBACK", "ready_to_pick");
+            if (hoaDon != null) {
+                hoaDon.setGhnOrderCode(demoCode);
+                hoaDon.setGhnStatus("ready_to_pick");
+            }
+            log.info("[SMART_FALLBACK] Successfully persisted fallback shipment mapping (GHN_FALLBACK) for HoaDon #{}", orderId);
+        } catch (Exception dbEx) {
+            log.error("[SMART_FALLBACK] Failed to persist fallback shipment mapping for HoaDon #{}: {}", orderId, dbEx.getMessage(), dbEx);
+        }
+
+        return demoCode;
     }
 
     private String executeCreateOrderCall(String shopId, String token, HoaDon hoaDon, List<HoaDonChiTiet> items,
@@ -515,7 +644,7 @@ public class GhnService {
                         jdbcTemplate.update(
                             "MERGE INTO TichHopVanChuyen WITH (HOLDLOCK) AS target " +
                             "USING (SELECT ? AS id_hoa_don, ? AS ma_van_don, ? AS trang_thai) AS source " +
-                            "ON target.id_hoa_don = source.id_hoa_don " +
+                            "ON target.id_hoa_don = source.id_hoa_don AND target.nha_cung_cap = 'GHN' " +
                             "WHEN MATCHED THEN UPDATE SET ma_van_don = COALESCE(source.ma_van_don, target.ma_van_don), " +
                             "                             ma_don_hang_ngoai = COALESCE(source.ma_van_don, target.ma_don_hang_ngoai), " +
                             "                             trang_thai = COALESCE(source.trang_thai, target.trang_thai) " +
@@ -609,15 +738,29 @@ public class GhnService {
                 if (data != null && data.get("order_code") != null) {
                     String orderCode = (String) data.get("order_code");
                     log.info("GHN: Created return order {} for HoaDon #{}", orderCode, hoaDon.getId());
-                    ghnShipmentPersistenceService.saveReturnShipment(hoaDon.getId(), orderCode, "waiting_to_return");
                     return orderCode;
                 }
             }
+            String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
+            throw new RuntimeException("GHN từ chối tạo đơn thu hồi: " + msg);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String body = e.getResponseBodyAsString();
+            try {
+                Map<String, Object> response = objectMapper.readValue(body, new TypeReference<>() {});
+                String msg = (String) response.get("message");
+                if (msg != null && !msg.isBlank()) {
+                    throw new RuntimeException("GHN từ chối tạo đơn thu hồi: " + msg);
+                }
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Exception ignored) {}
+            throw new RuntimeException("Lỗi kết nối GHN API (" + e.getStatusCode() + ")");
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            log.warn("GHN createReturnShippingOrder API call failed or simulated: {}", e.getMessage());
-            return "GHN-RETURN-SIMULATED-" + System.currentTimeMillis();
+            log.error("GHN createReturnShippingOrder API call failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể tạo vận đơn GHN thu hồi: " + e.getMessage(), e);
         }
-        return "GHNRET" + hoaDon.getId() + String.format("%04d", (int)(Math.random() * 10000));
     }
 
     /**
@@ -765,6 +908,10 @@ public class GhnService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> trackOrder(String orderCode) {
+        if (orderCode == null || orderCode.isBlank() || orderCode.startsWith("DEMO-GHN-")) {
+            log.debug("GHN trackOrder skipped for Demo orderCode: {}", orderCode);
+            return null;
+        }
         try {
             Map<String, Object> body = Map.of("order_code", orderCode);
             String url = ghnConfig.getBaseUrl() + API_DETAIL;

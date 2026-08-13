@@ -119,13 +119,13 @@ public class HoaDon {
     @Transient
     private String gatewayResponse;
 
-    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC)")
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap IN ('GHN', 'GHN_FALLBACK') ORDER BY t.id DESC)")
     private String ghnOrderCode;
 
-    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN_RETURN' ORDER BY t.id DESC)")
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap IN ('GHN_RETURN', 'GHN_RETURN_FALLBACK') ORDER BY t.id DESC)")
     private String ghnReturnOrderCode;
 
-    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC)")
+    @org.hibernate.annotations.Formula("(SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = id AND t.nha_cung_cap IN ('GHN', 'GHN_FALLBACK') ORDER BY t.id DESC)")
     private String ghnStatus;
 
     @Transient

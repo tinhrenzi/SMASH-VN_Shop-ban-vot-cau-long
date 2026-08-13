@@ -701,7 +701,7 @@
                                                         <div class="timeline-stepper-icon-circle">
                                                             <i class="fas fa-box-open"></i>
                                                         </div>
-                                                        <span class="timeline-stepper-label" th:text="${order['trangThaiDonHang'] == 'da_ban_giao_ghn' ? 'Đã Bàn Giao GHN' : (order['trangThaiDonHang'] == 'da_tao_van_don_ghn' ? 'Đã Tạo Vận Đơn GHN' : (order['trangThaiDonHang'] == 'san_sang_giao' ? 'Sẵn Sàng Giao' : (order['trangThaiDonHang'] == 'dang_chuan_bi_hang' ? 'Đang Chuẩn Bị Hàng' : 'Đang Lấy Hàng')))}">Đang Lấy Hàng</span>
+                                                        <span class="timeline-stepper-label" th:text="${order['trangThaiDonHang'] == 'da_ban_giao_ghn' ? 'Đã Lấy Hàng' : (order['trangThaiDonHang'] == 'da_tao_van_don_ghn' ? 'Đã Tạo Vận Đơn' : (order['trangThaiDonHang'] == 'san_sang_giao' ? 'Sẵn Sàng Giao' : (order['trangThaiDonHang'] == 'dang_chuan_bi_hang' ? 'Đang Chuẩn Bị Hàng' : 'Đang Lấy Hàng')))}">Đang Lấy Hàng</span>
                                                         <span class="timeline-stepper-time" th:text="${order['ngayLayHang'] != null ? #temporals.format(order['ngayLayHang'], 'HH:mm dd-MM-yyyy') : ''}"></span>
                                                     </div>
                                                     
@@ -1211,7 +1211,8 @@
             const textarea = document.getElementById('returnReasonDetail');
             const btnSubmit = document.getElementById('btnSubmitReturn');
 
-            let lyDo = select.value;
+            let loaiYeuCau = 'TRA'; // Shop chỉ thực hiện Trả hàng & Hoàn tiền
+            let lyDo = select ? select.value : 'Yêu cầu Trả hàng / Hoàn tiền';
             if (textarea && textarea.value.trim() !== '') {
                 lyDo += ' - ' + textarea.value.trim();
             }
@@ -1228,6 +1229,7 @@
 
             const orderId = document.getElementById('btn-yeu-cau-tra-hang') ? document.getElementById('btn-yeu-cau-tra-hang').getAttribute('data-order-id') || '[[${order.id}]]' : '[[${order.id}]]';
             const bodyParams = new URLSearchParams();
+            bodyParams.append('loaiYeuCau', loaiYeuCau);
             bodyParams.append('lyDo', lyDo);
 
             fetch('/user/manage-order/request-return/' + orderId, {
