@@ -1671,6 +1671,15 @@ public class OrderViewService {
         if (hd != null && hd.getTrangThaiHoanHang() != null) {
             return hd.getTrangThaiHoanHang();
         }
+        if (idHoaDon == null || hd == null) {
+            return null;
+        }
+        // Normal non-returned orders will never have return status in EditLog
+        String ttRaw = hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang().toLowerCase() : "";
+        String psRaw = hd.getPaymentStatus() != null ? hd.getPaymentStatus().toUpperCase() : "";
+        if (!"da_huy".equals(ttRaw) && !"cho_hoan_tien".equalsIgnoreCase(ttRaw) && !"CHO_HOAN_TIEN".equals(psRaw) && !"DA_HOAN_TIEN".equals(psRaw)) {
+            return null;
+        }
         try {
             List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);
             for (int i = logs.size() - 1; i >= 0; i--) {
@@ -1696,41 +1705,51 @@ public class OrderViewService {
     }
 
     public String resolveGhnReturnOrderCode(Integer idHoaDon, HoaDon hd) {
-        // 1. Prioritize TichHopVanChuyen database table as provider-specific shipment source of truth (GHN_RETURN)
-        if (idHoaDon != null) {
-            try {
-                List<String> codes = jdbcTemplate.queryForList(
-                    "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap IN ('GHN_RETURN', 'GHN_RETURN_FALLBACK') ORDER BY id DESC",
-                    String.class,
-                    idHoaDon
-                );
-                if (codes != null && !codes.isEmpty()) {
-                    for (String code : codes) {
-                        if (code != null && !code.isBlank() && !code.startsWith("GHN-RETURN-SIMULATED-") && !code.startsWith("GHNRET")) {
-                            return code.trim();
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-            }
+        if (idHoaDon == null || hd == null) {
+            return null;
         }
-        // 2. Fallback to HoaDon entity formula field (strictly provider-isolated)
-        if (hd != null && hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().isBlank()
+        // Only query TichHopVanChuyen if return status is present or order is cancelled/returned
+        if (hd.getTrangThaiHoanHang() == null && hd.getGhnReturnOrderCode() == null) {
+            return null;
+        }
+        if (hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().isBlank()
                 && !hd.getGhnReturnOrderCode().startsWith("GHN-RETURN-SIMULATED-")
                 && !hd.getGhnReturnOrderCode().startsWith("GHNRET")
                 && (hd.getGhnOrderCode() == null || !hd.getGhnReturnOrderCode().equals(hd.getGhnOrderCode()))) {
             return hd.getGhnReturnOrderCode().trim();
         }
+        try {
+            List<String> codes = jdbcTemplate.queryForList(
+                "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap IN ('GHN_RETURN', 'GHN_RETURN_FALLBACK') ORDER BY id DESC",
+                String.class,
+                idHoaDon
+            );
+            if (codes != null && !codes.isEmpty()) {
+                for (String code : codes) {
+                    if (code != null && !code.isBlank() && !code.startsWith("GHN-RETURN-SIMULATED-") && !code.startsWith("GHNRET")) {
+                        return code.trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
     public boolean isDaNhapKhoHoan(Integer idHoaDon, HoaDon hd) {
-        if (hd != null && Boolean.TRUE.equals(hd.getDaNhapKhoHoan())) {
+        if (hd == null || idHoaDon == null) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(hd.getDaNhapKhoHoan())) {
             return true;
         }
-        ReturnStatus st = resolveReturnStatus(idHoaDon, hd);
+        ReturnStatus st = hd.getTrangThaiHoanHang();
         if (st == ReturnStatus.RETURNED || st == ReturnStatus.REFUNDED) {
             return true;
+        }
+        String ttRaw = hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang().toLowerCase() : "";
+        if (!"da_huy".equals(ttRaw) && !"cho_hoan_tien".equals(ttRaw)) {
+            return false;
         }
         try {
             List<com.smashvn.shop.entity.EditLog> logs = editLogRepository.findByTenBangAndIdBanGhiOrderByThoiGianAsc("HoaDon", idHoaDon);

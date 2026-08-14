@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpSession;
 
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
@@ -323,6 +325,24 @@ public class AdminPosController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    @PostMapping("/confirm-payment-ui")
+    public String confirmPaymentUi(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
+        if (idNguoiDung == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+        try {
+            adminPosService.confirmPaymentPos(idHoaDon, idNguoiDung);
+            redirectAttributes.addFlashAttribute("successMsg", "Xác nhận thanh toán thành công cho đơn POS #" + idHoaDon + "!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi xác nhận thanh toán: " + e.getMessage());
+        }
+        return "redirect:/admin/don-hang";
     }
 
     @PostMapping("/cancel-order/{id}")

@@ -689,10 +689,16 @@
                 });
             }
 
+            let searchDebounceTimer = null;
+            let searchAbortController = null;
+
             const searchInput = document.getElementById("productSearchInput");
             if (searchInput) {
                 searchInput.addEventListener("input", function(e) {
-                    refreshProducts();
+                    clearTimeout(searchDebounceTimer);
+                    searchDebounceTimer = setTimeout(() => {
+                        refreshProducts();
+                    }, 250);
                 });
             }
 
@@ -1290,48 +1296,76 @@
             });
         }
 
-        function cancelPendingOrder(hoaDonId) {
+        function handlePaymentModalCancel() {
+            if (!currentCheckoutHoaDonId) {
+                closePaymentConfirmModal();
+                showToast("Đã hủy thao tác thanh toán.", "info");
+                return;
+            }
+
             stopPaymentPolling();
             Swal.fire({
-                title: 'Xác nhận hủy?',
-                icon: 'warning',
+                title: 'Hủy thao tác thanh toán',
+                html: `Đơn hàng <strong>${escapeHtml(currentCheckoutMaHoaDon)}</strong> đã được khởi tạo.<br/>Bạn muốn <strong>Hủy đơn & Hoàn kho</strong> hay <strong>Lưu ở trạng thái chờ thanh toán</strong>?`,
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'Xác nhận hủy',
+                showDenyButton: true,
+                confirmButtonColor: '#dc3545',
+                denyButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash me-1"></i> Hủy đơn & Hoàn kho',
+                denyButtonText: '<i class="fas fa-clock me-1"></i> Lưu chờ thanh toán',
                 cancelButtonText: 'Quay lại'
             }).then((result) => {
-                if (!result.isConfirmed) {
-                    startPaymentPolling(currentCheckoutMaHoaDon, hoaDonId);
-                    return;
-                }
-                const overlay = document.getElementById("posLoadingOverlay");
-                overlay.style.display = "flex";
-                closePaymentConfirmModal();
-
-                const csrfMeta = document.querySelector('meta[name="_csrf"]');
-                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-                const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
-                const headers = { "Content-Type": "application/json" };
-                if (csrfToken) headers[csrfHeaderName] = csrfToken;
-
-                fetch(`/admin/pos/cancel-order/${hoaDonId}`, {
-                    method: "POST",
-                    headers: headers
-                })
-                .then(res => res.json())
-                .then(data => {
-                    overlay.style.display = "none";
-                    if (data.success) {
-                        clearPOSState();
-                        showToast("Đã hủy hóa đơn chờ thanh toán.", "info");
-                    } else {
-                        showToast(`Lỗi: ${data.message}`, "error");
+                if (result.isConfirmed) {
+                    executeCancelPendingOrder(currentCheckoutHoaDonId);
+                } else if (result.isDenied) {
+                    const savedCode = currentCheckoutMaHoaDon;
+                    closePaymentConfirmModal();
+                    clearPOSState();
+                    showToast(`Đã lưu đơn ${savedCode} ở trạng thái Chờ thanh toán.`, "info");
+                } else {
+                    if (currentCheckoutMaHoaDon && currentCheckoutHoaDonId) {
+                        startPaymentPolling(currentCheckoutMaHoaDon, currentCheckoutHoaDonId);
                     }
-                })
-                .catch(err => {
-                    overlay.style.display = "none";
-                    showToast("Đã xảy ra lỗi khi hủy.", "error");
-                });
+                }
+            });
+        }
+
+        function cancelPendingOrder(hoaDonId) {
+            executeCancelPendingOrder(hoaDonId);
+        }
+
+        function executeCancelPendingOrder(hoaDonId) {
+            stopPaymentPolling();
+            const overlay = document.getElementById("posLoadingOverlay");
+            overlay.style.display = "flex";
+            closePaymentConfirmModal();
+
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+            const headers = { "Content-Type": "application/json" };
+            if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+            fetch(`/admin/pos/cancel-order/${hoaDonId}`, {
+                method: "POST",
+                headers: headers
+            })
+            .then(res => res.json())
+            .then(data => {
+                overlay.style.display = "none";
+                if (data.success) {
+                    clearPOSState();
+                    showToast("Đã hủy hóa đơn chờ thanh toán và hoàn trả tồn kho.", "info");
+                } else {
+                    showToast(`Lỗi: ${data.message}`, "error");
+                }
+            })
+            .catch(err => {
+                overlay.style.display = "none";
+                showToast("Đã xảy ra lỗi khi hủy.", "error");
             });
         }
 
@@ -1369,21 +1403,6 @@
             const modalEl = document.getElementById('paymentConfirmModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
-        }
-
-        function handlePaymentModalCancel() {
-            Swal.fire({
-                title: 'Xác nhận hủy?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Xác nhận hủy',
-                cancelButtonText: 'Quay lại'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    closePaymentConfirmModal();
-                    showToast("Đã hủy thao tác thanh toán.", "info");
-                }
-            });
         }
 
         function setupQuickCashButtons(total) {
