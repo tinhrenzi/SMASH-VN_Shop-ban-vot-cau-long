@@ -12,4 +12,6 @@ public interface ThuocTinhRepository extends JpaRepository<ThuocTinh, Integer> {
     List<ThuocTinh> findByTrangThaiTrueOrderByIdAsc();
     boolean existsByTenThuocTinhIgnoreCase(String tenThuocTinh);
     Optional<ThuocTinh> findByTenThuocTinhIgnoreCase(String tenThuocTinh);
+    Optional<ThuocTinh> findByTenThuocTinhIgnoreCaseAndTrangThaiTrue(String tenThuocTinh);
+    List<ThuocTinh> findByTenThuocTinhContainingIgnoreCaseAndTrangThaiTrue(String keyword);
 }

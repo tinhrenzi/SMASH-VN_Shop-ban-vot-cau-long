@@ -11,6 +11,8 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.smashvn.shop.dto.inventory.AllocationResult;
 import com.smashvn.shop.dto.inventory.AllocationStatus;
@@ -35,6 +37,7 @@ public class SepayOrderPaymentService {
     private final InventoryLotService inventoryLotService;
     private final AuditService auditService;
     private final com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+    private final TokenKhoiPhucRepository tokenRepository;
 
     /**
      * Điều phối xử lý IPN Webhook từ SePay trong 1 Transaction kín.
@@ -141,23 +144,63 @@ public class SepayOrderPaymentService {
             }
             hoaDonRepository.save(order);
 
-            // Gửi email hóa đơn xác nhận thanh toán cho đơn hàng Online
+            // Gửi email hóa đơn xác nhận thanh toán cho đơn hàng Online SAU KHI TRANSACTION COMMIT
             boolean isPosOrder = order.getMaDonHang() != null && order.getMaDonHang().startsWith("HDSVN");
             if (!isPosOrder) {
                 try {
-                    String userEmail = order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null
-                            ? order.getKhachHang().getTaiKhoan().getUsername()
-                            : null;
+                    String userEmail = order.getEmailNguoiNhan();
+                    if (userEmail == null || userEmail.isBlank()) {
+                        userEmail = (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null)
+                                ? order.getKhachHang().getTaiKhoan().getUsername()
+                                : null;
+                    }
                     if (userEmail != null && userEmail.contains("@")) {
-                        final String recipient = userEmail;
+                        final String recipient = userEmail.trim();
                         final HoaDon orderSnapshot = order;
-                        java.util.concurrent.CompletableFuture.runAsync(() -> {
+
+                        Runnable emailTask = () -> {
                             try {
+                                log.info("[SepayOrderPaymentService] Transaction committed, triggering order confirmation email for order #{}", orderSnapshot.getMaDonHang());
                                 guestCheckoutService.sendOrderConfirmationEmail(recipient, orderSnapshot, "http://localhost:8080");
+
+                                // Kiểm tra gửi email thiết lập mật khẩu cho Guest mua SePay lần đầu
+                                if (orderSnapshot.getKhachHang() != null && orderSnapshot.getKhachHang().getTaiKhoan() != null) {
+                                    TaiKhoan tk = orderSnapshot.getKhachHang().getTaiKhoan();
+                                    boolean isGuest = tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST
+                                            || (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty());
+
+                                    if (isGuest) {
+                                        List<TokenKhoiPhuc> tokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "EMAIL");
+                                        LocalDateTime currentTime = LocalDateTime.now();
+                                        Optional<TokenKhoiPhuc> validTokenOpt = tokens.stream()
+                                                .filter(t -> t.getThoiGianHetHan() != null && t.getThoiGianHetHan().isAfter(currentTime))
+                                                .max(java.util.Comparator.comparing(TokenKhoiPhuc::getId));
+
+                                        if (validTokenOpt.isPresent()) {
+                                            String activationToken = validTokenOpt.get().getMaXacNhan();
+                                            log.info("[SepayOrderPaymentService] Triggering guest password setup email for account ID {} (Order #{})", tk.getId(), orderSnapshot.getMaDonHang());
+                                            guestCheckoutService.sendOrderAndAccountNotification(recipient, activationToken, "http://localhost:8080");
+                                        } else {
+                                            log.warn("[SepayOrderPaymentService] Account ID {} is GUEST but no valid unexpired setup token found. Skipped setup email for Order #{}", tk.getId(), orderSnapshot.getMaDonHang());
+                                        }
+                                    }
+                                }
                             } catch (Exception ex) {
                                 log.error("[SepayOrderPaymentService] Lỗi gửi email xác nhận cho đơn {}: {}", orderSnapshot.getMaDonHang(), ex.getMessage());
                             }
-                        });
+                        };
+
+                        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                                @Override
+                                public void afterCommit() {
+                                    emailTask.run();
+                                }
+                            });
+                            log.info("[SepayOrderPaymentService] Registered afterCommit email notification for order #{}", orderSnapshot.getMaDonHang());
+                        } else {
+                            log.error("[SepayOrderPaymentService] No active transaction synchronization; skip confirmation email to avoid pre-commit send. order={}", orderSnapshot.getMaDonHang());
+                        }
                     }
                 } catch (Exception e) {
                     log.error("[SepayOrderPaymentService] Lỗi khởi chạy async email: {}", e.getMessage());

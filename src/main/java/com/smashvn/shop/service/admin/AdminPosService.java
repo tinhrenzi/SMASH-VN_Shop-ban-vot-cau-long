@@ -352,6 +352,16 @@ public class AdminPosService {
                 ? khachHang.getTenKh().trim()
                 : "Khách lẻ"
         );
+        if (khachHang != null && khachHang.getTaiKhoan() != null && khachHang.getTaiKhoan().getUsername() != null) {
+            String username = khachHang.getTaiKhoan().getUsername().trim();
+            if (!username.isEmpty() && username.contains("@") && !"khachle@smashvn.local".equalsIgnoreCase(username)) {
+                hd.setEmailNguoiNhan(username);
+            } else {
+                hd.setEmailNguoiNhan(null);
+            }
+        } else {
+            hd.setEmailNguoiNhan(null);
+        }
         hd.setGhiChu(sanitizedGhiChu);
         hd.setMaGiaoDich(sanitizedGiaoDich);
 

@@ -8,4 +8,5 @@ public interface TokenKhoiPhucRepository extends JpaRepository<TokenKhoiPhuc, In
 
     TokenKhoiPhuc findByMaXacNhan(String maXacNhan);
     java.util.List<TokenKhoiPhuc> findByTaiKhoan_Id(Integer id);
+    java.util.List<TokenKhoiPhuc> findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(Integer idTaiKhoan, String loaiXacNhan);
 }

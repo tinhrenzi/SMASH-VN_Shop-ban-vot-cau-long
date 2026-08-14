@@ -20,4 +20,29 @@ public interface SanPhamChiTietThuocTinhRepository extends JpaRepository<SanPham
               AND s.sanPhamChiTiet.trangThaiValue = true
             """)
     List<String> findDistinctGiaTriByTenThuocTinh(@Param("tenThuocTinh") String tenThuocTinh);
+
+    @Query("""
+            SELECT 
+                tt.id AS thuocTinhId,
+                tt.tenThuocTinh AS tenThuocTinh,
+                att.giaTri AS giaTri,
+                COUNT(DISTINCT sp.id) AS productCount
+            FROM SanPhamChiTietThuocTinh att
+            JOIN att.thuocTinh tt
+            JOIN att.sanPhamChiTiet spct
+            JOIN spct.sanPham sp
+            JOIN sp.danhMuc dm
+            JOIN DanhMucThuocTinh dmtt ON dmtt.danhMuc.id = dm.id AND dmtt.thuocTinh.id = tt.id
+            WHERE dm.id = :categoryId
+              AND dm.trangThai = true
+              AND tt.trangThai = true
+              AND dmtt.trangThai = true
+              AND sp.trangThaiValue = true
+              AND spct.trangThaiValue = true
+              AND att.giaTri IS NOT NULL 
+              AND TRIM(att.giaTri) != ''
+            GROUP BY tt.id, tt.tenThuocTinh, att.giaTri
+            ORDER BY tt.id ASC, att.giaTri ASC
+            """)
+    List<com.smashvn.shop.dto.product.AttributeOptionProjection> findAttributeOptionProjectionsByCategory(@Param("categoryId") Integer categoryId);
 }

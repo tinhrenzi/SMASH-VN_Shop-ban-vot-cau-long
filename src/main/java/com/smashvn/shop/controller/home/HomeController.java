@@ -2,6 +2,7 @@ package com.smashvn.shop.controller.home;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,7 @@ public class HomeController {
     private final DanhMucRepository danhMucRepository;
     private final BlogService blogService;
     private final DotGiamGiaDAO dotGiamGiaDAO;
+    private final com.smashvn.shop.service.product.SanPhamService sanPhamService;
 
     @GetMapping("/")
     @Transactional(readOnly = true)
@@ -153,6 +155,7 @@ public class HomeController {
             @RequestParam(value = "sort", required = false, defaultValue = "newest") String sort,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "12") int size,
+            @RequestParam Map<String, String> allParams,
             @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
             Model model) {
 
@@ -166,9 +169,6 @@ public class HomeController {
             }
         }
 
-        // Do ORDER BY đã được định nghĩa trực tiếp và đầy đủ trong @Query của SanPhamRepository.findByFilters,
-        // chúng ta sử dụng PageRequest.of không truyền Sort (tương đương Sort.unsorted()) để tránh Spring Data JPA
-        // tự động append thêm "order by sp.id desc/asc" gây ra lỗi trùng cột trong ORDER BY ở SQL Server.
         Pageable pageable = PageRequest.of(page, size);
 
         // Sanitize keyword (XSS prevention)
@@ -180,10 +180,58 @@ public class HomeController {
             }
         }
 
-        // Sử dụng query kết hợp nhiều điều kiện
-        Page<SanPham> productPage = sanPhamRepository.findByFilters(
-                sanitizedKeyword, categoryId, brandId, minPrice, maxPrice, rating, normalizedTrongLuong, sort, pageable
-        );
+        // Parse dynamic attributes map from request parameters (e.g. attrs[1]=..., attr_1=...)
+        java.util.Map<Integer, List<String>> attributesMap = new java.util.HashMap<>();
+        if (allParams != null) {
+            for (java.util.Map.Entry<String, String> entry : allParams.entrySet()) {
+                String key = entry.getKey();
+                String val = entry.getValue();
+                if (key == null || val == null || val.trim().isEmpty()) continue;
+
+                Integer attrId = null;
+                if (key.startsWith("attrs[") && key.endsWith("]")) {
+                    try {
+                        attrId = Integer.parseInt(key.substring(6, key.length() - 1));
+                    } catch (NumberFormatException ignored) {}
+                } else if (key.startsWith("attr_") || key.startsWith("attribute_")) {
+                    try {
+                        String idStr = key.substring(key.indexOf('_') + 1);
+                        attrId = Integer.parseInt(idStr);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                if (attrId != null) {
+                    List<String> valuesList = java.util.Arrays.stream(val.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                    if (!valuesList.isEmpty()) {
+                        attributesMap.computeIfAbsent(attrId, k -> new java.util.ArrayList<>()).addAll(valuesList);
+                    }
+                }
+            }
+        }
+
+        com.smashvn.shop.dto.product.ShopFilterRequest filterRequest = com.smashvn.shop.dto.product.ShopFilterRequest.builder()
+                .keyword(sanitizedKeyword)
+                .categoryId(categoryId)
+                .brandId(brandId)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .rating(rating)
+                .attributes(attributesMap)
+                .legacyTrongLuong(normalizedTrongLuong)
+                .sort(sort)
+                .page(page)
+                .size(size)
+                .build();
+
+        // Perform dynamic Specification query
+        Page<SanPham> productPage = sanPhamService.filterProducts(filterRequest, pageable);
+
+        // Fetch dynamic attribute filter structure for category
+        List<com.smashvn.shop.dto.product.AttributeFilterDTO> dynamicAttributeFilters =
+                sanPhamService.getDynamicAttributeFilters(categoryId, attributesMap, normalizedTrongLuong);
 
         // Lấy giá min/max toàn bộ sản phẩm để khởi tạo slider
         BigDecimal globalMinPrice = BigDecimal.ZERO;
@@ -209,7 +257,7 @@ public class HomeController {
         Set<Integer> newProductIds = newProductsList.stream().map(SanPham::getId).collect(Collectors.toSet());
         model.addAttribute("newProductIds", newProductIds);
 
-        // Initialize common racket weights (sizes)
+        // Backward compatibility for legacy shop.html size filter
         List<String> listTrongLuong = new java.util.ArrayList<>(java.util.Arrays.asList("2U", "3U", "4U", "5U", "6U"));
         List<String> dbTrongLuongs = sanPhamChiTietRepository.findDistinctTrongLuong();
         for (String dbTl : dbTrongLuongs) {
@@ -221,6 +269,9 @@ public class HomeController {
         for (String tl : listTrongLuong) {
             sizeCounts.put(tl, sanPhamRepository.countByTrongLuong(tl));
         }
+
+        model.addAttribute("dynamicAttributeFilters", dynamicAttributeFilters);
+        model.addAttribute("selectedAttributes", attributesMap);
 
         model.addAttribute("danhSachTrongLuong", listTrongLuong);
         model.addAttribute("sizeCounts", sizeCounts);

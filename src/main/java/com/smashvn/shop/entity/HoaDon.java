@@ -69,6 +69,9 @@ public class HoaDon {
     @Column(name = "sdt_nhan", nullable = false, length = 15)
     private String sdtNhan;
 
+    @Column(name = "email_nguoi_nhan", length = 255)
+    private String emailNguoiNhan;
+
     @Column(name = "dia_chi_nhan", nullable = false, length = 500)
     private String diaChiNhan;
 

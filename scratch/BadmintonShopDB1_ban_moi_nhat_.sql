@@ -490,6 +490,7 @@ CREATE TABLE [dbo].[HoaDon](
 	[trang_thai_thanh_toan] [nvarchar](50) NOT NULL,
 	[ten_nguoi_nhan] [nvarchar](100) NULL,
 	[sdt_nhan] [nvarchar](15) NOT NULL,
+	[email_nguoi_nhan] [nvarchar](255) NULL,
 	[dia_chi_nhan] [nvarchar](500) NOT NULL,
 	[ly_do_huy] [nvarchar](500) NULL,
 	[ly_do_hoan_tra] [nvarchar](500) NULL,
@@ -1766,42 +1767,42 @@ INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_
 GO
 
 -- 12. SanPhamChiTiet
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (1, 2500000, 3200000, 30, 1, GETDATE()); -- spct_1
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (2, 2500000, 3200000, 30, 1, GETDATE()); -- spct_2
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (3, 2500000, 3200000, 30, 1, GETDATE()); -- spct_3
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (4, 2500000, 3200000, 30, 1, GETDATE()); -- spct_4
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (5, 2500000, 3200000, 30, 1, GETDATE()); -- spct_5
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (6, 2500000, 3200000, 30, 1, GETDATE()); -- spct_6
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (7, 2500000, 3200000, 30, 1, GETDATE()); -- spct_7
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (8, 2500000, 3200000, 30, 1, GETDATE()); -- spct_8
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (9, 2500000, 3200000, 30, 1, GETDATE()); -- spct_9
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (10, 2500000, 3200000, 30, 1, GETDATE()); -- spct_10
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (1, 2500000, 4490000, 30, 1, GETDATE()); -- spct_1
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (2, 2500000, 5650000, 30, 1, GETDATE()); -- spct_2
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (3, 2500000, 5100000, 30, 1, GETDATE()); -- spct_3
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (4, 2500000, 1690000, 30, 1, GETDATE()); -- spct_4
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (5, 2500000, 1300000, 30, 1, GETDATE()); -- spct_5
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (6, 2500000, 880000, 30, 1, GETDATE()); -- spct_6
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (7, 2500000, 1100000, 30, 1, GETDATE()); -- spct_7
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (8, 2500000, 1400000, 30, 1, GETDATE()); -- spct_8
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (9, 2500000, 3756000, 30, 1, GETDATE()); -- spct_9
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (10, 2500000, 3842000, 30, 1, GETDATE()); -- spct_10
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (11, 2500000, 3200000, 30, 1, GETDATE()); -- spct_11
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (12, 2500000, 3200000, 30, 1, GETDATE()); -- spct_12
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (13, 2500000, 3200000, 30, 1, GETDATE()); -- spct_13
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (14, 2500000, 3200000, 30, 1, GETDATE()); -- spct_14
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (15, 2500000, 3200000, 30, 1, GETDATE()); -- spct_15
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (16, 2500000, 3200000, 30, 1, GETDATE()); -- spct_16
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (17, 2500000, 3200000, 30, 1, GETDATE()); -- spct_17
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (18, 2500000, 3200000, 30, 1, GETDATE()); -- spct_18
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (19, 2500000, 3200000, 30, 1, GETDATE()); -- spct_19
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (20, 2500000, 3200000, 30, 1, GETDATE()); -- spct_20
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (21, 2500000, 3200000, 30, 1, GETDATE()); -- spct_21
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (12, 2500000, 4190000, 30, 1, GETDATE()); -- spct_12
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (13, 2500000, 1190000, 30, 1, GETDATE()); -- spct_13
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (14, 2500000, 4490000, 30, 1, GETDATE()); -- spct_14
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (15, 2500000, 3900000, 30, 1, GETDATE()); -- spct_15
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (16, 2500000, 4449000, 30, 1, GETDATE()); -- spct_16
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (17, 2500000, 3900000, 30, 1, GETDATE()); -- spct_17
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (18, 2500000, 1250000, 30, 1, GETDATE()); -- spct_18
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (19, 2500000, 939000, 30, 1, GETDATE()); -- spct_19
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (20, 2500000, 4469000, 30, 1, GETDATE()); -- spct_20
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (21, 2500000, 2349000, 30, 1, GETDATE()); -- spct_21
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (22, 2500000, 3200000, 30, 1, GETDATE()); -- spct_22
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (23, 2500000, 3200000, 30, 1, GETDATE()); -- spct_23
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (24, 2500000, 3200000, 30, 1, GETDATE()); -- spct_24
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (25, 2500000, 3200000, 20, 1, GETDATE()); -- spct_25
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (25, 2500000, 3200000, 20, 1, GETDATE()); -- spct_26
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (26, 2500000, 3200000, 30, 1, GETDATE()); -- spct_27
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (27, 2500000, 3200000, 30, 1, GETDATE()); -- spct_28
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2100000, 20, 1, GETDATE()); -- spct_29
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2100000, 20, 1, GETDATE()); -- spct_30
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2100000, 20, 1, GETDATE()); -- spct_31
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2100000, 20, 1, GETDATE()); -- spct_32
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 2100000, 20, 1, GETDATE()); -- spct_33
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 2100000, 20, 1, GETDATE()); -- spct_34
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 2100000, 20, 1, GETDATE()); -- spct_35
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 2100000, 20, 1, GETDATE()); -- spct_36
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (23, 2500000, 5209000, 30, 1, GETDATE()); -- spct_23
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (24, 2500000, 4890000, 30, 1, GETDATE()); -- spct_24
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (25, 2500000, 709000, 20, 1, GETDATE()); -- spct_25
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (25, 2500000, 709000, 20, 1, GETDATE()); -- spct_26
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (26, 2500000, 5099000, 30, 1, GETDATE()); -- spct_27
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (27, 2500000, 4709000, 30, 1, GETDATE()); -- spct_28
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2290000, 20, 1, GETDATE()); -- spct_29
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2290000, 20, 1, GETDATE()); -- spct_30
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2290000, 20, 1, GETDATE()); -- spct_31
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (28, 1500000, 2290000, 20, 1, GETDATE()); -- spct_32
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 1589000, 20, 1, GETDATE()); -- spct_33
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 1589000, 20, 1, GETDATE()); -- spct_34
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 1589000, 20, 1, GETDATE()); -- spct_35
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (29, 1500000, 1589000, 20, 1, GETDATE()); -- spct_36
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (30, 1500000, 2100000, 20, 1, GETDATE()); -- spct_37
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (30, 1500000, 2100000, 20, 1, GETDATE()); -- spct_38
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (30, 1500000, 2100000, 20, 1, GETDATE()); -- spct_39
@@ -1826,10 +1827,10 @@ INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (33, 1500000, 2100000, 20, 1, GETDATE()); -- spct_58
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (33, 1500000, 2100000, 20, 1, GETDATE()); -- spct_59
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (33, 1500000, 2100000, 20, 1, GETDATE()); -- spct_60
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 320000, 25, 1, GETDATE()); -- spct_61
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 320000, 25, 1, GETDATE()); -- spct_62
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 320000, 25, 1, GETDATE()); -- spct_63
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 320000, 25, 1, GETDATE()); -- spct_64
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 599000, 25, 1, GETDATE()); -- spct_61
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 599000, 25, 1, GETDATE()); -- spct_62
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 599000, 25, 1, GETDATE()); -- spct_63
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (34, 200000, 599000, 25, 1, GETDATE()); -- spct_64
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (35, 200000, 320000, 25, 1, GETDATE()); -- spct_65
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (35, 200000, 320000, 25, 1, GETDATE()); -- spct_66
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (35, 200000, 320000, 25, 1, GETDATE()); -- spct_67
@@ -1862,10 +1863,10 @@ INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (42, 200000, 320000, 25, 1, GETDATE()); -- spct_94
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (42, 200000, 320000, 25, 1, GETDATE()); -- spct_95
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (42, 200000, 320000, 25, 1, GETDATE()); -- spct_96
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 320000, 25, 1, GETDATE()); -- spct_97
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 320000, 25, 1, GETDATE()); -- spct_98
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 320000, 25, 1, GETDATE()); -- spct_99
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 320000, 25, 1, GETDATE()); -- spct_100
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 509000, 25, 1, GETDATE()); -- spct_97
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 509000, 25, 1, GETDATE()); -- spct_98
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 509000, 25, 1, GETDATE()); -- spct_99
+INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (43, 200000, 509000, 25, 1, GETDATE()); -- spct_100
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (44, 500000, 790000, 30, 1, GETDATE()); -- spct_101
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (45, 500000, 790000, 30, 1, GETDATE()); -- spct_102
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (46, 500000, 790000, 30, 1, GETDATE()); -- spct_103
@@ -1887,46 +1888,46 @@ INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong
 GO
 
 -- 13. SanPhamChiTietThuocTinh
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (1, 1, N'Màu mặc định'), (1, 2, N'Cứng (Stiff)'), (1, 3, N'4U'), (1, 4, N'Đầu nặng'), (1, 5, N'Tấn công'), (1, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (2, 1, N'Màu mặc định'), (2, 2, N'Cứng (Stiff)'), (2, 3, N'4U'), (2, 4, N'Đầu nặng'), (2, 5, N'Tấn công'), (2, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (3, 1, N'Loh Kean Yew 2025'), (3, 2, N'Cứng (Stiff)'), (3, 3, N'4U'), (3, 4, N'Đầu nặng'), (3, 5, N'Tấn công'), (3, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (4, 1, N'Màu mặc định'), (4, 2, N'Cứng (Stiff)'), (4, 3, N'4U'), (4, 4, N'Đầu nặng'), (4, 5, N'Tấn công'), (4, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (5, 1, N'Màu mặc định'), (5, 2, N'Cứng (Stiff)'), (5, 3, N'4U'), (5, 4, N'Đầu nặng'), (5, 5, N'Tấn công'), (5, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (6, 1, N'Màu mặc định'), (6, 2, N'Cứng (Stiff)'), (6, 3, N'4U'), (6, 4, N'Đầu nặng'), (6, 5, N'Tấn công'), (6, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (7, 1, N'Màu mặc định'), (7, 2, N'Cứng (Stiff)'), (7, 3, N'4U'), (7, 4, N'Đầu nặng'), (7, 5, N'Tấn công'), (7, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (8, 1, N'Màu mặc định'), (8, 2, N'Cứng (Stiff)'), (8, 3, N'4U'), (8, 4, N'Đầu nặng'), (8, 5, N'Tấn công'), (8, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (9, 1, N'Màu mặc định'), (9, 2, N'Cứng (Stiff)'), (9, 3, N'4U'), (9, 4, N'Đầu nặng'), (9, 5, N'Tấn công'), (9, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (10, 1, N'Màu mặc định'), (10, 2, N'Cứng (Stiff)'), (10, 3, N'4U'), (10, 4, N'Đầu nặng'), (10, 5, N'Tấn công'), (10, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (11, 1, N'Đen xanh cam chính hãng'), (11, 2, N'Cứng (Stiff)'), (11, 3, N'4U'), (11, 4, N'Đầu nặng'), (11, 5, N'Tấn công'), (11, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (12, 1, N'Màu mặc định'), (12, 2, N'Cứng (Stiff)'), (12, 3, N'4U'), (12, 4, N'Đầu nặng'), (12, 5, N'Tấn công'), (12, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (13, 1, N'Màu mặc định'), (13, 2, N'Cứng (Stiff)'), (13, 3, N'4U'), (13, 4, N'Đầu nặng'), (13, 5, N'Tấn công'), (13, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (14, 1, N'Màu mặc định'), (14, 2, N'Cứng (Stiff)'), (14, 3, N'4U'), (14, 4, N'Đầu nặng'), (14, 5, N'Tấn công'), (14, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (15, 1, N'Màu mặc định'), (15, 2, N'Cứng (Stiff)'), (15, 3, N'4U'), (15, 4, N'Đầu nặng'), (15, 5, N'Tấn công'), (15, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (16, 1, N'Màu mặc định'), (16, 2, N'Cứng (Stiff)'), (16, 3, N'4U'), (16, 4, N'Đầu nặng'), (16, 5, N'Tấn công'), (16, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (17, 1, N'Màu mặc định'), (17, 2, N'Cứng (Stiff)'), (17, 3, N'4U'), (17, 4, N'Đầu nặng'), (17, 5, N'Tấn công'), (17, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (18, 1, N'Màu mặc định'), (18, 2, N'Cứng (Stiff)'), (18, 3, N'4U'), (18, 4, N'Đầu nặng'), (18, 5, N'Tấn công'), (18, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (19, 1, N'Màu mặc định'), (19, 2, N'Cứng (Stiff)'), (19, 3, N'4U'), (19, 4, N'Đầu nặng'), (19, 5, N'Tấn công'), (19, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (20, 1, N'Màu mặc định'), (20, 2, N'Cứng (Stiff)'), (20, 3, N'4U'), (20, 4, N'Đầu nặng'), (20, 5, N'Tấn công'), (20, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (21, 1, N'Màu mặc định'), (21, 2, N'Cứng (Stiff)'), (21, 3, N'4U'), (21, 4, N'Đầu nặng'), (21, 5, N'Tấn công'), (21, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (22, 1, N'Light Beige chính hãng'), (22, 2, N'Cứng (Stiff)'), (22, 3, N'4U'), (22, 4, N'Đầu nặng'), (22, 5, N'Tấn công'), (22, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (23, 1, N'Màu mặc định'), (23, 2, N'Cứng (Stiff)'), (23, 3, N'4U'), (23, 4, N'Đầu nặng'), (23, 5, N'Tấn công'), (23, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (24, 1, N'Màu mặc định'), (24, 2, N'Cứng (Stiff)'), (24, 3, N'4U'), (24, 4, N'Đầu nặng'), (24, 5, N'Tấn công'), (24, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (25, 1, N'Aqua blue'), (25, 2, N'Cứng vừa (Stiff)'), (25, 3, N'4U'), (25, 4, N'Trung bình'), (25, 5, N'Toàn diện'), (25, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (26, 1, N'Green'), (26, 2, N'Cứng vừa (Stiff)'), (26, 3, N'4U'), (26, 4, N'Trung bình'), (26, 5, N'Toàn diện'), (26, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (27, 1, N'Màu mặc định'), (27, 2, N'Cứng (Stiff)'), (27, 3, N'4U'), (27, 4, N'Đầu nặng'), (27, 5, N'Tấn công'), (27, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (28, 1, N'Màu mặc định'), (28, 2, N'Cứng (Stiff)'), (28, 3, N'4U'), (28, 4, N'Đầu nặng'), (28, 5, N'Tấn công'), (28, 7, N'20 - 28 lbs');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (29, 1, N'3 chính hãng'), (29, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (30, 1, N'3 chính hãng'), (30, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (31, 1, N'3 chính hãng'), (31, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (32, 1, N'3 chính hãng'), (32, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (33, 1, N'Màu mặc định'), (33, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (34, 1, N'Màu mặc định'), (34, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (35, 1, N'Màu mặc định'), (35, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (36, 1, N'Màu mặc định'), (36, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (37, 1, N'Trắng chính hãng'), (37, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (38, 1, N'Trắng chính hãng'), (38, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (39, 1, N'Trắng chính hãng'), (39, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (40, 1, N'Trắng chính hãng'), (40, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (1, 2, N'Cứng'), (1, 3, N'4U'), (1, 4, N'Cân bằng'), (1, 5, N'Phản tạt, phòng thủ'), (1, 7, N'30 - 31 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (2, 1, N'Đen vàng đồng xanh lam'), (2, 2, N'Cứng'), (2, 3, N'4U'), (2, 4, N'Nặng đầu'), (2, 5, N'Tấn công'), (2, 7, N'30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (3, 2, N'Cứng'), (3, 3, N'4U'), (3, 4, N'Nặng đầu'), (3, 5, N'Tấn công'), (3, 7, N'30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (4, 2, N'Dẻo'), (4, 3, N'4U'), (4, 4, N'Nặng đầu'), (4, 5, N'Tấn công'), (4, 7, N'28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (5, 3, N'4U'), (5, 4, N'Nặng đầu'), (5, 5, N'Tấn công');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (6, 2, N'Trung bình'), (6, 3, N'4U'), (6, 4, N'Hơi nặng đầu'), (6, 5, N'Công thủ toàn diện'), (6, 7, N'25 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (7, 2, N'Trung bình'), (7, 3, N'4U'), (7, 5, N'Công thủ toàn diện');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (8, 2, N'Dẻo'), (8, 3, N'5U'), (8, 4, N'Cân bằng'), (8, 5, N'Công thủ toàn diện'), (8, 7, N'30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (9, 1, N'Đen'), (9, 2, N'Trung bình'), (9, 3, N'4U'), (9, 4, N'Cân bằng'), (9, 5, N'Công thủ toàn diện'), (9, 7, N'22 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (10, 1, N'Xanh/Nâu nhạt'), (10, 2, N'Cứng'), (10, 3, N'4U'), (10, 4, N'Nặng đầu'), (10, 5, N'Tấn công'), (10, 7, N'30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (11, 1, N'Đen xanh cam'), (11, 2, N'Cứng'), (11, 3, N'4U'), (11, 4, N'Nặng đầu'), (11, 5, N'Tấn công'), (11, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (12, 2, N'Cứng'), (12, 3, N'4U'), (12, 4, N'Hơi nặng đầu'), (12, 7, N'31 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (13, 2, N'Trung bình'), (13, 3, N'4U'), (13, 4, N'Cân bằng'), (13, 5, N'Công thủ toàn diện');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (14, 1, N'Hồng xanh dương'), (14, 2, N'Trung bình'), (14, 3, N'4U'), (14, 4, N'Nặng đầu'), (14, 7, N'28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (15, 1, N'Xanh cobalt'), (15, 2, N'Cứng'), (15, 3, N'4U'), (15, 4, N'Hơi nặng đầu'), (15, 5, N'Phản tạt, phòng thủ'), (15, 7, N'28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (16, 1, N'Trắng hồng'), (16, 2, N'Cứng'), (16, 3, N'4U'), (16, 4, N'Hơi nặng đầu'), (16, 5, N'Công thủ toàn diện'), (16, 7, N'32 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (17, 2, N'Cứng'), (17, 3, N'3U'), (17, 4, N'Cân bằng'), (17, 7, N'29 - 30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (18, 2, N'Dẻo'), (18, 3, N'5U'), (18, 7, N'28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (19, 2, N'Trung bình'), (19, 3, N'4U');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (20, 1, N'Dark Olive'), (20, 2, N'Cứng'), (20, 3, N'4U'), (20, 4, N'Nặng đầu'), (20, 5, N'Tấn công'), (20, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (21, 1, N'Đen đỏ'), (21, 2, N'Trung bình'), (21, 3, N'3F'), (21, 4, N'Hơi nặng đầu'), (21, 5, N'Phản tạt, phòng thủ'), (21, 7, N'26 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (22, 1, N'Light Beige'), (22, 2, N'Cứng'), (22, 3, N'4U'), (22, 4, N'Nặng đầu'), (22, 5, N'Tấn công'), (22, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (23, 1, N'Black/Green'), (23, 2, N'Cứng'), (23, 3, N'4U'), (23, 4, N'Siêu nặng đầu'), (23, 5, N'Tấn công'), (23, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (24, 1, N'Black/Green'), (24, 2, N'Cứng'), (24, 3, N'4U'), (24, 4, N'Nặng đầu'), (24, 5, N'Tấn công'), (24, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (25, 1, N'Aqua blue'), (25, 2, N'Dẻo'), (25, 3, N'4U'), (25, 4, N'Hơi nặng đầu'), (25, 5, N'Công thủ toàn diện'), (25, 7, N'20 - 30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (26, 1, N'Green'), (26, 2, N'Dẻo'), (26, 3, N'4U'), (26, 4, N'Hơi nặng đầu'), (26, 5, N'Công thủ toàn diện'), (26, 7, N'20 - 30 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (27, 1, N'Đen - Vàng (Lightning Yellow)'), (27, 2, N'Siêu cứng'), (27, 3, N'4U'), (27, 4, N'Nhẹ đầu'), (27, 5, N'Phản tạt, phòng thủ'), (27, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (28, 1, N'Midnight Purple'), (28, 2, N'Trung bình'), (28, 3, N'4U'), (28, 4, N'Cân bằng'), (28, 5, N'Công thủ toàn diện'), (28, 7, N'20 - 28 lbs');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (29, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (30, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (31, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (32, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (33, 1, N'Trắng'), (33, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (34, 1, N'Trắng'), (34, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (35, 1, N'Trắng'), (35, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (36, 1, N'Trắng'), (36, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (37, 1, N'Trắng'), (37, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (38, 1, N'Trắng'), (38, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (39, 1, N'Trắng'), (39, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (40, 1, N'Trắng'), (40, 6, N'42');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (41, 1, N'Trắng'), (41, 6, N'39');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (42, 1, N'Trắng'), (42, 6, N'40');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (43, 1, N'Trắng'), (43, 6, N'41');
@@ -1935,30 +1936,30 @@ INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_ti
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (46, 1, N'Trắng đen'), (46, 6, N'40');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (47, 1, N'Trắng đen'), (47, 6, N'41');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (48, 1, N'Trắng đen'), (48, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (49, 1, N'Xanh NaVy'), (49, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (50, 1, N'Xanh NaVy'), (50, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (51, 1, N'Xanh NaVy'), (51, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (52, 1, N'Xanh NaVy'), (52, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (53, 1, N'Grayish Beige chính hãng'), (53, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (54, 1, N'Grayish Beige chính hãng'), (54, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (55, 1, N'Grayish Beige chính hãng'), (55, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (56, 1, N'Grayish Beige chính hãng'), (56, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (57, 1, N'Crystal teal chính hãng'), (57, 6, N'39');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (58, 1, N'Crystal teal chính hãng'), (58, 6, N'40');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (59, 1, N'Crystal teal chính hãng'), (59, 6, N'41');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (60, 1, N'Crystal teal chính hãng'), (60, 6, N'42');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (61, 1, N'1 nam chính hãng'), (61, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (62, 1, N'1 nam chính hãng'), (62, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (63, 1, N'1 nam chính hãng'), (63, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (64, 1, N'1 nam chính hãng'), (64, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (65, 1, N'Poinciana chính hãng'), (65, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (66, 1, N'Poinciana chính hãng'), (66, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (67, 1, N'Poinciana chính hãng'), (67, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (68, 1, N'Poinciana chính hãng'), (68, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (69, 1, N'White chính hãng'), (69, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (70, 1, N'White chính hãng'), (70, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (71, 1, N'White chính hãng'), (71, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (72, 1, N'White chính hãng'), (72, 6, N'XL');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (49, 1, N'Xanh Navy'), (49, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (50, 1, N'Xanh Navy'), (50, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (51, 1, N'Xanh Navy'), (51, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (52, 1, N'Xanh Navy'), (52, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (53, 1, N'Grayish Beige'), (53, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (54, 1, N'Grayish Beige'), (54, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (55, 1, N'Grayish Beige'), (55, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (56, 1, N'Grayish Beige'), (56, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (57, 1, N'Crystal Teal'), (57, 6, N'39');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (58, 1, N'Crystal Teal'), (58, 6, N'40');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (59, 1, N'Crystal Teal'), (59, 6, N'41');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (60, 1, N'Crystal Teal'), (60, 6, N'42');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (61, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (62, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (63, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (64, 6, N'XL');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (65, 1, N'Poinciana'), (65, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (66, 1, N'Poinciana'), (66, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (67, 1, N'Poinciana'), (67, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (68, 1, N'Poinciana'), (68, 6, N'XL');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (69, 1, N'White'), (69, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (70, 1, N'White'), (70, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (71, 1, N'White'), (71, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (72, 1, N'White'), (72, 6, N'XL');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (73, 1, N'Đỏ'), (73, 6, N'S');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (74, 1, N'Đỏ'), (74, 6, N'M');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (75, 1, N'Đỏ'), (75, 6, N'L');
@@ -1971,39 +1972,25 @@ INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_ti
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (82, 1, N'Đen xanh ngọc'), (82, 6, N'M');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (83, 1, N'Đen xanh ngọc'), (83, 6, N'L');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (84, 1, N'Đen xanh ngọc'), (84, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (85, 1, N'mã 081'), (85, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (86, 1, N'mã 081'), (86, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (87, 1, N'mã 081'), (87, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (88, 1, N'mã 081'), (88, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (89, 1, N'Màu mặc định'), (89, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (90, 1, N'Màu mặc định'), (90, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (91, 1, N'Màu mặc định'), (91, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (92, 1, N'Màu mặc định'), (92, 6, N'XL');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (85, 1, N'Đen'), (85, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (86, 1, N'Đen'), (86, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (87, 1, N'Đen'), (87, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (88, 1, N'Đen'), (88, 6, N'XL');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (89, 1, N'Trắng'), (89, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (90, 1, N'Trắng'), (90, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (91, 1, N'Trắng'), (91, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (92, 1, N'Trắng'), (92, 6, N'XL');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (93, 1, N'Đen trắng'), (93, 6, N'S');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (94, 1, N'Đen trắng'), (94, 6, N'M');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (95, 1, N'Đen trắng'), (95, 6, N'L');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (96, 1, N'Đen trắng'), (96, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (97, 1, N'Lion chính hãng'), (97, 6, N'S');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (98, 1, N'Lion chính hãng'), (98, 6, N'M');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (99, 1, N'Lion chính hãng'), (99, 6, N'L');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (100, 1, N'Lion chính hãng'), (100, 6, N'XL');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (101, 1, N'3 chính hãng');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (102, 1, N'Trắng đỏ chính hãng');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (103, 1, N'Trắng đỏ chính hãng');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (97, 1, N'Lion'), (97, 6, N'S');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (98, 1, N'Lion'), (98, 6, N'M');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (99, 1, N'Lion'), (99, 6, N'L');
+INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (100, 1, N'Lion'), (100, 6, N'XL');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (104, 1, N'Bright White');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (105, 1, N'Jet Black');
 INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (106, 1, N'Riviera');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (107, 1, N'2 chính hãng');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (108, 1, N'3 chính hãng');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (109, 1, N'Trắng đỏ chính hãng');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (110, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (111, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (112, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (113, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (114, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (115, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (116, 1, N'Màu mặc định');
-INSERT INTO [dbo].[SanPhamChiTietThuocTinh] ([id_san_pham_chi_tiet],[id_thuoc_tinh],[gia_tri]) VALUES (117, 1, N'30 EX (Túi 2 cuộn)');
 
 GO
 

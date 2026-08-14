@@ -708,6 +708,13 @@ public class GioHangService {
         hd.setDiaChiNhan(finalDiaChiNhan);
         hd.setSdtNhan(finalSdtNhan);
 
+        if (kh != null && kh.getTaiKhoan() != null && kh.getTaiKhoan().getUsername() != null) {
+            String emailSnapshot = kh.getTaiKhoan().getUsername().trim();
+            if (!emailSnapshot.isEmpty() && emailSnapshot.contains("@")) {
+                hd.setEmailNguoiNhan(emailSnapshot);
+            }
+        }
+
         String resolvedTenNguoiNhan = "Quý khách";
         if (finalHoTenNhan != null && !finalHoTenNhan.trim().isEmpty()) {
             resolvedTenNguoiNhan = finalHoTenNhan.trim();

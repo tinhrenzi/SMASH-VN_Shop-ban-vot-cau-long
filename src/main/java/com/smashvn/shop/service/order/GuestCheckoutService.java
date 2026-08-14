@@ -445,16 +445,7 @@ public class GuestCheckoutService {
                 BigDecimal thanhTien = donGia.multiply(new BigDecimal(sl));
                 tamTinh = tamTinh.add(thanhTien);
                 
-                String imgName = "product9.jpg";
-                if (ct.getSanPhamChiTiet() != null && ct.getSanPhamChiTiet().getHinhAnhSanPham() != null && !ct.getSanPhamChiTiet().getHinhAnhSanPham().isEmpty()) {
-                    imgName = ct.getSanPhamChiTiet().getHinhAnhSanPham();
-                }
-                String imgUrl = appUrl + "/uploads/product/" + imgName;
-
                 itemsHtml.append("<tr style=\"border-bottom: 1px solid #f3f4f6;\">")
-                    .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: center; width: 60px;\">")
-                    .append("    <img src=\"").append(imgUrl).append("\" alt=\"product\" style=\"width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;\" onerror=\"this.style.display='none';\">")
-                    .append("  </td>")
                     .append("  <td style=\"padding: 12px 8px; vertical-align: middle; text-align: left;\">")
                     .append("    <strong style=\"color: #1f2937; font-size: 14px;\">").append(tenSp).append("</strong><br>")
                     .append("    <span style=\"color: #6b7280; font-size: 12px;\">").append(thuocTinh).append("</span>")
@@ -531,7 +522,6 @@ public class GuestCheckoutService {
                 "                <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"border-collapse: collapse; margin-bottom: 24px;\">" +
                 "                    <thead>" +
                 "                        <tr style=\"background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;\">" +
-                "                            <th style=\"padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #374151; width: 60px;\">Ảnh</th>" +
                 "                            <th style=\"padding: 8px; text-align: left; font-size: 12px; font-weight: 600; color: #374151;\">Sản phẩm</th>" +
                 "                            <th style=\"padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #374151; width: 40px;\">SL</th>" +
                 "                            <th style=\"padding: 8px; text-align: right; font-size: 12px; font-weight: 600; color: #374151; width: 90px;\">Đơn giá</th>" +

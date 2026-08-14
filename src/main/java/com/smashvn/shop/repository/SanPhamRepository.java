@@ -12,7 +12,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
 
     List<SanPham> findAllByOrderByIdDesc();
 
