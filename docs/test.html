@@ -257,16 +257,16 @@ code {
   <div class="hsu">Ph&#226;n t&#237;ch &amp; &#273;&#225;nh gi&#225; c&#225;c lu&#7891;ng: Thanh to&#225;n &middot; &#272;&#7893;i / Tr&#7843; h&#224;ng &middot; B&#225;n h&#224;ng t&#7841;i qu&#7847;y (POS)</div>
 </div></div>
 <div class="meta">
-  <span><span class="mdo"></span>Ng&#224;y ki&#7875;m th&#7917;: 13/08/2026</span>
-  <span><span class="mdo"></span>Ng&#432;&#7901;i th&#7921;c hi&#7879;n: Antigravity AI Reviewer</span>
+  <span><span class="mdo"></span>Ngày kiểm thử: 14/08/2026</span>
+  <span><span class="mdo"></span>Người thực hiện: Antigravity AI Reviewer</span>
   <span><span class="mdo"></span>Spring Boot 3.x &middot; Java 21</span>
-  <span><span class="mdo"></span>T&#7893;ng test case: 45 &middot; Pass: 28 &middot; Warn: 4 &middot; Error: 5 &middot; Critical: 8</span>
+  <span><span class="mdo"></span>Tổng test case: 45 &middot; Pass: 29 &middot; Warn: 4 &middot; Error: 4 &middot; Critical: 8</span>
 </div></div></header>
 
 <div class="sbar">
-  <div class="sc sp"><div class="cnt">28</div><div class="lbl">&#9989; PASS</div></div>
+  <div class="sc sp"><div class="cnt">29</div><div class="lbl">&#9989; PASS</div></div>
   <div class="sc sw"><div class="cnt">4</div><div class="lbl">&#9888;&#65039; L&#7895;i Trung B&#236;nh</div></div>
-  <div class="sc se"><div class="cnt">5</div><div class="lbl">&#128308; L&#7895;i Nghi&#234;m Tr&#7885;ng</div></div>
+  <div class="sc se"><div class="cnt">4</div><div class="lbl">&#128308; L&#7895;i Nghi&#234;m Tr&#7885;ng</div></div>
   <div class="sc sk"><div class="cnt">8</div><div class="lbl">&#128165; &#272;&#7863;c Bi&#7879;t Nghi&#234;m Tr&#7885;ng</div></div>
 </div>
 
@@ -776,12 +776,11 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
 </tr>
 <tr>
   <td class="id-col">TC-D15</td>
-  <td><div class="tt">cancelOrderPos &#8212; kh&#244;ng reverse FIFO lot khi h&#7911;y</div><div class="ti">&#272;&#417;n POS cancel v&#7899;i kho FIFO multi-lot</div></td>
-  <td>Ho&#224;n kho: <code>spct.soLuongTon += ct.soLuong</code></td>
-  <td class="te">Ho&#224;n kho &#273;&#250;ng lot g&#7889;c &#273;&#227; tr&#7915;</td>
-  <td>&#128308; <code>cancelOrderPos()</code> c&#7897;ng th&#7859;ng v&#224;o <code>spct.soLuongTon</code> m&#224; kh&#244;ng c&#7897;ng l&#7841;i lot c&#7909; th&#7875;. Vi ph&#7841;m t&#237;nh to&#224;n v&#7865;n c&#7911;a FIFO lot tracking.
-    <div class="note nc">File: <code>AdminPosService.java:441-444</code> &#8212; c&#7847;n g&#7885;i <code>inventoryLotService.reverseAllocation()</code>.</div></td>
-  <td><span class="badge be">L&#7895;i Nghi&#234;m Tr&#7885;ng</span></td>
+  <td><div class="tt">cancelOrderPos &mdash; hoàn kho FIFO lot khi hủy đơn POS</div><div class="ti">Đơn POS cancel với kho FIFO multi-lot</div></td>
+  <td>Hoàn kho: <code>inventoryLotService.hoanKho()</code></td>
+  <td class="te">Hoàn kho đúng lot gốc đã trừ</td>
+  <td>&#10003; Đúng &mdash; <code>cancelOrderPos()</code> đã gọi <code>inventoryLotService.hoanKho()</code> để hoàn kho chính xác từng lô sản phẩm</td>
+  <td><span class="badge bp">Pass</span></td>
 </tr>
 <tr>
   <td class="id-col">TC-D16</td>
@@ -884,17 +883,17 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
     </tr>
     <tr>
       <td><strong>&#127978; POS</strong></td>
-      <td style="color:var(--pa);font-weight:700">12</td>
+      <td style="color:var(--pa);font-weight:700">13</td>
       <td style="color:var(--wa);font-weight:700">1</td>
-      <td style="color:var(--er);font-weight:700">1</td>
+      <td style="color:var(--er);font-weight:700">0</td>
       <td style="color:var(--cr);font-weight:700">2</td>
       <td><strong>16</strong></td>
     </tr>
     <tr style="border-top:2px solid var(--br);">
       <td><strong>T&#7893;ng c&#7897;ng</strong></td>
-      <td style="color:var(--pa);font-weight:800">28</td>
+      <td style="color:var(--pa);font-weight:800">29</td>
       <td style="color:var(--wa);font-weight:800">4</td>
-      <td style="color:var(--er);font-weight:800">5</td>
+      <td style="color:var(--er);font-weight:800">4</td>
       <td style="color:var(--cr);font-weight:800">8</td>
       <td><strong>45</strong></td>
     </tr>
@@ -908,10 +907,10 @@ Pass &#8211; Ho&#7841;t &#273;&#7897;ng &#273;&#250;ng k&#7923; v&#7885;ng</div>
       <div class="pb"><div class="pf" style="width:75%"></div></div>
       <div class="ph">&#128260; &#272;&#7893;i / Tr&#7843; H&#224;ng &nbsp;<strong style="color:var(--pa)">69%</strong> (9/13)</div>
       <div class="pb"><div class="pf" style="width:69%"></div></div>
-      <div class="ph">&#127978; B&#225;n H&#224;ng POS &nbsp;<strong style="color:var(--pa)">75%</strong> (12/16)</div>
-      <div class="pb"><div class="pf" style="width:75%"></div></div>
-      <div class="ph">&#128202; T&#7893;ng th&#7875; &nbsp;<strong style="color:var(--pa)">62%</strong> (28/45)</div>
-      <div class="pb"><div class="pf" style="width:62%"></div></div>
+      <div class="ph">&#127978; B&#225;n H&#224;ng POS &nbsp;<strong style="color:var(--pa)">81%</strong> (13/16)</div>
+      <div class="pb"><div class="pf" style="width:81%"></div></div>
+      <div class="ph">&#128202; T&#7893;ng th&#7875; &nbsp;<strong style="color:var(--pa)">64%</strong> (29/45)</div>
+      <div class="pb"><div class="pf" style="width:64%"></div></div>
     </div>
   </div>
 </div>

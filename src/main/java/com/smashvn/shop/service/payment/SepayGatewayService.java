@@ -55,14 +55,15 @@ public class SepayGatewayService implements PaymentGatewayService {
         // 1. Fast duplicate check (Idempotency)
         Optional<PaymentTransaction> existingTx = paymentTransactionRepository.findByTransactionId(transactionId);
         if (existingTx.isPresent()) {
-            if ("success".equalsIgnoreCase(existingTx.get().getStatus())) {
-                log.info("SePay IPN: Transaction ID {} already successfully processed (duplicate check).", transactionId);
+            String existingStatus = existingTx.get().getStatus();
+            if ("success".equalsIgnoreCase(existingStatus) || "stock_conflict_blocked".equalsIgnoreCase(existingStatus)) {
+                log.info("SePay IPN: Transaction ID {} already processed (status: {}). Duplicate IPN callback ignored.", transactionId, existingStatus);
                 auditService.log(null, "PaymentTransaction", null, "UPDATE", 
-                        null, "PAID", "127.0.0.1", "[PAYMENT_DUPLICATE] Duplicate IPN callback ignored.", "SYSTEM");
+                        null, "PAID", "127.0.0.1", "[PAYMENT_DUPLICATE] Duplicate IPN callback ignored for status " + existingStatus + ".", "SYSTEM");
                 return createSuccessResponse("Already processed");
             } else {
                 log.info("SePay IPN: Deleting previously failed transaction record {} (status: {}) to re-process.", 
-                        transactionId, existingTx.get().getStatus());
+                        transactionId, existingStatus);
                 paymentTransactionRepository.delete(existingTx.get());
                 paymentTransactionRepository.flush();
             }
@@ -148,6 +149,21 @@ public class SepayGatewayService implements PaymentGatewayService {
                     "[PAYMENT_RECEIVED_AFTER_CANCEL] CRITICAL: Payment received after order cancellation/expiration. Ref: " + transactionId + ", Amt: " + transferAmount, 
                     "SYSTEM");
             
+            return createSuccessResponse("Processed");
+        }
+
+        // 4.5 Handle STOCK_CONFLICT Order (Block IPN payment processing)
+        if (OrderStatus.STOCK_CONFLICT.getValue().equalsIgnoreCase(order.getTrangThaiDonHang())) {
+            log.warn("SePay IPN ignored/blocked because order is in STOCK_CONFLICT. maDonHang: {}, transactionId: {}, trangThaiDonHang: {}",
+                    orderCode, transactionId, order.getTrangThaiDonHang());
+
+            saveTransactionRecord(transaction, order, "stock_conflict_blocked", rawPayload);
+
+            auditService.log(null, "HoaDon", Long.valueOf(order.getId()), "UPDATE",
+                    OrderStatus.STOCK_CONFLICT.getValue(), OrderStatus.STOCK_CONFLICT.getValue(), "127.0.0.1",
+                    "[PAYMENT_BLOCKED_STOCK_CONFLICT] SePay IPN ignored/blocked because order is in STOCK_CONFLICT. Ref: " + transactionId + ", Amt: " + transferAmount,
+                    "SYSTEM");
+
             return createSuccessResponse("Processed");
         }
 

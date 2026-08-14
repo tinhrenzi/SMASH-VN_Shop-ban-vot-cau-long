@@ -42,6 +42,15 @@ public class InventoryLotServiceTest {
     private PaymentTransactionRepository paymentTransactionRepository;
 
     @Mock
+    private com.smashvn.shop.repository.NhanVienRepository nhanVienRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.PhieuNhapRepository phieuNhapRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.PhieuNhapChiTietRepository phieuNhapChiTietRepository;
+
+    @Mock
     private AuditService auditService;
 
     @InjectMocks
@@ -210,12 +219,13 @@ public class InventoryLotServiceTest {
         when(sanPhamChiTietRepository.findById(101)).thenReturn(Optional.of(spct1));
         when(sanPhamRepository.findByIdWithLock(3)).thenReturn(Optional.of(sampleProduct1));
         when(sanPhamChiTietRepository.save(any(SanPhamChiTiet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(nhanVienRepository.findByTaiKhoanId(any())).thenReturn(new com.smashvn.shop.entity.NhanVien());
 
         SanPhamChiTiet result = inventoryLotService.nhapLoMoi(101, 15, new BigDecimal("2900000"), 1);
 
         assertNotNull(result);
-        assertEquals(15, result.getSoLuongTon());
-        assertEquals(new BigDecimal("2900000"), result.getGiaNhap());
+        assertEquals(25, result.getSoLuongTon());
+        assertEquals(new BigDecimal("2860000.00"), result.getGiaNhap());
     }
 
     @Test

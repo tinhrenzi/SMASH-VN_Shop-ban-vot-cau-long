@@ -54,6 +54,13 @@ public class SepayOrderPaymentService {
         HoaDon order = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
+        // Fail-safe guard: STOCK_CONFLICT order status block
+        if (OrderStatus.STOCK_CONFLICT.getValue().equalsIgnoreCase(order.getTrangThaiDonHang())) {
+            log.warn("SePay IPN ignored/blocked because order is in STOCK_CONFLICT. maDonHang: {}, transactionId: {}, trangThaiDonHang: {}",
+                    order.getMaDonHang(), maGiaoDich, order.getTrangThaiDonHang());
+            return false;
+        }
+
         // Step 2: Idempotency Check dựa trên maGiaoDich SePay
         Optional<PaymentTransaction> existingTx = paymentTransactionRepository.findByTransactionId(maGiaoDich);
         if (existingTx.isPresent()) {
@@ -252,15 +259,34 @@ public class SepayOrderPaymentService {
         HoaDon order = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
 
-        // Kiểm tra xem đơn có giao dịch SePay nhận tiền và đang ở YEU_CAU_HUY
-        List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(idHoaDon);
-        boolean hasInsufficientStockTx = txs.stream().anyMatch(t -> "PAID_INSUFFICIENT_STOCK".equals(t.getStatus()) || "SUCCESS".equals(t.getStatus()));
-
-        if (!hasInsufficientStockTx && !"YEU_CAU_HUY".equals(order.getTrangThaiDonHang())) {
-            log.warn("[SepayOrderPaymentService] Đơn #{} không đủ điều kiện finalizeRefundWithoutRestock", idHoaDon);
+        // 1. Idempotency Guard: Nếu đơn đã ở trạng thái REFUNDED / RefundStatus.COMPLETED thì bỏ qua
+        if ("REFUNDED".equalsIgnoreCase(order.getTrangThaiThanhToan()) || RefundStatus.COMPLETED.equals(order.getRefundStatus())) {
+            log.info("[SepayOrderPaymentService] Đơn #{}: Đã ở trạng thái REFUNDED/COMPLETED trước đó. Bỏ qua hoàn tiền lặp lại.", idHoaDon);
             return;
         }
 
+        // 2. Strict Transaction Guard: Chỉ chấp nhận transaction có status PAID_INSUFFICIENT_STOCK
+        List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(idHoaDon);
+        boolean hasInsufficientStockTx = txs != null && txs.stream()
+                .anyMatch(t -> "PAID_INSUFFICIENT_STOCK".equalsIgnoreCase(t.getStatus()));
+
+        if (!hasInsufficientStockTx) {
+            String txStatuses = (txs != null && !txs.isEmpty()) 
+                    ? txs.stream().map(PaymentTransaction::getStatus).reduce((a, b) -> a + ", " + b).orElse("NONE")
+                    : "NONE";
+            log.warn("[SepayOrderPaymentService] Reject finalizeRefundWithoutRestock cho Đơn #{}, mã đơn: {}. Không có transaction PAID_INSUFFICIENT_STOCK. Transaction status hiện có: {}",
+                    idHoaDon, order.getMaDonHang(), txStatuses);
+            throw new IllegalStateException("Đơn hàng không thuộc trường hợp đã thanh toán nhưng thiếu tồn kho.");
+        }
+
+        // 3. Strict Order Status Guard: Trạng thái đơn hàng phải là YEU_CAU_HUY
+        if (!"YEU_CAU_HUY".equalsIgnoreCase(order.getTrangThaiDonHang())) {
+            log.warn("[SepayOrderPaymentService] Reject finalizeRefundWithoutRestock cho Đơn #{}, mã đơn: {}. Trạng thái đơn hàng hiện tại '{}' không phải YEU_CAU_HUY.",
+                    idHoaDon, order.getMaDonHang(), order.getTrangThaiDonHang());
+            throw new IllegalStateException("Trạng thái đơn hàng không hợp lệ để hoàn tiền do thiếu kho.");
+        }
+
+        // 4. Finalize refund mà KHÔNG tác động tồn kho
         order.setTrangThaiDonHang("DA_HUY");
         order.setTrangThaiThanhToan("REFUNDED");
         order.setRefundStatus(RefundStatus.COMPLETED);
@@ -270,7 +296,6 @@ public class SepayOrderPaymentService {
         String note = "Đã hoàn tiền thành công cho đơn SePay thiếu kho. Chuyển DA_HUY mà KHÔNG cộng tồn kho.";
         auditService.log(actingUserId, "HoaDon", idHoaDon.longValue(), "FINALIZE_REFUND_NO_RESTOCK",
                 "YEU_CAU_HUY", "DA_HUY", "127.0.0.1", note, "ADMIN");
-
 
         log.info("[SepayOrderPaymentService] Đã chuyển Đơn #{} sang DA_HUY & REFUNDED mà KHÔNG cộng tồn kho.", idHoaDon);
     }
