@@ -1178,22 +1178,22 @@ public class OrderViewService {
                 String giaTriMoi = log.getGiaTriMoi();
                 if (giaTriMoi != null) {
                     if (giaTriMoi.contains("status=da_xac_nhan") || giaTriMoi.contains("trangThaiDonHang=da_xac_nhan")) {
-                        times.put("da_xac_nhan", log.getThoiGian());
+                        times.putIfAbsent("da_xac_nhan", log.getThoiGian());
                     }
                     if (giaTriMoi.contains("status=dang_lay_hang") || giaTriMoi.contains("trangThaiDonHang=dang_lay_hang")) {
-                        times.put("dang_lay_hang", log.getThoiGian());
+                        times.putIfAbsent("dang_lay_hang", log.getThoiGian());
                     }
                     if (giaTriMoi.contains("status=dang_giao") || giaTriMoi.contains("trangThaiDonHang=dang_giao")) {
-                        times.put("dang_giao", log.getThoiGian());
+                        times.putIfAbsent("dang_giao", log.getThoiGian());
                     }
                     if (giaTriMoi.contains("status=da_giao") || giaTriMoi.contains("trangThaiDonHang=da_giao")) {
-                        times.put("da_giao", log.getThoiGian());
+                        times.putIfAbsent("da_giao", log.getThoiGian());
                     }
                     if (giaTriMoi.contains("status=hoan_thanh") || giaTriMoi.contains("trangThaiDonHang=hoan_thanh")) {
-                        times.put("hoan_thanh", log.getThoiGian());
+                        times.putIfAbsent("hoan_thanh", log.getThoiGian());
                     }
                     if (giaTriMoi.contains("status=da_huy") || giaTriMoi.contains("trangThaiDonHang=da_huy")) {
-                        times.put("da_huy", log.getThoiGian());
+                        times.putIfAbsent("da_huy", log.getThoiGian());
                     }
                 }
             }
@@ -1895,16 +1895,17 @@ public class OrderViewService {
         if (hd == null || hd.getId() == null) {
             return null;
         }
+        // Authoritative EditLog transition to da_giao or customer-confirmed hoan_thanh
         Map<String, LocalDateTime> times = getStatusTransitionTimes(hd.getId());
         if (times != null) {
             if (times.get("da_giao") != null) {
                 return times.get("da_giao");
             }
-            // Chỉ dùng hoan_thanh nếu EditLog chứng minh rõ transition đến từ hành động khách xác nhận nhận hàng
             if (times.get("hoan_thanh") != null && isConfirmedByCustomerInEditLog(hd.getId())) {
                 return times.get("hoan_thanh");
             }
         }
+        // Strictly return null if no delivery record exists. NEVER fall back to ngayThanhToan, paidAt, or thoiGianXacNhan.
         return null;
     }
 
