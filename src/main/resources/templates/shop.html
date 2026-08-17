@@ -616,10 +616,10 @@
 
                                                      <div class="shop-w__form-p-wrap">
                                                          <div>
-                                                             <input class="input-text input-text--style-1" type="number" name="minPrice" th:value="${selectedMinPrice}" placeholder="Min" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
+                                                             <input class="input-text input-text--style-1" type="number" name="minPrice" th:value="${selectedMinPrice}" placeholder="Từ" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
                                                          </div>
                                                          <div>
-                                                             <input class="input-text input-text--style-1" type="number" name="maxPrice" th:value="${selectedMaxPrice}" placeholder="Max" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
+                                                             <input class="input-text input-text--style-1" type="number" name="maxPrice" th:value="${selectedMaxPrice}" placeholder="Đến" th:min="${globalMinPrice}" th:max="${globalMaxPrice}" step="50000">
                                                          </div>
                                                          <div>
                                                              <button class="btn btn--e-brand" type="submit"><i class="fas fa-angle-right"></i></button>
@@ -792,14 +792,14 @@
                                     <!-- Bên trái: Grid/List toggle -->
                                     <div style="display:flex; gap:0;">
                                         <button id="btn-grid-view" onclick="setView('grid')" class="view-btn active" title="Dạng lưới">
-                                            Grid
+                                            Lưới
                                         </button>
                                         <button id="btn-list-view" onclick="setView('list')" class="view-btn" title="Dạng danh sách">
-                                            List
+                                            Danh sách
                                         </button>
                                     </div>
 
-                                    <!-- Bên phải: Show + Sort (Bản tiếng Anh theo mẫu) -->
+                                    <!-- Bên phải: Show + Sort -->
                                      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
                                          <form th:action="@{/shop}" method="get" id="toolbar-filter-form" style="display:flex; align-items:center; gap:16px;">
                                              <input type="hidden" name="categoryId" th:value="${selectedCategoryId}" th:if="${selectedCategoryId != null}">
@@ -1280,8 +1280,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="app-setting__wrap">
-                            <h1 class="app-setting__h1">JavaScript is disabled in your browser.</h1>
-                            <span class="app-setting__text">Please enable JavaScript in your browser or upgrade to a JavaScript-capable browser.</span>
+                            <h1 class="app-setting__h1">Trình duyệt của bạn đang tắt JavaScript.</h1>
+                            <span class="app-setting__text">Vui lòng bật JavaScript trên trình duyệt của bạn để trải nghiệm đầy đủ các tính năng của website.</span>
                         </div>
                     </div>
                 </div>
