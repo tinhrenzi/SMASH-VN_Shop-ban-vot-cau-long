@@ -301,6 +301,8 @@
     /*[<![CDATA[*/
     const orderCode = /*[[${order != null ? order.maDonHang : ''}]]*/ '';
     const amountVal = /*[[${order != null ? order.tongTien : 0}]]*/ 0;
+    const isGuestUser = /*[[${isGuest}]]*/ false;
+    const orderIdVal = /*[[${order != null ? order.id : 0}]]*/ 0;
     /*]]>*/
 
     // Force page reload when loaded from cache/history (e.g. Back button)
@@ -351,7 +353,11 @@
         // Trigger Cancel/Failure Simulation
         $('#btnSimulateCancel').on('click', function() {
             if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng của bạn sẽ ở trạng thái Chờ thanh toán.')) {
-                window.location.href = '/user/my-order';
+                if (isGuestUser && orderIdVal) {
+                    window.location.href = '/user/manage-order/' + orderIdVal;
+                } else {
+                    window.location.href = '/user/my-order';
+                }
             }
         });
 
@@ -420,7 +426,12 @@
                             $('#overlayMsg').text('Hệ thống đã nhận được thanh toán. Đang chuyển hướng...');
                             $('#statusOverlay').css('display', 'flex');
                             setTimeout(function() {
-                                window.location.href = '/user/my-order?payment=success';
+                                if (isGuestUser || response.isGuest) {
+                                    const targetOrderId = response.orderId || orderIdVal;
+                                    window.location.href = '/user/manage-order/' + targetOrderId + '?payment=success';
+                                } else {
+                                    window.location.href = '/user/my-order?payment=success';
+                                }
                             }, 1000);
                         } else if (response && response.paymentStatus === 'expired') {
                             handlePaymentExpired();

@@ -64,6 +64,7 @@ public class OrderViewService {
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final com.smashvn.shop.service.api.GhnShipmentPersistenceService ghnShipmentPersistenceService;
     private final com.smashvn.shop.repository.PaymentTransactionRepository paymentTransactionRepository;
+    private final com.smashvn.shop.repository.PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final ExchangeStockReservationService exchangeStockReservationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -327,6 +328,24 @@ public class OrderViewService {
                     }
                     if (!restockReqs.isEmpty()) {
                         inventoryLotService.hoanKho(restockReqs);
+                    }
+                }
+
+                // Hoàn lại số lượng voucher nếu đơn hàng có áp dụng voucher
+                if (hd.getPhieuGiamGia() != null && hd.getPhieuGiamGia().getMaPhieu() != null) {
+                    String maPhieu = hd.getPhieuGiamGia().getMaPhieu();
+                    try {
+                        phieuGiamGiaRepository.findByMaPhieuWithLock(maPhieu).ifPresent(voucher -> {
+                            Integer remaining = voucher.getSoLuongConLai();
+                            if (remaining != null) {
+                                voucher.setSoLuongConLai(remaining + 1);
+                                phieuGiamGiaRepository.save(voucher);
+                                log.info("[OrderViewService] Đã hoàn lại 1 lượt cho voucher '{}' khi hủy đơn #{}: {} -> {}",
+                                        maPhieu, idHoaDon, remaining, remaining + 1);
+                            }
+                        });
+                    } catch (Exception vEx) {
+                        log.error("[OrderViewService] Lỗi hoàn lại voucher '{}' khi hủy đơn #{}: {}", maPhieu, idHoaDon, vEx.getMessage());
                     }
                 }
 
@@ -661,6 +680,24 @@ public class OrderViewService {
                 hd.setGhiChu(newGhiChu.length() > 500 ? newGhiChu.substring(0, 500) : newGhiChu);
             }
             hd.setLyDoHuy(standardizedReason);
+
+            // Hoàn lại số lượng voucher nếu đơn hàng có áp dụng voucher
+            if (hd.getPhieuGiamGia() != null && hd.getPhieuGiamGia().getMaPhieu() != null && !OrderStatus.DA_HUY.getValue().equalsIgnoreCase(currentStatus)) {
+                String maPhieu = hd.getPhieuGiamGia().getMaPhieu();
+                try {
+                    phieuGiamGiaRepository.findByMaPhieuWithLock(maPhieu).ifPresent(voucher -> {
+                        Integer remaining = voucher.getSoLuongConLai();
+                        if (remaining != null) {
+                            voucher.setSoLuongConLai(remaining + 1);
+                            phieuGiamGiaRepository.save(voucher);
+                            log.info("[OrderViewService] Admin hủy đơn #{}, đã hoàn lại 1 lượt cho voucher '{}': {} -> {}",
+                                    idHoaDon, maPhieu, remaining, remaining + 1);
+                        }
+                    });
+                } catch (Exception vEx) {
+                    log.error("[OrderViewService] Lỗi hoàn lại voucher '{}' khi admin hủy đơn #{}: {}", maPhieu, idHoaDon, vEx.getMessage());
+                }
+            }
         }
 
         // 9. Update Order

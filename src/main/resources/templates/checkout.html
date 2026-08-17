@@ -306,9 +306,9 @@
                                         </a>
                                     </div>
                                     <!-- Email field for guest checkout -->
-                                    <div class="u-s-m-b-15" th:if="${session.idNguoiDung == null}">
+                                    <div class="u-s-m-b-15" th:if="${isGuest}">
                                         <label class="gl-label" for="email">EMAIL LIÊN HỆ *</label>
-                                        <input class="input-text input-text--primary-style" type="email" id="email" name="email" required placeholder="Nhập email của bạn..." maxlength="100">
+                                        <input class="input-text input-text--primary-style" type="email" id="email" name="email" required placeholder="Nhập email của bạn..." maxlength="100" th:value="${guestEmail}">
                                         <div class="invalid-feedback" id="email-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
                                     </div>
 
@@ -471,7 +471,7 @@
                                                 <i class="fas fa-qrcode text-brand" style="color: #ff4500; font-size: 26px;"></i>
                                             </div>
                                             <div class="payment-card-info">
-                                                <div class="payment-card-title">Chuyển khoản Ngân hàng (SePay)</div>
+                                                <div class="payment-card-title">Chuyển khoản Ngân hàng</div>
                                                 <div class="payment-card-desc">Quét mã QR tự động xác nhận</div>
                                             </div>
                                             <div class="card-radio"></div>
@@ -500,7 +500,7 @@
             <div class="zp-modal-header">
                 <div class="zp-modal-title">
                     <i class="fas fa-university text-brand" style="color: #ff4500; font-size: 20px;"></i>
-                    <span>Chuyển khoản Ngân hàng (SePay)</span>
+                    <span>Chuyển khoản Ngân hàng</span>
                 </div>
                 <button class="zp-modal-close" id="zp-close-btn">&times;</button>
             </div>
@@ -560,35 +560,22 @@
                     <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-verify-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">XÁC NHẬN ĐĂNG NHẬP</button>
                 </div>
 
-                <!-- Mandatory password set form for GUEST_EXPIRED accounts -->
-                <div id="guest-setup-password-form-group" style="display: none;">
-                    <div class="u-s-m-b-15">
-                        <label class="gl-label" for="guest-new-password">MẬT KHẨU MỚI *</label>
-                        <div style="position: relative; display: block; width: 100%;">
-                            <input class="input-text input-text--primary-style" type="password" id="guest-new-password" placeholder="Tối thiểu 8 ký tự (chữ và số)..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
-                            <span class="toggle-password" data-target="guest-new-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">
-                                <i class="far fa-eye"></i>
-                            </span>
-                        </div>
-                        <div id="guest-new-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
+                <!-- Mandatory notification for GUEST_EXPIRED accounts -->
+                <div id="guest-expired-form-group" style="display: none;">
+                    <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                        <p style="font-size: 13px; color: #9a3412; margin: 0; line-height: 1.5;">
+                            <i class="fas fa-info-circle" style="color: #ea580c; margin-right: 4px;"></i>
+                            Tài khoản này đã đạt giới hạn mua hàng vãng lai. Vui lòng kiểm tra email và thiết lập mật khẩu để tiếp tục mua hàng.
+                        </p>
                     </div>
-                    <div class="u-s-m-b-15">
-                        <label class="gl-label" for="guest-confirm-password">XÁC NHẬN MẬT KHẨU *</label>
-                        <div style="position: relative; display: block; width: 100%;">
-                            <input class="input-text input-text--primary-style" type="password" id="guest-confirm-password" placeholder="Nhập lại mật khẩu mới..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
-                            <span class="toggle-password" data-target="guest-confirm-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">
-                                <i class="far fa-eye"></i>
-                            </span>
-                        </div>
-                        <div id="guest-confirm-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
-                    </div>
-                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-setup-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">KÍCH HOẠT &amp; TIẾP TỤC</button>
+                    <div id="guest-resend-status" style="font-size: 12px; margin-bottom: 12px; display: none;"></div>
+                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-resend-activation" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Guest Success Modal (For optional password set after successful checkout) -->
+    <!-- Guest Success Modal -->
     <div class="zp-modal-overlay" id="guest-success-overlay">
         <div class="zp-modal" style="max-width: 480px;">
             <div class="zp-modal-header" style="border-bottom: none; padding-bottom: 0;">
@@ -598,38 +585,13 @@
                 </div>
             </div>
             <div class="zp-modal-body" style="text-align: left; padding: 20px 24px 24px;">
-                <p style="font-size: 14px; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
-                    Tài khoản của bạn đã được tạo tự động để hỗ trợ theo dõi đơn hàng.
+                <p style="font-size: 14px; color: #1e293b; font-weight: 600; margin-bottom: 12px;">
+                    Tài khoản của bạn đã được khởi tạo. Vui lòng kiểm tra email để thiết lập mật khẩu.
                 </p>
-                <p id="guest-success-warning-text" style="font-size: 13px; color: #ff4500; font-weight: 600; margin-bottom: 20px; display: none;">
-                    Bạn đã mua hàng nhiều lần. Lần mua tiếp theo sẽ yêu cầu thiết lập mật khẩu để tăng cường bảo mật.
+                <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px;">
+                    Chúng tôi đã gửi thông tin đơn hàng và đường dẫn thiết lập mật khẩu tới địa chỉ email của bạn.
                 </p>
-                
-                <div class="u-s-m-b-15">
-                    <label class="gl-label" for="success-password">MẬT KHẨU MỚI</label>
-                    <div style="position: relative; display: block; width: 100%;">
-                        <input class="input-text input-text--primary-style" type="password" id="success-password" placeholder="Nhập mật khẩu để kích hoạt tài khoản..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
-                        <span class="toggle-password" data-target="success-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">
-                            <i class="far fa-eye"></i>
-                        </span>
-                    </div>
-                    <div id="success-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
-                </div>
-                <div class="u-s-m-b-20">
-                    <label class="gl-label" for="success-confirm-password">XÁC NHẬN MẬT KHẨU</label>
-                    <div style="position: relative; display: block; width: 100%;">
-                        <input class="input-text input-text--primary-style" type="password" id="success-confirm-password" placeholder="Nhập lại mật khẩu..." style="width: 100% !important; padding-right: 40px; margin-bottom: 0;">
-                        <span class="toggle-password" data-target="success-confirm-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; font-size: 16px;">
-                            <i class="far fa-eye"></i>
-                        </span>
-                    </div>
-                    <div id="success-confirm-password-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
-                </div>
-
-                <div style="display: flex; gap: 12px;">
-                    <button class="btn btn--e-secondary" id="btn-success-skip" style="flex: 1; padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">Bỏ qua</button>
-                    <button class="btn btn--e-brand-b-2" id="btn-success-save-password" style="flex: 2; padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px; color: white;">Tạo mật khẩu ngay</button>
-                </div>
+                <button class="btn btn--e-brand-b-2 w-100" id="btn-success-close" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px; color: white;">XEM CHI TIẾT ĐƠN HÀNG</button>
             </div>
         </div>
     </div>
@@ -1065,31 +1027,44 @@
                             $('#guest-modal-title-text').text('Xác thực tài khoản thành viên');
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng và đồng bộ lịch sử mua hàng.');
                             $('#guest-password-form-group').show();
-                            $('#guest-setup-password-form-group').hide();
+                            $('#guest-expired-form-group').hide();
                             $('#guest-auth-overlay').addClass('active');
                         } else if (resp.status === 'GUEST_EXPIRED') {
-                            // Guest has checked out >= 3 times -> Force password setup
-                            $('#guest-modal-title-text').text('Thiết lập mật khẩu bảo mật');
-                            $('#guest-modal-desc').html('Email <strong>' + email + '</strong> đã mua hàng vãng lai 3 lần. Vui lòng thiết lập mật khẩu để kích hoạt tài khoản chính thức trước khi tiếp tục đặt hàng.');
+                            // Guest has checked out >= 3 times -> Show notice to check email
+                            $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
+                            $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đạt giới hạn mua hàng vãng lai.');
                             $('#guest-password-form-group').hide();
-                            $('#guest-setup-password-form-group').show();
+                            $('#guest-expired-form-group').show();
+                            $('#guest-resend-status').hide();
                             $('#guest-auth-overlay').addClass('active');
                         }
                     }
                 });
             });
 
+            // Auto show guest expired modal if already expired on page load
+            /*[# th:if="${isGuestExpired}"]*/
+            (function() {
+                const guestEmail = /*[[${guestEmail}]]*/ '';
+                if (guestEmail) {
+                    $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
+                    $('#guest-modal-desc').html('Địa chỉ email <strong>' + guestEmail + '</strong> đã đạt giới hạn mua hàng vãng lai.');
+                    $('#guest-password-form-group').hide();
+                    $('#guest-expired-form-group').show();
+                    $('#guest-resend-status').hide();
+                    $('#guest-auth-overlay').addClass('active');
+                }
+            })();
+            /*[/]*/
+
             // Close verification overlay
             $('#guest-auth-close-btn').on('click', function() {
                 $('#guest-auth-overlay').removeClass('active');
                 $('#email').val('').css('border-color', '');
                 $('#guest-password-input').val('');
-                $('#guest-new-password').val('');
-                $('#guest-confirm-password').val('');
                 $('#guest-password-error').hide();
                 $('#guest-password-success').hide();
-                $('#guest-new-password-error').hide();
-                $('#guest-confirm-password-error').hide();
+                $('#guest-resend-status').hide();
             });
 
             // Handle Forgot Password link inside Member Verification modal
@@ -1124,6 +1099,41 @@
                     error: function() {
                         $link.text('Quên mật khẩu?').css('pointer-events', 'auto');
                         $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
+                    }
+                });
+            });
+
+            // Handle Resend Activation / Set Password Email for GUEST_EXPIRED accounts
+            $('#btn-guest-resend-activation').on('click', function(e) {
+                e.preventDefault();
+                const email = $('#email').val().trim();
+                if (!email) {
+                    $('#guest-resend-status').css('color', '#ef4444').text('Vui lòng nhập địa chỉ email liên hệ.').show();
+                    return;
+                }
+
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('ĐANG GỬI EMAIL...');
+                $('#guest-resend-status').hide();
+
+                $.ajax({
+                    url: '/user/checkout/api/forgot-password',
+                    type: 'POST',
+                    data: { email: email },
+                    success: function(resp) {
+                        $btn.prop('disabled', false).text('GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU');
+                        if (resp.success) {
+                            $('#guest-resend-status').css('color', '#10b981').text(resp.message || 'Đã gửi link thiết lập mật khẩu tới email của bạn. Vui lòng kiểm tra hộp thư!').show();
+                            if (typeof showToast === 'function') {
+                                showToast(resp.message, 'success');
+                            }
+                        } else {
+                            $('#guest-resend-status').css('color', '#ef4444').text(resp.message || 'Không thể gửi email lúc này.').show();
+                        }
+                    },
+                    error: function() {
+                        $btn.prop('disabled', false).text('GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU');
+                        $('#guest-resend-status').css('color', '#ef4444').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
                     }
                 });
             });
@@ -1165,54 +1175,6 @@
                     error: function() {
                         $('#btn-guest-verify-password').prop('disabled', false).text('XÁC NHẬN ĐĂNG NHẬP');
                         $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống.').show();
-                    }
-                });
-            });
-
-            // Set password for guest account at checkout
-            $('#btn-guest-setup-password').on('click', function(e) {
-                e.preventDefault();
-                const email = $('#email').val().trim();
-                const password = $('#guest-new-password').val();
-                const confirmPassword = $('#guest-confirm-password').val();
-                const checkoutToken = $('input[name="checkoutToken"]').val() || '';
-
-                if (!password || password.length < 8) {
-                    $('#guest-new-password-error').text('Mật khẩu tối thiểu phải 8 ký tự.').show();
-                    return;
-                }
-                $('#guest-new-password-error').hide();
-
-                if (password !== confirmPassword) {
-                    $('#guest-confirm-password-error').text('Mật khẩu xác nhận không khớp.').show();
-                    return;
-                }
-                $('#guest-confirm-password-error').hide();
-
-                $('#btn-guest-setup-password').prop('disabled', true).text('ĐANG KÍCH HOẠT...');
-                $.ajax({
-                    url: '/checkout/api/set-password',
-                    type: 'POST',
-                    data: { email: email, password: password, checkoutToken: checkoutToken },
-                    success: function(resp) {
-                        $('#btn-guest-setup-password').prop('disabled', false).text('KÍCH HOẠT & TIẾP TỤC');
-                        if (resp.success) {
-                            showToast('Kích hoạt tài khoản thành công!', 'success');
-                            $('#guest-auth-overlay').removeClass('active');
-                            if (resp.redirectUrl) {
-                                window.location.href = resp.redirectUrl;
-                            } else if (checkoutToken) {
-                                window.location.href = '/checkout?token=' + encodeURIComponent(checkoutToken);
-                            } else {
-                                window.location.reload();
-                            }
-                        } else {
-                            $('#guest-new-password-error').text(resp.message || 'Lỗi thiết lập mật khẩu.').show();
-                        }
-                    },
-                    error: function() {
-                        $('#btn-guest-setup-password').prop('disabled', false).text('KÍCH HOẠT & TIẾP TỤC');
-                        $('#guest-new-password-error').text('Lỗi kết nối hệ thống khi thiết lập mật khẩu.').show();
                     }
                 });
             });
@@ -1760,7 +1722,7 @@
                 }
 
                 const totalText = $('.js-checkout-total').text().trim();
-                const paymentName = paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản Ngân hàng (SePay QR)';
+                const paymentName = paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản Ngân hàng';
 
                 Swal.fire({
                     title: 'Xác nhận tiến hành thanh toán',
@@ -1810,85 +1772,39 @@
                             console.log('[Diagnostics] Redirect target URL:', redirectUrl);
                             console.log('[Diagnostics] Payment initialization result: SUCCESS');
 
-                            if (response.isGuest === true && paymentMethod === 'COD') {
-                                // Show guest success modal for optional password creation
-                                if (response.soLanMuaThanhCong >= 2) {
-                                    $('#guest-success-warning-text').show();
-                                } else {
-                                    $('#guest-success-warning-text').hide();
-                                }
-
-                                // Setup actions
-                                $('#btn-success-skip').off('click').on('click', function() {
-                                    window.location.href = redirectUrl;
-                                });
-
-                                $('#btn-success-save-password').off('click').on('click', function(e) {
-                                    e.preventDefault();
-                                    const password = $('#success-password').val();
-                                    const confirmPassword = $('#success-confirm-password').val();
-
-                                    if (!password || password.length < 8) {
-                                        $('#success-password-error').text('Mật khẩu tối thiểu phải 8 ký tự.').show();
-                                        return;
-                                    }
-                                    $('#success-password-error').hide();
-
-                                    if (password !== confirmPassword) {
-                                        $('#success-confirm-password-error').text('Mật khẩu xác nhận không khớp.').show();
-                                        return;
-                                    }
-                                    $('#success-confirm-password-error').hide();
-
-                                    $('#btn-success-save-password').prop('disabled', true).text('ĐANG LƯU...');
-                                    $.ajax({
-                                        url: '/checkout/api/set-password',
-                                        type: 'POST',
-                                        data: { password: password },
-                                        success: function(resp) {
-                                            $('#btn-success-save-password').prop('disabled', false).text('Tạo mật khẩu ngay');
-                                            if (resp.success) {
-                                                showToast('Thiết lập mật khẩu thành công!', 'success');
-                                                setTimeout(function() {
-                                                    window.location.href = redirectUrl;
-                                                }, 1500);
-                                            } else {
-                                                $('#success-password-error').text(resp.message || 'Lỗi thiết lập mật khẩu.').show();
-                                            }
-                                        },
-                                        error: function() {
-                                            $('#btn-success-save-password').prop('disabled', false).text('Tạo mật khẩu ngay');
-                                            $('#success-password-error').text('Lỗi hệ thống khi thiết lập mật khẩu.').show();
-                                        }
+                            if (paymentMethod === 'COD') {
+                                if (response.isGuest === true && response.isNewAccount === true) {
+                                    $('#btn-success-close').off('click').on('click', function() {
+                                        window.location.href = redirectUrl;
                                     });
-                                });
-
-                                $('#guest-success-overlay').addClass('active');
-                            } else {
-                                if (paymentMethod === 'COD') {
+                                    $('#guest-success-overlay').addClass('active');
+                                } else {
                                     showToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
                                     setTimeout(function() {
-                                        window.location.href = '/user/my-order';
-                                    }, 1500);
-                                } else {
-                                    window.location.href = redirectUrl;
+                                        window.location.href = redirectUrl;
+                                    }, 1200);
                                 }
+                            } else {
+                                window.location.href = redirectUrl;
                             }
                         } else if (response.trangThai === 'yeucaudoimatkhau') {
                             showToast('Yêu cầu thiết lập mật khẩu.', 'warning');
-                            const email = $('#email').val().trim();
-                            $('#guest-modal-title-text').text('Thiết lập mật khẩu bảo mật');
-                            $('#guest-modal-desc').html('Email <strong>' + email + '</strong> đã mua hàng vãng lai 3 lần. Vui lòng thiết lập mật khẩu để kích hoạt tài khoản chính thức trước khi tiếp tục đặt hàng.');
+                            const email = response.email || $('#email').val().trim();
+                            if (email) $('#email').val(email);
+                            $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
+                            $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đạt giới hạn mua hàng vãng lai.');
                             $('#guest-password-form-group').hide();
-                            $('#guest-setup-password-form-group').show();
+                            $('#guest-expired-form-group').show();
+                            $('#guest-resend-status').hide();
                             $('#guest-auth-overlay').addClass('active');
                         } else if (response.trangThai === 'yeucaudangnhap') {
                             showToast('Tài khoản đã tồn tại. Vui lòng đăng nhập.', 'warning');
-                            const email = $('#email').val().trim();
+                            const email = response.email || $('#email').val().trim();
+                            if (email) $('#email').val(email);
                             $('#guest-modal-title-text').text('Xác thực tài khoản thành viên');
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng.');
                             $('#guest-password-form-group').show();
-                            $('#guest-setup-password-form-group').hide();
+                            $('#guest-expired-form-group').hide();
                             $('#guest-auth-overlay').addClass('active');
                         } else {
                             showToast('Đặt hàng thất bại: ' + response.message, 'error');
@@ -1963,13 +1879,21 @@
                         if (resp && (resp.paymentStatus === 'paid' || resp.paymentStatus === 'DA_THANH_TOAN')) {
                             if (pollingInterval) clearInterval(pollingInterval);
                             $('#zp-spinner-loading').hide();
-                            $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
-                                .html('<i class="fas fa-check-circle"></i> Thanh toán thành công! Đang chuyển hướng...');
+                            $('#zp-modal-overlay').removeClass('active');
                             
-                            // Redirect after 1 second
-                            setTimeout(function() {
-                                window.location.href = '/user/my-order?payment=success';
-                            }, 1000);
+                            if (resp.isGuest) {
+                                const targetOrderId = resp.orderId || orderId;
+                                $('#btn-success-close').off('click').on('click', function() {
+                                    window.location.href = '/user/manage-order/' + targetOrderId;
+                                });
+                                $('#guest-success-overlay').addClass('active');
+                            } else {
+                                $('#zp-status-msg').removeClass('zp-status-pending zp-status-error').addClass('zp-status-success')
+                                    .html('<i class="fas fa-check-circle"></i> Thanh toán thành công! Đang chuyển hướng...');
+                                setTimeout(function() {
+                                    window.location.href = '/user/my-order?payment=success';
+                                }, 1000);
+                            }
                         } else if (resp && resp.paymentStatus === 'expired') {
                             if (pollingInterval) clearInterval(pollingInterval);
                             $('#zp-spinner-loading').hide();

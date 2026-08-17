@@ -238,40 +238,7 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void testSessionIdRotationOnPasswordUpgrade() throws Exception {
-        String email = "guest-upgrade-" + System.nanoTime() + "@example.com";
-        TaiKhoan tk = createGuestAccount(email);
-
-        MockHttpSession guestSession = new MockHttpSession();
-        guestSession.setAttribute("idNguoiDung", tk.getId());
-        guestSession.setAttribute("guestCheckoutEmail", email);
-
-        MvcResult result = mockMvc.perform(post("/checkout/api/set-password")
-                .param("password", "strongpassword123")
-                .session(guestSession)
-                .requestAttr("_csrf", csrfToken))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        // Check that old session is invalidated and new session is created with login attributes
-        MockHttpSession returnedSession = (MockHttpSession) result.getRequest().getSession(false);
-        assertNotNull(returnedSession);
-        
-        // Assert old session attributes (like guestCheckoutEmail) are NOT present in the rotated session
-        assertNull(returnedSession.getAttribute("guestCheckoutEmail"));
-        
-        // Assert member authenticated attributes are present
-        assertEquals(email, returnedSession.getAttribute("nguoiDungDangNhap"));
-        assertEquals(tk.getId(), returnedSession.getAttribute("idNguoiDung"));
-        assertEquals("KH", returnedSession.getAttribute("vaiTro"));
-
-        // Verify status in DB is active
-        TaiKhoan updatedTk = taiKhoanRepository.findById(tk.getId()).orElseThrow();
-        assertEquals(AccountStatus.ACTIVE, updatedTk.getTrangThaiTaiKhoan());
-    }
-
-    @Test
-    void testAnonymousCannotUpgradeGuestByEmail() throws Exception {
+    void test01_AnonymousCannotUpgradeGuestByEmail() throws Exception {
         String email = "guest-attack-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
 
@@ -290,7 +257,129 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void testPasswordActivationRaceProtection() {
+    void test02_GuestCheckoutCreatesGuestAccountWithActivationToken() {
+        String email = "guest-new-" + System.nanoTime() + "@example.com";
+        String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Test", sdt, email);
+
+        assertNotNull(regResult);
+        assertNotNull(regResult.getTaiKhoan());
+        assertEquals(AccountStatus.GUEST, regResult.getTaiKhoan().getTrangThaiTaiKhoan());
+        assertNull(regResult.getTaiKhoan().getMatKhau());
+        assertNotNull(regResult.getToken(), "Activation token must be generated for guest account");
+
+        com.smashvn.shop.entity.TokenKhoiPhuc tkp = tokenRepository.findByMaXacNhan(regResult.getToken());
+        assertNotNull(tkp);
+        assertEquals(regResult.getTaiKhoan().getId(), tkp.getTaiKhoan().getId());
+        assertFalse(tkp.isDaSuDung());
+    }
+
+    @Test
+    void test03_ValidTokenSetsPasswordAndActivatesAccount() throws Exception {
+        String email = "guest-token-valid-" + System.nanoTime() + "@example.com";
+        String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Hop Le", sdt, email);
+        String token = regResult.getToken();
+
+        // GET view with valid token
+        mockMvc.perform(get("/user/thiet-lap-mat-khau").param("token", token))
+                .andExpect(status().isOk())
+                .andExpect(view().name("set-password-by-token"));
+
+        // POST submit new password
+        mockMvc.perform(post("/user/thiet-lap-mat-khau")
+                .param("token", token)
+                .param("password", "Password123")
+                .param("confirmPassword", "Password123")
+                .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dang-nhap?thanhcong=Thi%E1%BA%BFt+l%E1%BA%ADp+m%E1%BA%ADt+kh%E1%BA%A9u+th%C3%A0nh+c%C3%B4ng%21+Vui+l%C3%B2ng+%C4%91%C4%83ng+nh%E1%BA%ADp."));
+
+        TaiKhoan activatedTk = taiKhoanRepository.findById(regResult.getTaiKhoan().getId()).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, activatedTk.getTrangThaiTaiKhoan());
+        assertNotNull(activatedTk.getMatKhau());
+
+        com.smashvn.shop.entity.TokenKhoiPhuc usedToken = tokenRepository.findByMaXacNhan(token);
+        assertTrue(usedToken.isDaSuDung());
+    }
+
+    @Test
+    void test04_InvalidTokenIsRejected() throws Exception {
+        mockMvc.perform(get("/user/thiet-lap-mat-khau").param("token", "invalid-token-12345"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("signin"));
+
+        assertThrows(RuntimeException.class, () -> {
+            guestCheckoutService.setPasswordByToken("invalid-token-12345", "Password123");
+        });
+    }
+
+    @Test
+    void test05_ExpiredTokenIsRejected() {
+        String email = "guest-expired-token-" + System.nanoTime() + "@example.com";
+        String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Het Han", sdt, email);
+        String token = regResult.getToken();
+
+        com.smashvn.shop.entity.TokenKhoiPhuc tkp = tokenRepository.findByMaXacNhan(token);
+        tkp.setThoiGianHetHan(java.time.LocalDateTime.now().minusDays(1)); // expired
+        tokenRepository.saveAndFlush(tkp);
+
+        assertThrows(RuntimeException.class, () -> {
+            guestCheckoutService.setPasswordByToken(token, "Password123");
+        });
+    }
+
+    @Test
+    void test06_UsedTokenCannotBeUsedTwice() {
+        String email = "guest-used-token-" + System.nanoTime() + "@example.com";
+        String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Used", sdt, email);
+        String token = regResult.getToken();
+
+        // First use succeeds
+        guestCheckoutService.setPasswordByToken(token, "Password123");
+
+        // Second use fails
+        assertThrows(RuntimeException.class, () -> {
+            guestCheckoutService.setPasswordByToken(token, "AnotherPass123");
+        });
+    }
+
+    @Test
+    void test07_AttackerKnowingEmailCannotSetPasswordWithoutToken() throws Exception {
+        String email = "victim-guest-" + System.nanoTime() + "@example.com";
+        TaiKhoan victimTk = createGuestAccount(email);
+
+        // Attacker calls set-password endpoint directly
+        MvcResult result = mockMvc.perform(post("/checkout/api/set-password")
+                .param("email", email)
+                .param("password", "HackerPass123")
+                .requestAttr("_csrf", csrfToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString().contains("\"success\":false"));
+
+        // Victim account remains unchanged
+        TaiKhoan unchanged = taiKhoanRepository.findById(victimTk.getId()).orElseThrow();
+        assertEquals(AccountStatus.GUEST, unchanged.getTrangThaiTaiKhoan());
+        assertNull(unchanged.getMatKhau());
+    }
+
+    @Test
+    void test08_GuestExpiredStatusDetectedAfterMultiplePurchases() {
+        String email = "guest-multiple-buys-" + System.nanoTime() + "@example.com";
+        TaiKhoan tk = createGuestAccount(email);
+        tk.setSoLanMuaThanhCong(3);
+        taiKhoanRepository.saveAndFlush(tk);
+
+        String status = guestCheckoutService.checkEmailStatus(email);
+        assertEquals("GUEST_EXPIRED", status);
+    }
+
+    @Test
+    void test09_PasswordActivationRaceProtection() {
         String email = "guest-race-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
 
@@ -301,5 +390,62 @@ public class GuestCheckoutSecurityIntegrationTest {
         assertThrows(IllegalStateException.class, () -> {
             guestCheckoutService.setPasswordForGuest(tk.getId(), "anotherpassword123");
         });
+    }
+
+    @Test
+    void test10_OnlinePaymentIncrementsPurchaseCountAndEnforcesExpiryOn4thCheckout() throws Exception {
+        String email = "guest-4th-checkout-" + System.nanoTime() + "@example.com";
+        TaiKhoan tk = createGuestAccount(email);
+        assertEquals(0, tk.getSoLanMuaThanhCong());
+
+        // Simulate 3 successful payments
+        guestCheckoutService.incrementPurchaseCount(tk.getId());
+        guestCheckoutService.incrementPurchaseCount(tk.getId());
+        guestCheckoutService.incrementPurchaseCount(tk.getId());
+
+        TaiKhoan updatedTk = taiKhoanRepository.findById(tk.getId()).orElseThrow();
+        assertEquals(3, updatedTk.getSoLanMuaThanhCong());
+
+        // Service check
+        String status = guestCheckoutService.checkEmailStatus(email);
+        assertEquals("GUEST_EXPIRED", status);
+
+        // API check
+        MvcResult result = mockMvc.perform(post("/checkout/api/check-email")
+                .param("email", email)
+                .requestAttr("_csrf", csrfToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        assertTrue(responseContent.contains("GUEST_EXPIRED"));
+    }
+
+    @Test
+    void test11_GuestWithInSessionIdNguoiDungRejects4thCODCheckout() throws Exception {
+        String email = "guest-insession-" + System.nanoTime() + "@example.com";
+        TaiKhoan tk = createGuestAccount(email);
+        tk.setSoLanMuaThanhCong(3);
+        taiKhoanRepository.save(tk);
+
+        org.springframework.mock.web.MockHttpSession session = new org.springframework.mock.web.MockHttpSession();
+        session.setAttribute("idNguoiDung", tk.getId());
+        session.setAttribute("nguoiDungDangNhap", email);
+
+        // Attempt COD checkout with guest session
+        MvcResult result = mockMvc.perform(post("/checkout/submit")
+                .session(session)
+                .param("hoTenNhan", "Khach InSession")
+                .param("sdtNhan", "0987654321")
+                .param("diaChiNhan", "123 Le Loi, Da Nang")
+                .param("phuongThucThanhToan", "1") // COD
+                .param("phiShip", "0")
+                .requestAttr("_csrf", csrfToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseJson = result.getResponse().getContentAsString();
+        assertTrue(responseJson.contains("yeucaudoimatkhau"));
+        assertTrue(responseJson.contains("quá 3 lần") || responseJson.contains("3 lần"));
     }
 }

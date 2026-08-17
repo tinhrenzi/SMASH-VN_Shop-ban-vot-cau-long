@@ -163,4 +163,7 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
             """,
             nativeQuery = true)
     List<HoaDon> findActiveShippingOrders(Pageable pageable);
+
+    @Query("SELECT COUNT(hd) FROM HoaDon hd WHERE ((hd.khachHang IS NOT NULL AND hd.khachHang.taiKhoan IS NOT NULL AND hd.khachHang.taiKhoan.id = :idTaiKhoan) OR LOWER(hd.emailNguoiNhan) = LOWER(:email)) AND LOWER(hd.trangThaiDonHang) != 'da_huy'")
+    long countOrdersByTaiKhoanOrEmail(@Param("idTaiKhoan") Integer idTaiKhoan, @Param("email") String email);
 }

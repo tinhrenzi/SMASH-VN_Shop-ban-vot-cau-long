@@ -419,6 +419,7 @@ public class GioHangValidationIntegrationTest {
         itemBObj.setGioHang(gioHangB);
         itemBObj.setSanPhamChiTiet(testSpct);
         itemBObj.setSoLuong(1);
+        itemBObj.setTrangThai(trangThaiGioHangRepository.findById(1).orElseGet(() -> trangThaiGioHangRepository.findAll().get(0)));
         itemBObj = gioHangChiTietRepository.save(itemBObj);
         Integer itemB = itemBObj.getId();
 

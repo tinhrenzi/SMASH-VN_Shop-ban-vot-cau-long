@@ -578,6 +578,10 @@ public class UserDashboardController {
             model.addAttribute("wishlistCount", wishlistCount);
             model.addAttribute("isGuestView", isGuestView);
 
+            int soLanMua = (kh.getTaiKhoan() != null && kh.getTaiKhoan().getSoLanMuaThanhCong() != null) ? kh.getTaiKhoan().getSoLanMuaThanhCong() : 0;
+            boolean isFirstGuestOrder = isGuestView && (kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST && soLanMua <= 1);
+            model.addAttribute("isFirstGuestOrder", isFirstGuestOrder);
+
             return "dash-manage-order";
         } catch (Exception e) {
             e.printStackTrace();

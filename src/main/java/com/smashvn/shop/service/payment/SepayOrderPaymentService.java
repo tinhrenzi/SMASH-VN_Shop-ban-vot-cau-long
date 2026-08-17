@@ -38,6 +38,9 @@ public class SepayOrderPaymentService {
     private final AuditService auditService;
     private final com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
     private final TokenKhoiPhucRepository tokenRepository;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final GioHangRepository gioHangRepository;
+    private final GioHangChiTietRepository gioHangChiTietRepository;
 
     /**
      * Điều phối xử lý IPN Webhook từ SePay trong 1 Transaction kín.
@@ -150,6 +153,54 @@ public class SepayOrderPaymentService {
                 }
             }
             hoaDonRepository.save(order);
+
+            // Deduct applied Voucher quantity with Pessimistic Write Lock
+            if (order.getPhieuGiamGia() != null && order.getPhieuGiamGia().getMaPhieu() != null) {
+                String maPhieu = order.getPhieuGiamGia().getMaPhieu();
+                try {
+                    phieuGiamGiaRepository.findByMaPhieuWithLock(maPhieu).ifPresent(voucher -> {
+                        Integer remaining = voucher.getSoLuongConLai();
+                        if (remaining != null && remaining > 0) {
+                            voucher.setSoLuongConLai(remaining - 1);
+                            phieuGiamGiaRepository.save(voucher);
+                            log.info("[SepayOrderPaymentService] Đã trừ số lượng voucher '{}' sau thanh toán SePay thành công (Đơn #{}): {} -> {}",
+                                    maPhieu, idHoaDon, remaining, remaining - 1);
+                        } else {
+                            log.warn("[SepayOrderPaymentService] Voucher '{}' của đơn #{} đã hết lượt hoặc mang giá trị null ({}) tại thời điểm thanh toán SePay.",
+                                    maPhieu, idHoaDon, remaining);
+                        }
+                    });
+                } catch (Exception vEx) {
+                    log.error("[SepayOrderPaymentService] Lỗi trừ số lượng voucher '{}' cho đơn #{}: {}", maPhieu, idHoaDon, vEx.getMessage(), vEx);
+                }
+            }
+
+            // Tăng số lần mua thành công cho tài khoản Guest khi thanh toán online thành công
+            if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
+                guestCheckoutService.incrementPurchaseCount(order.getKhachHang().getTaiKhoan().getId());
+            }
+
+            // Cleanup cart items for the customer if any match
+            if (order.getKhachHang() != null && order.getKhachHang().getId() != null) {
+                try {
+                    GioHang gh = gioHangRepository.findByKhachHang_Id(order.getKhachHang().getId());
+                    if (gh != null) {
+                        List<GioHangChiTiet> currentCartItems = gioHangChiTietRepository.findByGioHang_Id(gh.getId());
+                        if (currentCartItems != null && !currentCartItems.isEmpty()) {
+                            for (HoaDonChiTiet pItem : provisionalItems) {
+                                if (pItem.getSanPhamChiTiet() != null) {
+                                    Integer spctId = pItem.getSanPhamChiTiet().getId();
+                                    currentCartItems.stream()
+                                            .filter(ci -> ci.getSanPhamChiTiet() != null && ci.getSanPhamChiTiet().getId().equals(spctId))
+                                            .forEach(gioHangChiTietRepository::delete);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception cEx) {
+                    log.warn("[SepayOrderPaymentService] Could not cleanup cart items for order #{}: {}", idHoaDon, cEx.getMessage());
+                }
+            }
 
             // Gửi email hóa đơn xác nhận thanh toán cho đơn hàng Online SAU KHI TRANSACTION COMMIT
             boolean isPosOrder = order.getMaDonHang() != null && order.getMaDonHang().startsWith("HDSVN");

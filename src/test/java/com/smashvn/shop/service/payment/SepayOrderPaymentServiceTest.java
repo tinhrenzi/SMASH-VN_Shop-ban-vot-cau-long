@@ -29,7 +29,22 @@ class SepayOrderPaymentServiceTest {
     private HoaDonRepository hoaDonRepository;
 
     @Mock
+    private com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
+
+    @Mock
     private PaymentTransactionRepository paymentTransactionRepository;
+
+    @Mock
+    private com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
+    @Mock
+    private com.smashvn.shop.repository.PhieuGiamGiaRepository phieuGiamGiaRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.GioHangRepository gioHangRepository;
+
+    @Mock
+    private com.smashvn.shop.repository.GioHangChiTietRepository gioHangChiTietRepository;
 
     @Mock
     private AuditService auditService;
@@ -140,5 +155,60 @@ class SepayOrderPaymentServiceTest {
         verify(paymentTransactionRepository, never()).findByOrder_Id(any());
         verify(hoaDonRepository, never()).save(any());
         verify(auditService, never()).log(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("TC-VOUCHER-01 – Thanh toán SePay thành công có voucher -> Phải trừ soLuongConLai của voucher")
+    void testSepayPaymentSuccess_DecrementsVoucherQuantity() {
+        // Given
+        com.smashvn.shop.entity.PhieuGiamGia voucher = new com.smashvn.shop.entity.PhieuGiamGia();
+        voucher.setId(10);
+        voucher.setMaPhieu("VOUCHER50K");
+        voucher.setSoLuongConLai(5);
+
+        HoaDon order = new HoaDon();
+        order.setId(200);
+        order.setMaDonHang("HD200");
+        order.setTrangThaiDonHang("CHO_THANH_TOAN");
+        order.setPhieuGiamGia(voucher);
+
+        when(hoaDonRepository.findById(200)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByTransactionId("TX_SEP_12345")).thenReturn(Optional.empty());
+
+        com.smashvn.shop.entity.SanPhamChiTiet spct = new com.smashvn.shop.entity.SanPhamChiTiet();
+        spct.setId(1);
+
+        com.smashvn.shop.entity.HoaDonChiTiet hdct = new com.smashvn.shop.entity.HoaDonChiTiet();
+        hdct.setId(1);
+        hdct.setHoaDon(order);
+        hdct.setSanPhamChiTiet(spct);
+        hdct.setSoLuong(1);
+        hdct.setDonGia(java.math.BigDecimal.valueOf(500000));
+        hdct.setGiaGoc(java.math.BigDecimal.valueOf(500000));
+        hdct.setGiaSauGiam(java.math.BigDecimal.valueOf(450000));
+
+        when(hoaDonChiTietRepository.findByHoaDon_Id(200)).thenReturn(List.of(hdct));
+
+        com.smashvn.shop.dto.inventory.LotAllocation alloc = new com.smashvn.shop.dto.inventory.LotAllocation(
+                1, 1, spct, 1
+        );
+
+        com.smashvn.shop.dto.inventory.AllocationResult allocResult = new com.smashvn.shop.dto.inventory.AllocationResult(
+                com.smashvn.shop.dto.inventory.AllocationStatus.SUCCESS,
+                List.of(alloc),
+                "Phân bổ thành công"
+        );
+
+        when(inventoryLotService.allocateFifo(any())).thenReturn(allocResult);
+        when(phieuGiamGiaRepository.findByMaPhieuWithLock("VOUCHER50K")).thenReturn(Optional.of(voucher));
+
+        // When
+        boolean result = sepayOrderPaymentService.xuLyThanhToanSePay(200, "TX_SEP_12345", java.math.BigDecimal.valueOf(450000), "{}");
+
+        // Then
+        assertTrue(result);
+        assertEquals(4, voucher.getSoLuongConLai());
+        verify(phieuGiamGiaRepository, times(1)).save(voucher);
+        verify(hoaDonRepository, times(1)).save(order);
     }
 }

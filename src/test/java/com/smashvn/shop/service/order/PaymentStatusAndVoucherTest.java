@@ -94,4 +94,79 @@ public class PaymentStatusAndVoucherTest {
         String corrected = originalSnapshot.replace("Mức cảng:", "Sức căng khuyến nghị:");
         assertEquals("Màu sắc: Xanh, Trọng lượng: 3U, Sức căng khuyến nghị: 28 lbs", corrected);
     }
+
+    @Autowired
+    private com.smashvn.shop.repository.PhieuGiamGiaRepository phieuGiamGiaRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.HoaDonRepository hoaDonRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.KhachHangRepository khachHangRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.TaiKhoanRepository taiKhoanRepository;
+
+    @Autowired
+    private com.smashvn.shop.repository.NhanVienRepository nhanVienRepository;
+
+    @Autowired
+    private com.smashvn.shop.dao.PhuongThucThanhToanDAO phuongThucThanhToanDAO;
+
+    @Test
+    public void testOrderCancel_RestoresVoucherQuantity() {
+        com.smashvn.shop.entity.NhanVien nv = nhanVienRepository.findAll().stream().findFirst().orElse(null);
+        com.smashvn.shop.entity.PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElse(null);
+
+        // Create test voucher
+        PhieuGiamGia voucher = new PhieuGiamGia();
+        voucher.setMaPhieu("TEST_RESTORE_VOUCHER");
+        voucher.setLoaiGiamGia("Giảm trực tiếp");
+        voucher.setDonVi("VND");
+        voucher.setGiaTri(BigDecimal.valueOf(50000));
+        voucher.setSoLuongConLai(10);
+        voucher.setGiaTriDonHangToiThieu(BigDecimal.ZERO);
+        voucher.setNgayBatDau(java.time.LocalDateTime.now().minusDays(1));
+        voucher.setNgayKetThuc(java.time.LocalDateTime.now().plusDays(10));
+        voucher.setNhanVien(nv);
+        voucher = phieuGiamGiaRepository.save(voucher);
+
+        // Create test user and customer
+        com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
+        tk.setUsername("vouchertest_" + System.currentTimeMillis() + "@test.com");
+        tk.setMatKhau("testpass");
+        tk.setVaiTro("KH");
+        tk.setTrangThai("hoat_dong");
+        tk = taiKhoanRepository.save(tk);
+
+        com.smashvn.shop.entity.KhachHang kh = new com.smashvn.shop.entity.KhachHang();
+        kh.setTaiKhoan(tk);
+        kh.setHoKh("Voucher");
+        kh.setTenKh("Tester");
+        kh.setSoDienThoaiKh("0912345678");
+        kh = khachHangRepository.save(kh);
+
+        // Create test order with voucher attached
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setMaDonHang("HD_VOUCHER_TEST");
+        hd.setTrangThaiDonHang("cho_xac_nhan");
+        hd.setTrangThaiThanhToan("CHUA_THANH_TOAN");
+        hd.setPaymentStatus("pending");
+        hd.setPaymentMethod("COD");
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setPhieuGiamGia(voucher);
+        hd.setTongTien(BigDecimal.valueOf(200000));
+        hd.setSdtNhan("0912345678");
+        hd.setDiaChiNhan("123 Hà Nội");
+        hd = hoaDonRepository.save(hd);
+
+        // Cancel order via huyDonHang
+        boolean cancelled = orderViewService.huyDonHang(hd.getId(), kh.getId(), "127.0.0.1", "Đổi ý không mua nữa");
+        assertEquals(true, cancelled);
+
+        // Check that voucher quantity was incremented: 10 -> 11
+        PhieuGiamGia updatedVoucher = phieuGiamGiaRepository.findById(voucher.getId()).orElseThrow();
+        assertEquals(11, updatedVoucher.getSoLuongConLai());
+    }
 }

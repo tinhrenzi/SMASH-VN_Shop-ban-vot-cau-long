@@ -58,6 +58,10 @@ public class SepaySimulationController {
             return "redirect:/";
         }
 
+        boolean isGuest = hd.getKhachHang() == null 
+                || hd.getKhachHang().getTaiKhoan() == null 
+                || hd.getKhachHang().getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST;
+        model.addAttribute("isGuest", isGuest);
         model.addAttribute("order", hd);
         model.addAttribute("sepayBankAccount", sepayConfig.getBankAccount());
         model.addAttribute("sepayBankName", sepayConfig.getBankName());

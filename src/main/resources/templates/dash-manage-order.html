@@ -130,6 +130,59 @@
         .toast-notify.success { background: #388e3c; }
         .toast-notify.error   { background: #d32f2f; }
 
+        /* ===== Guest First Order Success Modal ===== */
+        .guest-success-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .guest-success-modal-overlay.active {
+            display: flex;
+        }
+        .guest-success-modal {
+            background: #ffffff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            animation: modalIn 0.25s cubic-bezier(.34,1.56,.64,1) both;
+            color: #1e293b;
+        }
+        .guest-success-modal__header {
+            padding: 24px 24px 0;
+            display: flex;
+            align-items: center;
+            color: #10b981;
+            font-size: 20px;
+            font-weight: 700;
+            gap: 10px;
+        }
+        .guest-success-modal__body {
+            padding: 16px 24px 24px;
+            text-align: left;
+        }
+        .guest-success-modal__btn {
+            background: #ff4500;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .guest-success-modal__btn:hover {
+            background: #e03e00;
+        }
+
         /* ===== Custom Green Timeline Stepper (Matches 2nd image) ===== */
         .timeline-stepper {
             display: flex !important;
@@ -1303,10 +1356,57 @@
                 _closeModal();
                 const modalTH = document.getElementById('modalTraHang');
                 if (modalTH) modalTH.style.display = 'none';
+                const modalGuest = document.getElementById('guestSuccessModal');
+                if (modalGuest) modalGuest.classList.remove('active');
             }
         });
+
+        // ============ Payment / Order Success Handler ============
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFirstGuestOrder = /*[[${isFirstGuestOrder}]]*/ false;
+        
+        if (urlParams.get('payment') === 'success' || urlParams.get('order') === 'success') {
+            if (isFirstGuestOrder) {
+                const modal = document.getElementById('guestSuccessModal');
+                if (modal) modal.classList.add('active');
+            } else {
+                hienToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
+            }
+            // Clean URL parameters without reloading
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+        }
+
+        const btnCloseGuestModal = document.getElementById('btnCloseGuestModal');
+        if (btnCloseGuestModal) {
+            btnCloseGuestModal.addEventListener('click', function() {
+                const modal = document.getElementById('guestSuccessModal');
+                if (modal) modal.classList.remove('active');
+            });
+        }
     })();
     </script>
+
+    <!-- Guest Order Success Modal -->
+    <div class="guest-success-modal-overlay" id="guestSuccessModal">
+        <div class="guest-success-modal">
+            <div class="guest-success-modal__header">
+                <i class="fas fa-check-circle"></i>
+                <span>Đặt hàng thành công!</span>
+            </div>
+            <div class="guest-success-modal__body">
+                <p style="font-size: 14px; color: #1e293b; font-weight: 600; margin-bottom: 12px;">
+                    Tài khoản của bạn đã được khởi tạo. Vui lòng kiểm tra email để thiết lập mật khẩu.
+                </p>
+                <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px;">
+                    Chúng tôi đã gửi thông tin đơn hàng và đường dẫn thiết lập mật khẩu tới địa chỉ email của bạn.
+                </p>
+                <button class="guest-success-modal__btn" id="btnCloseGuestModal">
+                    ĐÃ HIỂU
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>

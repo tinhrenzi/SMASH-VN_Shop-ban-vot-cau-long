@@ -38,6 +38,7 @@ public class GuestCheckoutService {
     private final TokenKhoiPhucRepository tokenRepository;
     private final ThongBaoRepository thongBaoRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final com.smashvn.shop.repository.HoaDonRepository hoaDonRepository;
     private final JavaMailSender mailSender;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
@@ -62,8 +63,18 @@ public class GuestCheckoutService {
             }
         }
 
-        // status is GUEST
-        if (tk.getSoLanMuaThanhCong() < 3) {
+        // status is GUEST: dynamically check maximum between recorded counter and actual orders in DB
+        int recordedCount = (tk.getSoLanMuaThanhCong() != null) ? tk.getSoLanMuaThanhCong() : 0;
+        long dbOrderCount = (hoaDonRepository != null) ? hoaDonRepository.countOrdersByTaiKhoanOrEmail(tk.getId(), email.trim()) : 0;
+        int effectiveCount = Math.max(recordedCount, (int) dbOrderCount);
+
+        if (effectiveCount > recordedCount) {
+            tk.setSoLanMuaThanhCong(effectiveCount);
+            taiKhoanRepository.save(tk);
+            log.info("[GUEST_CHECKOUT] Resynchronized purchase count for TaiKhoan ID {}: {} -> {}", tk.getId(), recordedCount, effectiveCount);
+        }
+
+        if (effectiveCount < 3) {
             return "GUEST_VALID";
         } else {
             return "GUEST_EXPIRED";
@@ -218,9 +229,11 @@ public class GuestCheckoutService {
 
     @Transactional
     public void incrementPurchaseCount(Integer idTaiKhoan) {
-        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan)
-                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
-        tk.setSoLanMuaThanhCong(tk.getSoLanMuaThanhCong() + 1);
+        if (idTaiKhoan == null) return;
+        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan).orElse(null);
+        if (tk == null) return;
+        int current = (tk.getSoLanMuaThanhCong() != null) ? tk.getSoLanMuaThanhCong() : 0;
+        tk.setSoLanMuaThanhCong(current + 1);
         taiKhoanRepository.save(tk);
         log.info("[GUEST_CHECKOUT] Incremented successful purchase count for TaiKhoan ID {} to {}.", idTaiKhoan, tk.getSoLanMuaThanhCong());
     }

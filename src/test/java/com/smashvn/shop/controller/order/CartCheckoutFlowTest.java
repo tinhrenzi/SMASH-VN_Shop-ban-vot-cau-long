@@ -334,17 +334,13 @@ public class CartCheckoutFlowTest {
                 .param("checkoutToken", token)
                 .session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.redirectUrl").value("/checkout?token=" + token))
+                .andExpect(jsonPath("$.success").value(false))
                 .andReturn();
 
         com.smashvn.shop.entity.TaiKhoan updated = taiKhoanRepository.findById(guestTk.getId()).orElse(null);
         assertNotNull(updated);
-        assertEquals(com.smashvn.shop.entity.AccountStatus.ACTIVE, updated.getTrangThaiTaiKhoan());
-
-        jakarta.servlet.http.HttpSession newSession = mvcResult.getRequest().getSession();
-        CheckoutContext activeCtx = checkoutContextService.getContext(newSession, token);
-        assertNotNull(activeCtx);
-        assertEquals(updated.getId(), activeCtx.getCustomerId());
+        assertEquals(com.smashvn.shop.entity.AccountStatus.GUEST, updated.getTrangThaiTaiKhoan());
+        assertNull(updated.getMatKhau());
 
     }
 

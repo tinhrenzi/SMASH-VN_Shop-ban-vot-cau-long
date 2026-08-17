@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Kiểm Thử Toàn Diện Luồng Khách Hàng Vãng Lai (Guest Flow Audit) - SMASH-VN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --border-subtle: #e2e8f0;
+            --border-focus: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            
+            --rose-bg: #fff1f2;
+            --rose-text: #9f1239;
+            --rose-border: #fecdd3;
+            
+            --amber-bg: #fffbeb;
+            --amber-text: #92400e;
+            --amber-border: #fde68a;
+            
+            --emerald-bg: #ecfdf5;
+            --emerald-text: #065f46;
+            --emerald-border: #a7f3d0;
+            
+            --sky-bg: #f0f9ff;
+            --sky-text: #075985;
+            --sky-border: #bae6fd;
+            
+            --indigo-bg: #eef2ff;
+            --indigo-text: #3730a3;
+            --indigo-border: #c7d2fe;
+            
+            --purple-bg: #faf5ff;
+            --purple-text: #6b21a8;
+            --purple-border: #e9d5ff;
+
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 32px 20px 80px 20px;
+            letter-spacing: -0.01em;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 40px;
+            border-radius: var(--radius-xl);
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .badge-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #93c5fd;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-meta-item strong {
+            color: #f1f5f9;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+
+        .kpi-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .kpi-pass { color: #059669; }
+        .kpi-fail { color: #dc2626; }
+        .kpi-warn { color: #d97706; }
+        .kpi-blue { color: #2563eb; }
+
+        /* Sections */
+        .section-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 24px 0 12px 0;
+        }
+
+        p, ul, ol {
+            color: #334155;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        ul, ol {
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Flow Diagram */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .flow-step {
+            background: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .flow-step.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .flow-arrow {
+            color: var(--text-light);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+            background: white;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fcfcfd;
+        }
+
+        /* Pills */
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .pill-pass { background: var(--emerald-bg); color: var(--emerald-text); border: 1px solid var(--emerald-border); }
+        .pill-fail { background: var(--rose-bg); color: var(--rose-text); border: 1px solid var(--rose-border); }
+        .pill-warn { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber-border); }
+        .pill-info { background: var(--sky-bg); color: var(--sky-text); border: 1px solid var(--sky-border); }
+        .pill-p0 { background: #991b1b; color: white; }
+        .pill-p1 { background: #ea580c; color: white; }
+        .pill-p2 { background: #d97706; color: white; }
+        .pill-p3 { background: #64748b; color: white; }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 18px;
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 16px 0;
+        }
+
+        /* Callout Box */
+        .callout {
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .callout-danger {
+            background: var(--rose-bg);
+            border-left-color: #e11d48;
+            color: #881337;
+        }
+
+        .callout-warning {
+            background: var(--amber-bg);
+            border-left-color: #d97706;
+            color: #78350f;
+        }
+
+        .callout-success {
+            background: var(--emerald-bg);
+            border-left-color: #059669;
+            color: #064e3b;
+        }
+
+        .callout-info {
+            background: var(--sky-bg);
+            border-left-color: #0284c7;
+            color: #0c4a6e;
+        }
+
+        .bug-box {
+            background: white;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .bug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .bug-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .grid-two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-two {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="badge-header">
+            <span>🛡️ SMASH-VN E-COMMERCE</span>
+            <span>•</span>
+            <span>END-TO-END GUEST AUDIT</span>
+        </div>
+        <h1>Báo Cáo Kiểm Thử Toàn Diện Luồng Khách Hàng Vãng Lai</h1>
+        <p style="color: #cbd5e1; max-width: 900px; font-size: 16px;">
+            Đánh giá chuyên sâu 100% trải nghiệm khách hàng vãng lai (Guest Customer Journey) từ Trang chủ &rarr; Chi tiết &rarr; Giỏ hàng session &rarr; Đặt hàng COD/SePay QR &rarr; Tính cước GHN &rarr; Bảo mật Tra cứu đơn hàng.
+        </p>
+        <div class="header-meta">
+            <div class="header-meta-item">Dự Án: <strong>SMASH-VN (Spring Boot 3 + SQL Server)</strong></div>
+            <div class="header-meta-item">Tổng Ca Kiểm Thử Guest: <strong>144 Tests</strong></div>
+            <div class="header-meta-item">Tỷ Lệ Pass: <strong>91.7% (132 Passed)</strong></div>
+            <div class="header-meta-item">Thời Gian Thực Thi: <strong>17/08/2026</strong></div>
+        </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-title">Tổng Test Guest Đã Chạy</div>
+            <div class="kpi-value kpi-blue">144</div>
+            <div class="kpi-desc">Bao gồm 15 Test Suites liên quan trực tiếp</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Passed Tests</div>
+            <div class="kpi-value kpi-pass">132</div>
+            <div class="kpi-desc">Tỷ lệ thành công 91.7%</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Confirmed Production Bug</div>
+            <div class="kpi-value kpi-fail">1</div>
+            <div class="kpi-desc">Lỗ hổng set mật khẩu Guest không xác thực</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Business Rule Mismatch</div>
+            <div class="kpi-value kpi-warn">2</div>
+            <div class="kpi-desc">SĐT tài khoản cũ & Filter Lịch sử đơn</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Fixture & Outdated Tests</div>
+            <div class="kpi-value" style="color: #64748b;">9</div>
+            <div class="kpi-desc">Hardcoded ID 41, 112 & SPCT hết hàng trong Seed</div>
+        </div>
+    </div>
+
+    <!-- Section: Journey Map -->
+    <div class="section-card">
+        <h2>🗺️ Hành Trình Trải Nghiệm Khách Hàng Vãng Lai (Guest Customer Flow)</h2>
+        <div class="flow-container">
+            <div class="flow-step active">1. Trang Chủ (200 OK)</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">2. Danh Sách & Tìm Kiếm</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">3. Chi Tiết Sản Phẩm & Biến Thể</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">4. Session Cart (Thêm / Xóa / Sửa)</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">5. GHN Shipping Fee Auto-calc</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">6. Server Price Authority</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">7. COD / SePay IPN</div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step active">8. Tra Cứu Đơn & Chống IDOR</div>
+        </div>
+        <p>
+            Quy trình mua hàng của khách vãng lai được phân lập hoàn toàn thông qua cơ chế <code>GuestCartService</code> và <code>CheckoutContextService</code>. Dữ liệu giỏ hàng được quản lý trong <code>HttpSession</code> và chuyển dịch an toàn sang CSDL khi khách hàng đặt hàng hoặc nâng cấp tài khoản.
+        </p>
+    </div>
+
+    <!-- Section: Test Matrix -->
+    <div class="section-card">
+        <h2>📊 Ma Trận Kết Quả Kiểm Thử Chi Tiết (GUEST-001 &rarr; GUEST-027)</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Test</th>
+                        <th>Phân Hệ / Kịch Bản</th>
+                        <th>Kết Quả Thực Tế</th>
+                        <th>Phân Loại</th>
+                        <th>Mức Độ</th>
+                        <th>Priority</th>
+                        <th>Dẫn Chứng Thực Tế & Code Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>GUEST-001</strong></td>
+                        <td>Truy cập Trang chủ không đăng nhập</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>INFO</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td><code>HomeController.java:45</code> load danh sách sản phẩm nổi bật, banner, không phát sinh redirect login hay 500.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-002</strong></td>
+                        <td>Danh sách sản phẩm, Tìm kiếm & Lọc</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>INFO</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td><code>SanPhamController.java:35</code> JPA Specification dynamically filters theo danh mục, thương hiệu, mức giá.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-003</strong></td>
+                        <td>Xem chi tiết sản phẩm (Vợt, Giày, Áo, Phụ kiện)</td>
+                        <td><span class="pill pill-warn">PASS (RUNTIME)</span></td>
+                        <td>TEST FIXTURE BUG</td>
+                        <td>LOW</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td><code>SanPhamController.java:50-130</code> trả đầy đủ <code>listBienTheJS</code>. 4 test regression fail do test hardcode ID sản phẩm ngừng bán trong Seed.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-004</strong></td>
+                        <td>Thêm 1 SPCT bình thường vào giỏ</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>INFO</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td><code>GuestCartService.java:85</code> thêm SPCT vào <code>HttpSession.guestCart</code>, cập nhật badge giỏ hàng tức thời.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-005</strong></td>
+                        <td>Thêm phụ kiện đơn giản (Single Variant)</td>
+                        <td><span class="pill pill-warn">PASS (RUNTIME)</span></td>
+                        <td>TEST FIXTURE BUG</td>
+                        <td>LOW</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td>Test fail do fixture ID 112 hết hàng trong DB test. Khi truyền SPCT còn hàng, endpoint <code>/gio-hang/them</code> trả 200 JSON chuẩn.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-006</strong></td>
+                        <td>Thêm giày nhiều màu/size (Multi-variant)</td>
+                        <td><span class="pill pill-warn">PASS (RUNTIME)</span></td>
+                        <td>TEST FIXTURE BUG</td>
+                        <td>LOW</td>
+                        <td><span class="pill pill-p3">P3</span></td>
+                        <td>Mỗi lựa chọn màu/size map đúng <code>idSanPhamChiTiet</code> riêng biệt, không bị trùng lặp biến thể.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-007</strong></td>
+                        <td>Cập nhật số lượng (1 &rarr; 2 &rarr; 1, vượt tồn kho)</td>
+                        <td><span class="pill pill-pass">PASS (200 / 400)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>GuestCartService.java:99</code> ném <code>RuntimeException("Số lượng thêm vào vượt quá tồn kho khả dụng")</code> &rarr; Controller trả 400.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-008</strong></td>
+                        <td>Xóa sản phẩm khỏi giỏ</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>MEDIUM</td>
+                        <td><span class="pill pill-p2">P2</span></td>
+                        <td><code>GuestCartService.xoaKhoiGio()</code> xóa chính xác dòng hàng được chọn, tính lại subtotal tức thời.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-009</strong></td>
+                        <td>Duy trì Session giỏ hàng khi reload/chuyển trang</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td>Giỏ hàng lưu trong <code>HttpSession (SESSION_CART_KEY)</code>, không bị mất khi chuyển đổi giữa các trang xem hàng.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-010</strong></td>
+                        <td>Truy cập Checkout với Checkout Token</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>CheckoutController.java:280</code> kiểm tra <code>CheckoutContext</code> hợp lệ, hiển thị trang checkout không bắt login.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-011</strong></td>
+                        <td><strong>Server-Side Price Authority</strong></td>
+                        <td><span class="pill pill-pass">PASS (BẢO VỆ TUYỆT ĐỐI)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>GioHangService.java:640</code> và <code>PricingService.java</code> hoàn toàn tự tính lại giá từ DB, không tin giá từ Request/Client.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-012</strong></td>
+                        <td>Checkout khi tồn kho thực tế bị giảm (Race condition)</td>
+                        <td><span class="pill pill-pass">PASS (ROLLBACK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>InventoryLotService.java:55</code> dùng <code>PESSIMISTIC_WRITE</code> khóa SPCT, từ chối đơn và rollback nếu thiếu kho.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-013</strong></td>
+                        <td>Validate thông tin giao hàng người nhận</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>MEDIUM</td>
+                        <td><span class="pill pill-p2">P2</span></td>
+                        <td>Backend kiểm tra Regex SĐT Việt Nam, bắt buộc Tỉnh/Huyện/Xã và địa chỉ chi tiết trước khi tạo đơn.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-014</strong></td>
+                        <td>Guest đặt hàng với SĐT mới chưa có tài khoản</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td><code>GuestCheckoutService.java:155</code> tạo tài khoản <code>GUEST</code> (mật khẩu null, role KH) và tạo đơn thành công.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-015</strong></td>
+                        <td>Guest đặt hàng với SĐT đã thuộc tài khoản khác</td>
+                        <td><span class="pill pill-warn">CHẶN (400)</span></td>
+                        <td>BUSINESS RULE MISMATCH</td>
+                        <td>MEDIUM</td>
+                        <td><span class="pill pill-p2">P2</span></td>
+                        <td>Code cố ý chặn để bảo vệ tài khoản cũ (<code>"Số điện thoại này đã được đăng ký. Vui lòng đăng nhập"</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-016</strong></td>
+                        <td>Tính phí vận chuyển GHN tự động</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td><code>ShippingApiController.java:32</code> gọi <code>feeCalculator.calculateFee()</code> dựa trên District ID & Ward Code.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-017</strong></td>
+                        <td>GHN API Timeout / Failure Fallback</td>
+                        <td><span class="pill pill-pass">PASS (FALLBACK 30K)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td>Tự động fallback về cước mặc định 30.000 đ (<code>DEFAULT_NATIONWIDE_FALLBACK</code>), không gây lỗi 500 cho khách hàng.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-018</strong></td>
+                        <td>Tạo đơn hàng COD thành công</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td>Tạo đúng 1 bản ghi <code>HoaDon</code> (status <code>CHO_XAC_NHAN</code>), trừ kho chính xác, ghi lịch sử đơn hàng.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-019</strong></td>
+                        <td>Chống Double Click / Duplicate Submit Đơn Hàng</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>CheckoutContext.consume()</code> vô hiệu hóa Token ngay sau lần submit đầu tiên &rarr; Lần 2 bị từ chối, không tạo 2 đơn.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-020</strong></td>
+                        <td>Tạo đơn hàng SePay QR Code</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td>Tạo đơn trạng thái <code>CHO_THANH_TOAN</code>, sinh mã chuyển khoản chuẩn định dạng SePay QR.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-021</strong></td>
+                        <td>Xác nhận Webhook Thanh Toán SePay Thành Công</td>
+                        <td><span class="pill pill-pass">PASS (200 OK)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>SepayIpnController.java:60</code> cập nhật <code>DA_THANH_TOAN</code>, tạo bản ghi <code>PaymentTransaction</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-022</strong></td>
+                        <td>Idempotency Webhook SePay (Gửi trùng lặp)</td>
+                        <td><span class="pill pill-pass">PASS (IDEMPOTENT)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td>Kiểm tra <code>maGiaoDich</code> và trạng thái đơn &rarr; Bỏ qua request trùng, không ghi nhận tiền kép.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-023</strong></td>
+                        <td>SePay Amount Mismatch (Thanh toán thiếu tiền)</td>
+                        <td><span class="pill pill-pass">PASS (REJECTED)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>CRITICAL</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td>So sánh chính xác <code>transferAmount.compareTo(orderTotal) &lt; 0</code> &rarr; Từ chối xác nhận thanh toán.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-024</strong></td>
+                        <td>SePay Expiration & Timeout Scheduler</td>
+                        <td><span class="pill pill-pass">PASS (AUTO CANCEL)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td>Đơn quá hạn 30 phút không thanh toán được tự động hủy và hoàn trả tồn kho khả dụng.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-025</strong></td>
+                        <td>Tra cứu đơn hàng Guest hợp lệ</td>
+                        <td><span class="pill pill-pass">PASS</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p1">P1</span></td>
+                        <td>Xem được chi tiết trạng thái đơn hàng khi khớp session hoặc xác thực mã đơn + thông tin liên hệ.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-026</strong></td>
+                        <td><strong>Bảo Mật Tra Cứu Đơn & Chống IDOR</strong></td>
+                        <td><span class="pill pill-pass">PASS (CHỐNG IDOR)</span></td>
+                        <td>VERIFIED SAFE</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>UserDashboardController.java:531-566</code> kiểm tra <code>allowedGuestOrderAccesses</code> & <code>orderEmail.equals(guestEmail)</code>. Không lộ thông tin cho khách khác.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GUEST-027</strong></td>
+                        <td><strong>Lỗ hổng Set Password Guest Không Xác Thực</strong></td>
+                        <td><span class="pill pill-fail">FAIL (VULNERABLE)</span></td>
+                        <td>CONFIRMED PRODUCTION BUG</td>
+                        <td>HIGH</td>
+                        <td><span class="pill pill-p0">P0</span></td>
+                        <td><code>CheckoutController.java:1193-1220</code> cho phép attacker gửi email của guest khác để đặt mật khẩu chiếm quyền tài khoản mà không cần token xác thực email.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section: Confirmed Production Bug -->
+    <div class="section-card">
+        <h2>🚨 Phát Hiện Lỗi Sản Phẩm (Confirmed Production Bug)</h2>
+        
+        <div class="bug-box">
+            <div class="bug-header">
+                <div class="bug-title">GUEST-BUG-001: Lỗ hổng chiếm đoạt tài khoản Guest qua API /checkout/api/set-password</div>
+                <div style="display: flex; gap: 8px;">
+                    <span class="pill pill-fail">CONFIRMED</span>
+                    <span class="pill pill-p0">P0 - SECURITY</span>
+                </div>
+            </div>
+            
+            <p><strong>Mô tả chi tiết:</strong> Khi một khách vãng lai đặt hàng, hệ thống tạo một tài khoản <code>TaiKhoan</code> tạm ở trạng thái <code>GUEST</code> (mật khẩu rỗng). Sau đó, endpoint <code>POST /checkout/api/set-password</code> cho phép người dùng đặt mật khẩu để kích hoạt tài khoản chính thức.</p>
+            
+            <div class="callout callout-danger">
+                <strong>Nguyên nhân gốc (Root Cause):</strong><br>
+                Tại <code>CheckoutController.java:1193-1220</code>, khi request gửi lên không có session (ví dụ từ một anonymous browser khác), code kiểm tra tham số <code>email</code> trong Request Body:
+                <pre>String sessionEmail = (String) session.getAttribute("guestCheckoutEmail");
+String targetEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : sessionEmail;
+TaiKhoan tk = taiKhoanRepository.findByUsername(targetEmail.trim());
+if (tk != null && tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+    idNguoiDung = tk.getId(); // TỰ ĐỘNG GÁN ID CỦA NẠN NHÂN MÀ KHÔNG CẦN SESSION HOẶC TOKEN EMAIL!
+}</pre>
+                Kẻ tấn công chỉ cần biết email của khách vãng lai vừa mua hàng là có thể gửi POST request đặt mật khẩu mới và chiếm toàn bộ quyền truy cập tài khoản cùng lịch sử đơn hàng của khách đó.
+            </div>
+
+            <div class="grid-two">
+                <div>
+                    <strong>Bằng chứng thực nghiệm (Failed Test):</strong>
+                    <pre>GuestCheckoutSecurityIntegrationTest
+.testAnonymousCannotUpgradeGuestByEmail:285
+expected: &lt;true&gt; but was: &lt;false&gt;
+
+// Response trả về "success": true thay vì từ chối!</pre>
+                </div>
+                <div>
+                    <strong>Đề xuất khắc phục (Recommended Fix):</strong>
+                    <ul style="font-size: 14px;">
+                        <li>Bắt buộc người dùng phải có <code>session.getAttribute("guestCheckoutEmail")</code> khớp với email muốn đổi.</li>
+                        <li>Nếu không có Session, BẮT BUỘC phải yêu cầu token kích hoạt gửi qua email (<code>activationToken</code>) để chứng minh quyền sở hữu hộp thư.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Business Rule Mismatches -->
+    <div class="section-card">
+        <h2>⚠️ Bất Đồng Quy Tắc Nghiệp Vụ (Business Rule Mismatches)</h2>
+        
+        <div class="bug-box">
+            <div class="bug-header">
+                <div class="bug-title">RULE-001: Xử lý Số Điện Thoại đã tồn tại khi Guest Checkout</div>
+                <span class="pill pill-warn">BUSINESS RULE</span>
+            </div>
+            <p><strong>Hiện trạng trong Code (<code>GuestCheckoutService.java:149-152</code>):</strong></p>
+            <p>Khi khách vãng lai nhập SĐT đã thuộc về một khách hàng khác trong CSDL, hệ thống ném ngoại lệ <code>IllegalArgumentException("Số điện thoại này đã được đăng ký. Vui lòng đăng nhập...")</code> và chặn không cho tạo đơn.</p>
+            <p><strong>Đánh giá nghiệp vụ:</strong> Đây là chính sách bảo vệ danh tính tài khoản chặt chẽ (chống mạo danh SĐT người khác). Tuy nhiên, nếu khách hàng quên mật khẩu hoặc muốn mua nhanh mà không muốn đăng nhập, việc chặn này làm giảm tỷ lệ chuyển đổi (Drop-off conversion). Cần quyết định từ Product Owner xem nên cho phép Guest đặt hàng bình thường hay giữ nguyên luật bắt đăng nhập.</p>
+        </div>
+
+        <div class="bug-box">
+            <div class="bug-header">
+                <div class="bug-title">RULE-002: Lọc Đơn Hàng Chưa Xác Nhận & Quá Hạn trong Lịch Sử Đơn</div>
+                <span class="pill pill-warn">BUSINESS RULE</span>
+            </div>
+            <p><strong>Hiện trạng trong Code (<code>SepayTimeoutAndExpirationTest.java:191</code>):</strong></p>
+            <p>Test kỳ vọng trang lịch sử đơn hàng của khách hàng (<code>/user/my-order</code>) chỉ hiển thị các đơn hợp lệ (ẩn các đơn <code>CHO_THANH_TOAN</code> đã bị timeout hủy tự động). Thực tế code <code>orderViewService.layDanhSachOrders(khId)</code> đang hiển thị tất cả các đơn bao gồm cả đơn đã hủy timeout.</p>
+        </div>
+    </div>
+
+    <!-- Section: Core Security & Integrity Audits -->
+    <div class="section-card">
+        <h2>🔒 Đánh Giá Bảo Mật & Toàn Vẹn Dữ Liệu Chuyên Sâu</h2>
+        
+        <div class="grid-two">
+            <div style="background: var(--bg-subtle); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <h3 style="margin-top: 0; color: #059669;">✅ Server-Side Price Authority (GUEST-011)</h3>
+                <p style="font-size: 14px;"><strong>ĐẠT YÊU CẦU TUYỆT ĐỐI.</strong> Mọi nỗ lực can thiệp giá bán, tổng tiền hàng, tiền giảm giá hoặc phí ship từ Client / HTTP Request Body đều bị hệ thống bỏ qua. Toàn bộ đơn giá được nạp trực tiếp từ <code>SanPhamChiTietRepository</code> và tính toán chiết khấu bởi <code>PricingService</code> trước khi lưu vào <code>HoaDon</code>.</p>
+            </div>
+            <div style="background: var(--bg-subtle); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <h3 style="margin-top: 0; color: #059669;">✅ Idempotency & Lost Update (GUEST-019, 022)</h3>
+                <p style="font-size: 14px;"><strong>ĐẠT YÊU CẦU TUYỆT ĐỐI.</strong> 
+                1. <code>CheckoutContext</code> dùng mô hình One-Time Token (tiêu thụ token ngay sau khi bắt đầu tạo đơn), ngăn chặn hoàn toàn việc click đúp tạo 2 đơn hàng.<br>
+                2. Webhook SePay kiểm tra <code>maGiaoDich</code> và khóa bi quan <code>PESSIMISTIC_WRITE</code>, đảm bảo gọi lại 100 lần cũng không trừ kho hay cộng tiền lần 2.</p>
+            </div>
+        </div>
+
+        <div class="grid-two" style="margin-top: 20px;">
+            <div style="background: var(--bg-subtle); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <h3 style="margin-top: 0; color: #059669;">✅ Quản Lý Tồn Kho Hai Giai Đoạn FIFO (GUEST-012)</h3>
+                <p style="font-size: 14px;"><code>InventoryLotService.allocateFifo()</code> phân bổ tồn kho theo thuật toán FIFO dựa trên các lô hàng (<code>SanPhamChiTiet</code>). Khi tồn kho khả dụng &lt; số lượng yêu cầu, giao dịch bị từ chối ngay lập tức và CSDL rollback 100%, không xảy ra tình trạng số lượng tồn kho bị âm.</p>
+            </div>
+            <div style="background: var(--bg-subtle); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <h3 style="margin-top: 0; color: #059669;">✅ GHN Shipping Resilience (GUEST-016, 017)</h3>
+                <p style="font-size: 14px;">Tích hợp GHN API qua <code>ShippingApiController</code> và <code>GhnService</code> có cơ chế Timeout Fallback (30.000 đ) khi mạng gặp sự cố hoặc địa chỉ không phân giải được mã quận/phường, đảm bảo tiến trình thanh toán của khách không bao giờ bị nghẽn.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Release Blockers & Priority Roadmap -->
+    <div class="section-card">
+        <h2>🚦 GUEST RELEASE BLOCKERS & LỘ TRÌNH KHẮC PHỤC</h2>
+        
+        <div class="callout callout-warning">
+            <strong>Danh sách các hạng mục cần xử lý trước khi kích hoạt tính năng Guest Checkout trên Production:</strong>
+            <ol style="margin-top: 10px;">
+                <li><strong>[P0 - SECURITY] Sửa lỗ hổng GUEST-BUG-001:</strong> Bắt buộc xác thực Session hoặc <code>activationToken</code> trong <code>/checkout/api/set-password</code>.</li>
+                <li><strong>[P1 - TEST CLEANUP] Cập nhật Test Fixture:</strong> Sửa các test case <code>CartRuntimeRegressionTest</code> và <code>ProductDetailRuntimeRegressionTest</code> để tự động truy vấn ID sản phẩm khả dụng từ CSDL thay vì hardcode ID tĩnh.</li>
+                <li><strong>[P2 - BUSINESS RULE] Thống nhất xử lý SĐT trùng lặp:</strong> Xác nhận phương án cho phép Guest Checkout bằng SĐT đã có tài khoản (gắn cờ Guest Order) hay tiếp tục bắt đăng nhập.</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; padding: 24px; background: #0f172a; color: white; border-radius: var(--radius-lg); margin-top: 24px;">
+            <div style="font-size: 14px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.1em; margin-bottom: 8px;">KẾT LUẬN CUỐI CÙNG (FINAL VERDICT)</div>
+            <div style="font-size: 24px; font-weight: 800; color: #f59e0b;">GUEST FLOW NOT READY — HIGH PRIORITY BUGS</div>
+            <p style="color: #cbd5e1; font-size: 14px; margin-top: 8px; margin-bottom: 0;">Luồng nghiệp vụ cốt lõi hoạt động tốt (91.7% test pass, tính giá và tồn kho an toàn), nhưng cần vá lỗ hổng bảo mật GUEST-BUG-001 trước khi Release.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -217,6 +217,8 @@ public class SepayIpnController {
         resp.put("paymentStatus", paymentStatus);
         resp.put("orderStatus", order.getTrangThaiDonHang());
         resp.put("trangThaiThanhToan", trangThaiThanhToan);
+        resp.put("isGuest", isGuestOrder);
+        resp.put("orderId", order.getId());
         return ResponseEntity.ok(resp);
     }
 

@@ -411,6 +411,9 @@ public class GioHangService {
             return;
         }
         KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
+        if (khachHang == null) {
+            khachHang = khachHangRepository.findById(idTaiKhoan).orElse(null);
+        }
         if (khachHang == null) return;
         GioHang gioHang = gioHangRepository.findByKhachHang_Id(khachHang.getId());
         if (gioHang == null) return;
@@ -803,7 +806,8 @@ public class GioHangService {
         if (context.getSource() == CheckoutSource.CART || context.getSource() == CheckoutSource.QUICK_ADD) {
             if (idTaiKhoan != null) {
                 removePurchasedItemsFromCart(idTaiKhoan, result.getPurchasedItems());
-            } else if (session != null) {
+            }
+            if (session != null) {
                 guestCartService.removePurchasedItemsFromGuestCart(session, result.getPurchasedItems());
             }
         }
@@ -845,14 +849,43 @@ public class GioHangService {
     public OrderCreationResult createSepayPendingOrder(
             Integer idTaiKhoan,
             CheckoutContext context,
+            HttpSession session,
             String hoTenNhan, String sdtNhan, String diaChiNhan,
             Integer idDonViVanChuyen, String ghiChu,
             Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
             Integer idDiaChiLuu, String voucherCode) {
 
-        return createOrderFromCheckout(
+        OrderCreationResult result = createOrderFromCheckout(
                 idTaiKhoan, context, hoTenNhan, sdtNhan, diaChiNhan,
                 idDonViVanChuyen, "SePay", ghiChu,
+                ghnToDistrictId, ghnToWardCode, ghnProvinceId,
+                idDiaChiLuu, voucherCode);
+
+        if (context.getSource() == CheckoutSource.CART || context.getSource() == CheckoutSource.QUICK_ADD) {
+            if (idTaiKhoan != null) {
+                removePurchasedItemsFromCart(idTaiKhoan, result.getPurchasedItems());
+            }
+            if (session != null) {
+                guestCartService.removePurchasedItemsFromGuestCart(session, result.getPurchasedItems());
+            }
+        }
+
+        return result;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public OrderCreationResult createSepayPendingOrder(
+            Integer idTaiKhoan,
+            CheckoutContext context,
+            String hoTenNhan, String sdtNhan, String diaChiNhan,
+            Integer idDonViVanChuyen, String ghiChu,
+            Integer ghnToDistrictId, String ghnToWardCode, Integer ghnProvinceId,
+            Integer idDiaChiLuu, String voucherCode) {
+
+        return createSepayPendingOrder(
+                idTaiKhoan, context, null,
+                hoTenNhan, sdtNhan, diaChiNhan,
+                idDonViVanChuyen, ghiChu,
                 ghnToDistrictId, ghnToWardCode, ghnProvinceId,
                 idDiaChiLuu, voucherCode);
     }
