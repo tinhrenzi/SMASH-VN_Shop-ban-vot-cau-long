@@ -598,8 +598,12 @@ public class AdminController {
             String tenPhuongThuc = "N/A";
             if (hd.getPhuongThucThanhToan() != null && hd.getPhuongThucThanhToan().getTenPhuongThuc() != null) {
                 tenPhuongThuc = hd.getPhuongThucThanhToan().getTenPhuongThuc();
+            } else if (hd.getPaymentMethod() != null) {
+                tenPhuongThuc = hd.getPaymentMethod().toUpperCase();
             }
             map.put("paymentMethod", tenPhuongThuc);
+            map.put("isCod", hd.isCod());
+            map.put("isPrepaid", hd.isPrepaid());
 
             var paymentInfo = orderViewService.getPaymentStatusInfo(hd.getTrangThaiThanhToan());
             map.put("paymentStatus", hd.getTrangThaiThanhToan() != null ? hd.getTrangThaiThanhToan() : "N/A");
@@ -868,15 +872,18 @@ public class AdminController {
             return "redirect:/admin/dang-nhap";
         }
 
+        if (fileChungTu == null || fileChungTu.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.");
+            return "redirect:/admin/don-hang";
+        }
+
         java.util.List<String> savedNames = null;
         try {
-            String anhChungTuUrl = null;
-            if (fileChungTu != null && !fileChungTu.isEmpty()) {
-                savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
-                if (savedNames != null && !savedNames.isEmpty()) {
-                    anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
-                }
+            savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
+            if (savedNames == null || savedNames.isEmpty()) {
+                throw new IllegalArgumentException("Không thể lưu ảnh chứng từ hoàn tiền.");
             }
+            String anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
 
             orderViewService.xacNhanHoanTienChoKhach(
                 idHoaDon,

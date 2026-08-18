@@ -349,4 +349,78 @@ public class AdminControllerRenderTest {
                 .andExpect(jsonPath("$.bangChungHoanTra").value(""))
                 .andExpect(jsonPath("$.trangThaiHoanHang").value(org.hamcrest.Matchers.nullValue()));
     }
+
+    @Test
+    public void testConfirmRefund_WithoutImage_Fails() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
+
+        TaiKhoan manager = new TaiKhoan();
+        manager.setUsername("mgr_refund_noimg@smashvn.com");
+        manager.setMatKhau("pass123");
+        manager.setVaiTro("QL");
+        manager = taiKhoanRepository.save(manager);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/admin/don-hang/confirm-refund")
+                        .requestAttr("_csrf", csrfToken)
+                        .sessionAttr("idNguoiDung", manager.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .param("idHoaDon", "100")
+                        .param("phuongThucHoanTien", "CHUYEN_KHOAN")
+                        .param("soTienHoan", "100000")
+                        .param("maGiaoDichHoanTien", "FT123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attribute("errorMsg", "Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng."));
+    }
+
+    @Test
+    public void testConfirmRefund_WithValidImage_Success() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
+
+        TaiKhoan manager = new TaiKhoan();
+        manager.setUsername("mgr_refund_ok@smashvn.com");
+        manager.setMatKhau("pass123");
+        manager.setVaiTro("QL");
+        manager = taiKhoanRepository.save(manager);
+
+        KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseThrow();
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElseThrow();
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream().findFirst().orElseThrow();
+
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setMaDonHang("HD-REFUND-IMG-001");
+        hd.setNgayTao(LocalDateTime.now());
+        hd.setTongTien(new BigDecimal("500000"));
+        hd.setDiaChiNhan("123 Le Loi, Quan 1, TP HCM");
+        hd.setSdtNhan("0988776655");
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setTrangThaiDonHang("da_giao");
+        hd.setLoaiYeuCauDoiTra("TRA");
+        hd.setLyDoHoanTra("Vợt gãy");
+        hd.setTrangThaiHoanHang(com.smashvn.shop.entity.ReturnStatus.RETURNED);
+        hd.setTrangThaiXuLyHangHoan(com.smashvn.shop.entity.ReturnInventoryStatus.DA_HOAN_KHO);
+        hd = hoaDonRepository.save(hd);
+
+        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(10, 10, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(img, "png", baos);
+        org.springframework.mock.web.MockMultipartFile mockFile = new org.springframework.mock.web.MockMultipartFile(
+                "fileChungTu", "refund_proof.png", "image/png", baos.toByteArray()
+        );
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/admin/don-hang/confirm-refund")
+                        .file(mockFile)
+                        .requestAttr("_csrf", csrfToken)
+                        .sessionAttr("idNguoiDung", manager.getId())
+                        .sessionAttr("vaiTro", "QL")
+                        .param("idHoaDon", String.valueOf(hd.getId()))
+                        .param("phuongThucHoanTien", "CHUYEN_KHOAN")
+                        .param("soTienHoan", "500000")
+                        .param("maGiaoDichHoanTien", "FT_PROOF_" + System.currentTimeMillis()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!"));
+    }
 }

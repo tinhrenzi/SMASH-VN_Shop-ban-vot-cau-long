@@ -2618,16 +2618,17 @@ public class OrderViewService {
             }
         }
 
+        // 9.5 Validate Ảnh / Chứng Từ Hoàn Tiền Bắt Buộc
+        if (anhChungTuHoanTienInput == null || anhChungTuHoanTienInput.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ảnh / chứng từ xác nhận hoàn tiền là bắt buộc.");
+        }
+
         // 10. Tạo chuỗi JSON du_lieu_tho
         Map<String, Object> payloadMap = new java.util.LinkedHashMap<>();
         payloadMap.put("transactionType", "REFUND");
         payloadMap.put("phuongThucHoanTien", phuongThuc);
         payloadMap.put("ghiChu", finalGhiChu);
-        if (anhChungTuHoanTienInput != null && !anhChungTuHoanTienInput.isBlank()) {
-            payloadMap.put("anhChungTu", List.of(anhChungTuHoanTienInput.trim()));
-        } else {
-            payloadMap.put("anhChungTu", List.of());
-        }
+        payloadMap.put("anhChungTu", List.of(anhChungTuHoanTienInput.trim()));
         payloadMap.put("nguoiThucHien", actingUser.getUsername());
         payloadMap.put("thoiGianHoanTien", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 

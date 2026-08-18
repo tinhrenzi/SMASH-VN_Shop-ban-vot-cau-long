@@ -473,7 +473,7 @@ public class Phase6ExchangeIntegrationTest {
         HoaDon hd = createTestOrder("DOI", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, testSpct1, 1);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "FT_FAIL", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "FT_FAIL", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Chỉ yêu cầu TRẢ HÀNG mới có thể thực hiện hoàn tiền"));
     }

@@ -106,7 +106,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
         String maGD = "FT_TEST1_" + System.currentTimeMillis();
 
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD, "Hoàn đủ tiền", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD, "Hoàn đủ tiền", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, reloaded.getTrangThaiHoanHang());
@@ -124,7 +124,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_CHUYEN_KHO_LOI, new BigDecimal("700000"));
         String maGD = "FT_TEST2_" + System.currentTimeMillis();
 
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("700000"), maGD, "Hoàn hàng lỗi", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("700000"), maGD, "Hoàn hàng lỗi", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, reloaded.getTrangThaiHoanHang());
@@ -140,7 +140,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("DOI", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("300000"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("300000"), "FT_DOI", "Ghi chú", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("300000"), "FT_DOI", "Ghi chú", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Chỉ yêu cầu TRẢ HÀNG"));
     }
@@ -151,7 +151,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.DELIVERED_TO_SHOP, ReturnInventoryStatus.CHUA_XU_LY, new BigDecimal("400000"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_CHUA_XU_LY", "Ghi chú", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_CHUA_XU_LY", "Ghi chú", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Chỉ đơn hàng ở trạng thái Đã nhận hàng về shop (RETURNED) mới được phép hoàn tiền"));
     }
@@ -162,7 +162,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.REJECTED, ReturnInventoryStatus.DANG_TRA_LAI_KHACH, new BigDecimal("400000"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_REJECTED", "Ghi chú", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_REJECTED", "Ghi chú", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Chỉ đơn hàng ở trạng thái Đã nhận hàng về shop (RETURNED) mới được phép hoàn tiền"));
     }
@@ -173,11 +173,11 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
         String maGD = "FT_DOUBLE1_" + System.currentTimeMillis();
 
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD, "Hoàn lần 1", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD, "Hoàn lần 1", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
         int countBefore = paymentTransactionRepository.findByOrder_IdAndStatus(hd.getId(), "REFUND_SUCCESS").size();
 
         // Call refund again
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD + "_2", "Hoàn lần 2", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD + "_2", "Hoàn lần 2", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
         int countAfter = paymentTransactionRepository.findByOrder_IdAndStatus(hd.getId(), "REFUND_SUCCESS").size();
 
         assertEquals(1, countBefore);
@@ -201,7 +201,7 @@ public class Phase5RefundIntegrationTest {
         paymentTransactionRepository.saveAndFlush(tx);
 
         // Call confirmRefund on order which is still RETURNED
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("600000"), "FT_NEW_ATTEMPT", "Reconcile test", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("600000"), "FT_NEW_ATTEMPT", "Reconcile test", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, reloaded.getTrangThaiHoanHang());
@@ -218,7 +218,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", BigDecimal.ZERO, "FT_ZERO", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", BigDecimal.ZERO, "FT_ZERO", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Số tiền hoàn phải lớn hơn 0"));
     }
@@ -229,7 +229,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("-100000"), "FT_NEG", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("-100000"), "FT_NEG", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Số tiền hoàn phải lớn hơn 0"));
     }
@@ -240,7 +240,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("600000"), "FT_EXCEED", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("600000"), "FT_EXCEED", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Số tiền hoàn không được lớn hơn tổng số tiền khách thực trả"));
     }
@@ -251,7 +251,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_LESS", "", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("400000"), "FT_LESS", "", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("vui lòng nhập ghi chú lý do hoàn thiếu"));
     }
@@ -262,7 +262,7 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "  ", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "  ", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền"));
     }
@@ -274,10 +274,10 @@ public class Phase5RefundIntegrationTest {
         HoaDon hd2 = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("300000"));
         String sameMaGD = "FT_DUPLICATE_" + System.currentTimeMillis();
 
-        orderViewService.xacNhanHoanTienChoKhach(hd1.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), sameMaGD, "Notes 1", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd1.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), sameMaGD, "Notes 1", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd2.getId(), "CHUYEN_KHOAN", new BigDecimal("300000"), sameMaGD, "Notes 2", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd2.getId(), "CHUYEN_KHOAN", new BigDecimal("300000"), sameMaGD, "Notes 2", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
         assertTrue(ex.getMessage().contains("Mã giao dịch hoàn tiền") && ex.getMessage().contains("đã tồn tại"));
     }
@@ -287,7 +287,7 @@ public class Phase5RefundIntegrationTest {
     void test14_TienMatNoTransactionIdAutoGenerates() {
         HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
 
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "TIEN_MAT", new BigDecimal("500000"), null, "Hoàn tiền mặt", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "TIEN_MAT", new BigDecimal("500000"), null, "Hoàn tiền mặt", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         HoaDon reloaded = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, reloaded.getTrangThaiHoanHang());
@@ -314,7 +314,7 @@ public class Phase5RefundIntegrationTest {
 
         // Attempt refund with duplicate transactionId
         assertThrows(IllegalArgumentException.class, () ->
-                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "FT_FAIL_ROLLBACK", "Notes", null, adminTaiKhoanId, "127.0.0.1")
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), "FT_FAIL_ROLLBACK", "Notes", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1")
         );
 
         // Order MUST stay RETURNED (not REFUNDED)
@@ -329,10 +329,10 @@ public class Phase5RefundIntegrationTest {
         String maGD1 = "FT_CONCUR1_" + System.currentTimeMillis();
         String maGD2 = "FT_CONCUR2_" + System.currentTimeMillis();
 
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD1, "Admin 1", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD1, "Admin 1", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         // Second call should return gracefully due to Layer 1 guard
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD2, "Admin 2", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD2, "Admin 2", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_IdAndStatus(hd.getId(), "REFUND_SUCCESS");
         assertEquals(1, txs.size());
@@ -356,7 +356,7 @@ public class Phase5RefundIntegrationTest {
 
         // Perform refund
         String refundMaGD = "FT_ISOLATION_" + System.currentTimeMillis();
-        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), refundMaGD, "Refund isolation", null, adminTaiKhoanId, "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), refundMaGD, "Refund isolation", "/uploads/refunds/proof.png", adminTaiKhoanId, "127.0.0.1");
 
         // Payment query for SUCCESS should only return payTx
         List<PaymentTransaction> payTxs = paymentTransactionRepository.findByOrder_IdAndStatus(hd.getId(), "SUCCESS");
@@ -402,5 +402,17 @@ public class Phase5RefundIntegrationTest {
         // Verify file was deleted from disk
         java.nio.file.Path targetPath = java.nio.file.Paths.get("uploads/refunds/" + filename);
         assertFalse(java.nio.file.Files.exists(targetPath), "File chứng từ phải được xóa thành công khỏi ổ đĩa khi refund fail");
+    }
+
+    @Test
+    @DisplayName("Test 19: Refund không có ảnh chứng từ bị reject")
+    void test19_RefundWithoutProofImageFails() {
+        HoaDon hd = createTestOrder("TRA", ReturnStatus.RETURNED, ReturnInventoryStatus.DA_HOAN_KHO, new BigDecimal("500000"));
+        String maGD = "FT_NO_IMG_" + System.currentTimeMillis();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                orderViewService.xacNhanHoanTienChoKhach(hd.getId(), "CHUYEN_KHOAN", new BigDecimal("500000"), maGD, "Hoàn đủ tiền", null, adminTaiKhoanId, "127.0.0.1")
+        );
+        assertTrue(ex.getMessage().contains("Ảnh / chứng từ xác nhận hoàn tiền là bắt buộc"));
     }
 }

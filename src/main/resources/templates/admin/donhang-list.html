@@ -303,7 +303,7 @@
                                                         </button>
 
                                                         <button
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED' &amp;&amp; hd.loaiYeuCauDoiTra == 'TRA'}"
+                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED' &amp;&amp; hd.loaiYeuCauDoiTra == 'TRA' &amp;&amp; hd.prepaid}"
                                                             type="button"
                                                             class="admin-btn admin-btn-sm admin-btn-primary"
                                                             th:data-id="${hd.id}"
@@ -690,7 +690,7 @@
                                                             </button>
                                                         </form>
 
-                                                        <button th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
+                                                        <button th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED' and hd.loaiYeuCauDoiTra == 'TRA' and hd.prepaid}"
                                                              type="button" class="admin-btn admin-btn-icon"
                                                              th:data-id="${hd.id}"
                                                              th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
@@ -839,7 +839,7 @@
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
-                <form action="/admin/don-hang/confirm-refund" method="post" enctype="multipart/form-data">
+                <form action="/admin/don-hang/confirm-refund" method="post" enctype="multipart/form-data" onsubmit="return validateRefundForm(this)">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <input type="hidden" name="idHoaDon" id="refundIdHoaDon" />
 
@@ -881,8 +881,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small">Ảnh / Chứng từ hoàn tiền (Tùy chọn):</label>
-                            <input type="file" class="form-control" name="fileChungTu" accept="image/*" />
+                            <label class="form-label fw-bold small">Ảnh / Chứng từ hoàn tiền <span class="text-danger">*</span>:</label>
+                            <input type="file" class="form-control" name="fileChungTu" id="refundFileChungTu" accept="image/jpeg,image/png,image/webp,image/jpg" required onchange="previewRefundProofImage(this)" />
+                            <div id="refundImagePreviewContainer" class="mt-2" style="display: none;">
+                                <div class="d-flex align-items-center justify-content-between p-2 border rounded bg-light">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img id="refundImagePreview" src="" alt="Ảnh chứng từ xem trước" style="max-width: 120px; max-height: 90px; border-radius: 6px; border: 1px solid #ced4da; object-fit: cover;" />
+                                        <span id="refundImageName" class="small text-muted text-truncate" style="max-width: 200px;"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearRefundProofImage()" title="Xóa ảnh"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1951,11 +1960,19 @@
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
-                        actionsRightHtml += `
-                        <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
-                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền
-                        </button>
-                    `;
+                        if (data.isPrepaid && data.loaiYeuCauDoiTra === 'TRA') {
+                            actionsRightHtml += `
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
+                                <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền
+                            </button>
+                            `;
+                        } else if (data.isCod) {
+                            actionsLeftHtml += `
+                            <span class="badge-soft badge-soft-success">
+                                <i class="fas fa-check-double me-1"></i> Đã hoàn tất Trả hàng &amp; Nhập kho (Đơn COD)
+                            </span>
+                            `;
+                        }
                     } else if (data.trangThaiHoanHang === 'REFUNDED') {
                         actionsLeftHtml += `
                         <span class="badge-soft badge-soft-success">
@@ -2336,10 +2353,85 @@
             });
         };
 
+        window.previewRefundProofImage = function (input) {
+            const previewContainer = document.getElementById('refundImagePreviewContainer');
+            const previewImg = document.getElementById('refundImagePreview');
+            const previewName = document.getElementById('refundImageName');
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+                if (!validTypes.includes(file.type.toLowerCase())) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Định dạng không hợp lệ',
+                            text: 'Chỉ chấp nhận file ảnh JPG, JPEG, PNG, WEBP.'
+                        });
+                    } else {
+                        alert('Chỉ chấp nhận file ảnh JPG, JPEG, PNG, WEBP.');
+                    }
+                    input.value = '';
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Dung lượng quá lớn',
+                            text: 'Dung lượng ảnh chứng từ không được vượt quá 5MB.'
+                        });
+                    } else {
+                        alert('Dung lượng ảnh chứng từ không được vượt quá 5MB.');
+                    }
+                    input.value = '';
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    return;
+                }
+                if (previewImg) previewImg.src = URL.createObjectURL(file);
+                if (previewName) previewName.innerText = file.name;
+                if (previewContainer) previewContainer.style.display = 'block';
+            } else {
+                if (previewContainer) previewContainer.style.display = 'none';
+            }
+        };
+
+        window.clearRefundProofImage = function () {
+            const fileInput = document.getElementById('refundFileChungTu');
+            const previewContainer = document.getElementById('refundImagePreviewContainer');
+            const previewImg = document.getElementById('refundImagePreview');
+            const previewName = document.getElementById('refundImageName');
+            if (fileInput) fileInput.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewName) previewName.innerText = '';
+            if (previewContainer) previewContainer.style.display = 'none';
+        };
+
+        window.validateRefundForm = function (form) {
+            const fileInput = document.getElementById('refundFileChungTu');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0 || !fileInput.files[0]) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thiếu ảnh chứng từ',
+                        text: 'Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.'
+                    });
+                } else {
+                    alert('Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.');
+                }
+                return false;
+            }
+            return true;
+        };
+
         window.moModalConfirmRefund = function (idHoaDon, maDonHang, tongTien) {
             document.getElementById('refundIdHoaDon').value = idHoaDon;
             document.getElementById('refundMaDonHang').innerText = maDonHang || ('#' + idHoaDon);
             document.getElementById('refundSoTienHoan').value = tongTien || 0;
+            if (window.clearRefundProofImage) {
+                window.clearRefundProofImage();
+            }
 
             var modalEl = document.getElementById('modalConfirmRefund');
             var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);

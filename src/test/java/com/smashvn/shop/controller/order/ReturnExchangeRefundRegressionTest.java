@@ -465,7 +465,7 @@ public class ReturnExchangeRefundRegressionTest {
 
         // Refund attempt before inspection (state is PENDING_APPROVAL) -> Fails
         assertThrows(IllegalStateException.class, () -> {
-            orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", new BigDecimal("100000"), "TX123", "Ghi chu", null, adminTk.getId(), "127.0.0.1");
+            orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", new BigDecimal("100000"), "TX123", "Ghi chu", "/uploads/refunds/proof.png", adminTk.getId(), "127.0.0.1");
         });
 
         // Set to RETURNED and DA_HOAN_KHO
@@ -474,10 +474,15 @@ public class ReturnExchangeRefundRegressionTest {
         hd.setTrangThaiXuLyHangHoan(ReturnInventoryStatus.DA_HOAN_KHO);
         hoaDonRepository.save(hd);
 
+        // Refund attempt without proof image -> IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hd.getTongTien(), "TX123", "Ghi chu", null, adminTk.getId(), "127.0.0.1");
+        });
+
         // Refund attempt with arbitrary huge amount (> total order amount) -> Exception
         BigDecimal hugeAmount = hd.getTongTien().add(new BigDecimal("999999999"));
         assertThrows(IllegalArgumentException.class, () -> {
-            orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hugeAmount, "TX123", "Ghi chu", null, adminTk.getId(), "127.0.0.1");
+            orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hugeAmount, "TX123", "Ghi chu", "/uploads/refunds/proof.png", adminTk.getId(), "127.0.0.1");
         });
     }
 
@@ -498,7 +503,7 @@ public class ReturnExchangeRefundRegressionTest {
                 .findFirst().orElseThrow();
 
         // Confirm Refund #1
-        orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hd.getTongTien(), "REFUND-TX-001", "Hoan tien thanh cong", null, adminTk.getId(), "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hd.getTongTien(), "REFUND-TX-001", "Hoan tien thanh cong", "/uploads/refunds/proof.png", adminTk.getId(), "127.0.0.1");
 
         HoaDon hdRefunded = hoaDonRepository.findById(orderId).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, hdRefunded.getTrangThaiHoanHang());
@@ -506,7 +511,7 @@ public class ReturnExchangeRefundRegressionTest {
         assertEquals(RefundStatus.COMPLETED, hdRefunded.getRefundStatus());
 
         // Confirm Refund #2 (Replay / Double Refund) -> Protected safely via double refund guard / reconcile
-        orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hd.getTongTien(), "REFUND-TX-001", "Hoan tien duplicate", null, adminTk.getId(), "127.0.0.1");
+        orderViewService.xacNhanHoanTienChoKhach(orderId, "CHUYEN_KHOAN", hd.getTongTien(), "REFUND-TX-001", "Hoan tien duplicate", "/uploads/refunds/proof.png", adminTk.getId(), "127.0.0.1");
 
         HoaDon hdRefundedSecond = hoaDonRepository.findById(orderId).orElseThrow();
         assertEquals(ReturnStatus.REFUNDED, hdRefundedSecond.getTrangThaiHoanHang());

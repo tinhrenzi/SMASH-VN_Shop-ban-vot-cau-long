@@ -250,6 +250,30 @@ public class HoaDon {
         this.trangThaiThanhToan = paymentStatus;
     }
 
+    public boolean isCod() {
+        if (paymentMethod != null && ("cod".equalsIgnoreCase(paymentMethod) || "tien_mat".equalsIgnoreCase(paymentMethod))) {
+            return true;
+        }
+        if (phuongThucThanhToan != null) {
+            String ma = phuongThucThanhToan.getMaPhuongThuc();
+            String ten = phuongThucThanhToan.getTenPhuongThuc();
+            if (ma != null && ("cod".equalsIgnoreCase(ma) || "tien_mat".equalsIgnoreCase(ma))) {
+                return true;
+            }
+            if (ten != null && (ten.toLowerCase().contains("cod") || ten.toLowerCase().contains("nhận hàng") || ten.toLowerCase().contains("tiền mặt"))) {
+                return true;
+            }
+        }
+        if (paymentMethod == null && phuongThucThanhToan == null) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isPrepaid() {
+        return !isCod();
+    }
+
     public LocalDateTime getPaidAt() {
         return ngayThanhToan;
     }
