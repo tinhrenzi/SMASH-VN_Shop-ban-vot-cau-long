@@ -20,7 +20,7 @@ public class PendingCheckoutRegistry {
 
     public void registerSnapshot(CheckoutExecutionSnapshot snapshot) {
         if (snapshot == null || snapshot.getMaDonHang() == null || snapshot.getMaDonHang().isBlank()) {
-            throw new IllegalArgumentException("Snapshot and maDonHang must not be null or empty.");
+            throw new IllegalArgumentException("Thông tin đơn hàng thanh toán chờ xử lý không hợp lệ hoặc mã đơn hàng trống.");
         }
         String key = snapshot.getMaDonHang().trim().toUpperCase();
         if (snapshot.getCreatedAt() == null) {

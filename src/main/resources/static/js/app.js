@@ -1167,10 +1167,8 @@ function checkAndApplyVariant(container) {
           },
           error: function(xhr) {
               submitBtn.prop('disabled', false).html(originalBtnText);
-              var message = "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
-              if (xhr && xhr.responseText) {
-                  message = xhr.responseText;
-              }
+              var rawMsg = (xhr && xhr.responseText) ? xhr.responseText : "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
+              var message = getFriendlyErrorMessage(rawMsg, "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
               showToast(message, "error");
               console.log(xhr);
           }
@@ -1230,7 +1228,7 @@ function checkAndApplyVariant(container) {
                   }
               },
               error: function() {
-                  showToast("Lỗi kết nối máy chủ!", "error");
+                  showToast("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.", "error");
                   btn.css('opacity', '1');
               }
           });
@@ -1284,10 +1282,8 @@ function checkAndApplyVariant(container) {
               }
           },
           error: function(xhr) {
-              var message = "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
-              if (xhr && xhr.responseText) {
-                  message = xhr.responseText;
-              }
+              var rawMsg = (xhr && xhr.responseText) ? xhr.responseText : "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
+              var message = getFriendlyErrorMessage(rawMsg, "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
               showToast(message, "error");
               console.log(xhr);
           }
@@ -2423,6 +2419,37 @@ function recalculateSelectedCartSummary() {
 
 window.recalculateSelectedCartSummary = recalculateSelectedCartSummary;
 
+function getFriendlyErrorMessage(error, defaultMsg) {
+    const fallback = defaultMsg || 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.';
+    if (!error) return fallback;
+    let msg = '';
+    if (typeof error === 'string') {
+        msg = error;
+    } else if (error.responseJSON && (error.responseJSON.message || error.responseJSON.thongBao)) {
+        msg = error.responseJSON.message || error.responseJSON.thongBao;
+    } else if (error.message) {
+        msg = error.message;
+    } else if (error.responseText && typeof error.responseText === 'string' && error.responseText.length < 300) {
+        msg = error.responseText;
+    }
+    if (!msg || typeof msg !== 'string') return fallback;
+
+    const technicalPatterns = [
+        'failed to fetch', 'networkerror', 'load failed', 'internal server error',
+        'maximum upload size exceeded', 'aborterror', 'typeerror: failed to fetch',
+        'unexpected end of json input', 'syntaxerror', 'cannot read properties',
+        'something went wrong', 'unexpected error', 'request failed'
+    ];
+    const lower = msg.toLowerCase();
+    for (let i = 0; i < technicalPatterns.length; i++) {
+        if (lower.includes(technicalPatterns[i])) {
+            return fallback;
+        }
+    }
+    return msg;
+}
+window.getFriendlyErrorMessage = getFriendlyErrorMessage;
+
 function updateQuantityUiImmediately(row, newQuantity) {
     if (!row || !document.body.contains(row)) return;
     const input = row.querySelector('.js-cart-qty-input');
@@ -2507,7 +2534,8 @@ function persistQuantity(row, quantityToSave, state) {
 
                     updateQuantityUiImmediately(row, rollbackQty);
 
-                    const msg = (res && res.message) || 'Không thể cập nhật số lượng.';
+                    const rawMsg = (res && res.message) || 'Không thể cập nhật số lượng.';
+                    const msg = getFriendlyErrorMessage(rawMsg, 'Không thể cập nhật số lượng.');
                     if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Cập nhật thất bại', text: msg });
                     else alert(msg);
                     reject(new Error(msg));
@@ -2525,7 +2553,8 @@ function persistQuantity(row, quantityToSave, state) {
 
                 updateQuantityUiImmediately(row, rollbackQty);
 
-                const msg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Đã xảy ra lỗi khi cập nhật số lượng.';
+                const rawMsg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Đã xảy ra lỗi khi cập nhật số lượng.';
+                const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
                 if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
                 else alert(msg);
                 reject(err);
@@ -2736,14 +2765,17 @@ function initializeCartPage() {
                     if (res && res.trangThai === 'ok' && res.checkoutUrl) {
                         window.location.href = res.checkoutUrl;
                     } else {
-                        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: (res && res.message) || 'Không thể khởi tạo thanh toán.' });
-                        else alert((res && res.message) || 'Không thể khởi tạo thanh toán.');
+                        const rawMsg = (res && res.message) || 'Không thể khởi tạo thanh toán.';
+                        const msg = getFriendlyErrorMessage(rawMsg, 'Không thể khởi tạo thanh toán. Vui lòng thử lại sau.');
+                        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
+                        else alert(msg);
                         checkoutBtn.textContent = originalText;
                         recalculateSelectedCartSummary();
                     }
                 },
                 error: function(err) {
-                    const msg = (err.responseJSON && err.responseJSON.message) || 'Có lỗi xảy ra, vui lòng thử lại.';
+                    const rawMsg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Có lỗi xảy ra, vui lòng thử lại.';
+                    const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
                     if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
                     else alert(msg);
                     checkoutBtn.textContent = originalText;
@@ -2867,13 +2899,15 @@ function executeBulkDelete(selectedIds, selectedRows) {
                     handlePostDeleteSync();
                 }
             } else {
-                const msg = (res && (res.thongBao || res.message)) || 'Không thể xóa các sản phẩm đã chọn.';
+                const rawMsg = (res && (res.thongBao || res.message)) || 'Không thể xóa các sản phẩm đã chọn.';
+                const msg = getFriendlyErrorMessage(rawMsg, 'Không thể xóa các sản phẩm đã chọn.');
                 if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
                 else alert(msg);
             }
         },
         error: function(err) {
-            const msg = (err.responseJSON && (err.responseJSON.thongBao || err.responseJSON.message)) || 'Đã xảy ra lỗi khi xóa sản phẩm.';
+            const rawMsg = (err.responseJSON && (err.responseJSON.thongBao || err.responseJSON.message)) || 'Đã xảy ra lỗi khi xóa sản phẩm.';
+            const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
             if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
             else alert(msg);
         },
@@ -2996,16 +3030,17 @@ async function startAllCartCheckout(button) {
         }
 
         if (!data.checkoutUrl) {
-            throw new Error('Backend không trả về đường dẫn thanh toán.');
+            throw new Error('Hệ thống không trả về đường dẫn thanh toán. Vui lòng thử lại sau.');
         }
 
         window.location.href = data.checkoutUrl;
     } catch (error) {
         console.error("startAllCartCheckout error:", error);
+        const userMsg = getFriendlyErrorMessage(error, 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.');
         if (typeof Swal !== 'undefined') {
-            Swal.fire({ icon: 'error', title: 'Thanh toán thất bại', text: error.message });
+            Swal.fire({ icon: 'error', title: 'Thanh toán thất bại', text: userMsg });
         } else {
-            alert(error.message);
+            alert(userMsg);
         }
     } finally {
         window.__miniCartCheckoutInFlight = false;

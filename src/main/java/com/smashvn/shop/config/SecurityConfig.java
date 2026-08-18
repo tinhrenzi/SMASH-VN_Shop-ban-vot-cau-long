@@ -99,6 +99,7 @@ public class SecurityConfig {
                         } else {
                             log.warn("[SECURITY_EVENT] ACCESS_DENY: IP: {}, URL: {}, UserID: {}", ip, uri, idNguoiDung);
                         }
+                        request.getSession().setAttribute("errorMsg", "Bạn không có quyền truy cập vào chức năng này!");
                         response.sendRedirect(request.getContextPath() + "/admin/don-hang");
                     }
                 })
@@ -106,6 +107,11 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                 .loginPage("/user/dang-nhap") // Trỏ về trang đăng nhập của bạn
                 .defaultSuccessUrl("/user/google-success", true) // Thành công thì gọi về API này
+                .failureHandler((req, resp, exception) -> {
+                    log.warn("[SECURITY_EVENT] GOOGLE_LOGIN_FAILURE: {}", exception.getMessage());
+                    req.getSession().setAttribute("loi", "Đăng nhập bằng tài khoản Google không thành công. Vui lòng thử lại!");
+                    resp.sendRedirect(req.getContextPath() + "/user/dang-nhap");
+                })
                 );
 
         return http.build();

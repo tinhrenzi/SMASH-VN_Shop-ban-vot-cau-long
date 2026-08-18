@@ -229,7 +229,7 @@
                                                          <li th:each="cat, iter : ${globalCategories}" th:classappend="${iter.first} ? 'js-active'">
                                                              <a th:href="@{/shop(categoryId=${cat.id})}">
                                                                  <i th:class="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')} ? 'fa-solid fa-table-tennis-paddle-ball' : (${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')} ? 'fas fa-shoe-prints u-s-m-r-6' : 'fas fa-toolbox u-s-m-r-6')"></i>
-                                                                 <span th:text="${cat.tenDanhMuc}">Category Name</span>
+                                                                 <span th:text="${cat.tenDanhMuc}">Danh mục sản phẩm</span>
                                                              </a>
                                                              <span class="js-menu-toggle" th:classappend="${iter.first} ? ' js-toggle-mark' : ''"></span>
                                                          </li>
@@ -276,7 +276,7 @@
                                                          <div class="col-lg-12 mega-image">
                                                              <div class="mega-banner">
                                                                  <a class="u-d-block" th:href="@{/shop(categoryId=${cat.id})}">
-                                                                     <img class="u-img-fluid u-d-block" th:src="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')} ? @{/images/banners/banner-mega-0.jpg} : (${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')} ? @{/images/banners/banner-mega-1.jpg} : @{/images/banners/banner-mega-2.jpg})" alt="Banner">
+                                                                     <img class="u-img-fluid u-d-block" th:src="${cat.tenDanhMuc.contains('Vợt') || cat.tenDanhMuc.contains('vợt')} ? @{/images/banners/banner-mega-0.jpg} : (${cat.tenDanhMuc.contains('Giày') || cat.tenDanhMuc.contains('giày')} ? @{/images/banners/banner-mega-1.jpg} : @{/images/banners/banner-mega-2.jpg})" alt="Banner danh mục sản phẩm">
                                                                  </a>
                                                              </div>
                                                          </div>

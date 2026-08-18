@@ -263,7 +263,7 @@
             <tbody>
                 <tr th:each="item : ${orderItems}">
                     <td style="text-align: center;">
-                        <img th:src="@{${item.sanPhamChiTiet.hinhAnhUrl}}" alt="product" class="product-img" onerror="this.onerror=null; this.src='/images/placeholder.png';">
+                        <img th:src="@{${item.sanPhamChiTiet.hinhAnhUrl}}" alt="Hình ảnh sản phẩm" class="product-img" onerror="this.onerror=null; this.src='/images/placeholder.png';">
                     </td>
                     <td>
                         <strong th:text="${item.tenSanPhamSnapshot}">Tên sản phẩm</strong><br>

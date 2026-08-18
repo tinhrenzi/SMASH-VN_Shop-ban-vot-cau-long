@@ -978,6 +978,25 @@
         }
 
         $(document).ready(function() {
+            // Helper sanitize user-facing messages
+            function getSafeCheckoutMessage(msg, fallback) {
+                if (!msg || typeof msg !== 'string') return fallback;
+                const lower = msg.toLowerCase();
+                const technicalPatterns = [
+                    'failed to fetch', 'networkerror', 'load failed', 'internal server error',
+                    'nullpointerexception', 'sql', 'hibernate', 'constraintviolation',
+                    'unexpected error', 'something went wrong', 'typeerror', 'syntaxerror',
+                    'invalid coupon', 'voucher invalid', 'promotion not found', 'failed to create',
+                    'maximum upload size exceeded'
+                ];
+                for (let i = 0; i < technicalPatterns.length; i++) {
+                    if (lower.includes(technicalPatterns[i])) {
+                        return fallback;
+                    }
+                }
+                return msg;
+            }
+
             // CSRF Setup
             const token = $("meta[name='_csrf']").attr("content");
             const header = $("meta[name='_csrf_header']").attr("content");
@@ -1088,12 +1107,14 @@
                     success: function(resp) {
                         $link.text('Quên mật khẩu?').css('pointer-events', 'auto');
                         if (resp.success) {
-                            $('#guest-password-success').text(resp.message).show();
+                            const msg = getSafeCheckoutMessage(resp.message, 'Đã gửi liên kết khôi phục mật khẩu tới email của bạn.');
+                            $('#guest-password-success').text(msg).show();
                             if (typeof showToast === 'function') {
-                                showToast(resp.message, 'success');
+                                showToast(msg, 'success');
                             }
                         } else {
-                            $('#guest-password-error').text(resp.message || 'Không thể gửi yêu cầu khôi phục mật khẩu.').show();
+                            const msg = getSafeCheckoutMessage(resp.message, 'Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại sau.');
+                            $('#guest-password-error').text(msg).show();
                         }
                     },
                     error: function() {
@@ -1123,12 +1144,14 @@
                     success: function(resp) {
                         $btn.prop('disabled', false).text('GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU');
                         if (resp.success) {
-                            $('#guest-resend-status').css('color', '#10b981').text(resp.message || 'Đã gửi link thiết lập mật khẩu tới email của bạn. Vui lòng kiểm tra hộp thư!').show();
+                            const msg = getSafeCheckoutMessage(resp.message, 'Đã gửi link thiết lập mật khẩu tới email của bạn. Vui lòng kiểm tra hộp thư!');
+                            $('#guest-resend-status').css('color', '#10b981').text(msg).show();
                             if (typeof showToast === 'function') {
-                                showToast(resp.message, 'success');
+                                showToast(msg, 'success');
                             }
                         } else {
-                            $('#guest-resend-status').css('color', '#ef4444').text(resp.message || 'Không thể gửi email lúc này.').show();
+                            const msg = getSafeCheckoutMessage(resp.message, 'Không thể gửi email lúc này. Vui lòng thử lại sau.');
+                            $('#guest-resend-status').css('color', '#ef4444').text(msg).show();
                         }
                     },
                     error: function() {
@@ -1169,12 +1192,13 @@
                                 window.location.reload();
                             }
                         } else {
-                            $('#guest-password-error').text(resp.message || 'Mật khẩu không đúng. Vui lòng kiểm tra lại.').show();
+                            const msg = getSafeCheckoutMessage(resp.message, 'Mật khẩu không đúng. Vui lòng kiểm tra lại.');
+                            $('#guest-password-error').text(msg).show();
                         }
                     },
                     error: function() {
                         $('#btn-guest-verify-password').prop('disabled', false).text('XÁC NHẬN ĐĂNG NHẬP');
-                        $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống.').show();
+                        $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
                     }
                 });
             });
@@ -1343,18 +1367,20 @@
                             $('.js-voucher-discount').text('-' + response.giamGiaFormatted);
                             $('#voucher-discount-row').show();
 
-                            $msg.css('color', '#10b981').text(response.message).show();
+                            const successMsg = getSafeCheckoutMessage(response.message, 'Áp dụng mã giảm giá thành công!');
+                            $msg.css('color', '#10b981').text(successMsg).show();
                             updateUITotal();
-                            showToast('Áp dụng mã giảm giá thành công!', 'success');
+                            showToast(successMsg, 'success');
                         } else {
-                            $msg.css('color', '#ef4444').text(response.message).show();
-                            showToast(response.message, 'error');
+                            const errorMsg = getSafeCheckoutMessage(response.message, 'Mã giảm giá không hợp lệ hoặc đã hết hạn.');
+                            $msg.css('color', '#ef4444').text(errorMsg).show();
+                            showToast(errorMsg, 'error');
                         }
                     },
                     error: function(xhr, status, error) {
                         $btn.prop('disabled', false);
                         $msg.css('color', '#ef4444').text('Không thể kiểm tra mã lúc này.').show();
-                        showToast('Lỗi hệ thống khi áp dụng mã giảm giá.', 'error');
+                        showToast('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.', 'error');
                     }
                 });
             });
@@ -1759,7 +1785,8 @@
 
                         if (response.status === 'error' || response.errorCode === 'PAYMENT_INIT_FAILED') {
                             console.error('[Diagnostics] Payment initialization failed:', response);
-                            showToast('Đặt hàng thất bại: ' + response.message, 'error');
+                            const errMsg = getSafeCheckoutMessage(response.message, 'Không thể khởi tạo thanh toán. Vui lòng thử lại sau.');
+                            showToast('Đặt hàng thất bại: ' + errMsg, 'error');
                             return;
                         }
 
@@ -1807,12 +1834,15 @@
                             $('#guest-expired-form-group').hide();
                             $('#guest-auth-overlay').addClass('active');
                         } else {
-                            showToast('Đặt hàng thất bại: ' + response.message, 'error');
+                            const errMsg = getSafeCheckoutMessage(response.message, 'Không thể tạo đơn hàng. Vui lòng thử lại sau.');
+                            showToast('Đặt hàng thất bại: ' + errMsg, 'error');
                         }
                     },
                     error: function(xhr, status, error) {
                         $('.preloader').removeClass('is-active');
-                        showToast('Đã xảy ra lỗi kết nối: ' + error, 'error');
+                        const rawMsg = (xhr && xhr.responseJSON && xhr.responseJSON.message) || error || '';
+                        const errMsg = getSafeCheckoutMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.');
+                        showToast(errMsg, 'error');
                     }
                 });
             }

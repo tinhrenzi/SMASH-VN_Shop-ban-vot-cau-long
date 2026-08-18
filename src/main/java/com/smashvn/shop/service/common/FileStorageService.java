@@ -119,7 +119,7 @@ public class FileStorageService {
 
             Path targetFilePath = targetFolder.resolve(secureFileName).normalize().toAbsolutePath();
             if (!targetFilePath.startsWith(targetFolder.toAbsolutePath().normalize())) {
-                throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ (ngăn chặn Path Traversal).");
+                throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ.");
             }
 
             // Lưu tệp lên đĩa
@@ -131,7 +131,7 @@ public class FileStorageService {
                 for (String name : savedFileNames) {
                     deleteImage(name, folderName);
                 }
-                throw e;
+                throw new RuntimeException("Không thể lưu hình ảnh. Vui lòng thử lại sau.", e);
             }
 
             savedFileNames.add(secureFileName);
@@ -237,13 +237,13 @@ public class FileStorageService {
         }
 
         if (!targetFolder.startsWith(rootUploadPath)) {
-            throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ (ngăn chặn Path Traversal).");
+            throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ.");
         }
 
         String secureFileName = UUID.randomUUID().toString() + "." + ext;
         Path targetFilePath = targetFolder.resolve(secureFileName).normalize().toAbsolutePath();
         if (!targetFilePath.startsWith(targetFolder)) {
-            throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ (ngăn chặn Path Traversal).");
+            throw new SecurityException("Đường dẫn tải lên tệp không hợp lệ.");
         }
 
         // 5. Lưu file vào đĩa
@@ -251,7 +251,7 @@ public class FileStorageService {
             Files.copy(inputStream, targetFilePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             log.error("[UPLOAD_FAILURE] Failed to save return evidence video for order #{}: {}", orderId, e.getMessage());
-            throw e;
+            throw new RuntimeException("Không thể lưu video bằng chứng. Vui lòng thử lại sau.", e);
         }
 
         String relativePath = "/uploads/returns/" + orderId + "/" + secureFileName;

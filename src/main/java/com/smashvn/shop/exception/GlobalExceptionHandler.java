@@ -62,6 +62,40 @@ public class GlobalExceptionHandler {
         return mav;
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public Object handleMaxUploadSize(HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response, org.springframework.web.multipart.MaxUploadSizeExceededException ex) throws java.io.IOException {
+        log.warn("Dung lượng tệp tải lên vượt quá giới hạn tại URL: {}", request.getRequestURI());
+        String requestedWith = request.getHeader("X-Requested-With");
+        String accept = request.getHeader("Accept");
+        String uri = request.getRequestURI();
+
+        if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)
+                || (accept != null && accept.contains("application/json"))
+                || uri.contains("-json")
+                || uri.contains("/api/")) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"trangThai\":\"loi\",\"status\":\"error\",\"message\":\"Dung lượng tệp tải lên vượt quá giới hạn cho phép (Tối đa 50MB cho video và 5MB cho hình ảnh).\"}");
+            return null;
+        }
+
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isBlank()) {
+            org.springframework.web.servlet.view.RedirectView rv = new org.springframework.web.servlet.view.RedirectView(referer, true);
+            org.springframework.web.servlet.FlashMap flashMap = org.springframework.web.servlet.support.RequestContextUtils.getOutputFlashMap(request);
+            if (flashMap != null) {
+                flashMap.put("errorMsg", "Dung lượng tệp tải lên vượt quá giới hạn cho phép (Tối đa 50MB cho video và 5MB cho hình ảnh).");
+                flashMap.put("loi", "Dung lượng tệp tải lên vượt quá giới hạn cho phép (Tối đa 50MB cho video và 5MB cho hình ảnh).");
+            }
+            return rv;
+        }
+
+        ModelAndView mav = new ModelAndView();
+        mav.addObject("loi", "Dung lượng tệp tải lên vượt quá giới hạn cho phép.");
+        mav.setViewName("error/generic");
+        return mav;
+    }
+
     @ExceptionHandler({org.apache.catalina.connector.ClientAbortException.class, java.io.IOException.class})
     public void handleClientAbort(HttpServletRequest request, Exception ex) {
         // Khách hàng ngắt kết nối thủ công (tắt tab, F5, reload trang).

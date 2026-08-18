@@ -660,19 +660,20 @@ public class GhnService {
                 }
             }
             String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
-            throw new RuntimeException("GHN từ chối tạo đơn: " + msg);
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn: " + msg);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             String body = e.getResponseBodyAsString();
             try {
                 Map<String, Object> response = objectMapper.readValue(body, new TypeReference<>() {});
                 String msg = (String) response.get("message");
                 if (msg != null && !msg.isBlank()) {
-                    throw new RuntimeException("GHN lỗi: " + msg);
+                    throw new RuntimeException("Đơn vị vận chuyển GHN thông báo lỗi: " + msg);
                 }
             } catch (Exception jsonEx) {
                 // ignore
             }
-            throw new RuntimeException("Lỗi kết nối GHN (" + e.getStatusCode() + "): " + body);
+            log.error("Lỗi kết nối GHN API (HTTP {}): {}", e.getStatusCode(), body);
+            throw new RuntimeException("Không thể kết nối đơn vị vận chuyển GHN. Vui lòng thử lại sau.");
         }
     }
 
@@ -742,24 +743,25 @@ public class GhnService {
                 }
             }
             String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
-            throw new RuntimeException("GHN từ chối tạo đơn thu hồi: " + msg);
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn thu hồi: " + msg);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             String body = e.getResponseBodyAsString();
             try {
                 Map<String, Object> response = objectMapper.readValue(body, new TypeReference<>() {});
                 String msg = (String) response.get("message");
                 if (msg != null && !msg.isBlank()) {
-                    throw new RuntimeException("GHN từ chối tạo đơn thu hồi: " + msg);
+                    throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn thu hồi: " + msg);
                 }
             } catch (RuntimeException re) {
                 throw re;
             } catch (Exception ignored) {}
-            throw new RuntimeException("Lỗi kết nối GHN API (" + e.getStatusCode() + ")");
+            log.error("Lỗi kết nối GHN API (HTTP {}): {}", e.getStatusCode(), body);
+            throw new RuntimeException("Không thể kết nối đơn vị vận chuyển GHN. Vui lòng thử lại sau.");
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             log.error("GHN createReturnShippingOrder API call failed: {}", e.getMessage(), e);
-            throw new RuntimeException("Không thể tạo vận đơn GHN thu hồi: " + e.getMessage(), e);
+            throw new RuntimeException("Không thể tạo vận đơn GHN thu hồi. Vui lòng thử lại sau.", e);
         }
     }
 
@@ -893,10 +895,11 @@ public class GhnService {
                 }
             }
             String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
-            throw new RuntimeException("GHN từ chối tạo đơn giao hàng đổi: " + msg);
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn giao hàng đổi: " + msg);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             String body = e.getResponseBodyAsString();
-            throw new RuntimeException("Lỗi kết nối GHN (" + e.getStatusCode() + "): " + body);
+            log.error("Lỗi kết nối GHN API (HTTP {}): {}", e.getStatusCode(), body);
+            throw new RuntimeException("Không thể kết nối đơn vị vận chuyển GHN. Vui lòng thử lại sau.");
         }
     }
 

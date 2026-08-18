@@ -484,10 +484,10 @@
 
                                         <span class="u-c-white" th:text="${hasCamp ? highestDiscountCampaign.tenChienDich : 'Việt Nam'}">Việt Nam</span>
 
-                                        <span class="u-c-brand" th:text="${hasCamp ? ' -' + highestDiscountCampaign.phanTramGiam + '%' : ' Offers'}">Offers</span></div>
+                                        <span class="u-c-brand" th:text="${hasCamp ? ' -' + highestDiscountCampaign.phanTramGiam + '%' : ' Ưu đãi'}">Ưu đãi</span></div>
                                     <div class="banner-bg__text-2">
 
-                                        <span class="u-c-brand" th:text="${hasCamp ? 'SIÊU ƯU ĐÃI' : 'Official Launch'}">Official Launch</span>
+                                        <span class="u-c-brand" th:text="${hasCamp ? 'SIÊU ƯU ĐÃI' : 'Ra mắt chính thức'}">Ra mắt chính thức</span>
 
                                         <span class="u-c-white">Đừng bỏ lỡ!</span></div>
 
@@ -629,8 +629,8 @@
                                         </a>
                                     </div>
                                     <div class="col-8">
-                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
-                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên sản phẩm</a></span>
                                         <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
                                             <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
                                         </div>
@@ -666,8 +666,8 @@
                                         </a>
                                     </div>
                                     <div class="col-8">
-                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
-                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên sản phẩm</a></span>
                                         <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
                                             <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
                                         </div>
@@ -703,8 +703,8 @@
                                         </a>
                                     </div>
                                     <div class="col-8">
-                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Category</a></span>
-                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Product Name</a></span>
+                                        <span class="product-o__category"><a th:href="@{/shop(categoryId=${product.danhMuc.id})}" th:text="${product.danhMuc.tenDanhMuc}">Danh mục</a></span>
+                                        <span class="product-o__name" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><a th:href="@{/san-pham/{id}(id=${product.id})}" th:text="${product.tenSanPham}">Tên sản phẩm</a></span>
                                         <div class="product-o__price" th:if="${!product.sanPhamChiTiets.isEmpty()}" th:with="percent=${product.getActiveGiamGiaPhanTram()}">
                                             <span th:text="${#numbers.formatDecimal(product.getGiaSauGiam(product.sanPhamChiTiets[0].giaBan), 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size: 13px; font-weight: 700; color: #ff4500;"></span>
                                         </div>
@@ -819,14 +819,14 @@
                                                 </span>
                                             </div>
                                             <div class="bp-mini__category">
-                                                <a th:text="${blog.category}">Learning</a>
+                                                <a th:text="${blog.category}">Kiến thức</a>
                                             </div>
                                             <span class="bp-mini__h1">
-                                                <a th:href="@{/blog/{slug}(slug=${blog.slug})}" th:text="${blog.title}">Blog Title</a>
+                                                <a th:href="@{/blog/{slug}(slug=${blog.slug})}" th:text="${blog.title}">Tiêu đề bài viết</a>
                                             </span>
-                                            <p class="bp-mini__p" th:text="${blog.summary}">Blog Summary</p>
+                                            <p class="bp-mini__p" th:text="${blog.summary}">Tóm tắt bài viết</p>
                                             <div class="blog-t-w" th:if="${blog.tags != null}">
-                                                <a class="gl-tag btn--e-transparent-hover-brand-b-2" th:each="tag : ${blog.tags}" th:text="${tag}">Tag</a>
+                                                <a class="gl-tag btn--e-transparent-hover-brand-b-2" th:each="tag : ${blog.tags}" th:text="${tag}">Thẻ</a>
                                             </div>
                                         </div>
                                     </div>
@@ -1032,7 +1032,7 @@
                                         </div>
                                         
                                         <!-- Brand Name text label -->
-                                        <span th:text="${brand.tenThuongHieu.toUpperCase()}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; color: #15171c; text-align: center; display: block;">BRAND</span>
+                                        <span th:text="${brand.tenThuongHieu.toUpperCase()}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; color: #15171c; text-align: center; display: block;">THƯƠNG HIỆU</span>
                                     </a>
                                 </div>
                             </div>

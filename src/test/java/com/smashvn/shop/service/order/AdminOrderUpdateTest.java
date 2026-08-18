@@ -461,12 +461,7 @@ public class AdminOrderUpdateTest {
         assertEquals("da_tao_van_don_ghn", hd.getTrangThaiDonHang());
         assertNotNull(hd.getGhnOrderCode());
 
-        // 6. da_tao_van_don_ghn -> da_ban_giao_ghn
-        orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
-        hd = hoaDonRepository.findById(hd.getId()).get();
-        assertEquals("da_ban_giao_ghn", hd.getTrangThaiDonHang());
-
-        // 7. Try to move beyond da_ban_giao_ghn -> expect exception (locked state)
+        // 6. Once at da_tao_van_don_ghn, order has GHN order code, manual transition is locked
         final Integer orderId = hd.getId();
         assertThrows(IllegalStateException.class, () -> {
             orderViewService.moveOrderToNextStatus(orderId, adminUser.getId(), "127.0.0.1");

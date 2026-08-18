@@ -265,7 +265,7 @@
                                                                      <div class="manage-o__product-item" th:each="item : ${order.items}" style="display: flex; align-items: center; margin-bottom: 6px; gap: 10px;">
                                                                          <img th:src="@{${item.imageUrl != null and !#strings.isEmpty(item.imageUrl) ? item.imageUrl : (item.image != null ? item.image : '/images/placeholder.png')}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh sản phẩm" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; flex-shrink: 0;">
                                                                          <div style="display: flex; flex-direction: column; min-width: 0;">
-                                                                             <span th:text="${item.title}" th:title="${item.title}" style="font-size: 13px; font-weight: 600; color: #333; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Product Name</span>
+                                                                             <span th:text="${item.title}" th:title="${item.title}" style="font-size: 13px; font-weight: 600; color: #333; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tên sản phẩm</span>
                                                                              <span style="font-size: 12px; color: #888;" th:text="'Số lượng: ' + ${item.quantity}">Số lượng: 1</span>
                                                                          </div>
                                                                      </div>

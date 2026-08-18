@@ -41,7 +41,8 @@ public class QuickAddAndCheckoutTest {
 
         // 1. Create a guest account in DB to simulate a previous guest checkout
         String email = "quick_add_test_" + System.currentTimeMillis() + "@smash.vn";
-        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Trần Văn Quick", "0987654321", email);
+        String phone = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Trần Văn Quick", phone, email);
         TaiKhoan tk = regResult.getTaiKhoan();
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
         assertNotNull(kh);
