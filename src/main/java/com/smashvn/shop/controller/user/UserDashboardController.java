@@ -48,74 +48,7 @@ public class UserDashboardController {
     private final ThongBaoRepository thongBaoRepository;
     private final HoaDonRepository hoaDonRepository;
     private final com.smashvn.shop.repository.NewsletterSubscriberRepository newsletterSubscriberRepository;
-
-    private List<String> processUploadedEvidenceFiles(MultipartFile[] files, Integer orderId) throws Exception {
-        List<String> uploadedPaths = new java.util.ArrayList<>();
-        if (files == null || files.length == 0) {
-            return uploadedPaths;
-        }
-
-        List<MultipartFile> validFiles = new java.util.ArrayList<>();
-        for (MultipartFile f : files) {
-            if (f != null && !f.isEmpty() && f.getSize() > 0) {
-                validFiles.add(f);
-            }
-        }
-
-        if (validFiles.isEmpty()) {
-            return uploadedPaths;
-        }
-
-        if (validFiles.size() > 5) {
-            throw new IllegalArgumentException("Chỉ được upload tối đa 5 file bằng chứng (ảnh/video).");
-        }
-
-        java.nio.file.Path baseUploadDir = java.nio.file.Paths.get(uploadPathConfig != null ? uploadPathConfig : "uploads").toAbsolutePath().normalize();
-        java.nio.file.Path targetUploadDir = baseUploadDir.resolve("returns").resolve(String.valueOf(orderId)).normalize();
-        if (!java.nio.file.Files.exists(targetUploadDir)) {
-            java.nio.file.Files.createDirectories(targetUploadDir);
-        }
-
-        List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "webp", "mp4", "webm", "mov");
-        List<String> allowedMimeTypes = List.of(
-                "image/jpeg", "image/png", "image/webp",
-                "video/mp4", "video/webm", "video/quicktime"
-        );
-
-        long maxFileSize = 10 * 1024 * 1024; // 10MB per file
-
-        for (MultipartFile file : validFiles) {
-            if (file.getSize() > maxFileSize) {
-                throw new IllegalArgumentException("Dung lượng mỗi file bằng chứng không được vượt quá 10MB.");
-            }
-
-            String contentType = file.getContentType();
-            if (contentType == null || !allowedMimeTypes.contains(contentType.toLowerCase())) {
-                throw new IllegalArgumentException("Định dạng file không được hỗ trợ. Chỉ nhận ảnh (JPG, PNG, WEBP) hoặc video (MP4, WEBM, MOV).");
-            }
-
-            String origName = file.getOriginalFilename();
-            String ext = "";
-            if (origName != null && origName.contains(".")) {
-                ext = origName.substring(origName.lastIndexOf(".") + 1).toLowerCase();
-            }
-            if (!allowedExtensions.contains(ext)) {
-                throw new IllegalArgumentException("Đuôi file '." + ext + "' không hợp lệ.");
-            }
-
-            String safeFileName = java.util.UUID.randomUUID().toString() + "." + ext;
-            java.nio.file.Path targetFilePath = targetUploadDir.resolve(safeFileName).normalize();
-
-            if (!targetFilePath.startsWith(targetUploadDir)) {
-                throw new SecurityException("Phát hiện hành vi Path Traversal không hợp lệ.");
-            }
-
-            file.transferTo(targetFilePath.toFile());
-            uploadedPaths.add("/uploads/returns/" + orderId + "/" + safeFileName);
-        }
-
-        return uploadedPaths;
-    }
+    private final com.smashvn.shop.service.common.FileStorageService fileStorageService;
 
     // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
     private KhachHang getLoggedInCustomer(HttpSession session) {
@@ -654,26 +587,6 @@ public class UserDashboardController {
         return org.springframework.http.ResponseEntity.ok(response);
     }
 
-    private void cleanupUploadedFiles(List<String> relativePaths) {
-        if (relativePaths == null || relativePaths.isEmpty()) {
-            return;
-        }
-        java.nio.file.Path baseUploadDir = java.nio.file.Paths.get(uploadPathConfig != null ? uploadPathConfig : "uploads").toAbsolutePath().normalize();
-        for (String relPath : relativePaths) {
-            try {
-                if (relPath != null && relPath.startsWith("/uploads/")) {
-                    String subPath = relPath.substring("/uploads/".length());
-                    java.nio.file.Path filePath = baseUploadDir.resolve(subPath).normalize();
-                    if (filePath.startsWith(baseUploadDir)) {
-                        java.nio.file.Files.deleteIfExists(filePath);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Không thể xóa file đính kèm rác {}: {}", relPath, e.getMessage());
-            }
-        }
-    }
-
     @PostMapping("/manage-order/request-return/{id}")
     @ResponseBody
     public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> xuLyYeuCauTraHang(
@@ -693,18 +606,18 @@ public class UserDashboardController {
 
         List<String> bangChungPaths = new java.util.ArrayList<>();
         try {
-            bangChungPaths = processUploadedEvidenceFiles(files, idHoaDon);
+            bangChungPaths = fileStorageService.storeReturnEvidenceVideos(files, idHoaDon);
             boolean success = orderViewService.yeuCauTraHang(idHoaDon, kh.getId(), loaiYeuCau, lyDo, bangChungPaths, request.getRemoteAddr());
             if (success) {
                 response.put("success", true);
                 response.put("message", "Yêu cầu Đổi/Trả hàng của bạn đã được gửi thành công! Shop sẽ sớm phản hồi.");
             } else {
-                cleanupUploadedFiles(bangChungPaths);
+                fileStorageService.deleteReturnFiles(bangChungPaths);
                 response.put("success", false);
                 response.put("message", "Không thể gửi yêu cầu Đổi/Trả cho đơn hàng này.");
             }
         } catch (Exception e) {
-            cleanupUploadedFiles(bangChungPaths);
+            fileStorageService.deleteReturnFiles(bangChungPaths);
             response.put("success", false);
             response.put("message", e.getMessage());
         }

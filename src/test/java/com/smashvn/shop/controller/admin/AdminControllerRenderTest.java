@@ -232,4 +232,121 @@ public class AdminControllerRenderTest {
                 .andExpect(jsonPath("$.tongDonHoanThanh").value(0))
                 .andExpect(jsonPath("$.tongChiTieuFormatted").value("0 ₫"));
     }
+
+    @Test
+    public void testGetOrderDetailJson_WithReturnEvidence_AdminAndStaff() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        // 1. Seed Manager (QL) and Staff (NV)
+        TaiKhoan manager = new TaiKhoan();
+        manager.setUsername("manager_return_test@smashvn.com");
+        manager.setMatKhau("pass123");
+        manager.setVaiTro("QL");
+        manager = taiKhoanRepository.save(manager);
+
+        TaiKhoan staff = new TaiKhoan();
+        staff.setUsername("staff_return_test@smashvn.com");
+        staff.setMatKhau("pass123");
+        staff.setVaiTro("NV");
+        staff = taiKhoanRepository.save(staff);
+
+        // 2. Seed Customer and Order with return evidence
+        KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseThrow();
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElseGet(() -> {
+            PhuongThucThanhToan p = new PhuongThucThanhToan();
+            p.setTenPhuongThuc("Tiền mặt");
+            return phuongThucThanhToanDAO.save(p);
+        });
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream().findFirst().orElseGet(() -> {
+            DonViVanChuyen d = new DonViVanChuyen();
+            d.setTenDonVi("Mua tại quầy");
+            d.setHotline("000000");
+            return donViVanChuyenDAO.save(d);
+        });
+
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setMaDonHang("HD-RETURN-TEST-001");
+        hd.setNgayTao(LocalDateTime.now());
+        hd.setTongTien(new BigDecimal("1500000"));
+        hd.setDiaChiNhan("123 Le Loi, Quan 1, TP HCM");
+        hd.setSdtNhan("0988776655");
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setTrangThaiDonHang("da_giao");
+        hd.setLoaiYeuCauDoiTra("TRA");
+        hd.setLyDoHoanTra("Sản phẩm bị lỗi / hỏng hóc - Vợt bị nứt ở khung");
+        hd.setBangChungHoanTra("[\"/uploads/returns/999/f5c7378d-a1e2-4d9f.mp4\"]");
+        hd.setTrangThaiHoanHang(com.smashvn.shop.entity.ReturnStatus.PENDING_APPROVAL);
+        hd = hoaDonRepository.save(hd);
+
+        // 3. Test Admin (QL) access
+        mockMvc.perform(get("/admin/don-hang/detail-json")
+                        .param("id", String.valueOf(hd.getId()))
+                        .sessionAttr("idNguoiDung", manager.getId())
+                        .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(hd.getId()))
+                .andExpect(jsonPath("$.loaiYeuCauDoiTra").value("TRA"))
+                .andExpect(jsonPath("$.lyDoHoanTra").value("Sản phẩm bị lỗi / hỏng hóc - Vợt bị nứt ở khung"))
+                .andExpect(jsonPath("$.bangChungHoanTra").value("[\"/uploads/returns/999/f5c7378d-a1e2-4d9f.mp4\"]"))
+                .andExpect(jsonPath("$.trangThaiHoanHang").value("PENDING_APPROVAL"));
+
+        // 4. Test Staff (NV) access
+        mockMvc.perform(get("/admin/don-hang/detail-json")
+                        .param("id", String.valueOf(hd.getId()))
+                        .sessionAttr("idNguoiDung", staff.getId())
+                        .sessionAttr("vaiTro", "NV"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(hd.getId()))
+                .andExpect(jsonPath("$.loaiYeuCauDoiTra").value("TRA"))
+                .andExpect(jsonPath("$.lyDoHoanTra").value("Sản phẩm bị lỗi / hỏng hóc - Vợt bị nứt ở khung"))
+                .andExpect(jsonPath("$.bangChungHoanTra").value("[\"/uploads/returns/999/f5c7378d-a1e2-4d9f.mp4\"]"))
+                .andExpect(jsonPath("$.trangThaiHoanHang").value("PENDING_APPROVAL"));
+    }
+
+    @Test
+    public void testGetOrderDetailJson_WithoutReturnEvidence() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        TaiKhoan manager = new TaiKhoan();
+        manager.setUsername("manager_no_return_test@smashvn.com");
+        manager.setMatKhau("pass123");
+        manager.setVaiTro("QL");
+        manager = taiKhoanRepository.save(manager);
+
+        KhachHang kh = khachHangRepository.findAll().stream().findFirst().orElseThrow();
+        PhuongThucThanhToan pttt = phuongThucThanhToanDAO.findAll().stream().findFirst().orElseGet(() -> {
+            PhuongThucThanhToan p = new PhuongThucThanhToan();
+            p.setTenPhuongThuc("Tiền mặt");
+            return phuongThucThanhToanDAO.save(p);
+        });
+        DonViVanChuyen dvvc = donViVanChuyenDAO.findAll().stream().findFirst().orElseGet(() -> {
+            DonViVanChuyen d = new DonViVanChuyen();
+            d.setTenDonVi("Mua tại quầy");
+            d.setHotline("000000");
+            return donViVanChuyenDAO.save(d);
+        });
+
+        HoaDon hd = new HoaDon();
+        hd.setKhachHang(kh);
+        hd.setMaDonHang("HD-NO-RETURN-002");
+        hd.setNgayTao(LocalDateTime.now());
+        hd.setTongTien(new BigDecimal("500000"));
+        hd.setDiaChiNhan("123 Le Loi, Quan 1, TP HCM");
+        hd.setSdtNhan("0988776655");
+        hd.setPhuongThucThanhToan(pttt);
+        hd.setDonViVanChuyen(dvvc);
+        hd.setTrangThaiDonHang("cho_xac_nhan");
+        hd = hoaDonRepository.save(hd);
+
+        mockMvc.perform(get("/admin/don-hang/detail-json")
+                        .param("id", String.valueOf(hd.getId()))
+                        .sessionAttr("idNguoiDung", manager.getId())
+                        .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(hd.getId()))
+                .andExpect(jsonPath("$.bangChungHoanTra").value(""))
+                .andExpect(jsonPath("$.trangThaiHoanHang").value(org.hamcrest.Matchers.nullValue()));
+    }
 }

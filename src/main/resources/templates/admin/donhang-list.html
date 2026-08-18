@@ -1100,12 +1100,64 @@
             return map[s] || status;
         };
 
+        window.getReturnRequestTypeLabel = function (type) {
+            if (!type) return 'Trả hàng / Hoàn tiền';
+            const t = String(type).trim().toUpperCase();
+            if (t === 'DOI') {
+                return 'Đổi hàng';
+            }
+            if (t === 'TRA') {
+                return 'Trả hàng / Hoàn tiền';
+            }
+            return 'Trả hàng / Hoàn tiền';
+        };
+
+        window.parseReturnEvidence = function (rawValue) {
+            if (!rawValue) {
+                return [];
+            }
+            try {
+                const parsed = typeof rawValue === 'string' ? JSON.parse(rawValue) : rawValue;
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => typeof item === 'string' && item.trim() !== '');
+                }
+                if (typeof parsed === 'string' && parsed.trim() !== '') {
+                    return [parsed.trim()];
+                }
+                return [];
+            } catch (e) {
+                console.warn('Không thể parse bangChungHoanTra JSON:', e);
+                if (typeof rawValue === 'string' && rawValue.trim().startsWith('/uploads/returns/')) {
+                    return [rawValue.trim()];
+                }
+                return [];
+            }
+        };
+
+        window.isValidReturnVideoPath = function (path) {
+            if (typeof path !== 'string') {
+                return false;
+            }
+            const clean = path.trim().toLowerCase();
+            if (clean.startsWith('javascript:') || clean.startsWith('data:') || clean.startsWith('http://') || clean.startsWith('https://')) {
+                return false;
+            }
+            return path.trim().startsWith('/uploads/returns/');
+        };
+
         let lastFocusedElement = null;
 
         document.addEventListener('DOMContentLoaded', function () {
             const modalEl = document.getElementById('orderDetailModal');
             if (modalEl) {
                 modalEl.addEventListener('hidden.bs.modal', function () {
+                    const videos = modalEl.querySelectorAll('video');
+                    videos.forEach(v => {
+                        try {
+                            v.pause();
+                            v.src = '';
+                        } catch (e) {}
+                    });
                     if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
                         try { lastFocusedElement.focus(); } catch (e) {}
                     }
@@ -1569,6 +1621,97 @@
                     </div>
                 `;
 
+                    // ============ Return / Exchange Evidence Details Card ============
+                    let returnInfoCardHtml = '';
+                    const hasReturnData = (data.trangThaiHoanHang && data.trangThaiHoanHang !== '') ||
+                                          (data.lyDoHoanTra && data.lyDoHoanTra.trim() !== '') ||
+                                          (data.bangChungHoanTra && data.bangChungHoanTra.trim() !== '');
+
+                    if (hasReturnData) {
+                        const loaiYeuCauLabel = getReturnRequestTypeLabel(data.loaiYeuCauDoiTra);
+                        const returnStatusLabel = formatReturnStatus(data.trangThaiHoanHang);
+                        const lyDoKhachHang = data.lyDoHoanTra ? escapeHtml(data.lyDoHoanTra) : 'Không có lý do chi tiết';
+                        const evidenceList = parseReturnEvidence(data.bangChungHoanTra);
+
+                        let videoPlayersHtml = '';
+                        const validVideos = evidenceList.filter(v => isValidReturnVideoPath(v));
+
+                        if (validVideos.length > 0) {
+                            videoPlayersHtml = validVideos.map((videoPath, idx) => `
+                                <div class="mb-3">
+                                    ${validVideos.length > 1 ? `<div class="fw-bold small text-muted mb-1"><i class="fas fa-video me-1"></i>Video bằng chứng ${idx + 1}:</div>` : ''}
+                                    <div style="background: #000; border-radius: 8px; overflow: hidden; max-height: 420px; text-align: center;">
+                                        <video controls preload="metadata" style="width: 100%; max-height: 420px; border-radius: 8px; background: #000; outline: none; display: block;">
+                                            <source src="${escapeHtml(videoPath)}" type="video/mp4">
+                                            <source src="${escapeHtml(videoPath)}" type="video/webm">
+                                            <source src="${escapeHtml(videoPath)}" type="video/quicktime">
+                                            Trình duyệt không hỗ trợ phát video. <a href="${escapeHtml(videoPath)}" target="_blank" class="text-white text-decoration-underline">Tải video tại đây</a>
+                                        </video>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <span class="text-muted small font-monospace" style="font-size: 11px;">${escapeHtml(videoPath)}</span>
+                                        <a href="${escapeHtml(videoPath)}" target="_blank" class="admin-btn admin-btn-sm admin-btn-outline-secondary py-0 px-2" style="font-size: 11px;">
+                                            <i class="fas fa-external-link-alt me-1"></i>Mở tab mới
+                                        </a>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            videoPlayersHtml = `
+                                <div class="alert alert-light border text-muted small mb-0 py-2 d-flex align-items-center">
+                                    <i class="fas fa-video-slash me-2 text-secondary"></i>
+                                    <span>Khách hàng không đính kèm video bằng chứng.</span>
+                                </div>
+                            `;
+                        }
+
+                        returnInfoCardHtml = `
+                            <!-- Return & Exchange Evidence Section -->
+                            <div class="order-detail-card mt-3 mb-0" style="border-left: 4px solid var(--admin-warning, #ff9800); background: #fffdfa;">
+                                <div class="order-detail-card-header d-flex justify-content-between align-items-center" style="background: #fff8e1;">
+                                    <h6 class="order-detail-card-title text-warning-emphasis mb-0" style="font-weight: 700;">
+                                        <i class="fas fa-undo-alt me-1 text-warning"></i> THÔNG TIN YÊU CẦU ĐỔI / TRẢ
+                                    </h6>
+                                    <span class="badge-soft badge-soft-warning fw-bold">${escapeHtml(returnStatusLabel)}</span>
+                                </div>
+                                <div class="order-detail-fields p-3">
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-md-6">
+                                            <div class="order-detail-field">
+                                                <span class="order-detail-label">Loại yêu cầu:</span>
+                                                <span class="order-detail-value fw-bold text-dark">${escapeHtml(loaiYeuCauLabel)}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="order-detail-field">
+                                                <span class="order-detail-label">Trạng thái yêu cầu:</span>
+                                                <span class="order-detail-value"><span class="badge-soft badge-soft-warning">${escapeHtml(returnStatusLabel)}</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="order-detail-field" style="flex-direction: column; align-items: flex-start;">
+                                                <span class="order-detail-label mb-1">Lý do khách hàng:</span>
+                                                <div class="p-2 w-100 rounded bg-white border text-dark" style="font-size: 13px; line-height: 1.5;">
+                                                    <i class="fas fa-quote-left me-1 text-muted"></i>${lyDoKhachHang}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Video Player Area -->
+                                    <div class="mt-2 pt-2 border-top">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="fw-bold text-dark small"><i class="fas fa-video me-1 text-danger"></i> VIDEO BẰNG CHỨNG TỪ KHÁCH HÀNG:</span>
+                                        </div>
+                                        ${videoPlayersHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    detailsContentHtml += returnInfoCardHtml;
+
                     if (isPosOrder) {
                         let posItemsHtml = '';
                         (data.items || []).forEach(item => {
@@ -1763,14 +1906,14 @@
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?')">
-                                <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng &amp; Tạo mã GHN
+                                <i class="fas fa-check-circle me-1"></i> Duyệt
                             </button>
                         </form>
                         <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
-                                <i class="fas fa-times-circle me-1"></i> Từ chối trả hàng
+                                <i class="fas fa-times-circle me-1"></i> Từ chối
                             </button>
                         </form>
                     `;

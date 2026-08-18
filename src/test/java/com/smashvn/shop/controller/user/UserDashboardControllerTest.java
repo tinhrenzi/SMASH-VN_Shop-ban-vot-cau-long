@@ -46,6 +46,9 @@ public class UserDashboardControllerTest {
     private NewsletterSubscriberRepository newsletterSubscriberRepository;
 
     @Mock
+    private com.smashvn.shop.service.common.FileStorageService fileStorageService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -56,7 +59,7 @@ public class UserDashboardControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new UserDashboardController(dashboardService, orderViewService, wishlistRepository, thongBaoRepository, hoaDonRepository, newsletterSubscriberRepository);
+        controller = new UserDashboardController(dashboardService, orderViewService, wishlistRepository, thongBaoRepository, hoaDonRepository, newsletterSubscriberRepository, fileStorageService);
     }
 
     @Test

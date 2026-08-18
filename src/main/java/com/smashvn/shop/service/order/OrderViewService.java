@@ -284,6 +284,8 @@ public class OrderViewService {
         map.put("thoiGianHoanTien", refundDetails.getOrDefault("thoiGianHoanTien", hd.getThoiGianHoanTien() != null ? hd.getThoiGianHoanTien().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) : ""));
         map.put("nguoiThucHienHoanTien", refundDetails.getOrDefault("nguoiThucHienHoanTien", hd.getNguoiThucHienHoanTien() != null ? hd.getNguoiThucHienHoanTien() : ""));
         map.put("daNhapKhoHoan", isDaNhapKhoHoan(hd.getId(), hd));
+        map.put("loaiYeuCauDoiTra", hd.getLoaiYeuCauDoiTra() != null ? hd.getLoaiYeuCauDoiTra() : "");
+        map.put("bangChungHoanTra", hd.getBangChungHoanTra() != null ? hd.getBangChungHoanTra() : "");
 
         return map;
     }

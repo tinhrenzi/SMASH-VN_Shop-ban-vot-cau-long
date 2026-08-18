@@ -207,30 +207,7 @@ public class AdminNhanVienService {
 
         // 1. Kiểm tra Email tồn tại
         if (taiKhoanRepository.existsByUsername(sanitizedEmail)) {
-            TaiKhoan existingTk = taiKhoanRepository.findByUsername(sanitizedEmail);
-            String existingRole = existingTk.getVaiTro();
-            if ("NV".equals(existingRole) || "QL".equals(existingRole)) {
-                throw new IllegalArgumentException(MSG_DUPLICATE_EMPLOYEE_ACCOUNT);
-            }
-
-            // Nâng quyền tài khoản khách hàng thành nhân viên
-            existingTk.setVaiTro("NV");
-            existingTk = saveTaiKhoan(existingTk);
-
-            // Tạo NhanVien
-            NhanVien nv = new NhanVien();
-            nv.setTaiKhoan(existingTk);
-            nv.setHoTenNv(sanitizedName);
-            nv.setChucVu(sanitizedChucVu);
-            nv.setSoDienThoaiNv(trimmedPhone);
-            nv = saveNhanVien(nv);
-
-            // Lưu Audit Logs
-            TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-            if (actingUser != null) {
-                auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "INSERT", null, formatState(nv, existingTk), ipAddress, "Nâng quyền tài khoản khách hàng thành nhân viên mới: " + com.smashvn.shop.util.ValidationUtils.maskEmail(sanitizedEmail), actingUser.getVaiTro());
-            }
-            return;
+            throw new IllegalArgumentException(MSG_DUPLICATE_EMAIL);
         }
 
         // 2. Tạo TaiKhoan mới

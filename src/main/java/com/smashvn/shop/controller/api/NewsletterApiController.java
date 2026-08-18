@@ -22,18 +22,15 @@ public class NewsletterApiController {
 
     public static class SubscribeRequest {
         private String email;
-        private String gioiTinh;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
-        public String getGioiTinh() { return gioiTinh; }
-        public void setGioiTinh(String gioiTinh) { this.gioiTinh = gioiTinh; }
     }
 
     @PostMapping("/api/newsletter/subscribe")
     @ResponseBody
     public ResponseEntity<?> subscribe(@RequestBody SubscribeRequest request) {
-        newsletterService.subscribe(request.getEmail(), request.getGioiTinh());
+        newsletterService.subscribe(request.getEmail());
         return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký nhận ưu đãi thành công!"));
     }
 

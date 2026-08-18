@@ -53,7 +53,7 @@ public class NewsletterServiceTest {
         String email = "Test@Example.Com";
         when(subscriberRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
 
-        newsletterService.subscribe(email, "male");
+        newsletterService.subscribe(email);
 
         verify(subscriberRepository, times(1)).save(any(NewsletterSubscriber.class));
         verify(mailSender, times(1)).send(any(MimeMessage.class));
@@ -69,7 +69,7 @@ public class NewsletterServiceTest {
         when(subscriberRepository.findByEmail(email)).thenReturn(Optional.of(subscriber));
 
         NewsletterValidationException ex = assertThrows(NewsletterValidationException.class, () -> {
-            newsletterService.subscribe(email, null);
+            newsletterService.subscribe(email);
         });
 
         assertEquals("Email này đã đăng ký nhận ưu đãi.", ex.getMessage());
@@ -85,7 +85,7 @@ public class NewsletterServiceTest {
 
         when(subscriberRepository.findByEmail(email)).thenReturn(Optional.of(subscriber));
 
-        newsletterService.subscribe(email, "female");
+        newsletterService.subscribe(email);
 
         assertEquals("hoat_dong", subscriber.getTrangThai());
         assertNull(subscriber.getNgayHuy());
@@ -99,7 +99,7 @@ public class NewsletterServiceTest {
     void testSubscribe_InvalidEmail_ThrowsException() {
         String email = "invalid-email";
         assertThrows(NewsletterValidationException.class, () -> {
-            newsletterService.subscribe(email, null);
+            newsletterService.subscribe(email);
         });
     }
 

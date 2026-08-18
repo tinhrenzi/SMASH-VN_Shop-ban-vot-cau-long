@@ -626,8 +626,11 @@ public class AdminController {
             map.put("ghiChu", hd.getGhiChu() != null ? hd.getGhiChu() : "");
 
             // Return status details
-            map.put("trangThaiHoanHang", resolvedReturnStatus != null ? resolvedReturnStatus.name() : "");
-            map.put("trangThaiHoanHangLabel", resolvedReturnStatus != null ? resolvedReturnStatus.getLabel() : "");
+            map.put("trangThaiHoanHang", resolvedReturnStatus != null ? resolvedReturnStatus.name() : (hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().name() : null));
+            map.put("trangThaiHoanHangLabel", resolvedReturnStatus != null ? resolvedReturnStatus.getLabel() : (hd.getTrangThaiHoanHang() != null ? hd.getTrangThaiHoanHang().getLabel() : ""));
+            map.put("loaiYeuCauDoiTra", hd.getLoaiYeuCauDoiTra() != null ? hd.getLoaiYeuCauDoiTra() : "");
+            map.put("lyDoHoanTra", hd.getLyDoHoanTra() != null ? hd.getLyDoHoanTra() : "");
+            map.put("bangChungHoanTra", hd.getBangChungHoanTra() != null ? hd.getBangChungHoanTra() : "");
             map.put("ngayXacNhanHoanHang", hd.getNgayXacNhanHoanHang() != null ? hd.getNgayXacNhanHoanHang().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "");
             map.put("nhanVienXacNhan", hd.getNhanVienXacNhan() != null ? hd.getNhanVienXacNhan().getHoTenNv() : "");
 

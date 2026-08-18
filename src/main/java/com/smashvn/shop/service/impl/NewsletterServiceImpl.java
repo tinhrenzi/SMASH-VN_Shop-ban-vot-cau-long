@@ -44,7 +44,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 
     @Override
     @Transactional
-    public void subscribe(String email, String gioiTinh) {
+    public void subscribe(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new NewsletterValidationException("Email không được để trống!");
         }
@@ -53,13 +53,6 @@ public class NewsletterServiceImpl implements NewsletterService {
 
         if (!normalizedEmail.matches(EMAIL_REGEX)) {
             throw new NewsletterValidationException("Định dạng email không hợp lệ!");
-        }
-
-        if (gioiTinh != null) {
-            String gt = gioiTinh.trim().toLowerCase();
-            if (!gt.equals("male") && !gt.equals("female")) {
-                throw new NewsletterValidationException("Giới tính không hợp lệ!");
-            }
         }
 
         Optional<NewsletterSubscriber> existingOpt = subscriberRepository.findByEmail(normalizedEmail);

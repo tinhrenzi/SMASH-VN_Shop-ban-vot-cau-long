@@ -911,12 +911,10 @@
                             
                             const emailInput = document.getElementById("newsletter");
                             const submitBtn = newsletterForm.querySelector(".newsletter__btn");
-                            const genderRadio = newsletterForm.querySelector('input[name="gender"]:checked');
                             
                             if (!emailInput || !submitBtn) return;
                             
                             const email = emailInput.value.trim();
-                            const gender = genderRadio ? genderRadio.value : null;
                             const headers = {
                                 "Content-Type": "application/json"
                             };
@@ -936,7 +934,7 @@
                             fetch("/api/newsletter/subscribe", {
                                 method: "POST",
                                 headers: headers,
-                                body: JSON.stringify({ email: email, gioiTinh: gender })
+                                body: JSON.stringify({ email: email })
                             })
                             .then(response => {
                                 const contentType = response.headers.get("content-type");

@@ -1231,11 +1231,12 @@
                 modal.id = 'modalTraHang';
                 modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
                 modal.innerHTML = `
-                    <div style="background:#fff; width:90%; max-width:480px; padding:24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-                        <h4 style="margin-top:0; color:#d9534f; font-weight:700;"><i class="fas fa-undo"></i> Yêu cầu Trả hàng / Hoàn tiền</h4>
-                        <p style="font-size:13px; color:#666;">Vui lòng chọn lý do và mô tả chi tiết yêu cầu của bạn cho Shop:</p>
+                    <div style="background:#fff; width:90%; max-width:500px; padding:24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
+                        <h4 style="margin-top:0; color:#d9534f; font-weight:700;"><i class="fas fa-undo"></i> Yêu cầu Đổi / Trả hàng</h4>
+                        <p style="font-size:13px; color:#666; margin-bottom:14px;">Vui lòng chọn lý do, đính kèm video bằng chứng và mô tả chi tiết yêu cầu của bạn cho Shop:</p>
+                        
                         <div style="margin-bottom:12px;">
-                            <label style="font-size:12px; font-weight:600; color:#333;">Lý do trả hàng:</label>
+                            <label style="font-size:12px; font-weight:600; color:#333; display:block; margin-bottom:4px;">Lý do đổi/trả:</label>
                             <select id="returnReasonSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:13px;">
                                 <option value="Sản phẩm bị lỗi / hỏng hóc">Sản phẩm bị lỗi / hỏng hóc</option>
                                 <option value="Shop giao sai hàng / sai mẫu / sai kích thước">Shop giao sai hàng / sai mẫu / sai kích thước</option>
@@ -1244,13 +1245,26 @@
                                 <option value="Khác">Lý do khác...</option>
                             </select>
                         </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px; font-weight:600; color:#333;">Chi tiết lý do / Ghi chú:</label>
-                            <textarea id="returnReasonDetail" rows="3" placeholder="Nhập chi tiết mô tả lỗi hoặc ghi chú thêm cho Shop..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:13px;"></textarea>
+                        
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:12px; font-weight:600; color:#333; display:block; margin-bottom:4px;">Chi tiết lý do / Ghi chú:</label>
+                            <textarea id="returnReasonDetail" rows="3" placeholder="Nhập chi tiết mô tả lỗi hoặc ghi chú thêm cho Shop..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:13px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
                         </div>
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="document.getElementById('modalTraHang').style.display='none'" style="padding:8px 16px; border-radius:6px; border:1px solid #ccc; background:#f5f5f5; cursor:pointer;">Hủy</button>
-                            <button id="btnSubmitReturn" onclick="guiYeuCauTraHang()" style="padding:8px 20px; border-radius:6px; border:none; background:#d9534f; color:#fff; font-weight:700; cursor:pointer;">Gửi Yêu Cầu</button>
+
+                        <!-- Khu vực tải video bằng chứng -->
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; font-weight:600; color:#333; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span><i class="fas fa-video me-1 text-danger"></i> Video bằng chứng <span style="color:#d9534f;">*</span>:</span>
+                                <span style="font-size:11px; color:#888; font-weight:normal;">Tối đa 50MB (MP4, WEBM, MOV)</span>
+                            </label>
+                            <input type="file" id="returnEvidenceVideo" accept="video/mp4,video/webm,video/quicktime" onchange="previewReturnVideo(event)" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #ccc; font-size:12px; background:#fdfdfd; box-sizing:border-box;">
+                            <div id="videoErrorMsg" style="display:none; color:#d9534f; font-size:12px; margin-top:4px; font-weight:600;"></div>
+                            <video id="returnVideoPreview" controls style="display:none; width:100%; max-height:240px; margin-top:10px; border-radius:6px; background:#000; outline:none;"></video>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #eee; padding-top:14px;">
+                            <button type="button" onclick="dongModalTraHang()" style="padding:8px 16px; border-radius:6px; border:1px solid #ccc; background:#f5f5f5; cursor:pointer; font-weight:600;">Hủy</button>
+                            <button type="button" id="btnSubmitReturn" onclick="guiYeuCauTraHang()" style="padding:8px 20px; border-radius:6px; border:none; background:#d9534f; color:#fff; font-weight:700; cursor:pointer;">Gửi Yêu Cầu</button>
                         </div>
                     </div>
                 `;
@@ -1259,42 +1273,155 @@
             modal.style.display = 'flex';
         };
 
+        window.dongModalTraHang = function () {
+            const modal = document.getElementById('modalTraHang');
+            if (modal) modal.style.display = 'none';
+            const videoPreview = document.getElementById('returnVideoPreview');
+            if (videoPreview) {
+                videoPreview.pause();
+                videoPreview.src = '';
+                videoPreview.style.display = 'none';
+            }
+            const fileInput = document.getElementById('returnEvidenceVideo');
+            if (fileInput) fileInput.value = '';
+            const errorDiv = document.getElementById('videoErrorMsg');
+            if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
+        };
+
+        window.previewReturnVideo = function (event) {
+            const fileInput = event.target;
+            const videoPreview = document.getElementById('returnVideoPreview');
+            const errorDiv = document.getElementById('videoErrorMsg');
+            if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+
+                // Check file size
+                if (file.size > maxSizeBytes) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Video không được vượt quá 50MB.';
+                        errorDiv.style.display = 'block';
+                    }
+                    fileInput.value = '';
+                    if (videoPreview) {
+                        videoPreview.pause();
+                        videoPreview.src = '';
+                        videoPreview.style.display = 'none';
+                    }
+                    return;
+                }
+
+                // Check file type/extension
+                const fileName = file.name || '';
+                const ext = fileName.includes('.') ? fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase() : '';
+                const validExts = ['mp4', 'webm', 'mov'];
+                const validMimes = ['video/mp4', 'video/webm', 'video/quicktime'];
+                if (!validExts.includes(ext) && !validMimes.includes(file.type.toLowerCase())) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.';
+                        errorDiv.style.display = 'block';
+                    }
+                    fileInput.value = '';
+                    if (videoPreview) {
+                        videoPreview.pause();
+                        videoPreview.src = '';
+                        videoPreview.style.display = 'none';
+                    }
+                    return;
+                }
+
+                if (videoPreview) {
+                    videoPreview.src = URL.createObjectURL(file);
+                    videoPreview.style.display = 'block';
+                }
+            } else {
+                if (videoPreview) {
+                    videoPreview.pause();
+                    videoPreview.src = '';
+                    videoPreview.style.display = 'none';
+                }
+            }
+        };
+
         window.guiYeuCauTraHang = function () {
             const select = document.getElementById('returnReasonSelect');
             const textarea = document.getElementById('returnReasonDetail');
+            const fileInput = document.getElementById('returnEvidenceVideo');
             const btnSubmit = document.getElementById('btnSubmitReturn');
+            const errorDiv = document.getElementById('videoErrorMsg');
+            if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
 
-            let loaiYeuCau = 'TRA'; // Shop chỉ thực hiện Trả hàng & Hoàn tiền
+            // Validation 1: Video is mandatory
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Vui lòng đính kèm video bằng chứng.';
+                    errorDiv.style.display = 'block';
+                }
+                hienToast('⚠️ Vui lòng đính kèm video bằng chứng.', 'error');
+                return;
+            }
+
+            const videoFile = fileInput.files[0];
+
+            // Validation 2: Max 50MB
+            if (videoFile.size > 50 * 1024 * 1024) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Video không được vượt quá 50MB.';
+                    errorDiv.style.display = 'block';
+                }
+                hienToast('⚠️ Video không được vượt quá 50MB.', 'error');
+                return;
+            }
+
+            // Validation 3: Format
+            const fileName = videoFile.name || '';
+            const ext = fileName.includes('.') ? fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase() : '';
+            const validExts = ['mp4', 'webm', 'mov'];
+            const validMimes = ['video/mp4', 'video/webm', 'video/quicktime'];
+            if (!validExts.includes(ext) && !validMimes.includes(videoFile.type.toLowerCase())) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.';
+                    errorDiv.style.display = 'block';
+                }
+                hienToast('⚠️ Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.', 'error');
+                return;
+            }
+
+            let loaiYeuCau = 'TRA';
             let lyDo = select ? select.value : 'Yêu cầu Trả hàng / Hoàn tiền';
             if (textarea && textarea.value.trim() !== '') {
                 lyDo += ' - ' + textarea.value.trim();
             }
 
             btnSubmit.disabled = true;
-            btnSubmit.textContent = 'Đang gửi...';
+            btnSubmit.textContent = 'Đang tải lên...';
 
             const csrfToken = document.querySelector('meta[name="_csrf"]');
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-            const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            const headers = {};
             if (csrfToken && csrfHeader) {
                 headers[csrfHeader.content] = csrfToken.content;
             }
 
             const orderId = document.getElementById('btn-yeu-cau-tra-hang') ? document.getElementById('btn-yeu-cau-tra-hang').getAttribute('data-order-id') || '[[${order.id}]]' : '[[${order.id}]]';
-            const bodyParams = new URLSearchParams();
-            bodyParams.append('loaiYeuCau', loaiYeuCau);
-            bodyParams.append('lyDo', lyDo);
+            
+            const formData = new FormData();
+            formData.append('loaiYeuCau', loaiYeuCau);
+            formData.append('lyDo', lyDo);
+            formData.append('files', videoFile);
 
             fetch('/user/manage-order/request-return/' + orderId, {
                 method: 'POST',
                 headers: headers,
-                body: bodyParams.toString()
+                body: formData
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     hienToast('✅ ' + data.message, 'success');
-                    document.getElementById('modalTraHang').style.display = 'none';
+                    dongModalTraHang();
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
                     hienToast('❌ ' + data.message, 'error');
@@ -1354,8 +1481,7 @@
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 _closeModal();
-                const modalTH = document.getElementById('modalTraHang');
-                if (modalTH) modalTH.style.display = 'none';
+                if (window.dongModalTraHang) window.dongModalTraHang();
                 const modalGuest = document.getElementById('guestSuccessModal');
                 if (modalGuest) modalGuest.classList.remove('active');
             }

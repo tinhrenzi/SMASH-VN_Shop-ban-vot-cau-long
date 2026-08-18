@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Kiểm Tra Toàn Diện Hệ Thống - SMASH-VN</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-page: #090d16;
+            --bg-card: #0f172a;
+            --bg-header: #1e293b;
+            --bg-row-hover: #172033;
+            --bg-code: #030712;
+            
+            --text-pure: #ffffff;
+            --text-main: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            --border-color: #1e293b;
+            --border-light: #334155;
+            
+            --brand-cyan: #38bdf8;
+            --brand-cyan-bg: rgba(56, 189, 248, 0.15);
+            --brand-cyan-border: #0284c7;
+
+            /* Status Pills */
+            --pass-bg: rgba(34, 197, 94, 0.15);
+            --pass-text: #4ade80;
+            --pass-border: rgba(34, 197, 94, 0.4);
+
+            --fail-bg: rgba(239, 68, 68, 0.15);
+            --fail-text: #f87171;
+            --fail-border: rgba(239, 68, 68, 0.4);
+
+            --warn-bg: rgba(234, 179, 8, 0.15);
+            --warn-text: #facc15;
+            --warn-border: rgba(234, 179, 8, 0.4);
+
+            --critical-text: #f87171;
+            --high-text: #fb923c;
+            --medium-text: #facc15;
+            --low-text: #60a5fa;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 30px 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Top Header */
+        .page-header {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-info h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-pure);
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+
+        .header-info p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .stat-badge.fail { border-color: rgba(239, 68, 68, 0.4); color: var(--fail-text); }
+        .stat-badge.warn { border-color: rgba(234, 179, 8, 0.4); color: var(--warn-text); }
+        .stat-badge.pass { border-color: rgba(34, 197, 94, 0.4); color: var(--pass-text); }
+
+        /* Section Card */
+        .section-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 26px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-pure);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-number {
+            background-color: var(--brand-cyan);
+            color: #000000;
+            font-size: 0.8rem;
+            font-weight: 800;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        table.custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+        }
+
+        table.custom-table th {
+            background-color: var(--bg-header);
+            color: var(--text-pure);
+            font-weight: 700;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+        }
+
+        table.custom-table td {
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            background-color: var(--bg-card);
+        }
+
+        table.custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        table.custom-table tr:hover td {
+            background-color: var(--bg-row-hover);
+            color: var(--text-pure);
+        }
+
+        /* Code Tags */
+        .code-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background-color: var(--bg-code);
+            color: var(--brand-cyan);
+            border: 1px solid var(--border-light);
+            padding: 2px 7px;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .code-file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #38bdf8;
+            background-color: var(--bg-code);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            display: inline-block;
+        }
+
+        /* Status Pills (Exactly as Screenshot) */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 3px 12px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .status-pill.pass {
+            background-color: var(--pass-bg);
+            color: var(--pass-text);
+            border: 1px solid var(--pass-border);
+        }
+
+        .status-pill.fail {
+            background-color: var(--fail-bg);
+            color: var(--fail-text);
+            border: 1px solid var(--fail-border);
+        }
+
+        .status-pill.warning {
+            background-color: var(--warn-bg);
+            color: var(--warn-text);
+            border: 1px solid var(--warn-border);
+        }
+
+        /* Severity Text */
+        .severity-tag {
+            font-weight: 800;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-tag.critical { color: var(--critical-text); }
+        .severity-tag.high { color: var(--high-text); }
+        .severity-tag.medium { color: var(--medium-text); }
+        .severity-tag.low { color: var(--low-text); }
+
+        /* Timing & Evaluation Badges */
+        .pill-timing {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        .pill-timing.pre {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+        .pill-timing.post {
+            background-color: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.35);
+        }
+        .pill-timing.realtime {
+            background-color: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.35);
+        }
+
+        .pill-eval {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        .pill-eval.correct {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+        }
+        .pill-eval.incorrect {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        .field-status {
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        .field-status.clean {
+            color: #cbd5e1;
+        }
+        .field-status.warning-text {
+            color: #fde047;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 20px 0 10px;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header class="page-header">
+            <div class="header-info">
+                <h1>Báo Cáo Kiểm Tra Toàn Diện Hệ Thống</h1>
+                <p>SMASH-VN Shop Bán Vợt Cầu Lông — Kết quả đối soát trực tiếp mã nguồn (Không báo pass giả)</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge fail"><i class="fa-solid fa-xmark"></i> 9 Lỗi Mở (FAIL)</div>
+                <div class="stat-badge warn"><i class="fa-solid fa-triangle-exclamation"></i> 1 Cảnh Báo (WARNING)</div>
+                <div class="stat-badge pass"><i class="fa-solid fa-check"></i> 2 Đã Xử Lý (FIXED)</div>
+            </div>
+        </header>
+
+        <!-- BẢNG 1: BẢNG TỔNG HỢP CHI TIẾT LỖI & NGUY CƠ -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Bảng Tổng Hợp Danh Sách Lỗi & Sự Cố Hệ Thống
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>MÃ LỖI</th>
+                            <th>PHÂN HỆ</th>
+                            <th>VẤN ĐỀ / NGUYÊN NHÂN</th>
+                            <th>VỊ TRÍ FILE</th>
+                            <th>MỨC ĐỘ</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">BUG-01</span></td>
+                            <td><strong>Vận Chuyển / GHN</strong></td>
+                            <td>Webhook gọi <code>findAll()</code> toàn bộ CSDL trong vòng lặp gây tràn RAM & nguy cơ sập hệ thống (DoS)</td>
+                            <td><span class="code-file">GhnRestController.java: L489</span></td>
+                            <td><span class="severity-tag critical">CRITICAL</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-02</span></td>
+                            <td><strong>Khuyến Mãi</strong></td>
+                            <td>Không lưu <code>gia_tu</code>/<code>gia_den</code> khi tạo đợt giảm giá & thiếu tính năng sửa theo khoảng giá</td>
+                            <td><span class="code-file">AdminKhuyenMaiService.java: L189</span></td>
+                            <td><span class="severity-tag high">HIGH</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-03</span></td>
+                            <td><strong>Cấu Hình & Email</strong></td>
+                            <td>Hardcode <code>http://localhost:8080</code> trong email thanh toán SePay và link kích hoạt tài khoản</td>
+                            <td><span class="code-file">SepayOrderPaymentService.java: L222</span></td>
+                            <td><span class="severity-tag high">HIGH</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-04</span></td>
+                            <td><strong>Thống Kê Doanh Thu</strong></td>
+                            <td>Logic thống kê bỏ sót Doanh thu dự kiến đối với đơn hàng Online đã thanh toán tiền trước</td>
+                            <td><span class="code-file">AdminThongKeService.java: L94</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-05</span></td>
+                            <td><strong>Quản Trị Nhân Viên</strong></td>
+                            <td>Nghiệp vụ nâng quyền từ khách hàng lên nhân viên đã được xóa bỏ; chặn hoàn toàn khi Email đã tồn tại</td>
+                            <td><span class="code-file">AdminNhanVienService.java: L208</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> ĐÃ XÓA (FIXED)</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-06</span></td>
+                            <td><strong>Quản Lý Sản Phẩm</strong></td>
+                            <td>Hàm <code>capNhatSanPham</code> không lọc XSS qua Jsoup, thiếu validate độ dài & không ghi Audit Log</td>
+                            <td><span class="code-file">AdminSanPhamService.java: L451</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-07</span></td>
+                            <td><strong>Bán Hàng POS</strong></td>
+                            <td>Hóa đơn in POS tính sai "Tổng tiền trước giảm" do <code>donGia</code> đã là giá sau đợt giảm chiến dịch</td>
+                            <td><span class="code-file">AdminPosController.java: L264</span></td>
+                            <td><span class="severity-tag low">LOW</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-08</span></td>
+                            <td><strong>Tồn Kho Lô Hàng</strong></td>
+                            <td>Sửa tồn kho trực tiếp trên biến thể làm sai lệch dữ liệu với hệ thống Lô hàng FIFO (InventoryLot)</td>
+                            <td><span class="code-file">AdminBienTheService.java: L283</span></td>
+                            <td><span class="severity-tag high">HIGH</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-09</span></td>
+                            <td><strong>Bản Tin Newsletter</strong></td>
+                            <td>Đã loại bỏ hoàn toàn tham số và validation giới tính nam/nữ theo đúng cấu trúc CSDL thực tế</td>
+                            <td><span class="code-file">NewsletterServiceImpl.java: L45</span></td>
+                            <td><span class="severity-tag low">LOW</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> ĐÃ XÓA (FIXED)</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-10</span></td>
+                            <td><strong>Bảo Mật & Xác Thực</strong></td>
+                            <td>Tạo link khôi phục mật khẩu ghép trực tiếp cổng port 80/443 gây lỗi khi chạy qua SSL Proxy</td>
+                            <td><span class="code-file">UserQuenMatKhauController.java: L64</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-11</span></td>
+                            <td><strong>Giao Diện Cá Nhân</strong></td>
+                            <td>Câu chào Sidebar tại 12 trang cá nhân còn dùng tiếng Anh ("Hello, ") thay vì "Xin chào, "</td>
+                            <td><span class="code-file">dash-manage-order.html: L429</span></td>
+                            <td><span class="severity-tag low">LOW</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-12</span></td>
+                            <td><strong>Đặt Hàng / Checkout</strong></td>
+                            <td>Lệch cờ chọn địa chỉ mặc định (isDefault) trong bộ kiểm thử CheckoutControllerTest</td>
+                            <td><span class="code-file">CheckoutControllerTest.java: L218</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">BUG-13</span></td>
+                            <td><strong>Giỏ Hàng / Cart</strong></td>
+                            <td>Trả về HTTP 400 khi thêm biến thể không thỏa mãn ràng buộc tồn kho trong CartRuntimeRegressionTest</td>
+                            <td><span class="code-file">CartRuntimeRegressionTest.java: L85</span></td>
+                            <td><span class="severity-tag medium">MEDIUM</span></td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 2: BẢNG ĐỐI SOÁT RÀNG BUỘC & NGHIỆP VỤ TOÀN HỆ THỐNG (CHUẨN SCREENSHOT) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Bảng Đối Soát Ràng Buộc & Nghiệp Vụ Toàn Hệ Thống
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>PHÂN HỆ</th>
+                            <th>NỘI DUNG KIỂM TRA</th>
+                            <th>RÀNG BUỘC MONG ĐỢI</th>
+                            <th>KẾT QUẢ ĐỐI SOÁT THỰC TẾ</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Khuyến Mãi</strong></td>
+                            <td>Tạo Đợt Giảm Giá (% giảm)</td>
+                            <td>Từ 1% đến 40%, bắt buộc số nguyên</td>
+                            <td>Validate đúng qua PromotionValidationConstants</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khuyến Mãi</strong></td>
+                            <td>Lưu khoảng giá (giaTu, giaDen)</td>
+                            <td>Lưu giá trị vào bảng DotGiamGia</td>
+                            <td>Quên gán giá trị vào entity (Bị NULL trong DB)</td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khuyến Mãi</strong></td>
+                            <td>Sửa Đợt Giảm Giá theo khoảng giá</td>
+                            <td>Hỗ trợ xem & sửa theo khoảng giá</td>
+                            <td>Thiếu form & tham số xử lý trên backend</td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Voucher</strong></td>
+                            <td>Trần giảm tối đa (Cap)</td>
+                            <td>Bắt buộc khi đơn vị là %, cấm khi là VND</td>
+                            <td>Validate đúng trong AdminKhuyenMaiService</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bán Hàng POS</strong></td>
+                            <td>Trừ tồn kho FIFO tại quầy</td>
+                            <td>Lock sản phẩm chống deadlock & trừ theo lô cũ nhất</td>
+                            <td>Đã phân bổ an toàn qua InventoryLotService</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bán Hàng POS</strong></td>
+                            <td>In hóa đơn tiền giảm chiết khấu</td>
+                            <td>Thể hiện đầy đủ giảm giá đợt và voucher</td>
+                            <td>Chỉ tính tiền giảm từ voucher</td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thanh Toán Online</strong></td>
+                            <td>SePay IPN Webhook Idempotency</td>
+                            <td>Chống duplicate IPN khi nhận nhiều request cùng mã</td>
+                            <td>Kiểm tra PaymentTransactionId an toàn</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Giao Hàng GHN</strong></td>
+                            <td>Webhook xử lý trạng thái giao hàng</td>
+                            <td>Truy vấn nhanh theo mã vận đơn có index</td>
+                            <td>Quét toàn bộ bảng findAll() gây nghẽn DB</td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quản Trị Nhân Viên</strong></td>
+                            <td>Tạo nhân viên mới khi Email đã tồn tại (Chặn nâng quyền)</td>
+                            <td>Chặn hoàn toàn và báo lỗi "Email đã được sử dụng"</td>
+                            <td>Đã xóa bỏ nghiệp vụ nâng quyền, chặn chuẩn xác qua MSG_DUPLICATE_EMAIL</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm</strong></td>
+                            <td>Sửa sản phẩm cơ bản (capNhatSanPham)</td>
+                            <td>Lọc XSS Jsoup và kiểm tra độ dài tên/mô tả</td>
+                            <td>Không lọc Jsoup, không ghi Audit Log</td>
+                            <td><span class="status-pill fail"><i class="fa-solid fa-xmark"></i> FAIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Đánh Giá</strong></td>
+                            <td>Kiểm duyệt từ ngữ thô tục (Trie)</td>
+                            <td>Tự động gắn cờ và ẩn bình luận vi phạm</td>
+                            <td>Hoạt động chính xác theo thuật toán Trie</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Đổi Trả / Hoàn Tiền</strong></td>
+                            <td>Hoàn trả hàng và nhập lại kho</td>
+                            <td>Chỉ nhập kho với hàng còn nguyên vẹn, ghi log</td>
+                            <td>Thực hiện đúng theo quy trình phân loại hàng</td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 3: BẢNG KIỂM THỬ TOÀN DIỆN NGHIỆP VỤ KHÁCH HÀNG VÃNG LAI (GUEST CUSTOMER) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Bảng Kiểm Thử Toàn Diện Nghiệp Vụ Khách Hàng Vãng Lai (Guest Customer)
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>PHÂN HỆ / TÍNH NĂNG</th>
+                            <th>NGHIỆP VỤ & TÌNH HUỐNG KIỂM THỬ</th>
+                            <th>THỜI ĐIỂM THÔNG BÁO</th>
+                            <th>ĐỐI SOÁT NGHIỆP VỤ</th>
+                            <th>KIỂM TRA VIỆT HÓA FIELD / TEXT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">GC-01</span></td>
+                            <td><strong>Giỏ Hàng Phiên Ẩn Danh</strong></td>
+                            <td>Khách vãng lai thêm sản phẩm vào giỏ hàng session không cần đăng nhập; tự động chuyển sang giỏ hàng DB khi tiến hành đặt hàng.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Toast báo thêm giỏ & badge header</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Tự động đồng bộ giỏ session vào DB</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra tồn kho biến thể, giá chiến dịch và lock session an toàn.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Giỏ hàng, Đơn giá, Thành tiền)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-02</span></td>
+                            <td><strong>Khách Mới (Email Mới)</strong></td>
+                            <td>Khách vãng lai nhập Email mới chưa từng có trong hệ thống, chọn COD hoặc chuyển khoản và bấm Đặt Hàng.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU ĐẶT HÀNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Bật Modal thông báo tài khoản tự động tạo & gửi Async Email kèm link kích hoạt 30 ngày.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tạo TaiKhoan (GUEST, matKhau=null, count=1), sinh TokenKhoiPhuc và lưu ThongBao in-app.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Modal đặt hàng, tiêu đề & nội dung email)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-03</span></td>
+                            <td><strong>Trùng Email Thành Viên</strong></td>
+                            <td>Khách vãng lai nhập Email của tài khoản thành viên chính thức (đã có mật khẩu bảo mật).</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC ĐẶT HÀNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chặn ngay khi blur ô email / submit: Bật Modal yêu cầu nhập mật khẩu.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chống giả mạo email người khác, bảo vệ điểm tích lũy và voucher thành viên.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form nhập mật khẩu, link "Quên mật khẩu?")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-04</span></td>
+                            <td><strong>Hạn Mức Vãng Lai (≥ 3 Lần)</strong></td>
+                            <td>Email vãng lai đã mua hàng thành công 3 lần mà chưa kích hoạt mật khẩu bảo vệ.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC ĐẶT HÀNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chặn tạo đơn, bật Modal thông báo quá hạn mức và nút gửi lại link kích hoạt.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra max giữa counter và CSDL thực tế, chống spam đơn hàng ẩn danh.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Cảnh báo hạn mức, nút gửi lại email kích hoạt)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-05</span></td>
+                            <td><strong>Trùng Số Điện Thoại</strong></td>
+                            <td>Khách vãng lai nhập số điện thoại đã thuộc về một hồ sơ khách hàng khác trong hệ thống.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC TẠO ĐƠN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Backend phát hiện xung đột và trả về Toast/Alert cảnh báo lỗi.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Validate định dạng 10 số (03,05,07,08,09) và bảo đảm tính toàn vẹn duy nhất.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Số điện thoại này đã được đăng ký...")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-06</span></td>
+                            <td><strong>Địa Chỉ & Phí Vận Chuyển GHN</strong></td>
+                            <td>Khách vãng lai nhập địa chỉ nhận hàng mới, chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Báo lỗi nếu thiếu dropdown 3 cấp</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Tự động lưu địa chỉ vào SoDiaChi</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Gọi API GHN tính cước chính xác, tự động gán đơn vị vận chuyển GHN.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Dropdown địa chỉ 3 cấp, nhãn địa chỉ giao hàng)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-07</span></td>
+                            <td><strong>Thanh Toán QR SePay</strong></td>
+                            <td>Khách vãng lai chọn Chuyển khoản QR ngân hàng tự động qua cổng SePay.</td>
+                            <td>
+                                <div><span class="pill-timing realtime"><i class="fa-solid fa-bolt"></i> REALTIME SAU ĐƠN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hiện Popup VietQR động; SePay Webhook bắn IPN tự động xác nhận đã nhận tiền.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Idempotency an toàn, chuyển trạng thái cho_xac_nhan & tăng số lần mua.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Hướng dẫn chuyển khoản, ngân hàng, memo CK)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-08</span></td>
+                            <td><strong>Tra Cứu Đơn Hàng Vãng Lai</strong></td>
+                            <td>Khách truy cập <code>/user/track-order</code> nhập Mã Đơn Hàng + (Email hoặc Số điện thoại).</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU TRA CỨU</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Nếu sai thông tin: Báo lỗi đỏ. Nếu đúng: Cấp session token truy cập chi tiết đơn.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chống IDOR bằng cách bắt buộc khớp chính xác Email/SĐT đặt hàng.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form tra cứu, hướng dẫn và thông báo lỗi)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-09</span></td>
+                            <td><strong>Xem Chi Tiết Đơn Vãng Lai</strong></td>
+                            <td>Giao diện quản lý & theo dõi chi tiết đơn hàng (<code>dash-manage-order</code>) dành cho khách vãng lai.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU KHI MỞ</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hiển thị Stepper trạng thái, phí ship, chi tiết sản phẩm, nút in hóa đơn.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tự động ẩn menu nhạy cảm của thành viên, chỉ hiển thị thông tin đơn hàng hiện tại.</div>
+                            </td>
+                            <td><span class="field-status warning-text"><i class="fa-solid fa-triangle-exclamation" style="color:#facc15;"></i> CÒN CHỮ TIẾNG ANH: Câu chào Sidebar dùng "Hello, [Tên]" thay vì "Xin chào, [Tên]"</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">GC-10</span></td>
+                            <td><strong>Đăng Nhập Google Bằng Email Vãng Lai</strong></td>
+                            <td>Khách vãng lai sử dụng chức năng Đăng nhập Google (OAuth2) bằng đúng email đã mua hàng trước đó.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU ĐĂNG NHẬP</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Đăng nhập thành công, chuyển hướng trực tiếp vào Dashboard thành viên.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tự động nâng cấp tài khoản GUEST -> ACTIVE, kích hoạt mật khẩu và đồng bộ toàn bộ đơn hàng.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Nút Google, thông báo đăng nhập)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 4: BẢNG KIỂM THỬ TOÀN DIỆN NGHIỆP VỤ KHÁCH HÀNG THÀNH VIÊN (ACTIVE CUSTOMER) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Bảng Kiểm Thử Toàn Diện Nghiệp Vụ Khách Hàng Thành Viên (Tài Khoản ACTIVE)
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>PHÂN HỆ / TÍNH NĂNG</th>
+                            <th>NGHIỆP VỤ & TÌNH HUỐNG KIỂM THỬ</th>
+                            <th>THỜI ĐIỂM THÔNG BÁO</th>
+                            <th>ĐỐI SOÁT NGHIỆP VỤ</th>
+                            <th>KIỂM TRA VIỆT HÓA FIELD / TEXT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">AC-01</span></td>
+                            <td><strong>Đăng Nhập Mật Khẩu Chuẩn</strong></td>
+                            <td>Thành viên đăng nhập bằng Email & Mật khẩu đã kích hoạt, kiểm tra xác thực BCrypt và trạng thái tài khoản.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> KHI SAI</span> Báo lỗi form: "Email hoặc mật khẩu không chính xác!"</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI ĐÚNG</span> Chuyển hướng Dashboard</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Xác thực an toàn BCrypt, lưu Session (idNguoiDung, vaiTro='KH').</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form đăng nhập, thông báo lỗi)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-02</span></td>
+                            <td><strong>Đăng Nhập Google OAuth2</strong></td>
+                            <td>Thành viên sử dụng nút "Đăng nhập với Google" bằng email đã kích hoạt tài khoản ACTIVE.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU ĐĂNG NHẬP</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chuyển hướng vào Dashboard, tự động đồng bộ tên hiển thị Google.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Không ghi đè mật khẩu cũ, kiểm tra trạng thái khóa tài khoản an toàn.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Nút Google, thông báo liên kết)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-03</span></td>
+                            <td><strong>Kiểm Tra Tài Khoản Bị Khóa</strong></td>
+                            <td>Tài khoản thành viên có trạng thái <code>AccountStatus.LOCKED</code> / <code>bi_khoa</code> cố tình đăng nhập hoặc thao tác.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi đỏ: "Tài khoản của bạn đã bị khóa!" và từ chối cấp quyền.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chặn toàn diện cả đăng nhập thường, Google OAuth2 và thu hồi Session.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Tài khoản của bạn đã bị khóa!")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-04</span></td>
+                            <td><strong>Đổi Mật Khẩu Thành Viên</strong></td>
+                            <td>Thành viên vào trang cá nhân đổi mật khẩu: nhập mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate mật khẩu cũ & độ dài ≥ 6 ký tự</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Flash message xanh: "Đổi mật khẩu thành công!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Xác thực mật khẩu cũ qua BCrypt encoder, mã hóa an toàn trước khi lưu.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Nhãn trường, thông báo xác nhận)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-05</span></td>
+                            <td><strong>Quên Mật Khẩu & Khôi Phục Link</strong></td>
+                            <td>Thành viên yêu cầu cấp lại mật khẩu qua email; nhập mã xác nhận OTP/Link để đặt mật khẩu mới.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Rate Limiter chặn spam yêu cầu (15 phút)</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Báo xanh: "Đã gửi link khôi phục mật khẩu..."</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Sinh TokenKhoiPhuc giới hạn 15 phút, tự động hủy token sau khi dùng 1 lần.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form nhập email, giao diện đặt mật khẩu mới)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-06</span></td>
+                            <td><strong>Quản Lý Sổ Địa Chỉ & Chống IDOR</strong></td>
+                            <td>Thêm địa chỉ mới chuẩn 3 cấp GHN, chỉnh sửa, đặt làm mặc định hoặc xóa địa chỉ đã lưu.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate quyền sở hữu & dữ liệu GHN</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Toast / Flash message thành công</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chống IDOR (chỉ sửa/xóa địa chỉ của chính mình), xử lý Foreign Key an toàn.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Danh sách địa chỉ, modal xóa, dropdown GHN)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-07</span></td>
+                            <td><strong>Giỏ Hàng CSDL & Tự Động Merge</strong></td>
+                            <td>Giỏ hàng thành viên lưu trữ vĩnh viễn trong CSDL; tự động gộp sản phẩm từ phiên ẩn danh khi vừa đăng nhập.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Cập nhật số lượng và thành tiền realtime</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Merge giỏ hàng session vào DB ngay khi login</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra tồn kho biến thể, giá chiến dịch đợt giảm giá chính xác.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Giỏ hàng, Đơn giá, Cập nhật số lượng)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-08</span></td>
+                            <td><strong>Áp Dụng Mã Giảm Giá (Voucher)</strong></td>
+                            <td>Thành viên áp dụng voucher cá nhân/công khai vào đơn hàng để nhận chiết khấu thêm.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC ĐẶT HÀNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">AJAX kiểm tra realtime: báo tiền giảm hoặc báo lỗi nếu không thỏa điều kiện.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra hạn dùng, trần giảm tối đa (Cap), trừ lượt sử dụng nguyên tử.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo áp dụng voucher, lý do từ chối)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-09</span></td>
+                            <td><strong>Đặt Hàng Nhanh (1-Click Checkout)</strong></td>
+                            <td>Tự động điền Họ tên, SĐT, Email và Địa chỉ mặc định từ hồ sơ thành viên; chọn COD hoặc SePay QR.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU ĐẶT HÀNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chuyển hướng trang Order Success hoặc Popup VietQR, gửi Email xác nhận.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Trừ tồn kho Lô hàng FIFO, ghi nhận lịch sử mua sắm vào tài khoản thành viên.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tóm tắt đơn hàng, phí ship GHN, phương thức thanh toán)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-10</span></td>
+                            <td><strong>Tự Hủy Đơn Hàng & Hoàn Kho FIFO</strong></td>
+                            <td>Thành viên chủ động hủy đơn hàng khi đơn còn ở trạng thái <code>cho_xac_nhan</code> hoặc <code>dang_chuan_bi_hang</code>.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Modal yêu cầu nhập lý do hủy</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Toast xanh: "Hủy đơn hàng thành công!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Pessimistic Lock, tự động hoàn kho FIFO (hoanKho) và hoàn lại 1 lượt dùng Voucher.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Modal hủy đơn, trường lý do hủy)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-11</span></td>
+                            <td><strong>Xác Nhận Đã Nhận & Đánh Giá Sao</strong></td>
+                            <td>Bấm "Đã nhận được hàng" chuyển đơn sang <code>hoan_thanh</code> và mở form viết nhận xét đánh giá sản phẩm.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU XÁC NHẬN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Toast xanh cảm ơn và mở form bình luận đánh giá sao.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chỉ cho phép đánh giá đơn đã hoàn thành; thuật toán Trie tự động lọc từ ngữ vi phạm.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form đánh giá, số sao, nội dung nhận xét)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-12</span></td>
+                            <td><strong>Danh Sách Yêu Thích (Wishlist)</strong></td>
+                            <td>Thêm / Xóa sản phẩm yêu thích và chuyển nhanh toàn bộ vào giỏ hàng thành viên.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> REALTIME</span> Toast thông báo đã thêm/xóa khỏi Wishlist</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Lưu trữ vĩnh viễn theo ID khách hàng, tự động kiểm tra trùng lặp.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang Wishlist, nút xóa, nút thêm vào giỏ)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-13</span></td>
+                            <td><strong>Hộp Thư Thông Báo In-App</strong></td>
+                            <td>Xem danh sách thông báo hệ thống (cập nhật đơn hàng, voucher mới, tài khoản); đánh dấu đã đọc.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI CÓ SỰ KIỆN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Cập nhật badge chuông Header realtime và lưu trữ bản ghi vào bảng ThongBao.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hỗ trợ đánh dấu đọc từng tin hoặc đọc tất cả, phân loại theo loại thông báo.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang thông báo, tiêu đề, thời gian tạo)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">AC-14</span></td>
+                            <td><strong>Giao Diện Dashboard & Quản Lý Hồ Sơ</strong></td>
+                            <td>Xem tổng quan tài khoản, thống kê đơn đặt, đơn hủy, danh sách đơn hàng đã mua.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI MỞ TRANG</span> Hiển thị số liệu thống kê</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Phân quyền chặt chẽ, chống truy cập trái phép trang Admin.</div>
+                            </td>
+                            <td><span class="field-status warning-text"><i class="fa-solid fa-triangle-exclamation" style="color:#facc15;"></i> CÒN CHỮ TIẾNG ANH: Câu chào Sidebar tại 12 trang Dashboard dùng "Hello, [Tên]" thay vì "Xin chào, [Tên]"</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 5: BẢNG KIỂM THỬ TOÀN DIỆN NGHIỆP VỤ NHÂN VIÊN (ROLE NV / STAFF) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Bảng Kiểm Thử Toàn Diện Nghiệp Vụ Nhân Viên (Phân Quyền Staff / Role NV)
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>PHÂN HỆ / TÍNH NĂNG</th>
+                            <th>NGHIỆP VỤ & TÌNH HUỐNG KIỂM THỬ</th>
+                            <th>THỜI ĐIỂM THÔNG BÁO</th>
+                            <th>ĐỐI SOÁT NGHIỆP VỤ</th>
+                            <th>KIỂM TRA VIỆT HÓA FIELD / TEXT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">NV-01</span></td>
+                            <td><strong>Đăng Nhập & Phân Quyền RBAC</strong></td>
+                            <td>Nhân viên đăng nhập qua <code>/admin/dang-nhap</code> với tài khoản vai trò <code>NV</code>; kiểm tra menu hiển thị và quyền truy cập.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI LOGIN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chuyển hướng vào trang đơn hàng, hiển thị tên "Nhân viên hệ thống".</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Spring Security cấp ROLE_NV, ẩn các mục quản trị dành riêng cho Quản lý.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang đăng nhập Admin, thông báo thành công)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-02</span></td>
+                            <td><strong>Chặn Quyền Quản Trị & Thống Kê</strong></td>
+                            <td>Nhân viên (<code>NV</code>) cố tình truy cập các URL quản lý nhân viên (<code>/admin/nhan-vien/**</code>) hoặc thống kê doanh thu (<code>/admin/thong-ke/**</code>).</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Từ chối truy cập ngay lập tức: trả về mã lỗi 403 Forbidden.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Thực thi nguyên tắc đặc quyền tối thiểu (Least Privilege) bảo vệ dữ liệu nhạy cảm.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang thông báo từ chối quyền truy cập)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-03</span></td>
+                            <td><strong>Hóa Đơn Chờ Bán Tại Quầy (POS)</strong></td>
+                            <td>Thu ngân tạo tối đa 5 hóa đơn chờ đồng thời tại quầy, chuyển đổi tab hóa đơn linh hoạt khi phục vụ nhiều khách.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Cảnh báo nếu tạo vượt quá 5 hóa đơn chờ</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Lưu trạng thái tab tức thì</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Quản lý session tab an toàn, không bị mất dữ liệu giỏ hàng khi đổi khách.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tạo hóa đơn, Tab Hóa đơn 1..5, Đóng tab)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-04</span></td>
+                            <td><strong>Tìm & Chọn Khách Hàng Tại Quầy</strong></td>
+                            <td>Chọn "Khách lẻ" mặc định, hoặc tìm kiếm khách hàng cũ theo Tên/SĐT/Email, hoặc tạo nhanh khách hàng mới.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC THANH TOÁN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hiển thị thông tin khách hàng, tích lũy điểm và áp dụng ưu đãi thành viên.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hỗ trợ khách lẻ (null ID) và tạo nhanh khách hàng mới có cờ tài khoản nội bộ.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Khách lẻ, Tìm khách hàng, Thêm nhanh)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-05</span></td>
+                            <td><strong>Thanh Toán Tiền Mặt Tại Quầy POS</strong></td>
+                            <td>Thu ngân nhập số tiền khách đưa, hệ thống tính tiền thừa trả lại, bấm Hoàn tất thanh toán.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Báo lỗi nếu tiền khách đưa nhỏ hơn tổng tiền</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Toast xanh: "Thanh toán thành công!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Khóa bi quan, trừ tồn kho Lô hàng FIFO, lưu hóa đơn hoàn thành ngay.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tiền khách đưa, Tiền thừa trả khách, Nút thanh toán)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-06</span></td>
+                            <td><strong>Thanh Toán Chuyển Khoản QR POS</strong></td>
+                            <td>Thu ngân chọn Chuyển khoản QR, màn hình hiện mã VietQR động với cú pháp <code>DH...</code>.</td>
+                            <td>
+                                <div><span class="pill-timing realtime"><i class="fa-solid fa-bolt"></i> REALTIME SAU ĐƠN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Popup VietQR tự động lắng nghe SePay Webhook IPN để xác nhận thanh toán.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chống trùng IPN, tự động chuyển đơn sang hoàn thành khi nhận đủ tiền.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Modal VietQR, thông tin tài khoản ngân hàng)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-07</span></td>
+                            <td><strong>In Hóa Đơn Nhiệt Tại Quầy POS</strong></td>
+                            <td>Thu ngân bấm in phiếu tính tiền khổ giấy nhiệt 80mm giao cho khách hàng tại quầy.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU KHI THANH TOÁN</span> Mở popup in hóa đơn</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval incorrect"><i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO (BUG-07)</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tiền giảm đợt khuyến mãi chưa thể hiện rõ do đơn giá đã là giá sau giảm.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tên shop, SĐT, Danh sách món, Tổng tiền)</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-08</span></td>
+                            <td><strong>Xử Lý & Cập Nhật Trạng Thái Đơn Online</strong></td>
+                            <td>Nhân viên duyệt đơn: Chờ xác nhận → Đang chuẩn bị hàng → Đang giao hàng → Đã giao hàng.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU CẬP NHẬT</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Toast báo cập nhật thành công và gửi email tự động cho khách hàng.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chuyển trạng thái theo đúng sơ đồ máy trạng thái hữu hạn (FSM), ghi Audit Log.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Chờ xác nhận, Chuẩn bị hàng, Đang giao hàng, Đã giao hàng)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-09</span></td>
+                            <td><strong>Đồng Bộ Vận Đơn Giao Hàng Nhanh (GHN)</strong></td>
+                            <td>Nhân viên bấm "Tạo vận đơn GHN", hệ thống gửi API sang GHN và nhận mã vận đơn Tracking Code.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU GỌI API</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Cập nhật mã vận đơn lên bảng đơn hàng và kích hoạt Webhook đồng bộ.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tính đúng kích thước, trọng lượng gói hàng và tiền thu hộ COD.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tạo vận đơn GHN, In phiếu giao, Tra cứu vận đơn)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-10</span></td>
+                            <td><strong>Hủy Đơn Hàng Online & Hoàn Kho FIFO</strong></td>
+                            <td>Nhân viên hủy đơn khi khách yêu cầu hoặc phát hiện đơn ảo/không liên lạc được.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Bắt buộc nhập lý do hủy</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Toast xanh: "Hủy đơn thành công!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Pessimistic Lock, tự động hoàn trả tồn kho Lô hàng FIFO và hoàn lượt Voucher.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Modal lý do hủy, danh sách lý do mẫu)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-11</span></td>
+                            <td><strong>Xử Lý Đổi Trả & Phân Loại Hàng Nhập Kho</strong></td>
+                            <td>Nhân viên tiếp nhận yêu cầu đổi trả từ khách, kiểm tra tình trạng hàng (nguyên vẹn hay lỗi/hỏng).</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU XỬ LÝ</span> Toast thông báo duyệt đổi trả / hoàn tiền</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hàng nguyên vẹn nhập lại kho FIFO (conBanDuoc=true); hàng lỗi ghi nhận hủy bỏ.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Duyệt yêu cầu, Từ chối, Nhập kho, Hoàn tiền)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NV-12</span></td>
+                            <td><strong>Ghi Nhật Ký Audit Log Mọi Thao Tác</strong></td>
+                            <td>Tất cả hành vi tạo đơn POS, chuyển trạng thái, hủy đơn, duyệt đổi trả đều tự động ghi nhật ký hệ thống.</td>
+                            <td>
+                                <div><span class="pill-timing realtime"><i class="fa-solid fa-bolt"></i> BẤT ĐỒNG BỘ</span> Ghi log ngầm không nghẽn luồng</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Lưu đầy đủ idTaiKhoan, vaiTroThucHien='NV', clientIp, moTa và thoiGian.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Mô tả hành động trong nhật ký quản trị)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 6: BẢNG KIỂM THỬ TOÀN DIỆN NGHIỆP VỤ QUẢN LÝ (ROLE QL / MANAGER) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Bảng Kiểm Thử Toàn Diện Nghiệp Vụ Quản Lý (Phân Quyền Manager / Role QL)
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>PHÂN HỆ / TÍNH NĂNG</th>
+                            <th>NGHIỆP VỤ & TÌNH HUỐNG KIỂM THỬ</th>
+                            <th>THỜI ĐIỂM THÔNG BÁO</th>
+                            <th>ĐỐI SOÁT NGHIỆP VỤ</th>
+                            <th>KIỂM TRA VIỆT HÓA FIELD / TEXT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">QL-01</span></td>
+                            <td><strong>Đăng Nhập & Cấp Quyền Quản Trị Tối Cao</strong></td>
+                            <td>Quản lý đăng nhập qua <code>/admin/dang-nhap</code> với tài khoản <code>QL</code>, mở toàn bộ các module và quyền cấu hình.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI LOGIN</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chuyển hướng vào trang quản trị tổng thể, hiển thị tên "Quản lý hệ thống".</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Spring Security cấp ROLE_QL, toàn quyền truy cập tất cả API & Controller.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang đăng nhập, Header Admin)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-02</span></td>
+                            <td><strong>Thêm Mới Nhân Viên</strong></td>
+                            <td>Quản lý nhập Email, Mật khẩu khởi tạo, Họ tên, Chức vụ, SĐT để tạo tài khoản nhân viên mới.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate định dạng email, SĐT, độ dài mật khẩu</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Flash message: "Thêm nhân viên thành công!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Tạo TaiKhoan (NV), mã hóa BCrypt, chặn trùng lặp email/SĐT tuyệt đối.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form thêm nhân viên, nhãn trường, thông báo lỗi)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-03</span></td>
+                            <td><strong>Sửa Hồ Sơ & Đổi Mật Khẩu Nhân Viên</strong></td>
+                            <td>Chỉnh sửa họ tên, chức vụ, SĐT hoặc đặt lại mật khẩu mới cho nhân viên trực thuộc.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU CẬP NHẬT</span> Toast / Flash message thành công</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Ghi Audit Log người thực hiện (actingTaiKhoanId), mã hóa mật khẩu mới.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form sửa nhân viên, trường mật khẩu mới)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-04</span></td>
+                            <td><strong>Khóa / Mở Khóa Tài Khoản Nhân Viên</strong></td>
+                            <td>Quản lý tạm khóa hoặc kích hoạt lại tài khoản nhân viên; chặn tự khóa chính mình.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Chặn nếu tự khóa tài khoản của chính mình</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Báo thành công tức thì</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chống tự khóa (Self-Lock Prevention), hỗ trợ quy trình duyệt 2 bước nếu có.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Nút khóa/mở, thông báo xác nhận)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-05</span></td>
+                            <td><strong>Thống Kê Doanh Thu & Báo Cáo Tài Chính</strong></td>
+                            <td>Xem biểu đồ doanh thu theo ngày/tuần/tháng/năm hoặc tùy chọn khoảng ngày; phân tích doanh thu thực tế vs dự kiến.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI LỌC DỮ LIỆU</span> AJAX cập nhật biểu đồ Chart.js và KPI cards</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval incorrect"><i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO (BUG-04)</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Doanh thu dự kiến trước đây bỏ sót các đơn Online đã thanh toán trước đang chuẩn bị.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Biểu đồ doanh thu, KPI, Bộ lọc thời gian)</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-06</span></td>
+                            <td><strong>Xuất Báo Cáo Thống Kê Ra File Excel</strong></td>
+                            <td>Quản lý bấm nút Xuất Excel để tải file bảng tính thống kê doanh thu và chi tiết đơn hàng.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU BẤM XUẤT</span> Tự động tải file .xlsx về máy tính</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Stream trực tiếp byte array Excel MIME type OpenXML chuẩn.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Nút xuất báo cáo, tiêu đề cột trong file Excel)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-07</span></td>
+                            <td><strong>Tạo Đợt Giảm Giá (Chiến Dịch Khuyến Mãi)</strong></td>
+                            <td>Thiết lập chiến dịch giảm giá theo danh sách sản phẩm hoặc khoảng giá (% giảm từ 1% đến 40%).</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate ngày bắt đầu &lt; ngày kết thúc, % giảm hợp lệ</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Tự động cập nhật giá sau giảm</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval incorrect"><i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO (BUG-02)</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Khi chọn áp dụng theo khoảng giá, DB chưa lưu lại metadata khoảng giá để render lại form.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Form đợt giảm giá, chọn sản phẩm, % giảm)</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-08</span></td>
+                            <td><strong>Tạo & Phát Hành Phiếu Giảm Giá (Voucher)</strong></td>
+                            <td>Tạo mã voucher cá nhân/công khai, cấu hình đơn tối thiểu, trần giảm tối đa (Cap), số lượt phát hành.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate mã duy nhất, không trùng lặp</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Báo tạo thành công</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Khóa bi quan khi trừ/hoàn lượt, hỗ trợ gửi email voucher hàng loạt qua Newsletter.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Mã voucher, Loại giảm giá, Ngày hết hạn)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-09</span></td>
+                            <td><strong>Quản Lý Sản Phẩm, Biến Thể & Nhập Kho FIFO</strong></td>
+                            <td>Quản lý thêm/sửa sản phẩm cha, cấu hình biến thể và tạo Lô Hàng nhập kho FIFO (InventoryLot).</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> TRƯỚC</span> Validate tên sản phẩm, giá niêm yết</div>
+                                <div style="margin-top: 4px;"><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU</span> Lưu sản phẩm & tạo lô nhập kho</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval incorrect"><i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO (BUG-08)</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Sửa tồn kho biến thể trực tiếp từ màn hình chi tiết có thể làm lệch với các Lô hàng FIFO.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Tên sản phẩm, Danh mục, Thương hiệu, Biến thể)</span></td>
+                            <td><span class="status-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-10</span></td>
+                            <td><strong>Phê Duyệt & Xuất Bản Bài Viết Blog</strong></td>
+                            <td>Quản lý xem xét bài viết của nhân viên và bấm "Xuất bản" hoặc "Xóa bài viết" (quyền độc quyền của Quản lý).</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU DUYỆT</span> Toast báo bài viết đã được công khai trên website</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chỉ tài khoản ROLE_QL mới có quyền duyệt xuất bản hoặc xóa bài blog.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trình soạn thảo, Trạng thái: Nháp, Đã xuất bản)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-11</span></td>
+                            <td><strong>Kiểm Duyệt Từ Khóa & Đánh Giá Sản Phẩm</strong></td>
+                            <td>Cấu hình danh sách từ khóa cấm/thô tục cho bộ lọc Trie và duyệt các đánh giá bị gắn cờ.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU CẬP NHẬT</span> Cập nhật lại cây Trie in-memory realtime</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Quyền độc quyền của Quản lý, tự động lọc và gắn cờ các bình luận có nội dung xấu.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Quản lý từ khóa, Đánh giá, Ẩn/Hiện bình luận)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">QL-12</span></td>
+                            <td><strong>Giám Sát Toàn Bộ Nhật Ký Audit Log</strong></td>
+                            <td>Quản lý tra cứu lịch sử thao tác của toàn bộ nhân viên và quản lý khác trong hệ thống.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> KHI TRA CỨU</span> Bảng log phân trang, lọc theo người làm, ngày, hành động</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Log bất biến (Immutable Log), chỉ đọc, không cho phép sửa xóa nhật ký.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thời gian, Người thao tác, IP, Hành động, Chi tiết)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 7: BẢNG KIỂM THỬ NGƯỢC & TÌNH HUỐNG BIÊN (NEGATIVE & SECURITY EDGE-CASE TESTING) -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Bảng Kiểm Thử Ngược & Tình Huống Biên (Negative & Security Edge-Case Testing)
+            </h2>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>PHÂN HỆ / TÍNH NĂNG</th>
+                            <th>NGHIỆP VỤ & TÌNH HUỐNG KIỂM THỬ NGƯỢC</th>
+                            <th>THỜI ĐIỂM THÔNG BÁO</th>
+                            <th>ĐỐI SOÁT NGHIỆP VỤ</th>
+                            <th>KIỂM TRA VIỆT HÓA FIELD / TEXT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">NEG-01</span></td>
+                            <td><strong>Nhập Số Lượng Âm Hoặc Bằng 0</strong></td>
+                            <td>Người dùng/Thu ngân cố tình nhập số lượng <code>-5</code>, <code>0</code> hoặc chuỗi chữ vào ô số lượng giỏ hàng/POS.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi: "Số lượng sản phẩm không hợp lệ!" và tự khôi phục về 1.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Validate kép cả Client JS và Backend DTO (@Positive, @Min(1)).</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Số lượng sản phẩm không hợp lệ!")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-02</span></td>
+                            <td><strong>Đặt Mua Vượt Quá Tồn Kho Thực Tế</strong></td>
+                            <td>Khách hàng cố tình đặt mua số lượng 10 khi biến thể sản phẩm chỉ còn tồn kho 2 chiếc.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Toast đỏ: "Sản phẩm [...] chỉ còn 2 sản phẩm trong kho!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra tồn kho thời gian thực trước khi trừ kho FIFO, ngăn chặn overselling.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo tồn kho chi tiết kèm tên sản phẩm)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-03</span></td>
+                            <td><strong>Tấn Công XSS (Cross-Site Scripting)</strong></td>
+                            <td>Chèn mã độc <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code> vào Họ tên, Địa chỉ, Lý do hủy đơn, Bình luận đánh giá.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> LÀM SẠCH TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Hệ thống tự động lọc bỏ thẻ độc hại trước khi lưu CSDL.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Sử dụng Jsoup.clean(Safelist.none()) làm sạch 100% dữ liệu đầu vào.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Dữ liệu hiển thị an toàn không bị phá vỡ)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-04</span></td>
+                            <td><strong>Tấn Công SQL Injection (SQLi)</strong></td>
+                            <td>Nhập <code>' OR '1'='1</code> hoặc <code>; DROP TABLE...</code> vào ô tìm kiếm, form đăng nhập, ô mã voucher.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> XỬ LÝ AN TOÀN</span> Báo không tìm thấy hoặc sai tài khoản</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Sử dụng Spring Data JPA PreparedStatement / Parameterized Query tuyệt đối.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo "Không tìm thấy dữ liệu")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-05</span></td>
+                            <td><strong>Tấn Công IDOR (Trộm Đơn Hàng / Sổ Địa Chỉ)</strong></td>
+                            <td>Khách hàng A cố tình sửa ID trên URL để xem/hủy đơn hàng hoặc sửa/xóa địa chỉ thuộc về Khách hàng B.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Từ chối truy cập: "Địa chỉ/Đơn hàng không tồn tại hoặc bạn không có quyền!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra bắt buộc quyền sở hữu khachHang.id == loggedInCustomer.id ở tất cả Controller.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Bạn không có quyền truy cập thông tin này!")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-06</span></td>
+                            <td><strong>Vượt Quyền Truy Cập (Privilege Escalation)</strong></td>
+                            <td>Khách hàng hoặc Nhân viên (<code>NV</code>) gõ trực tiếp URL trang Quản lý (<code>/admin/nhan-vien</code>, <code>/admin/thong-ke</code>).</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span> Spring Security ném 403 Forbidden</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Bộ lọc bảo mật RBAC phân quyền chặt chẽ từng URL endpoint theo vai trò.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Trang báo lỗi từ chối truy cập)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-07</span></td>
+                            <td><strong>Spam Brute Force & Quên Mật Khẩu (Rate Limiting)</strong></td>
+                            <td>Kẻ xấu cố tình spam submit form đăng nhập sai mật khẩu hoặc spam gửi email OTP liên tục.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi: "Hành động bị chặn tạm thời do yêu cầu quá nhiều lần. Vui lòng thử lại sau 15 phút."</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Bộ lọc LoginRateLimiter & ForgotPasswordRateLimiter khóa IP tạm thời 15 phút.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo chặn spam rõ ràng)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-08</span></td>
+                            <td><strong>Double-Click / Double-Submit Đặt Hàng & POS</strong></td>
+                            <td>Người dùng hoặc Thu ngân click liên tục nhiều lần vào nút "Đặt hàng" hoặc "Thanh toán POS".</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo cảnh báo: "Hệ thống đang xử lý giao dịch trước đó. Vui lòng không click liên tục!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Khóa cờ Session 'pos_processing' / Client debounce, chống tạo đơn kép.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Cảnh báo click liên tục thuần Việt)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-09</span></td>
+                            <td><strong>Tranh Mua Món Hàng Cuối (Race Condition)</strong></td>
+                            <td>2 khách hàng cùng lúc bấm thanh toán 1 sản phẩm cuối cùng chỉ còn tồn kho = 1.</td>
+                            <td>
+                                <div><span class="pill-timing post"><i class="fa-solid fa-arrow-right"></i> SAU SUBMIT</span> Khách 1 thành công; Khách 2 báo hết hàng</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Sử dụng Pessimistic Locking (PESSIMISTIC_WRITE) trên bảng biến thể & Lô hàng.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Sản phẩm vừa hết hàng, vui lòng thử lại sau!")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-10</span></td>
+                            <td><strong>Cố Tình Hủy Đơn Hàng Đã Giao Cho Shipper</strong></td>
+                            <td>Khách hàng cố tình gửi API hủy đơn khi đơn hàng đã ở trạng thái <code>dang_giao_hang</code> hoặc <code>da_giao_hang</code>.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi: "Không thể hủy đơn hàng này. Đơn hàng đã được giao cho đơn vị vận chuyển."</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Kiểm tra FSM nghiêm ngặt, chỉ cho phép hủy ở trạng thái chờ xử lý.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo lý do từ chối hủy đơn)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-11</span></td>
+                            <td><strong>Cố Tình Đánh Giá Sản Phẩm Chưa Từng Mua</strong></td>
+                            <td>Người dùng cố tình gửi API đánh giá sao cho sản phẩm khi chưa mua hoặc đơn hàng chưa hoàn thành.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span> Báo lỗi từ chối ghi nhận</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Xác thực chéo hóa đơn: chỉ cho phép đánh giá nếu tồn tại hóa đơn 'hoan_thanh' chứa sản phẩm đó.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Bạn cần mua và hoàn thành đơn hàng để đánh giá!")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-12</span></td>
+                            <td><strong>Quản Lý Tự Khóa Tài Khoản Của Chính Mình</strong></td>
+                            <td>Quản lý đang đăng nhập cố tình bấm nút khóa hoặc xóa tài khoản của chính mình.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi: "Không thể khóa tài khoản của chính bạn đang đăng nhập!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Cơ chế Self-Lock Prevention bảo vệ hệ thống không bị mất quyền quản trị tối cao.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt ("Không thể tự khóa tài khoản chính mình")</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-13</span></td>
+                            <td><strong>Nhập Ngày Kết Thúc Trước Ngày Bắt Đầu</strong></td>
+                            <td>Tạo Đợt giảm giá hoặc Voucher với Ngày kết thúc &lt; Ngày bắt đầu hoặc % giảm &gt; 40%.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Báo lỗi: "Ngày kết thúc phải sau ngày bắt đầu!" hoặc "Mức giảm không được vượt quá 40%!"</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Validation thời gian logic và giới hạn biên chiết khấu chặt chẽ.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Thông báo lỗi validate ngày tháng & % giảm)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">NEG-14</span></td>
+                            <td><strong>Khách Vãng Lai Vượt Quá 3 Lần Mua Hàng</strong></td>
+                            <td>Khách vãng lai dùng lại email đã mua thành công 3 lần để đặt tiếp lần thứ 4 mà không đặt mật khẩu.</td>
+                            <td>
+                                <div><span class="pill-timing pre"><i class="fa-solid fa-arrow-left"></i> CHẶN TRƯỚC CHECKOUT</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Bật Modal yêu cầu kích hoạt mật khẩu bảo vệ để tiếp tục mua hàng.</div>
+                            </td>
+                            <td>
+                                <div><span class="pill-eval correct"><i class="fa-solid fa-check"></i> ĐÚNG</span></div>
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Chặn đặt hàng nếu soLanMuaThanhCong >= 3, ép buộc nâng cấp bảo mật tài khoản.</div>
+                            </td>
+                            <td><span class="field-status clean"><i class="fa-solid fa-circle-check" style="color:#4ade80;"></i> 100% Tiếng Việt (Modal yêu cầu đặt mật khẩu vãng lai)</span></td>
+                            <td><span class="status-pill pass"><i class="fa-solid fa-check"></i> PASS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BẢNG 8: CHI TIẾT CÁC BUG HỆ THỐNG THEO ĐỊNH DẠNG CHUẨN QA & PHÂN LOẠI -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Hồ Sơ Chi Tiết Từng Bug Hệ Thống (Format Chuẩn QA Audit)
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+
+                <!-- BUG-01 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--critical-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-01</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Vòng lặp findAll() duyệt toàn bộ CSDL khi nhận Webhook GHN</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag critical">CRITICAL</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Vận Chuyển GHN / GLOBAL & STAFF (Role NV)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">GhnRestController.java: L489-L508</span> (ghnWebhook)</p>
+                        <p><strong>Điều kiện & Dữ liệu:</strong> GHN Webhook gửi payload cập nhật trạng thái đơn hàng OrderCode: <code>DEMO-GHN-123</code></p>
+                        <p><strong>Mô tả lỗi:</strong> Tại dòng 489, hệ thống gọi <code>for (HoaDon h : hoaDonRepository.findAll())</code> tải toàn bộ thực thể <code>HoaDon</code> trong CSDL lên RAM rồi duyệt tuần tự, gây N+1 queries và nguy cơ tràn bộ nhớ JVM (OutOfMemoryError / DoS) khi dữ liệu đơn hàng tăng cao.</p>
+                        <p><strong>Kỳ vọng:</strong> Tìm kiếm trực tiếp qua câu truy vấn SQL có Index: <code>hoaDonRepository.findByGhnOrderCode(orderCode)</code>.</p>
+                        <p><strong>Thực tế:</strong> Tải toàn bộ database lên bộ nhớ Java, làm chậm nghiêm trọng thời gian phản hồi Webhook.</p>
+                        <p><strong>Tác động:</strong> Hệ thống có thể bị treo hoặc sập dịch vụ khi nhận lưu lượng Webhook đồng thời từ GHN.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-02 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--high-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-02</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Không lưu metadata khoảng giá (giaTu, giaDen) khi tạo đợt giảm giá theo khoảng giá</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag high">HIGH</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Quản Lý Khuyến Mãi / Quản Lý (Role QL)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">AdminKhuyenMaiService.java: L189-L202 & L310-L320</span> (createDotGiamGia, updateDotGiamGia)</p>
+                        <p><strong>Điều kiện & Dữ liệu:</strong> Tạo đợt giảm giá theo khoảng giá từ 500.000đ đến 2.000.000đ.</p>
+                        <p><strong>Mô tả lỗi:</strong> Service tìm danh sách sản phẩm thỏa mãn khoảng giá để gán Many-to-Many, nhưng bỏ qua lệnh gán <code>dgg.setGiaTu(giaFrom)</code> và <code>dgg.setGiaDen(giaDen)</code>. Khi mở form chỉnh sửa đợt giảm giá, 2 trường này bị <code>NULL</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> CSDL lưu đầy đủ <code>gia_tu</code> và <code>gia_den</code> vào bảng <code>DotGiamGia</code> để form sửa hiển thị lại đúng cấu hình ban đầu.</p>
+                        <p><strong>Thực tế:</strong> Bảng <code>DotGiamGia</code> lưu <code>gia_tu = NULL</code>, <code>gia_den = NULL</code>.</p>
+                        <p><strong>Tác động:</strong> Mất thông tin cấu hình ban đầu, Quản lý không thể chỉnh sửa hoặc kiểm tra lại phạm vi khoảng giá của chiến dịch.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-03 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--high-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-03</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Hardcode URL "http://localhost:8080" trong email kích hoạt và thông báo SePay</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag high">HIGH</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Email & Cổng Thanh Toán / GLOBAL</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">SepayOrderPaymentService.java: L222, L240</span>, <span class="code-file">NewsletterServiceImpl.java: L42</span>, <span class="code-file">OrderViewService.java: L1387</span></p>
+                        <p><strong>Mô tả lỗi:</strong> Đường link kích hoạt tài khoản khách vãng lai và link tra cứu đơn hàng trong email được ghép trực tiếp bằng chuỗi cứng <code>"http://localhost:8080"</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Đọc đường dẫn cơ sở động từ cấu hình hệ thống (<code>app.base-url</code> hoặc <code>request.getServerName()</code>).</p>
+                        <p><strong>Thực tế:</strong> Khi triển khai môi trường thực tế hoặc tên miền production, toàn bộ link trong email gửi cho khách hàng bị trỏ về localhost máy cục bộ.</p>
+                        <p><strong>Tác động:</strong> Khách hàng không thể bấm kích hoạt tài khoản hoặc tra cứu đơn từ thiết bị của họ.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-04 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--medium-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-04</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Bỏ sót doanh thu dự kiến của đơn hàng Online đã thanh toán trước đang chuẩn bị hàng</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag medium">MEDIUM</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Báo Cáo Thống Kê Doanh Thu / Quản Lý (Role QL)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">AdminThongKeService.java: L94-L98</span> (OrderClassifier.classify)</p>
+                        <p><strong>Mô tả lỗi:</strong> Bộ phân loại doanh thu chỉ tính doanh thu dự kiến cho đơn online thanh toán trước khi ở trạng thái <code>dang_giao</code>. Các trạng thái hoạt động trước đó (<code>cho_xac_nhan</code>, <code>da_xac_nhan</code>, <code>dang_chuan_bi_hang</code>) bị phân loại là <code>EXCLUDED</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Đơn hàng online đã thanh toán tiền vào tài khoản cần được cộng vào Doanh thu dự kiến trong suốt quá trình chuẩn bị hàng.</p>
+                        <p><strong>Thực tế:</strong> Doanh thu dự kiến bị hụt toàn bộ giá trị của các đơn online đang đóng gói chuẩn bị hàng.</p>
+                        <p><strong>Tác động:</strong> Báo cáo tài chính hiển thị sai lệch số liệu dòng tiền dự kiến của cửa hàng.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-06 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--medium-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-06</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Hàm capNhatSanPham bỏ sót bộ lọc XSS Jsoup và thiếu ghi Audit Log</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag medium">MEDIUM</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Quản Lý Sản Phẩm / Quản Lý & Nhân Viên</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">AdminSanPhamService.java: L451-L479</span> (capNhatSanPham, xoaSanPham)</p>
+                        <p><strong>Mô tả lỗi:</strong> Khác với hàm <code>themSanPham</code> có lọc Jsoup và ghi audit log, hàm <code>capNhatSanPham</code> gán trực tiếp <code>tenSanPham</code> và <code>moTa</code> vào entity không qua Jsoup; đồng thời nhận tham số <code>idNguoiDung</code>, <code>remoteAddr</code> nhưng không gọi <code>auditService.log()</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Làm sạch mã độc HTML trước khi lưu và ghi nhận đầy đủ nhật ký thay đổi thông tin sản phẩm.</p>
+                        <p><strong>Thực tế:</strong> Dữ liệu HTML thô được lưu vào DB, không có bản ghi nào được tạo trong bảng <code>EditLog</code>.</p>
+                        <p><strong>Tác động:</strong> Nguy cơ Stored XSS trong trang quản trị và mất dấu vết kiểm toán khi sản phẩm bị thay đổi thông tin.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-07 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--low-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-07</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">In hóa đơn nhiệt POS tính sai tổng tiền trước giảm khi có đợt giảm giá</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag low">LOW</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill warning">WARNING</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Bán Hàng Tại Quầy POS / Nhân Viên (Role NV)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">AdminPosController.java: L264-L268</span> & <span class="code-file">pos-print.html: L203</span></p>
+                        <p><strong>Mô tả lỗi:</strong> Giá trị <code>tongTienTruocGiam</code> được tính từ <code>item.getDonGia()</code> trong <code>HoaDonChiTiet</code> (vốn đã là giá sau khi trừ % giảm giá chiến dịch). Số tiền giảm <code>tienGiam</code> tính ra chỉ bằng đúng số tiền giảm của Voucher.</p>
+                        <p><strong>Kỳ vọng:</strong> Hóa đơn in nhiệt thể hiện: Giá niêm yết gốc $\rightarrow$ Tiền giảm chiến dịch $\rightarrow$ Tiền giảm voucher $\rightarrow$ Tổng thanh toán.</p>
+                        <p><strong>Thực tế:</strong> Khoản giảm giá từ đợt giảm giá chiến dịch hoàn toàn không xuất hiện trên hóa đơn in giấy.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-08 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--high-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-08</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Sửa tồn kho biến thể trực tiếp làm lệch số lượng Lô hàng FIFO</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag high">HIGH</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Quản Lý Biến Thể & Kho / Quản Lý & Nhân Viên</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">AdminBienTheService.java: L283</span> (updateBienThe)</p>
+                        <p><strong>Mô tả lỗi:</strong> Khi sửa số lượng tồn kho của một biến thể, hàm cập nhật trực tiếp <code>spct.setSoLuongTon(soLuongTon)</code> mà không cập nhật hoặc tạo Lô hàng tương ứng trong bảng <code>InventoryLot</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Mọi biến động số lượng tồn kho phải được phản ánh vào các Lô hàng nhập kho FIFO.</p>
+                        <p><strong>Thực tế:</strong> Số lượng trên <code>SanPhamChiTiet</code> lệch hoàn toàn với tổng <code>remainingQuantity</code> của <code>InventoryLot</code>, gây lỗi khi xuất kho FIFO các món hàng vượt số lô cũ.</p>
+                        <p><strong>Tác động:</strong> Phá vỡ tính toàn vẹn của nghiệp vụ quản lý kho FIFO và tính giá vốn hàng bán.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-10 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--medium-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-10</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Nối trực tiếp port vào URL khôi phục mật khẩu gây lỗi cổng khi chạy qua Reverse Proxy</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag medium">MEDIUM</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Khôi Phục Mật Khẩu / Khách Hàng Thành Viên (ACTIVE)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">UserQuenMatKhauController.java: L64 & L112</span></p>
+                        <p><strong>Mô tả lỗi:</strong> Ghép chuỗi URL khôi phục mật khẩu bằng: <code>request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort()</code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Không hiển thị cổng port đối với cổng chuẩn 80 (HTTP) và 443 (HTTPS), hoặc hỗ trợ header <code>X-Forwarded-Port</code>.</p>
+                        <p><strong>Thực tế:</strong> Khi chạy HTTPS hoặc qua Reverse Proxy, đường link gửi vào email bị gắn thêm <code>:8080</code> hoặc <code>:443</code>, khiến người dùng click vào bị lỗi kết nối không mở được trang web.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-11 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--low-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-11</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Câu chào Sidebar tại 12 màn hình cá nhân Dashboard còn dùng tiếng Anh "Hello, "</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag low">LOW</span>
+                            <span class="code-tag" style="color: #38bdf8;">STATIC CONFIRMED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Giao Diện Cá Nhân / ACTIVE & GUEST</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">dash-manage-order.html: L429</span>, <span class="code-file">dash-track-order.html: L76</span>, <span class="code-file">dashboard.html: L82</span>, <span class="code-file">dash-my-order.html: L155</span>, <span class="code-file">dash-address-book.html: L82</span>, v.v.</p>
+                        <p><strong>Mô tả lỗi:</strong> Mã Thymeleaf hardcode chuỗi <code>th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"</code> thay vì dùng từ tiếng Việt "Xin chào, ".</p>
+                        <p><strong>Kỳ vọng:</strong> Hiển thị câu chào thuần Việt: "Xin chào, [Họ và Tên]".</p>
+                        <p><strong>Thực tế:</strong> Hiển thị lẫn lộn tiếng Anh ("Hello, [Họ và Tên]").</p>
+                    </div>
+                </div>
+
+                <!-- BUG-12 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--medium-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-12</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">Lệch cờ chọn địa chỉ mặc định trong unit test CheckoutControllerTest</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag medium">MEDIUM</span>
+                            <span class="code-tag" style="color: #f87171;">RUNTIME REPRODUCED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Đặt Hàng Checkout / Khách Thành Viên (ACTIVE)</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">CheckoutControllerTest.java: L218</span> & <span class="code-file">CheckoutController.java: L150-L180</span></p>
+                        <p><strong>Mô tả lỗi:</strong> Khi khách hàng có 1 địa chỉ duy nhất nhưng không set default (<code>isDefault = false</code>), controller tự động gán là địa chỉ mặc định làm assertion kiểm thử tự động trả về <code>AssertionFailedError: expected: <false> but was: <true></code>.</p>
+                        <p><strong>Kỳ vọng:</strong> Thống nhất logic xác định địa chỉ mặc định giữa Controller và Test Suite.</p>
+                        <p><strong>Thực tế:</strong> Gây fail 1 test case khi chạy Maven test.</p>
+                    </div>
+                </div>
+
+                <!-- BUG-13 -->
+                <div style="background-color: var(--bg-code); border: 1px solid var(--border-light); border-left: 4px solid var(--medium-text); border-radius: var(--radius-sm); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span class="code-tag">BUG-13</span>
+                            <span style="font-weight: 700; color: var(--text-pure); margin-left: 10px; font-size: 1.05rem;">HTTP 400 khi thêm biến thể không thỏa mãn ràng buộc trạng thái trong CartRuntimeRegressionTest</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="severity-tag medium">MEDIUM</span>
+                            <span class="code-tag" style="color: #f87171;">RUNTIME REPRODUCED</span>
+                            <span class="status-pill fail">OPEN</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+                        <p><strong>Phân hệ / Vai trò:</strong> Giỏ Hàng / GUEST & ACTIVE</p>
+                        <p><strong>Vị trí mã nguồn:</strong> <span class="code-file">CartRuntimeRegressionTest.java: L85, L106, L244</span> & <span class="code-file">GioHangController.java: L73-L95</span></p>
+                        <p><strong>Mô tả lỗi:</strong> Các test case kiểm thử thêm biến thể giày (SPCT ID 41) và phụ kiện (SPCT ID 112) nhận phản hồi HTTP 400 do dữ liệu mẫu trong DB test không ở trạng thái <code>dang_ban</code> hoặc tồn kho = 0.</p>
+                        <p><strong>Kỳ vọng:</strong> Controller xử lý thêm giỏ hàng thành công trả về HTTP 200 OK.</p>
+                        <p><strong>Thực tế:</strong> Controller ném lỗi 400 do vi phạm điều kiện <code>isSanPhamChiTietDangBan</code>.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <p>© 2026 SMASH-VN System Quality Assurance & Security Engineering Team. Dữ liệu trích xuất từ mã nguồn thực tế.</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
