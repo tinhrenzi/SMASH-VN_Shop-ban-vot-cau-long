@@ -455,13 +455,21 @@ public class AdminOrderUpdateTest {
         hd = hoaDonRepository.findById(hd.getId()).get();
         assertEquals("san_sang_giao", hd.getTrangThaiDonHang());
 
-        // 5. san_sang_giao -> da_tao_van_don_ghn
-        orderViewService.moveOrderToNextStatus(hd.getId(), adminUser.getId(), "127.0.0.1");
-        hd = hoaDonRepository.findById(hd.getId()).get();
+        // 5. san_sang_giao without ghnOrderCode -> moveOrderToNextStatus MUST be blocked
+        final Integer hdId = hd.getId();
+        assertThrows(IllegalStateException.class, () -> {
+            orderViewService.moveOrderToNextStatus(hdId, adminUser.getId(), "127.0.0.1");
+        });
+
+        // 6. After GHN creates shipment code, order moves to da_tao_van_don_ghn
+        hd.setGhnOrderCode("DEMO-GHN-TEST-123");
+        hd.setGhnStatus("ready_to_pick");
+        hd.setTrangThaiDonHang("da_tao_van_don_ghn");
+        hd = hoaDonRepository.save(hd);
         assertEquals("da_tao_van_don_ghn", hd.getTrangThaiDonHang());
         assertNotNull(hd.getGhnOrderCode());
 
-        // 6. Once at da_tao_van_don_ghn, order has GHN order code, manual transition is locked
+        // 7. Once at da_tao_van_don_ghn, order has GHN order code, manual transition is locked
         final Integer orderId = hd.getId();
         assertThrows(IllegalStateException.class, () -> {
             orderViewService.moveOrderToNextStatus(orderId, adminUser.getId(), "127.0.0.1");

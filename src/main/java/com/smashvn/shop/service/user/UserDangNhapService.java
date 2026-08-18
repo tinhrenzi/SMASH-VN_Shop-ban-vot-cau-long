@@ -78,6 +78,11 @@ public class UserDangNhapService {
         if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST && (taiKhoan.getMatKhau() == null || taiKhoan.getMatKhau().trim().isEmpty())) {
             throw new RuntimeException("Tài khoản vãng lai chưa được kích hoạt mật khẩu. Vui lòng đăng nhập bằng Google hoặc kích hoạt qua email!");
         }
+        if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(taiKhoan.getTrangThai())) {
+            taiKhoan.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+            taiKhoan = taiKhoanRepository.saveAndFlush(taiKhoan);
+            log.info("[LOGIN] Upgraded guest account {} to ACTIVE on password login.", taiKhoan.getUsername());
+        }
         return taiKhoan;
     }
 

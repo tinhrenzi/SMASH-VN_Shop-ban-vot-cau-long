@@ -772,67 +772,80 @@
 
             if (!address) {
                 setQuickAddressFeedback('', '#64748b');
+                isGhnLoadingMasterData = false;
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
                 return;
             }
 
             const segments = splitQuickAddressSegments(address);
             if (segments.length === 0) {
                 setQuickAddressFeedback('Không nhận diện được địa chỉ, vui lòng chọn thủ công', '#64748b');
-                return;
-            }
-
-            if (typeof window.apiLoadProvinces === 'function') {
-                await window.apiLoadProvinces();
-                if (seq !== quickAddressParseSeq) return;
-            }
-
-            const provinceMatch = findMatchingOption($('#ghnProvinceId'), segments, address, 'province');
-            if (!provinceMatch) {
-                setQuickAddressFeedback('Không nhận diện được địa chỉ, vui lòng chọn thủ công', '#64748b');
-                return;
-            }
-
-            isGhnLoadingMasterData = true;
-            $('#ghnProvinceId').val(provinceMatch.value);
-            await window.apiLoadDistricts(provinceMatch.value);
-            if (seq !== quickAddressParseSeq) return;
-
-            const districtMatch = findMatchingOption($('#ghnDistrictId'), segments, address, 'district');
-            if (!districtMatch) {
                 isGhnLoadingMasterData = false;
-                setQuickAddressFeedback('Đã nhận diện tỉnh/thành, vui lòng chọn thêm quận/huyện hoặc phường/xã', '#d97706');
-                if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
                 return;
             }
 
-            $('#ghnDistrictId').val(districtMatch.value);
-            await window.apiLoadWards(districtMatch.value);
-            if (seq !== quickAddressParseSeq) return;
-
-            const wardMatch = findMatchingOption($('#ghnWardCode'), segments, address, 'ward');
-            if (wardMatch) {
-                $('#ghnWardCode').val(wardMatch.value).trigger('change');
-            } else {
-                $('#ghnWardCode').val('').trigger('change');
-            }
-
-            const recognizedIndexes = [provinceMatch.segmentIndex, districtMatch.segmentIndex, wardMatch ? wardMatch.segmentIndex : null]
-                .filter(function(index) { return index !== null && index !== undefined; });
-            const firstRecognizedIndex = recognizedIndexes.length ? Math.min.apply(Math, recognizedIndexes) : -1;
-
-            if (firstRecognizedIndex > 0 && (!diaChiNhanTouchedByUser || !$('#diaChiNhan').val().trim())) {
-                const specificAddress = cleanSpecificAddress(segments.slice(0, firstRecognizedIndex).join(', '));
-                if (specificAddress) {
-                    $('#diaChiNhan').val(specificAddress).trigger('change');
+            try {
+                if (typeof window.apiLoadProvinces === 'function') {
+                    await window.apiLoadProvinces();
+                    if (seq !== quickAddressParseSeq) return;
                 }
-            }
 
-            isGhnLoadingMasterData = false;
-            if (wardMatch) {
-                setQuickAddressFeedback('Đã tự nhận diện: ' + provinceMatch.label + ' / ' + districtMatch.label + ' / ' + wardMatch.label, '#16a34a');
-            } else {
-                setQuickAddressFeedback('Đã nhận diện tỉnh/thành và quận/huyện, vui lòng chọn thêm phường/xã', '#d97706');
-                if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+                const provinceMatch = findMatchingOption($('#ghnProvinceId'), segments, address, 'province');
+                if (!provinceMatch) {
+                    setQuickAddressFeedback('Không nhận diện được địa chỉ, vui lòng chọn thủ công', '#64748b');
+                    isGhnLoadingMasterData = false;
+                    if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
+                    return;
+                }
+
+                isGhnLoadingMasterData = true;
+                $('#ghnProvinceId').val(provinceMatch.value);
+                await window.apiLoadDistricts(provinceMatch.value);
+                if (seq !== quickAddressParseSeq) return;
+
+                const districtMatch = findMatchingOption($('#ghnDistrictId'), segments, address, 'district');
+                if (!districtMatch) {
+                    isGhnLoadingMasterData = false;
+                    setQuickAddressFeedback('Đã nhận diện tỉnh/thành, vui lòng chọn thêm quận/huyện hoặc phường/xã', '#d97706');
+                    if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+                    return;
+                }
+
+                $('#ghnDistrictId').val(districtMatch.value);
+                await window.apiLoadWards(districtMatch.value);
+                if (seq !== quickAddressParseSeq) return;
+
+                const wardMatch = findMatchingOption($('#ghnWardCode'), segments, address, 'ward');
+                if (wardMatch) {
+                    $('#ghnWardCode').val(wardMatch.value).trigger('change');
+                } else {
+                    $('#ghnWardCode').val('').trigger('change');
+                }
+
+                const recognizedIndexes = [provinceMatch.segmentIndex, districtMatch.segmentIndex, wardMatch ? wardMatch.segmentIndex : null]
+                    .filter(function(index) { return index !== null && index !== undefined; });
+                const firstRecognizedIndex = recognizedIndexes.length ? Math.min.apply(Math, recognizedIndexes) : -1;
+
+                if (firstRecognizedIndex > 0 && (!diaChiNhanTouchedByUser || !$('#diaChiNhan').val().trim())) {
+                    const specificAddress = cleanSpecificAddress(segments.slice(0, firstRecognizedIndex).join(', '));
+                    if (specificAddress) {
+                        $('#diaChiNhan').val(specificAddress).trigger('change');
+                    }
+                }
+
+                isGhnLoadingMasterData = false;
+                if (wardMatch) {
+                    setQuickAddressFeedback('Đã tự nhận diện: ' + provinceMatch.label + ' / ' + districtMatch.label + ' / ' + wardMatch.label, '#16a34a');
+                } else {
+                    setQuickAddressFeedback('Đã nhận diện tỉnh/thành và quận/huyện, vui lòng chọn thêm phường/xã', '#d97706');
+                    if (typeof window.calculateShippingFee === 'function') window.calculateShippingFee();
+                }
+            } catch (err) {
+                console.error("[parseQuickAddress] Error:", err);
+                setQuickAddressFeedback('Lỗi tự nhận diện địa chỉ, vui lòng chọn thủ công', '#64748b');
+                isGhnLoadingMasterData = false;
+                if (typeof setShippingFeeLoadingState === 'function') setShippingFeeLoadingState(false);
             }
         }
 
@@ -1413,6 +1426,8 @@
                         // Keep loading active if still cascading/loading
                         if (isGhnLoadingMasterData) {
                             setShippingFeeLoadingState(true);
+                        } else {
+                            setShippingFeeLoadingState(false);
                         }
                         return; 
                     }
@@ -1470,6 +1485,11 @@
                     error: function(xhr, status, error) {
                         if (status !== 'abort') {
                             console.error("Lỗi tính phí vận chuyển:", error);
+                            setShippingFeeLoadingState(false);
+                        }
+                    },
+                    complete: function(xhr, status) {
+                        if (status !== 'abort') {
                             setShippingFeeLoadingState(false);
                         }
                     }
@@ -1843,6 +1863,9 @@
                         const rawMsg = (xhr && xhr.responseJSON && xhr.responseJSON.message) || error || '';
                         const errMsg = getSafeCheckoutMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.');
                         showToast(errMsg, 'error');
+                    },
+                    complete: function() {
+                        $('.preloader').removeClass('is-active');
                     }
                 });
             }

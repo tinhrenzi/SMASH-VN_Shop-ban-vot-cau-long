@@ -602,30 +602,7 @@ public class OrderViewService {
 
         if (OrderStatus.DA_TAO_VAN_DON_GHN.getValue().equalsIgnoreCase(newStatus)) {
             if (hd.getGhnOrderCode() == null || hd.getGhnOrderCode().isBlank()) {
-                Integer districtId = hd.getGhnToDistrictId();
-                String wardCode = hd.getGhnToWardCode();
-                if (districtId == null && hd.getDiaChi() != null) {
-                    districtId = hd.getDiaChi().getDistrictId();
-                }
-                if ((wardCode == null || wardCode.isBlank()) && hd.getDiaChi() != null) {
-                    wardCode = hd.getDiaChi().getWardCode();
-                }
-                try {
-                    String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, districtId, wardCode);
-                    if (ghnCode == null || ghnCode.isBlank()) {
-                        throw new IllegalStateException("Hệ thống GHN không trả về mã vận đơn.");
-                    }
-                    hd.setGhnOrderCode(ghnCode);
-                    hd.setGhnStatus("ready_to_pick");
-                } catch (Exception e) {
-                    if (isTestEnvironment()) {
-                        log.warn("[TEST] GHN API call failed in test env: {}", e.getMessage());
-                        hd.setGhnOrderCode("GHN_TEST_" + hd.getId());
-                        hd.setGhnStatus("ready_to_pick");
-                    } else {
-                        throw new IllegalStateException("Tạo vận đơn GHN thất bại: " + e.getMessage(), e);
-                    }
-                }
+                throw new IllegalStateException("Đơn hàng chưa có mã vận đơn GHN. Vui lòng bấm 'Gửi đơn sang GHN' để tạo vận đơn trước khi chuyển sang trạng thái này.");
             }
         }
 
@@ -1118,11 +1095,14 @@ public class OrderViewService {
                 || (hd.getGhnReturnOrderCode() != null && !hd.getGhnReturnOrderCode().trim().isEmpty());
         String currentStatus = hd.getTrangThaiDonHang().toLowerCase();
 
-        // Đơn hàng đã có mã GHN hoặc đã bàn giao GHN/đang lấy hàng/đang giao -> Ngăn chặn chuyển tiếp thủ công
-        if (hasGhnCode || "da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus)) {
-            if ("da_tao_van_don_ghn".equals(currentStatus) || "da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus)) {
-                return null;
-            }
+        // 1. Nếu ở trạng thái san_sang_giao mà chưa có mã GHN -> KHÔNG cho phép chuyển tiếp bằng nút Next (phải bấm Gửi đơn sang GHN)
+        if ("san_sang_giao".equals(currentStatus) && !hasGhnCode) {
+            return null;
+        }
+
+        // 2. Đơn hàng đã có mã GHN / đã tạo vận đơn / đã bàn giao GHN / đang lấy hàng / đang giao / đã giao / hoàn thành / đã hủy -> Quản lý qua GHN, ngăn chặn chuyển tiếp thủ công
+        if (hasGhnCode || "da_tao_van_don_ghn".equals(currentStatus) || "da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus) || "da_giao".equals(currentStatus) || "hoan_thanh".equals(currentStatus) || "da_huy".equals(currentStatus)) {
+            return null;
         }
 
         return getNextStatus(currentStatus);

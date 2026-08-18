@@ -52,15 +52,20 @@ public class GuestCheckoutService {
             return "NEW";
         }
 
+        if (tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty()) {
+            if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
+                log.info("[GUEST_CHECKOUT] Upgrading guest account with existing password to ACTIVE for email: {}", email);
+                tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+                taiKhoanRepository.save(tk);
+            }
+            return "ACTIVE";
+        }
+
         if (tk.getTrangThaiTaiKhoan() == AccountStatus.ACTIVE) {
             // Auto-correct accounts created without a password
-            if (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty()) {
-                log.info("[GUEST_CHECKOUT] Correcting corrupt account status ACTIVE -> GUEST for email: {}", email);
-                tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
-                taiKhoanRepository.save(tk);
-            } else {
-                return "ACTIVE";
-            }
+            log.info("[GUEST_CHECKOUT] Correcting corrupt account status ACTIVE -> GUEST for email: {}", email);
+            tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+            taiKhoanRepository.save(tk);
         }
 
         // status is GUEST: dynamically check maximum between recorded counter and actual orders in DB
@@ -121,6 +126,10 @@ public class GuestCheckoutService {
             if ((existingTk.getMatKhau() == null || existingTk.getMatKhau().trim().isEmpty()) && existingTk.getTrangThaiTaiKhoan() == AccountStatus.ACTIVE) {
                 log.info("[GUEST_CHECKOUT] Auto-correcting corrupt guest account status to GUEST for: {}", trimmedEmail);
                 existingTk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+                taiKhoanRepository.save(existingTk);
+            } else if (existingTk.getMatKhau() != null && !existingTk.getMatKhau().trim().isEmpty() && existingTk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+                log.info("[GUEST_CHECKOUT] Upgrading guest account with existing password to ACTIVE for: {}", trimmedEmail);
+                existingTk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
                 taiKhoanRepository.save(existingTk);
             }
 
@@ -390,7 +399,7 @@ public class GuestCheckoutService {
 
         tk.setMatKhau(passwordEncoder.encode(password));
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
-        taiKhoanRepository.save(tk);
+        taiKhoanRepository.saveAndFlush(tk);
 
         log.info("[GUEST_CHECKOUT] Upgraded guest account ID {} to ACTIVE status and saved password.", idTaiKhoan);
     }
@@ -415,7 +424,7 @@ public class GuestCheckoutService {
         setPasswordForGuest(tk.getId(), password);
 
         tkp.setDaSuDung(true);
-        tokenRepository.save(tkp);
+        tokenRepository.saveAndFlush(tkp);
     }
 
     @org.springframework.scheduling.annotation.Async

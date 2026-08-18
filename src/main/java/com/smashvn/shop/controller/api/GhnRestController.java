@@ -19,6 +19,10 @@ import com.smashvn.shop.config.GhnConfig;
 import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
+import com.smashvn.shop.entity.OrderStatus;
+import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.exception.GhnCreateIndeterminateException;
+import com.smashvn.shop.exception.GhnUnsupportedRouteException;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
@@ -228,6 +232,7 @@ public class GhnRestController {
             @PathVariable Integer orderId,
             @RequestParam(required = false) Integer toDistrictId,
             @RequestParam(required = false) String toWardCode,
+            @RequestParam(required = false, defaultValue = "false") boolean forceRetry,
             HttpSession session) {
 
         // Chỉ admin/nhân viên mới được dùng
@@ -258,9 +263,49 @@ public class GhnRestController {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "Đơn hàng không có sản phẩm"));
             }
 
-            // Nếu không truyền từ RequestParam, dùng thông tin đã lưu trong hóa đơn
+            // Nếu không truyền từ RequestParam, tìm thông tin từ entity / sổ địa chỉ / phân giải địa chỉ
             Integer finalDistrictId = toDistrictId != null ? toDistrictId : hd.getGhnToDistrictId();
             String finalWardCode = toWardCode != null && !toWardCode.isBlank() ? toWardCode : hd.getGhnToWardCode();
+
+            if (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) {
+                if (hd.getDiaChi() != null) {
+                    SoDiaChi dc = hd.getDiaChi();
+                    if (dc.getDistrictId() != null && dc.getWardCode() != null && !dc.getWardCode().isBlank()) {
+                        finalDistrictId = dc.getDistrictId();
+                        finalWardCode = dc.getWardCode();
+                    } else {
+                        GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(dc);
+                        if (mapping != null && mapping.getDistrictId() != null && mapping.getWardCode() != null) {
+                            finalDistrictId = mapping.getDistrictId();
+                            finalWardCode = mapping.getWardCode();
+                        }
+                    }
+                }
+            }
+
+            if (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) {
+                if (hd.getDiaChiNhan() != null && !hd.getDiaChiNhan().isBlank()) {
+                    SoDiaChi tempDc = new SoDiaChi();
+                    tempDc.setDiaChiCuThe(hd.getDiaChiNhan());
+                    String[] parts = hd.getDiaChiNhan().split(",");
+                    if (parts.length > 0) {
+                        tempDc.setTinhThanh(parts[parts.length - 1].trim());
+                    }
+                    GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(tempDc);
+                    if (mapping != null && mapping.getDistrictId() != null && mapping.getWardCode() != null) {
+                        finalDistrictId = mapping.getDistrictId();
+                        finalWardCode = mapping.getWardCode();
+                    }
+                }
+            }
+
+            // Fallback cho môi trường Sandbox khi địa chỉ text không thể phân giải đầy đủ Quận/Huyện
+            if ((finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) && ghnService.isSandboxEnvironment()) {
+                log.warn("[ADMIN_GHN_SANDBOX] Order ID {} has unresolvable address '{}', falling back to default Sandbox district (1442) and ward (20101)",
+                        orderId, hd.getDiaChiNhan());
+                finalDistrictId = 1442;
+                finalWardCode = "20101";
+            }
 
             if (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) {
                 return ResponseEntity.ok(Map.of(
@@ -273,10 +318,18 @@ public class GhnRestController {
             hd.setGhnToDistrictId(finalDistrictId);
             hd.setGhnToWardCode(finalWardCode);
 
-            String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, finalDistrictId, finalWardCode);
-            if (ghnCode != null) {
+            String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, finalDistrictId, finalWardCode, forceRetry);
+            if (ghnCode != null && !ghnCode.isBlank()) {
                 hd.setGhnOrderCode(ghnCode);
                 hd.setGhnStatus("ready_to_pick");
+                String currentStatus = hd.getTrangThaiDonHang();
+                if (currentStatus != null && (
+                        "san_sang_giao".equalsIgnoreCase(currentStatus) ||
+                        "dang_chuan_bi_hang".equalsIgnoreCase(currentStatus) ||
+                        "da_xac_nhan".equalsIgnoreCase(currentStatus) ||
+                        "cho_xac_nhan".equalsIgnoreCase(currentStatus))) {
+                    hd.setTrangThaiDonHang(OrderStatus.DA_TAO_VAN_DON_GHN.getValue());
+                }
                 hoaDonRepository.save(hd);
                 log.info("[ADMIN] Đã push đơn #{} lên GHN thành công, mã: {}", orderId, ghnCode);
                 return ResponseEntity.ok(Map.of(
@@ -286,8 +339,22 @@ public class GhnRestController {
                         "orderId", orderId
                 ));
             } else {
-                return ResponseEntity.ok(Map.of("status", "error", "message", "GHN trả về mã null, kiểm tra log server"));
+                return ResponseEntity.ok(Map.of("status", "error", "message", "GHN không trả về mã vận đơn"));
             }
+        } catch (GhnCreateIndeterminateException e) {
+            log.error("[ADMIN_GHN_CREATE_RESULT_UNKNOWN] Push GHN indeterminate orderId={}: {}", orderId, e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                    "status", "unknown_result",
+                    "ghnCreateUnknown", true,
+                    "requireForceRetry", true,
+                    "message", "Kết quả tạo vận đơn GHN chưa xác định. Vui lòng kiểm tra trên GHN trước khi tạo lại để tránh tạo trùng vận đơn."
+            ));
+        } catch (GhnUnsupportedRouteException e) {
+            log.error("[ADMIN_GHN_UNSUPPORTED_ROUTE] Push GHN unsupported route orderId={}: {}", orderId, e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "GHN chưa hỗ trợ tuyến giao hàng cho địa chỉ này: " + e.getMessage()
+            ));
         } catch (Exception e) {
             log.error("[ADMIN] Push GHN error orderId={}: {}", orderId, e.getMessage(), e);
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Lỗi không xác định";

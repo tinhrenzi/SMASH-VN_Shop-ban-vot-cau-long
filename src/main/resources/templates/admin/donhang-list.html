@@ -380,6 +380,16 @@
                                                             </button>
                                                         </form>
 
+                                                        <!-- Nút Gửi đơn sang GHN & Tạo vận đơn khi ở trạng thái Sẵn sàng giao chưa có mã GHN -->
+                                                        <button
+                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang == 'san_sang_giao' &amp;&amp; (hd.ghnOrderCode == null || hd.ghnOrderCode.trim() == '') &amp;&amp; (hd.donViVanChuyen != null &amp;&amp; (hd.donViVanChuyen.tenDonVi.toUpperCase().contains('GHN') || hd.donViVanChuyen.tenDonVi.toUpperCase().contains('GIAO HÀNG NHANH')))}"
+                                                            type="button" class="admin-btn admin-btn-icon"
+                                                            th:data-id="${hd.id}"
+                                                            onclick="pushOrderToGhn(this.getAttribute('data-id'), this)"
+                                                            title="Gửi đơn sang GHN &amp; Tạo mã vận đơn">
+                                                            <i class="fas fa-shipping-fast text-warning"></i>
+                                                        </button>
+
                                                         <button
                                                             th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
                                                             type="button" class="admin-btn admin-btn-icon danger"
@@ -1831,7 +1841,7 @@
 
                     const hasGhnCode = data.ghnOrderCode && data.ghnOrderCode.trim() !== '';
                     const stRaw = data.trangThaiRaw ? data.trangThaiRaw.toLowerCase() : '';
-                    const isGhnManaged = hasGhnCode || ['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao'].includes(stRaw);
+                    const isGhnManaged = ['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao'].includes(stRaw);
 
                     if (stRaw && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw) && !isGhnManaged && !isPosOrder) {
                         let nextStatusLabel = '';
@@ -1840,7 +1850,7 @@
                             case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
                             case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
                             case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
-                            case 'san_sang_giao': nextStatusLabel = 'Đã tạo vận đơn GHN'; break;
+                            case 'san_sang_giao': nextStatusLabel = hasGhnCode ? 'Đã tạo vận đơn GHN' : ''; break;
                             case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
                             case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
                         }
@@ -1854,6 +1864,14 @@
                                     <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${nextStatusLabel})
                                 </button>
                             </form>
+                        `;
+                        }
+
+                        if (!isPosOrder && stRaw === 'san_sang_giao' && !hasGhnCode) {
+                            actionsRightHtml += `
+                            <button type="button" class="admin-btn admin-btn-warning text-dark fw-bold" onclick="pushOrderToGhn(${data.id}, this)">
+                                <i class="fas fa-shipping-fast me-1"></i> Gửi đơn sang GHN (Tạo vận đơn)
+                            </button>
                         `;
                         }
 
@@ -2103,7 +2121,7 @@
             finalInput.value = finalReason;
         });
 
-        window.pushOrderToGhn = function (orderId) {
+        window.pushOrderToGhn = function (orderId, forceRetry = false) {
             const errorDiv = document.getElementById('ghn-push-error-' + orderId);
             const pushBox = document.getElementById('ghn-push-box-' + orderId);
 
@@ -2127,7 +2145,9 @@
                 headers[csrfHeaderName] = csrfToken;
             }
 
-            fetch('/api/ghn/admin/push/' + orderId, {
+            const url = '/api/ghn/admin/push/' + orderId + (forceRetry ? '?forceRetry=true' : '');
+
+            fetch(url, {
                 method: 'POST',
                 headers: headers,
                 credentials: 'same-origin'
@@ -2137,11 +2157,11 @@
                     if (data.status === 'ok') {
                         Swal.fire({
                             title: 'Thành công',
-                            text: 'Đã tạo đơn vận chuyển trên GHN Sandbox thành công!',
+                            text: 'Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || ''),
                             icon: 'success',
                             confirmButtonText: 'Đóng'
                         }).then(() => {
-                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
+                            window.location.reload();
                         });
                     } else if (data.status === 'already_exists') {
                         Swal.fire({
@@ -2152,15 +2172,41 @@
                         }).then(() => {
                             if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
                         });
+                    } else if (data.status === 'unknown_result' || data.ghnCreateUnknown === true) {
+                        buttons.forEach(btn => btn.disabled = false);
+                        Swal.fire({
+                            title: 'Cảnh báo: Kết quả chưa xác định!',
+                            html: `
+                                <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+                                    <p class="text-danger fw-bold mb-2"><i class="fas fa-exclamation-triangle me-1"></i> ${data.message || 'Kết quả tạo vận đơn GHN chưa xác định do timeout hoặc mất kết nối.'}</p>
+                                    <p class="mb-2">Hệ thống đã tự động khóa tạo đơn để tránh tạo trùng 2 vận đơn.</p>
+                                    <div class="alert alert-warning p-2 mb-0" style="font-size: 13px;">
+                                        <strong>Hướng dẫn:</strong> Vui lòng kiểm tra trên cổng quản lý GHN xem đơn đã xuất hiện chưa.
+                                        Nếu <strong>xác nhận trên GHN chưa có đơn</strong>, bấm nút bên dưới để xác nhận tạo lại.
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: '<i class="fas fa-redo me-1"></i> Đã kiểm tra GHN & Xác nhận tạo lại',
+                            cancelButtonText: 'Để kiểm tra lại sau',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.pushOrderToGhn(orderId, true);
+                            }
+                        });
                     } else {
-                        throw new Error(data.message || 'Lỗi không xác định từ GHN Sandbox');
+                        throw new Error(data.message || 'Lỗi không xác định từ GHN');
                     }
                 })
                 .catch(err => {
                     console.error(err);
                     if (errorDiv) {
                         errorDiv.style.display = 'block';
-                        errorDiv.innerHTML = '<strong>Lỗi đẩy đơn GHN Sandbox:</strong><br>' + err.message;
+                        errorDiv.innerHTML = '<strong>Lỗi đẩy đơn GHN:</strong><br>' + err.message;
                     }
                     buttons.forEach(btn => btn.disabled = false);
                 });

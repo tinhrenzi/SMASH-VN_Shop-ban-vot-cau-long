@@ -59,6 +59,12 @@ public class GuestCheckoutSecurityIntegrationTest {
     private com.smashvn.shop.dao.PhuongThucThanhToanDAO phuongThucThanhToanDAO;
     @Autowired
     private GuestCheckoutService guestCheckoutService;
+    @Autowired
+    private com.smashvn.shop.service.user.UserQuenMatKhauService userQuenMatKhauService;
+    @Autowired
+    private com.smashvn.shop.service.user.UserDangNhapService userDangNhapService;
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     private MockMvc mockMvc;
     private DonViVanChuyen testDvvc;
@@ -447,5 +453,57 @@ public class GuestCheckoutSecurityIntegrationTest {
         String responseJson = result.getResponse().getContentAsString();
         assertTrue(responseJson.contains("yeucaudoimatkhau"));
         assertTrue(responseJson.contains("quá 3 lần") || responseJson.contains("3 lần"));
+    }
+
+    @Test
+    void test12_ResetPasswordViaUserQuenMatKhauServiceUpgradesGuestToActive() {
+        String email = "guest-reset-active-" + System.nanoTime() + "@example.com";
+        String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
+        GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Reset", sdt, email);
+        String token = regResult.getToken();
+
+        TaiKhoan initialTk = taiKhoanRepository.findById(regResult.getTaiKhoan().getId()).orElseThrow();
+        assertEquals(AccountStatus.GUEST, initialTk.getTrangThaiTaiKhoan());
+
+        userQuenMatKhauService.datLaiMatKhau(token, "NewPassword123");
+
+        TaiKhoan upgradedTk = taiKhoanRepository.findById(regResult.getTaiKhoan().getId()).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, upgradedTk.getTrangThaiTaiKhoan());
+        assertNotNull(upgradedTk.getMatKhau());
+    }
+
+    @Test
+    void test13_GuestWithPasswordLogsInUpgradesToActive() {
+        String email = "guest-login-active-" + System.nanoTime() + "@example.com";
+        TaiKhoan guestTk = new TaiKhoan();
+        guestTk.setUsername(email);
+        guestTk.setMatKhau(passwordEncoder.encode("ValidPass123"));
+        guestTk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        guestTk.setVaiTro("KH");
+        guestTk = taiKhoanRepository.saveAndFlush(guestTk);
+
+        TaiKhoan loggedInTk = userDangNhapService.kiemTraDangNhap(email, "ValidPass123");
+        assertNotNull(loggedInTk);
+        assertEquals(AccountStatus.ACTIVE, loggedInTk.getTrangThaiTaiKhoan());
+
+        TaiKhoan dbTk = taiKhoanRepository.findById(guestTk.getId()).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, dbTk.getTrangThaiTaiKhoan());
+    }
+
+    @Test
+    void test14_CheckEmailStatusUpgradesGuestWithPasswordToActive() {
+        String email = "guest-check-active-" + System.nanoTime() + "@example.com";
+        TaiKhoan guestTk = new TaiKhoan();
+        guestTk.setUsername(email);
+        guestTk.setMatKhau(passwordEncoder.encode("ValidPass123"));
+        guestTk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        guestTk.setVaiTro("KH");
+        guestTk = taiKhoanRepository.saveAndFlush(guestTk);
+
+        String status = guestCheckoutService.checkEmailStatus(email);
+        assertEquals("ACTIVE", status);
+
+        TaiKhoan dbTk = taiKhoanRepository.findById(guestTk.getId()).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, dbTk.getTrangThaiTaiKhoan());
     }
 }

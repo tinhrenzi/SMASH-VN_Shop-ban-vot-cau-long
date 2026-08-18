@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.TokenKhoiPhuc;
 import com.smashvn.shop.entity.KhachHang;
@@ -122,9 +123,12 @@ public class UserQuenMatKhauService {
 
         TaiKhoan tk = tkp.getTaiKhoan();
         tk.setMatKhau(passwordEncoder.encode(matKhauMoi)); // Mã hóa Pass mới
-        taiKhoanRepository.save(tk);
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
+            tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+        }
+        taiKhoanRepository.saveAndFlush(tk);
 
         tkp.setDaSuDung(true);
-        tokenRepository.save(tkp);
+        tokenRepository.saveAndFlush(tkp);
     }
 }

@@ -40,6 +40,7 @@ import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.TaiKhoan;
 
 @SpringBootTest
+@org.springframework.transaction.annotation.Transactional
 public class CartCheckoutFlowTest {
 
     @Autowired

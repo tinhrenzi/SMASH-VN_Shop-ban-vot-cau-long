@@ -812,20 +812,6 @@ public class GioHangService {
             }
         }
 
-        if (hd.getGhnToDistrictId() != null && hd.getGhnToWardCode() != null && !hd.getGhnToWardCode().isBlank()) {
-            List<HoaDonChiTiet> savedItems = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
-            try {
-                String ghnCode = ghnService.createShippingOrder(hd, savedItems, hd.getGhnToDistrictId(), hd.getGhnToWardCode());
-                if (ghnCode != null) {
-                    hd.setGhnOrderCode(ghnCode);
-                    hd.setGhnStatus("ready_to_pick");
-                    hd = hoaDonRepository.save(hd);
-                }
-            } catch (Exception e) {
-                log.error("[GHN] Lỗi tạo đơn GHN cho COD HoaDon #{}: {}", hd.getId(), e.getMessage());
-            }
-        }
-
         try {
             if (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null) {
                 ThongBao thongBaoOrder = ThongBao.builder()

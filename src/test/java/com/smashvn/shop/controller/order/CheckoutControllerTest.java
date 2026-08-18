@@ -215,7 +215,7 @@ public class CheckoutControllerTest {
 
 
         assertEquals("checkout", view);
-        assertEquals(false, model.getAttribute("hasDefaultAddress"));
+        assertEquals(true, model.getAttribute("hasDefaultAddress"));
 
         String jsonStr = (String) model.getAttribute("addressMapJson");
         Map<?, ?> addressMap = objectMapper.readValue(jsonStr, Map.class);
