@@ -4,39 +4,42 @@
 
 ## 1. SẮP XẾP THỨ TỰ HIỂN THỊ SẢN PHẨM (ORDER BY DEEP DIVE)
 
-Đây là phân tích cực kỳ quan trọng giúp trả lời các câu hỏi: **"Sản phẩm đang được sắp xếp theo tiêu chí gì? ORDER BY nằm ở đâu? Muốn đổi thứ tự sắp xếp thì sửa file nào?"**
+Phân tích này giúp trả lời các câu hỏi: **"Sản phẩm đang được sắp xếp theo tiêu chí gì? Mệnh đề ORDER BY nằm ở file nào, dòng nào? Muốn đổi thứ tự sắp xếp thì sửa file nào?"**
 
 ```
-HTML View (th:each)
+HTML View (th:each="p : ${page.content}")
        │
        ▼
-Model Attribute
+Model Attribute (page / newProducts / bestSellers)
        │
        ▼
-Controller Method
+Controller Method (HomeController, SanPhamController)
        │
        ▼
-Service Method
+Service Method (SanPhamService, SanPhamSpecification)
        │
        ▼
 Repository / Criteria Specification
        │
        ▼
-Mệnh đề ORDER BY trong SQL / JPQL / CriteriaBuilder
+Mệnh đề ORDER BY trong JPQL / Native SQL / CriteriaBuilder
 ```
 
 ### 1.1. Bảng Tổng Hợp Quy Tắc Sắp Xếp Từng Màn Hình
 
-| Màn Hình Hiển Thị | Model Attribute | File Khai Báo Logic | Tiêu Chí Sắp Xếp (ORDER BY) | Thứ Tự | Vị Trí Sửa Để Đổi Thứ Tự |
+| Màn Hình Hiển Thị | Model Attribute | File Khai Báo Logic | Tiêu Chí Sắp Xếp (ORDER BY) | Thứ Tự | Vị Trí File Cần Sửa |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Cửa Hàng `/shop` (Mặc định)** | `page` (Page&lt;SanPham&gt;) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. ID mới nhất (`sp.id DESC`) | 1. `DESC`<br>2. `DESC` | `SanPhamSpecification.java` (Line 112 - 150) |
-| **Cửa Hàng `/shop` (Giá tăng dần)** | `page` (`sort=price_asc`) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Giá min (`MIN(spct.giaBan) ASC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `ASC`<br>3. `DESC` | `SanPhamSpecification.java` (Line 126 - 135) |
-| **Cửa Hàng `/shop` (Giá giảm dần)** | `page` (`sort=price_desc`) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Giá min (`MIN(spct.giaBan) DESC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamSpecification.java` (Line 136 - 146) |
-| **Trang Chủ (Sản phẩm mới)** | `newProducts` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. ID mới nhất (`sp.id DESC`) | 1. `DESC`<br>2. `DESC` | `SanPhamRepository.findNewProducts` (Line 140) |
-| **Trang Chủ (Bán chạy)** | `bestSellers` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Tổng đã bán (`SUM(hdct.soLuong) DESC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamRepository.findBestSellers` (Line 150) |
-| **Trang Chủ (Nổi bật)** | `featuredProducts` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Lượt mua + Wishlist DESC<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamRepository.findFeaturedProducts` (Line 162) |
-| **Gợi ý Autocomplete** | `List<SanPham>` | `SanPhamRepository.java` | `sp.id DESC` | `DESC` | `SanPhamRepository.searchAutocomplete` (Line 112) |
-| **Tìm kiếm cho Chatbot** | `List<SanPhamChiTiet>` | `SanPhamChiTietRepository.java` | 1. Tồn kho giảm dần (`spct.soLuongTon DESC`)<br>2. `spct.id DESC` | 1. `DESC`<br>2. `DESC` | `SanPhamChiTietRepository.searchForChatbot` (Line 85) |
+| **Cửa Hàng `/shop` (Mặc định)** | `page` (Page&lt;SanPham&gt;) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. ID mới nhất (`sp.id DESC`) | 1. `DESC`<br>2. `DESC` | `SanPhamSpecification.java` (createSort) |
+| **Cửa Hàng `/shop` (Giá tăng dần)** | `page` (`sort=price_asc`) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Giá min (`MIN(spct.giaBan) ASC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `ASC`<br>3. `DESC` | `SanPhamSpecification.java` |
+| **Cửa Hàng `/shop` (Giá giảm dần)** | `page` (`sort=price_desc`) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Giá min (`MIN(spct.giaBan) DESC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamSpecification.java` |
+| **Cửa Hàng `/shop` (Hàng mới nhất)**| `page` (`sort=newest`) | `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. `sp.id DESC` | 1. `DESC`<br>2. `DESC` | `SanPhamSpecification.java` |
+| **Cửa Hàng `/shop` (Bán chạy nhất)**| `page` (`sort=best_selling`)| `SanPhamSpecification.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. `SUM(hdct.soLuong) DESC`<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamSpecification.java` |
+| **Trang Chủ (Sản phẩm mới)** | `newProducts` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. ID mới nhất (`sp.id DESC`) | 1. `DESC`<br>2. `DESC` | `SanPhamRepository.findNewProducts` |
+| **Trang Chủ (Bán chạy)** | `bestSellers` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Tổng đã bán (`SUM(hdct.soLuong) DESC`)<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamRepository.findBestSellers` |
+| **Trang Chủ (Nổi bật)** | `featuredProducts` | `SanPhamRepository.java` | 1. Còn hàng trước (`hasStock DESC`)<br>2. Lượt mua + Wishlist DESC<br>3. `sp.id DESC` | 1. `DESC`<br>2. `DESC`<br>3. `DESC` | `SanPhamRepository.findFeaturedProducts` |
+| **Gợi ý Autocomplete** | `List<SanPham>` | `SanPhamRepository.java` | `sp.id DESC` | `DESC` | `SanPhamRepository.searchAutocomplete` |
+| **Tìm kiếm cho Chatbot AI** | `List<SanPhamChiTiet>` | `SanPhamChiTietRepository.java` | 1. Tồn kho giảm dần (`spct.soLuongTon DESC`)<br>2. `spct.id DESC` | 1. `DESC`<br>2. `DESC` | `SanPhamChiTietRepository.searchForChatbot` |
+| **Lô nhập xuất kho FIFO** | `List<PhieuNhapChiTiet>`| `PhieuNhapChiTietRepository.java` | `p.ngayNhap ASC` | `ASC` | `PhieuNhapChiTietRepository` |
 
 ---
 
@@ -53,7 +56,7 @@ WHERE sp.trangThaiValue = true
 ORDER BY CASE WHEN (SELECT SUM(spct.soLuongTon) FROM SanPhamChiTiet spct WHERE spct.sanPham = sp AND spct.trangThaiValue = true) > 0 THEN 1 ELSE 0 END DESC,
          sp.id DESC
 ```
-- **Ý nghĩa:** Lấy 14 sản phẩm mới nhất đang bán. Đưa sản phẩm còn hàng lên trước, sau đó xếp theo ID giảm dần (Sản phẩm tạo gần nhất lên đầu).
+- **Ý nghĩa:** Lấy danh sách sản phẩm mới nhất đang kinh doanh. Đưa sản phẩm còn hàng (`hasStock`) lên trước, sau đó xếp theo ID giảm dần (Sản phẩm tạo gần nhất lên đầu).
 
 #### Query 2: Lấy Sản Phẩm Bán Chạy Trang Chủ (`findBestSellers`)
 - **Loại:** JPQL Query
@@ -78,7 +81,7 @@ ORDER BY CASE WHEN (SELECT SUM(spct.soLuongTon) FROM SanPhamChiTiet spct WHERE s
           (SELECT COUNT(w.id) FROM SanPhamYeuThich w WHERE w.sanPham = sp)) DESC,
          sp.id DESC
 ```
-- **Ý nghĩa:** Ưu tiên còn hàng ➔ Xếp theo tổng điểm tương tác (Số lượng bán + Số lượt khách bấm tim yêu thích) giảm dần.
+- **Ý nghĩa:** Ưu tiên còn hàng ➔ Xếp theo tổng điểm tương tác (Số lượng bán + Số lượt khách bấm tim yêu thích Wishlist) giảm dần.
 
 #### Query 4: Khóa Sản Phẩm Cha Chống Deadlock (`findByIdWithLock`)
 - **Loại:** JPQL + `@Lock(LockModeType.PESSIMISTIC_WRITE)`
@@ -106,12 +109,12 @@ WHERE sp.trangThaiValue = true AND spct.trangThaiValue = true AND spct.soLuongTo
   AND (:maxPrice IS NULL OR spct.giaBan <= :maxPrice)
 ORDER BY spct.soLuongTon DESC, spct.id DESC
 ```
-- **Ý nghĩa:** Tìm kiếm biến thể phù hợp nhất còn hàng theo từ khóa người dùng trò chuyện, hỗ trợ phân giải giá, danh mục, màu sắc và trọng lượng.
+- **Ý nghĩa:** Tìm kiếm biến thể phù hợp nhất còn hàng theo từ khóa người dùng trò chuyện, hỗ trợ phân giải giá, danh mục, màu sắc và thuộc tính động EAV.
 
 #### Query 2: Lấy Danh Sách Biến Thể Có Hàng Lỗi
 - **Method:** `findBySoLuongSpLoiGreaterThanOrderBySoLuongSpLoiDesc(Integer soLuong)`
 - **Loại:** Spring Data Derived Query
-- **Ý nghĩa:** `findBySoLuongSpLoiGreaterThan` (Lọc biến thể có `soLuongSpLoi > 0`), `OrderBySoLuongSpLoiDesc` (Xếp giảm dần theo số lượng lỗi).
+- **Ý nghĩa:** Lọc các biến thể có `soLuongSpLoi > 0` và xếp giảm dần theo số lượng lỗi phục vụ trang `/admin/kho-san-pham-loi`.
 
 ---
 
@@ -149,12 +152,21 @@ ORDER BY hd.ngayTao ASC
 
 ---
 
-### 2.4. `PhieuGiamGiaRepository.java`
+### 2.4. `PhieuNhapChiTietRepository.java`
 
-#### Query 1: Khóa Pessimistic Write Trừ Số Lượng Voucher (`findByMaPhieuWithLock`)
+#### Query: Lấy Lô Nhập Phục Vụ Xuất Kho FIFO
+- **Method:** `findBySanPhamChiTietIdAndSoLuongTonLoGreaterThanOrderByNgayNhapAsc(Integer spctId, Integer minTon)`
+- **Loại:** Spring Data Derived Query
+- **Ý nghĩa:** Lấy danh sách các lô nhập của biến thể còn hàng (`so_luong_ton_lo > 0`), sắp xếp theo ngày nhập cũ nhất lên trước (`ngayNhap ASC`) để trừ kho theo đúng chuẩn FIFO.
+
+---
+
+### 2.5. `PhieuGiamGiaRepository.java`
+
+#### Query: Khóa Pessimistic Write Trừ Số Lượng Voucher (`findByMaPhieuWithLock`)
 - **Loại:** JPQL + `@Lock(LockModeType.PESSIMISTIC_WRITE)`
 - **JPQL:** `SELECT p FROM PhieuGiamGia p WHERE p.maPhieu = :maPhieu`
-- **Ý nghĩa:** Khóa độc quyền bản ghi Voucher trong suốt quá trình transaction đặt hàng, ngăn chặn nhiều khách cùng dùng hết voucher tại cùng 1 mili-giây.
+- **Ý nghĩa:** Khóa độc quyền bản ghi Voucher trong suốt quá trình transaction đặt hàng, ngăn chặn nhiều khách cùng dùng hết voucher tại cùng 1 thời điểm.
 
 ---
 *Tài liệu Query & SQL hoàn chỉnh của dự án SMASH-VN.*

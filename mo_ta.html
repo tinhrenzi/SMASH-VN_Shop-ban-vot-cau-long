@@ -855,7 +855,7 @@ src/main/resources
 [GioHangService.submitCodOrder() HOẶC GioHangService.createSepayPendingOrder()]
        ↓ (Khóa tồn kho PESSIMISTIC_WRITE, áp dụng Voucher với Pessimistic Lock, tính phí ship GHN)
 [HoaDonRepository.save() & HoaDonChiTietRepository.saveAll()]
-       ↓ (Nếu COD: Trừ kho FIFO ngay -> Gọi GHN API tạo vận đơn -> Gửi email -> Trả về kết quả)
+       ↓ (Nếu COD: Lưu đơn CHO_XAC_NHAN, CHƯA trừ kho -> Gọi GHN API tạo vận đơn -> Gửi email -> Trả về kết quả; Tồn kho FIFO chỉ trừ khi Quản lý/Nhân viên bấm 'Xác nhận đơn hàng')
        ↓ (Nếu SePay: Lưu đơn chờ thanh toán -> Lưu CheckoutExecutionSnapshot -> Trả về QR Code)
 [Redirect / Hiển thị Modal thành công]
             </div>
@@ -1431,7 +1431,7 @@ Bước 5: Gọi GioHangService.createOrderFromCheckout():
         - Áp dụng Voucher (nếu có) với Pessimistic Lock trên PhieuGiamGia.
         - Khởi tạo HoaDon và lưu các dòng HoaDonChiTiet kèm Snapshots (Tên SP, SKU, Giá gốc, Đợt giảm giá).
 Bước 6: Rẽ nhánh thanh toán:
-        - Nếu COD: Trừ kho FIFO ngay, tạo đơn GHN, xóa món đã mua khỏi giỏ, gửi email thông báo.
+        - Nếu COD: Khởi tạo đơn CHO_XAC_NHAN, CHƯA trừ tồn kho ngay (để phòng chống spam/đơn ảo), tạo đơn GHN, xóa món đã mua khỏi giỏ, gửi email thông báo. Tồn kho FIFO chỉ được trừ khi Nhân viên bấm 'Xác nhận đơn hàng'.
         - Nếu SePay: Đăng ký Snapshot vào PendingCheckoutRegistry, xóa món khỏi giỏ, trả về mã QR SePay.
             </div>
 
@@ -1595,7 +1595,7 @@ Bước 6: Rẽ nhánh thanh toán:
         <!-- SECTION 14: PAYMENT COD -->
         <section class="doc-section" id="payment-cod">
             <h2 class="section-title">14. THANH TOÁN COD (CASH ON DELIVERY)</h2>
-            <p>Quy trình thanh toán khi nhận hàng (COD) xử lý đơn hàng tạo ngay, trừ kho tức thì và bàn giao vận chuyển.</p>
+            <p>Quy trình thanh toán khi nhận hàng (COD) xử lý đơn hàng tạo ngay ở trạng thái Chờ xác nhận, <strong>chưa trừ kho tức thì</strong> (để chống spam đơn ảo giữ chỗ). Tồn kho FIFO chỉ được phân bổ trừ kho khi Nhân viên/Quản lý duyệt 'Xác nhận đơn hàng'.</p>
 
             <div class="table-wrapper">
                 <table>
@@ -1633,7 +1633,7 @@ Bước 6: Rẽ nhánh thanh toán:
                         </tr>
                         <tr>
                             <td><strong>Có trừ tồn kho ngay không? Ở đâu?</strong></td>
-                            <td><strong>CÓ</strong>. Trừ kho ngay lập tức tại <code>GioHangService.createOrderFromCheckout()</code> bằng cách gọi <code>inventoryLotService.allocateFifo(reqs)</code>.</td>
+                            <td><strong>KHÔNG TRỪ KHO NGAY LÚC ĐẶT</strong>. Khi khách bấm đặt hàng COD, hệ thống chỉ kiểm tra tồn kho và lưu đơn ở trạng thái <code>CHO_XAC_NHAN</code>. Tồn kho FIFO chỉ được trừ <strong>KHI VÀ CHỈ KHI</strong> Quản lý / Nhân viên bấm <strong>"Xác nhận đơn hàng"</strong> trong Admin (chuyển sang <code>DA_XAC_NHAN</code>) thông qua <code>OrderViewService.updateOrderStatusByAdmin()</code> gọi <code>inventoryLotService.allocateFifo(reqs)</code>.</td>
                         </tr>
                         <tr>
                             <td><strong>Có tạo đơn vận chuyển GHN không?</strong></td>

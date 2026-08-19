@@ -263,29 +263,22 @@ public class AdminOrderUpdateTest {
 
     @Test
     void testDoubleDeductionProtection() {
-        // Under new logic, stock is deducted immediately on checkout (status = cho_xac_nhan)
-        // Status changes: cho_xac_nhan (deducted) -> da_xac_nhan (deducted) -> dang_chuan_bi_hang (deducted) -> san_sang_giao (deducted)
+        // Status changes: da_xac_nhan (deducted) -> dang_chuan_bi_hang (deducted) -> san_sang_giao (deducted)
         int initialStock = testSpct.getSoLuongTon();
-        HoaDon hd = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 2);
-        
-        // Simulate immediate checkout deduction in database
+        HoaDon hd = createTestOrder("da_xac_nhan", "COD", "pending", ptttCOD, 2);
+
+        // Simulate that when order moved to da_xac_nhan, stock was deducted by 2
         testSpct.setSoLuongTon(initialStock - 2);
         sanPhamChiTietRepository.saveAndFlush(testSpct);
 
-        // Move to da_xac_nhan (deducted -> deducted, no change)
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_xac_nhan", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
-        
+        // Move to dang_chuan_bi_hang (deducted -> deducted, no double deduction)
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "dang_chuan_bi_hang", "da_xac_nhan", adminUser.getId(), "127.0.0.1");
+
         SanPhamChiTiet updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(updatedSpct);
         assertEquals(initialStock - 2, updatedSpct.getSoLuongTon());
 
-        // Move to dang_chuan_bi_hang (deducted -> deducted, no change)
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "dang_chuan_bi_hang", "da_xac_nhan", adminUser.getId(), "127.0.0.1");
-        updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
-        assertNotNull(updatedSpct);
-        assertEquals(initialStock - 2, updatedSpct.getSoLuongTon());
-
-        // Move to san_sang_giao (deducted -> deducted, no change)
+        // Move to san_sang_giao (deducted -> deducted, no double deduction)
         orderViewService.updateOrderStatusByAdmin(hd.getId(), "san_sang_giao", "dang_chuan_bi_hang", adminUser.getId(), "127.0.0.1");
         updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(updatedSpct);
@@ -322,12 +315,12 @@ public class AdminOrderUpdateTest {
         testSpct.setSoLuongTon(1);
         sanPhamChiTietRepository.saveAndFlush(testSpct);
 
-        // Order needs 2 items, initially in stock_conflict status
-        HoaDon hd = createTestOrder("stock_conflict", "SEPAY", "pending", ptttOnline, 2);
+        // Order needs 2 items, initially in cho_xac_nhan status (stock not yet deducted)
+        HoaDon hd = createTestOrder("cho_xac_nhan", "COD", "pending", ptttCOD, 2);
 
-        // Moving to cho_xac_nhan (STOCK_NOT_DEDUCTED -> STOCK_DEDUCTED) should fail because stock is 1 < 2
+        // Moving to da_xac_nhan (STOCK_NOT_DEDUCTED -> STOCK_DEDUCTED) should fail because stock is 1 < 2
         assertThrows(IllegalArgumentException.class, () -> {
-            orderViewService.updateOrderStatusByAdmin(hd.getId(), "cho_xac_nhan", "stock_conflict", adminUser.getId(), "127.0.0.1");
+            orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_xac_nhan", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
         });
     }
 
@@ -365,12 +358,12 @@ public class AdminOrderUpdateTest {
         testSpct.setSoLuongTon(0);
         sanPhamChiTietRepository.saveAndFlush(testSpct);
 
-        // Order is in stock_conflict status
-        HoaDon hd = createTestOrder("stock_conflict", "SEPAY", "paid", ptttOnline, 2);
+        // Order is in cho_xac_nhan status
+        HoaDon hd = createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, 2);
 
-        // Transition from stock_conflict to cho_xac_nhan should fail when stock is 0
+        // Transition from cho_xac_nhan to da_xac_nhan should fail when stock is 0
         assertThrows(IllegalArgumentException.class, () -> {
-            orderViewService.updateOrderStatusByAdmin(hd.getId(), "cho_xac_nhan", "stock_conflict", adminUser.getId(), "127.0.0.1");
+            orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_xac_nhan", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
         });
 
         // Add stock back to 5
@@ -378,11 +371,11 @@ public class AdminOrderUpdateTest {
         sanPhamChiTietRepository.saveAndFlush(testSpct);
 
         // Transition should now succeed and deduct stock
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "cho_xac_nhan", "stock_conflict", adminUser.getId(), "127.0.0.1");
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_xac_nhan", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
 
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElse(null);
         assertNotNull(updated);
-        assertEquals("cho_xac_nhan", updated.getTrangThaiDonHang());
+        assertEquals("da_xac_nhan", updated.getTrangThaiDonHang());
 
         SanPhamChiTiet updatedSpct = sanPhamChiTietRepository.findById(testSpct.getId()).orElse(null);
         assertNotNull(updatedSpct);
@@ -729,15 +722,15 @@ public class AdminOrderUpdateTest {
     void testRefundAndInventoryIsolation() {
         SanPhamChiTiet freshSpct = sanPhamChiTietRepository.findById(testSpct.getId()).get();
         int initialStock = freshSpct.getSoLuongTon();
-        HoaDon hd = createTestOrder("cho_xac_nhan", "SEPAY", "paid", ptttOnline, 2);
-        
-        // Simulate immediate checkout deduction in database
+        HoaDon hd = createTestOrder("da_xac_nhan", "SEPAY", "paid", ptttOnline, 2);
+
+        // Simulate that when order moved to da_xac_nhan, stock was deducted by 2
         testSpct.setSoLuongTon(initialStock - 2);
         sanPhamChiTietRepository.saveAndFlush(testSpct);
-        
-        // Cancel order -> CHO_HOAN_TIEN (since it was cho_xac_nhan and not shipped, it restores stock immediately)
-        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_huy", "cho_xac_nhan", adminUser.getId(), "127.0.0.1");
-        
+
+        // Cancel order -> CHO_HOAN_TIEN (since it was da_xac_nhan and not shipped, it restores stock immediately)
+        orderViewService.updateOrderStatusByAdmin(hd.getId(), "da_huy", "da_xac_nhan", adminUser.getId(), "127.0.0.1");
+
         // Since it wasn't shipped but was in a deducted state, cancellation restores the stock to initialStock
         SanPhamChiTiet spctCancelled = sanPhamChiTietRepository.findById(testSpct.getId()).get();
         assertEquals(initialStock, spctCancelled.getSoLuongTon());

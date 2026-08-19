@@ -532,8 +532,14 @@ public class OrderViewService {
                 || OrderStatus.DA_BAN_GIAO_GHN.getValue().equalsIgnoreCase(currentStatus)
                 || "dang_giao".equalsIgnoreCase(currentStatus)
                 || "hoan_thanh".equalsIgnoreCase(currentStatus)
-                || (hasGhnCode && ("dang_lay_hang".equalsIgnoreCase(currentStatus) || "da_tao_van_don_ghn".equalsIgnoreCase(currentStatus)))) {
-            throw new IllegalArgumentException("Không thể chỉnh sửa hoặc chuyển trạng thái thủ công cho đơn hàng đã có mã vận đơn GHN / đã bàn giao GHN / đang giao hàng!");
+                || (hasGhnCode && ("dang_lay_hang".equalsIgnoreCase(currentStatus)
+                        || "da_tao_van_don_ghn".equalsIgnoreCase(currentStatus)
+                        || "san_sang_giao".equalsIgnoreCase(currentStatus)
+                        || "da_ban_giao_ghn".equalsIgnoreCase(currentStatus)
+                        || "giao_that_bai".equalsIgnoreCase(currentStatus)))) {
+            throw new IllegalArgumentException("Đơn hàng đã được giao cho đơn vị vận chuyển GHN (Mã: "
+                    + (hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "")
+                    + "). Trạng thái vận chuyển được đồng bộ tự động từ GHN và không thể chuyển thủ công trên hệ thống!");
         }
 
         // 5. If status is the same, no transition is needed
@@ -1097,8 +1103,16 @@ public class OrderViewService {
             return null;
         }
 
-        // 2. Đơn hàng đã bàn giao GHN / đang lấy hàng / đang giao / đã giao / hoàn thành / đã hủy -> Quản lý qua GHN, ngăn chặn chuyển tiếp thủ công
-        if ("da_ban_giao_ghn".equals(currentStatus) || "dang_lay_hang".equals(currentStatus) || "dang_giao".equals(currentStatus) || "da_giao".equals(currentStatus) || "hoan_thanh".equals(currentStatus) || "da_huy".equals(currentStatus)) {
+        // 2. Đơn hàng đã có mã GHN hoặc ở các trạng thái vận chuyển GHN / hoàn thành / đã hủy -> Quản lý hoàn toàn qua GHN, ngăn chặn chuyển tiếp thủ công
+        if (hasGhnCode
+                || "da_tao_van_don_ghn".equals(currentStatus)
+                || "da_ban_giao_ghn".equals(currentStatus)
+                || "dang_lay_hang".equals(currentStatus)
+                || "dang_giao".equals(currentStatus)
+                || "da_giao".equals(currentStatus)
+                || "giao_that_bai".equals(currentStatus)
+                || "hoan_thanh".equals(currentStatus)
+                || "da_huy".equals(currentStatus)) {
             return null;
         }
 

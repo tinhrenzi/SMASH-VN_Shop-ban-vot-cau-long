@@ -1911,22 +1911,21 @@
 
                     const hasGhnCode = data.ghnOrderCode && data.ghnOrderCode.trim() !== '';
                     const stRaw = data.trangThaiRaw ? data.trangThaiRaw.toLowerCase() : '';
+                    const isGhnShippingState = hasGhnCode || ['san_sang_giao', 'da_tao_van_don_ghn', 'da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'giao_that_bai', 'hoan_thanh', 'da_huy'].includes(stRaw);
 
                     // 1. Next Status Button
                     let nextStatusLabel = data.nextStatusLabel;
-                    if (!nextStatusLabel) {
+                    if (!isGhnShippingState && !nextStatusLabel) {
                         switch (stRaw) {
                             case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
                             case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
                             case 'da_xac_nhan': nextStatusLabel = 'Đang chuẩn bị hàng'; break;
                             case 'dang_chuan_bi_hang': nextStatusLabel = 'Sẵn sàng giao'; break;
-                            case 'san_sang_giao': nextStatusLabel = hasGhnCode ? 'Đã tạo vận đơn GHN' : ''; break;
-                            case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
                             case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
                         }
                     }
 
-                    if (!isPosOrder && nextStatusLabel && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw)) {
+                    if (!isPosOrder && !isGhnShippingState && nextStatusLabel) {
                         actionsRightHtml += `
                         <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
@@ -1936,6 +1935,14 @@
                             </button>
                         </form>
                     `;
+                    }
+
+                    if (hasGhnCode && ['da_tao_van_don_ghn', 'da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao'].includes(stRaw)) {
+                        actionsLeftHtml += `
+                        <span class="badge bg-info text-dark p-2 fs-7 fw-semibold">
+                            <i class="fas fa-shipping-fast me-1"></i> Đã giao cho GHN (${escapeHtml(data.ghnOrderCode)}) — Trạng thái tự động đồng bộ từ GHN
+                        </span>
+                        `;
                     }
 
                     if (!isPosOrder && stRaw === 'san_sang_giao' && !hasGhnCode) {
