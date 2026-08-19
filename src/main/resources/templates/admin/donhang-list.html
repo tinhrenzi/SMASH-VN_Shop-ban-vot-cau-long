@@ -859,6 +859,135 @@
         </div>
     </div>
 
+    <!-- Modal Kiểm Định & Chọn Kho Nhập Hàng Hoàn (DELIVERED_TO_SHOP) -->
+    <div class="modal fade" id="adminRestockModal" tabindex="-1" aria-labelledby="adminRestockModalLabel"
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); background-color: #ffffff;">
+                <form id="adminRestockForm" action="/admin/don-hang/confirm-restock" method="post" novalidate onsubmit="return validateAndSubmitRestock(event, this)">
+                    <input type="hidden" name="_csrf" id="adminRestockCsrf" />
+                    <input type="hidden" name="idHoaDon" id="adminRestockIdHoaDon" />
+
+                    <div class="modal-header bg-primary text-white py-3">
+                        <h5 class="modal-title fw-bold" id="adminRestockModalLabel">
+                            <i class="fas fa-boxes me-2"></i>Kiểm Định &amp; Chọn Kho Nhập Hàng Hoàn <span id="restockModalHeaderCode"></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body p-4" style="background-color: #ffffff;">
+                        <!-- Thẻ tóm tắt thông tin đơn hàng hoàn trả -->
+                        <div class="card bg-light border mb-3">
+                            <div class="card-body py-3">
+                                <div class="row g-2 small">
+                                    <div class="col-sm-3 text-muted">Mã đơn hàng:</div>
+                                    <div class="col-sm-9 fw-bold text-dark" id="restockSummaryCode">-</div>
+                                    <div class="col-sm-3 text-muted">Khách hàng:</div>
+                                    <div class="col-sm-9 fw-bold text-dark" id="restockSummaryCustomer">-</div>
+                                    <div class="col-sm-3 text-muted">Lý do khách trả:</div>
+                                    <div class="col-sm-9" id="restockSummaryReasonBox">
+                                        <span class="text-danger fw-semibold" id="restockSummaryCustomerReason">-</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-2 border-top">
+                                    <div class="fw-bold text-dark small mb-2"><i class="fas fa-list-check me-1 text-primary"></i>Danh sách sản phẩm trong kiện hoàn trả:</div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered bg-white mb-0" style="font-size: 12px;">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Sản phẩm / Biến thể</th>
+                                                    <th class="text-center" style="width: 90px;">Số lượng</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="restockProductList">
+                                                <!-- Dynamic items -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chọn Kho Nhập / Kết quả kiểm định -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">
+                                <i class="fas fa-warehouse me-1 text-primary"></i>Kết quả kiểm định thực tế - Chọn kho nhập <span class="text-danger">*</span>:
+                            </label>
+
+                            <div class="d-flex flex-column gap-2 mt-2">
+                                <!-- Option 1: Kho Hàng Lỗi -->
+                                <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card border-danger bg-danger-subtle" for="restockOptLoi" style="cursor: pointer;">
+                                    <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="ketQua" id="restockOptLoi" value="HANG_LOI" checked onchange="toggleRestockFields()">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-danger fs-6">
+                                                <i class="fas fa-triangle-exclamation me-1"></i> Nhập vào Kho Sản Phẩm Lỗi
+                                            </span>
+                                            <span class="badge bg-danger">Cách ly tồn kho bán</span>
+                                        </div>
+                                        <div class="small text-muted">
+                                            Sản phẩm bị lỗi hỏng do nhà sản xuất, trầy xước hoặc hư hại trong quá trình vận chuyển. 
+                                            Số lượng sẽ được chuyển cách ly vào <strong>Kho Sản Phẩm Lỗi (<code>soLuongSpLoi</code>)</strong> để theo dõi xử lý riêng, <span class="text-danger fw-bold">TUYỆT ĐỐI KHÔNG</span> cộng vào tồn kho bán hàng bình thường.
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Option 2: Kho Bán Bình Thường -->
+                                <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card bg-light" for="restockOptBanLai" style="cursor: pointer;">
+                                    <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="ketQua" id="restockOptBanLai" value="BAN_LAI" onchange="toggleRestockFields()">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-success fs-6">
+                                                <i class="fas fa-check-circle me-1"></i> Nhập vào Kho Bán Bình Thường
+                                            </span>
+                                            <span class="badge bg-success">Tồn kho kinh doanh</span>
+                                        </div>
+                                        <div class="small text-muted">
+                                            Sản phẩm còn mới 100%, nguyên tem niêm phong, không có bất kỳ hư hại nào và đủ điều kiện tiếp tục kinh doanh. 
+                                            Số lượng sẽ được hoàn lại vào <strong>Tồn kho bán hàng (<code>soLuongTon</code>)</strong> theo thuật toán FIFO.
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Option 3: Từ chối nhận hàng -->
+                                <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card bg-light" for="restockOptTuChoi" style="cursor: pointer;">
+                                    <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="ketQua" id="restockOptTuChoi" value="TU_CHOI" onchange="toggleRestockFields()">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-secondary fs-6">
+                                                <i class="fas fa-times-circle me-1"></i> Từ chối nhận hàng hoàn
+                                            </span>
+                                            <span class="badge bg-secondary">Không nhập kho</span>
+                                        </div>
+                                        <div class="small text-muted">
+                                            Hàng gửi về không đúng quy định (bị tráo hàng, hàng bị cố ý phá hoại bởi người dùng...). Hệ thống <strong>sẽ KHÔNG nhập kho</strong> và tự động tạo đơn giao hàng gửi trả lại cho khách hàng.
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Khung lý do từ chối (Chỉ hiện khi chọn TU_CHOI) -->
+                        <div class="mb-3" id="groupRestockLyDoTuChoi" style="display: none;">
+                            <label for="restockLyDoTuChoi" class="form-label fw-bold text-danger small">
+                                Lý do từ chối nhận hàng hoàn <span class="text-danger">*</span>:
+                            </label>
+                            <textarea class="form-control" name="lyDoTuChoi" id="restockLyDoTuChoi" rows="3" placeholder="Nhập lý do chi tiết từ chối nhận kiện hàng này để lưu hồ sơ và thông báo cho khách..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="admin-btn admin-btn-primary" id="btnSubmitRestock">
+                            <i class="fas fa-check-double me-1"></i> Xác Nhận Nhập Kho / Xử Lý
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script th:inline="none">
         function toggleRefundMaGDRequirement() {
             var method = document.getElementById('refundPhuongThuc').value;
@@ -1912,13 +2041,12 @@
                         `;
                     } else if (data.trangThaiHoanHang === 'DELIVERED_TO_SHOP') {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/confirm-restock" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận kiểm kiện &amp; nhập kho cộng lại số lượng tồn?')">
-                                <i class="fas fa-boxes me-1"></i> Kiểm kiện &amp; Nhập kho
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary" 
+                                data-id="${data.id}" 
+                                data-code="${escapeHtml(data.maDonHang || ('#' + data.id))}"
+                                onclick="openAdminRestockModal(this)">
+                            <i class="fas fa-boxes me-1"></i> Kiểm kiện &amp; Chọn kho nhập
+                        </button>
                     `;
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
                         if (data.loaiYeuCauDoiTra === 'DOI') {
@@ -2338,6 +2466,168 @@
                 detailModal.hide();
             } else {
                 openAdminCancelModal(btn);
+            }
+        };
+
+        window.openAdminRestockModal = function (btn) {
+            const id = btn.getAttribute('data-id');
+            const code = btn.getAttribute('data-code') || ('#' + id);
+
+            const detailModalEl = document.getElementById('orderDetailModal');
+            const detailModal = bootstrap.Modal.getInstance(detailModalEl);
+
+            const doOpen = function () {
+                document.getElementById('adminRestockIdHoaDon').value = id;
+                const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                document.getElementById('adminRestockCsrf').value = csrfToken;
+
+                document.getElementById('restockModalHeaderCode').textContent = code;
+                document.getElementById('restockSummaryCode').textContent = code;
+                document.getElementById('restockOptLoi').checked = true;
+                toggleRestockFields();
+
+                // Fetch details
+                fetch('/admin/don-hang/detail-json?id=' + id)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('restockSummaryCustomer').textContent = data.khachHang || 'Khách lẻ';
+                        document.getElementById('restockSummaryCustomerReason').textContent = data.lyDoHoanTra || 'Khách hàng yêu cầu đổi/trả sản phẩm';
+
+                        const tbody = document.getElementById('restockProductList');
+                        if (tbody) {
+                            tbody.innerHTML = '';
+                            if (data.items && data.items.length > 0) {
+                                data.items.forEach(it => {
+                                    const tr = document.createElement('tr');
+                                    tr.innerHTML = `
+                                        <td>
+                                            <div class="fw-bold text-dark">${escapeHtml(it.tenSanPham || 'Sản phẩm')}</div>
+                                            <small class="text-muted">${escapeHtml(it.thuocTinh || '')}</small>
+                                        </td>
+                                        <td class="text-center fw-bold text-primary">${it.soLuong || 1}</td>
+                                    `;
+                                    tbody.appendChild(tr);
+                                });
+                            } else {
+                                tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Không có chi tiết sản phẩm</td></tr>';
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error loading return order details for restock:', err);
+                    });
+
+                const modalEl = document.getElementById('adminRestockModal');
+                let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (!modalInstance) {
+                    modalInstance = new bootstrap.Modal(modalEl);
+                }
+                modalInstance.show();
+            };
+
+            if (detailModal) {
+                const onHidden = function () {
+                    detailModalEl.removeEventListener('hidden.bs.modal', onHidden);
+                    doOpen();
+                };
+                detailModalEl.addEventListener('hidden.bs.modal', onHidden);
+                detailModal.hide();
+            } else {
+                doOpen();
+            }
+        };
+
+        window.toggleRestockFields = function () {
+            const optLoi = document.getElementById('restockOptLoi');
+            const optBanLai = document.getElementById('restockOptBanLai');
+            const optTuChoi = document.getElementById('restockOptTuChoi');
+            const groupTuChoi = document.getElementById('groupRestockLyDoTuChoi');
+            const textareaTuChoi = document.getElementById('restockLyDoTuChoi');
+
+            if (!optLoi || !optBanLai || !optTuChoi) return;
+
+            // Style active cards
+            const cardLoi = optLoi.closest('.restock-option-card');
+            const cardBanLai = optBanLai.closest('.restock-option-card');
+            const cardTuChoi = optTuChoi.closest('.restock-option-card');
+
+            if (cardLoi) cardLoi.className = 'p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card ' + (optLoi.checked ? 'border-danger bg-danger-subtle' : 'bg-light');
+            if (cardBanLai) cardBanLai.className = 'p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card ' + (optBanLai.checked ? 'border-success bg-success-subtle' : 'bg-light');
+            if (cardTuChoi) cardTuChoi.className = 'p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer restock-option-card ' + (optTuChoi.checked ? 'border-secondary bg-secondary-subtle' : 'bg-light');
+
+            if (optTuChoi.checked) {
+                if (groupTuChoi) groupTuChoi.style.display = 'block';
+                if (textareaTuChoi) textareaTuChoi.focus();
+            } else {
+                if (groupTuChoi) groupTuChoi.style.display = 'none';
+                if (textareaTuChoi) textareaTuChoi.value = '';
+            }
+        };
+
+        window.validateAndSubmitRestock = function (e, form) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            const optLoi = document.getElementById('restockOptLoi');
+            const optBanLai = document.getElementById('restockOptBanLai');
+            const optTuChoi = document.getElementById('restockOptTuChoi');
+            const lyDoTuChoi = document.getElementById('restockLyDoTuChoi') ? document.getElementById('restockLyDoTuChoi').value.trim() : '';
+
+            let titleMsg = '';
+            let textMsg = '';
+            let btnColor = '#0d6efd';
+
+            if (optTuChoi && optTuChoi.checked) {
+                if (!lyDoTuChoi) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Thiếu lý do từ chối',
+                            text: 'Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.'
+                        }).then(() => {
+                            document.getElementById('restockLyDoTuChoi').focus();
+                        });
+                    } else {
+                        alert('Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.');
+                    }
+                    return false;
+                }
+                titleMsg = 'Xác nhận từ chối nhận hàng hoàn?';
+                textMsg = 'Hệ thống sẽ KHÔNG nhập kho và tự động tạo vận đơn gửi trả lại kiện hàng cho khách.';
+                btnColor = '#6c757d';
+            } else if (optLoi && optLoi.checked) {
+                titleMsg = 'Xác nhận nhập vào KHO SẢN PHẨM LỖI?';
+                textMsg = 'Sản phẩm sẽ được chuyển cách ly vào Kho Sản Phẩm Lỗi (soLuongSpLoi) và KHÔNG cộng vào kho bán.';
+                btnColor = '#dc3545';
+            } else {
+                titleMsg = 'Xác nhận nhập vào KHO BÁN BÌNH THƯỜNG?';
+                textMsg = 'Sản phẩm nguyên vẹn sẽ được cộng lại vào Tồn kho bán (soLuongTon) để tiếp tục kinh doanh.';
+                btnColor = '#198754';
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: titleMsg,
+                    text: textMsg,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: btnColor,
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý thực hiện',
+                    cancelButtonText: 'Quay lại'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitBtn = document.getElementById('btnSubmitRestock');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+                        }
+                        form.submit();
+                    }
+                });
+                return false;
+            } else {
+                return confirm(titleMsg + '\n' + textMsg);
             }
         };
 
