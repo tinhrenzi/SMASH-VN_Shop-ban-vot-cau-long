@@ -1263,6 +1263,59 @@ public class GhnService {
         return List.of();
     }
 
+    /**
+     * Hủy đơn hàng / vận đơn trên hệ thống GHN.
+     * Hỗ trợ xử lý an toàn cho cả mã DEMO / Fallback và mã GHN thật.
+     *
+     * @param ghnOrderCode Mã vận đơn GHN cần hủy
+     * @return true nếu hủy thành công hoặc mã demo, false nếu có lỗi
+     */
+    public boolean cancelOrder(String ghnOrderCode) {
+        if (ghnOrderCode == null || ghnOrderCode.trim().isEmpty()) {
+            return false;
+        }
+        String cleanCode = ghnOrderCode.trim();
+        log.info("[GHN_CANCEL] Đang yêu cầu hủy vận đơn GHN: {}", cleanCode);
+
+        // Trường hợp đơn DEMO / Fallback nội bộ
+        if (cleanCode.startsWith("DEMO-") || cleanCode.startsWith("FALLBACK-")) {
+            try {
+                jdbcTemplate.update("UPDATE TichHopVanChuyen SET trang_thai = 'cancel' WHERE ma_van_don = ?", cleanCode);
+            } catch (Exception dbEx) {
+                log.warn("[GHN_CANCEL] Lỗi cập nhật trạng thái bảng TichHopVanChuyen cho mã {}: {}", cleanCode, dbEx.getMessage());
+            }
+            log.info("[GHN_CANCEL] Đã đánh dấu hủy vận đơn nội bộ: {}", cleanCode);
+            return true;
+        }
+
+        try {
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/switch-status/cancel";
+            Map<String, Object> body = Map.of("order_codes", List.of(cleanCode));
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+
+            if (responseEntity.getBody() != null) {
+                Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+                Integer code = (Integer) response.get("code");
+                if (code != null && code == 200) {
+                    try {
+                        jdbcTemplate.update("UPDATE TichHopVanChuyen SET trang_thai = 'cancel' WHERE ma_van_don = ?", cleanCode);
+                    } catch (Exception dbEx) {
+                        log.warn("[GHN_CANCEL] Lỗi cập nhật trạng thái bảng TichHopVanChuyen: {}", dbEx.getMessage());
+                    }
+                    log.info("[GHN_CANCEL] Hủy vận đơn GHN thành công trên hệ thống GHN cho mã: {}", cleanCode);
+                    return true;
+                } else {
+                    log.warn("[GHN_CANCEL] GHN trả về phản hồi khi hủy vận đơn {}: code={}, message={}",
+                            cleanCode, code, response.get("message"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("[GHN_CANCEL] Lỗi kết nối khi gọi API hủy vận đơn GHN {}: {}", cleanCode, e.getMessage());
+        }
+        return false;
+    }
+
     @Data
     @AllArgsConstructor
     private static class GhnServiceInfo {

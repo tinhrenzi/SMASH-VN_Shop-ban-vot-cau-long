@@ -111,6 +111,13 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
     @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
     Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
 
+    /**
+     * Lay danh sach bien the co hang loi (soLuongSpLoi > 0).
+     * Ket qua sap xep giam dan theo soLuongSpLoi de hien nhieu loi truoc.
+     * Dung cho tab Kho San Pham Loi – Phase 1.
+     */
+    List<SanPhamChiTiet> findBySoLuongSpLoiGreaterThanOrderBySoLuongSpLoiDesc(Integer soLuong);
+
     @Query("""
             SELECT DISTINCT s.giaTri FROM SanPhamChiTietThuocTinh s
             WHERE (LOWER(s.thuocTinh.tenThuocTinh) LIKE '%trọng%' OR LOWER(s.thuocTinh.tenThuocTinh) LIKE '%weight%')

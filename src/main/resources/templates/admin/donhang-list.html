@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
 
 <head>
     <meta charset="UTF-8">
@@ -297,137 +297,10 @@
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
-                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
                                                             title="Chi tiết đơn hàng">
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
-
-                                                        <button
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'RETURNED' &amp;&amp; hd.loaiYeuCauDoiTra == 'TRA' &amp;&amp; hd.prepaid}"
-                                                            type="button"
-                                                            class="admin-btn admin-btn-sm admin-btn-primary"
-                                                            th:data-id="${hd.id}"
-                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                            th:data-total="${hd.tongTien}"
-                                                            onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))">
-                                                            <i class="fas fa-hand-holding-usd"></i> Hoàn tiền
-                                                        </button>
-
-                                                        <form th:if="${hd.trangThaiHoanHang != null &amp;&amp; (hd.trangThaiHoanHang.name() == 'RETURNED' or hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED') &amp;&amp; hd.loaiYeuCauDoiTra == 'DOI'}"
-                                                              action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-success"
-                                                                    th:title="${hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED' ? 'Thử lại tạo vận đơn GHN hàng đổi' : 'Phân bổ tồn kho & Giao hàng đổi mới'}">
-                                                                <i class="fas fa-shipping-fast"></i> <span th:text="${hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED' ? 'Thử lại vận đơn GHN' : 'Giao hàng đổi'}">Giao hàng đổi</span>
-                                                            </button>
-                                                        </form>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
-                                                            action="/admin/don-hang/approve-return" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Duyệt trả hàng &amp; Tạo mã GHN"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
-                                                                <i class="fas fa-check text-success"></i>
-                                                            </button>
-                                                        </form>
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
-                                                            action="/admin/don-hang/reject-return" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit"
-                                                                class="admin-btn admin-btn-icon danger"
-                                                                title="Từ chối trả hàng"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
-                                                                <i class="fas fa-times"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null &amp;&amp; hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}"
-                                                            action="/admin/don-hang/confirm-restock" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Kiểm kiện &amp; Nhập kho"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập kho?')">
-                                                                <i class="fas fa-boxes text-warning"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_lay_hang' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; nextStatusLabels[hd.id] != null &amp;&amp; !(hd.maDonHang != null &amp;&amp; (hd.maDonHang.startsWith('HDSVN') || hd.maDonHang.startsWith('HD-'))) &amp;&amp; hd.diaChiNhan != 'Bán tại quầy'}"
-                                                            th:data-next-status-label="${nextStatusLabels[hd.id]}"
-                                                            th:action="@{/admin/don-hang/next-status}" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                th:title="'Tiếp theo: ' + ${nextStatusLabels[hd.id]}"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
-                                                                <i class="fas fa-arrow-right text-success"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <!-- Nút Gửi đơn sang GHN & Tạo vận đơn khi ở trạng thái Sẵn sàng giao chưa có mã GHN -->
-                                                        <button
-                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang == 'san_sang_giao' &amp;&amp; (hd.ghnOrderCode == null || hd.ghnOrderCode.trim() == '') &amp;&amp; (hd.donViVanChuyen != null &amp;&amp; (hd.donViVanChuyen.tenDonVi.toUpperCase().contains('GHN') || hd.donViVanChuyen.tenDonVi.toUpperCase().contains('GIAO HÀNG NHANH')))}"
-                                                            type="button" class="admin-btn admin-btn-icon"
-                                                            th:data-id="${hd.id}"
-                                                            onclick="pushOrderToGhn(this.getAttribute('data-id'), this)"
-                                                            title="Gửi đơn sang GHN &amp; Tạo mã vận đơn">
-                                                            <i class="fas fa-shipping-fast text-warning"></i>
-                                                        </button>
-
-                                                        <button
-                                                            th:if="${hd.trangThaiHoanHang == null &amp;&amp; hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
-                                                            type="button" class="admin-btn admin-btn-icon danger"
-                                                            th:data-id="${hd.id}"
-                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                            th:data-status="${hd.trangThaiDonHang}"
-                                                            onclick="openAdminCancelModal(this)" title="Hủy đơn hàng">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
-                                                            th:action="@{/admin/don-hang/approve-refund-ui}"
-                                                            method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Xác nhận hoàn tiền"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này? (Tiền sẽ bị trừ khỏi thống kê)')">
-                                                                <i class="fas fa-hand-holding-usd text-success"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
-                                                            th:action="@{/admin/don-hang/reject-refund-ui}"
-                                                            method="post" class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit"
-                                                                class="admin-btn admin-btn-icon danger"
-                                                                title="Từ chối hoàn tiền"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền? (Giữ nguyên doanh thu)')">
-                                                                <i class="fas fa-ban"></i>
-                                                            </button>
-                                                        </form>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -530,21 +403,9 @@
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
-                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
                                                             title="Chi tiết đơn hàng">
                                                             <i class="fas fa-eye text-primary"></i>
-                                                        </button>
-
-
-
-                                                        <button
-                                                            th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_giao' &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
-                                                            type="button" class="admin-btn admin-btn-icon danger"
-                                                            th:data-id="${hd.id}"
-                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                            th:data-status="${hd.trangThaiDonHang}"
-                                                            onclick="openAdminCancelModal(this)" title="Hủy đơn hàng">
-                                                            <i class="fas fa-times"></i>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -653,62 +514,10 @@
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
-                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'))"
+                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
                                                             title="Chi tiết đơn hàng">
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
-                                                            action="/admin/don-hang/approve-return" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Duyệt trả hàng &amp; Tạo mã GHN"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tạo mã GHN thu hồi?')">
-                                                                <i class="fas fa-check text-success"></i>
-                                                            </button>
-                                                        </form>
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL'}"
-                                                            action="/admin/don-hang/reject-return" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit"
-                                                                class="admin-btn admin-btn-icon danger"
-                                                                title="Từ chối trả hàng"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
-                                                                <i class="fas fa-times"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <form
-                                                            th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'}"
-                                                            action="/admin/don-hang/confirm-restock" method="post"
-                                                            class="d-inline-block m-0">
-                                                            <input type="hidden" th:name="${_csrf.parameterName}"
-                                                                th:value="${_csrf.token}" />
-                                                            <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                            <button type="submit" class="admin-btn admin-btn-icon"
-                                                                title="Kiểm kiện &amp; Nhập kho"
-                                                                onclick="return confirmSubmit(this, 'Xác nhận kiện hàng đã về shop, kiểm kiện và nhập lại tồn kho?')">
-                                                                <i class="fas fa-boxes text-warning"></i>
-                                                            </button>
-                                                        </form>
-
-                                                        <button th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED' and hd.loaiYeuCauDoiTra == 'TRA' and hd.prepaid}"
-                                                             type="button" class="admin-btn admin-btn-icon"
-                                                             th:data-id="${hd.id}"
-                                                             th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                             th:data-total="${hd.tongTien}"
-                                                             onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-total'))"
-                                                             title="Xác nhận hoàn tiền">
-                                                             <i class="fas fa-hand-holding-usd text-success"></i>
-                                                         </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -790,54 +599,187 @@
         </div>
     </div>
 
-    <!-- Modal Hủy đơn hàng của Admin -->
+    <!-- Modal Hủy đơn hàng của Admin (Phân nhánh COD vs Online Paid) -->
     <div class="modal fade" id="adminCancelOrderModal" tabindex="-1" aria-labelledby="adminCancelOrderModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="adminCancelOrderModalLabel"><i
-                            class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy đơn hàng</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); background-color: #ffffff;">
+                <div class="modal-header bg-danger text-white py-3">
+                    <h5 class="modal-title fw-bold" id="adminCancelOrderModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Hủy Đơn Hàng <span id="adminCancelOrderCodeHeader"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="adminCancelOrderForm" method="post" action="/admin/don-hang/update-status">
-                    <input type="hidden" name="_csrf" id="adminCancelCsrf" />
-                    <input type="hidden" name="idHoaDon" id="adminCancelId" />
-                    <input type="hidden" name="expectedStatus" id="adminCancelExpectedStatus" />
-                    <input type="hidden" name="trangThai" value="da_huy" />
-                    <input type="hidden" name="lyDoHuy" id="adminCancelReasonFinal" />
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn hủy đơn hàng <strong id="adminCancelOrderCode"></strong> không?</p>
+
+                <!-- BƯỚC 1: Chọn / Nhập lý do hủy -->
+                <div id="adminCancelStep1Box">
+                    <div class="modal-body p-4" style="background-color: #ffffff;">
+                        <div class="alert alert-warning d-flex align-items-center mb-3">
+                            <i class="fas fa-info-circle fa-2x me-3 text-warning"></i>
+                            <div>
+                                Bạn đang yêu cầu hủy đơn hàng <strong id="adminCancelOrderCode" class="text-dark"></strong>.
+                                Vui lòng chọn lý do hủy đơn trước khi tiếp tục.
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label for="adminCancelReasonSelect" class="form-label fw-bold">Vui lòng chọn lý do hủy
-                                đơn:</label>
-                            <select class="form-select" id="adminCancelReasonSelect"
-                                onchange="toggleAdminCancelReasonTextarea()">
-                                <option value="Khách hàng yêu cầu hủy">Khách hàng yêu cầu hủy</option>
-                                <option value="Sản phẩm hết hàng / lỗi chất lượng">Sản phẩm hết hàng / lỗi chất lượng
-                                </option>
-                                <option value="Không liên hệ được với người nhận">Không liên hệ được với người nhận
-                                </option>
-                                <option value="Trùng đơn hàng / sai thông tin">Trùng đơn hàng / sai thông tin</option>
-                                <option value="Khác">Khác (Tự nhập lý do)...</option>
+                            <label for="adminCancelReasonSelect" class="form-label fw-bold">Lý do hủy đơn <span class="text-danger">*</span>:</label>
+                            <select class="form-select form-select-lg" id="adminCancelReasonSelect" onchange="toggleAdminCancelReasonTextarea()">
+                                <option value="Không liên hệ được khách hàng">Không liên hệ được khách hàng</option>
+                                <option value="Địa chỉ giao hàng không hợp lệ">Địa chỉ giao hàng không hợp lệ</option>
+                                <option value="Khách yêu cầu hủy">Khách yêu cầu hủy</option>
+                                <option value="Sản phẩm không đáp ứng được">Sản phẩm không đáp ứng được</option>
+                                <option value="Thông tin đơn hàng bất thường">Thông tin đơn hàng bất thường</option>
+                                <option value="Khác">Lý do khác (Nhập chi tiết)...</option>
                             </select>
                         </div>
+
                         <div class="mb-3" id="adminCustomReasonWrapper" style="display: none;">
-                            <textarea class="form-control" id="adminCustomCancelReason"
-                                oninput="toggleAdminCancelReasonTextarea()"
-                                placeholder="Vui lòng nhập lý do hủy chi tiết tại đây..." rows="3"></textarea>
-                            <div id="adminCancelReasonError" class="text-danger mt-1 fw-bold"
-                                style="display: none; font-size: 13px;">
-                                ⚠️ Vui lòng điền lý do hủy đơn.
+                            <label for="adminCustomCancelReason" class="form-label fw-bold">Chi tiết lý do <span class="text-danger">*</span>:</label>
+                            <textarea class="form-control" id="adminCustomCancelReason" oninput="toggleAdminCancelReasonTextarea()" placeholder="Vui lòng nhập chi tiết lý do hủy đơn..." rows="3"></textarea>
+                        </div>
+                        <div id="adminCancelReasonError" class="alert alert-danger py-2 mb-0" style="display: none;">
+                            <i class="fas fa-exclamation-circle me-1"></i>Vui lòng nhập lý do hủy chi tiết khi chọn "Lý do khác".
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="admin-btn admin-btn-danger" id="adminCancelStep1NextBtn" onclick="proceedToCancelStep2()">
+                            Tiếp tục <i class="fas fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BƯỚC 2A: Xác nhận hủy đơn COD / Chưa thanh toán -->
+                <form id="adminCancelUnpaidForm" method="post" action="/admin/don-hang/cancel-unpaid" novalidate onsubmit="return validateCancelUnpaidForm(event, this)" style="display: none;">
+                    <input type="hidden" name="_csrf" id="adminCancelUnpaidCsrf" />
+                    <input type="hidden" name="idHoaDon" id="adminCancelUnpaidId" />
+                    <input type="hidden" name="lyDoHuy" id="adminCancelUnpaidReason" />
+
+                    <div class="modal-body p-4" style="background-color: #ffffff;">
+                        <div class="alert alert-info py-3 mb-3">
+                            <h6 class="fw-bold mb-1"><i class="fas fa-check-circle text-success me-2"></i>Đơn hàng chưa thanh toán</h6>
+                            <p class="mb-0 small text-muted">Đơn hàng này chưa phát sinh giao dịch nhận tiền. Việc hủy đơn sẽ <strong>không phát sinh hoàn tiền</strong>.</p>
+                        </div>
+
+                        <div class="card bg-light border mb-3">
+                            <div class="card-body py-3">
+                                <div class="row g-2 small">
+                                    <div class="col-sm-4 text-muted">Mã đơn hàng:</div>
+                                    <div class="col-sm-8 fw-bold" id="adminCancelUnpaidSummaryCode">-</div>
+                                    <div class="col-sm-4 text-muted">Khách hàng:</div>
+                                    <div class="col-sm-8 fw-bold" id="adminCancelUnpaidSummaryCustomer">-</div>
+                                    <div class="col-sm-4 text-muted">Hình thức thanh toán:</div>
+                                    <div class="col-sm-8" id="adminCancelUnpaidSummaryPayment">-</div>
+                                    <div class="col-sm-4 text-muted">Tổng tiền:</div>
+                                    <div class="col-sm-8 fw-bold text-primary" id="adminCancelUnpaidSummaryAmount">-</div>
+                                    <div class="col-sm-4 text-muted">Lý do hủy:</div>
+                                    <div class="col-sm-8 fw-bold text-danger" id="adminCancelUnpaidSummaryReason">-</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Quay
-                            lại</button>
-                        <button type="submit" class="admin-btn admin-btn-danger" id="adminCancelSubmitBtn">Xác nhận
-                            hủy</button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="admin-btn admin-btn-secondary" onclick="backToCancelStep1()">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </button>
+                        <button type="submit" class="admin-btn admin-btn-danger" id="btnSubmitCancelUnpaid">
+                            <i class="fas fa-times-circle me-1"></i> Xác nhận hủy đơn
+                        </button>
+                    </div>
+                </form>
+
+                <!-- BƯỚC 2B: Xác nhận hoàn tiền & Hủy đơn Online đã thanh toán -->
+                <form id="adminCancelPaidForm" method="post" action="/admin/don-hang/cancel-paid-refund" enctype="multipart/form-data" novalidate onsubmit="return validateCancelPaidForm(event, this)" style="display: none;">
+                    <input type="hidden" name="_csrf" id="adminCancelPaidCsrf" />
+                    <input type="hidden" name="idHoaDon" id="adminCancelPaidId" />
+                    <input type="hidden" name="lyDoHuy" id="adminCancelPaidReason" />
+
+                    <div class="modal-body p-4" style="background-color: #ffffff;">
+                        <div class="alert alert-danger py-3 mb-3 border-danger">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-shield-alt fa-2x text-danger me-3"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-danger text-uppercase">ĐƠN HÀNG ĐÃ ĐƯỢC THANH TOÁN</h6>
+                                    <div class="small text-muted">Đơn hàng này đã nhận tiền qua cổng thanh toán Online. Nhân viên <strong>bắt buộc xác nhận hoàn tiền</strong> trước khi hoàn tất hủy đơn.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Thông tin giao dịch thanh toán gốc -->
+                        <div class="card border mb-3 bg-light">
+                            <div class="card-header bg-white py-2 fw-bold text-dark small">
+                                <i class="fas fa-receipt me-1 text-primary"></i>THÔNG TIN THANH TOÁN GỐC CỦA KHÁCH HÀNG
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="row g-2 small">
+                                    <div class="col-sm-4 text-muted">Mã đơn hàng:</div>
+                                    <div class="col-sm-8 fw-bold" id="adminCancelPaidSummaryCode">-</div>
+                                    <div class="col-sm-4 text-muted">Khách hàng:</div>
+                                    <div class="col-sm-8 fw-bold" id="adminCancelPaidSummaryCustomer">-</div>
+                                    <div class="col-sm-4 text-muted">Cổng thanh toán:</div>
+                                    <div class="col-sm-8"><span class="badge bg-success" id="adminCancelPaidSummaryGateway">-</span></div>
+                                    <div class="col-sm-4 text-muted">Số tiền khách đã trả:</div>
+                                    <div class="col-sm-8 fw-bold text-success" id="adminCancelPaidSummaryPaidAmount">-</div>
+                                    <div class="col-sm-4 text-muted">Mã giao dịch gốc:</div>
+                                    <div class="col-sm-8 font-monospace fw-bold" id="adminCancelPaidSummaryTxId">-</div>
+                                    <div class="col-sm-4 text-muted">Thời gian thanh toán:</div>
+                                    <div class="col-sm-8" id="adminCancelPaidSummaryPaidAt">-</div>
+                                    <div class="col-sm-4 text-muted">Lý do hủy đơn:</div>
+                                    <div class="col-sm-8 fw-bold text-danger" id="adminCancelPaidSummaryReason">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Xác Nhận Hoàn Tiền -->
+                        <div class="border rounded p-3 bg-white">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="fas fa-hand-holding-usd me-1"></i>THÔNG TIN XÁC NHẬN HOÀN TIỀN
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Phương thức hoàn tiền <span class="text-danger">*</span>:</label>
+                                    <select class="form-select form-select-sm" name="phuongThucHoanTien" id="cancelRefundPhuongThuc" onchange="toggleCancelRefundMaGD()">
+                                        <option value="CHUYEN_KHOAN" selected>Chuyển khoản ngân hàng</option>
+                                        <option value="TIEN_MAT">Tiền mặt</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Số tiền cần hoàn (VNĐ) <span class="text-danger">*</span>:</label>
+                                    <input type="number" class="form-control form-control-sm fw-bold text-success" name="soTienHoan" id="cancelRefundSoTienHoan" readonly />
+                                </div>
+                                <div class="col-md-12" id="groupCancelRefundMaGD">
+                                    <label class="form-label fw-bold small">Mã giao dịch hoàn tiền <span class="text-danger" id="reqCancelMaGDMark">*</span>:</label>
+                                    <input type="text" class="form-control form-control-sm" name="maGiaoDichHoanTien" id="cancelRefundMaGiaoDich" placeholder="Ví dụ: FT240810123456" />
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">Ghi chú hoàn tiền:</label>
+                                    <textarea class="form-control form-control-sm" name="ghiChuHoanTien" id="cancelRefundGhiChu" rows="2" placeholder="Ghi chú hoàn tiền cho khách..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">Ảnh / Chứng từ hoàn tiền <span class="text-danger">*</span>:</label>
+                                    <input type="file" class="form-control form-control-sm" name="fileChungTu" id="cancelRefundFileChungTu" accept="image/jpeg,image/png,image/webp,image/jpg" onchange="previewCancelRefundProof(this)" />
+                                    <div id="cancelRefundImagePreviewContainer" class="mt-2" style="display: none;">
+                                        <div class="d-flex align-items-center justify-content-between p-2 border rounded bg-light">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img id="cancelRefundImagePreview" src="" alt="Ảnh xem trước" style="max-width: 100px; max-height: 75px; border-radius: 6px; object-fit: cover;" />
+                                                <span id="cancelRefundImageName" class="small text-muted text-truncate" style="max-width: 250px;"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearCancelRefundProof()"><i class="fas fa-trash-alt"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="admin-btn admin-btn-secondary" onclick="backToCancelStep1()">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </button>
+                        <button type="submit" class="admin-btn admin-btn-success" id="btnSubmitCancelPaid">
+                            <i class="fas fa-check-circle me-1"></i> Xác nhận hoàn tiền & Hủy đơn
+                        </button>
                     </div>
                 </form>
             </div>
@@ -849,7 +791,7 @@
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
-                <form action="/admin/don-hang/confirm-refund" method="post" enctype="multipart/form-data" onsubmit="return validateRefundForm(this)">
+                <form action="/admin/don-hang/confirm-refund" method="post" enctype="multipart/form-data" novalidate onsubmit="return validateRefundForm(event, this)">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <input type="hidden" name="idHoaDon" id="refundIdHoaDon" />
 
@@ -876,7 +818,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold small">Số tiền hoàn (VNĐ) <span class="text-danger">*</span>:</label>
-                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan" placeholder="Nhập số tiền hoàn..." required />
+                            <input type="number" class="form-control" name="soTienHoan" id="refundSoTienHoan" placeholder="Nhập số tiền hoàn..." />
                         </div>
 
                         <div class="mb-3" id="groupMaGiaoDich">
@@ -892,7 +834,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold small">Ảnh / Chứng từ hoàn tiền <span class="text-danger">*</span>:</label>
-                            <input type="file" class="form-control" name="fileChungTu" id="refundFileChungTu" accept="image/jpeg,image/png,image/webp,image/jpg" required onchange="previewRefundProofImage(this)" />
+                            <input type="file" class="form-control" name="fileChungTu" id="refundFileChungTu" accept="image/jpeg,image/png,image/webp,image/jpg" onchange="previewRefundProofImage(this)" />
                             <div id="refundImagePreviewContainer" class="mt-2" style="display: none;">
                                 <div class="d-flex align-items-center justify-content-between p-2 border rounded bg-light">
                                     <div class="d-flex align-items-center gap-2">
@@ -1335,8 +1277,7 @@
                     `;
                     });
 
-                    const isPosOrder = (data.maDonHang && (data.maDonHang.startsWith('HDSVN') || data.maDonHang.startsWith('HD-'))) ||
-                        (data.diaChi === 'Bán tại quầy');
+                    const isPosOrder = (data.isPosOrder !== undefined) ? data.isPosOrder : (data.diaChi === 'Bán tại quầy');
 
                     let paymentBadgeClass = 'badge-soft-secondary';
                     if (data.paymentStatusBadgeClass) {
@@ -1837,14 +1778,14 @@
 
                     // Build Footer Actions
                     let actionsLeftHtml = '';
-                    let actionsRightHtml = `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Đóng</button>`;
+                    let actionsRightHtml = '';
 
                     const hasGhnCode = data.ghnOrderCode && data.ghnOrderCode.trim() !== '';
                     const stRaw = data.trangThaiRaw ? data.trangThaiRaw.toLowerCase() : '';
-                    const isGhnManaged = ['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao'].includes(stRaw);
 
-                    if (stRaw && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw) && !isGhnManaged && !isPosOrder) {
-                        let nextStatusLabel = '';
+                    // 1. Next Status Button
+                    let nextStatusLabel = data.nextStatusLabel;
+                    if (!nextStatusLabel) {
                         switch (stRaw) {
                             case 'cho_thanh_toan': nextStatusLabel = 'Chờ xác nhận'; break;
                             case 'cho_xac_nhan': nextStatusLabel = 'Đã xác nhận'; break;
@@ -1854,49 +1795,51 @@
                             case 'da_tao_van_don_ghn': nextStatusLabel = 'Đã bàn giao GHN'; break;
                             case 'stock_conflict': nextStatusLabel = 'Chờ xác nhận'; break;
                         }
+                    }
 
-                        if (!isPosOrder && nextStatusLabel) {
-                            actionsRightHtml += `
-                            <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
-                                <input type="hidden" name="_csrf" value="${csrfToken}" />
-                                <input type="hidden" name="idHoaDon" value="${data.id}" />
-                                <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${nextStatusLabel}?')">
-                                    <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${nextStatusLabel})
-                                </button>
-                            </form>
-                        `;
-                        }
-
-                        if (!isPosOrder && stRaw === 'san_sang_giao' && !hasGhnCode) {
-                            actionsRightHtml += `
-                            <button type="button" class="admin-btn admin-btn-warning text-dark fw-bold" onclick="pushOrderToGhn(${data.id}, this)">
-                                <i class="fas fa-shipping-fast me-1"></i> Gửi đơn sang GHN (Tạo vận đơn)
+                    if (!isPosOrder && nextStatusLabel && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw)) {
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
+                            <input type="hidden" name="_csrf" value="${csrfToken}" />
+                            <input type="hidden" name="idHoaDon" value="${data.id}" />
+                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${escapeHtml(nextStatusLabel)}?')">
+                                <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${escapeHtml(nextStatusLabel)})
                             </button>
-                        `;
-                        }
+                        </form>
+                    `;
+                    }
 
-                        if (isPosOrder && stRaw === 'cho_thanh_toan') {
-                            actionsRightHtml += `
-                            <button type="button" class="admin-btn admin-btn-success" onclick="confirmPaymentPosModal(${data.id})">
-                                <i class="fas fa-check-circle me-1"></i> Xác nhận đã nhận tiền
+                    if (!isPosOrder && stRaw === 'san_sang_giao' && !hasGhnCode) {
+                        actionsRightHtml += `
+                        <button type="button" class="admin-btn admin-btn-warning text-dark fw-bold" onclick="pushOrderToGhn(${data.id}, this)">
+                            <i class="fas fa-shipping-fast me-1"></i> Gửi đơn sang GHN (Tạo vận đơn)
+                        </button>
+                    `;
+                    }
+
+                    if (isPosOrder && stRaw === 'cho_thanh_toan') {
+                        actionsRightHtml += `
+                        <button type="button" class="admin-btn admin-btn-success" onclick="confirmPaymentPosModal(${data.id})">
+                            <i class="fas fa-check-circle me-1"></i> Xác nhận đã nhận tiền
+                        </button>
+                    `;
+                    }
+
+                    if (stRaw === 'dang_giao' && !hasGhnCode) {
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
+                            <input type="hidden" name="_csrf" value="${csrfToken}" />
+                            <input type="hidden" name="idHoaDon" value="${data.id}" />
+                            <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
+                            <input type="hidden" name="trangThai" value="da_giao" />
+                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
+                                <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
                             </button>
-                        `;
-                        }
+                        </form>
+                    `;
+                    }
 
-                        if (stRaw === 'dang_giao' && !hasGhnCode) {
-                            actionsRightHtml += `
-                            <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
-                                <input type="hidden" name="_csrf" value="${csrfToken}" />
-                                <input type="hidden" name="idHoaDon" value="${data.id}" />
-                                <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
-                                <input type="hidden" name="trangThai" value="da_giao" />
-                                <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
-                                    <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
-                                </button>
-                            </form>
-                        `;
-                        }
-
+                    if (stRaw && !['da_ban_giao_ghn', 'dang_lay_hang', 'dang_giao', 'da_giao', 'hoan_thanh', 'da_huy'].includes(stRaw)) {
                         actionsRightHtml += `
                         <button type="button" class="admin-btn admin-btn-danger" 
                                 data-id="${data.id}" 
@@ -1933,7 +1876,7 @@
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
                             <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?')">
-                                <i class="fas fa-check-circle me-1"></i> Duyệt
+                                <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng
                             </button>
                         </form>
                         <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
@@ -1978,19 +1921,33 @@
                         </form>
                     `;
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
-                        if (data.isPrepaid && data.loaiYeuCauDoiTra === 'TRA') {
+                        if (data.loaiYeuCauDoiTra === 'DOI') {
+                            actionsRightHtml += `
+                            <form action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
+                                <input type="hidden" name="_csrf" value="${csrfToken}" />
+                                <input type="hidden" name="idHoaDon" value="${data.id}" />
+                                <button type="submit" class="admin-btn admin-btn-success" onclick="return confirmSubmit(this, 'Xác nhận phân bổ tồn kho và giao hàng đổi mới?')">
+                                    <i class="fas fa-shipping-fast me-1"></i> Giao hàng đổi mới
+                                </button>
+                            </form>
+                            `;
+                        } else {
                             actionsRightHtml += `
                             <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
                                 <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận hoàn tiền
                             </button>
                             `;
-                        } else if (data.isCod) {
-                            actionsLeftHtml += `
-                            <span class="badge-soft badge-soft-success">
-                                <i class="fas fa-check-double me-1"></i> Đã hoàn tất Trả hàng &amp; Nhập kho (Đơn COD)
-                            </span>
-                            `;
                         }
+                    } else if (data.trangThaiHoanHang === 'EXCHANGE_STOCK_ALLOCATED') {
+                        actionsRightHtml += `
+                        <form action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
+                            <input type="hidden" name="_csrf" value="${csrfToken}" />
+                            <input type="hidden" name="idHoaDon" value="${data.id}" />
+                            <button type="submit" class="admin-btn admin-btn-success" onclick="return confirmSubmit(this, 'Thử lại tạo vận đơn GHN hàng đổi?')">
+                                <i class="fas fa-shipping-fast me-1"></i> Thử lại vận đơn GHN
+                            </button>
+                        </form>
+                        `;
                     } else if (data.trangThaiHoanHang === 'REFUNDED') {
                         actionsLeftHtml += `
                         <span class="badge-soft badge-soft-success">
@@ -1998,6 +1955,8 @@
                         </span>
                     `;
                     }
+
+                    actionsRightHtml += `<button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Đóng</button>`;
 
                     footer.innerHTML = `
                         <div class="order-detail-footer-info">
@@ -2035,21 +1994,25 @@
             myModal.show();
         }
 
+        window.currentCancelOrderData = null;
+
+        window.formatCurrency = function (amount) {
+            if (amount === null || amount === undefined || isNaN(amount)) return '0 đ';
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+        };
+
         window.toggleAdminCancelReasonTextarea = function () {
             const select = document.getElementById('adminCancelReasonSelect');
             const wrapper = document.getElementById('adminCustomReasonWrapper');
             const textarea = document.getElementById('adminCustomCancelReason');
-            const finalInput = document.getElementById('adminCancelReasonFinal');
             const errDiv = document.getElementById('adminCancelReasonError');
             if (errDiv) errDiv.style.display = 'none';
-            if (select && wrapper && finalInput) {
+            if (select && wrapper) {
                 if (select.value === 'Khác') {
                     wrapper.style.display = 'block';
-                    finalInput.value = textarea ? textarea.value.trim() : '';
                 } else {
                     wrapper.style.display = 'none';
                     if (textarea) textarea.value = '';
-                    finalInput.value = select.value;
                 }
             }
         };
@@ -2067,21 +2030,29 @@
 
         window.openAdminCancelModal = function (btn) {
             const id = btn.getAttribute('data-id');
-            const code = btn.getAttribute('data-code');
-            const expectedStatus = btn.getAttribute('data-status');
+            const code = btn.getAttribute('data-code') || ('#' + id);
 
-            document.getElementById('adminCancelId').value = id;
-            document.getElementById('adminCancelOrderCode').textContent = code;
-            document.getElementById('adminCancelExpectedStatus').value = expectedStatus;
+            // Set headers & initial values
+            const headerCodeEl = document.getElementById('adminCancelOrderCodeHeader');
+            if (headerCodeEl) headerCodeEl.textContent = code;
+            const bodyCodeEl = document.getElementById('adminCancelOrderCode');
+            if (bodyCodeEl) bodyCodeEl.textContent = code;
 
             const csrfMeta = document.querySelector('meta[name="_csrf"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-            document.getElementById('adminCancelCsrf').value = csrfToken;
+            const csrfUnpaid = document.getElementById('adminCancelUnpaidCsrf');
+            if (csrfUnpaid) csrfUnpaid.value = csrfToken;
+            const csrfPaid = document.getElementById('adminCancelPaidCsrf');
+            if (csrfPaid) csrfPaid.value = csrfToken;
 
+            const unpaidId = document.getElementById('adminCancelUnpaidId');
+            if (unpaidId) unpaidId.value = id;
+            const paidId = document.getElementById('adminCancelPaidId');
+            if (paidId) paidId.value = id;
+
+            // Reset Step 1 form
             const select = document.getElementById('adminCancelReasonSelect');
-            if (select) select.value = 'Khách hàng yêu cầu hủy';
-            const finalInput = document.getElementById('adminCancelReasonFinal');
-            if (finalInput) finalInput.value = 'Khách hàng yêu cầu hủy';
+            if (select) select.value = 'Không liên hệ được khách hàng';
             const textarea = document.getElementById('adminCustomCancelReason');
             if (textarea) textarea.value = '';
             const wrapper = document.getElementById('adminCustomReasonWrapper');
@@ -2089,23 +2060,36 @@
             const errDiv = document.getElementById('adminCancelReasonError');
             if (errDiv) errDiv.style.display = 'none';
 
-            const modal = new bootstrap.Modal(document.getElementById('adminCancelOrderModal'));
-            modal.show();
-        };
+            // Reset step displays: Show Step 1 Box, Hide Step 2A and 2B
+            const step1Box = document.getElementById('adminCancelStep1Box');
+            if (step1Box) step1Box.style.display = 'block';
+            const formUnpaid = document.getElementById('adminCancelUnpaidForm');
+            if (formUnpaid) formUnpaid.style.display = 'none';
+            const formPaid = document.getElementById('adminCancelPaidForm');
+            if (formPaid) formPaid.style.display = 'none';
 
-        window.closeDetailsAndCancel = function (btn) {
-            const detailModalEl = document.getElementById('orderDetailModal');
-            const detailModal = bootstrap.Modal.getInstance(detailModalEl);
-            if (detailModal) {
-                detailModal.hide();
+            // Fetch order detail from backend to get fresh payment status
+            window.currentCancelOrderData = null;
+            fetch('/admin/don-hang/detail-json?id=' + id)
+                .then(res => res.json())
+                .then(data => {
+                    window.currentCancelOrderData = data;
+                })
+                .catch(err => {
+                    console.error('Error fetching order detail for cancel:', err);
+                });
+
+            const modalEl = document.getElementById('adminCancelOrderModal');
+            let modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (!modalInstance) {
+                modalInstance = new bootstrap.Modal(modalEl);
             }
-            openAdminCancelModal(btn);
+            modalInstance.show();
         };
 
-        document.getElementById('adminCancelOrderForm').addEventListener('submit', function (e) {
+        window.proceedToCancelStep2 = function () {
             const select = document.getElementById('adminCancelReasonSelect');
             const textarea = document.getElementById('adminCustomCancelReason');
-            const finalInput = document.getElementById('adminCancelReasonFinal');
             const errDiv = document.getElementById('adminCancelReasonError');
             if (errDiv) errDiv.style.display = 'none';
 
@@ -2113,13 +2097,249 @@
             if (finalReason === 'Khác') {
                 finalReason = textarea ? textarea.value.trim() : '';
                 if (!finalReason) {
-                    e.preventDefault();
                     if (errDiv) errDiv.style.display = 'block';
+                    if (textarea) textarea.focus();
                     return;
                 }
             }
-            finalInput.value = finalReason;
-        });
+
+            const nextBtn = document.getElementById('adminCancelStep1NextBtn');
+            const data = window.currentCancelOrderData;
+            if (!data) {
+                if (nextBtn) {
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải...';
+                }
+                const orderId = document.getElementById('adminCancelUnpaidId').value;
+                fetch('/admin/don-hang/detail-json?id=' + orderId)
+                    .then(res => res.json())
+                    .then(fetchedData => {
+                        window.currentCancelOrderData = fetchedData;
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.innerHTML = 'Tiếp tục <i class="fas fa-arrow-right ms-1"></i>';
+                        }
+                        showCancelStep2(finalReason, fetchedData);
+                    })
+                    .catch(err => {
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.innerHTML = 'Tiếp tục <i class="fas fa-arrow-right ms-1"></i>';
+                        }
+                        alert('Không thể tải thông tin đơn hàng: ' + err.message);
+                    });
+                return;
+            }
+
+            showCancelStep2(finalReason, data);
+        };
+
+        function showCancelStep2(reason, data) {
+            try {
+                const isPaid = data && (data.isOrderPaid === true);
+
+                // Hide Step 1
+                const step1Box = document.getElementById('adminCancelStep1Box');
+                if (step1Box) step1Box.style.display = 'none';
+
+                const formattedAmount = window.formatCurrency(data.tongTien || 0);
+
+                if (!isPaid) {
+                    // Step 2A: Unpaid / COD
+                    document.getElementById('adminCancelUnpaidReason').value = reason;
+                    document.getElementById('adminCancelUnpaidSummaryCode').textContent = data.maDonHang || ('#' + data.id);
+                    document.getElementById('adminCancelUnpaidSummaryCustomer').textContent = data.khachHang || 'Khách vãng lai';
+                    document.getElementById('adminCancelUnpaidSummaryPayment').textContent = (data.paymentMethod || 'COD') + ' (' + (data.paymentStatusLabel || 'Chưa thanh toán') + ')';
+                    document.getElementById('adminCancelUnpaidSummaryAmount').textContent = formattedAmount;
+                    document.getElementById('adminCancelUnpaidSummaryReason').textContent = reason;
+
+                    document.getElementById('adminCancelUnpaidForm').style.display = 'block';
+                    document.getElementById('adminCancelPaidForm').style.display = 'none';
+                } else {
+                    // Step 2B: Online PAID
+                    document.getElementById('adminCancelPaidReason').value = reason;
+                    document.getElementById('adminCancelPaidSummaryCode').textContent = data.maDonHang || ('#' + data.id);
+                    document.getElementById('adminCancelPaidSummaryCustomer').textContent = data.khachHang || 'Khách vãng lai';
+                    document.getElementById('adminCancelPaidSummaryGateway').textContent = data.paymentMethod || 'Online';
+                    document.getElementById('adminCancelPaidSummaryPaidAmount').textContent = formattedAmount;
+                    document.getElementById('adminCancelPaidSummaryTxId').textContent = data.maGiaoDich || data.transactionId || '-';
+                    document.getElementById('adminCancelPaidSummaryPaidAt').textContent = data.thoiGianThanhToan || data.thoiGianXacNhan || '-';
+                    document.getElementById('adminCancelPaidSummaryReason').textContent = reason;
+
+                    document.getElementById('cancelRefundSoTienHoan').value = data.tongTien || 0;
+                    document.getElementById('cancelRefundMaGiaoDich').value = '';
+                    document.getElementById('cancelRefundGhiChu').value = '';
+                    document.getElementById('cancelRefundFileChungTu').value = '';
+                    if (typeof clearCancelRefundProof === 'function') clearCancelRefundProof();
+                    if (typeof toggleCancelRefundMaGD === 'function') toggleCancelRefundMaGD();
+
+                    document.getElementById('adminCancelUnpaidForm').style.display = 'none';
+                    document.getElementById('adminCancelPaidForm').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error in showCancelStep2:', err);
+                const step1Box = document.getElementById('adminCancelStep1Box');
+                if (step1Box) step1Box.style.display = 'block';
+                alert('Lỗi hiển thị bước xác nhận hủy: ' + err.message);
+            }
+        }
+
+        window.backToCancelStep1 = function () {
+            const step1Box = document.getElementById('adminCancelStep1Box');
+            if (step1Box) step1Box.style.display = 'block';
+            const formUnpaid = document.getElementById('adminCancelUnpaidForm');
+            if (formUnpaid) formUnpaid.style.display = 'none';
+            const formPaid = document.getElementById('adminCancelPaidForm');
+            if (formPaid) formPaid.style.display = 'none';
+        };
+
+        window.toggleCancelRefundMaGD = function () {
+            const pttt = document.getElementById('cancelRefundPhuongThuc');
+            const reqMark = document.getElementById('reqCancelMaGDMark');
+            const maGDInput = document.getElementById('cancelRefundMaGiaoDich');
+            if (pttt && pttt.value === 'TIEN_MAT') {
+                if (reqMark) reqMark.style.display = 'none';
+                if (maGDInput) maGDInput.placeholder = 'Tự động tạo mã nội bộ nếu để trống';
+            } else {
+                if (reqMark) reqMark.style.display = 'inline';
+                if (maGDInput) maGDInput.placeholder = 'Ví dụ: FT240810123456 (Bắt buộc)';
+            }
+        };
+
+        window.previewCancelRefundProof = function (input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Kích thước ảnh tối đa là 10MB.');
+                    input.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('cancelRefundImagePreview').src = e.target.result;
+                    document.getElementById('cancelRefundImageName').textContent = file.name;
+                    document.getElementById('cancelRefundImagePreviewContainer').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.clearCancelRefundProof = function () {
+            const fileInput = document.getElementById('cancelRefundFileChungTu');
+            if (fileInput) fileInput.value = '';
+            const container = document.getElementById('cancelRefundImagePreviewContainer');
+            if (container) container.style.display = 'none';
+            const img = document.getElementById('cancelRefundImagePreview');
+            if (img) img.src = '';
+        };
+
+        window.validateCancelUnpaidForm = function (e, form) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Xác nhận hủy đơn hàng?',
+                    text: 'Đơn hàng chưa thanh toán này sẽ được chuyển sang trạng thái ĐÃ HỦY.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-times-circle me-1"></i> Xác nhận hủy đơn',
+                    cancelButtonText: 'Quay lại'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitBtn = document.getElementById('btnSubmitCancelUnpaid');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+                        }
+                        form.submit();
+                    }
+                });
+                return false;
+            } else {
+                return confirm('Bạn có chắc chắn muốn xác nhận hủy đơn hàng này không?');
+            }
+        };
+
+        window.validateCancelPaidForm = function (e, form) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            const pttt = document.getElementById('cancelRefundPhuongThuc').value;
+            const maGD = document.getElementById('cancelRefundMaGiaoDich').value.trim();
+            const fileInput = document.getElementById('cancelRefundFileChungTu');
+            const soTien = document.getElementById('cancelRefundSoTienHoan').value;
+
+            if (pttt === 'CHUYEN_KHOAN' && !maGD) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thiếu mã giao dịch',
+                        text: 'Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền cho khách.'
+                    }).then(() => {
+                        document.getElementById('cancelRefundMaGiaoDich').focus();
+                    });
+                } else {
+                    alert('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền cho khách.');
+                    document.getElementById('cancelRefundMaGiaoDich').focus();
+                }
+                return false;
+            }
+
+            if (!fileInput.files || fileInput.files.length === 0 || !fileInput.files[0]) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thiếu ảnh chứng từ',
+                        text: 'Vui lòng chọn ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.'
+                    });
+                } else {
+                    alert('Vui lòng chọn ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.');
+                }
+                return false;
+            }
+
+            if (typeof Swal !== 'undefined') {
+                const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
+                Swal.fire({
+                    title: 'Xác nhận hủy & hoàn tiền?',
+                    html: `Xác nhận đã hoàn tiền <b>${formattedMoney}</b> cho khách hàng và hoàn tất hủy đơn hàng này?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý hủy & hoàn tiền',
+                    cancelButtonText: 'Quay lại'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitBtn = document.getElementById('btnSubmitCancelPaid');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+                        }
+                        form.submit();
+                    }
+                });
+                return false;
+            } else {
+                return confirm('Bạn có chắc chắn muốn xác nhận hoàn tiền và hoàn tất hủy đơn hàng này không?');
+            }
+        };
+
+        window.closeDetailsAndCancel = function (btn) {
+            const detailModalEl = document.getElementById('orderDetailModal');
+            const detailModal = bootstrap.Modal.getInstance(detailModalEl);
+            if (detailModal) {
+                const onModalHidden = function () {
+                    detailModalEl.removeEventListener('hidden.bs.modal', onModalHidden);
+                    openAdminCancelModal(btn);
+                };
+                detailModalEl.addEventListener('hidden.bs.modal', onModalHidden);
+                detailModal.hide();
+            } else {
+                openAdminCancelModal(btn);
+            }
+        };
 
         window.pushOrderToGhn = function (orderId, forceRetry = false) {
             const errorDiv = document.getElementById('ghn-push-error-' + orderId);
@@ -2454,8 +2674,43 @@
             if (previewContainer) previewContainer.style.display = 'none';
         };
 
-        window.validateRefundForm = function (form) {
+        window.validateRefundForm = function (e, form) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            const pttt = document.getElementById('refundPhuongThuc').value;
+            const soTien = document.getElementById('refundSoTienHoan').value;
+            const maGD = document.getElementById('refundMaGiaoDich').value.trim();
             const fileInput = document.getElementById('refundFileChungTu');
+
+            if (!soTien || parseFloat(soTien) <= 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Số tiền không hợp lệ',
+                        text: 'Vui lòng nhập số tiền cần hoàn lại cho khách hàng.'
+                    });
+                } else {
+                    alert('Vui lòng nhập số tiền cần hoàn lại cho khách hàng.');
+                }
+                return false;
+            }
+
+            if (pttt === 'CHUYEN_KHOAN' && !maGD) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thiếu mã giao dịch',
+                        text: 'Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.'
+                    }).then(() => {
+                        document.getElementById('refundMaGiaoDich').focus();
+                    });
+                } else {
+                    alert('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.');
+                    document.getElementById('refundMaGiaoDich').focus();
+                }
+                return false;
+            }
+
             if (!fileInput || !fileInput.files || fileInput.files.length === 0 || !fileInput.files[0]) {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -2468,6 +2723,26 @@
                 }
                 return false;
             }
+
+            if (typeof Swal !== 'undefined') {
+                const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
+                Swal.fire({
+                    title: 'Xác nhận hoàn tiền?',
+                    html: `Xác nhận đã hoàn tiền <b>${formattedMoney}</b> cho khách hàng?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý hoàn tiền',
+                    cancelButtonText: 'Quay lại'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+                return false;
+            }
+
             return true;
         };
 

@@ -740,17 +740,6 @@ public class GioHangService {
             SanPhamChiTiet lockedSpct = (SanPhamChiTiet) itemMap.get("spct");
             Integer qty = (Integer) itemMap.get("soLuong");
 
-            if ("COD".equalsIgnoreCase(ptttName)) {
-                List<com.smashvn.shop.dto.inventory.OrderItemRequest> reqs = new ArrayList<>();
-                reqs.add(com.smashvn.shop.dto.inventory.OrderItemRequest.builder()
-                        .representativeSpctId(lockedSpct.getId())
-                        .quantity(qty)
-                        .build());
-                inventoryLotService.allocateFifo(reqs);
-            }
-
-
-
             com.smashvn.shop.service.product.PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(lockedSpct);
 
             HoaDonChiTiet hdct = new HoaDonChiTiet();

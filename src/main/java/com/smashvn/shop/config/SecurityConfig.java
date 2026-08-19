@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers("/admin/khach-hang", "/admin/khach-hang/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/transactions", "/admin/transactions/**").hasAnyRole("QL", "NV")
                 .requestMatchers("/admin/danh-gia", "/admin/danh-gia/**").hasAnyRole("QL", "NV")
+                // Phase 1 – Kho San Pham Loi: ca QL va NV deu truy cap duoc
+                .requestMatchers("/admin/kho-san-pham-loi", "/admin/kho-san-pham-loi/**").hasAnyRole("QL", "NV")
                 // Các trang quản trị còn lại chỉ dành cho QL
                 .requestMatchers("/admin", "/admin/**").hasRole("QL")
                 // Tất cả các request khác đều được permit

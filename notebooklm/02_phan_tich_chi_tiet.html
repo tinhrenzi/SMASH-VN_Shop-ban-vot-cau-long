@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMASH-VN | Toàn Tập Tài Liệu Kỹ Thuật & Bản Đồ Kiến Trúc Hệ Thống</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+            --secondary: #475569;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #94a3b8;
+            --sidebar-hover: #1e293b;
+            --sidebar-active: #38bdf8;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --warning: #f59e0b;
+            --warning-bg: #fffbeb;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --info: #06b6d4;
+            --info-bg: #ecfeff;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        #sidebar {
+            width: 290px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1e293b;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px 18px;
+            background-color: #0b1120;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .sidebar-brand {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-brand span {
+            color: #38bdf8;
+        }
+
+        .sidebar-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            background: #2563eb;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .search-box-wrapper {
+            padding: 14px 16px;
+            background-color: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #f8fafc;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .sidebar-nav {
+            padding: 12px 0;
+            flex: 1;
+        }
+
+        .nav-group-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #64748b;
+            padding: 12px 20px 6px 20px;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 7px 20px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav a:hover {
+            color: #f8fafc;
+            background-color: var(--sidebar-hover);
+            border-left-color: #38bdf8;
+        }
+
+        .sidebar-nav a.active {
+            color: #38bdf8;
+            background-color: #1e293b;
+            border-left-color: #38bdf8;
+            font-weight: 600;
+        }
+
+        /* Main Content Container */
+        #main-content {
+            margin-left: 290px;
+            flex: 1;
+            padding: 30px 40px;
+            max-width: calc(100vw - 290px);
+            overflow-wrap: break-word;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            background: #0f172a;
+            color: white;
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* Hero / Header Section */
+        .doc-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 32px 36px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid #334155;
+        }
+
+        .doc-header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .doc-header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            max-width: 900px;
+        }
+
+        .doc-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .doc-meta-badge {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #e2e8f0;
+        }
+
+        /* Metrics Dashboard Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 18px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .metric-val {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* Section Cards */
+        .doc-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 28px 32px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sub-section-title {
+            font-size: 1.12rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 24px 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Alert / Callout Boxes */
+        .alert-box {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            border-left: 4px solid transparent;
+        }
+
+        .alert-info {
+            background-color: var(--info-bg);
+            border-left-color: var(--info);
+            color: #0e7490;
+        }
+
+        .alert-success {
+            background-color: var(--success-bg);
+            border-left-color: var(--success);
+            color: #047857;
+        }
+
+        .alert-warning {
+            background-color: var(--warning-bg);
+            border-left-color: var(--warning);
+            color: #b45309;
+        }
+
+        .alert-danger {
+            background-color: var(--danger-bg);
+            border-left-color: var(--danger);
+            color: #b91c1c;
+        }
+
+        /* Quick Conclusion & Edit Box */
+        .quick-edit-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin: 20px 0;
+            box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.02);
+        }
+
+        .quick-edit-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #0f172a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-edit-list {
+            list-style: none;
+            padding: 0;
+            font-size: 0.88rem;
+        }
+
+        .quick-edit-list li {
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .quick-edit-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .badge-view { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+        .badge-js { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+        .badge-controller { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-service { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+        .badge-repository { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-entity { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+        .badge-dto { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .badge-config { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .badge-scheduler { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+        .badge-api { background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
+        .badge-db { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+        .badge-get { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 800; }
+        .badge-post { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-weight: 800; }
+        .badge-put { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 800; }
+        .badge-delete { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 800; }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+            background: white;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            padding: 11px 14px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: #1e293b;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        tr:hover td {
+            background-color: #f1f5f9;
+        }
+
+        /* Flow Diagrams */
+        .flow-diagram {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 20px 24px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #334155;
+        }
+
+        .flow-step {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .flow-arrow {
+            color: #94a3b8;
+            margin: 0 6px;
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.83rem;
+            overflow-x: auto;
+            margin: 14px 0;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+        }
+
+        p code, li code, td code {
+            background-color: #e2e8f0;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* QA Accordion style */
+        .qa-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .qa-header {
+            padding: 14px 18px;
+            background: #f8fafc;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #0f172a;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .qa-body {
+            padding: 16px 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Back to top button */
+        #backToTop {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            z-index: 100;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        #backToTop:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            #main-content {
+                margin-left: 0;
+                max-width: 100vw;
+                padding: 20px;
+            }
+            .mobile-header {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div style="font-weight: 800; font-size: 1.1rem;">SMASH-VN <span>DOCS</span></div>
+        <button class="menu-btn" onclick="toggleSidebar()">☰ Mục Lục</button>
+    </div>
+
+    <!-- Left Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">SMASH-VN <span>ARCHITECTURE</span></div>
+            <div class="sidebar-badge">DEVELOPER REFERENCE v2.5</div>
+        </div>
+
+        <div class="search-box-wrapper">
+            <input type="text" id="docSearchInput" class="search-input" placeholder="🔍 Tìm chức năng, file, query..." onkeyup="filterContent()">
+        </div>
+
+        <div class="sidebar-nav" id="sidebarNav">
+            <div class="nav-group-title">Tổng Quan & Kiến Trúc</div>
+            <a href="#overview">1. Tổng Quan Dự Án</a>
+            <a href="#tech-stack">2. Công Nghệ & Hạ Tầng</a>
+            <a href="#project-structure">3. Cấu Trúc Mã Nguồn</a>
+            <a href="#core-flows">4. Luồng Nghiệp Vụ Cốt Lõi</a>
+
+            <div class="nav-group-title">Chức Năng Chi Tiết</div>
+            <a href="#auth-security">5. Đăng Nhập & Phân Quyền & Bảo Mật</a>
+            <a href="#home-products">6. Trang Chủ & Sản Phẩm Banner</a>
+            <a href="#shop-catalog">7. Cửa Hàng & Lọc Thuộc Tính Động</a>
+            <a href="#product-sorting">8. Thứ Tự & Quy Tắc Sắp Xếp</a>
+            <a href="#product-detail">9. Chi Tiết SP & Đánh Giá Bình Luận</a>
+            <a href="#cart-system">10. Giỏ Hàng & Mini Cart (Member/Guest)</a>
+            <a href="#checkout-process">11. Quy Trình Checkout & Đặt Hàng</a>
+            <a href="#shipping-ghn">12. Phí Giao Hàng & Tích Hợp GHN</a>
+            <a href="#discounts-vouchers">13. Đợt Giảm Giá & Voucher</a>
+            <a href="#payment-cod">14. Thanh Toán COD</a>
+            <a href="#payment-sepay">15. Thanh Toán SePay (QR/IPN)</a>
+            <a href="#pos-counter">16. POS Bán Hàng Tại Quầy</a>
+            <a href="#order-management">17. Quản Lý Đơn Hàng & State Flow</a>
+            <a href="#returns-refunds">18. Đổi Trả, Kiểm Hàng & Hoàn Tiền</a>
+            <a href="#inventory-fifo">19. Kho Tồn FIFO & Kho Hàng Lỗi</a>
+            <a href="#admin-stats">20. Báo Cáo Thống Kê & Excel POI</a>
+            <a href="#review-moderation">21. Kiểm Duyệt Nội Dung & Scheduler</a>
+            <a href="#blog-cms">22. Blog CMS & Tự Động Xóa Bài</a>
+            <a href="#ai-chatbot">23. AI Chatbot Gemini & Newsletter</a>
+
+            <div class="nav-group-title">Hạ Tầng & Bản Đồ Tra Cứu</div>
+            <a href="#transactions-locks">24. Transactions & Locks</a>
+            <a href="#schedulers-tasks">25. Schedulers & Tác Vụ Ngầm</a>
+            <a href="#external-apis">26. Tích Hợp API Ngoài</a>
+            <a href="#db-entity-map">27. Bản Đồ Database & Entity</a>
+            <a href="#enum-states">28. Bản Đồ Enum & Trạng Thái</a>
+            <a href="#endpoint-map">29. Toàn Bộ Endpoint API / URL</a>
+            <a href="#query-sql-map">30. Toàn Bộ Query / JPQL / SQL</a>
+            <a href="#file-map">31. Bản Đồ File Dự Án</a>
+            <a href="#method-index">32. Chỉ Mục Method Nghiệp Vụ</a>
+            <a href="#quick-qa">33. Hỏi Nhanh – Đáp Nhanh</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content">
+
+        <!-- Header Dashboard -->
+        <header class="doc-header" id="overview">
+            <h1>TÀI LIỆU KỸ THUẬT TOÀN DIỆN DỰ ÁN SMASH-VN</h1>
+            <p>Hệ thống Website Thương mại điện tử & Quản trị Bán vợt cầu lông đa kênh (Online Store + POS tại quầy + Tích hợp SePay QR + Giao Hàng Nhanh GHN + AI Chatbot Gemini).</p>
+            <div class="doc-meta">
+                <span class="doc-meta-badge">🏗️ Kiến trúc: Monolithic Spring Boot Layered Architecture</span>
+                <span class="doc-meta-badge">☕ Java 21 + Spring Boot 4.0.6</span>
+                <span class="doc-meta-badge">🗄️ Microsoft SQL Server 2022</span>
+                <span class="doc-meta-badge">🔒 Spring Security + CSRF + RateLimiter</span>
+                <span class="doc-meta-badge">📅 Cập nhật: 2026-08-19</span>
+            </div>
+        </header>
+
+        <!-- Metrics Dashboard -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-val">35</div>
+                <div class="metric-label">Controllers (Web & REST)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">37</div>
+                <div class="metric-label">Services / Helpers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">33</div>
+                <div class="metric-label">JPA Repositories</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">32</div>
+                <div class="metric-label">Entities & Tables</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">110+</div>
+                <div class="metric-label">Endpoints Handled</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">4</div>
+                <div class="metric-label">Background Schedulers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val">5</div>
+                <div class="metric-label">External Integrations</div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: TECH STACK -->
+        <section class="doc-section" id="tech-stack">
+            <h2 class="section-title">2. CÔNG NGHỆ & HẠ TẦNG SỬ DỤNG</h2>
+            <p>Dự án được xây dựng theo chuẩn Java Enterprise hiện đại, kết hợp đồng bộ giữa mô hình MVC truyền thống cho SEO và các Rest API động phục vụ trải nghiệm người dùng không tải lại trang.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phân Hệ</th>
+                            <th>Công Nghệ / Thư Viện</th>
+                            <th>Phiên Bản / Cấu Hình</th>
+                            <th>Mục Đích Sử Dụng Trong Source Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Backend Core</strong></td>
+                            <td>Java, Spring Boot, Spring MVC</td>
+                            <td>Java 21 (LTS), Spring Boot 4.0.6</td>
+                            <td>Nền tảng khởi chạy ứng dụng, IoC Container, Dependency Injection, REST & MVC Controllers.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Access</strong></td>
+                            <td>Spring Data JPA, Hibernate, MSSQL JDBC</td>
+                            <td>Hibernate 6.x, SQLServerDialect</td>
+                            <td>Thao tác CRUD database, Specification, JPQL Queries, Pessimistic Locking, Formula mapping.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database Engine</strong></td>
+                            <td>Microsoft SQL Server</td>
+                            <td>SQL Server 2022 (Port 1433)</td>
+                            <td>Cơ sở dữ liệu quan hệ lưu trữ hóa đơn, sản phẩm, biến thể, tài khoản, tồn kho FIFO, giao dịch.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database Migration</strong></td>
+                            <td>Flyway Migration</td>
+                            <td><code>flyway-sqlserver</code></td>
+                            <td>Đồng bộ schema, versioning database và baseline tự động.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security & Auth</strong></td>
+                            <td>Spring Security, OAuth2 Client, BCrypt</td>
+                            <td><code>jbcrypt 0.4</code>, BCryptPasswordEncoder</td>
+                            <td>Phân quyền vai trò (QL/NV/KH), đăng nhập Google OAuth2, bảo vệ CSRF, chặn IDOR, Rate Limiter.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Caching Layer</strong></td>
+                            <td>Caffeine Cache</td>
+                            <td><code>spring-boot-starter-cache</code></td>
+                            <td>Cache thống kê doanh thu, tọa độ địa lý IP, trạng thái tài khoản (expireAfterWrite=30s).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Template Engine</strong></td>
+                            <td>Thymeleaf</td>
+                            <td><code>spring-boot-starter-thymeleaf</code></td>
+                            <td>Render giao diện Server-Side, fragments tái sử dụng (header, footer, modals, admin sidebar).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Content Sanitization</strong></td>
+                            <td>Jsoup, Apache Tika</td>
+                            <td>Jsoup 1.18.1, Tika-core 2.9.2</td>
+                            <td>Chống tấn công XSS trong text input/comment, kiểm tra MIME type file upload thực tế.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Reporting & Excel</strong></td>
+                            <td>Apache POI, POI-OOXML</td>
+                            <td>Apache POI 5.2.5</td>
+                            <td>Xuất báo cáo thống kê doanh thu, giao dịch và hiệu suất sản phẩm sang định dạng <code>.xlsx</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email Service</strong></td>
+                            <td>Spring Mail SMTP</td>
+                            <td>Gmail SMTP (Port 587, STARTTLS)</td>
+                            <td>Gửi email hóa đơn đặt hàng, xác nhận thanh toán SePay, link kích hoạt tài khoản Guest vãng lai.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Payment Gateway</strong></td>
+                            <td>SePay Payment Gateway</td>
+                            <td>Bank Transfer Vietcombank / QR IPN</td>
+                            <td>Tạo mã QR thanh toán tự động, Webhook IPN callback xác thực chữ ký và số tiền giao dịch.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Shipping Gateway</strong></td>
+                            <td>Giao Hàng Nhanh (GHN) API</td>
+                            <td>Dev & Prod Gateway, Webhook Token</td>
+                            <td>Tính phí ship theo quận/huyện/phường/xã, tự động tạo vận đơn giao hàng, tạo đơn thu hồi đổi trả.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Assistant</strong></td>
+                            <td>Google Gemini AI Flash</td>
+                            <td><code>gemini-2.0-flash</code> (OpenAI-compatible)</td>
+                            <td>Trợ lý ảo tư vấn vợt, kiểm tra tồn kho, gợi ý sản phẩm theo tầm giá/lối chơi qua REST API.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 3: PROJECT STRUCTURE -->
+        <section class="doc-section" id="project-structure">
+            <h2 class="section-title">3. TỔNG QUAN CẤU TRÚC DỰ ÁN</h2>
+            <p>Mã nguồn được phân chia theo mô hình Layered Architecture phân định rõ ranh giới giữa Controller, Service, Repository, DTO và Configuration.</p>
+
+            <pre><code>src/main/java/com/smashvn/shop
+├── config/                          # Cấu hình hệ thống (Security, WebMvc, Async, SePay, GHN, Gemini, Password)
+│   ├── SecurityConfig.java          # Cấu hình Spring Security, URL Role filters, CSRF whitelist, OAuth2
+│   ├── AdminInterceptor.java        # Kiểm tra trạng thái tài khoản active/lock trong Session
+│   ├── DotenvEnvironmentPostProcessor.java # Nạp biến môi trường từ .env
+│   ├── GeminiHttpClientConfig.java  # RestClient cấu hình timeout và auth cho AI Chatbot
+│   ├── GhnConfig.java               # Đọc token, shop-id, webhook secret GHN
+│   ├── SepayConfig.java             # Đọc cấu hình SePay (API key, IPN secret, IP whitelist)
+│   ├── UploadSecurityFilter.java    # Lọc bảo mật ngăn chặn thực thi mã độc trong thư mục uploads
+│   └── WebMvcConfig.java            # Đăng ký Interceptor, CORS và static resource handlers
+├── constant/                        # Các hằng số nghiệp vụ
+│   ├── CategoryType.java            # Enum phân loại danh mục (VOT, GIAY, TRANG_PHUC, BALO, CUOC, QUAN_CAN...)
+│   └── SanPhamAttributeConfig.java  # Cấu hình ràng buộc thuộc tính theo loại sản phẩm
+├── controller/                      # Lớp tiếp nhận Request HTTP (MVC & REST)
+│   ├── admin/                       # 13 Controllers quản trị (Sản phẩm, Đơn hàng, POS, Thống kê, Blog, KM...)
+│   ├── advice/                      # Global Controller Advice (GlobalNotificationAdvice)
+│   ├── api/                         # 8 REST Controllers (GHN, Chatbot, Location, Shipping, Newsletter...)
+│   ├── blog/                        # Public BlogController
+│   ├── home/                        # HomeController (Trang chủ & Cửa hàng /shop)
+│   ├── order/                       # CheckoutController, GioHangController
+│   ├── payment/                     # SepayIpnController, SepaySimulationController
+│   ├── product/                     # SanPhamController, SanPhamYeuThichController
+│   └── user/                        # UserDangNhapController, UserDangKyController, UserDashboardController...
+├── dao/                             # Các DAO bổ trợ cho entity thuần
+├── dto/                             # Data Transfer Objects truyền nhận giữa View và Service
+├── entity/                          # 32 JPA Entities ánh xạ xuống Database Tables
+├── exception/                       # Custom Exception và GlobalExceptionHandler
+├── repository/                      # 33 Spring Data JPA Repositories (Derived, JPQL, Native Query, Lock)
+├── scheduler/                       # Background Schedulers (CommentModerationScheduler)
+├── security/                        # Rate Limiters bảo vệ Brute Force (Login, Register, Forgot Password)
+├── service/                         # Lớp Xử lý Nghiệp Vụ Cốt Lõi (Business Logic)
+│   ├── admin/                       # Nghiệp vụ Admin (Thống kê, POS, Khuyến mãi, Nhân viên, Sản phẩm)
+│   ├── api/                         # GhnService, GhnPollingScheduler, ShippingFeeCalculator, LocationService
+│   ├── blog/                        # BlogService, CommentModerationService
+│   ├── common/                      # FileStorageService (Upload và xóa file an toàn)
+│   ├── impl/                        # ChatbotServiceImpl, NewsletterServiceImpl, VietnamesePriceParser
+│   ├── inventory/                   # InventoryLotService (Thuật toán FIFO & Quản lý Kho sản phẩm lỗi)
+│   ├── order/                       # GioHangService, OrderViewService, GuestCheckoutService, CheckoutContextService
+│   ├── payment/                     # SepayGatewayService, SepayOrderPaymentService, SepayPaymentOrchestratorService
+│   ├── product/                     # SanPhamService, PricingServiceImpl, DanhGiaService, DanhMucService
+│   └── user/                        # UserDangNhapService, UserDangKyService, UserDashboardService...
+├── specification/                   # SanPhamSpecification (JPA Criteria Builder lọc sản phẩm động)
+└── util/                            # Tiện ích bổ trợ (VoucherCalculator, PhoneUtils, ProfanityFilter, ValidationUtils)
+
+src/main/resources
+├── application.properties           # Cấu hình cổng, database, timeout, mail, scheduler, SePay, GHN, Gemini
+├── static/                          # Tài nguyên tĩnh (CSS, JS, Webfonts, SCSS, Images)
+└── templates/                       # Giao diện Thymeleaf HTML
+    ├── admin/                       # 26 Templates Quản trị (pos, sanpham, donhang, thongke, kho-san-pham-loi...)
+    ├── error/                       # Generic error pages
+    ├── layout/                      # Fragments (header.html, footer.html, modals.html)
+    └── *.html                       # 18 Public Pages (index, shop, product-detail, cart, checkout, dashboard...)</code></pre>
+        </section>
+
+        <!-- SECTION 4: CORE FLOWS -->
+        <section class="doc-section" id="core-flows">
+            <h2 class="section-title">4. CÁC LUỒNG NGHIỆP VỤ CỐT LÕI</h2>
+            <p>Hệ thống hoạt động dựa trên các chuỗi luồng nghiệp vụ phối hợp chặt chẽ giữa Giao diện, Controller, Service, Repository, Database và Các bên thứ 3.</p>
+
+            <div class="sub-section-title">A. Luồng Đặt Hàng Trực Tuyến (Checkout Flow)</div>
+            <div class="flow-diagram">
+[cart.html / product-detail.html]
+       ↓ (Click "Thanh toán" / "Mua ngay" - Ajax POST /checkout/start hoặc /checkout/buy-now)
+[CheckoutController.startCheckout()]
+       ↓ (Xác thực session, tạo CheckoutContext token lưu trong session)
+[checkout.html] (Khách nhập địa chỉ, chọn GHN, chọn Voucher, chọn COD hoặc SePay)
+       ↓ (Ajax POST /checkout/submit)
+[CheckoutController.submitCheckout()]
+       ↓ (Xác thực thông tin, tự động đăng ký tài khoản Guest nếu là khách vãng lai, lưu SoDiaChi)
+[GioHangService.submitCodOrder() HOẶC GioHangService.createSepayPendingOrder()]
+       ↓ (Khóa tồn kho PESSIMISTIC_WRITE, áp dụng Voucher với Pessimistic Lock, tính phí ship GHN)
+[HoaDonRepository.save() & HoaDonChiTietRepository.saveAll()]
+       ↓ (Nếu COD: Trừ kho FIFO ngay -> Gọi GHN API tạo vận đơn -> Gửi email -> Trả về kết quả)
+       ↓ (Nếu SePay: Lưu đơn chờ thanh toán -> Lưu CheckoutExecutionSnapshot -> Trả về QR Code)
+[Redirect / Hiển thị Modal thành công]
+            </div>
+
+            <div class="sub-section-title">B. Luồng Thanh Toán Online SePay (SePay IPN Flow)</div>
+            <div class="flow-diagram">
+[Khách hàng quét mã QR chuyển khoản Vietcombank theo cú pháp DHSVN...]
+       ↓
+[Cổng thanh toán SePay nhận biến động số dư ngân hàng]
+       ↓ (SePay bắn Webhook POST /api/payment/sepay/ipn)
+[SepayIpnController.handleSepayIpn()]
+       ↓ (Kiểm tra IP Whitelist -> Kiểm tra Authorization Header Apikey -> Parse JSON payload)
+[SepayGatewayService.handleIpn()]
+       ↓ (Kiểm tra trùng transactionId -> Trích xuất mã đơn -> Khớp số tiền chuyển khoản với tổng tiền)
+[SepayOrderPaymentService.xuLyThanhToanSePay()]
+       ↓ (Gọi InventoryLotService.allocateFifo để phân bổ tồn kho thực tế theo từng lô)
+       ├── [Trường hợp ĐỦ KHO]:
+       │     - Lưu vết PaymentTransaction SUCCESS
+       │     - Thay thế HoaDonChiTiet tạm thời bằng các bản ghi phân bổ theo lô thực tế
+       │     - Cập nhật HoaDon: paymentStatus='paid', trangThaiThanhToan='DA_THANH_TOAN', trangThaiDonHang='CHO_XAC_NHAN'
+       │     - Trừ số lượng Voucher (Pessimistic Lock)
+       │     - Dọn sạch giỏ hàng của khách
+       │     - Sau khi Commit: Gửi email xác nhận thanh toán & link kích hoạt tài khoản
+       └── [Trường hợp THIẾU KHO (INSUFFICIENT_STOCK)]:
+             - Lưu vết PaymentTransaction PAID_INSUFFICIENT_STOCK
+             - Chuyển HoaDon: trangThaiDonHang='YEU_CAU_HUY', trangThaiThanhToan='CHO_HOAN_TIEN', RefundStatus=PENDING
+             - KHÔNG rollback nhận tiền, lưu vết Audit để Admin hoàn tiền thủ công
+            </div>
+
+            <div class="sub-section-title">C. Luồng Đổi Hàng, Trả Hàng & Hoàn Tiền (Return / Exchange Flow)</div>
+            <div class="flow-diagram">
+[Khách hàng tại dash-my-order.html bấm "Yêu cầu đổi / trả hàng"]
+       ↓ (Kiểm tra điều kiện: Đơn đã giao trong vòng 7 ngày - isWithinReturnWindow)
+[UserDashboardController.guiYeuCauTraHang() -> OrderViewService.yeuCauTraHang()]
+       ↓ (Upload hình ảnh/video bằng chứng lỗi -> Lưu ReturnStatus = REQUESTED (CHO_DUYET))
+[Admin kiểm duyệt yêu cầu tại admin/donhang-list.html]
+       ↓ (Admin bấm Duyệt -> OrderViewService.duyetYeuCauTraHangVaTaoDonGhn())
+[GhnService.createShippingOrder() -> Tạo đơn thu hồi hàng GHN] (ReturnStatus = CHO_THU_HOI)
+       ↓ (GHN lấy hàng và giao về kho -> GhnPollingScheduler cập nhật DANG_KIEM_TRA)
+[Admin nhận hàng tại kho và thực hiện Kiểm Kho (Inspect Goods)]
+       ├── [Hàng đủ điều kiện, còn nguyên vẹn]: Nhập lại vào kho bán hàng bình thường qua InventoryLotService.hoanKho()
+       └── [Hàng bị lỗi do nhà sản xuất/vận chuyển]: Nhập vào "Kho Sản Phẩm Lỗi" (soLuongSpLoi += qty)
+       ↓
+[Nếu là Đơn ĐỔI HÀNG]:
+       OrderViewService.xacNhanGiaoHangDoiMoiChoKhach() -> Trừ biến thể đổi -> Tạo đơn GHN giao hàng mới
+[Nếu là Đơn TRẢ HÀNG HOÀN TIỀN]:
+       Admin chuyển khoản tiền cho khách -> Nhập mã giao dịch -> OrderViewService.xacNhanHoanTienChoKhach()
+       (RefundStatus = COMPLETED, TrangThaiThanhToan = 'REFUNDED', ReturnStatus = 'HOAN_TIEN_THANH_CONG')
+            </div>
+        </section>
+
+        <!-- SECTION 5: AUTH & SECURITY -->
+        <section class="doc-section" id="auth-security">
+            <h2 class="section-title">5. ĐĂNG NHẬP, PHÂN QUYỀN & BẢO MẬT HỆ THỐNG</h2>
+
+            <div class="sub-section-title">5.1. Cơ chế Phân quyền Role-based Access Control (RBAC)</div>
+            <p>Hệ thống phân chia 3 nhóm đối tượng người dùng chính với quyền hạn phân định rõ ràng trên cả tầng Spring Security Filter và Interceptor:</p>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li><code>ROLE_QL</code> (Quản lý / Admin): Toàn quyền truy cập bảng điều khiển <code>/admin/**</code>, xem thống kê doanh thu <code>/admin/thong-ke</code>, quản lý nhân sự <code>/admin/nhan-vien</code>, quản lý người dùng, duyệt xuất bản/xóa blog, cấu hình từ khóa kiểm duyệt.</li>
+                <li><code>ROLE_NV</code> (Nhân viên / Staff): Được truy cập các nghiệp vụ tác nghiệp bán hàng: POS tại quầy <code>/admin/pos</code>, xử lý đơn hàng <code>/admin/don-hang</code>, danh mục & sản phẩm <code>/admin/san-pham</code>, khách hàng, giao dịch, đánh giá và kho sản phẩm lỗi <code>/admin/kho-san-pham-loi</code>. Bị chặn truy cập thống kê doanh thu và quản trị nhân sự.</li>
+                <li><code>ROLE_KH</code> (Khách hàng thành viên): Mua sắm, quản lý sổ địa chỉ, xem lịch sử đơn hàng, gửi đánh giá, yêu cầu đổi trả hàng trong 7 ngày.</li>
+                <li><code>GUEST</code> (Khách hàng vãng lai): Cho phép mua hàng nhanh không cần mật khẩu ban đầu. Hệ thống tự động cấp tài khoản GUEST và gửi email thiết lập mật khẩu. Giới hạn mua tối đa 3 lần, sau đó bắt buộc thiết lập mật khẩu để bảo vệ an toàn.</li>
+            </ul>
+
+            <div class="sub-section-title">5.2. Danh sách Chống tấn công & Hardening</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cơ Chế Bảo Mật</th>
+                            <th>File Xử Lý</th>
+                            <th>Class / Logic Chi Tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CSRF Protection</strong></td>
+                            <td><code>SecurityConfig.java</code></td>
+                            <td>Kích hoạt CSRF toàn hệ thống. Chỉ mở ngoại lệ (ignoringRequestMatchers) cho các Webhook công khai có chữ ký bảo mật riêng: SePay IPN, GHN Webhook, Chatbot API, Newsletter.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security Headers</strong></td>
+                            <td><code>SecurityConfig.java</code></td>
+                            <td>Bật <code>X-Frame-Options: SAMEORIGIN</code> chống Clickjacking, <code>X-XSS-Protection: 1; mode=block</code>, <code>Referrer-Policy: strict-origin-when-cross-origin</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Brute-Force Rate Limiting</strong></td>
+                            <td><code>LoginRateLimiter.java</code>, <code>RegisterRateLimiter.java</code>, <code>ForgotPasswordRateLimiter.java</code></td>
+                            <td>Sử dụng Caffeine Cache giới hạn số lần thử đăng nhập sai, đăng ký tài khoản và gửi yêu cầu khôi phục mật khẩu theo từng IP client.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Kiểm tra Khóa Tài Khoản Realtime</strong></td>
+                            <td><code>AdminInterceptor.java</code></td>
+                            <td>Mỗi request vào <code>/admin/**</code> đều kiểm tra trạng thái <code>hoat_dong</code> của tài khoản trong Caffeine Cache <code>taiKhoanStatus</code>. Nếu bị khóa sẽ lập tức hủy session và đá về trang đăng nhập.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Upload Security & MIME Verification</strong></td>
+                            <td><code>UploadSecurityFilter.java</code>, <code>UploadPathVerifier.java</code>, <code>FileStorageService.java</code></td>
+                            <td>Chặn truy cập trực tiếp các file thực thi (<code>.jsp, .exe, .sh, .bat, .php</code>) trong thư mục <code>/uploads/</code>. Dùng Apache Tika đọc Magic Bytes kiểm tra định dạng ảnh thật trước khi lưu.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>XSS Sanitization</strong></td>
+                            <td><code>Jsoup.clean(..., Safelist.none())</code></td>
+                            <td>Lọc sạch mọi thẻ HTML/Javascript độc hại trong tên người nhận, địa chỉ, ghi chú, bình luận đánh giá và từ khóa tìm kiếm.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA BẢO MẬT & ĐĂNG NHẬP THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-config">Config</span> <code>src/main/java/com/smashvn/shop/config/SecurityConfig.java</code> → Cấu hình phân quyền URL, CSRF, PasswordEncoder.</li>
+                    <li><span class="badge badge-config">Interceptor</span> <code>src/main/java/com/smashvn/shop/config/AdminInterceptor.java</code> → Kiểm tra session và trạng thái khóa tài khoản.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/user/UserDangNhapController.java</code> → Xử lý đăng nhập khách hàng & Google callback.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/admin/AdminDangNhapController.java</code> → Xử lý đăng nhập ban quản trị.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/user/UserDangNhapService.java</code> → Kiểm tra mật khẩu BCrypt, ghi nhớ đăng nhập.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 6: HOME PAGE -->
+        <section class="doc-section" id="home-products">
+            <h2 class="section-title">6. TRANG CHỦ & HIỂN THỊ SẢN PHẨM</h2>
+            
+            <div class="sub-section-title">6.1. Chi tiết dữ liệu trên Trang Chủ (index.html)</div>
+            <p>Trang chủ được điều phối bởi <code>HomeController.hienThiTrangChu()</code>, tải đồng thời các danh mục dữ liệu chính:</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành Phần Giao Diện</th>
+                            <th>Model Attribute</th>
+                            <th>Nguồn Dữ Liệu & Query Thực Tế</th>
+                            <th>Quy Tắc Lọc & Giới Hạn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Banner Countdown Flash Sale</strong></td>
+                            <td><code>highestDiscountCampaign</code>, <code>campaignEndDate</code>, <code>highestDiscountProduct</code></td>
+                            <td><code>dotGiamGiaDAO.findAll()</code> + <code>sanPhamRepository.findAll()</code></td>
+                            <td>Lọc chiến dịch đang <code>ACTIVE</code> có <code>phanTramGiam</code> cao nhất. Tìm sản phẩm có % giảm giá thực tế cao nhất đang bán.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Đang Giảm Giá</strong></td>
+                            <td><code>products</code></td>
+                            <td><code>sanPhamRepository.findAll()</code></td>
+                            <td>Lọc các sản phẩm có <code>getActiveGiamGiaPhanTram() > 0</code> và <code>trangThai = 'dang_ban'</code> (lấy tối đa 2 sản phẩm).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Mới Nhất</strong></td>
+                            <td><code>newProducts</code></td>
+                            <td><code>sanPhamRepository.findNewProducts(PageRequest.of(0, 14))</code></td>
+                            <td>Lấy 14 sản phẩm đang bán, ưu tiên sản phẩm CÒN HÀNG trước, sau đó sắp xếp theo <code>sp.id DESC</code> (ID lớn nhất hiển thị trước).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Bán Chạy</strong></td>
+                            <td><code>bestSellers</code></td>
+                            <td><code>sanPhamRepository.findBestSellers(PageRequest.of(0, 100))</code></td>
+                            <td>Lấy danh sách sắp xếp theo: Còn hàng trước ➔ Tổng số lượng đã bán trong <code>HoaDonChiTiet</code> giảm dần ➔ <code>sp.id DESC</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Nổi Bật</strong></td>
+                            <td><code>featuredProducts</code></td>
+                            <td><code>sanPhamRepository.findFeaturedProducts(PageRequest.of(0, 4))</code></td>
+                            <td>Lấy 4 sản phẩm sắp xếp theo: Còn hàng trước ➔ Tổng (Số lượng mua + Lượt yêu thích trong <code>SanPhamYeuThich</code>) giảm dần ➔ <code>sp.id DESC</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thương Hiệu Nổi Bật</strong></td>
+                            <td><code>brands</code></td>
+                            <td><code>thuongHieuRepository.findByTrangThaiTrue()</code></td>
+                            <td>Lọc các thương hiệu đang hoạt động, gom nhóm loại bỏ trùng lặp tên (ví dụ gom các biến thể của Li-Ning).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tin Tức & Blog Mới</strong></td>
+                            <td><code>blogs</code></td>
+                            <td><code>blogService.getRecentBlogs(3)</code></td>
+                            <td>Lấy 3 bài viết blog có <code>published = true</code> và <code>deleted = false</code>, sắp xếp theo <code>createdAt DESC</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA TRANG CHỦ THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/index.html</code> → File template giao diện trang chủ.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/home/HomeController.java</code> (Method: <code>hienThiTrangChu()</code>) → Nạp Model Attributes.</li>
+                    <li><span class="badge badge-repository">Repository</span> <code>src/main/java/com/smashvn/shop/repository/SanPhamRepository.java</code> → Các query <code>findNewProducts</code>, <code>findBestSellers</code>, <code>findFeaturedProducts</code>.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 7: SHOP CATALOG & DYNAMIC FILTERS -->
+        <section class="doc-section" id="shop-catalog">
+            <h2 class="section-title">7. CỬA HÀNG & LỌC THUỘC TÍNH ĐỘNG (SHOP CATALOG)</h2>
+            <p>Trang Cửa hàng (<code>/shop</code>) sở hữu công cụ lọc đa chiều cực kỳ mạnh mẽ, được xử lý bởi <code>SanPhamSpecification</code> và hỗ trợ nạp phân mảnh AJAX (<code>shop :: #shop-content-area</code>).</p>
+
+            <div class="sub-section-title">7.1. Cấu trúc Lọc Cùng Biến Thể (Same-Variant Specification Matching)</div>
+            <div class="alert-box alert-info">
+                <strong>Đặc tả kỹ thuật quan trọng:</strong> Khi người dùng lọc kết hợp (Ví dụ: Tìm Vợt giá từ 1.000.000đ - 2.000.000đ VÀ Trọng lượng là 4U VÀ Màu sắc là Đỏ), truy vấn KHÔNG lọc rời rạc từng biến thể mà sử dụng <strong>Single Correlated Subquery</strong> trên <code>SanPhamChiTiet</code>. Điều này đảm bảo tất cả các tiêu chí giá và thuộc tính bắt buộc phải cùng thỏa mãn trên <strong>CÙNG MỘT BIẾN THỂ CỤ THỂ</strong>.
+            </div>
+
+            <pre><code>// Đoạn mã trích từ SanPhamSpecification.java:
+Subquery<Integer> variantSubquery = query.subquery(Integer.class);
+Root<SanPhamChiTiet> variantRoot = variantSubquery.from(SanPhamChiTiet.class);
+variantSubquery.select(cb.literal(1));
+
+List<Predicate> variantPredicates = new ArrayList<>();
+variantPredicates.add(cb.equal(variantRoot.get("sanPham"), root));
+variantPredicates.add(cb.equal(variantRoot.get("trangThaiValue"), true));
+
+// Lọc giá trên cùng biến thể
+if (req.getMinPrice() != null) variantPredicates.add(cb.greaterThanOrEqualTo(variantRoot.get("giaBan"), req.getMinPrice()));
+if (req.getMaxPrice() != null) variantPredicates.add(cb.lessThanOrEqualTo(variantRoot.get("giaBan"), req.getMaxPrice()));
+
+// Lọc thuộc tính động EAV (Màu sắc, Size, Trọng lượng...) trên cùng biến thể
+for (Map.Entry<Integer, List<String>> entry : attributesMap.entrySet()) {
+    Subquery<Integer> attSubquery = query.subquery(Integer.class);
+    Root<SanPhamChiTietThuocTinh> attRoot = attSubquery.from(SanPhamChiTietThuocTinh.class);
+    attSubquery.select(cb.literal(1));
+    attSubquery.where(
+        cb.equal(attRoot.get("sanPhamChiTiet"), variantRoot),
+        cb.equal(attRoot.get("thuocTinh").get("id"), entry.getKey()),
+        attRoot.get("giaTri").in(cleanValues)
+    );
+    variantPredicates.add(cb.exists(attSubquery));
+}
+
+variantSubquery.where(variantPredicates.toArray(new Predicate[0]));
+predicates.add(cb.exists(variantSubquery));</code></pre>
+
+            <div class="sub-section-title">7.2. Tải Thuộc Tính Động Theo Danh Mục (Dynamic Category Attribute Rendering)</div>
+            <p>Hệ thống không hardcode danh sách bộ lọc mà tự động truy vấn cấu hình danh mục qua <code>SanPhamService.getDynamicAttributeFilters(categoryId)</code>:</p>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li>Đọc liên kết <code>DanhMucThuocTinh</code> đang kích hoạt theo <code>idDanhMuc</code>.</li>
+                <li>Dùng Projection <code>SanPhamChiTietThuocTinhRepository.findAttributeOptionProjectionsByCategory(categoryId)</code> để lấy danh sách giá trị thực tế có trong kho kèm số lượng sản phẩm tương ứng.</li>
+                <li>Hỗ trợ tương thích ngược cho bộ lọc trọng lượng (<code>legacyTrongLuong</code> 2U, 3U, 4U, 5U, 6U).</li>
+            </ul>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA TRANG CỬA HÀNG & BỘ LỌC THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/shop.html</code> → Giao diện danh sách sản phẩm, sidebar bộ lọc.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/home/HomeController.java</code> (Method: <code>hienThiCuaHang()</code>) → Nhận params, sanitize keyword, phân trang.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/product/SanPhamService.java</code> (Method: <code>filterProducts()</code>, <code>getDynamicAttributeFilters()</code>).</li>
+                    <li><span class="badge badge-repository">Specification</span> <code>src/main/java/com/smashvn/shop/specification/SanPhamSpecification.java</code> → Xây dựng cây Criteria Predicate & OrderBy.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 8: PRODUCT SORTING -->
+        <section class="doc-section" id="product-sorting">
+            <h2 class="section-title">8. QUY TẮC & THỨ TỰ SẮP XẾP SẢN PHẨM (SORTING & ORDER BY)</h2>
+            <p>Thứ tự hiển thị sản phẩm trên toàn bộ hệ thống được kiểm soát chặt chẽ nhằm tối ưu tỷ lệ chuyển đổi (ưu tiên sản phẩm còn hàng) và cho phép người dùng tùy biến sắp xếp theo nhu cầu.</p>
+
+            <div class="sub-section-title">8.1. Bảng Tra Cứu Thứ Tự Sắp Xếp Từng Danh Sách</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vị Trí Hiển Thị</th>
+                            <th>Tham Số Sort</th>
+                            <th>Field Sắp Xếp</th>
+                            <th>Thứ Tự</th>
+                            <th>Nơi Khai Báo / File / Method</th>
+                            <th>Ý Nghĩa Nghiệp Vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Cửa hàng (Mặc định)</strong></td>
+                            <td><code>sort=newest</code> (default)</td>
+                            <td>1. <code>hasStock</code><br>2. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>DESC</code></td>
+                            <td><code>SanPhamSpecification.java</code> (Line 112 - 150)</td>
+                            <td>Sản phẩm còn hàng luôn xếp trước. Sản phẩm mới tạo gần nhất (ID lớn hơn) xếp trước.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cửa hàng (Giá tăng dần)</strong></td>
+                            <td><code>sort=price_asc</code></td>
+                            <td>1. <code>hasStock</code><br>2. <code>MIN(spct.giaBan)</code><br>3. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>ASC</code><br>3. <code>DESC</code></td>
+                            <td><code>SanPhamSpecification.java</code> (Line 126 - 135)</td>
+                            <td>Còn hàng xếp trước. Xếp theo giá thấp nhất của các biến thể tăng dần.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cửa hàng (Giá giảm dần)</strong></td>
+                            <td><code>sort=price_desc</code></td>
+                            <td>1. <code>hasStock</code><br>2. <code>MIN(spct.giaBan)</code><br>3. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>DESC</code><br>3. <code>DESC</code></td>
+                            <td><code>SanPhamSpecification.java</code> (Line 136 - 146)</td>
+                            <td>Còn hàng xếp trước. Xếp theo giá biến thể từ cao xuống thấp.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trang chủ (Sản phẩm Mới)</strong></td>
+                            <td>N/A</td>
+                            <td>1. <code>hasStock</code><br>2. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>DESC</code></td>
+                            <td><code>SanPhamRepository.findNewProducts()</code> (Line 140 - 145)</td>
+                            <td>14 sản phẩm mới nhất đang bán và còn hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trang chủ (Bán chạy)</strong></td>
+                            <td>N/A</td>
+                            <td>1. <code>hasStock</code><br>2. <code>SUM(hdct.soLuong)</code><br>3. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>DESC</code><br>3. <code>DESC</code></td>
+                            <td><code>SanPhamRepository.findBestSellers()</code> (Line 150 - 157)</td>
+                            <td>Sản phẩm có tổng số lượng bán ra nhiều nhất trên toàn hệ thống.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trang chủ (Nổi bật)</strong></td>
+                            <td>N/A</td>
+                            <td>1. <code>hasStock</code><br>2. <code>(SUM(hdct) + COUNT(wishlist))</code><br>3. <code>sp.id</code></td>
+                            <td>1. <code>DESC</code><br>2. <code>DESC</code><br>3. <code>DESC</code></td>
+                            <td><code>SanPhamRepository.findFeaturedProducts()</code> (Line 162 - 169)</td>
+                            <td>Sản phẩm có điểm tương tác cao nhất (Lượt mua + Lượt bấm yêu thích).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tìm kiếm Autocomplete</strong></td>
+                            <td>N/A</td>
+                            <td><code>sp.id</code></td>
+                            <td><code>DESC</code></td>
+                            <td><code>SanPhamRepository.searchAutocomplete()</code> (Line 112 - 119)</td>
+                            <td>Top 8 sản phẩm khớp từ khóa gợi ý nhanh khi người dùng gõ tìm kiếm.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert-box alert-warning">
+                <strong>Cảnh báo về truy vấn không có ORDER BY:</strong> Toàn bộ các danh sách sản phẩm và đơn hàng quan trọng trong SMASH-VN đều được khai báo tường minh mệnh đề <code>ORDER BY</code> kèm theo khóa phụ <code>sp.id DESC</code> để triệt tiêu hiện tượng Non-deterministic sorting của SQL Server khi phân trang Pageable.
+            </div>
+        </section>
+
+        <!-- SECTION 9: PRODUCT DETAIL & REVIEWS -->
+        <section class="doc-section" id="product-detail">
+            <h2 class="section-title">9. CHI TIẾT SẢN PHẨM & ĐÁNH GIÁ (PRODUCT DETAIL & REVIEWS)</h2>
+
+            <div class="sub-section-title">9.1. Logic Xử Lý Biến Thể Theo Danh Mục (Category-Specific Variant Selection)</div>
+            <p>Trang <code>product-detail.html</code> và modal <code>quick-look</code> xử lý thuộc tính biến thể tùy biến theo loại danh mục thông qua <code>CategoryType</code>:</p>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li><strong>Vợt cầu lông (CategoryType.VOT):</strong> Bắt buộc chọn 2 nhóm thuộc tính: <strong>Màu sắc</strong> và <strong>Trọng lượng (3U, 4U, 5U)</strong>.</li>
+                <li><strong>Giày & Trang phục (CategoryType.GIAY, TRANG_PHUC):</strong> Bắt buộc chọn <strong>Màu sắc</strong> và <strong>Kích thước (Size 39-43 hoặc S, M, L, XL)</strong>.</li>
+                <li><strong>Balo & Túi (CategoryType.BALO):</strong> Chỉ chọn <strong>Màu sắc</strong>.</li>
+                <li><strong>Phụ kiện nhỏ (Cước, Quấn cán, Băng quấn, Hộp cầu):</strong> Không yêu cầu chọn biến thể (Direct Single Variant).</li>
+            </ul>
+
+            <div class="sub-section-title">9.2. Quy Trình Gửi Đánh Giá & Kiểm Duyệt Tự Động</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bước</th>
+                            <th>Thành Phần Xử Lý</th>
+                            <th>File & Method</th>
+                            <th>Nội Dung Thực Hiện</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Giao diện</td>
+                            <td><code>product-detail.html</code> (Form <code>#form-danh-gia</code>)</td>
+                            <td>Khách hàng nhập số sao (1-5 sao), nội dung nhận xét và đính kèm tối đa 5 file ảnh chụp sản phẩm.</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Controller</td>
+                            <td><code>SanPhamController.guiDanhGia()</code></td>
+                            <td>Kiểm tra session đăng nhập. Nếu chưa đăng nhập chuyển hướng <code>/user/dang-nhap</code>.</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Service & Validation</td>
+                            <td><code>DanhGiaService.themHoacCapNhatDanhGia()</code></td>
+                            <td>Kiểm tra khách hàng đã thực sự mua và nhận đơn hàng có chứa sản phẩm này chưa (<code>danhGiaService.daMuaSanPham</code>).</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>Profanity Filter</td>
+                            <td><code>ProfanityFilter.java</code></td>
+                            <td>Quét từ khóa nhạy cảm, thô tục, chửi thề tiếng Việt. Nếu vi phạm: tự động ẩn từ cấm bằng dấu <code>***</code> và ghi log vào <code>CommentViolationLog</code>.</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Lưu File Ảnh</td>
+                            <td><code>FileStorageService.storeImage(file, "danhgia")</code></td>
+                            <td>Kiểm tra định dạng, nén ảnh và lưu vào <code>/uploads/danhgia/</code>, tạo liên kết trong <code>HinhAnhDanhGia</code>.</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>Cập nhật Điểm TB</td>
+                            <td><code>DanhGiaService.capNhatDiemTrungBinhSanPham()</code></td>
+                            <td>Tính toán lại <code>diemTrungBinh</code> và <code>soDanhGia</code> của <code>SanPham</code> để cập nhật hiển thị ngay lập tức.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA CHI TIẾT SẢN PHẨM & ĐÁNH GIÁ THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/product-detail.html</code> → Giao diện chi tiết sản phẩm và form review.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/product/SanPhamController.java</code> → Endpoint <code>/san-pham/{id}</code> và <code>/san-pham/{id}/danh-gia</code>.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/product/DanhGiaService.java</code> → Xử lý logic đánh giá và cập nhật rating trung bình.</li>
+                    <li><span class="badge badge-util">Filter</span> <code>src/main/java/com/smashvn/shop/util/ProfanityFilter.java</code> → Bộ từ điển lọc từ ngữ thô tục.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 10: CART & MINI CART -->
+        <section class="doc-section" id="cart-system">
+            <h2 class="section-title">10. GIỎ HÀNG & MINI CART (MEMBER & GUEST)</h2>
+            <p>Hệ thống hỗ trợ 2 chế độ giỏ hàng song song: <strong>Giỏ hàng Cơ sở dữ liệu</strong> cho thành viên đã đăng nhập và <strong>Giỏ hàng Session</strong> cho khách vãng lai.</p>
+
+            <div class="sub-section-title">10.1. So Sánh Hai Cơ Chế Giỏ Hàng</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Đặc Tính</th>
+                            <th>Giỏ Hàng Thành Viên (Member Cart)</th>
+                            <th>Giỏ Hàng Vãng Lai (Guest Cart)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lưu Trữ</strong></td>
+                            <td>Table <code>gio_hang</code> và <code>gio_hang_chi_tiet</code> trong MSSQL</td>
+                            <td><code>HttpSession</code> (Key: <code>guest_cart_items</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Service Xử Lý</strong></td>
+                            <td><code>GioHangService.java</code></td>
+                            <td><code>GuestCartService.java</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khóa Chặn Tồn Kho</strong></td>
+                            <td>Khóa <code>PESSIMISTIC_WRITE</code> kiểm tra tồn kho tức thời</td>
+                            <td>Kiểm tra số lượng tồn kho theo <code>SanPhamChiTiet.soLuongTon</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Giới Hạn Tối Đa</strong></td>
+                            <td>999 sản phẩm / dòng (<code>MAX_CART_QUANTITY = 999</code>)</td>
+                            <td>999 sản phẩm / dòng</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Đồng Bộ Khi Đăng Nhập</strong></td>
+                            <td colspan="2">Khi khách vãng lai đăng nhập hoặc hoàn tất đăng ký tài khoản, method <code>GuestCartService.transferGuestCartToDb()</code> sẽ tự động gộp toàn bộ sản phẩm trong Session vào giỏ hàng Database.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sub-section-title">10.2. Các Endpoint API Giỏ Hàng</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Controller & Service Xử Lý</th>
+                            <th>Chức Năng & Kết Quả Trả Về</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/gio-hang/them</code></td>
+                            <td><span class="badge badge-post">POST</span></td>
+                            <td><code>GioHangController.xuLyThemVaoGio()</code></td>
+                            <td>Thêm sản phẩm vào giỏ (AJAX). Trả về JSON thông tin sản phẩm, phân loại, giá bán và tạo sẵn <code>checkoutToken</code> cho nút "Mua ngay trong modal".</td>
+                        </tr>
+                        <tr>
+                            <td><code>/gio-hang/api/mini-cart</code></td>
+                            <td><span class="badge badge-get">GET</span></td>
+                            <td><code>GioHangController.layDuLieuMiniCart()</code></td>
+                            <td>Trả về danh sách sản phẩm, tổng số lượng và tổng tiền để cập nhật dropdown Mini Cart trên Header mà không cần tải lại trang.</td>
+                        </tr>
+                        <tr>
+                            <td><code>/gio-hang/cap-nhat</code></td>
+                            <td><span class="badge badge-post">POST</span></td>
+                            <td><code>GioHangController.capNhatSoLuong()</code></td>
+                            <td>Cập nhật số lượng (+ / -). Kiểm tra số lượng tồn kho. Trả về thành tiền dòng sản phẩm và tồn kho khả dụng.</td>
+                        </tr>
+                        <tr>
+                            <td><code>/gio-hang/api/xoa/{id}</code></td>
+                            <td><span class="badge badge-post">POST</span></td>
+                            <td><code>GioHangController.xoaSanPhamAjax()</code></td>
+                            <td>Xóa 1 dòng sản phẩm khỏi giỏ hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><code>/gio-hang/api/xoa-nhieu</code></td>
+                            <td><span class="badge badge-post">POST</span></td>
+                            <td><code>GioHangController.xoaNhieuSanPhamAjax()</code></td>
+                            <td>Xóa hàng loạt các sản phẩm được chọn (Selected Checkboxes) trong <code>cart.html</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA GIỎ HÀNG THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/cart.html</code> → Giao diện trang giỏ hàng.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/order/GioHangController.java</code> → Tiếp nhận các request giỏ hàng.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/order/GioHangService.java</code> → Xử lý giỏ hàng thành viên DB.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/order/GuestCartService.java</code> → Xử lý giỏ hàng khách vãng lai Session.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 11: CHECKOUT PROCESS -->
+        <section class="doc-section" id="checkout-process">
+            <h2 class="section-title">11. QUY TRÌNH CHECKOUT & ĐẶT HÀNG</h2>
+            <p>Quy trình Checkout được thiết kế an toàn tuyệt đối chống tấn công sửa giá (Price Tampering) và chống đặt hàng đồng thời nhờ cơ chế Tokenized Checkout Context.</p>
+
+            <div class="sub-section-title">11.1. Các Khởi Điểm Bắt Đầu Checkout</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hình Thức Mua</th>
+                            <th>Endpoint Bắt Đầu</th>
+                            <th>Source Context</th>
+                            <th>Cơ Chế Khởi Tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Mua Ngay (Buy Now)</strong></td>
+                            <td><code>POST /checkout/buy-now</code></td>
+                            <td><code>CheckoutSource.BUY_NOW</code></td>
+                            <td>Khách bấm "Mua ngay" tại trang chi tiết. Tạo <code>CheckoutContext</code> chứa đúng 1 sản phẩm chi tiết với số lượng yêu cầu mà không làm ảnh hưởng giỏ hàng hiện tại.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mua Nhanh Từ Modal</strong></td>
+                            <td><code>POST /gio-hang/them</code></td>
+                            <td><code>CheckoutSource.QUICK_ADD</code></td>
+                            <td>Khi thêm vào giỏ, modal hiện nút "Tiến hành thanh toán". Token được sinh tự động và gắn kèm link <code>/checkout?token=...</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thanh Toán Sản Phẩm Chọn</strong></td>
+                            <td><code>POST /checkout/start</code></td>
+                            <td><code>CheckoutSource.CART</code></td>
+                            <td>Khách tích chọn một số sản phẩm trong <code>cart.html</code> và bấm "Thanh toán". Hệ thống kiểm tra tồn kho từng món được chọn và sinh Token.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thanh Toán Toàn Bộ Giỏ</strong></td>
+                            <td><code>POST /checkout/start-all</code></td>
+                            <td><code>CheckoutSource.CART</code></td>
+                            <td>Thanh toán tất cả các sản phẩm hợp lệ có trong giỏ hàng.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sub-section-title">11.2. Các Bước Xử Lý Tại Submit Checkout (<code>POST /checkout/submit</code>)</div>
+            <div class="flow-diagram">
+Bước 1: Kiểm tra Token & Claim Context: context.tryClaim() để chống nhấn nút đặt hàng lặp lại nhiều lần.
+Bước 2: Sanitize toàn bộ chuỗi đầu vào (Jsoup.clean text fields: Họ tên, SĐT, Địa chỉ, Ghi chú).
+Bước 3: Xử lý Khách Vãng Lai (Guest):
+        - Kiểm tra trạng thái Email qua guestCheckoutService.checkEmailStatus(email).
+        - Nếu email đã có tài khoản Active -> Yêu cầu nhập mật khẩu xác nhận (yeucaudangnhap).
+        - Nếu email đã mua quá 3 lần -> Yêu cầu thiết lập mật khẩu (yeucaudoimatkhau).
+        - Nếu khách mới -> Tự động đăng ký tài khoản GUEST, tạo Token thiết lập mật khẩu, chuyển giỏ session sang DB.
+Bước 4: Chuẩn hóa sổ địa chỉ SoDiaChi & Tự động lưu địa chỉ nếu là lần mua đầu tiên.
+Bước 5: Gọi GioHangService.createOrderFromCheckout():
+        - Khóa từng biến thể bằng findByIdWithLock(spctId) (Pessimistic Write Lock).
+        - Tính lại đơn giá niêm yết và giá sau giảm từ PricingService (Chống sửa giá từ client).
+        - Tính phí vận chuyển thực tế qua ShippingFeeCalculator (Gọi GHN API hoặc Fallback Zone).
+        - Áp dụng Voucher (nếu có) với Pessimistic Lock trên PhieuGiamGia.
+        - Khởi tạo HoaDon và lưu các dòng HoaDonChiTiet kèm Snapshots (Tên SP, SKU, Giá gốc, Đợt giảm giá).
+Bước 6: Rẽ nhánh thanh toán:
+        - Nếu COD: Trừ kho FIFO ngay, tạo đơn GHN, xóa món đã mua khỏi giỏ, gửi email thông báo.
+        - Nếu SePay: Đăng ký Snapshot vào PendingCheckoutRegistry, xóa món khỏi giỏ, trả về mã QR SePay.
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA CHECKOUT THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/checkout.html</code> → Giao diện đặt hàng và chọn địa chỉ/thanh toán.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/order/CheckoutController.java</code> (Method: <code>submitCheckout()</code>).</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/order/CheckoutContextService.java</code> → Quản lý Context Token.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/order/GuestCheckoutService.java</code> → Xử lý khách vãng lai & gửi mail kích hoạt.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 12: SHIPPING & GHN -->
+        <section class="doc-section" id="shipping-ghn">
+            <h2 class="section-title">12. PHÍ GIAO HÀNG & TÍCH HỢP GIAO HÀNG NHANH (GHN)</h2>
+
+            <div class="sub-section-title">12.1. Ma Trận Tính Phí Vận Chuyển</div>
+            <p>Phí giao hàng được tính toán linh hoạt thông qua <code>ShippingFeeCalculator.java</code> theo 3 mức ưu tiên:</p>
+            <ol style="margin-left: 20px; font-size: 0.9rem;">
+                <li><strong>Ưu tiên 1 (Real-time GHN API):</strong> Nếu đơn vị vận chuyển là GHN và có đủ <code>districtId</code> + <code>wardCode</code>, hệ thống gọi API <code>https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee</code> để lấy phí ship chuẩn xác theo biểu phí bưu cục.</li>
+                <li><strong>Ưu tiên 2 (Database Value):</strong> Lấy mức phí cấu hình sẵn trong bảng <code>don_vi_van_chuyen</code> (Cột <code>phi_local</code> hoặc <code>phi_nationwide</code>).</li>
+                <li><strong>Ưu tiên 3 (Application Properties Fallback):</strong> Đọc cấu hình mặc định trong <code>application.properties</code>:
+                    <ul style="margin-left: 20px;">
+                        <li>GHN Nội thành (Hà Nội, Thái Nguyên): <code>25,000 đ</code> | Toàn quốc: <code>38,000 đ</code></li>
+                        <li>GHTK Nội thành: <code>22,000 đ</code> | Toàn quốc: <code>30,000 đ</code></li>
+                        <li>Mặc định: <code>30,000 đ</code></li>
+                    </ul>
+                </li>
+            </ol>
+
+            <div class="sub-section-title">12.2. Các API GHN Tích Hợp Trong Hệ Thống</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nhiệm Vụ</th>
+                            <th>Method Trong GhnService.java</th>
+                            <th>Endpoint GHN Gọi Tới</th>
+                            <th>Mô Tả Xử Lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lấy Tỉnh/Thành</strong></td>
+                            <td><code>getProvinces()</code></td>
+                            <td><code>/master-data/province</code></td>
+                            <td>Lấy danh mục 63 tỉnh thành để nạp vào dropdown checkout.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lấy Quận/Huyện</strong></td>
+                            <td><code>getDistricts(provinceId)</code></td>
+                            <td><code>/master-data/district</code></td>
+                            <td>Lấy danh mục quận/huyện theo tỉnh được chọn.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lấy Phường/Xã</strong></td>
+                            <td><code>getWards(districtId)</code></td>
+                            <td><code>/master-data/ward</code></td>
+                            <td>Lấy danh mục phường/xã theo quận/huyện.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tính Phí Giao Hàng</strong></td>
+                            <td><code>calculateShipFee(toDistrictId, toWardCode, insuranceValue)</code></td>
+                            <td><code>/v2/shipping-order/fee</code></td>
+                            <td>Tính phí vận chuyển và bảo hiểm hàng hóa theo kích thước và trọng lượng kiện hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tạo Đơn Giao Hàng</strong></td>
+                            <td><code>createShippingOrder(hoaDon, items, toDistrictId, toWardCode)</code></td>
+                            <td><code>/v2/shipping-order/create</code></td>
+                            <td>Tạo vận đơn giao hàng chính thức, nhận về <code>ghnOrderCode</code> (VD: <code>L3Z7P9</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tạo Đơn Thu Hồi Đổi Trả</strong></td>
+                            <td><code>createReturnOrder(hoaDon, reason)</code></td>
+                            <td><code>/v2/shipping-order/create</code></td>
+                            <td>Tạo vận đơn thu hồi hàng từ nhà khách về kho Smash VN (Nhà cung cấp <code>GHN_RETURN</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Theo Dõi Vận Đơn</strong></td>
+                            <td><code>trackOrder(orderCode)</code></td>
+                            <td><code>/v2/shipping-order/detail</code></td>
+                            <td>Tra cứu trạng thái vận chuyển thời gian thực của bưu tá.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hủy Vận Đơn</strong></td>
+                            <td><code>cancelOrder(orderCode)</code></td>
+                            <td><code>/v2/switch-status/cancel</code></td>
+                            <td>Hủy đơn giao hàng trên hệ thống GHN khi đơn hàng bị hủy trước khi bưu tá lấy hàng.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA PHÍ SHIP & GHN THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/api/GhnService.java</code> → Tích hợp toàn bộ HTTP API của GHN.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/api/ShippingFeeCalculator.java</code> → Tính toán phí ship đa tầng.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/api/ShippingZoneResolver.java</code> → Phân giải khu vực Local vs Nationwide.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/api/GhnRestController.java</code> → API REST cho dropdown địa chỉ và Webhook.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 13: DISCOUNTS & VOUCHERS -->
+        <section class="doc-section" id="discounts-vouchers">
+            <h2 class="section-title">13. ĐỢT GIẢM GIÁ (CAMPAIGNS) & PHIẾU GIẢM GIÁ (VOUCHERS)</h2>
+            <p>Hệ thống phân biệt rạch ròi giữa <strong>Đợt Giảm Giá (Giảm trực tiếp vào giá sản phẩm)</strong> và <strong>Phiếu Giảm Giá (Voucher áp dụng tại bước thanh toán)</strong>.</p>
+
+            <div class="sub-section-title">13.1. Đợt Giảm Giá (DotGiamGia - Flash Sale / Chiến Dịch)</div>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li>Được xử lý bởi <code>PricingServiceImpl.java</code>.</li>
+                <li>Áp dụng trực tiếp vào biến thể <code>SanPhamChiTiet</code>, hiển thị giá gạch trên toàn bộ website.</li>
+                <li>Hỗ trợ 5 kiểu áp dụng (<code>ApDungKieu</code>):
+                    <ul style="margin-left: 20px;">
+                        <li><code>TAT_CA</code>: Giảm toàn bộ sản phẩm trong cửa hàng.</li>
+                        <li><code>THEO_DANH_MUC</code>: Giảm tất cả sản phẩm thuộc 1 danh mục.</li>
+                        <li><code>THEO_THUONG_HIEU</code>: Giảm tất cả sản phẩm của 1 thương hiệu (Yonex, Victor, Lining...).</li>
+                        <li><code>THEO_KHOANG_GIA</code>: Giảm các sản phẩm có giá niêm yết trong khoảng <code>[minPrice, maxPrice]</code>.</li>
+                        <li><code>THU_CONG</code>: Chọn thủ công từng sản phẩm cụ thể.</li>
+                    </ul>
+                </li>
+                <li>Một sản phẩm chỉ được có duy nhất 1 đợt giảm giá <code>ACTIVE</code> tại một thời điểm (Tránh chồng chéo khuyến mãi).</li>
+            </ul>
+
+            <div class="sub-section-title">13.2. Phiếu Giảm Giá (PhieuGiamGia - Voucher Code)</div>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li>Được xử lý và tính toán bởi <code>VoucherCalculator.calculateVoucherDiscount(tamTinh, voucher)</code>.</li>
+                <li>Khách hàng nhập mã tại <code>checkout.html</code> (Endpoint <code>POST /api/voucher/apply</code>).</li>
+                <li>Quy tắc kiểm tra hợp lệ:
+                    <ul style="margin-left: 20px;">
+                        <li>Trạng thái <code>active = true</code>.</li>
+                        <li>Thời gian hiện tại nằm trong khoảng <code>ngayBatDau <= now <= ngayKetThuc</code>.</li>
+                        <li>Số lượng còn lại <code>soLuongConLai > 0</code>.</li>
+                        <li>Tổng tiền tạm tính của đơn phải lớn hơn hoặc bằng <code>giaTriDonHangToiThieu</code>.</li>
+                    </ul>
+                </li>
+                <li>Công thức tính giảm:
+                    <ul style="margin-left: 20px;">
+                        <li>Đơn vị <code>%</code>: <code>giamGia = tamTinh * giaTri / 100</code>. Nếu có <code>giaTriGiamToiDa</code> thì không được vượt quá mức tối đa này.</li>
+                        <li>Đơn vị <code>VND / đ</code>: <code>giamGia = MIN(giaTri, tamTinh)</code>.</li>
+                    </ul>
+                </li>
+                <li><strong>Khóa an toàn chống cướp Voucher:</strong> Khi trừ số lượng voucher, hệ thống dùng <code>phieuGiamGiaRepository.findByMaPhieuWithLock(maPhieu)</code> với <code>@Lock(LockModeType.PESSIMISTIC_WRITE)</code> để đảm bảo không bị âm số lượng trong môi trường nhiều khách thanh toán đồng thời.</li>
+            </ul>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA KHUYẾN MÃI & VOUCHER THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/product/PricingServiceImpl.java</code> → Tính giá bán thực tế sau chiến dịch giảm giá.</li>
+                    <li><span class="badge badge-util">Util</span> <code>src/main/java/com/smashvn/shop/util/VoucherCalculator.java</code> → Thuật toán tính tiền giảm của Voucher.</li>
+                    <li><span class="badge badge-repository">Repository</span> <code>src/main/java/com/smashvn/shop/repository/PhieuGiamGiaRepository.java</code> → Khóa Pessimistic Write trừ voucher.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/admin/AdminKhuyenMaiController.java</code> → CRUD Đợt giảm giá & Voucher trong Admin.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 14: PAYMENT COD -->
+        <section class="doc-section" id="payment-cod">
+            <h2 class="section-title">14. THANH TOÁN COD (CASH ON DELIVERY)</h2>
+            <p>Quy trình thanh toán khi nhận hàng (COD) xử lý đơn hàng tạo ngay, trừ kho tức thì và bàn giao vận chuyển.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Câu Hỏi Kỹ Thuật</th>
+                            <th>Câu Trả Lời & File Xử Lý Thực Tế</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>COD bắt đầu ở đâu?</strong></td>
+                            <td>Khách chọn radio <code>COD</code> tại <code>checkout.html</code> và bấm "Đặt hàng". Gửi <code>POST /checkout/submit</code> với <code>phuongThucThanhToan=COD</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Controller nào nhận request?</strong></td>
+                            <td><code>CheckoutController.java</code> (Method: <code>submitCheckout()</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Service nào xử lý nghiệp vụ?</strong></td>
+                            <td><code>GioHangService.java</code> (Method: <code>submitCodOrder()</code> gọi <code>createOrderFromCheckout()</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Có tạo hóa đơn ngay không?</strong></td>
+                            <td><strong>CÓ</strong>. Tạo bản ghi <code>HoaDon</code> ngay lập tức và lưu vào database.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trạng thái hóa đơn ban đầu là gì?</strong></td>
+                            <td>
+                                <code>trangThaiDonHang = OrderStatus.CHO_XAC_NHAN ("cho_xac_nhan")</code><br>
+                                <code>trangThaiThanhToan = "CHO_THANH_TOAN"</code><br>
+                                <code>paymentStatus = PaymentStatus.PENDING ("pending")</code><br>
+                                <code>paymentMethod = "COD"</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Có trừ tồn kho ngay không? Ở đâu?</strong></td>
+                            <td><strong>CÓ</strong>. Trừ kho ngay lập tức tại <code>GioHangService.createOrderFromCheckout()</code> bằng cách gọi <code>inventoryLotService.allocateFifo(reqs)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Có tạo đơn vận chuyển GHN không?</strong></td>
+                            <td><strong>CÓ</strong>. Nếu địa chỉ nhận hàng có đủ thông tin GHN, <code>GioHangService.submitCodOrder()</code> gọi <code>ghnService.createShippingOrder()</code> để tạo vận đơn và lưu <code>ghnOrderCode</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Xử lý Voucher như thế nào?</strong></td>
+                            <td>Số lượng còn lại của voucher được trừ ngay lập tức: <code>voucher.setSoLuongConLai(voucher.getSoLuongConLai() - 1)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sau xử lý redirect về đâu?</strong></td>
+                            <td>Trả về JSON <code>{"trangThai": "ok", "orderId": ..., "paymentMethod": "COD"}</code>. Frontend JavaScript trên <code>checkout.html</code> hiển thị modal xác nhận đặt hàng thành công và chuyển hướng đến trang theo dõi đơn hàng <code>/dashboard#orders</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 15: PAYMENT SEPAY ONLINE -->
+        <section class="doc-section" id="payment-sepay">
+            <h2 class="section-title">15. THANH TOÁN ONLINE CỔNG SEPAY (QR / IPN WEBHOOK)</h2>
+            <p>SMASH-VN tích hợp cổng thanh toán SePay tự động hóa 100% việc xác nhận chuyển khoản ngân hàng qua mã QR Vietcombank động.</p>
+
+            <div class="sub-section-title">15.1. Bảng Trả Lời Chi Tiết Về Thanh Toán Online SePay</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Câu Hỏi Kỹ Thuật</th>
+                            <th>Câu Trả Lời & File Xử Lý Thực Tế</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>File tạo yêu cầu & hiển thị mã QR?</strong></td>
+                            <td><code>CheckoutController.submitCheckout()</code> gọi <code>gioHangService.createSepayPendingOrder()</code>. Trả về thông tin tài khoản ngân hàng, mã đơn hàng <code>DHSVN...</code> và số tiền để frontend render mã QR SePay.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>File nhận Callback / IPN Webhook?</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/controller/payment/SepayIpnController.java</code> (Endpoint: <code>POST /api/payment/sepay/ipn</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cơ chế xác thực Webhook an toàn?</strong></td>
+                            <td>
+                                1. Kiểm tra IP Whitelist (Nếu bật <code>sepay.ip-verification=true</code>).<br>
+                                2. Kiểm tra Header <code>Authorization: Apikey {sepay.ipn-secret}</code>.<br>
+                                3. Chống Duplicate IPN (Idempotency) dựa trên <code>paymentTransactionRepository.findByTransactionId(maGiaoDich)</code>.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>File xử lý giao dịch & trừ kho FIFO?</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/service/payment/SepayOrderPaymentService.java</code> (Method: <code>xuLyThanhToanSePay()</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khi nào trừ tồn kho?</strong></td>
+                            <td>Chỉ trừ tồn kho <strong>KHI VÀ CHỈ KHI</strong> nhận được Webhook thanh toán thành công từ SePay thông qua <code>inventoryLotService.allocateFifo(itemRequests)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Xử lý thế nào nếu khách đã chuyển tiền nhưng KHO BỊ THIẾU?</strong></td>
+                            <td>Xử lý trường hợp <code>PAID_INSUFFICIENT_STOCK</code>: Commit lưu vết giao dịch nhận tiền trong <code>PaymentTransaction</code>, chuyển đơn hàng sang <code>YEU_CAU_HUY</code>, trạng thái thanh toán <code>CHO_HOAN_TIEN</code>, <code>RefundStatus.PENDING</code>. Tuyệt đối không throw Exception để không bị mất vết nhận tiền của khách.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Xử lý thế nào nếu khách chuyển tiền cho ĐƠN ĐÃ BỊ HỦY / HẾT HẠN (Late Webhook)?</strong></td>
+                            <td><code>SepayGatewayService.java</code> lưu vết transaction với trạng thái <code>PAID_RECEIVED_AFTER_CANCEL</code>, ghi cảnh báo Audit cấp bách cho Admin, không kích hoạt lại đơn, không trừ kho.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mã giao dịch SePay được lưu ở đâu?</strong></td>
+                            <td>Lưu tại 2 nơi: Table <code>payment_transactions</code> (Cột <code>transaction_id</code>) và Table <code>hoa_don</code> (Cột <code>ma_giao_dich</code> và <code>transaction_id</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gửi email xác nhận thanh toán khi nào?</strong></td>
+                            <td>Gửi bằng <code>TransactionSynchronizationManager.registerSynchronization.afterCommit()</code> để đảm bảo email chỉ được gửi đi khi toàn bộ dữ liệu đơn hàng và giao dịch đã được COMMIT thành công xuống Database.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 16: POS COUNTER SALES -->
+        <section class="doc-section" id="pos-counter">
+            <h2 class="section-title">16. POS BÁN HÀNG TẠI QUẦY (COUNTER POS)</h2>
+            <p>Hệ thống POS (Point of Sale) tại <code>/admin/pos</code> phục vụ nhân viên bán hàng trực tiếp tại quầy với tốc độ cao.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nghiệp Vụ POS</th>
+                            <th>File & Method Xử Lý</th>
+                            <th>Chi Tiết Xử Lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Quét mã Barcode / Tìm kiếm biến thể</strong></td>
+                            <td><code>AdminPosController.timKiemSanPhamAjax()</code> → <code>AdminPosService.timKiemBienTheChoPos()</code></td>
+                            <td>Tìm kiếm siêu nhanh theo Barcode SKU, tên sản phẩm hoặc thuộc tính. Chỉ hiển thị biến thể đang bán có <code>soLuongTon > 0</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quản lý Hóa Đơn Chờ (Tabs)</strong></td>
+                            <td><code>AdminPosService.taoHoaDonCho()</code>, <code>layDanhSachHoaDonCho()</code></td>
+                            <td>Cho phép mở tối đa 10 hóa đơn chờ cùng lúc để phục vụ nhiều khách hàng song song.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chọn Khách Hàng / Đăng Ký Khách Mới</strong></td>
+                            <td><code>AdminPosController.timKhachHangAjax()</code>, <code>dangKyKhachHangNhanh()</code></td>
+                            <td>Tìm khách hàng theo SĐT. Nếu khách mới, hỗ trợ tạo nhanh tài khoản thành viên ngay tại quầy.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thanh Toán Tiền Mặt (Cash)</strong></td>
+                            <td><code>AdminPosService.thanhToanHoaDonPos()</code></td>
+                            <td>Trừ tồn kho FIFO ngay lập tức, chuyển trạng thái <code>OrderStatus.DA_GIAO</code> ("da_giao"), <code>TrangThaiThanhToan = "DA_THANH_TOAN"</code>, gán nhân viên phụ trách.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thanh Toán SePay QR Tại Quầy</strong></td>
+                            <td><code>AdminPosService.taoQrThanhToanPos()</code></td>
+                            <td>Mã hóa đơn POS có tiền tố <code>HDSVN...</code>. Khi SePay IPN báo về, đơn POS được tự động hoàn thành ngay lập tức (<code>DA_GIAO</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>In Hóa Đơn Nhiệt (Thermal Print)</strong></td>
+                            <td><code>AdminPosController.inHoaDonPos()</code> → <code>templates/admin/pos-print.html</code></td>
+                            <td>Xuất hóa đơn khổ giấy K80 tiêu chuẩn chứa đầy đủ logo, mã vạch, danh sách sản phẩm, chiết khấu và QR tra cứu.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 17: ORDER MANAGEMENT & STATE MACHINE -->
+        <section class="doc-section" id="order-management">
+            <h2 class="section-title">17. QUẢN LÝ ĐƠN HÀNG & MÁY TRẠNG THÁI (ORDER STATE MACHINE)</h2>
+
+            <div class="sub-section-title">17.1. Sơ Đồ Chuyển Đổi Trạng Thái Đơn Hàng (Order State Flow)</div>
+            <div class="flow-diagram">
+                       [CHO_THANH_TOAN] (Đơn SePay chờ quét QR)
+                             │
+                             ├── (Hết hạn 3 phút / Khách hủy) ───────────► [DA_HUY] (expired)
+                             │
+                             ▼ (SePay IPN thành công)
+                       [CHO_XAC_NHAN] ◄──── (Đơn COD tạo thành công)
+                             │
+                             ├── (Khách / Admin hủy đơn) ────────────────► [DA_HUY] (Hoàn tồn kho FIFO)
+                             │
+                             ▼ (Admin xác nhận đơn)
+                       [CHO_GIAO_HANG] (Đang đóng gói kiện hàng)
+                             │
+                             ├── (Admin hủy đơn) ────────────────────────► [DA_HUY] (Hoàn tồn kho FIFO)
+                             │
+                             ▼ (Bàn giao bưu tá GHN)
+                       [DANG_GIAO] (Đang trên đường giao tới khách)
+                             │
+                             ├── (Khách từ chối nhận / Giao thất bại) ───► [TRA_HANG] / [DA_HUY]
+                             │
+                             ▼ (Bưu tá GHN giao thành công / Khách xác nhận)
+                       [DA_GIAO] (Giao hàng thành công)
+                             │
+                             ▼ (Trong vòng 7 ngày kể từ khi nhận hàng)
+                       [Yêu cầu Đổi / Trả hàng] ──────────────────────────► (Chuyển sang Return Flow)
+            </div>
+
+            <div class="sub-section-title">17.2. Bảng Ràng Buộc Chuyển Đổi Trạng Thái (Valid Next Statuses)</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Trạng Thái Hiện Tại</th>
+                            <th>Mã Enum</th>
+                            <th>Các Trạng Thái Tiếp Theo Hợp Lệ</th>
+                            <th>Hành Động Tồn Kho Khi Hủy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Chờ thanh toán</td>
+                            <td><code>cho_thanh_toan</code></td>
+                            <td><code>cho_xac_nhan</code>, <code>da_huy</code></td>
+                            <td>Chưa từng trừ kho ➔ Không hoàn kho.</td>
+                        </tr>
+                        <tr>
+                            <td>Chờ xác nhận</td>
+                            <td><code>cho_xac_nhan</code></td>
+                            <td><code>cho_giao_hang</code>, <code>da_huy</code></td>
+                            <td>Đã trừ kho ➔ Hoàn lại số lượng vào các lô ban đầu.</td>
+                        </tr>
+                        <tr>
+                            <td>Chờ giao hàng</td>
+                            <td><code>cho_giao_hang</code></td>
+                            <td><code>dang_giao</code>, <code>da_huy</code></td>
+                            <td>Đã trừ kho ➔ Hoàn lại số lượng vào các lô ban đầu.</td>
+                        </tr>
+                        <tr>
+                            <td>Đang giao</td>
+                            <td><code>dang_giao</code></td>
+                            <td><code>da_giao</code>, <code>da_huy</code>, <code>tra_hang</code></td>
+                            <td>Hủy/trả hàng ➔ Chờ hàng về kho kiểm tra trước khi hoàn tồn.</td>
+                        </tr>
+                        <tr>
+                            <td>Đã giao</td>
+                            <td><code>da_giao</code></td>
+                            <td><code>tra_hang</code></td>
+                            <td>Xử lý qua quy trình đổi trả hàng.</td>
+                        </tr>
+                        <tr>
+                            <td>Đã hủy</td>
+                            <td><code>da_huy</code></td>
+                            <td><em>(Trạng thái kết thúc - Không thể chuyển tiếp)</em></td>
+                            <td>N/A</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 18: RETURNS & REFUNDS -->
+        <section class="doc-section" id="returns-refunds">
+            <h2 class="section-title">18. ĐỔI HÀNG, TRẢ HÀNG, KIỂM KHO & HOÀN TIỀN</h2>
+            <p>Quy trình Đổi/Trả hàng (RMA) được hiện thực hóa với đầy đủ bằng chứng hình ảnh, liên kết đơn thu hồi GHN và phân loại kho hàng lỗi.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Giai Đoạn</th>
+                            <th>Trạng Thái ReturnStatus</th>
+                            <th>File & Method Xử Lý</th>
+                            <th>Hành Động Hệ Thống & Tác Động Dữ Liệu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1. Khách gửi yêu cầu</strong></td>
+                            <td><code>REQUESTED ("CHO_DUYET")</code></td>
+                            <td><code>OrderViewService.yeuCauTraHang()</code></td>
+                            <td>Kiểm tra <code>isWithinReturnWindow</code> (7 ngày). Lưu lý do và danh sách đường dẫn ảnh bằng chứng (<code>bangChungPaths</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Admin duyệt yêu cầu</strong></td>
+                            <td><code>APPROVED ("DA_DUYET")</code> → <code>CHO_THU_HOI</code></td>
+                            <td><code>OrderViewService.duyetYeuCauTraHangVaTaoDonGhn()</code></td>
+                            <td>Tự động gọi GHN API tạo đơn thu hồi bưu tá lấy hàng tận nhà khách. Lưu mã vận đơn thu hồi <code>GHN_RETURN</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. GHN lấy hàng về kho</strong></td>
+                            <td><code>PICKING</code> → <code>PICKED</code> → <code>INSPECTING ("DANG_KIEM_TRA")</code></td>
+                            <td><code>GhnPollingScheduler.pollGhnOrderStatuses()</code></td>
+                            <td>Scheduler tự động nhận diện đơn hàng đã về tới bưu cục shop và chuyển sang trạng thái chờ nhân viên kiểm hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4. Kiểm tra chất lượng (Inspection)</strong></td>
+                            <td><code>REFUND_PENDING ("CHO_HOAN_TIEN")</code> HOẶC <code>EXCHANGE_PENDING ("CHO_GIAO_HANG_DOI")</code></td>
+                            <td><code>OrderViewService.xacNhanKiemKhoVaNhapKho()</code></td>
+                            <td>
+                                - Nếu hàng tốt: Hoàn lại kho bán bình thường qua <code>InventoryLotService.hoanKho()</code>.<br>
+                                - Nếu hàng lỗi: Chuyển vào <strong>Kho Sản Phẩm Lỗi</strong> (Cộng <code>soLuongSpLoi</code> trong <code>SanPhamChiTiet</code>).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Hoàn tất Hoàn Tiền</strong></td>
+                            <td><code>COMPLETED ("HOAN_TIEN_THANH_CONG")</code></td>
+                            <td><code>OrderViewService.xacNhanHoanTienChoKhach()</code></td>
+                            <td>Cập nhật <code>RefundStatus.COMPLETED</code>, <code>trangThaiThanhToan = 'REFUNDED'</code>, lưu mã giao dịch và ảnh chụp ủy nhiệm chi. <strong>Tuyệt đối không hoàn kho lặp lại</strong>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>6. Hoàn tất Đổi Hàng Mới</strong></td>
+                            <td><code>EXCHANGED ("DA_DOI_HANG")</code></td>
+                            <td><code>OrderViewService.xacNhanGiaoHangDoiMoiChoKhach()</code></td>
+                            <td>Duyệt kho biến thể đổi mới, tạo đơn GHN mới (<code>GHN_EXCHANGE</code>) gửi lại cho khách hàng.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA ĐỔI TRẢ & HOÀN TIỀN THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/order/OrderViewService.java</code> (Toàn bộ các method từ dòng 1850 - 2700).</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/user/UserDashboardController.java</code> → Endpoint gửi yêu cầu phía khách.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/admin/AdminController.java</code> → Endpoint xử lý duyệt, kiểm kho, hoàn tiền phía Admin.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 19: INVENTORY FIFO & FAULTY INVENTORY -->
+        <section class="doc-section" id="inventory-fifo">
+            <h2 class="section-title">19. QUẢN LÝ TỒN KHO FIFO & KHO SẢN PHẨM LỖI</h2>
+
+            <div class="sub-section-title">19.1. Thuật Toán Phân Bổ Tồn Kho FIFO (First-In, First-Out)</div>
+            <p>Để đảm bảo hạch toán giá vốn chính xác và tránh xung đột đơn hàng đồng thời, <code>InventoryLotService.allocateFifo()</code> triển khai cơ chế phân bổ hai giai đoạn (Two-Phase Allocation):</p>
+            <div class="flow-diagram">
+Giai đoạn 1: Planning Phase
+- Gom nhóm tất cả sản phẩm cha (SanPham) liên quan đến danh sách cần mua.
+- Sắp xếp productIds theo thứ tự TĂNG DẦN (ID ASC) và áp dụng Pessimistic Write Lock (findByIdWithLock).
+- Việc khóa theo thứ tự ID ASC triệt tiêu hoàn toàn nguy cơ Deadlock giữa các transaction song song.
+- Quét các biến thể con SanPhamChiTiet theo thứ tự ID ASC (Lô cũ nhập trước có ID nhỏ hơn).
+- Lập kế hoạch phân bổ PlannedAllocations cho từng dòng hàng.
+- Nếu tổng tồn kho của tất cả các lô không đủ đáp ứng -> Trả về AllocationStatus.INSUFFICIENT_STOCK.
+
+Giai đoạn 2: Execution Phase
+- Duyệt qua từng LotAllocation đã lập trong kế hoạch.
+- Trừ soLuongTon của từng bản ghi SanPhamChiTiet tương ứng: spct.setSoLuongTon(spct.getSoLuongTon() - alloc.getQty()).
+- Lưu các bản ghi SanPhamChiTiet xuống database và trả về AllocationStatus.SUCCESS.
+            </div>
+
+            <div class="sub-section-title">19.2. Quản Lý Kho Sản Phẩm Lỗi (Defective Product Inventory)</div>
+            <p>Hệ thống tách biệt hoàn toàn giữa <strong>Tồn kho kinh doanh</strong> (<code>soLuongTon</code>) và <strong>Tồn kho hàng lỗi</strong> (<code>soLuongSpLoi</code>) trên từng biến thể sản phẩm:</p>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li>Khi kiểm tra hàng đổi trả phát hiện lỗi ➔ <code>soLuongSpLoi += qty</code> (Không đưa vào bán lại).</li>
+                <li>Giao diện quản trị tại <code>/admin/kho-san-pham-loi</code> cho phép nhân viên xem danh sách hàng lỗi, xem nguồn gốc đơn hàng gây lỗi và lịch sử xử lý.</li>
+                <li>Hỗ trợ 3 hành động xử lý hàng lỗi (<code>FaultyInventoryAction</code>):
+                    <ul style="margin-left: 20px;">
+                        <li><code>XUAT_TRA_NCC</code>: Xuất trả lại nhà cung cấp để bảo hành/đổi mới.</li>
+                        <li><code>THANH_LY</code>: Bán thanh lý giá rẻ thu hồi vốn.</li>
+                        <li><code>TIEU_HUY</code>: Tiêu hủy nếu sản phẩm bị gãy khung/hỏng hoàn toàn không thể phục hồi.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA TỒN KHO & KHO HÀNG LỖI THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/inventory/InventoryLotService.java</code> → Thuật toán FIFO, Nhập kho, Kho hàng lỗi.</li>
+                    <li><span class="badge badge-repository">Repository</span> <code>src/main/java/com/smashvn/shop/repository/SanPhamChiTietRepository.java</code> → Query <code>findActiveCandidatesBySanPhamId</code>, <code>findByIdWithLock</code>.</li>
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/admin/kho-san-pham-loi.html</code> → Giao diện quản lý kho hàng lỗi.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 20: ADMIN STATS & EXCEL POI -->
+        <section class="doc-section" id="admin-stats">
+            <h2 class="section-title">20. BÁO CÁO THỐNG KÊ DOANH THU & XUẤT EXCEL (APACHE POI)</h2>
+
+            <div class="sub-section-title">20.1. Phân Loại Doanh Thu Thực Tế (Revenue Classification)</div>
+            <p>Dịch vụ <code>AdminThongKeService.java</code> phân loại chính xác từng dòng doanh thu tránh phóng đại số liệu:</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phân Loại Doanh Thu</th>
+                            <th>Mã Enum</th>
+                            <th>Điều Kiện Trạng Thái Đơn Hàng</th>
+                            <th>Ý Nghĩa Hạch Toán</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Doanh Thu Thực Tế (Actual Revenue)</strong></td>
+                            <td><code>ACTUAL_REVENUE</code></td>
+                            <td>Đơn hàng có <code>trangThaiDonHang IN ('da_giao', 'hoan_thanh')</code> và không bị hoàn tiền.</td>
+                            <td>Tiền đã thực sự vào tài khoản/két của shop, khách đã nhận hàng thành công.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khoản Giảm Trừ Doanh Thu (Reversal)</strong></td>
+                            <td><code>ACTUAL_REVENUE_REVERSAL</code></td>
+                            <td>Đơn hàng đã giao nhưng sau đó bị hoàn tiền (<code>RefundStatus.COMPLETED</code> hoặc <code>trangThaiThanhToan = 'REFUNDED'</code>).</td>
+                            <td>Ghi âm doanh thu để khấu trừ chính xác vào báo cáo tài chính.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Doanh Thu Tạm Tính (Projected)</strong></td>
+                            <td><code>PROJECTED_REVENUE</code></td>
+                            <td>Đơn COD đang hoạt động (<code>cho_xac_nhan</code>, <code>dang_giao</code>) hoặc Đơn Online đang giao.</td>
+                            <td>Doanh thu dự kiến thu về khi giao hàng thành công.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Loại Bỏ (Excluded)</strong></td>
+                            <td><code>EXCLUDED</code></td>
+                            <td>Đơn đã hủy (<code>da_huy</code>) hoặc đơn chờ thanh toán chưa thanh toán.</td>
+                            <td>Không tính vào bất kỳ chỉ số doanh thu nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sub-section-title">20.2. Xuất Báo Cáo Excel Chuẩn Apache POI</div>
+            <p>Endpoint <code>GET /admin/thong-ke/xuat-excel</code> xuất file Excel <code>.xlsx</code> được định dạng chuyên nghiệp với CellStyle, Header phủ màu Slate, Font chữ Segoe UI, Border nét mảnh và DataFormat tiền tệ <code>#,##0 "₫"</code>.</p>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA BÁO CÁO & THỐNG KÊ THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/admin/AdminThongKeController.java</code> → Endpoint xem thống kê và xuất file Excel.</li>
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/admin/AdminThongKeService.java</code> → Xử lý logic tính doanh thu, vẽ biểu đồ, xuất file Apache POI.</li>
+                    <li><span class="badge badge-view">View</span> <code>src/main/resources/templates/admin/thongke.html</code> → Dashboard biểu đồ Chart.js thống kê trực quan.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 21: REVIEW MODERATION -->
+        <section class="doc-section" id="review-moderation">
+            <h2 class="section-title">21. KIỂM DUYỆT NỘI DUNG & TỰ ĐỘNG KHÓA TÀI KHOẢN VI PHẠM</h2>
+            <p>Hệ thống tự động bảo vệ môi trường thảo luận lành mạnh thông qua bộ lọc từ khóa cấm và tác vụ quét định kỳ ngầm.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành Phần</th>
+                            <th>File Xử Lý</th>
+                            <th>Mô Tả & Cơ Chế Hoạt Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Từ Điển Từ Khóa Cấm</strong></td>
+                            <td><code>CommentModerationKeywordRepository.java</code>, <code>ProfanityFilter.java</code></td>
+                            <td>Quản lý danh sách từ ngữ thô tục, quảng cáo rác, xúc phạm. Hỗ trợ Admin thêm/sửa/xóa từ khóa tại <code>/admin/moderation/keywords</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nhật Ký Vi Phạm (Violation Log)</strong></td>
+                            <td><code>CommentViolationLogRepository.java</code></td>
+                            <td>Ghi lại thời gian, IP, ID người dùng, nội dung bình luận vi phạm và từ khóa bị bắt dính.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tự Động Khóa Bình Luận</strong></td>
+                            <td><code>DanhGiaService.java</code> (Method: <code>themHoacCapNhatDanhGia</code>)</td>
+                            <td>Nếu người dùng vi phạm nhiều lần, hệ thống tự động thiết lập <code>TaiKhoan.ngayKhoaBinhLuanDen = LocalDateTime.now().plusDays(X)</code> để tước quyền đánh giá trong thời hạn phạt.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scheduler Quét Ngầm</strong></td>
+                            <td><code>CommentModerationScheduler.java</code></td>
+                            <td>Chạy ngầm mỗi 5 phút (<code>fixedDelay = 300,000ms</code>) để quét lại toàn bộ bình luận mới phát sinh và ẩn các nội dung vi phạm bị bỏ sót.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 22: BLOG CMS -->
+        <section class="doc-section" id="blog-cms">
+            <h2 class="section-title">22. QUẢN LÝ BLOG, TIN TỨC & CHU KỲ XÓA DỮ LIỆU</h2>
+            <p>Module Blog CMS hỗ trợ biên tập bài viết chuẩn SEO, tích hợp trình soạn thảo CKEditor 5 và cơ chế xóa mềm bảo toàn dữ liệu.</p>
+
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li><strong>Biên tập bài viết:</strong> Quản trị viên (QL) và Nhân viên (NV) có thể tạo bài viết mới tại <code>/admin/blog/add</code>, tải ảnh đại diện và ảnh bài viết trực tiếp qua CKEditor.</li>
+                <li><strong>Phân quyền xuất bản & xóa bài:</strong> Chỉ có Quản lý (<code>ROLE_QL</code>) mới có quyền bấm "Xuất bản" (<code>/admin/blog/publish/{id}</code>) và "Xóa bài viết" (<code>/admin/blog/delete/{id}</code>).</li>
+                <li><strong>Cơ chế Xóa Mềm (Soft Delete):</strong> Khi xóa bài, hệ thống chỉ cập nhật <code>deleted = true</code> và <code>deletedAt = LocalDateTime.now()</code>. Bài viết bị ẩn khỏi trang công khai nhưng vẫn lưu trữ trong database.</li>
+                <li><strong>Tác vụ Dọn Dẹp Tự Động 90 Ngày:</strong> Method <code>BlogService.purgeDeletedBlogs()</code> chạy tự động vào 3 giờ sáng mỗi ngày (<code>@Scheduled(cron = "0 0 3 * * *")</code>) để xóa vĩnh viễn các bài viết đã xóa mềm quá 90 ngày kèm xóa file ảnh liên kết trên đĩa cứng.</li>
+            </ul>
+        </section>
+
+        <!-- SECTION 23: AI CHATBOT & NEWSLETTER -->
+        <section class="doc-section" id="ai-chatbot">
+            <h2 class="section-title">23. TRỢ LÝ ẢO AI CHATBOT GEMINI & BẢN TIN (NEWSLETTER)</h2>
+
+            <div class="sub-section-title">23.1. Trợ Lý Ảo Gemini AI (Chatbot RAG Architecture)</div>
+            <p>Chatbot SMASH-VN tích hợp mô hình ngôn ngữ lớn <strong>Google Gemini 2.0 Flash</strong> qua giao thức OpenAI-compatible REST API kết hợp kỹ thuật truy xuất dữ liệu thời gian thực (RAG):</p>
+            <div class="flow-diagram">
+[Khách hàng nhập câu hỏi tại widget chatbot ở góc màn hình]
+       ↓ (Ajax POST /api/chatbot/chat)
+[ChatbotRestController.chat() -> ChatbotServiceImpl.chat()]
+       ↓
+[Phân tích Intent người dùng: VietnamesePriceParser & Phân loại câu hỏi]
+       ├── [Nếu hỏi thông tin Shop / Chính sách / Liên hệ]:
+       │     Nạp dữ liệu từ ShopContactProperties và trả lời ngay.
+       ├── [Nếu hỏi tìm kiếm vợt / tư vấn sản phẩm]:
+       │     Gọi SanPhamChiTietRepository.searchForChatbot() truy vấn DB thực tế (tồn kho, giá, thương hiệu).
+       │     Đóng gói danh sách sản phẩm tìm được vào System Prompt làm ngữ cảnh (Context Injection).
+       └── [Nếu hỏi kiểm tra đơn hàng]:
+             Truy vấn HoaDonRepository theo mã đơn hoặc số điện thoại để tóm tắt lộ trình giao hàng.
+       ↓
+[Gọi API Gemini 2.0 Flash (https://generativelanguage.googleapis.com/v1beta/openai/chat/completions)]
+       ↓
+[Lưu lịch sử hội thoại ChatConversation, ChatMessage -> Trả về câu trả lời kèm thẻ gợi ý sản phẩm]
+            </div>
+
+            <div class="sub-section-title">23.2. Bản Tin Khuyến Mãi (Newsletter Subscription)</div>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li>Khách hàng nhập email tại Footer (<code>POST /api/newsletter/subscribe</code>).</li>
+                <li>Dịch vụ <code>NewsletterServiceImpl.java</code> kiểm tra cú pháp email, chống spam và lưu vào <code>NewsletterSubscriber</code> với trạng thái kích hoạt <code>active = true</code>.</li>
+                <li>Hỗ trợ link hủy đăng ký an toàn kèm Token bảo mật qua <code>/newsletter/unsubscribe?token=...</code>.</li>
+            </ul>
+
+            <div class="quick-edit-box">
+                <div class="quick-edit-title">🛠️ MUỐN SỬA CHATBOT AI & BẢN TIN THÌ XEM CÁC FILE:</div>
+                <ul class="quick-edit-list">
+                    <li><span class="badge badge-service">Service</span> <code>src/main/java/com/smashvn/shop/service/impl/ChatbotServiceImpl.java</code> → Toàn bộ logic Prompt Engineering và gọi Gemini AI.</li>
+                    <li><span class="badge badge-controller">Controller</span> <code>src/main/java/com/smashvn/shop/controller/api/ChatbotRestController.java</code> → Endpoint nhận tin nhắn chat.</li>
+                    <li><span class="badge badge-config">Config</span> <code>src/main/java/com/smashvn/shop/config/GeminiHttpClientConfig.java</code> → Cấu hình RestClient và API Key.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 24: TRANSACTIONS & LOCKS -->
+        <section class="doc-section" id="transactions-locks">
+            <h2 class="section-title">24. PHÂN TÍCH TRANSACTIONS, LOCKS & CHỐNG TRÙNG LẶP</h2>
+
+            <div class="sub-section-title">24.1. Bảng Quản Lý Pessimistic Locks Trong Hệ Thống</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Entity Được Khóa</th>
+                            <th>Repository & Method</th>
+                            <th>Cơ Chế Lock</th>
+                            <th>Mục Đích Bảo Vệ Nghiệp Vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>SanPham</strong></td>
+                            <td><code>SanPhamRepository.findByIdWithLock(id)</code></td>
+                            <td><code>@Lock(PESSIMISTIC_WRITE)</code></td>
+                            <td>Khóa sản phẩm cha theo thứ tự ID tăng dần khi phân bổ tồn kho FIFO trong <code>InventoryLotService</code> nhằm triệt tiêu hoàn toàn Deadlock.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SanPhamChiTiet</strong></td>
+                            <td><code>SanPhamChiTietRepository.findByIdWithLock(id)</code></td>
+                            <td><code>@Lock(PESSIMISTIC_WRITE)</code></td>
+                            <td>Khóa độc quyền bản ghi biến thể khi kiểm tra tồn kho tại bước thêm vào giỏ hàng và tạo đơn hàng. Ngăn chặn hiện tượng mua vượt tồn kho (Overselling).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PhieuGiamGia</strong></td>
+                            <td><code>PhieuGiamGiaRepository.findByMaPhieuWithLock(maPhieu)</code></td>
+                            <td><code>@Lock(PESSIMISTIC_WRITE)</code></td>
+                            <td>Khóa bản ghi Voucher khi trừ <code>soLuongConLai</code>. Đảm bảo voucher chỉ có thể được sử dụng đúng số lượng đã phát hành.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>HoaDon</strong></td>
+                            <td><code>HoaDonRepository.findByIdWithLock(id)</code></td>
+                            <td><code>@Lock(PESSIMISTIC_WRITE)</code></td>
+                            <td>Khóa đơn hàng khi xử lý SePay Webhook IPN, ngăn chặn 2 request Webhook xử lý trùng nhau cùng lúc.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sub-section-title">24.2. Cơ Chế Idempotency & Quản Lý Transaction Trễ</div>
+            <ul style="margin-left: 20px; font-size: 0.9rem;">
+                <li><strong>Idempotency SePay IPN:</strong> Mọi callback đều tra cứu <code>paymentTransactionRepository.findByTransactionId(maGiaoDich)</code>. Nếu giao dịch đã tồn tại thì lập tức bỏ qua và trả về HTTP 200 OK <code>Already processed</code>.</li>
+                <li><strong>Bảo vệ Transaction Commit Email:</strong> Sử dụng <code>TransactionSynchronizationManager.registerSynchronization.afterCommit()</code> đảm bảo email xác nhận đơn chỉ được phát đi khi toàn bộ giao dịch cơ sở dữ liệu đã commit thành công.</li>
+                <li><strong>Checkout Claim Flag:</strong> Đối tượng <code>CheckoutContext</code> sở hữu cờ nguyên tử <code>tryClaim()</code> ngăn chặn người dùng bấm đúp nút "Đặt hàng".</li>
+            </ul>
+        </section>
+
+        <!-- SECTION 25: SCHEDULERS -->
+        <section class="doc-section" id="schedulers-tasks">
+            <h2 class="section-title">25. SCHEDULERS & CÁC TÁC VỤ TỰ ĐỘNG NGẦM</h2>
+            <p>Hệ thống có 4 tác vụ ngầm chạy định kỳ phục vụ đồng bộ vận chuyển, kiểm duyệt nội dung và giải phóng bộ nhớ:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tác Vụ Ngầm</th>
+                            <th>File & Method</th>
+                            <th>Chu Kỳ / Tần Suất</th>
+                            <th>Nhiệm Vụ & Dữ Liệu Tác Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Đồng Bộ Vận Đơn GHN</strong></td>
+                            <td><code>GhnPollingScheduler.pollGhnOrderStatuses()</code></td>
+                            <td>Mỗi 10 phút (<code>fixedDelay = 600,000ms</code>)</td>
+                            <td>Quét các đơn hàng đang vận chuyển (<code>cho_xac_nhan</code>, <code>dang_giao</code>, <code>dang_thu_hoi</code>), gọi GHN Track API để tự động cập nhật trạng thái đơn hàng sang Đang giao, Đã giao hoặc Đang kiểm tra.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quét Kiểm Duyệt Đánh Giá</strong></td>
+                            <td><code>CommentModerationScheduler.runCommentModerationScan()</code></td>
+                            <td>Mỗi 5 phút (<code>fixedDelay = 300,000ms</code>)</td>
+                            <td>Quét toàn bộ đánh giá mới tạo, kiểm tra từ ngữ nhạy cảm và tự động ẩn các nội dung vi phạm.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dọn Rác Blog Đã Xóa Mềm</strong></td>
+                            <td><code>BlogService.purgeDeletedBlogs()</code></td>
+                            <td>3:00 AM mỗi ngày (<code>cron = "0 0 3 * * *"</code>)</td>
+                            <td>Xóa vĩnh viễn các bài viết trong <code>blog</code> có <code>deleted = true</code> đã quá 90 ngày và xóa file ảnh liên quan.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dọn Dẹp Checkout Hết Hạn</strong></td>
+                            <td><code>PendingCheckoutRegistry.cleanupExpiredSnapshots()</code></td>
+                            <td>Mỗi 1 phút (<code>fixedRate = 60,000ms</code>)</td>
+                            <td>Giải phóng các snapshot checkout online quá 30 phút trong bộ nhớ RAM để tránh rò rỉ bộ nhớ.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 26: EXTERNAL APIS -->
+        <section class="doc-section" id="external-apis">
+            <h2 class="section-title">26. TÍCH HỢP API BÊN THỨ BA (EXTERNAL APIS)</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Đối Tác / Dịch Vụ</th>
+                            <th>Config Class</th>
+                            <th>Service Xử Lý</th>
+                            <th>Mục Đích Tích Hợp & Giao Thức</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>SePay Payment Gateway</strong></td>
+                            <td><code>SepayConfig.java</code></td>
+                            <td><code>SepayGatewayService.java</code>, <code>SepayOrderPaymentService.java</code></td>
+                            <td>Cổng thanh toán tự động Vietcombank QR. Nhận IPN Webhook qua HTTP POST và xác thực chữ ký Apikey.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Giao Hàng Nhanh (GHN)</strong></td>
+                            <td><code>GhnConfig.java</code></td>
+                            <td><code>GhnService.java</code>, <code>ShippingFeeCalculator.java</code></td>
+                            <td>Tính phí ship bưu cục, tạo vận đơn lấy hàng, tạo vận đơn thu hồi đổi trả, theo dõi tiến độ giao hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google OAuth2</strong></td>
+                            <td><code>SecurityConfig.java</code></td>
+                            <td><code>UserDangNhapController.googleLoginSuccess()</code></td>
+                            <td>Đăng nhập nhanh 1-Click bằng tài khoản Google (OpenID Connect).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google Gemini AI</strong></td>
+                            <td><code>GeminiHttpClientConfig.java</code></td>
+                            <td><code>ChatbotServiceImpl.java</code></td>
+                            <td>Trợ lý ảo thông minh tư vấn sản phẩm, giải đáp thắc mắc khách hàng qua model <code>gemini-2.0-flash</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IP Geolocation & Geocoding</strong></td>
+                            <td><code>application.properties</code></td>
+                            <td><code>LocationService.java</code></td>
+                            <td>Tự động nhận diện Tỉnh/Thành phố của khách hàng dựa trên địa chỉ IP client để gợi ý địa chỉ nhận hàng.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 27: DATABASE & ENTITY MAP -->
+        <section class="doc-section" id="db-entity-map">
+            <h2 class="section-title">27. BẢN ĐỒ CƠ SỞ DỮ LIỆU & THỰC THỂ (DATABASE & ENTITIES)</h2>
+            <p>Hệ thống bao gồm 32 Entity JPA đại diện cho các bảng nghiệp vụ trong Microsoft SQL Server:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Entity Class</th>
+                            <th>Table Name</th>
+                            <th>Primary Key</th>
+                            <th>Khóa Ngoại & Quan Hệ</th>
+                            <th>Các Trường Nghiệp Vụ Trọng Tâm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>SanPham</code></td>
+                            <td><code>san_pham</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_danh_muc</code> (ManyToOne), <code>id_thuong_hieu</code> (ManyToOne), <code>sanPhamChiTiets</code> (OneToMany)</td>
+                            <td><code>ten_san_pham</code>, <code>trang_thai</code>, <code>diem_trung_binh</code>, <code>so_danh_gia</code>, <code>hinh_anh_dai_dien</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>SanPhamChiTiet</code></td>
+                            <td><code>san_pham_chi_tiet</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_san_pham</code> (ManyToOne), <code>sanPhamChiTietThuocTinhs</code> (OneToMany)</td>
+                            <td><code>gia_ban</code>, <code>so_luong_ton</code>, <code>so_luong_sp_loi</code>, <code>mau_sac</code>, <code>trong_luong</code>, <code>kich_thuoc</code>, <code>sku</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>HoaDon</code></td>
+                            <td><code>hoa_don</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_khach_hang</code>, <code>id_nhan_vien</code>, <code>id_don_vi_van_chuyen</code>, <code>id_phieu_giam_gia</code></td>
+                            <td><code>ma_don_hang</code>, <code>tong_tien</code>, <code>phi_van_chuyen</code>, <code>trang_thai_don_hang</code>, <code>trang_thai_thanh_toan</code>, <code>payment_status</code>, <code>ma_giao_dich</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>HoaDonChiTiet</code></td>
+                            <td><code>hoa_don_chi_tiet</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_hoa_don</code> (ManyToOne), <code>id_san_pham_chi_tiet</code> (ManyToOne)</td>
+                            <td><code>so_luong</code>, <code>don_gia</code>, <code>gia_goc</code>, <code>gia_sau_giam</code>, <code>ten_san_pham_snapshot</code>, <code>sku_snapshot</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>TaiKhoan</code></td>
+                            <td><code>tai_khoan</code></td>
+                            <td><code>id (int)</code></td>
+                            <td>OneToOne với <code>KhachHang</code> hoặc <code>NhanVien</code></td>
+                            <td><code>username</code>, <code>mat_khau</code>, <code>vai_tro</code> (QL/NV/KH), <code>trang_thai_tai_khoan</code> (ACTIVE/GUEST/LOCKED), <code>so_lan_mua_thanh_cong</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>KhachHang</code></td>
+                            <td><code>khach_hang</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_tai_khoan</code> (OneToOne), <code>soDiaChis</code> (OneToMany)</td>
+                            <td><code>ho_kh</code>, <code>ten_kh</code>, <code>so_dien_thoai_kh</code>, <code>nhan_ban_tin</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>NhanVien</code></td>
+                            <td><code>nhan_vien</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_tai_khoan</code> (OneToOne)</td>
+                            <td><code>ho_nv</code>, <code>ten_nv</code>, <code>so_dien_thoai_nv</code>, <code>chuc_vu</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>SoDiaChi</code></td>
+                            <td><code>so_dia_chi</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_khach_hang</code> (ManyToOne)</td>
+                            <td><code>dia_chi_cu_the</code>, <code>province_id</code>, <code>district_id</code>, <code>ward_code</code>, <code>is_default_shipping</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>PhieuGiamGia</code></td>
+                            <td><code>phieu_giam_gia</code></td>
+                            <td><code>id (int)</code></td>
+                            <td>N/A</td>
+                            <td><code>ma_phieu</code>, <code>gia_tri</code>, <code>don_vi</code> (% hoặc VND), <code>gia_tri_giam_toi_da</code>, <code>so_luong_con_lai</code>, <code>active</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>DotGiamGia</code></td>
+                            <td><code>dot_giam_gia</code></td>
+                            <td><code>id (int)</code></td>
+                            <td>ManyToMany với <code>SanPham</code> qua <code>chi_tiet_dot_giam_gia</code></td>
+                            <td><code>ma_chien_dich</code>, <code>phan_tram_giam</code>, <code>ngay_bat_dau</code>, <code>ngay_ket_thuc</code>, <code>kieu_ap_dung</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>PhieuNhap</code></td>
+                            <td><code>phieu_nhap</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_nhan_vien</code>, <code>phieuNhapChiTiets</code> (OneToMany)</td>
+                            <td><code>ma_phieu_nhap</code>, <code>nha_cung_cap</code>, <code>tong_tien_nhap</code>, <code>ngay_nhap</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>PhieuNhapChiTiet</code></td>
+                            <td><code>phieu_nhap_chi_tiet</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_phieu_nhap</code>, <code>id_san_pham_chi_tiet</code></td>
+                            <td><code>so_luong_nhap</code>, <code>gia_nhap</code>, <code>so_luong_con_lai</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>PaymentTransaction</code></td>
+                            <td><code>payment_transactions</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_hoa_don</code> (ManyToOne)</td>
+                            <td><code>transaction_id</code> (Unique), <code>amount</code>, <code>status</code>, <code>gateway</code>, <code>raw_payload</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>DanhGia</code></td>
+                            <td><code>danh_gia</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>id_san_pham</code>, <code>id_tai_khoan</code>, <code>danhGiaAnhs</code> (OneToMany)</td>
+                            <td><code>so_sao</code>, <code>binh_luan</code>, <code>trang_thai</code>, <code>ngay_danh_gia</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>Blog</code></td>
+                            <td><code>blog</code></td>
+                            <td><code>id (int)</code></td>
+                            <td><code>comments</code> (OneToMany)</td>
+                            <td><code>title</code>, <code>slug</code>, <code>content</code>, <code>image</code>, <code>published</code>, <code>deleted</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 28: ENUMS -->
+        <section class="doc-section" id="enum-states">
+            <h2 class="section-title">28. BẢN ĐỒ ENUMS & ĐẶC TẢ TRẠNG THÁI</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tên Enum</th>
+                            <th>File Khai Báo</th>
+                            <th>Các Giá Trị Giá Trị Thực Tế</th>
+                            <th>Mục Đích Sử Dụng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>OrderStatus</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/OrderStatus.java</code></td>
+                            <td><code>CHO_THANH_TOAN</code> ("cho_thanh_toan"), <code>CHO_XAC_NHAN</code> ("cho_xac_nhan"), <code>CHO_GIAO_HANG</code> ("cho_giao_hang"), <code>DANG_GIAO_HANG</code> ("dang_giao"), <code>DA_GIAO</code> ("da_giao"), <code>DA_HUY</code> ("da_huy"), <code>TRA_HANG</code> ("tra_hang"), <code>STOCK_CONFLICT</code>, <code>YEU_CAU_HUY</code></td>
+                            <td>Trạng thái chu kỳ sống của đơn hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PaymentStatus</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/PaymentStatus.java</code></td>
+                            <td><code>PENDING</code> ("pending"), <code>PAID</code> ("paid"), <code>FAILED</code> ("failed"), <code>EXPIRED</code> ("expired"), <code>AMOUNT_MISMATCH</code>, <code>PAID_RECEIVED_AFTER_CANCEL</code>, <code>PAID_INSUFFICIENT_STOCK</code></td>
+                            <td>Trạng thái xử lý thanh toán cổng SePay.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PaymentMethod</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/PaymentMethod.java</code></td>
+                            <td><code>COD</code> ("COD"), <code>SEPAY</code> ("SePay"), <code>ZALOPAY</code> ("ZaloPay")</td>
+                            <td>Phương thức thanh toán đơn hàng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ReturnStatus</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/ReturnStatus.java</code></td>
+                            <td><code>REQUESTED</code> ("CHO_DUYET"), <code>APPROVED</code> ("DA_DUYET"), <code>REJECTED</code> ("TU_CHOI"), <code>PICKING</code> ("DANG_THU_HOI"), <code>PICKED</code> ("DA_THU_HOI"), <code>INSPECTING</code> ("DANG_KIEM_TRA"), <code>REFUND_PENDING</code> ("CHO_HOAN_TIEN"), <code>EXCHANGE_PENDING</code>, <code>EXCHANGE_SHIPPING</code>, <code>EXCHANGED</code>, <code>COMPLETED</code> ("HOAN_TIEN_THANH_CONG")</td>
+                            <td>Quy trình đổi trả hàng & kiểm kho.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RefundStatus</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/RefundStatus.java</code></td>
+                            <td><code>PENDING</code>, <code>COMPLETED</code>, <code>REJECTED</code></td>
+                            <td>Trạng thái hoàn tiền cho khách.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AccountStatus</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/entity/AccountStatus.java</code></td>
+                            <td><code>GUEST</code>, <code>ACTIVE</code>, <code>LOCKED</code></td>
+                            <td>Trạng thái tài khoản người dùng.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CategoryType</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/constant/CategoryType.java</code></td>
+                            <td><code>VOT</code>, <code>GIAY</code>, <code>TRANG_PHUC</code>, <code>BALO</code>, <code>CUOC</code>, <code>QUAN_CAN</code>, <code>BANG_QUAN</code>, <code>HOP_CAU</code>, <code>OTHER</code></td>
+                            <td>Ràng buộc thuộc tính biến thể theo danh mục.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ApDungKieu</strong></td>
+                            <td><code>src/main/java/com/smashvn/shop/util/ApDungKieu.java</code></td>
+                            <td><code>TAT_CA</code>, <code>THEO_DANH_MUC</code>, <code>THEO_THUONG_HIEU</code>, <code>THEO_KHOANG_GIA</code>, <code>THU_CONG</code></td>
+                            <td>Phạm vi áp dụng đợt giảm giá.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 29: ENDPOINT MAP -->
+        <section class="doc-section" id="endpoint-map">
+            <h2 class="section-title">29. BẢN ĐỒ TOÀN BỘ ENDPOINTS (ENDPOINT MAP)</h2>
+            <p>Dưới đây là danh mục tổng hợp các Route URL chính trong toàn bộ dự án:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Đường Dẫn URL</th>
+                            <th>Controller Class</th>
+                            <th>Method Xử Lý</th>
+                            <th>Quyền Hạn</th>
+                            <th>Mô Tả Chức Năng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/</code></td><td><code>HomeController</code></td><td><code>hienThiTrangChu()</code></td><td>Public</td><td>Trang chủ</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/shop</code></td><td><code>HomeController</code></td><td><code>hienThiCuaHang()</code></td><td>Public</td><td>Cửa hàng, lọc sản phẩm</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/san-pham/{id}</code></td><td><code>SanPhamController</code></td><td><code>hienThiChiTietSanPham()</code></td><td>Public</td><td>Chi tiết sản phẩm</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/san-pham/{id}/danh-gia</code></td><td><code>SanPhamController</code></td><td><code>guiDanhGia()</code></td><td>User (KH)</td><td>Gửi đánh giá sản phẩm</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/gio-hang/them</code></td><td><code>GioHangController</code></td><td><code>xuLyThemVaoGio()</code></td><td>Public</td><td>Thêm sản phẩm vào giỏ (AJAX)</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/gio-hang</code></td><td><code>GioHangController</code></td><td><code>hienThiGioHang()</code></td><td>Public</td><td>Trang giỏ hàng cart.html</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/gio-hang/cap-nhat</code></td><td><code>GioHangController</code></td><td><code>capNhatSoLuong()</code></td><td>Public</td><td>Cập nhật số lượng giỏ</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/gio-hang/api/xoa/{id}</code></td><td><code>GioHangController</code></td><td><code>xoaSanPhamAjax()</code></td><td>Public</td><td>Xóa 1 món khỏi giỏ</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/gio-hang/api/xoa-nhieu</code></td><td><code>GioHangController</code></td><td><code>xoaNhieuSanPhamAjax()</code></td><td>Public</td><td>Xóa nhiều món khỏi giỏ</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/gio-hang/api/mini-cart</code></td><td><code>GioHangController</code></td><td><code>layDuLieuMiniCart()</code></td><td>Public</td><td>Lấy dữ liệu Mini Cart Header</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/checkout/start</code></td><td><code>CheckoutController</code></td><td><code>startCheckout()</code></td><td>Public</td><td>Khởi tạo checkout các món chọn</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/checkout/buy-now</code></td><td><code>CheckoutController</code></td><td><code>buyNow()</code></td><td>Public</td><td>Khởi tạo checkout Mua Ngay</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/checkout</code></td><td><code>CheckoutController</code></td><td><code>viewCheckout()</code></td><td>Public</td><td>Trang thanh toán checkout.html</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/checkout/submit</code></td><td><code>CheckoutController</code></td><td><code>submitCheckout()</code></td><td>Public</td><td>Xác nhận đặt hàng</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/voucher/apply</code></td><td><code>CheckoutController</code></td><td><code>applyVoucher()</code></td><td>Public</td><td>Áp dụng mã giảm giá</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/payment/sepay/ipn</code></td><td><code>SepayIpnController</code></td><td><code>handleSepayIpn()</code></td><td>SePay Gateway</td><td>Webhook thanh toán online</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/payment/sepay/query/{code}</code></td><td><code>SepayIpnController</code></td><td><code>queryTransaction()</code></td><td>Public/User</td><td>Polling trạng thái thanh toán</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/dashboard</code></td><td><code>UserDashboardController</code></td><td><code>hienThiDashboard()</code></td><td>User (KH)</td><td>Trang cá nhân & đơn hàng</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/user/don-hang/huy/{id}</code></td><td><code>UserDashboardController</code></td><td><code>huyDonHang()</code></td><td>User (KH)</td><td>Khách hủy đơn hàng</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/user/don-hang/tra-hang/{id}</code></td><td><code>UserDashboardController</code></td><td><code>guiYeuCauTraHang()</code></td><td>User (KH)</td><td>Gửi yêu cầu đổi/trả hàng</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/pos</code></td><td><code>AdminPosController</code></td><td><code>hienThiTrangPos()</code></td><td>QL, NV</td><td>Giao diện POS bán tại quầy</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/admin/pos/thanh-toan</code></td><td><code>AdminPosController</code></td><td><code>thanhToanPos()</code></td><td>QL, NV</td><td>Thanh toán đơn hàng POS</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/don-hang</code></td><td><code>AdminController</code></td><td><code>hienThiDanhSachDonHang()</code></td><td>QL, NV</td><td>Quản lý danh sách đơn hàng</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/admin/don-hang/cap-nhat-trang-thai</code></td><td><code>AdminController</code></td><td><code>capNhatTrangThaiDonHang()</code></td><td>QL, NV</td><td>Cập nhật trạng thái đơn</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/thong-ke</code></td><td><code>AdminThongKeController</code></td><td><code>hienThiTrangThongKe()</code></td><td>QL (Admin)</td><td>Báo cáo doanh thu & biểu đồ</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/thong-ke/xuat-excel</code></td><td><code>AdminThongKeController</code></td><td><code>xuatExcel()</code></td><td>QL (Admin)</td><td>Xuất báo cáo Excel POI</td></tr>
+                        <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/kho-san-pham-loi</code></td><td><code>AdminController</code></td><td><code>hienThiKhoSanPhamLoi()</code></td><td>QL, NV</td><td>Quản lý kho hàng lỗi</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/chatbot/chat</code></td><td><code>ChatbotRestController</code></td><td><code>chat()</code></td><td>Public</td><td>Gửi tin nhắn cho AI Chatbot</td></tr>
+                        <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/newsletter/subscribe</code></td><td><code>NewsletterApiController</code></td><td><code>subscribe()</code></td><td>Public</td><td>Đăng ký nhận bản tin</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 30: QUERY & SQL MAP -->
+        <section class="doc-section" id="query-sql-map">
+            <h2 class="section-title">30. BẢN ĐỒ QUERY / JPQL / NATIVE SQL TRỌNG YẾU</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nghiệp Vụ</th>
+                            <th>Repository Interface</th>
+                            <th>Method Name</th>
+                            <th>Loại Query</th>
+                            <th>Chi Tiết Query / Mệnh Đề ORDER BY</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lọc Cửa Hàng Đa Năng</strong></td>
+                            <td><code>SanPhamRepository</code></td>
+                            <td><code>findAll(Specification, Pageable)</code></td>
+                            <td>JPA Criteria Specification</td>
+                            <td>Correlated Subquery trên cùng biến thể. ORDER BY <code>hasStock DESC</code>, <code>price ASC/DESC</code>, <code>id DESC</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Mới Trang Chủ</strong></td>
+                            <td><code>SanPhamRepository</code></td>
+                            <td><code>findNewProducts(Pageable)</code></td>
+                            <td>JPQL Query</td>
+                            <td><code>ORDER BY (hasStock) DESC, sp.id DESC</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Bán Chạy</strong></td>
+                            <td><code>SanPhamRepository</code></td>
+                            <td><code>findBestSellers(Pageable)</code></td>
+                            <td>JPQL Query</td>
+                            <td><code>ORDER BY (hasStock) DESC, (SELECT SUM(hdct.soLuong)) DESC, sp.id DESC</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sản Phẩm Nổi Bật</strong></td>
+                            <td><code>SanPhamRepository</code></td>
+                            <td><code>findFeaturedProducts(Pageable)</code></td>
+                            <td>JPQL Query</td>
+                            <td><code>ORDER BY (hasStock) DESC, (SUM(hdct) + COUNT(wishlist)) DESC, sp.id DESC</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tìm Kiếm Cho Chatbot</strong></td>
+                            <td><code>SanPhamChiTietRepository</code></td>
+                            <td><code>searchForChatbot(...)</code></td>
+                            <td>JPQL Query (Fetch Join)</td>
+                            <td>Tìm đa từ khóa trên Tên, Mô tả, EAV Attributes. <code>ORDER BY spct.soLuongTon DESC, spct.id DESC</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tìm Đơn GHN Cần Polling</strong></td>
+                            <td><code>HoaDonRepository</code></td>
+                            <td><code>findActiveShippingOrders(Pageable)</code></td>
+                            <td>Native SQL (MSSQL)</td>
+                            <td><code>SELECT hd.*, (SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen...) WHERE hd.trang_thai_don_hang IN ('cho_xac_nhan', 'dang_lay_hang', 'dang_giao') ORDER BY hd.ngay_tao ASC</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thống Kê Doanh Thu Đơn</strong></td>
+                            <td><code>HoaDonRepository</code></td>
+                            <td><code>findRawTransactionsInPeriod(...)</code></td>
+                            <td>JPQL Query</td>
+                            <td>Lọc các đơn hoàn thành hoặc đã thanh toán trong khoảng thời gian. <code>ORDER BY hd.ngayTao ASC</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 31: FILE MAP -->
+        <section class="doc-section" id="file-map">
+            <h2 class="section-title">31. BẢN ĐỒ FILE QUAN TRỌNG TRONG DỰ ÁN (FILE MAP)</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Đường Dẫn File</th>
+                            <th>Lớp Phân Loại</th>
+                            <th>Chức Năng & Trách Nhiệm Nghiệp Vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>src/main/java/.../controller/order/CheckoutController.java</code></td><td><span class="badge badge-controller">Controller</span></td><td>Điều phối toàn bộ quy trình checkout, start checkout, buy now, submit order, apply voucher.</td></tr>
+                        <tr><td><code>src/main/java/.../service/order/GioHangService.java</code></td><td><span class="badge badge-service">Service</span></td><td>Quản lý giỏ hàng DB, tạo đơn COD, tạo đơn SePay pending, hoàn kho giỏ hàng.</td></tr>
+                        <tr><td><code>src/main/java/.../service/order/OrderViewService.java</code></td><td><span class="badge badge-service">Service</span></td><td>Quản lý vòng đời đơn hàng, hủy đơn, quy trình đổi trả hàng, kiểm kho, hoàn tiền.</td></tr>
+                        <tr><td><code>src/main/java/.../service/payment/SepayOrderPaymentService.java</code></td><td><span class="badge badge-service">Service</span></td><td>Xử lý xác nhận thanh toán SePay IPN trong Transaction kín, phân bổ tồn kho FIFO.</td></tr>
+                        <tr><td><code>src/main/java/.../service/inventory/InventoryLotService.java</code></td><td><span class="badge badge-service">Service</span></td><td>Thuật toán phân bổ tồn kho FIFO 2 giai đoạn, nhập kho, quản lý kho hàng lỗi.</td></tr>
+                        <tr><td><code>src/main/java/.../service/product/PricingServiceImpl.java</code></td><td><span class="badge badge-service">Service</span></td><td>Tính toán snapshot giá bán sau khuyến mãi đợt giảm giá.</td></tr>
+                        <tr><td><code>src/main/java/.../service/api/GhnService.java</code></td><td><span class="badge badge-service">Service</span></td><td>Tích hợp API Giao Hàng Nhanh (tính phí, tạo đơn, thu hồi, tracking).</td></tr>
+                        <tr><td><code>src/main/java/.../repository/HoaDonRepository.java</code></td><td><span class="badge badge-repository">Repository</span></td><td>Truy vấn hóa đơn, tra cứu mã đơn, tìm kiếm giao dịch và đơn vận chuyển GHN.</td></tr>
+                        <tr><td><code>src/main/java/.../repository/SanPhamRepository.java</code></td><td><span class="badge badge-repository">Repository</span></td><td>Truy vấn sản phẩm, tìm kiếm, lọc trang chủ, autocomplete search.</td></tr>
+                        <tr><td><code>src/main/java/.../repository/PhieuGiamGiaRepository.java</code></td><td><span class="badge badge-repository">Repository</span></td><td>Khóa Pessimistic Write quản lý trừ số lượng voucher an toàn.</td></tr>
+                        <tr><td><code>src/main/resources/templates/checkout.html</code></td><td><span class="badge badge-view">View</span></td><td>Giao diện trang đặt hàng và thanh toán.</td></tr>
+                        <tr><td><code>src/main/resources/templates/cart.html</code></td><td><span class="badge badge-view">View</span></td><td>Giao diện trang giỏ hàng.</td></tr>
+                        <tr><td><code>src/main/resources/templates/shop.html</code></td><td><span class="badge badge-view">View</span></td><td>Giao diện danh mục cửa hàng và bộ lọc động.</td></tr>
+                        <tr><td><code>src/main/resources/templates/product-detail.html</code></td><td><span class="badge badge-view">View</span></td><td>Giao diện chi tiết sản phẩm và gửi đánh giá.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 32: METHOD INDEX -->
+        <section class="doc-section" id="method-index">
+            <h2 class="section-title">32. CHỈ MỤC METHOD NGHIỆP VỤ (METHOD INDEX)</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tên Method</th>
+                            <th>Class / Interface</th>
+                            <th>Chức Năng Nghiệp Vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>submitCheckout(...)</code></td><td><code>CheckoutController.java</code></td><td>Tiếp nhận và điều phối tạo đơn hàng trực tuyến.</td></tr>
+                        <tr><td><code>createOrderFromCheckout(...)</code></td><td><code>GioHangService.java</code></td><td>Khóa tồn kho, kiểm tra giá, áp dụng voucher và khởi tạo bản ghi HoaDon.</td></tr>
+                        <tr><td><code>xuLyThanhToanSePay(...)</code></td><td><code>SepayOrderPaymentService.java</code></td><td>Xử lý Webhook thanh toán SePay, phân bổ lô FIFO và xác nhận đơn.</td></tr>
+                        <tr><td><code>allocateFifo(...)</code></td><td><code>InventoryLotService.java</code></td><td>Phân bổ trừ kho theo nguyên tắc nhập trước xuất trước (FIFO).</td></tr>
+                        <tr><td><code>calculateVoucherDiscount(...)</code></td><td><code>VoucherCalculator.java</code></td><td>Tính toán số tiền được giảm theo voucher code.</td></tr>
+                        <tr><td><code>calculateCurrentSellingPrice(...)</code></td><td><code>PricingServiceImpl.java</code></td><td>Tính giá bán thực tế của biến thể sau đợt giảm giá.</td></tr>
+                        <tr><td><code>filterProducts(...)</code></td><td><code>SanPhamService.java</code></td><td>Lọc sản phẩm động theo Specification Criteria.</td></tr>
+                        <tr><td><code>duyetYeuCauTraHangVaTaoDonGhn(...)</code></td><td><code>OrderViewService.java</code></td><td>Admin duyệt đổi trả và tự động tạo đơn thu hồi GHN.</td></tr>
+                        <tr><td><code>xacNhanHoanTienChoKhach(...)</code></td><td><code>OrderViewService.java</code></td><td>Admin xác nhận hoàn tất chuyển khoản hoàn tiền cho khách.</td></tr>
+                        <tr><td><code>thanhToanHoaDonPos(...)</code></td><td><code>AdminPosService.java</code></td><td>Thanh toán và xuất hóa đơn bán lẻ tại quầy POS.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 33: QUICK QA -->
+        <section class="doc-section" id="quick-qa">
+            <h2 class="section-title">33. HỎI NHANH – ĐÁP NHANH KỸ THUẬT (DEVELOPER FAQ)</h2>
+
+            <div class="qa-card">
+                <div class="qa-header">1. Chức năng thanh toán nằm ở đâu? File nào xử lý logic thanh toán?</div>
+                <div class="qa-body">
+                    - <strong>Tiếp nhận request:</strong> <code>CheckoutController.java</code> (Endpoint: <code>POST /checkout/submit</code>)<br>
+                    - <strong>Tạo đơn SePay pending:</strong> <code>GioHangService.java</code> (Method: <code>createSepayPendingOrder</code>)<br>
+                    - <strong>Webhook Callback:</strong> <code>SepayIpnController.java</code> (Endpoint: <code>POST /api/payment/sepay/ipn</code>)<br>
+                    - <strong>Nghiệp vụ xác nhận tiền & trừ kho:</strong> <code>SepayOrderPaymentService.java</code> (Method: <code>xuLyThanhToanSePay</code>)<br>
+                    - <strong>Giao diện:</strong> <code>checkout.html</code> (Render QR SePay động).
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">2. Sản phẩm trên trang chủ được lấy từ file nào? Sắp xếp theo thứ tự gì?</div>
+                <div class="qa-body">
+                    - <strong>Controller:</strong> <code>HomeController.java</code> (Method: <code>hienThiTrangChu</code>)<br>
+                    - <strong>Repository:</strong> <code>SanPhamRepository.java</code> (Methods: <code>findNewProducts</code>, <code>findBestSellers</code>, <code>findFeaturedProducts</code>)<br>
+                    - <strong>Quy tắc sắp xếp:</strong> Ưu tiên sản phẩm CÒN HÀNG (<code>hasStock DESC</code>) ➔ Xếp theo ID mới nhất (<code>sp.id DESC</code>) hoặc Số lượng bán chạy (<code>SUM(hdct.soLuong) DESC</code>).
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">3. Muốn đổi thứ tự sắp xếp sản phẩm trên trang Cửa Hàng (/shop) thì sửa file nào?</div>
+                <div class="qa-body">
+                    - Mở file: <code>src/main/java/com/smashvn/shop/specification/SanPhamSpecification.java</code><br>
+                    - Xem khối code từ dòng 108 đến 154 (Khối <code>query.orderBy(...)</code>). Có thể điều chỉnh tiêu chí sort mặc định hoặc các nhánh <code>price_asc</code>, <code>price_desc</code>.
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">4. Logic trừ tồn kho nằm ở đâu? Khi nào trừ?</div>
+                <div class="qa-body">
+                    - <strong>File xử lý:</strong> <code>src/main/java/com/smashvn/shop/service/inventory/InventoryLotService.java</code> (Method: <code>allocateFifo()</code>).<br>
+                    - <strong>Đơn COD:</strong> Trừ tồn kho ngay khi khách bấm đặt hàng thành công tại <code>GioHangService.createOrderFromCheckout()</code>.<br>
+                    - <strong>Đơn SePay:</strong> Chỉ trừ tồn kho khi SePay Webhook IPN báo nhận tiền thành công tại <code>SepayOrderPaymentService.xuLyThanhToanSePay()</code>.
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">5. Voucher giảm giá được kiểm tra và trừ ở đâu?</div>
+                <div class="qa-body">
+                    - <strong>Kiểm tra hợp lệ & tính tiền:</strong> <code>VoucherCalculator.java</code> và <code>CheckoutController.applyVoucher()</code>.<br>
+                    - <strong>Trừ số lượng tồn voucher:</strong> <code>PhieuGiamGiaRepository.findByMaPhieuWithLock()</code> (Sử dụng <code>@Lock(PESSIMISTIC_WRITE)</code> để đảm bảo không bị trừ âm).
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">6. Khi khách hủy đơn hàng thì file nào xử lý? Có hoàn kho không?</div>
+                <div class="qa-body">
+                    - <strong>Khách hủy:</strong> <code>UserDashboardController.huyDonHang()</code> gọi <code>OrderViewService.huyDonHang()</code>.<br>
+                    - <strong>Admin hủy:</strong> <code>AdminController.capNhatTrangThaiDonHang()</code> gọi <code>OrderViewService.updateOrderStatusByAdmin()</code>.<br>
+                    - <strong>Hoàn kho:</strong> Nếu đơn hàng đã từng trừ tồn kho (Đơn COD hoặc Đơn SePay đã thanh toán), hệ thống tự động hoàn lại số lượng sản phẩm vào các lô nhập cũ tương ứng. Nếu là voucher thì khôi phục lại lượt dùng voucher.
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">7. Quy trình Đổi / Trả hàng và Hoàn tiền chạy qua những file nào?</div>
+                <div class="qa-body">
+                    - <strong>Khách gửi yêu cầu:</strong> <code>UserDashboardController.guiYeuCauTraHang()</code> → <code>OrderViewService.yeuCauTraHang()</code>.<br>
+                    - <strong>Admin duyệt & tạo đơn thu hồi GHN:</strong> <code>OrderViewService.duyetYeuCauTraHangVaTaoDonGhn()</code> → <code>GhnService.createShippingOrder()</code>.<br>
+                    - <strong>Kiểm kho:</strong> <code>OrderViewService.xacNhanKiemKhoVaNhapKho()</code> (Hàng tốt ➔ Hoàn kho bán; Hàng lỗi ➔ Chuyển Kho Hàng Lỗi).<br>
+                    - <strong>Hoàn tiền:</strong> <code>OrderViewService.xacNhanHoanTienChoKhach()</code> (Cập nhật <code>RefundStatus.COMPLETED</code>, tuyệt đối không hoàn kho lần 2).
+                </div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-header">8. API bên thứ ba được gọi ở những class nào?</div>
+                <div class="qa-body">
+                    - <strong>SePay Webhook & IPN:</strong> <code>SepayIpnController.java</code>, <code>SepayGatewayService.java</code>.<br>
+                    - <strong>Giao Hàng Nhanh (GHN):</strong> <code>GhnService.java</code>, <code>GhnRestController.java</code>, <code>GhnPollingScheduler.java</code>.<br>
+                    - <strong>Google OAuth2:</strong> <code>SecurityConfig.java</code>, <code>UserDangNhapController.java</code>.<br>
+                    - <strong>Gemini 2.0 Flash AI:</strong> <code>GeminiHttpClientConfig.java</code>, <code>ChatbotServiceImpl.java</code>.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Back to top button -->
+    <button id="backToTop" onclick="scrollToTop()">▲ Lên Đầu Trang</button>
+
+    <script>
+        // Toggle Mobile Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Live Search Filter
+        function filterContent() {
+            const input = document.getElementById('docSearchInput').value.toLowerCase();
+            const sections = document.querySelectorAll('.doc-section');
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+            sections.forEach(sec => {
+                const text = sec.innerText.toLowerCase();
+                if (text.includes(input)) {
+                    sec.style.display = 'block';
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+
+            navLinks.forEach(link => {
+                const text = link.innerText.toLowerCase();
+                if (text.includes(input)) {
+                    link.style.display = 'block';
+                } else {
+                    link.style.display = 'none';
+                }
+            });
+        }
+
+        // Scroll Spy & Back to top visibility
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.scrollY > 400) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+
+            // Highlight active sidebar item
+            const sections = document.querySelectorAll('.doc-section, .doc-header');
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 120) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            document.querySelectorAll('.sidebar-nav a').forEach(a => {
+                a.classList.remove('active');
+                if (a.getAttribute('href') === '#' + current) {
+                    a.classList.add('active');
+                }
+            });
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Close sidebar on link click (mobile)
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

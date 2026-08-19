@@ -68,6 +68,12 @@
                             <span>Danh mục & hãng</span>
                         </div>
                     </a>
+                    <a th:href="@{/admin/kho-san-pham-loi}" class="admin-nav-link" th:classappend="${activeTab == 'khoSpLoi' ? 'active' : ''}">
+                        <div class="admin-nav-link-content">
+                            <i class="fas fa-triangle-exclamation nav-icon"></i>
+                            <span>Kho sản phẩm lỗi</span>
+                        </div>
+                    </a>
                 </div>
 
                 <!-- Group 4: NGƯỜI DÙNG -->
@@ -165,6 +171,12 @@
                         <div class="admin-nav-link-content">
                             <i class="fas fa-shopping-cart nav-icon"></i>
                             <span>Đơn hàng</span>
+                        </div>
+                    </a>
+                    <a th:href="@{/admin/kho-san-pham-loi}" class="admin-nav-link" th:classappend="${activeTab == 'khoSpLoi' ? 'active' : ''}">
+                        <div class="admin-nav-link-content">
+                            <i class="fas fa-triangle-exclamation nav-icon"></i>
+                            <span>Kho sản phẩm lỗi</span>
                         </div>
                     </a>
                 </div>

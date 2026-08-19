@@ -49,4 +49,18 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
     @Query("SELECT DISTINCT hdct.sanPhamChiTiet.id FROM HoaDonChiTiet hdct "
             + "WHERE hdct.sanPhamChiTiet.sanPham.id = :sanPhamId")
     List<Integer> findOrderedVariantIdsBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
+
+    /**
+     * Phase 2 – Kho San Pham Loi: Tim cac HoaDonChiTiet da tung ghi nhan dua bien the nay vao kho loi.
+     * Dieu kien: hdct.sanPhamChiTiet.id = :spctId va hoaDon.trangThaiXuLyHangHoan = DA_CHUYEN_KHO_LOI.
+     */
+    @Query("""
+        SELECT hdct
+        FROM HoaDonChiTiet hdct
+        JOIN FETCH hdct.hoaDon hd
+        WHERE hdct.sanPhamChiTiet.id = :spctId
+          AND hd.trangThaiXuLyHangHoan = com.smashvn.shop.entity.ReturnInventoryStatus.DA_CHUYEN_KHO_LOI
+        ORDER BY hd.id DESC
+    """)
+    List<HoaDonChiTiet> findKhoLoiSources(@Param("spctId") Integer spctId);
 }

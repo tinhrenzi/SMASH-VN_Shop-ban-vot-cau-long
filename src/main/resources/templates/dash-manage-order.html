@@ -547,14 +547,6 @@
                                                      <i class="fas fa-times-circle"></i> Hủy đơn hàng
                                                  </button>
 
-                                                 <!-- Nút Đã nhận được hàng (Chỉ khi CHÍNH THỨC ĐÃ GIAO THÀNH CÔNG và CHƯA có yêu cầu trả hàng) -->
-                                                 <button th:if="${order['trangThaiDonHang'] == 'da_giao' and order['trangThaiHoanHang'] == null}"
-                                                         id="btn-xac-nhan-nhan-hang"
-                                                         th:onclick="'xacNhanNhanHang(' + ${order.id} + ')'"
-                                                         style="padding: 10px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; color: white; background-color: #198754; border: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 0;">
-                                                     <i class="fas fa-check-circle"></i> Đã nhận được hàng
-                                                 </button>
-
                                                  <!-- Nút Yêu cầu Trả hàng / Hoàn tiền (Khi đã giao và chưa yêu cầu hoặc bị từ chối) -->
                                                  <button th:if="${(order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh') and (order['trangThaiHoanHang'] == null or order['trangThaiHoanHang'] == 'REJECTED')}"
                                                          id="btn-yeu-cau-tra-hang"

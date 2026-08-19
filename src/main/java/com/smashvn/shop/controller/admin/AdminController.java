@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.smashvn.shop.dto.inventory.KhoSanPhamLoiDetailView;
+import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.PaymentTransaction;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.repository.HoaDonRepository;
@@ -20,6 +22,7 @@ import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.admin.AdminKhuyenMaiService;
+import com.smashvn.shop.service.inventory.InventoryLotService;
 import com.smashvn.shop.service.order.OrderViewService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +48,10 @@ public class AdminController {
     private final com.smashvn.shop.repository.SoDiaChiRepository soDiaChiRepository;
     private final com.smashvn.shop.service.admin.AdminKhachHangService adminKhachHangService;
     private final com.smashvn.shop.service.common.FileStorageService fileStorageService;
+    /**
+     * Phase 1 – Kho San Pham Loi
+     */
+    private final InventoryLotService inventoryLotService;
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
@@ -404,6 +411,85 @@ public class AdminController {
         return "redirect:/admin/don-hang";
     }
 
+    @PostMapping("/don-hang/cancel-unpaid")
+    public String cancelOrderUnpaid(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        try {
+            orderViewService.cancelOrderUnpaid(idHoaDon, lyDoHuy, actingTaiKhoanId, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMsg", "Hủy đơn hàng #" + idHoaDon + " thành công!");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hủy đơn: " + e.getMessage());
+        }
+
+        return "redirect:/admin/don-hang";
+    }
+
+    @PostMapping("/don-hang/cancel-paid-refund")
+    public String cancelOrderPaidWithRefund(
+            @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
+            @RequestParam(value = "phuongThucHoanTien", required = false) String phuongThucHoanTien,
+            @RequestParam(value = "soTienHoan", required = false) java.math.BigDecimal soTienHoan,
+            @RequestParam(value = "maGiaoDichHoanTien", required = false) String maGiaoDichHoanTien,
+            @RequestParam(value = "ghiChuHoanTien", required = false) String ghiChuHoanTien,
+            @RequestParam(value = "fileChungTu", required = false) org.springframework.web.multipart.MultipartFile fileChungTu,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        java.util.List<String> savedNames = null;
+        String anhChungTuUrl = null;
+        try {
+            if (fileChungTu != null && !fileChungTu.isEmpty()) {
+                savedNames = fileStorageService.saveImages(java.util.List.of(fileChungTu), "refunds");
+                if (savedNames != null && !savedNames.isEmpty()) {
+                    anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
+                }
+            }
+
+            orderViewService.cancelOrderPaidWithRefund(
+                    idHoaDon,
+                    lyDoHuy,
+                    phuongThucHoanTien,
+                    soTienHoan,
+                    maGiaoDichHoanTien,
+                    ghiChuHoanTien,
+                    anhChungTuUrl,
+                    actingTaiKhoanId,
+                    request.getRemoteAddr()
+            );
+            redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền và hủy đơn hàng #" + idHoaDon + " thành công!");
+        } catch (Exception e) {
+            if (savedNames != null && !savedNames.isEmpty()) {
+                try {
+                    fileStorageService.deleteFiles(savedNames, "refunds");
+                } catch (Exception cleanupEx) {
+                    log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
+                }
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hoàn tiền & hủy đơn: " + e.getMessage());
+        }
+
+        return "redirect:/admin/don-hang";
+    }
+
     @GetMapping("/don-hang/approve-refund")
     public String approveRefundEmail(
             @RequestParam("id") Integer id,
@@ -516,11 +602,16 @@ public class AdminController {
             HttpSession session) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
-        if (actingTaiKhoanId == null) {
+        String role = (String) session.getAttribute("vaiTro");
+        String activeRole = (String) session.getAttribute("activeRole");
+        var secAuth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isSpringAuth = secAuth != null && secAuth.isAuthenticated() && !(secAuth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
+
+        if (actingTaiKhoanId == null && !isSpringAuth) {
             return org.springframework.http.ResponseEntity.status(401).build();
         }
-        String role = (String) session.getAttribute("vaiTro");
-        if (!"QL".equals(role) && !"NV".equals(role)) {
+        if (role != null && !"QL".equalsIgnoreCase(role) && !"NV".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role) && !"STAFF".equalsIgnoreCase(role)
+                && !"QL".equalsIgnoreCase(activeRole) && !"NV".equalsIgnoreCase(activeRole) && !isSpringAuth) {
             return org.springframework.http.ResponseEntity.status(403).build();
         }
 
@@ -588,6 +679,12 @@ public class AdminController {
             map.put("moTaVoucherSnapshot", moTaVoucher);
             map.put("trangThai", orderViewService.getStatusLabel(hd.getTrangThaiDonHang()));
             map.put("trangThaiRaw", hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang() : "");
+            String nextStatus = orderViewService.getNextStatus(hd);
+            String nextStatusLabel = nextStatus != null ? orderViewService.getStatusLabel(nextStatus) : "";
+            map.put("nextStatus", nextStatus != null ? nextStatus : "");
+            map.put("nextStatusLabel", nextStatusLabel);
+            boolean isPos = "Bán tại quầy".equalsIgnoreCase(hd.getDiaChiNhan()) || (hd.getDonViVanChuyen() != null && "Tại quầy".equalsIgnoreCase(hd.getDonViVanChuyen().getTenDonVi()));
+            map.put("isPosOrder", isPos);
             String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
             com.smashvn.shop.entity.ReturnStatus resolvedReturnStatus = orderViewService.resolveReturnStatus(hd.getId(), hd);
 
@@ -643,6 +740,22 @@ public class AdminController {
             map.put("refundStatusLabel", hd.getRefundStatus() != null ? hd.getRefundStatus().getLabel() : "");
             map.put("refundTime", hd.getRefundTime() != null ? hd.getRefundTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "");
             map.put("refundConfirmedBy", hd.getRefundConfirmedBy() != null ? hd.getRefundConfirmedBy().getHoTenNv() : "");
+
+            // Cancellation & Refund meta
+            map.put("isOrderPaid", orderViewService.isOrderPaid(hd));
+            map.put("isStockDeducted", orderViewService.isStockDeductedState(hd, hd.getTrangThaiDonHang()));
+            map.put("lyDoHuy", hd.getLyDoHuy() != null ? hd.getLyDoHuy() : "");
+            map.put("phuongThucHoanTien", hd.getPhuongThucHoanTien() != null ? hd.getPhuongThucHoanTien() : "");
+            map.put("soTienHoan", hd.getSoTienHoan() != null ? hd.getSoTienHoan() : java.math.BigDecimal.ZERO);
+            map.put("maGiaoDichHoanTien", hd.getMaGiaoDichHoanTien() != null ? hd.getMaGiaoDichHoanTien() : "");
+            map.put("ghiChuHoanTien", hd.getGhiChuHoanTien() != null ? hd.getGhiChuHoanTien() : "");
+            map.put("anhChungTuHoanTien", hd.getAnhChungTuHoanTien() != null ? hd.getAnhChungTuHoanTien() : "");
+            boolean canCancel = !OrderStatus.DA_HUY.getValue().equalsIgnoreCase(hd.getTrangThaiDonHang())
+                    && !OrderStatus.DA_GIAO.getValue().equalsIgnoreCase(hd.getTrangThaiDonHang())
+                    && !OrderStatus.DA_BAN_GIAO_GHN.getValue().equalsIgnoreCase(hd.getTrangThaiDonHang())
+                    && !"dang_giao".equalsIgnoreCase(hd.getTrangThaiDonHang())
+                    && !"hoan_thanh".equalsIgnoreCase(hd.getTrangThaiDonHang());
+            map.put("canCancel", canCancel);
 
             // Linked transactions from PaymentTransaction
             java.util.List<com.smashvn.shop.entity.PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(id);
@@ -886,14 +999,14 @@ public class AdminController {
             String anhChungTuUrl = "/uploads/refunds/" + savedNames.get(0);
 
             orderViewService.xacNhanHoanTienChoKhach(
-                idHoaDon,
-                phuongThucHoanTien,
-                soTienHoan,
-                maGiaoDichHoanTien,
-                ghiChuHoanTien,
-                anhChungTuUrl,
-                actingTaiKhoanId,
-                request.getRemoteAddr()
+                    idHoaDon,
+                    phuongThucHoanTien,
+                    soTienHoan,
+                    maGiaoDichHoanTien,
+                    ghiChuHoanTien,
+                    anhChungTuUrl,
+                    actingTaiKhoanId,
+                    request.getRemoteAddr()
             );
             redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!");
         } catch (Exception e) {
@@ -910,7 +1023,8 @@ public class AdminController {
     }
 
     /**
-     * Endpoint Admin xác nhận phân bổ kho và tạo vận đơn giao sản phẩm đổi mới cho khách hàng (Phase 6)
+     * Endpoint Admin xác nhận phân bổ kho và tạo vận đơn giao sản phẩm đổi mới
+     * cho khách hàng (Phase 6)
      */
     @PostMapping("/don-hang/confirm-exchange-shipment")
     public String confirmExchangeShipment(
@@ -931,5 +1045,121 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMsg", "Lỗi xử lý giao hàng đổi: " + e.getMessage());
         }
         return "redirect:/admin/don-hang";
+    }
+
+    // ── PHASE 1: KHO SAN PHAM LOI ────────────────────────────────────────────
+    /**
+     * GET /admin/kho-san-pham-loi Hien thi danh sach bien the san pham co
+     * soLuongSpLoi > 0. Chi doc – khong chinh sua du lieu. Phan quyen: QL va NV
+     * (dam bao boi SecurityConfig).
+     */
+    @GetMapping("/kho-san-pham-loi")
+    public String hienThiKhoSanPhamLoi(HttpSession session, Model model) {
+        String role = (String) session.getAttribute("vaiTro");
+        if (role == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        java.util.List<com.smashvn.shop.dto.inventory.KhoSanPhamLoiView> danhSach
+                = inventoryLotService.layDanhSachKhoSanPhamLoi();
+
+        int tongSoLuongSanPhamLoi = danhSach.stream()
+                .mapToInt(v -> v.getSoLuongSpLoi() != null ? v.getSoLuongSpLoi() : 0)
+                .sum();
+
+        model.addAttribute("danhSachKhoLoi", danhSach);
+        model.addAttribute("tongSoLuongSanPhamLoi", tongSoLuongSanPhamLoi);
+        model.addAttribute("soBienTheCoLoi", danhSach.size());
+
+        return "admin/kho-san-pham-loi";
+    }
+
+    /**
+     * Phase 2 – Chi Tiet Kho San Pham Loi GET
+     * /admin/kho-san-pham-loi/{idSanPhamChiTiet} Hien thi thong tin bien the va
+     * lich su cac don hang da tung chuyen bien the nay vao kho loi.
+     */
+    @GetMapping("/kho-san-pham-loi/{idSanPhamChiTiet}")
+    public String hienThiChiTietKhoSanPhamLoi(
+            @PathVariable("idSanPhamChiTiet") Integer idSanPhamChiTiet,
+            HttpSession session,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        String role = (String) session.getAttribute("vaiTro");
+        if (role == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        KhoSanPhamLoiDetailView detail = inventoryLotService.layChiTietKhoSanPhamLoi(idSanPhamChiTiet);
+        if (detail == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy sản phẩm hoặc biến thể.");
+            return "redirect:/admin/kho-san-pham-loi";
+        }
+
+        model.addAttribute("detail", detail);
+        return "admin/kho-san-pham-loi-detail";
+    }
+
+    /**
+     * Phase 3 – Xử lý sản phẩm đang nằm trong kho lỗi: POST
+     * /admin/kho-san-pham-loi/{idSanPhamChiTiet}/xu-ly 1. Sửa xong -> Nhập lại
+     * kho bán (SUA_XONG_NHAP_LAI_KHO) 2. Tiêu hủy (TIEU_HUY - QL ONLY) 3. Trả
+     * nhà cung cấp (TRA_NHA_CUNG_CAP)
+     */
+    @PostMapping("/kho-san-pham-loi/{idSanPhamChiTiet}/xu-ly")
+    public String xuLySanPhamLoi(
+            @PathVariable("idSanPhamChiTiet") Integer idSanPhamChiTiet,
+            @RequestParam("hanhDong") String hanhDong,
+            @RequestParam(value = "soLuong", required = false) Integer soLuong,
+            @RequestParam(value = "ghiChu", required = false) String ghiChu,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        String role = (String) session.getAttribute("vaiTro");
+        if (role == null) {
+            return "redirect:/admin/dang-nhap";
+        }
+
+        Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+        if (actingTaiKhoanId == null) {
+            TaiKhoan tk = (TaiKhoan) session.getAttribute("taiKhoan");
+            if (tk != null) {
+                actingTaiKhoanId = tk.getId();
+            }
+        }
+
+        String clientIp = request.getRemoteAddr();
+
+        try {
+            inventoryLotService.xuLySanPhamLoi(
+                    idSanPhamChiTiet,
+                    hanhDong,
+                    soLuong,
+                    ghiChu,
+                    actingTaiKhoanId,
+                    role,
+                    clientIp
+            );
+
+            String successMsg = "Đã xử lý sản phẩm lỗi thành công.";
+            if ("SUA_XONG_NHAP_LAI_KHO".equalsIgnoreCase(hanhDong)) {
+                successMsg = "Đã chuyển " + soLuong + " sản phẩm đã sửa chữa trở lại kho bán.";
+            } else if ("TIEU_HUY".equalsIgnoreCase(hanhDong)) {
+                successMsg = "Đã tiêu hủy " + soLuong + " sản phẩm lỗi.";
+            } else if ("TRA_NHA_CUNG_CAP".equalsIgnoreCase(hanhDong)) {
+                successMsg = "Đã ghi nhận trả " + soLuong + " sản phẩm lỗi cho nhà cung cấp.";
+            }
+
+            redirectAttributes.addFlashAttribute("successMsg", successMsg);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        } catch (Exception e) {
+            log.error("Lỗi khi xử lý sản phẩm lỗi SPCT #{}: ", idSanPhamChiTiet, e);
+            redirectAttributes.addFlashAttribute("errorMsg", "Có lỗi xảy ra trong quá trình xử lý: " + e.getMessage());
+        }
+
+        return "redirect:/admin/kho-san-pham-loi/" + idSanPhamChiTiet;
     }
 }

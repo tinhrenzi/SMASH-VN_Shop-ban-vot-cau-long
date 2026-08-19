@@ -30,6 +30,7 @@ public class InventoryLotService {
     private final com.smashvn.shop.repository.PhieuNhapRepository phieuNhapRepository;
     private final com.smashvn.shop.repository.PhieuNhapChiTietRepository phieuNhapChiTietRepository;
     private final com.smashvn.shop.repository.NhanVienRepository nhanVienRepository;
+    private final com.smashvn.shop.repository.HoaDonChiTietRepository hoaDonChiTietRepository;
     private final AuditService auditService;
 
     @Value("${inventory.lot.enabled-from:2026-08-07T08:30:00}")
@@ -734,6 +735,482 @@ public class InventoryLotService {
             }
         }
         return "/images/default-product.png";
+    }
+
+    // ── PHASE 1: KHO SAN PHAM LOI ────────────────────────────────────────────
+
+    /**
+     * Lay danh sach bien the san pham co hang loi (soLuongSpLoi > 0).
+     * Chi doc du lieu – khong chuong trinh DB, khong query HoaDon, khong query EditLog.
+     * Ket qua duoc sap xep giam dan theo soLuongSpLoi (nhieu loi nhat hien truoc).
+     */
+    public List<KhoSanPhamLoiView> layDanhSachKhoSanPhamLoi() {
+        List<SanPhamChiTiet> danhSach = sanPhamChiTietRepository
+                .findBySoLuongSpLoiGreaterThanOrderBySoLuongSpLoiDesc(0);
+
+        List<KhoSanPhamLoiView> result = new ArrayList<>();
+        for (SanPhamChiTiet spct : danhSach) {
+            if (spct == null) continue;
+
+            Integer idSanPham = (spct.getSanPham() != null) ? spct.getSanPham().getId() : null;
+            String tenSanPham = (spct.getSanPham() != null && spct.getSanPham().getTenSanPham() != null)
+                    ? spct.getSanPham().getTenSanPham()
+                    : "—";
+
+            String phanLoai;
+            try {
+                phanLoai = spct.getPhanLoaiHienThi();
+            } catch (Exception e) {
+                phanLoai = "—";
+            }
+
+            String hinhAnh;
+            try {
+                hinhAnh = spct.getHinhAnhUrl();
+            } catch (Exception e) {
+                hinhAnh = "/images/placeholder.png";
+            }
+
+            result.add(new KhoSanPhamLoiView(
+                    spct.getId(),
+                    idSanPham,
+                    tenSanPham,
+                    phanLoai,
+                    hinhAnh,
+                    spct.getSoLuongTon(),
+                    spct.getSoLuongSpLoi()
+            ));
+        }
+        return result;
+    }
+
+    // ── PHASE 2: CHI TIET KHO SAN PHAM LOI ───────────────────────────────────
+
+    /**
+     * Lay chi tiet kho san pham loi cua 1 bien the, bao gom cac don hang nguon da chuyen vao kho loi.
+     * Chi doc du lieu – khong ghi DB, khong sua soLuongSpLoi, khong sua don hang.
+     */
+    @Transactional(readOnly = true)
+    public KhoSanPhamLoiDetailView layChiTietKhoSanPhamLoi(Integer idSanPhamChiTiet) {
+        if (idSanPhamChiTiet == null) {
+            return null;
+        }
+
+        Optional<SanPhamChiTiet> spctOpt = sanPhamChiTietRepository.findById(idSanPhamChiTiet);
+        if (spctOpt.isEmpty()) {
+            return null;
+        }
+        SanPhamChiTiet spct = spctOpt.get();
+
+        Integer idSanPham = (spct.getSanPham() != null) ? spct.getSanPham().getId() : null;
+        String tenSanPham = (spct.getSanPham() != null && spct.getSanPham().getTenSanPham() != null)
+                ? spct.getSanPham().getTenSanPham()
+                : "—";
+
+        String phanLoai;
+        try {
+            phanLoai = spct.getPhanLoaiHienThi();
+        } catch (Exception e) {
+            phanLoai = "—";
+        }
+
+        String hinhAnh;
+        try {
+            hinhAnh = spct.getHinhAnhUrl();
+        } catch (Exception e) {
+            hinhAnh = "/images/placeholder.png";
+        }
+
+        // 1. Query danh sach HoaDonChiTiet lien quan (da chuyen kho loi)
+        List<HoaDonChiTiet> hdcts = hoaDonChiTietRepository.findKhoLoiSources(idSanPhamChiTiet);
+
+        // 2. Group theo HoaDon de tinh tong soLuongDaChuyen cho tung don (tranh duplicate record khi cung 1 SPCT co nhieu dong trong 1 don)
+        Map<Integer, Integer> qtyPerHoaDon = new LinkedHashMap<>();
+        Map<Integer, HoaDon> hoaDonMap = new LinkedHashMap<>();
+
+        for (HoaDonChiTiet hdct : hdcts) {
+            if (hdct == null || hdct.getHoaDon() == null || hdct.getHoaDon().getId() == null) continue;
+            Integer hdId = hdct.getHoaDon().getId();
+            int qty = (hdct.getSoLuong() != null) ? hdct.getSoLuong() : 0;
+            qtyPerHoaDon.put(hdId, qtyPerHoaDon.getOrDefault(hdId, 0) + qty);
+            hoaDonMap.putIfAbsent(hdId, hdct.getHoaDon());
+        }
+
+        List<Integer> hoaDonIds = new ArrayList<>(hoaDonMap.keySet());
+
+        // 3. Batch query EditLogs cho cac hoa don nay (chong N+1 query)
+        Map<Integer, EditLog> latestLogMap = new HashMap<>();
+        if (!hoaDonIds.isEmpty()) {
+            List<EditLog> logs = editLogRepository.findKiemHangLoiLogsBatch(hoaDonIds);
+            for (EditLog logItem : logs) {
+                if (logItem != null && logItem.getIdBanGhi() != null && !latestLogMap.containsKey(logItem.getIdBanGhi())) {
+                    latestLogMap.put(logItem.getIdBanGhi(), logItem);
+                }
+            }
+        }
+
+        // 4. Batch lookup ten NhanVien tu TaiKhoan (chong N+1 query)
+        Set<Integer> taiKhoanIds = new HashSet<>();
+        for (EditLog logItem : latestLogMap.values()) {
+            if (logItem.getTaiKhoan() != null && logItem.getTaiKhoan().getId() != null) {
+                taiKhoanIds.add(logItem.getTaiKhoan().getId());
+            }
+        }
+        Map<Integer, String> staffNameMap = new HashMap<>();
+        for (Integer tkId : taiKhoanIds) {
+            NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkId);
+            if (nv != null && nv.getHoTenNv() != null && !nv.getHoTenNv().isBlank()) {
+                staffNameMap.put(tkId, nv.getHoTenNv().trim());
+            }
+        }
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        // 5. Build SourceViews
+        List<KhoSanPhamLoiSourceView> sourceViews = new ArrayList<>();
+        for (Map.Entry<Integer, HoaDon> entry : hoaDonMap.entrySet()) {
+            Integer hdId = entry.getKey();
+            HoaDon hd = entry.getValue();
+            int soLuongDaChuyen = qtyPerHoaDon.getOrDefault(hdId, 0);
+
+            // Parse evidence JSON
+            List<String> bangChungList = new ArrayList<>();
+            String rawEvidence = hd.getBangChungHoanTra();
+            if (rawEvidence != null && !rawEvidence.isBlank()) {
+                try {
+                    if (rawEvidence.trim().startsWith("[")) {
+                        List<String> paths = objectMapper.readValue(rawEvidence, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                        if (paths != null) {
+                            for (String p : paths) {
+                                if (isValidEvidencePath(p)) {
+                                    bangChungList.add(normalizeEvidencePath(p));
+                                }
+                            }
+                        }
+                    } else if (isValidEvidencePath(rawEvidence)) {
+                        bangChungList.add(normalizeEvidencePath(rawEvidence));
+                    }
+                } catch (Exception e) {
+                    log.warn("Loi parse bangChungHoanTra JSON don #{}: {}", hdId, e.getMessage());
+                    if (isValidEvidencePath(rawEvidence)) {
+                        bangChungList.add(normalizeEvidencePath(rawEvidence));
+                    }
+                }
+            }
+
+            // Reason
+            String lyDo = (hd.getLyDoHoanTra() != null && !hd.getLyDoHoanTra().isBlank())
+                    ? hd.getLyDoHoanTra().trim()
+                    : "Không có thông tin lý do hoàn trả.";
+
+            // Request Type
+            String loaiYeuCau;
+            if ("TRA".equalsIgnoreCase(hd.getLoaiYeuCauDoiTra())) {
+                loaiYeuCau = "Trả hàng";
+            } else if ("DOI".equalsIgnoreCase(hd.getLoaiYeuCauDoiTra())) {
+                loaiYeuCau = "Đổi hàng";
+            } else if (hd.getLoaiYeuCauDoiTra() != null && !hd.getLoaiYeuCauDoiTra().isBlank()) {
+                loaiYeuCau = hd.getLoaiYeuCauDoiTra();
+            } else {
+                loaiYeuCau = "Trả hàng";
+            }
+
+            // Return Status labels
+            String trangThaiHoanHangLabel = (hd.getTrangThaiHoanHang() != null)
+                    ? hd.getTrangThaiHoanHang().getLabel()
+                    : "—";
+            String trangThaiXuLyHangHoanLabel = (hd.getTrangThaiXuLyHangHoan() != null)
+                    ? hd.getTrangThaiXuLyHangHoan().getLabel()
+                    : "—";
+
+            // EditLog / Processor info
+            EditLog editLog = latestLogMap.get(hdId);
+            String nguoiXuLy = "Không xác định";
+            String vaiTroNguoiXuLy = "Không xác định";
+            LocalDateTime thoiGianXuLy = null;
+            String thoiGianXuLyFormatted = "Không xác định";
+
+            if (editLog != null) {
+                thoiGianXuLy = editLog.getThoiGian();
+                if (thoiGianXuLy != null) {
+                    thoiGianXuLyFormatted = thoiGianXuLy.format(dtf);
+                }
+                String roleRaw = editLog.getVaiTroThucHien();
+                if ("QL".equalsIgnoreCase(roleRaw) || "QUAN_LY".equalsIgnoreCase(roleRaw) || "ROLE_QL".equalsIgnoreCase(roleRaw)) {
+                    vaiTroNguoiXuLy = "Quản lý";
+                } else if ("NV".equalsIgnoreCase(roleRaw) || "NHAN_VIEN".equalsIgnoreCase(roleRaw) || "ROLE_NV".equalsIgnoreCase(roleRaw)) {
+                    vaiTroNguoiXuLy = "Nhân viên";
+                } else if ("SYSTEM".equalsIgnoreCase(roleRaw)) {
+                    vaiTroNguoiXuLy = "Hệ thống";
+                } else if (roleRaw != null && !roleRaw.isBlank()) {
+                    vaiTroNguoiXuLy = roleRaw;
+                }
+
+                if (editLog.getTaiKhoan() != null) {
+                    Integer tkId = editLog.getTaiKhoan().getId();
+                    if (staffNameMap.containsKey(tkId)) {
+                        nguoiXuLy = staffNameMap.get(tkId);
+                    } else if (editLog.getTaiKhoan().getUsername() != null) {
+                        nguoiXuLy = editLog.getTaiKhoan().getUsername();
+                    }
+                } else if ("SYSTEM".equalsIgnoreCase(roleRaw)) {
+                    nguoiXuLy = "Hệ thống tự động";
+                }
+            }
+
+            KhoSanPhamLoiSourceView sourceView = new KhoSanPhamLoiSourceView();
+            sourceView.setIdHoaDon(hdId);
+            sourceView.setMaDonHang(hd.getMaDonHang());
+            sourceView.setSoLuongDaChuyen(soLuongDaChuyen);
+            sourceView.setLyDoHoanTra(lyDo);
+            sourceView.setLoaiYeuCauDoiTra(loaiYeuCau);
+            sourceView.setLoaiYeuCauDoiTraRaw(hd.getLoaiYeuCauDoiTra());
+            sourceView.setTrangThaiHoanHang(trangThaiHoanHangLabel);
+            sourceView.setTrangThaiXuLyHangHoan(trangThaiXuLyHangHoanLabel);
+            sourceView.setBangChungList(bangChungList);
+            sourceView.setNguoiXuLy(nguoiXuLy);
+            sourceView.setVaiTroNguoiXuLy(vaiTroNguoiXuLy);
+            sourceView.setThoiGianXuLy(thoiGianXuLy);
+            sourceView.setThoiGianXuLyFormatted(thoiGianXuLyFormatted);
+
+            sourceViews.add(sourceView);
+        }
+
+        // 6. Query lich su xu ly kho loi (Phase 3)
+        List<EditLog> lichSuXuLyLogs = editLogRepository.findLichSuXuLyKhoLoi(idSanPhamChiTiet);
+        for (EditLog logItem : lichSuXuLyLogs) {
+            if (logItem.getTaiKhoan() != null && logItem.getTaiKhoan().getId() != null) {
+                Integer tkId = logItem.getTaiKhoan().getId();
+                if (!staffNameMap.containsKey(tkId)) {
+                    NhanVien nv = nhanVienRepository.findByTaiKhoanId(tkId);
+                    if (nv != null && nv.getHoTenNv() != null && !nv.getHoTenNv().isBlank()) {
+                        staffNameMap.put(tkId, nv.getHoTenNv().trim());
+                    }
+                }
+            }
+        }
+
+        List<KhoSanPhamLoiLichSuXuLyView> lichSuXuLyViews = new ArrayList<>();
+        for (EditLog logItem : lichSuXuLyLogs) {
+            String noteRaw = logItem.getGhiChu() != null ? logItem.getGhiChu() : "";
+            String hanhDongDisplay = "Xử lý kho lỗi";
+            String hanhDongRaw = "XU_LY";
+            String badgeClass = "bg-secondary";
+            Integer qty = null;
+            String noteDisplay = noteRaw;
+
+            if (noteRaw.contains("[KHO_LOI_SUA_XONG_NHAP_LAI_KHO]")) {
+                hanhDongDisplay = FaultyInventoryAction.SUA_XONG_NHAP_LAI_KHO.getLabel();
+                hanhDongRaw = "SUA_XONG_NHAP_LAI_KHO";
+                badgeClass = FaultyInventoryAction.SUA_XONG_NHAP_LAI_KHO.getBadgeClass();
+            } else if (noteRaw.contains("[KHO_LOI_TIEU_HUY]")) {
+                hanhDongDisplay = FaultyInventoryAction.TIEU_HUY.getLabel();
+                hanhDongRaw = "TIEU_HUY";
+                badgeClass = FaultyInventoryAction.TIEU_HUY.getBadgeClass();
+            } else if (noteRaw.contains("[KHO_LOI_TRA_NCC]")) {
+                hanhDongDisplay = FaultyInventoryAction.TRA_NHA_CUNG_CAP.getLabel();
+                hanhDongRaw = "TRA_NHA_CUNG_CAP";
+                badgeClass = FaultyInventoryAction.TRA_NHA_CUNG_CAP.getBadgeClass();
+            }
+
+            // Extract soLuong=X; lyDo=...
+            if (noteRaw.contains("soLuong=")) {
+                try {
+                    int startQty = noteRaw.indexOf("soLuong=") + 8;
+                    int endQty = noteRaw.indexOf(";", startQty);
+                    if (endQty > startQty) {
+                        qty = Integer.parseInt(noteRaw.substring(startQty, endQty).trim());
+                    } else {
+                        qty = Integer.parseInt(noteRaw.substring(startQty).trim());
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (noteRaw.contains("lyDo=")) {
+                int startLyDo = noteRaw.indexOf("lyDo=") + 5;
+                noteDisplay = noteRaw.substring(startLyDo).trim();
+            } else if (noteRaw.contains("]")) {
+                noteDisplay = noteRaw.substring(noteRaw.indexOf("]") + 1).trim();
+            }
+
+            String performer = "Không xác định";
+            if (logItem.getTaiKhoan() != null) {
+                Integer tkId = logItem.getTaiKhoan().getId();
+                if (staffNameMap.containsKey(tkId)) {
+                    performer = staffNameMap.get(tkId);
+                } else if (logItem.getTaiKhoan().getUsername() != null) {
+                    performer = logItem.getTaiKhoan().getUsername();
+                }
+            }
+
+            String performerRole = "Không xác định";
+            String roleRaw = logItem.getVaiTroThucHien();
+            if ("QL".equalsIgnoreCase(roleRaw) || "QUAN_LY".equalsIgnoreCase(roleRaw) || "ROLE_QL".equalsIgnoreCase(roleRaw)) {
+                performerRole = "Quản lý";
+            } else if ("NV".equalsIgnoreCase(roleRaw) || "NHAN_VIEN".equalsIgnoreCase(roleRaw) || "ROLE_NV".equalsIgnoreCase(roleRaw)) {
+                performerRole = "Nhân viên";
+            } else if ("SYSTEM".equalsIgnoreCase(roleRaw)) {
+                performerRole = "Hệ thống";
+            } else if (roleRaw != null && !roleRaw.isBlank()) {
+                performerRole = roleRaw;
+            }
+
+            String timeFormatted = logItem.getThoiGian() != null ? logItem.getThoiGian().format(dtf) : "—";
+
+            lichSuXuLyViews.add(new KhoSanPhamLoiLichSuXuLyView(
+                    logItem.getId(),
+                    logItem.getThoiGian(),
+                    timeFormatted,
+                    hanhDongDisplay,
+                    hanhDongRaw,
+                    badgeClass,
+                    qty,
+                    performer,
+                    performerRole,
+                    noteDisplay
+            ));
+        }
+
+        return new KhoSanPhamLoiDetailView(
+                spct.getId(),
+                idSanPham,
+                tenSanPham,
+                phanLoai,
+                hinhAnh,
+                spct.getSoLuongTon(),
+                spct.getSoLuongSpLoi(),
+                sourceViews,
+                lichSuXuLyViews
+        );
+    }
+
+    // ── PHASE 3: XỬ LÝ SẢN PHẨM TRONG KHO LỖI ─────────────────────────────────
+
+    /**
+     * Xử lý sản phẩm đang nằm trong kho lỗi:
+     * 1. Sửa xong → Nhập lại kho bán (SUA_XONG_NHAP_LAI_KHO)
+     * 2. Tiêu hủy (TIEU_HUY - QL ONLY)
+     * 3. Trả nhà cung cấp (TRA_NHA_CUNG_CAP)
+     *
+     * Thực hiện trong Transaction, dùng PESSIMISTIC_WRITE lock, validate số lượng,
+     * không cho âm kho, và ghi EditLog đầy đủ.
+     */
+    @Transactional
+    public void xuLySanPhamLoi(
+            Integer idSanPhamChiTiet,
+            String hanhDongInput,
+            Integer soLuong,
+            String ghiChu,
+            Integer actingTaiKhoanId,
+            String vaiTroThucHien,
+            String clientIp
+    ) {
+        if (idSanPhamChiTiet == null) {
+            throw new IllegalArgumentException("Mã biến thể sản phẩm không được để trống.");
+        }
+
+        // 1. Pessimistic Lock SPCT
+        SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(idSanPhamChiTiet)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể sản phẩm có ID: " + idSanPhamChiTiet));
+
+        // Lock parent SanPham để đồng bộ
+        if (spct.getSanPham() != null && spct.getSanPham().getId() != null) {
+            sanPhamRepository.findByIdWithLock(spct.getSanPham().getId());
+        }
+
+        // 2. Validate Action
+        FaultyInventoryAction action = FaultyInventoryAction.fromString(hanhDongInput);
+        if (action == null) {
+            throw new IllegalArgumentException("Hành động xử lý kho lỗi không hợp lệ.");
+        }
+
+        // 3. Phân quyền: TIEU_HUY chỉ dành cho QL
+        if (action == FaultyInventoryAction.TIEU_HUY) {
+            boolean isQL = "QL".equalsIgnoreCase(vaiTroThucHien) || "QUAN_LY".equalsIgnoreCase(vaiTroThucHien) || "ROLE_QL".equalsIgnoreCase(vaiTroThucHien);
+            if (!isQL) {
+                throw new org.springframework.security.access.AccessDeniedException("Chỉ Quản lý (QL) mới có quyền thực hiện tiêu hủy sản phẩm lỗi.");
+            }
+        }
+
+        // 4. Validate Số lượng
+        if (soLuong == null || soLuong <= 0) {
+            throw new IllegalArgumentException("Số lượng xử lý phải là số nguyên dương lớn hơn 0.");
+        }
+
+        int currentFaulty = spct.getSoLuongSpLoi() != null ? spct.getSoLuongSpLoi() : 0;
+        if (soLuong > currentFaulty) {
+            throw new IllegalArgumentException("Số lượng xử lý không được vượt quá số lượng sản phẩm lỗi hiện có.");
+        }
+
+        // 5. Validate Ghi chú
+        if (ghiChu == null || ghiChu.trim().isBlank()) {
+            throw new IllegalArgumentException("Lý do / Ghi chú xử lý bắt buộc không được để trống.");
+        }
+        String cleanGhiChu = ghiChu.trim();
+        if (cleanGhiChu.length() > 500) {
+            throw new IllegalArgumentException("Ghi chú không được vượt quá 500 ký tự.");
+        }
+        cleanGhiChu = cleanGhiChu.replace("<", "&lt;").replace(">", "&gt;");
+
+        // 6. Thực hiện cập nhật số lượng
+        int oldFaulty = currentFaulty;
+        int newFaulty = currentFaulty - soLuong;
+        if (newFaulty < 0) {
+            throw new IllegalStateException("Số lượng sản phẩm lỗi sau xử lý không được âm.");
+        }
+        spct.setSoLuongSpLoi(newFaulty);
+
+        int oldTon = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
+        int newTon = oldTon;
+
+        if (action == FaultyInventoryAction.SUA_XONG_NHAP_LAI_KHO) {
+            // Tăng tồn kho bán khả dụng
+            newTon = oldTon + soLuong;
+            spct.setSoLuongTon(newTon);
+            log.info("[InventoryLotService] Sửa xong SPCT #{}: Tồn kho bán {} -> {}, Kho lỗi {} -> {}",
+                    spct.getId(), oldTon, newTon, oldFaulty, newFaulty);
+        } else {
+            log.info("[InventoryLotService] Xử lý kho lỗi [{}] SPCT #{}: Kho lỗi {} -> {}, Tồn kho bán giữ nguyên ({})",
+                    action.name(), spct.getId(), oldFaulty, newFaulty, oldTon);
+        }
+
+        sanPhamChiTietRepository.save(spct);
+
+        // 7. Ghi Audit Log vào EditLog
+        String giaTriCu = "soLuongSpLoi=" + oldFaulty + ", soLuongTon=" + oldTon;
+        String giaTriMoi = "soLuongSpLoi=" + newFaulty + ", soLuongTon=" + newTon;
+        String fullNote = action.getLogPrefix() + " soLuong=" + soLuong + "; lyDo=" + cleanGhiChu;
+
+        auditService.log(
+                actingTaiKhoanId,
+                "SanPhamChiTiet",
+                spct.getId().longValue(),
+                "UPDATE",
+                giaTriCu,
+                giaTriMoi,
+                clientIp,
+                fullNote,
+                vaiTroThucHien
+        );
+    }
+
+    private boolean isValidEvidencePath(String path) {
+        if (path == null || path.isBlank()) return false;
+        String clean = path.trim().toLowerCase();
+        if (clean.startsWith("javascript:") || clean.startsWith("data:") || clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("file:")) {
+            return false;
+        }
+        return clean.startsWith("/uploads/returns/") || clean.startsWith("uploads/returns/");
+    }
+
+    private String normalizeEvidencePath(String path) {
+        if (path == null) return "";
+        String p = path.trim();
+        if (!p.startsWith("/")) {
+            p = "/" + p;
+        }
+        return p;
     }
 }
 
