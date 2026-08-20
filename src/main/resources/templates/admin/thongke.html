@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thống Kê Doanh Thu - Admin SmashVN</title>
+    <title>Báo Cáo Thống Kê - Admin SmashVN</title>
     
     <!-- Bootstrap 5.3.0 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,6 +14,10 @@
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Chart.js (Local Bundle Offline Ready) -->
+    <script th:src="@{/js/chart.umd.min.js}"></script>
+
     <style>
         .filter-btn {
             border-radius: 20px;
@@ -34,14 +38,66 @@
         .no-data-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            z-index: 5; border-radius: 12px;
+            z-index: 5; border-radius: 8px;
         }
-        .chart-container-relative {
-            position: relative;
-            min-height: 320px;
+        .growth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+        .growth-up {
+            color: #16a34a;
+            background-color: rgba(22, 163, 74, 0.1);
+        }
+        .growth-down {
+            color: #dc2626;
+            background-color: rgba(220, 38, 38, 0.1);
+        }
+        .growth-neutral {
+            color: #64748b;
+            background-color: rgba(100, 116, 139, 0.1);
+        }
+        .insight-card {
+            border-left: 4px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .insight-card.insight-SUCCESS {
+            border-left-color: #16a34a;
+            background: rgba(22, 163, 74, 0.05);
+        }
+        .insight-card.insight-WARNING {
+            border-left-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+        .insight-card.insight-DANGER {
+            border-left-color: #dc2626;
+            background: rgba(220, 38, 38, 0.05);
+        }
+        .insight-card.insight-INFO {
+            border-left-color: #0284c7;
+            background: rgba(2, 132, 199, 0.05);
+        }
+        .progress-micro {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e2e8f0;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -62,7 +118,7 @@
                 <div class="admin-page-header">
                     <div>
                         <h1 class="admin-page-title"><i class="fas fa-chart-line text-brand me-2"></i>Báo Cáo Thống Kê</h1>
-                        <p class="admin-page-subtitle">Theo dõi doanh thu, hiệu suất đơn hàng và sản phẩm bán chạy</p>
+                        <p class="admin-page-subtitle">Theo dõi doanh thu, hiệu suất đơn hàng, phân tích thương hiệu và cảnh báo tồn kho</p>
                     </div>
                     <div class="admin-toolbar">
                         <button id="btnExportExcel" class="admin-btn admin-btn-primary">
@@ -71,7 +127,7 @@
                     </div>
                 </div>
 
-                <!-- Filters Section -->
+                <!-- TẦNG 1: BỘ LỌC THỜI GIAN -->
                 <div class="admin-card mb-4">
                     <div class="admin-card-body py-3">
                         <div class="row align-items-center g-3">
@@ -86,7 +142,7 @@
                                 <button type="button" class="filter-btn" data-preset="custom">Tùy chỉnh</button>
                             </div>
                             
-                            <!-- Custom Date Picker Forms -->
+                            <!-- Custom Date Picker Form -->
                             <div class="col-xl-5 col-lg-12">
                                 <form id="customDateForm" class="row g-2 align-items-center justify-content-xl-end d-none">
                                     <div class="col-auto">
@@ -110,206 +166,274 @@
                     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                         <span class="visually-hidden">Đang tải...</span>
                     </div>
-                    <h6 class="mt-3 text-muted">Đang cập nhật số liệu...</h6>
+                    <h6 class="mt-3 text-muted">Đang cập nhật số liệu thống kê...</h6>
                 </div>
 
-                <!-- Stats Metrics Content -->
+                <!-- Stats Content Wrapper -->
                 <div id="statsContent">
-                    <!-- Row 1: KPI Cards -->
+                    
+                    <!-- TẦNG 2: KPI KINH DOANH -->
                     <div class="row g-3 mb-4">
-                        <div class="col-lg-4 col-md-6 col-sm-6">
+                        <!-- Card 1: Doanh Thu Thực Tế -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                             <div class="admin-stat-card">
                                 <div class="admin-stat-info">
                                     <div class="stat-label">Doanh Thu Thực Tế</div>
                                     <div class="stat-value text-danger" id="valRevenue" style="font-size: 1.35rem;">0 đ</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn giao thành công</small>
+                                    <div id="badgeGrowthRevenue"></div>
                                 </div>
                                 <div class="admin-stat-icon danger">
                                     <i class="fas fa-wallet"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-6">
+
+                        <!-- Card 2: Tổng Đơn Hàng -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                             <div class="admin-stat-card">
                                 <div class="admin-stat-info">
-                                    <div class="stat-label">Doanh Thu Dự Kiến</div>
-                                    <div class="stat-value text-warning" id="valExpectedRevenue" style="font-size: 1.35rem;">0 đ</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn hàng đang giao</small>
+                                    <div class="stat-label">Tổng Đơn Hàng</div>
+                                    <div class="stat-value text-dark" id="valTotalOrders" style="font-size: 1.35rem;">0</div>
+                                    <div id="badgeGrowthOrders"></div>
                                 </div>
-                                <div class="admin-stat-icon warning">
-                                    <i class="fas fa-truck"></i>
+                                <div class="admin-stat-icon primary">
+                                    <i class="fas fa-receipt"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-6">
-                            <div class="admin-stat-card">
-                                <div class="admin-stat-info">
-                                    <div class="stat-label">Doanh Thu Đã Hoàn</div>
-                                    <div class="stat-value text-secondary" id="valRefundedRevenue" style="font-size: 1.35rem;">0 đ</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Đơn hoàn trả tiền</small>
-                                </div>
-                                <div class="admin-stat-icon info">
-                                    <i class="fas fa-undo-alt"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-md-6 col-sm-6">
+
+                        <!-- Card 3: Đơn Thành Công + Tỷ Lệ Thành Công -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                             <div class="admin-stat-card">
                                 <div class="admin-stat-info">
                                     <div class="stat-label">Đơn Thành Công</div>
                                     <div class="stat-value text-success" id="valSuccessOrders" style="font-size: 1.35rem;">0</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Tổng đơn hoàn thành</small>
+                                    <small class="text-muted" style="font-size: 0.75rem;" id="valSuccessRateText">Tỷ lệ: 0.0%</small>
                                 </div>
                                 <div class="admin-stat-icon success">
                                     <i class="fas fa-check-double"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-6">
+
+                        <!-- Card 4: Giá Trị TB Đơn (AOV) -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                             <div class="admin-stat-card">
                                 <div class="admin-stat-info">
-                                    <div class="stat-label">Sản Phẩm Đã Bán</div>
-                                    <div class="stat-value text-primary" id="valProductsSold" style="font-size: 1.35rem;">0</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Số lượng bán ra</small>
-                                </div>
-                                <div class="admin-stat-icon primary">
-                                    <i class="fas fa-shopping-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-md-6 col-sm-6">
-                            <div class="admin-stat-card">
-                                <div class="admin-stat-info">
-                                    <div class="stat-label">Giá Trị TB Đơn</div>
+                                    <div class="stat-label">Giá Trị TB Đơn (AOV)</div>
                                     <div class="stat-value text-info" id="valAvgOrderValue" style="font-size: 1.35rem;">0 đ</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Doanh thu / đơn</small>
+                                    <div id="badgeGrowthAov"></div>
                                 </div>
                                 <div class="admin-stat-icon info">
                                     <i class="fas fa-calculator"></i>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Card 5: Khách Hàng Mới -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Khách Hàng Mới</div>
+                                    <div class="stat-value text-dark" id="valNewCustomers" style="font-size: 1.35rem;">0</div>
+                                    <div id="badgeGrowthCustomers"></div>
+                                </div>
+                                <div class="admin-stat-icon neutral">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 6: Đơn Hủy & Tỷ Lệ Hủy -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Đơn Hàng Đã Hủy</div>
+                                    <div class="stat-value text-danger" id="valCancelledOrders" style="font-size: 1.35rem;">0</div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <small class="text-muted" style="font-size: 0.75rem;" id="valCancelRateText">Tỷ lệ: 0.0%</small>
+                                        <div id="badgeGrowthCancel"></div>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-icon danger">
+                                    <i class="fas fa-ban"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 7: Doanh Thu Dự Kiến & Đang Xử Lý -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Doanh Thu Dự Kiến</div>
+                                    <div class="stat-value text-warning" id="valExpectedRevenue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;" id="valProcessingOrdersText">Đang xử lý: 0 đơn</small>
+                                </div>
+                                <div class="admin-stat-icon warning">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 8: Doanh Thu Đã Hoàn & Tiền Chờ Hoàn -->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-info">
+                                    <div class="stat-label">Doanh Thu Đã Hoàn</div>
+                                    <div class="stat-value text-secondary" id="valRefundedRevenue" style="font-size: 1.35rem;">0 đ</div>
+                                    <small class="text-muted" style="font-size: 0.75rem;" id="valPendingRefundText">Chờ hoàn: 0 đ</small>
+                                </div>
+                                <div class="admin-stat-icon info">
+                                    <i class="fas fa-undo-alt"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Row 1.5: Extra KPIs -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Khách Hàng Mới Trong Kỳ</div>
-                                <div class="stat-value text-dark mt-1" id="valNewCustomers" style="font-size: 1.35rem;">0</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Đơn Hàng Đã Hủy</div>
-                                <div class="stat-value text-danger mt-1" id="valCancelledOrders" style="font-size: 1.35rem;">0</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Tỷ Lệ Hủy Đơn Hàng</div>
-                                <div class="stat-value text-warning mt-1" id="valCancellationRate" style="font-size: 1.35rem;">0.0%</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Tiền Chờ Hoàn</div>
-                                <div class="stat-value text-info mt-1" id="valPendingRefund" style="font-size: 1.35rem;">0 đ</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Row 1.8: Online Payment Statistics -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Tổng Giao Dịch Online</div>
-                                <div class="stat-value text-dark mt-1" id="valOnlineTotal" style="font-size: 1.35rem;">0</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Thanh Toán Online Thành Công</div>
-                                <div class="stat-value text-success mt-1" id="valOnlineSuccess" style="font-size: 1.35rem;">0</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Thất Bại / Đang Chờ</div>
-                                <div class="stat-value text-danger mt-1" id="valOnlineFailedPending" style="font-size: 1.35rem;">0 / 0</div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 col-sm-6">
-                            <div class="admin-card mb-0 p-3">
-                                <div class="stat-label">Doanh Thu Online</div>
-                                <div class="stat-value text-primary mt-1" id="valOnlineRevenue" style="font-size: 1.35rem;">0 đ</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Row 2: Charts -->
+                    <!-- TẦNG 3: VISUAL ANALYTICS (BIỂU ĐỒ) -->
                     <div class="row g-4 mb-4">
-                        <div class="col-lg-8">
-                            <div class="admin-card">
+                        <!-- Biểu đồ doanh thu theo thời gian -->
+                        <div class="col-xl-7 col-lg-12">
+                            <div class="admin-card h-100">
                                 <div class="admin-card-header">
                                     <h5 class="admin-card-title"><i class="fas fa-chart-area text-primary me-2"></i>Biểu Đồ Doanh Thu</h5>
                                     <span class="admin-status admin-status-info" id="lblGroupingType">Theo Ngày</span>
                                 </div>
-                                <div class="admin-card-body chart-container-relative">
-                                    <div id="noDataOverlayRevenue" class="no-data-overlay d-none">
-                                        <i class="fas fa-chart-line fa-3x text-muted mb-2"></i>
-                                        <span class="fw-semibold text-muted">Không có dữ liệu trong khoảng thời gian đã chọn</span>
+                                <div class="admin-card-body p-3">
+                                    <div style="position: relative; height: 320px; width: 100%;">
+                                        <div id="noDataOverlayRevenue" class="no-data-overlay d-none">
+                                            <i class="fas fa-chart-line fa-3x text-muted mb-2"></i>
+                                            <span class="fw-semibold text-muted">Không có dữ liệu doanh thu trong khoảng thời gian đã chọn</span>
+                                        </div>
+                                        <canvas id="chartRevenue"></canvas>
                                     </div>
-                                    <canvas id="chartRevenue"></canvas>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4">
-                            <div class="admin-card">
+
+                        <!-- Biểu đồ trạng thái & Thương hiệu -->
+                        <div class="col-xl-5 col-lg-12">
+                            <div class="row g-4">
+                                <!-- Trạng thái đơn hàng -->
+                                <div class="col-12">
+                                    <div class="admin-card">
+                                        <div class="admin-card-header py-2">
+                                            <h6 class="admin-card-title mb-0" style="font-size: 0.95rem;"><i class="fas fa-chart-pie text-primary me-2"></i>Trạng Thái Đơn Hàng</h6>
+                                        </div>
+                                        <div class="admin-card-body p-3">
+                                            <div style="position: relative; height: 220px; width: 100%;">
+                                                <div id="noDataOverlayStatus" class="no-data-overlay d-none">
+                                                    <i class="fas fa-chart-pie fa-2x text-muted mb-1"></i>
+                                                    <span class="small text-muted">Không có dữ liệu</span>
+                                                </div>
+                                                <canvas id="chartStatus"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Doanh thu theo thương hiệu -->
+                                <div class="col-12">
+                                    <div class="admin-card">
+                                        <div class="admin-card-header py-2">
+                                            <h6 class="admin-card-title mb-0" style="font-size: 0.95rem;"><i class="fas fa-tags text-success me-2"></i>Doanh Thu Theo Thương Hiệu</h6>
+                                        </div>
+                                        <div class="admin-card-body p-3">
+                                            <div style="position: relative; height: 220px; width: 100%;">
+                                                <div id="noDataOverlayBrand" class="no-data-overlay d-none">
+                                                    <i class="fas fa-tag fa-2x text-muted mb-1"></i>
+                                                    <span class="small text-muted">Không có dữ liệu thương hiệu</span>
+                                                </div>
+                                                <canvas id="chartBrand"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TẦNG 4: PHÂN TÍCH SẢN PHẨM (TOP BÁN CHẠY & BÁN CHẬM/TỒN KHO) -->
+                    <div class="row g-4 mb-4">
+                        <!-- Top 5 Bán Chạy -->
+                        <div class="col-lg-6">
+                            <div class="admin-card h-100">
                                 <div class="admin-card-header">
-                                    <h5 class="admin-card-title"><i class="fas fa-chart-pie text-primary me-2"></i>Trạng Thái Đơn Hàng</h5>
+                                    <h5 class="admin-card-title"><i class="fas fa-trophy text-warning me-2"></i>Top Sản Phẩm Bán Chạy</h5>
+                                    <span class="admin-status admin-status-success">Top 5</span>
                                 </div>
-                                <div class="admin-card-body chart-container-relative">
-                                    <div id="noDataOverlayStatus" class="no-data-overlay d-none">
-                                        <i class="fas fa-pie-chart fa-3x text-muted mb-2"></i>
-                                        <span class="fw-semibold text-muted">Không có dữ liệu đơn hàng</span>
+                                <div class="admin-card-body p-0">
+                                    <div class="admin-table-wrapper">
+                                        <table class="admin-table" id="tableTopProducts">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 50px;" class="text-center">#</th>
+                                                    <th style="width: 60px;">Ảnh</th>
+                                                    <th>Sản Phẩm</th>
+                                                    <th class="text-center" style="width: 70px;">Đã Bán</th>
+                                                    <th class="text-end" style="width: 140px;">Doanh Thu & Tỷ Trọng</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                        <div id="noDataOverlayProducts" class="text-center py-4 text-muted d-none">
+                                            <i class="fas fa-box-open fa-2x mb-2 text-muted"></i>
+                                            <p class="small mb-0">Không có sản phẩm bán ra trong kỳ</p>
+                                        </div>
                                     </div>
-                                    <canvas id="chartStatus"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hàng Tồn Bán Chậm / Cần Theo Dõi -->
+                        <div class="col-lg-6">
+                            <div class="admin-card h-100">
+                                <div class="admin-card-header">
+                                    <h5 class="admin-card-title"><i class="fas fa-hourglass-half text-danger me-2"></i>Sản Phẩm Bán Chậm / Tồn Kho</h5>
+                                    <span class="admin-status admin-status-neutral">Cần Lưu Ý</span>
+                                </div>
+                                <div class="admin-card-body p-0">
+                                    <div class="admin-table-wrapper">
+                                        <table class="admin-table" id="tableSlowMoving">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 50px;" class="text-center">#</th>
+                                                    <th style="width: 60px;">Ảnh</th>
+                                                    <th>Sản Phẩm</th>
+                                                    <th class="text-center" style="width: 80px;">Tồn Kho</th>
+                                                    <th class="text-center" style="width: 80px;">Đã Bán</th>
+                                                    <th class="text-center" style="width: 130px;">Cảnh Báo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                        <div id="noDataOverlaySlowMoving" class="text-center py-4 text-muted d-none">
+                                            <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                                            <p class="small mb-0">Không có sản phẩm tồn kho cần cảnh báo</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Row 3: Top Selling Products -->
-                    <div class="admin-card mb-4">
+                    <!-- TẦNG 5: NHẬN XÉT VẬN HÀNH / ĐIỂM CẦN CHÚ Ý -->
+                    <div class="admin-card mb-4" id="sectionInsights">
                         <div class="admin-card-header">
-                            <h5 class="admin-card-title"><i class="fas fa-trophy text-warning me-2"></i>Sản Phẩm Bán Chạy Nhất</h5>
-                            <span class="admin-status admin-status-info">Top 5</span>
+                            <h5 class="admin-card-title"><i class="fas fa-lightbulb text-warning me-2"></i>Nhận Xét Vận Hành & Điểm Cần Chú Ý</h5>
+                            <span class="admin-status admin-status-info">Tự động phân tích</span>
                         </div>
-                        <div class="admin-card-body p-0">
-                            <div class="admin-table-wrapper">
-                                <table class="admin-table" id="tableTopProducts">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 80px;" class="text-center">Hạng</th>
-                                            <th style="width: 100px;">Ảnh</th>
-                                            <th>Tên Sản Phẩm</th>
-                                            <th>Danh Mục</th>
-                                            <th class="text-center">Số Lượng Bán</th>
-                                            <th class="text-end">Doanh Thu</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                                <div id="noDataOverlayProducts" class="text-center py-5 text-muted d-none">
-                                    <i class="fas fa-box-open fa-3x mb-2 text-muted"></i>
-                                    <p class="fw-semibold mb-0">Không có sản phẩm nào được bán thành công trong khoảng thời gian đã chọn</p>
-                                </div>
+                        <div class="admin-card-body">
+                            <div id="containerInsights" class="row g-3">
+                                <!-- Insight cards injected via JS -->
+                            </div>
+                            <div id="noDataOverlayInsights" class="text-center py-3 text-muted d-none">
+                                <p class="small mb-0">Số liệu vận hành trong kỳ ở mức bình thường, chưa phát sinh cảnh báo đặc biệt.</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Row 4: Transaction History -->
+                    <!-- TẦNG 6: LỊCH SỬ GIAO DỊCH -->
                     <div class="admin-card mb-4">
                         <div class="admin-card-header">
                             <h5 class="admin-card-title"><i class="fas fa-history text-primary me-2"></i>Lịch Sử Giao Dịch</h5>
@@ -341,19 +465,20 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
 
             </div>
         </main>
     </div>
 
-    <!-- Chart.js Script -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Admin Dashboard Runtime Script -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         let currentPreset = "last_30_days";
         let chartRevenueInstance = null;
         let chartStatusInstance = null;
+        let chartBrandInstance = null;
 
         const quickFilters = document.querySelectorAll(".filter-btn");
         const customDateForm = document.getElementById("customDateForm");
@@ -363,6 +488,7 @@
         const statsContent = document.getElementById("statsContent");
         const btnExportExcel = document.getElementById("btnExportExcel");
 
+        // Gắn sự kiện click cho các nút lọc nhanh
         quickFilters.forEach(btn => {
             btn.addEventListener("click", function() {
                 quickFilters.forEach(b => b.classList.remove("active"));
@@ -372,14 +498,15 @@
                 currentPreset = preset;
                 
                 if (preset === "custom") {
-                    customDateForm.classList.remove("d-none");
+                    if (customDateForm) customDateForm.classList.remove("d-none");
                 } else {
-                    customDateForm.classList.add("d-none");
+                    if (customDateForm) customDateForm.classList.add("d-none");
                     loadStatistics(preset, "", "");
                 }
             });
         });
 
+        // Xử lý submit form lọc tùy chỉnh
         if (customDateForm) {
             customDateForm.addEventListener("submit", function(e) {
                 e.preventDefault();
@@ -387,35 +514,45 @@
             });
         }
 
+        // Xử lý xuất báo cáo Excel
         if (btnExportExcel) {
             btnExportExcel.addEventListener("click", function() {
-                let url = `/admin/thong-ke/export?preset=${currentPreset}`;
+                let url = `/admin/thong-ke/export?preset=${encodeURIComponent(currentPreset)}`;
                 if (currentPreset === "custom") {
-                    url += `&startDate=${inputStartDate.value}&endDate=${inputEndDate.value}`;
+                    url += `&startDate=${encodeURIComponent(inputStartDate.value)}&endDate=${encodeURIComponent(inputEndDate.value)}`;
                 }
                 window.location.href = url;
             });
         }
 
+        // Hàm gọi API lấy dữ liệu thống kê
         function loadStatistics(preset, start, end) {
             if (loader) loader.classList.remove("d-none");
             if (statsContent) statsContent.style.opacity = "0.5";
 
-            let url = `/admin/thong-ke/api?preset=${preset}`;
+            let url = `/admin/thong-ke/api?preset=${encodeURIComponent(preset)}`;
             if (preset === "custom") {
-                url += `&startDate=${start}&endDate=${end}`;
+                url += `&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
             }
 
+            console.log(`[ThongKe] Đang tải dữ liệu với preset: ${preset}`);
+
             fetch(url)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error("Mã phản hồi HTTP: " + res.status);
+                    return res.json();
+                })
                 .then(data => {
+                    console.log("[ThongKe] API Data nhận được:", data);
                     updateMetrics(data);
                     updateCharts(data);
                     updateTopProducts(data);
+                    updateSlowMovingProducts(data);
+                    updateInsights(data);
                     updateTransactions(data);
                 })
                 .catch(err => {
-                    console.error("Lỗi khi tải dữ liệu thống kê: ", err);
+                    console.error("[ThongKe] Lỗi khi tải dữ liệu thống kê:", err);
                 })
                 .finally(() => {
                     if (loader) loader.classList.add("d-none");
@@ -423,29 +560,131 @@
                 });
         }
 
+        // Cập nhật các thẻ KPI tầng 2
         function updateMetrics(data) {
-            const m = data.metrics || {};
-            
-            document.getElementById("valRevenue").textContent = formatVND(data.actualRevenue);
-            document.getElementById("valExpectedRevenue").textContent = formatVND(data.expectedRevenue);
-            document.getElementById("valRefundedRevenue").textContent = formatVND(data.refundedRevenue);
-            document.getElementById("valSuccessOrders").textContent = formatNumber(m.successfulOrders);
-            document.getElementById("valProductsSold").textContent = formatNumber(m.totalProductsSold);
-            document.getElementById("valAvgOrderValue").textContent = formatVND(m.avgOrderValue);
-            document.getElementById("valNewCustomers").textContent = formatNumber(data.newCustomers);
-            document.getElementById("valCancelledOrders").textContent = formatNumber(m.cancelledOrders);
-            document.getElementById("valCancellationRate").textContent = (data.cancellationRate || 0).toFixed(1) + "%";
-            document.getElementById("valPendingRefund").textContent = formatVND(data.pendingRefund);
+            try {
+                const m = data.metrics || {};
+                const growth = data.growth || {};
+                
+                // Doanh thu & Đơn hàng
+                const elRev = document.getElementById("valRevenue");
+                if (elRev) elRev.textContent = formatVND(data.actualRevenue);
 
-            document.getElementById("valOnlineTotal").textContent = formatNumber(data.onlineTotal);
-            document.getElementById("valOnlineSuccess").textContent = formatNumber(data.onlineSuccess);
-            document.getElementById("valOnlineFailedPending").textContent = formatNumber(data.onlineFailed) + " / " + formatNumber(data.onlinePending);
-            document.getElementById("valOnlineRevenue").textContent = formatVND(data.onlineRevenue);
+                const elTotalOrders = document.getElementById("valTotalOrders");
+                if (elTotalOrders) elTotalOrders.textContent = formatNumber(data.totalOrders != null ? data.totalOrders : m.totalOrders);
+
+                const elSuccessOrders = document.getElementById("valSuccessOrders");
+                if (elSuccessOrders) elSuccessOrders.textContent = formatNumber(data.successfulOrders != null ? data.successfulOrders : m.successfulOrders);
+
+                const elAvgOrderValue = document.getElementById("valAvgOrderValue");
+                if (elAvgOrderValue) elAvgOrderValue.textContent = formatVND(m.avgOrderValue);
+
+                const elNewCustomers = document.getElementById("valNewCustomers");
+                if (elNewCustomers) elNewCustomers.textContent = formatNumber(data.newCustomers);
+
+                const elCancelledOrders = document.getElementById("valCancelledOrders");
+                if (elCancelledOrders) elCancelledOrders.textContent = formatNumber(data.cancelledOrders != null ? data.cancelledOrders : m.cancelledOrders);
+
+                const elExpectedRevenue = document.getElementById("valExpectedRevenue");
+                if (elExpectedRevenue) elExpectedRevenue.textContent = formatVND(data.expectedRevenue);
+
+                const elRefundedRevenue = document.getElementById("valRefundedRevenue");
+                if (elRefundedRevenue) elRefundedRevenue.textContent = formatVND(data.refundedRevenue);
+
+                // Tỷ lệ thành công & Hủy
+                const elSuccessRate = document.getElementById("valSuccessRateText");
+                if (elSuccessRate) {
+                    const sRate = data.successRate != null ? data.successRate : (m.totalOrders > 0 ? (m.successfulOrders * 100.0 / m.totalOrders) : 0);
+                    elSuccessRate.textContent = "Tỷ lệ: " + (Number(sRate) || 0).toFixed(1) + "%";
+                }
+
+                const elCancelRate = document.getElementById("valCancelRateText");
+                if (elCancelRate) {
+                    const cRate = data.cancellationRate != null ? data.cancellationRate : 0;
+                    elCancelRate.textContent = "Tỷ lệ: " + (Number(cRate) || 0).toFixed(1) + "%";
+                }
+
+                const elProcessing = document.getElementById("valProcessingOrdersText");
+                if (elProcessing) {
+                    const pOrders = data.processingOrders != null ? data.processingOrders : 0;
+                    elProcessing.textContent = "Đang xử lý: " + formatNumber(pOrders) + " đơn";
+                }
+
+                const elPendingRefund = document.getElementById("valPendingRefundText");
+                if (elPendingRefund) {
+                    const pRefund = data.pendingRefund != null ? data.pendingRefund : 0;
+                    elPendingRefund.textContent = "Chờ hoàn: " + formatVND(pRefund);
+                }
+
+                // Badges so sánh kỳ trước
+                renderGrowthBadge("badgeGrowthRevenue", growth.revenue);
+                renderGrowthBadge("badgeGrowthOrders", growth.totalOrders);
+                renderGrowthBadge("badgeGrowthAov", growth.avgOrderValue);
+                renderGrowthBadge("badgeGrowthCustomers", growth.newCustomers);
+                renderGrowthBadge("badgeGrowthCancel", growth.cancellationRate, true);
+            } catch (err) {
+                console.error("[ThongKe] Lỗi khi cập nhật KPIs:", err);
+            }
         }
 
+        // Vẽ nhãn tăng trưởng so với kỳ trước
+        function renderGrowthBadge(containerId, growthObj, invertColor = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!growthObj || !growthObj.formattedChange) {
+                container.innerHTML = "";
+                return;
+            }
+
+            let badgeClass = "growth-neutral";
+            if (growthObj.direction === "UP") {
+                badgeClass = invertColor ? "growth-down" : "growth-up";
+            } else if (growthObj.direction === "DOWN") {
+                badgeClass = invertColor ? "growth-up" : "growth-down";
+            }
+
+            container.innerHTML = `<span class="growth-badge ${badgeClass}" title="So với kỳ trước">${escapeHtml(growthObj.formattedChange)} so với kỳ trước</span>`;
+        }
+
+        // Cập nhật toàn bộ 3 biểu đồ
         function updateCharts(data) {
+            if (typeof Chart === 'undefined') {
+                console.warn("[ThongKe] Chart.js chưa được nạp đầy đủ vào window!");
+                return;
+            }
+
+            // 1. Biểu đồ Doanh thu (Line Chart)
+            try {
+                renderRevenueChart(data);
+            } catch (e) {
+                console.error("[ThongKe] Lỗi render Revenue Chart:", e);
+            }
+
+            // 2. Biểu đồ Trạng thái đơn hàng (Doughnut Chart)
+            try {
+                renderStatusChart(data);
+            } catch (e) {
+                console.error("[ThongKe] Lỗi render Status Chart:", e);
+            }
+
+            // 3. Biểu đồ Doanh thu thương hiệu (Bar Chart)
+            try {
+                renderBrandChart(data);
+            } catch (e) {
+                console.error("[ThongKe] Lỗi render Brand Chart:", e);
+            }
+        }
+
+        function renderRevenueChart(data) {
+            const ctxRev = document.getElementById("chartRevenue");
+            if (!ctxRev) return;
+
+            const existing = Chart.getChart(ctxRev);
+            if (existing) existing.destroy();
+
             const labels = data.chartLabels || [];
-            const values = data.chartValues || [];
+            const values = (data.chartValues || []).map(v => Number(v) || 0);
             const isRevenueEmpty = values.length === 0 || values.every(v => v === 0);
 
             const overlayRevenue = document.getElementById("noDataOverlayRevenue");
@@ -461,51 +700,82 @@
                 else lblGrouping.textContent = "Theo Tháng";
             }
 
-            if (chartRevenueInstance) chartRevenueInstance.destroy();
-
-            const ctxRev = document.getElementById("chartRevenue");
-            if (ctxRev) {
-                chartRevenueInstance = new Chart(ctxRev.getContext("2d"), {
-                    type: "line",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: "Doanh thu (VND)",
-                            data: values,
-                            borderColor: "#f4511e",
-                            backgroundColor: "rgba(244, 81, 30, 0.08)",
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.35,
-                            pointBackgroundColor: "#f4511e",
-                            pointRadius: 4
-                        }]
+            chartRevenueInstance = new Chart(ctxRev, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Doanh thu (VND)",
+                        data: values,
+                        borderColor: "#f4511e",
+                        backgroundColor: "rgba(244, 81, 30, 0.08)",
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: "#f4511e",
+                        pointRadius: values.length > 31 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return " Doanh thu: " + (Number(context.raw) || 0).toLocaleString("vi-VN") + " đ";
+                                }
+                            }
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(val) { return val.toLocaleString("vi-VN") + " đ"; }
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + " tr";
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + " k";
+                                    return val.toLocaleString("vi-VN") + " đ";
                                 }
                             }
                         }
                     }
-                });
-            }
+                }
+            });
+        }
+
+        function renderStatusChart(data) {
+            const ctxStatus = document.getElementById("chartStatus");
+            if (!ctxStatus) return;
+
+            const existing = Chart.getChart(ctxStatus);
+            if (existing) existing.destroy();
 
             const sd = data.statusDistribution || {};
-            const statusLabels = ["Chờ xác nhận", "Đang giao", "Đã giao", "Đã hủy"];
+            console.log("[ThongKe Status] Source Data (statusDistribution):", sd);
+
+            const statusLabels = ["Chờ xử lý", "Đang giao", "Đã giao", "Đã hủy"];
             const statusValues = [
-                sd.cho_xac_nhan || 0,
-                sd.dang_giao || 0,
-                sd.da_giao || 0,
-                sd.da_huy || 0
+                Number(sd.cho_xac_nhan) || 0,
+                Number(sd.dang_giao) || 0,
+                Number(sd.da_giao) || 0,
+                Number(sd.da_huy) || 0
             ];
+            const statusColors = ["#f59e0b", "#0ea5e9", "#22c55e", "#ef4444"];
             const isStatusEmpty = statusValues.every(v => v === 0);
+
+            console.log("[ThongKe Status] Dataset config:", {
+                labels: statusLabels,
+                values: statusValues,
+                colors: statusColors
+            });
 
             const overlayStatus = document.getElementById("noDataOverlayStatus");
             if (overlayStatus) {
@@ -513,48 +783,151 @@
                 else overlayStatus.classList.add("d-none");
             }
 
-            if (chartStatusInstance) chartStatusInstance.destroy();
-
-            const ctxStatus = document.getElementById("chartStatus");
-            if (ctxStatus) {
-                chartStatusInstance = new Chart(ctxStatus.getContext("2d"), {
-                    type: "doughnut",
-                    data: {
-                        labels: statusLabels,
-                        datasets: [{
-                            data: statusValues,
-                            backgroundColor: ["#b45309", "#0369a1", "#15803d", "#dc2626"],
-                            borderWidth: 2,
-                            borderColor: "#ffffff"
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: "bottom", labels: { boxWidth: 12, font: { weight: "600" } } }
+            chartStatusInstance = new Chart(ctxStatus, {
+                type: "doughnut",
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: isStatusEmpty ? [1] : statusValues,
+                        backgroundColor: isStatusEmpty ? ["#e2e8f0"] : statusColors,
+                        borderWidth: 2,
+                        borderColor: "#ffffff"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: {
+                            display: !isStatusEmpty,
+                            position: "right",
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 11, weight: "600" }
+                            }
                         },
-                        cutout: "70%"
-                    }
-                });
+                        tooltip: {
+                            enabled: !isStatusEmpty,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = Number(context.raw) || 0;
+                                    const total = statusValues.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${val} đơn (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: "55%"
+                }
+            });
+
+            const chart = Chart.getChart(ctxStatus);
+            if (chart) {
+                console.log("[ThongKe Status] Rendered Data:", chart.data.datasets[0].data);
+                console.log("[ThongKe Status] ChartArea:", chart.chartArea);
             }
         }
 
+        function renderBrandChart(data) {
+            const ctxBrand = document.getElementById("chartBrand");
+            if (!ctxBrand) return;
+
+            const existing = Chart.getChart(ctxBrand);
+            if (existing) existing.destroy();
+
+            const rawLabels = data.brandChartLabels || [];
+            const rawValues = data.brandChartValues || [];
+
+            const brandLabels = rawLabels.slice(0, 5);
+            const brandValues = rawValues.slice(0, 5).map(v => Number(v) || 0);
+            const brandColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+            const isBrandEmpty = brandValues.length === 0 || brandValues.every(v => v === 0);
+
+            console.log("[ThongKe Brand] Labels:", brandLabels);
+            console.log("[ThongKe Brand] Values:", brandValues);
+            console.log("[ThongKe Brand] Colors:", brandColors.slice(0, Math.max(brandLabels.length, 1)));
+
+            const overlayBrand = document.getElementById("noDataOverlayBrand");
+            if (overlayBrand) {
+                if (isBrandEmpty) overlayBrand.classList.remove("d-none");
+                else overlayBrand.classList.add("d-none");
+            }
+
+            chartBrandInstance = new Chart(ctxBrand, {
+                type: "bar",
+                data: {
+                    labels: isBrandEmpty ? ["Chưa có dữ liệu"] : brandLabels,
+                    datasets: [{
+                        label: "Doanh thu",
+                        data: isBrandEmpty ? [0] : brandValues,
+                        backgroundColor: isBrandEmpty ? ["#cbd5e1"] : brandColors.slice(0, Math.max(brandLabels.length, 1)),
+                        borderColor: ["#2563eb", "#059669", "#d97706", "#7c3aed", "#db2777"].slice(0, Math.max(brandLabels.length, 1)),
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.5,
+                        categoryPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: !isBrandEmpty,
+                            callbacks: {
+                                label: function(context) {
+                                    return " Doanh thu: " + (Number(context.raw) || 0).toLocaleString("vi-VN") + " đ";
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: "600" } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + " tr";
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + " k";
+                                    return val.toLocaleString("vi-VN") + " đ";
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const chart = Chart.getChart(ctxBrand);
+            if (chart) {
+                console.log("[ThongKe Brand] Rendered Data:", chart.data.datasets[0].data);
+                console.log("[ThongKe Brand] ChartArea:", chart.chartArea);
+            }
+        }
+
+        // Cập nhật bảng Top 5 sản phẩm bán chạy
         function updateTopProducts(data) {
             const list = data.topProducts || [];
             const tbody = document.querySelector("#tableTopProducts tbody");
-            const noDataOverlayProducts = document.getElementById("noDataOverlayProducts");
+            const noDataOverlay = document.getElementById("noDataOverlayProducts");
             const table = document.getElementById("tableTopProducts");
 
             if (!tbody) return;
             tbody.innerHTML = "";
 
             if (list.length === 0) {
-                if (noDataOverlayProducts) noDataOverlayProducts.classList.remove("d-none");
+                if (noDataOverlay) noDataOverlay.classList.remove("d-none");
                 if (table) table.classList.add("d-none");
                 return;
             } else {
-                if (noDataOverlayProducts) noDataOverlayProducts.classList.add("d-none");
+                if (noDataOverlay) noDataOverlay.classList.add("d-none");
                 if (table) table.classList.remove("d-none");
             }
 
@@ -565,28 +938,118 @@
                             : (idx === 2 ? `<span class="admin-status admin-status-neutral"><i class="fas fa-medal"></i> 3</span>`
                             : `<span class="fw-bold">${idx + 1}</span>`));
                 const imgSrc = p.image ? p.image : '/images/default-product.png';
+                const pct = (p.percentage != null ? p.percentage : 0).toFixed(1);
 
                 tr.innerHTML = `
                     <td class="text-center">${rankHtml}</td>
                     <td>
-                        <img src="${imgSrc}" class="img-thumbnail rounded" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.src='https://placehold.co/44x44/f4f6fa/15171c?text=No+Img'">
+                        <img src="${imgSrc}" class="img-thumbnail rounded" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.src='https://placehold.co/40x40/f4f6fa/15171c?text=No+Img'">
                     </td>
-                    <td class="fw-bold text-dark">${escapeHtml(p.productName)}</td>
-                    <td class="text-secondary fw-semibold">${escapeHtml(p.categoryName)}</td>
+                    <td>
+                        <div class="fw-bold text-dark text-truncate" style="max-width: 180px;" title="${escapeHtml(p.productName)}">${escapeHtml(p.productName)}</div>
+                        <small class="text-muted">${escapeHtml(p.categoryName)}</small>
+                    </td>
                     <td class="text-center fw-bold text-primary">${formatNumber(p.soldQuantity)}</td>
-                    <td class="text-end fw-bold text-danger">${formatVND(p.revenue)}</td>
+                    <td class="text-end">
+                        <div class="fw-bold text-danger">${formatVND(p.revenue)}</div>
+                        <div class="d-flex align-items-center justify-content-end gap-1 mt-1">
+                            <div class="progress-micro flex-grow-1" style="max-width: 60px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: ${Math.min(pct, 100)}%;"></div>
+                            </div>
+                            <small class="text-muted fw-semibold">${pct}%</small>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function escapeHtml(str) {
-            if (str === null || str === undefined) return "";
-            return String(str)
-                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        // Cập nhật bảng Sản phẩm bán chậm / tồn kho
+        function updateSlowMovingProducts(data) {
+            const list = data.slowMovingProducts || [];
+            const tbody = document.querySelector("#tableSlowMoving tbody");
+            const noDataOverlay = document.getElementById("noDataOverlaySlowMoving");
+            const table = document.getElementById("tableSlowMoving");
+
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (list.length === 0) {
+                if (noDataOverlay) noDataOverlay.classList.remove("d-none");
+                if (table) table.classList.add("d-none");
+                return;
+            } else {
+                if (noDataOverlay) noDataOverlay.classList.add("d-none");
+                if (table) table.classList.remove("d-none");
+            }
+
+            list.forEach((p, idx) => {
+                const tr = document.createElement("tr");
+                const imgSrc = p.image ? p.image : '/images/default-product.png';
+                let badgeClass = "admin-status-neutral";
+                if (p.warningLevel === "DANGER") badgeClass = "admin-status-danger";
+                else if (p.warningLevel === "WARNING") badgeClass = "admin-status-warning";
+
+                tr.innerHTML = `
+                    <td class="text-center fw-bold text-muted">${idx + 1}</td>
+                    <td>
+                        <img src="${imgSrc}" class="img-thumbnail rounded" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.src='https://placehold.co/40x40/f4f6fa/15171c?text=No+Img'">
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark text-truncate" style="max-width: 180px;" title="${escapeHtml(p.productName)}">${escapeHtml(p.productName)}</div>
+                        <small class="text-muted">${escapeHtml(p.categoryName)}</small>
+                    </td>
+                    <td class="text-center fw-bold text-dark">${formatNumber(p.stockQuantity)}</td>
+                    <td class="text-center fw-bold ${p.soldQuantity === 0 ? 'text-danger' : 'text-primary'}">${formatNumber(p.soldQuantity)}</td>
+                    <td class="text-center">
+                        <span class="admin-status ${badgeClass}" style="font-size: 0.75rem;">${escapeHtml(p.warningBadge)}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
+        // Cập nhật các thẻ Nhận xét vận hành
+        function updateInsights(data) {
+            const list = data.insights || [];
+            const container = document.getElementById("containerInsights");
+            const noDataOverlay = document.getElementById("noDataOverlayInsights");
+
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                if (noDataOverlay) noDataOverlay.classList.remove("d-none");
+                return;
+            } else {
+                if (noDataOverlay) noDataOverlay.classList.add("d-none");
+            }
+
+            list.forEach(item => {
+                const col = document.createElement("div");
+                col.className = "col-lg-6 col-md-12";
+
+                let iconColor = "text-info";
+                if (item.type === "SUCCESS") iconColor = "text-success";
+                else if (item.type === "WARNING") iconColor = "text-warning";
+                else if (item.type === "DANGER") iconColor = "text-danger";
+
+                col.innerHTML = `
+                    <div class="insight-card insight-${escapeHtml(item.type)} d-flex align-items-start gap-3 h-100">
+                        <div class="fs-4 ${iconColor} mt-1">
+                            <i class="${escapeHtml(item.icon)}"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">${escapeHtml(item.title)}</div>
+                            <div class="small text-secondary mt-1">${escapeHtml(item.message)}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        // Cập nhật bảng Lịch sử giao dịch
         function updateTransactions(data) {
             const list = data.transactions || [];
             const tbody = document.querySelector("#tableTransactions tbody");
@@ -655,6 +1118,13 @@
             });
         }
 
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
         function formatVND(value) {
             if (value === null || value === undefined) return "0 đ";
             return Math.round(value).toLocaleString("vi-VN") + " đ";
@@ -665,6 +1135,7 @@
             return value.toLocaleString("vi-VN");
         }
 
+        // Tải dữ liệu mặc định ban đầu
         loadStatistics("last_30_days", "", "");
     });
     </script>

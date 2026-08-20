@@ -82,7 +82,7 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
             + "null, "
             + "null, "
             + "hd.tongTien, "
-            + "null "
+            + "hd.refundStatus "
             + "FROM HoaDon hd "
             + "LEFT JOIN hd.khachHang "
             + "LEFT JOIN hd.phuongThucThanhToan "

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.smashvn.shop.dto.product.BrandRevenueDTO;
 import com.smashvn.shop.dto.product.TopProductDTO;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 
@@ -16,7 +17,9 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
     List<HoaDonChiTiet> findByHoaDon_Id(Integer idHoaDon);
 
     @Query("SELECT COALESCE(SUM(hdct.soLuong), 0L) FROM HoaDonChiTiet hdct "
-            + "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
+            + "WHERE LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh', 'delivered') "
+            + "AND (hdct.hoaDon.trangThaiThanhToan IS NULL OR UPPER(hdct.hoaDon.trangThaiThanhToan) NOT IN ('REFUNDED', 'HOAN_TIEN', 'DA_HOAN_TIEN')) "
+            + "AND hdct.hoaDon.ngayTao BETWEEN :start AND :end")
     Long getTotalProductsSold(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT new com.smashvn.shop.dto.product.TopProductDTO("
@@ -28,7 +31,8 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
             + "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)"
             + ") "
             + "FROM HoaDonChiTiet hdct "
-            + "WHERE hdct.hoaDon.trangThaiDonHang IN ('da_giao', 'delivered') "
+            + "WHERE LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh', 'delivered') "
+            + "AND (hdct.hoaDon.trangThaiThanhToan IS NULL OR UPPER(hdct.hoaDon.trangThaiThanhToan) NOT IN ('REFUNDED', 'HOAN_TIEN', 'DA_HOAN_TIEN')) "
             + "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate "
             + "GROUP BY hdct.sanPhamChiTiet.sanPham.id, hdct.sanPhamChiTiet.sanPham.tenSanPham, hdct.sanPhamChiTiet.sanPham.danhMuc.tenDanhMuc "
             + "ORDER BY SUM(hdct.soLuong) DESC")
@@ -36,6 +40,32 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
+    );
+
+    @Query("SELECT COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0) FROM HoaDonChiTiet hdct "
+            + "WHERE LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh', 'delivered') "
+            + "AND (hdct.hoaDon.trangThaiThanhToan IS NULL OR UPPER(hdct.hoaDon.trangThaiThanhToan) NOT IN ('REFUNDED', 'HOAN_TIEN', 'DA_HOAN_TIEN')) "
+            + "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate")
+    Double getTotalProductLineRevenueInPeriod(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query("SELECT new com.smashvn.shop.dto.product.BrandRevenueDTO("
+            + "hdct.sanPhamChiTiet.sanPham.thuongHieu.id, "
+            + "COALESCE(hdct.sanPhamChiTiet.sanPham.thuongHieu.tenThuongHieu, 'Khác'), "
+            + "COALESCE(SUM(hdct.soLuong), 0L), "
+            + "COALESCE(SUM(hdct.soLuong * hdct.donGia), 0.0)"
+            + ") "
+            + "FROM HoaDonChiTiet hdct "
+            + "WHERE LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh', 'delivered') "
+            + "AND (hdct.hoaDon.trangThaiThanhToan IS NULL OR UPPER(hdct.hoaDon.trangThaiThanhToan) NOT IN ('REFUNDED', 'HOAN_TIEN', 'DA_HOAN_TIEN')) "
+            + "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate "
+            + "GROUP BY hdct.sanPhamChiTiet.sanPham.thuongHieu.id, hdct.sanPhamChiTiet.sanPham.thuongHieu.tenThuongHieu "
+            + "ORDER BY SUM(hdct.soLuong * hdct.donGia) DESC")
+    List<BrandRevenueDTO> findRevenueByBrand(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
     );
 
     @Query("SELECT COUNT(hdct) > 0 FROM HoaDonChiTiet hdct "
@@ -63,4 +93,15 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
         ORDER BY hd.id DESC
     """)
     List<HoaDonChiTiet> findKhoLoiSources(@Param("spctId") Integer spctId);
+
+    @Query("SELECT hdct.sanPhamChiTiet.sanPham.id, COALESCE(SUM(hdct.soLuong), 0L) "
+            + "FROM HoaDonChiTiet hdct "
+            + "WHERE LOWER(hdct.hoaDon.trangThaiDonHang) IN ('da_giao', 'hoan_thanh', 'delivered') "
+            + "AND (hdct.hoaDon.trangThaiThanhToan IS NULL OR UPPER(hdct.hoaDon.trangThaiThanhToan) NOT IN ('REFUNDED', 'HOAN_TIEN', 'DA_HOAN_TIEN')) "
+            + "AND hdct.hoaDon.ngayTao BETWEEN :startDate AND :endDate "
+            + "GROUP BY hdct.sanPhamChiTiet.sanPham.id")
+    List<Object[]> findSoldQuantityByProductInPeriod(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

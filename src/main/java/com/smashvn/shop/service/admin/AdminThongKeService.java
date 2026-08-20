@@ -32,12 +32,20 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.stream.Collectors;
+
 import com.smashvn.shop.dto.order.GeneralMetricsDTO;
+import com.smashvn.shop.dto.order.GrowthMetricDTO;
+import com.smashvn.shop.dto.order.OperationalInsightDTO;
+import com.smashvn.shop.dto.product.BrandRevenueDTO;
+import com.smashvn.shop.dto.product.SlowMovingProductDTO;
 import com.smashvn.shop.dto.product.TopProductDTO;
 import com.smashvn.shop.dto.payment.TransactionHistoryDTO;
 import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,8 +55,14 @@ public class AdminThongKeService {
 
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final SanPhamRepository sanPhamRepository;
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    // Ngưỡng cảnh báo dashboard nội bộ để phục vụ theo dõi vận hành
+    private static final double INTERNAL_HIGH_CANCEL_RATE_THRESHOLD = 15.0; // 15%
+    private static final double INTERNAL_REVENUE_GROWTH_THRESHOLD = 10.0;    // 10%
+    private static final double INTERNAL_REVENUE_DROP_THRESHOLD = -10.0;    // -10%
 
     public enum RevenueClassification {
         ACTUAL_REVENUE,
@@ -71,16 +85,16 @@ public class AdminThongKeService {
             String tStatus = trangThaiThanhToan != null ? trangThaiThanhToan.toUpperCase() : "";
 
             // 1. Actual Revenue: only successful/delivered orders
-            if ("da_giao".equals(status) || "hoan_thanh".equals(status)) {
+            if ("da_giao".equals(status) || "hoan_thanh".equals(status) || "delivered".equals(status)) {
                 // If it is refunded, it is a reversal
-                if ("refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
+                if ("refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
                     return RevenueClassification.ACTUAL_REVENUE_REVERSAL;
                 }
                 return RevenueClassification.ACTUAL_REVENUE;
             }
 
             // 2. Projected Revenue:
-            boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
+            boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
             if (isRefunded) {
                 return RevenueClassification.EXCLUDED;
             }
@@ -127,7 +141,7 @@ public class AdminThongKeService {
                 end = now.toLocalDate().atTime(LocalTime.MAX);
                 break;
             case "last_30_days":
-                start = now.toLocalDate().minusDays(30).atStartOfDay();
+                start = now.toLocalDate().minusDays(29).atStartOfDay();
                 end = now.toLocalDate().atTime(LocalTime.MAX);
                 break;
             case "all_time":
@@ -140,13 +154,13 @@ public class AdminThongKeService {
                     end = LocalDate.parse(endDateStr).atTime(LocalTime.MAX);
                 } else {
                     // Mặc định 30 ngày qua
-                    start = now.toLocalDate().minusDays(30).atStartOfDay();
+                    start = now.toLocalDate().minusDays(29).atStartOfDay();
                     end = now.toLocalDate().atTime(LocalTime.MAX);
                 }
                 break;
             default:
                 // Mặc định 30 ngày qua
-                start = now.toLocalDate().minusDays(30).atStartOfDay();
+                start = now.toLocalDate().minusDays(29).atStartOfDay();
                 end = now.toLocalDate().atTime(LocalTime.MAX);
                 break;
         }
@@ -155,6 +169,191 @@ public class AdminThongKeService {
         range.put("start", start);
         range.put("end", end);
         return range;
+    }
+
+    // Xử lý Lấy khoảng thời gian của kỳ trước tương ứng để so sánh tăng trưởng
+    public Map<String, LocalDateTime> getPreviousDateRange(String preset, LocalDateTime currentStart, LocalDateTime currentEnd) {
+        if (preset == null || "all_time".equalsIgnoreCase(preset)) {
+            return null;
+        }
+
+        LocalDateTime prevStart;
+        LocalDateTime prevEnd;
+
+        switch (preset.toLowerCase()) {
+            case "today":
+                // Hôm qua
+                prevStart = currentStart.minusDays(1);
+                prevEnd = currentEnd.minusDays(1);
+                break;
+            case "this_week":
+                // Cùng khoảng thời gian của tuần trước
+                prevStart = currentStart.minusWeeks(1);
+                prevEnd = currentEnd.minusWeeks(1);
+                break;
+            case "last_30_days":
+                // 30 ngày ngay trước khoảng hiện tại
+                prevStart = currentStart.minusDays(30);
+                prevEnd = currentStart.minusNanos(1);
+                break;
+            case "this_month":
+                // Cùng khoảng ngày tương ứng của tháng trước (an toàn khi tháng trước ngắn hơn)
+                LocalDate prevMonthStart = currentStart.toLocalDate().minusMonths(1).withDayOfMonth(1);
+                int maxDayPrevMonth = prevMonthStart.lengthOfMonth();
+                int targetDay = Math.min(currentEnd.toLocalDate().getDayOfMonth(), maxDayPrevMonth);
+                LocalDate prevMonthEnd = prevMonthStart.withDayOfMonth(targetDay);
+                prevStart = prevMonthStart.atStartOfDay();
+                prevEnd = prevMonthEnd.atTime(LocalTime.MAX);
+                break;
+            case "this_year":
+                // Cùng khoảng thời gian tương ứng của năm trước (Leap year safe)
+                prevStart = currentStart.minusYears(1);
+                prevEnd = currentEnd.minusYears(1);
+                break;
+            case "custom":
+            default:
+                // Kỳ trước có ĐÚNG SỐ NGÀY LỊCH bằng kỳ hiện tại
+                long days = java.time.temporal.ChronoUnit.DAYS.between(
+                        currentStart.toLocalDate(),
+                        currentEnd.toLocalDate()
+                ) + 1;
+                prevStart = currentStart.minusDays(days);
+                prevEnd = currentStart.minusNanos(1);
+                break;
+        }
+
+        Map<String, LocalDateTime> prevRange = new HashMap<>();
+        prevRange.put("start", prevStart);
+        prevRange.put("end", prevEnd);
+        return prevRange;
+    }
+
+    // Helper tính toán tăng trưởng giữa kỳ hiện tại và kỳ trước an toàn phép chia cho 0
+    public static GrowthMetricDTO calculateGrowth(Double current, Double previous) {
+        if (current == null) current = 0.0;
+        if (previous == null) previous = 0.0;
+
+        if (previous == 0.0) {
+            if (current == 0.0) {
+                return new GrowthMetricDTO(current, previous, 0.0, "0.0%", "EQUAL", false);
+            } else {
+                return new GrowthMetricDTO(current, previous, null, "Mới", "UP", true);
+            }
+        }
+
+        double diff = current - previous;
+        double pct = (diff / previous) * 100.0;
+        String dir;
+        String formatted;
+        if (Math.abs(pct) < 0.05) {
+            dir = "EQUAL";
+            formatted = "0.0%";
+        } else if (pct > 0) {
+            dir = "UP";
+            formatted = String.format("↑ %.1f%%", pct);
+        } else {
+            dir = "DOWN";
+            formatted = String.format("↓ %.1f%%", Math.abs(pct));
+        }
+        return new GrowthMetricDTO(current, previous, pct, formatted, dir, false);
+    }
+
+    // Sinh 3-5 nhận xét vận hành quan trọng dựa trên dữ liệu thực tế
+    public List<OperationalInsightDTO> generateOperationalInsights(
+            GrowthMetricDTO revenueGrowth,
+            GrowthMetricDTO cancelGrowth,
+            double cancellationRate,
+            long totalOrders,
+            List<BrandRevenueDTO> brandRevenues,
+            List<SlowMovingProductDTO> slowMovingProducts,
+            BigDecimal pendingRefund) {
+
+        List<OperationalInsightDTO> insights = new ArrayList<>();
+
+        // 1. Nhận xét doanh thu so với kỳ trước
+        if (revenueGrowth != null && revenueGrowth.percentageChange() != null) {
+            double pct = revenueGrowth.percentageChange();
+            if (pct >= INTERNAL_REVENUE_GROWTH_THRESHOLD) {
+                insights.add(new OperationalInsightDTO(
+                        "SUCCESS",
+                        "Tăng trưởng doanh thu tích cực",
+                        String.format("Doanh thu thực tế kỳ này tăng %.1f%% so với kỳ trước.", pct),
+                        "fas fa-arrow-trend-up"
+                ));
+            } else if (pct <= INTERNAL_REVENUE_DROP_THRESHOLD) {
+                insights.add(new OperationalInsightDTO(
+                        "WARNING",
+                        "Doanh thu suy giảm",
+                        String.format("Doanh thu thực tế kỳ này giảm %.1f%% so với kỳ trước.", Math.abs(pct)),
+                        "fas fa-arrow-trend-down"
+                ));
+            } else {
+                insights.add(new OperationalInsightDTO(
+                        "INFO",
+                        "Doanh thu ổn định",
+                        String.format("Doanh thu thực tế duy trì tương đương kỳ trước (%s).", revenueGrowth.formattedChange()),
+                        "fas fa-chart-line"
+                ));
+            }
+        } else if (revenueGrowth != null && Boolean.TRUE.equals(revenueGrowth.isNew())) {
+            insights.add(new OperationalInsightDTO(
+                    "SUCCESS",
+                    "Ghi nhận doanh thu mới",
+                    "Kỳ này phát sinh doanh thu mới so với mức 0 đ ở kỳ trước.",
+                    "fas fa-sparkles"
+            ));
+        }
+
+        // 2. Cảnh báo tỷ lệ hủy đơn hàng
+        if (totalOrders >= 5 && cancellationRate >= INTERNAL_HIGH_CANCEL_RATE_THRESHOLD) {
+            insights.add(new OperationalInsightDTO(
+                    "DANGER",
+                    "Tỷ lệ hủy đơn cao",
+                    String.format("Tỷ lệ hủy đơn đạt %.1f%% trên tổng số %d đơn hàng phát sinh trong kỳ.", cancellationRate, totalOrders),
+                    "fas fa-triangle-exclamation"
+            ));
+        }
+
+        // 3. Thương hiệu đóng góp doanh thu lớn nhất
+        if (brandRevenues != null && !brandRevenues.isEmpty()) {
+            BrandRevenueDTO topBrand = brandRevenues.get(0);
+            if (topBrand.revenue() != null && topBrand.revenue().compareTo(BigDecimal.ZERO) > 0 && topBrand.percentage() != null && topBrand.percentage() > 0.0) {
+                insights.add(new OperationalInsightDTO(
+                        "INFO",
+                        "Thương hiệu chủ lực",
+                        String.format("Thương hiệu %s đóng góp tỷ trọng doanh thu hàng hóa lớn nhất: %.1f%%.",
+                                topBrand.brandName(), topBrand.percentage()),
+                        "fas fa-award"
+                ));
+            }
+        }
+
+        // 4. Hàng tồn kho không phát sinh đơn bán
+        if (slowMovingProducts != null) {
+            long zeroSalesCount = slowMovingProducts.stream().filter(p -> p.soldQuantity() == 0).count();
+            if (zeroSalesCount > 0) {
+                insights.add(new OperationalInsightDTO(
+                        "WARNING",
+                        "Sản phẩm tồn kho chưa bán được",
+                        String.format("Có %d sản phẩm trong danh sách theo dõi đang còn tồn kho nhưng chưa phát sinh lượt bán trong kỳ.", zeroSalesCount),
+                        "fas fa-boxes-stacked"
+                ));
+            }
+        }
+
+        // 5. Cảnh báo tiền chờ hoàn
+        if (pendingRefund != null && pendingRefund.compareTo(BigDecimal.ZERO) > 0) {
+            insights.add(new OperationalInsightDTO(
+                    "WARNING",
+                    "Dòng tiền chờ hoàn trả",
+                    String.format("Hiện đang có %s đ tiền hàng trong trạng thái chờ xử lý hoàn trả.",
+                            Math.round(pendingRefund.doubleValue())),
+                    "fas fa-hand-holding-dollar"
+            ));
+        }
+
+        // Giới hạn tối đa 5 insights quan trọng nhất
+        return insights.stream().limit(5).collect(Collectors.toList());
     }
 
     // Xác định kiểu gom nhóm biểu đồ
@@ -277,13 +476,15 @@ public class AdminThongKeService {
     }
 
     // Cache kết quả thống kê 30 giây (được cấu hình bằng Caffeine TTL ở application.properties)
-    @Cacheable(value = "thongke", key = "#start.toString() + '-' + #end.toString()")
-    public Map<String, Object> getStatisticsData(LocalDateTime start, LocalDateTime end) {
+    @Cacheable(value = "thongke", key = "(#preset != null ? #preset : 'default') + '-' + #start.toString() + '-' + #end.toString()")
+    public Map<String, Object> getStatisticsData(String preset, LocalDateTime start, LocalDateTime end) {
         List<Object[]> rawOrders = hoaDonRepository.findAllOrdersInPeriod(start, end);
 
         long totalOrders = rawOrders.size();
         long successfulOrders = 0;
+        long processingOrders = 0;
         long cancelledOrders = 0;
+        long refundedOrders = 0;
         BigDecimal actualRevenue = BigDecimal.ZERO;
         BigDecimal expectedRevenue = BigDecimal.ZERO;
         BigDecimal refundedRevenue = BigDecimal.ZERO; // New Metric: total value of refunded orders
@@ -334,6 +535,7 @@ public class AdminThongKeService {
             } else if (classification == RevenueClassification.ACTUAL_REVENUE_REVERSAL) {
                 actualRevenue = actualRevenue.subtract(tongTien);
                 refundedRevenue = refundedRevenue.add(tongTien); // Add to new metric
+                refundedOrders++;
                 revenueContribution = tongTien.negate();
             } else if (classification == RevenueClassification.PROJECTED_REVENUE) {
                 expectedRevenue = expectedRevenue.add(tongTien);
@@ -353,10 +555,15 @@ public class AdminThongKeService {
                 }
             }
 
-            // Count cancelled orders
+            // Count order categories
             String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
-            if ("da_huy".equals(status)) {
+            if ("da_huy".equals(status) || "cancelled".equals(status) || "giao_that_bai".equals(status) || "stock_conflict".equals(status)) {
                 cancelledOrders++;
+            } else if ("cho_xac_nhan".equals(status) || "cho_thanh_toan".equals(status) || "da_xac_nhan".equals(status) 
+                    || "dang_chuan_bi_hang".equals(status) || "san_sang_giao".equals(status) || "da_tao_van_don_ghn".equals(status) 
+                    || "da_ban_giao_ghn".equals(status) || "dang_lay_hang".equals(status) || "dang_giao".equals(status) 
+                    || "processing".equals(status) || "shipping".equals(status)) {
+                processingOrders++;
             }
 
             // Count pending refund
@@ -364,18 +571,18 @@ public class AdminThongKeService {
                 pendingRefund = pendingRefund.add(tongTien);
             }
 
-            // Status map distribution
+            // Status map distribution for chart
             String normalizedStatus = switch (status) {
-                case "da_giao", "delivered" ->
+                case "da_giao", "delivered", "hoan_thanh" ->
                     "da_giao";
-                case "da_huy", "cancelled" ->
+                case "da_huy", "cancelled", "giao_that_bai", "stock_conflict" ->
                     "da_huy";
                 case "dang_giao", "shipping", "dang_lay_hang", "da_ban_giao_ghn" ->
                     "dang_giao";
-                case "cho_xac_nhan", "processing", "da_xac_nhan", "dang_chuan_bi_hang", "san_sang_giao", "da_tao_van_don_ghn" ->
+                case "cho_xac_nhan", "cho_thanh_toan", "processing", "da_xac_nhan", "dang_chuan_bi_hang", "san_sang_giao", "da_tao_van_don_ghn" ->
                     "cho_xac_nhan";
                 default ->
-                    status;
+                    "cho_xac_nhan";
             };
             if (statusMap.containsKey(normalizedStatus)) {
                 statusMap.put(normalizedStatus, statusMap.get(normalizedStatus) + 1);
@@ -395,8 +602,8 @@ public class AdminThongKeService {
                     if ("PAID".equals(pStatus)) {
                         onlineSuccess++;
                         // Revenue: only count if delivered AND gateway-confirmed
-                        if ("da_giao".equalsIgnoreCase(trangThaiDonHang) || "hoan_thanh".equalsIgnoreCase(trangThaiDonHang)) {
-                            if ("REFUNDED".equals(pStatus) || "REFUNDED".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
+                        if ("da_giao".equalsIgnoreCase(trangThaiDonHang) || "hoan_thanh".equalsIgnoreCase(trangThaiDonHang) || "delivered".equalsIgnoreCase(trangThaiDonHang)) {
+                            if ("REFUNDED".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
                                 onlineRevenue = onlineRevenue.subtract(tongTien);
                             } else {
                                 onlineRevenue = onlineRevenue.add(tongTien);
@@ -420,11 +627,10 @@ public class AdminThongKeService {
             avgOrderValue = sum.doubleValue() / successfulOrderAmounts.size();
         }
 
-        // Tỷ lệ hủy đơn
-        double cancellationRate = 0.0;
-        if (totalOrders > 0) {
-            cancellationRate = ((double) cancelledOrders / totalOrders) * 100.0;
-        }
+        // Rates
+        double successRate = totalOrders > 0 ? ((double) successfulOrders / totalOrders) * 100.0 : 0.0;
+        double cancellationRate = totalOrders > 0 ? ((double) cancelledOrders / totalOrders) * 100.0 : 0.0;
+        double processingRate = totalOrders > 0 ? ((double) processingOrders / totalOrders) * 100.0 : 0.0;
 
         // Khách hàng mới (Có đơn đầu tiên hoàn thành trong kỳ)
         Long newCustomersCount = hoaDonRepository.countNewCustomers(start, end);
@@ -456,8 +662,87 @@ public class AdminThongKeService {
             }
         }
 
-        // Top 5 products
-        List<TopProductDTO> topProducts = hoaDonChiTietRepository.findBestSellingProducts(start, end, PageRequest.of(0, 5));
+        // Top 5 products with revenue percentage calculated against total valid product line revenue
+        List<TopProductDTO> rawTopProducts = hoaDonChiTietRepository.findBestSellingProducts(start, end, PageRequest.of(0, 5));
+        Double totalValidProductRevenue = hoaDonChiTietRepository.getTotalProductLineRevenueInPeriod(start, end);
+        double baseProductRevenue = (totalValidProductRevenue != null && totalValidProductRevenue > 0) ? totalValidProductRevenue : 0.0;
+
+        List<TopProductDTO> topProducts = new ArrayList<>();
+        for (TopProductDTO p : rawTopProducts) {
+            double pRev = p.revenue() != null ? p.revenue().doubleValue() : 0.0;
+            double pShare = baseProductRevenue > 0 ? (pRev / baseProductRevenue) * 100.0 : 0.0;
+            topProducts.add(p.withPercentage(pShare));
+        }
+
+        // Brand revenue statistics & chart data
+        List<BrandRevenueDTO> rawBrandRevenues = hoaDonChiTietRepository.findRevenueByBrand(start, end);
+        List<BrandRevenueDTO> brandRevenues = new ArrayList<>();
+        List<String> brandChartLabels = new ArrayList<>();
+        List<BigDecimal> brandChartValues = new ArrayList<>();
+
+        for (BrandRevenueDTO b : rawBrandRevenues) {
+            double bRev = b.revenue() != null ? b.revenue().doubleValue() : 0.0;
+            double bShare = baseProductRevenue > 0 ? (bRev / baseProductRevenue) * 100.0 : 0.0;
+            BrandRevenueDTO enrichedBrand = b.withPercentage(bShare);
+            brandRevenues.add(enrichedBrand);
+            brandChartLabels.add(b.brandName() != null ? b.brandName() : "Khác");
+            brandChartValues.add(b.revenue() != null ? b.revenue() : BigDecimal.ZERO);
+        }
+
+        // Slow moving / inventory analysis (Products with stock > 0, supporting soldQty = 0)
+        List<Object[]> activeProducts = sanPhamRepository.findActiveProductsWithStock();
+        List<Object[]> salesData = hoaDonChiTietRepository.findSoldQuantityByProductInPeriod(start, end);
+
+        Map<Integer, Long> salesMap = new HashMap<>();
+        for (Object[] row : salesData) {
+            Integer pId = (Integer) row[0];
+            Long sold = (Long) row[1];
+            salesMap.put(pId, sold != null ? sold : 0L);
+        }
+
+        List<SlowMovingProductDTO> slowMovingCandidates = new ArrayList<>();
+        for (Object[] row : activeProducts) {
+            Integer pId = (Integer) row[0];
+            String pName = (String) row[1];
+            String catName = (String) row[2];
+            String img = (String) row[3];
+            Long stock = (Long) row[4];
+            long sold = salesMap.getOrDefault(pId, 0L);
+            long stockVal = stock != null ? stock : 0L;
+
+            if (stockVal > 0) {
+                String warningLevel;
+                String warningBadge;
+                if (sold == 0) {
+                    warningLevel = "DANGER";
+                    warningBadge = "Không phát sinh bán trong kỳ";
+                } else {
+                    warningLevel = "WARNING";
+                    warningBadge = "Cần theo dõi";
+                }
+
+                slowMovingCandidates.add(new SlowMovingProductDTO(
+                        pId,
+                        pName,
+                        catName,
+                        img,
+                        stockVal,
+                        sold,
+                        warningLevel,
+                        warningBadge
+                ));
+            }
+        }
+
+        // Sort priority: soldQuantity ASC, stockQuantity DESC
+        slowMovingCandidates.sort(
+                Comparator.comparingLong(SlowMovingProductDTO::soldQuantity)
+                          .thenComparing(Comparator.comparingLong(SlowMovingProductDTO::stockQuantity).reversed())
+        );
+
+        List<SlowMovingProductDTO> slowMovingProducts = slowMovingCandidates.stream()
+                .limit(5)
+                .collect(Collectors.toList());
 
         // General DTO
         GeneralMetricsDTO metrics = new GeneralMetricsDTO(
@@ -471,12 +756,23 @@ public class AdminThongKeService {
 
         Map<String, Object> data = new HashMap<>();
         data.put("metrics", metrics);
+        data.put("totalOrders", totalOrders);
+        data.put("successfulOrders", successfulOrders);
+        data.put("processingOrders", processingOrders);
+        data.put("cancelledOrders", cancelledOrders);
+        data.put("refundedOrders", refundedOrders);
+        data.put("successRate", successRate);
         data.put("cancellationRate", cancellationRate);
+        data.put("processingRate", processingRate);
         data.put("newCustomers", newCustomersCount != null ? newCustomersCount : 0L);
         data.put("statusDistribution", statusMap);
         data.put("chartLabels", chartLabels);
         data.put("chartValues", chartValues);
         data.put("topProducts", topProducts);
+        data.put("slowMovingProducts", slowMovingProducts);
+        data.put("brandRevenues", brandRevenues);
+        data.put("brandChartLabels", brandChartLabels);
+        data.put("brandChartValues", brandChartValues);
         data.put("grouping", grouping);
         data.put("expectedRevenue", expectedRevenue);
         data.put("actualRevenue", actualRevenue);
@@ -497,7 +793,91 @@ public class AdminThongKeService {
         data.put("displayedTransactions", transactions.size());
         data.put("transactions", transactions);
 
+        // Growth / Comparison with previous period
+        Map<String, GrowthMetricDTO> growthMap = new HashMap<>();
+        Map<String, LocalDateTime> prevRange = (preset != null && !"all_time".equalsIgnoreCase(preset))
+                ? getPreviousDateRange(preset, start, end)
+                : null;
+
+        if (prevRange != null && prevRange.get("start") != null && prevRange.get("end") != null) {
+            LocalDateTime prevStart = prevRange.get("start");
+            LocalDateTime prevEnd = prevRange.get("end");
+
+            List<Object[]> rawPrevOrders = hoaDonRepository.findAllOrdersInPeriod(prevStart, prevEnd);
+            long prevTotalOrders = rawPrevOrders.size();
+            long prevSuccessfulOrders = 0;
+            long prevCancelledOrders = 0;
+            BigDecimal prevActualRevenue = BigDecimal.ZERO;
+            List<BigDecimal> prevSuccessfulOrderAmounts = new ArrayList<>();
+
+            for (Object[] row : rawPrevOrders) {
+                String paymentMethod = (String) row[4];
+                String paymentStatus = (String) row[6];
+                String trangThaiThanhToan = (String) row[7];
+                String trangThaiDonHang = (String) row[8];
+                BigDecimal tongTien = (BigDecimal) row[12];
+                RefundStatus refundStatus = (RefundStatus) row[13];
+
+                if (tongTien == null) {
+                    tongTien = BigDecimal.ZERO;
+                }
+
+                String m1 = paymentMethod != null ? paymentMethod.toUpperCase().trim() : "";
+                String m2 = (String) row[5] != null ? ((String) row[5]).toUpperCase().trim() : "";
+                boolean isCod = m1.contains("COD") || m2.contains("COD");
+                RevenueClassification classification = OrderClassifier.classify(trangThaiDonHang, paymentStatus, trangThaiThanhToan, refundStatus, isCod);
+
+                if (classification == RevenueClassification.ACTUAL_REVENUE) {
+                    prevActualRevenue = prevActualRevenue.add(tongTien);
+                    prevSuccessfulOrders++;
+                    prevSuccessfulOrderAmounts.add(tongTien);
+                } else if (classification == RevenueClassification.ACTUAL_REVENUE_REVERSAL) {
+                    prevActualRevenue = prevActualRevenue.subtract(tongTien);
+                }
+
+                String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
+                if ("da_huy".equals(status) || "cancelled".equals(status) || "giao_that_bai".equals(status) || "stock_conflict".equals(status)) {
+                    prevCancelledOrders++;
+                }
+            }
+
+            double prevAvgOrderValue = 0.0;
+            if (!prevSuccessfulOrderAmounts.isEmpty()) {
+                BigDecimal sum = prevSuccessfulOrderAmounts.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+                prevAvgOrderValue = sum.doubleValue() / prevSuccessfulOrderAmounts.size();
+            }
+
+            double prevCancellationRate = prevTotalOrders > 0 ? ((double) prevCancelledOrders / prevTotalOrders) * 100.0 : 0.0;
+            Long prevNewCustomersCount = hoaDonRepository.countNewCustomers(prevStart, prevEnd);
+            long prevNewCust = prevNewCustomersCount != null ? prevNewCustomersCount : 0L;
+
+            growthMap.put("revenue", calculateGrowth(actualRevenue.doubleValue(), prevActualRevenue.doubleValue()));
+            growthMap.put("totalOrders", calculateGrowth((double) totalOrders, (double) prevTotalOrders));
+            growthMap.put("avgOrderValue", calculateGrowth(avgOrderValue, prevAvgOrderValue));
+            growthMap.put("newCustomers", calculateGrowth((double) (newCustomersCount != null ? newCustomersCount : 0L), (double) prevNewCust));
+            growthMap.put("cancellationRate", calculateGrowth(cancellationRate, prevCancellationRate));
+        }
+
+        data.put("growth", growthMap.isEmpty() ? null : growthMap);
+        data.put("hasPreviousPeriod", prevRange != null);
+
+        // Generate Operational Insights (Rule-based 3-5 key points)
+        List<OperationalInsightDTO> insights = generateOperationalInsights(
+                growthMap.get("revenue"),
+                growthMap.get("cancellationRate"),
+                cancellationRate,
+                totalOrders,
+                brandRevenues,
+                slowMovingProducts,
+                pendingRefund
+        );
+        data.put("insights", insights);
+
         return data;
+    }
+
+    public Map<String, Object> getStatisticsData(LocalDateTime start, LocalDateTime end) {
+        return getStatisticsData("last_30_days", start, end);
     }
 
     // Xuất báo cáo thống kê ra file Excel
@@ -654,6 +1034,10 @@ public class AdminThongKeService {
                 cellVal.setCellStyle(currencyStyle);
             }
 
+            // Kiểu định dạng tỷ lệ %
+            CellStyle percentStyle = workbook.createCellStyle();
+            percentStyle.setDataFormat(format.getFormat("0.0%"));
+
             // ----------------------------------------------------
             // SHEET 3: TOP SẢN PHẨM BÁN CHẠY
             // ----------------------------------------------------
@@ -661,11 +1045,12 @@ public class AdminThongKeService {
             prodSheet.setColumnWidth(0, 2000);
             prodSheet.setColumnWidth(1, 10000);
             prodSheet.setColumnWidth(2, 5000);
-            prodSheet.setColumnWidth(3, 3000);
+            prodSheet.setColumnWidth(3, 3500);
             prodSheet.setColumnWidth(4, 5000);
+            prodSheet.setColumnWidth(5, 3500);
 
             Row rProdHeader = prodSheet.createRow(0);
-            String[] prodHeaders = {"Rank", "Tên Sản Phẩm", "Danh Mục", "Số Lượng Bán", "Doanh Thu"};
+            String[] prodHeaders = {"Rank", "Tên Sản Phẩm", "Danh Mục", "Số Lượng Bán", "Doanh Thu", "Tỷ Trọng"};
             for (int i = 0; i < prodHeaders.length; i++) {
                 Cell cell = rProdHeader.createCell(i);
                 cell.setCellValue(prodHeaders[i]);
@@ -680,12 +1065,85 @@ public class AdminThongKeService {
                 row.createCell(2).setCellValue(p.categoryName());
                 row.createCell(3).setCellValue(p.soldQuantity());
                 Cell cellRev = row.createCell(4);
-                cellRev.setCellValue(p.revenue().doubleValue());
+                cellRev.setCellValue(p.revenue() != null ? p.revenue().doubleValue() : 0.0);
                 cellRev.setCellStyle(currencyStyle);
+                Cell cellPct = row.createCell(5);
+                cellPct.setCellValue((p.percentage() != null ? p.percentage() : 0.0) / 100.0);
+                cellPct.setCellStyle(percentStyle);
             }
 
             // ----------------------------------------------------
-            // SHEET 4: LỊCH SỬ GIAO DỊCH
+            // SHEET 4: DOANH THU THEO THƯƠNG HIỆU
+            // ----------------------------------------------------
+            Sheet brandSheet = workbook.createSheet("Doanh Thu Theo Thương Hiệu");
+            brandSheet.setColumnWidth(0, 2000);
+            brandSheet.setColumnWidth(1, 7000);
+            brandSheet.setColumnWidth(2, 3500);
+            brandSheet.setColumnWidth(3, 5000);
+            brandSheet.setColumnWidth(4, 3500);
+
+            Row rBrandHeader = brandSheet.createRow(0);
+            String[] brandHeaders = {"Rank", "Thương Hiệu", "Số Lượng Bán", "Doanh Thu", "Tỷ Trọng"};
+            for (int i = 0; i < brandHeaders.length; i++) {
+                Cell cell = rBrandHeader.createCell(i);
+                cell.setCellValue(brandHeaders[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            @SuppressWarnings("unchecked")
+            List<BrandRevenueDTO> brandList = (List<BrandRevenueDTO>) stats.get("brandRevenues");
+            if (brandList != null) {
+                for (int i = 0; i < brandList.size(); i++) {
+                    BrandRevenueDTO b = brandList.get(i);
+                    Row row = brandSheet.createRow(i + 1);
+                    row.createCell(0).setCellValue(i + 1);
+                    row.createCell(1).setCellValue(b.brandName());
+                    row.createCell(2).setCellValue(b.soldQuantity() != null ? b.soldQuantity() : 0L);
+                    Cell cellRev = row.createCell(3);
+                    cellRev.setCellValue(b.revenue() != null ? b.revenue().doubleValue() : 0.0);
+                    cellRev.setCellStyle(currencyStyle);
+                    Cell cellPct = row.createCell(4);
+                    cellPct.setCellValue((b.percentage() != null ? b.percentage() : 0.0) / 100.0);
+                    cellPct.setCellStyle(percentStyle);
+                }
+            }
+
+            // ----------------------------------------------------
+            // SHEET 5: SẢN PHẨM BÁN CHẬM / TỒN KHO
+            // ----------------------------------------------------
+            Sheet slowSheet = workbook.createSheet("Sản Phẩm Bán Chậm - Tồn Kho");
+            slowSheet.setColumnWidth(0, 2000);
+            slowSheet.setColumnWidth(1, 10000);
+            slowSheet.setColumnWidth(2, 5000);
+            slowSheet.setColumnWidth(3, 3500);
+            slowSheet.setColumnWidth(4, 3500);
+            slowSheet.setColumnWidth(5, 6000);
+
+            Row rSlowHeader = slowSheet.createRow(0);
+            String[] slowHeaders = {"Rank", "Tên Sản Phẩm", "Danh Mục", "Tồn Kho Hiện Tại", "Đã Bán Trong Kỳ", "Cảnh Báo"};
+            for (int i = 0; i < slowHeaders.length; i++) {
+                Cell cell = rSlowHeader.createCell(i);
+                cell.setCellValue(slowHeaders[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            @SuppressWarnings("unchecked")
+            List<SlowMovingProductDTO> slowList = (List<SlowMovingProductDTO>) stats.get("slowMovingProducts");
+            if (slowList != null) {
+                for (int i = 0; i < slowList.size(); i++) {
+                    SlowMovingProductDTO s = slowList.get(i);
+                    Row row = slowSheet.createRow(i + 1);
+                    row.createCell(0).setCellValue(i + 1);
+                    row.createCell(1).setCellValue(s.productName());
+                    row.createCell(2).setCellValue(s.categoryName());
+                    row.createCell(3).setCellValue(s.stockQuantity() != null ? s.stockQuantity() : 0L);
+                    row.createCell(4).setCellValue(s.soldQuantity() != null ? s.soldQuantity() : 0L);
+                    row.createCell(5).setCellValue(s.warningBadge());
+                }
+            }
+
+            // ----------------------------------------------------
+            // SHEET 6: LỊCH SỬ GIAO DỊCH
             // ----------------------------------------------------
             Sheet txSheet = workbook.createSheet("Lịch Sử Giao Dịch");
             txSheet.setColumnWidth(0, 3000);

@@ -200,4 +200,16 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
         @Param("maxPrice") java.math.BigDecimal maxPrice,
         org.springframework.data.domain.Pageable pageable
     );
+
+    @Query("SELECT sp.id, "
+            + "sp.tenSanPham, "
+            + "COALESCE(sp.danhMuc.tenDanhMuc, 'Chưa phân loại'), "
+            + "COALESCE((SELECT MIN(ha.urlHinhAnh) FROM HinhAnhSanPham ha JOIN ha.sanPhamChiTiet spctMain WHERE spctMain.sanPham.id = sp.id), ''), "
+            + "COALESCE(SUM(spct.soLuongTon), 0L) "
+            + "FROM SanPham sp "
+            + "JOIN sp.sanPhamChiTiets spct "
+            + "WHERE sp.trangThaiValue = true AND spct.trangThaiValue = true "
+            + "GROUP BY sp.id, sp.tenSanPham, sp.danhMuc.tenDanhMuc "
+            + "HAVING SUM(spct.soLuongTon) > 0")
+    List<Object[]> findActiveProductsWithStock();
 }
