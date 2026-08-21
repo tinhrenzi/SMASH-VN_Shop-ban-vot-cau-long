@@ -632,7 +632,37 @@
                                                                       ? rawNote.substring(rawNote.lastIndexOf('Lý do hủy:') + 10).trim() 
                                                                       : 'Không cung cấp lý do'}"></span>
                                                  </div>
-                                            </div>
+
+                                                 <!-- Trạng thái chờ hoàn tiền -->
+                                                 <div th:if="${order['trangThaiThanhToan'] == 'CHO_HOAN_TIEN' or order['refundStatus'] == 'PENDING'}"
+                                                      style="margin-top: 8px; padding: 10px 12px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; color: #b78103; font-size: 12px;">
+                                                     <i class="fas fa-hourglass-half" style="margin-right: 6px;"></i>
+                                                     <strong>Thông tin hoàn tiền:</strong> Đơn hàng đã được ghi nhận hủy. Shop đang tiến hành thủ tục hoàn tiền cho bạn.
+                                                 </div>
+
+                                                 <!-- Đã hoàn tiền thành công -->
+                                                 <div th:if="${order['trangThaiThanhToan'] == 'REFUNDED' or order['trangThaiThanhToan'] == 'DA_HOAN_TIEN' or (order['anhChungTuHoanTien'] != null and !#strings.isEmpty(order['anhChungTuHoanTien']))}"
+                                                      style="margin-top: 8px; padding: 12px 14px; background: #f4fbf7; border: 1px solid #c3e6cb; border-radius: 6px; color: #155724;">
+                                                     <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                                         <i class="fas fa-check-circle" style="color: #198754;"></i>
+                                                         <span>Shop đã hoàn tiền thành công cho đơn hàng này!</span>
+                                                     </div>
+                                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 12px;">
+                                                         <div><strong>Số tiền hoàn:</strong> <span style="font-size: 13px; font-weight: 700; color: #d9534f;" th:text="${#numbers.formatDecimal(order['soTienHoan'] != null ? order['soTienHoan'] : order['tongTien'], 0, 'COMMA', 0, 'POINT')} + 'đ'"></span></div>
+                                                         <div th:if="${order['phuongThucHoanTien'] != null and !#strings.isEmpty(order['phuongThucHoanTien'])}"><strong>Phương thức:</strong> <span th:text="${order['phuongThucHoanTien'] == 'CHUYEN_KHOAN' ? 'Chuyển khoản ngân hàng' : (order['phuongThucHoanTien'] == 'TIEN_MAT' ? 'Tiền mặt' : order['phuongThucHoanTien'])}"></span></div>
+                                                         <div th:if="${order['maGiaoDichHoanTien'] != null and !#strings.isEmpty(order['maGiaoDichHoanTien'])}"><strong>Mã giao dịch:</strong> <code th:text="${order['maGiaoDichHoanTien']}"></code></div>
+                                                         <div th:if="${order['thoiGianHoanTien'] != null and !#strings.isEmpty(order['thoiGianHoanTien'])}"><strong>Thời gian:</strong> <span th:text="${order['thoiGianHoanTien']}"></span></div>
+                                                     </div>
+                                                     <div th:if="${order['ghiChuHoanTien'] != null and !#strings.isEmpty(order['ghiChuHoanTien'])}" style="margin-top: 6px; font-size: 12px;">
+                                                         <strong>Ghi chú từ Shop:</strong> <span th:text="${order['ghiChuHoanTien']}"></span>
+                                                     </div>
+                                                     <div th:if="${order['anhChungTuHoanTien'] != null and !#strings.isEmpty(order['anhChungTuHoanTien'])}" style="margin-top: 8px;">
+                                                         <a th:href="${order['anhChungTuHoanTien']}" target="_blank" class="btn btn-sm btn-outline-success" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid #198754; color: #198754; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                                             <i class="fas fa-file-invoice-dollar"></i> Xem chứng từ chuyển khoản
+                                                         </a>
+                                                     </div>
+                                                 </div>
+                                             </div>
                                         </div>
                                     </div>
 

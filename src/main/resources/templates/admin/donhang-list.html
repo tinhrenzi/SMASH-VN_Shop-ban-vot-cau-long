@@ -336,16 +336,15 @@
                                                          </button>
 
                                                          <!-- Nút Hoàn tiền đơn hủy -->
-                                                         <form th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
-                                                               th:action="@{/admin/don-hang/approve-refund-ui}" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" 
-                                                                     title="Xác nhận hoàn tiền"
-                                                                     onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này?')">
-                                                                 <i class="fas fa-hand-holding-usd text-success"></i>
-                                                             </button>
-                                                         </form>
+                                                         <button th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                                 type="button" class="admin-btn admin-btn-icon" 
+                                                                 title="Xác nhận hoàn tiền"
+                                                                 th:data-id="${hd.id}"
+                                                                 th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                                 th:data-amount="${hd.tongTien != null ? hd.tongTien : 0}"
+                                                                 onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-amount'))">
+                                                             <i class="fas fa-hand-holding-usd text-success"></i>
+                                                         </button>
                                                      </div>
                                                 </td>
                                             </tr>
@@ -1650,12 +1649,27 @@
                                     </div>
                                     ` : ''}
 
-                                    ${data.refundStatus ? `
+                                    ${(data.refundStatus || data.anhChungTuHoanTien || data.phuongThucHoanTien || (data.soTienHoan && data.soTienHoan > 0)) ? `
                                     <div class="pt-2 border-top mt-2">
                                         <div class="order-detail-field">
                                             <span class="order-detail-label">Trạng thái hoàn tiền</span>
-                                            <span class="order-detail-value"><span class="badge-soft badge-soft-info">${escapeHtml(formatPaymentStatus(data.refundStatusLabel || data.refundStatus))}</span></span>
+                                            <span class="order-detail-value"><span class="badge-soft badge-soft-info">${escapeHtml(formatPaymentStatus(data.refundStatusLabel || data.refundStatus || 'DA_HOAN_TIEN'))}</span></span>
                                         </div>
+                                        ${data.soTienHoan && data.soTienHoan > 0 ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Số tiền hoàn</span>
+                                            <span class="order-detail-value fw-bold text-danger">${new Intl.NumberFormat('vi-VN').format(data.soTienHoan)} đ</span>
+                                        </div>` : ''}
+                                        ${data.phuongThucHoanTien ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Phương thức hoàn</span>
+                                            <span class="order-detail-value">${data.phuongThucHoanTien === 'CHUYEN_KHOAN' ? 'Chuyển khoản ngân hàng' : (data.phuongThucHoanTien === 'TIEN_MAT' ? 'Tiền mặt' : escapeHtml(data.phuongThucHoanTien))}</span>
+                                        </div>` : ''}
+                                        ${data.maGiaoDichHoanTien ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Mã GD hoàn tiền</span>
+                                            <span class="order-detail-value font-monospace small">${escapeHtml(data.maGiaoDichHoanTien)}</span>
+                                        </div>` : ''}
                                         ${data.refundTime ? `
                                         <div class="order-detail-field mt-1">
                                             <span class="order-detail-label">Ngày hoàn tiền</span>
@@ -1665,6 +1679,21 @@
                                         <div class="order-detail-field mt-1">
                                             <span class="order-detail-label">NV xác nhận hoàn</span>
                                             <span class="order-detail-value">${escapeHtml(data.refundConfirmedBy)}</span>
+                                        </div>` : ''}
+                                        ${data.ghiChuHoanTien ? `
+                                        <div class="order-detail-field mt-1">
+                                            <span class="order-detail-label">Ghi chú hoàn tiền</span>
+                                            <span class="order-detail-value text-muted">${escapeHtml(data.ghiChuHoanTien)}</span>
+                                        </div>` : ''}
+                                        ${data.anhChungTuHoanTien ? `
+                                        <div class="order-detail-field mt-2" style="flex-direction: column; align-items: flex-start;">
+                                            <span class="order-detail-label mb-1"><i class="fas fa-file-invoice-dollar text-success me-1"></i>Chứng từ hoàn tiền:</span>
+                                            <div class="d-flex align-items-center gap-2 mt-1">
+                                                <img src="${escapeHtml(data.anhChungTuHoanTien)}" alt="Chứng từ hoàn tiền" style="max-width: 120px; max-height: 80px; border-radius: 6px; border: 1px solid #ced4da; cursor: pointer; object-fit: cover;" onclick="showLargeImage('${escapeHtml(data.anhChungTuHoanTien)}')" title="Bấm để xem ảnh lớn" />
+                                                <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary" onclick="showLargeImage('${escapeHtml(data.anhChungTuHoanTien)}')">
+                                                    <i class="fas fa-search-plus me-1"></i> Xem ảnh lớn
+                                                </button>
+                                            </div>
                                         </div>` : ''}
                                     </div>
                                     ` : ''}
@@ -2036,13 +2065,9 @@
 
                     if (data.trangThaiRaw && data.trangThaiRaw.toLowerCase() === 'da_huy' && data.paymentStatus === 'CHO_HOAN_TIEN') {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/approve-refund-ui" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này?')">
-                                <i class="fas fa-hand-holding-usd me-1"></i> Hoàn tiền
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Hoàn tiền
+                        </button>
                         <form action="/admin/don-hang/reject-refund-ui" method="post" class="d-inline-block m-0">
                             <input type="hidden" name="_csrf" value="${csrfToken}" />
                             <input type="hidden" name="idHoaDon" value="${data.id}" />
