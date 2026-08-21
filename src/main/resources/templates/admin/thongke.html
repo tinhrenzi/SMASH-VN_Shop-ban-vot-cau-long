@@ -535,15 +535,12 @@
                 url += `&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
             }
 
-            console.log(`[ThongKe] Đang tải dữ liệu với preset: ${preset}`);
-
             fetch(url)
                 .then(res => {
                     if (!res.ok) throw new Error("Mã phản hồi HTTP: " + res.status);
                     return res.json();
                 })
                 .then(data => {
-                    console.log("[ThongKe] API Data nhận được:", data);
                     updateMetrics(data);
                     updateCharts(data);
                     updateTopProducts(data);
@@ -759,8 +756,6 @@
             if (existing) existing.destroy();
 
             const sd = data.statusDistribution || {};
-            console.log("[ThongKe Status] Source Data (statusDistribution):", sd);
-
             const statusLabels = ["Chờ xử lý", "Đang giao", "Đã giao", "Đã hủy"];
             const statusValues = [
                 Number(sd.cho_xac_nhan) || 0,
@@ -770,12 +765,6 @@
             ];
             const statusColors = ["#f59e0b", "#0ea5e9", "#22c55e", "#ef4444"];
             const isStatusEmpty = statusValues.every(v => v === 0);
-
-            console.log("[ThongKe Status] Dataset config:", {
-                labels: statusLabels,
-                values: statusValues,
-                colors: statusColors
-            });
 
             const overlayStatus = document.getElementById("noDataOverlayStatus");
             if (overlayStatus) {
@@ -824,11 +813,6 @@
                 }
             });
 
-            const chart = Chart.getChart(ctxStatus);
-            if (chart) {
-                console.log("[ThongKe Status] Rendered Data:", chart.data.datasets[0].data);
-                console.log("[ThongKe Status] ChartArea:", chart.chartArea);
-            }
         }
 
         function renderBrandChart(data) {
@@ -845,10 +829,6 @@
             const brandValues = rawValues.slice(0, 5).map(v => Number(v) || 0);
             const brandColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
             const isBrandEmpty = brandValues.length === 0 || brandValues.every(v => v === 0);
-
-            console.log("[ThongKe Brand] Labels:", brandLabels);
-            console.log("[ThongKe Brand] Values:", brandValues);
-            console.log("[ThongKe Brand] Colors:", brandColors.slice(0, Math.max(brandLabels.length, 1)));
 
             const overlayBrand = document.getElementById("noDataOverlayBrand");
             if (overlayBrand) {
@@ -905,11 +885,6 @@
                 }
             });
 
-            const chart = Chart.getChart(ctxBrand);
-            if (chart) {
-                console.log("[ThongKe Brand] Rendered Data:", chart.data.datasets[0].data);
-                console.log("[ThongKe Brand] ChartArea:", chart.chartArea);
-            }
         }
 
         // Cập nhật bảng Top 5 sản phẩm bán chạy

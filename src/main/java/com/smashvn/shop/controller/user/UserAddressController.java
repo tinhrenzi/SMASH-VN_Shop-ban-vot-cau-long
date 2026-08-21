@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.dto.user.UserAddressDto;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.service.user.UserDashboardService;
@@ -40,6 +41,9 @@ public class UserAddressController {
     private final SanPhamYeuThichRepository wishlistRepository;
 
     private KhachHang getLoggedInCustomer(HttpSession session) {
+        if (session == null || Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return null;
+        }
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
         if (idTaiKhoan == null) {
             return null;
@@ -48,8 +52,9 @@ public class UserAddressController {
         if (kh == null || kh.getTaiKhoan() == null) {
             return null;
         }
-        com.smashvn.shop.entity.AccountStatus status = kh.getTaiKhoan().getTrangThaiTaiKhoan();
-        if (status == com.smashvn.shop.entity.AccountStatus.LOCKED || status == com.smashvn.shop.entity.AccountStatus.PENDING_LOCK) {
+        TaiKhoan tk = kh.getTaiKhoan();
+        if (tk == null || tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE
+                || (tk.getTrangThai() != null && !"hoat_dong".equalsIgnoreCase(tk.getTrangThai()))) {
             return null;
         }
         return kh;

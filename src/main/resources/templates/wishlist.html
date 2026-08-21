@@ -26,7 +26,7 @@
     <div class="preloader is-active">
         <div class="preloader__wrap">
 
-            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64"></div>
     </div>
 
     <!--====== app js ======-->
@@ -132,7 +132,8 @@
                                             <span>TIẾP TỤC MUA SẮM</span></a></div>
                                     <div class="route-box__g">
 
-                                        <a class="route-box__link" th:href="@{/wishlist/xoa-tat-ca}" onclick="return confirm('Bạn muốn xóa tất cả?');">
+                                        <a class="route-box__link" th:href="@{/wishlist/xoa-tat-ca}"
+                                           onclick="event.preventDefault(); const targetUrl = this.href; SmashNotify.confirm({title: 'Xóa toàn bộ danh sách?', message: 'Bạn có chắc chắn muốn xóa tất cả sản phẩm yêu thích?', confirmText: 'Xóa tất cả', danger: true}).then(function(confirmed) { if (confirmed) window.location.href = targetUrl; }); return false;">
 											    
 											    <i class="fas fa-trash"></i><span> XÓA TẤT CẢ</span></a></div>
                                 </div>

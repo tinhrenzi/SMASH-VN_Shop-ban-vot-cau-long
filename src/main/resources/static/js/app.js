@@ -974,7 +974,6 @@ function checkAndApplyVariant(container) {
               $('#quick-look').modal('show');
           },
           error: function(error) {
-              console.log("Lỗi khi tải dữ liệu Quick Look", error);
               showToast("Có lỗi xảy ra khi tải dữ liệu sản phẩm!", "error");
           }
       });
@@ -1066,7 +1065,7 @@ function checkAndApplyVariant(container) {
               $cartContainer.html(htmlContent);
           },
           error: function(error) {
-              console.log("Lỗi khi tải Mini Cart:", error);
+              showToast("Không thể tải giỏ hàng. Vui lòng thử lại.", "error");
           }
       });
   }
@@ -1170,7 +1169,6 @@ function checkAndApplyVariant(container) {
               var rawMsg = (xhr && xhr.responseText) ? xhr.responseText : "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
               var message = getFriendlyErrorMessage(rawMsg, "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
               showToast(message, "error");
-              console.log(xhr);
           }
       });
   });
@@ -1184,7 +1182,13 @@ function checkAndApplyVariant(container) {
       var btn = $(this);
       var idChiTiet = btn.data('id');
 
-      if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ?')) {
+      SmashNotify.confirm({
+          title: 'Xóa sản phẩm khỏi giỏ?',
+          message: 'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ?',
+          confirmText: 'Xóa',
+          danger: true
+      }).then(function(confirmed) {
+          if (!confirmed) return;
           // Làm mờ nút đi một chút để báo hiệu đang chờ Server xử lý
           btn.css('opacity', '0.5');
 
@@ -1232,7 +1236,7 @@ function checkAndApplyVariant(container) {
                   btn.css('opacity', '1');
               }
           });
-      }
+      });
   });
   /*==============================================================
     # CUSTOM JS: Thêm nhanh vào giỏ (Dành cho SP có duy nhất 1 biến thể)
@@ -1285,7 +1289,6 @@ function checkAndApplyVariant(container) {
               var rawMsg = (xhr && xhr.responseText) ? xhr.responseText : "Có lỗi kết nối đến máy chủ. Vui lòng thử lại!";
               var message = getFriendlyErrorMessage(rawMsg, "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
               showToast(message, "error");
-              console.log(xhr);
           }
       });
   }
@@ -1301,54 +1304,6 @@ function checkAndApplyVariant(container) {
           $('#floating-cart').removeClass('is-visible');
       }
   });
-  /*==============================================================
-    # CUSTOM JS: Toast Notification (No Browser Alerts)
-  ==============================================================*/
-  function showToast(message, type) {
-      type = type || 'success';
-      var $container = $('#custom-toast-container');
-      if ($container.length === 0) {
-          $container = $('<div id="custom-toast-container"></div>').appendTo('body');
-      }
-      
-      // Limit to 2 toasts. Hide/remove the oldest one.
-      var $activeToasts = $container.children('.custom-toast.show:not(.hiding)');
-      if ($activeToasts.length >= 2) {
-          var $oldest = $activeToasts.first();
-          $oldest.addClass('hiding').removeClass('show');
-          setTimeout(function() {
-              $oldest.remove();
-          }, 300);
-      }
-      
-      var iconClass = 'fa-check-circle';
-      if (type === 'error') {
-          iconClass = 'fa-exclamation-circle';
-      } else if (type === 'info') {
-          iconClass = 'fa-info-circle';
-      }
-      
-      var $toast = $(`
-          <div class="custom-toast custom-toast--${type}">
-              <i class="fas ${iconClass}"></i>
-              <span class="custom-toast__message">${message}</span>
-          </div>
-      `);
-      
-      $container.append($toast);
-      
-      setTimeout(function() {
-          $toast.addClass('show');
-      }, 10);
-      
-      setTimeout(function() {
-          $toast.removeClass('show');
-          setTimeout(function() {
-              $toast.remove();
-          }, 300);
-      }, 3000);
-  }
-
   /*==============================================================
     # CUSTOM JS: Thêm vào Wishlist bằng AJAX
   ==============================================================*/
@@ -1429,7 +1384,13 @@ function checkAndApplyVariant(container) {
       var btn = $(this);
       var idSanPham = btn.data('id');
 
-      if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi danh sách yêu thích?')) {
+      SmashNotify.confirm({
+          title: 'Xóa khỏi danh sách yêu thích?',
+          message: 'Bạn có chắc chắn muốn xóa sản phẩm này khỏi danh sách yêu thích?',
+          confirmText: 'Xóa',
+          danger: true
+      }).then(function(confirmed) {
+          if (!confirmed) return;
           btn.css('opacity', '0.5');
 
           $.ajax({
@@ -1467,7 +1428,7 @@ function checkAndApplyVariant(container) {
                   btn.css('opacity', '1');
               }
           });
-      }
+      });
   });
   /*==============================================================
     # CUSTOM JS: Lấy vị trí hiện tại (Geolocation + OpenStreetMap + Bản đồ tương tác)
@@ -1476,171 +1437,6 @@ function checkAndApplyVariant(container) {
   // Global variables for Map and Marker (use var to allow re-declaration if script is re-evaluated by jQuery globalEval)
   var leafletMap = null;
   var mapMarker = null;
-
-  // Dynamic Toast CSS injection for premium notifications
-  (function injectToastStyles() {
-      if (document.getElementById('custom-toast-styles')) return;
-      const styles = `
-          .custom-toast-container {
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              z-index: 99999;
-              display: flex;
-              flex-direction: column;
-              gap: 10px;
-              max-width: 380px;
-              width: calc(100% - 40px);
-              pointer-events: none;
-          }
-          .custom-toast {
-              display: flex;
-              align-items: flex-start;
-              gap: 12px;
-              background: rgba(255, 255, 255, 0.95);
-              backdrop-filter: blur(10px);
-              border-radius: 12px;
-              padding: 16px;
-              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-              border-left: 5px solid #ccc;
-              transform: translateX(120%);
-              transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
-              opacity: 0;
-              pointer-events: auto;
-          }
-          .custom-toast.show {
-              transform: translateX(0);
-              opacity: 1;
-          }
-          .custom-toast-success {
-              border-left-color: #2ecc71;
-          }
-          .custom-toast-warning {
-              border-left-color: #f1c40f;
-          }
-          .custom-toast-error {
-              border-left-color: #e74c3c;
-          }
-          .custom-toast-info {
-              border-left-color: #3498db;
-          }
-          .custom-toast-icon {
-              font-size: 1.25rem;
-              flex-shrink: 0;
-              margin-top: 2px;
-          }
-          .custom-toast-success .custom-toast-icon { color: #2ecc71; }
-          .custom-toast-warning .custom-toast-icon { color: #f1c40f; }
-          .custom-toast-error .custom-toast-icon { color: #e74c3c; }
-          .custom-toast-info .custom-toast-icon { color: #3498db; }
-          
-          .custom-toast-content {
-              flex-grow: 1;
-              color: #2c3e50;
-          }
-          .custom-toast-title {
-              font-weight: 700;
-              font-size: 0.95rem;
-              margin-bottom: 4px;
-          }
-          .custom-toast-message {
-              font-size: 0.85rem;
-              line-height: 1.4;
-              color: #7f8c8d;
-          }
-          .custom-toast-close {
-              background: none;
-              border: none;
-              color: #bdc3c7;
-              cursor: pointer;
-              font-size: 1rem;
-              padding: 0;
-              line-height: 1;
-              flex-shrink: 0;
-              transition: color 0.2s;
-          }
-          .custom-toast-close:hover {
-              color: #7f8c8d;
-          }
-          
-          @media (max-width: 480px) {
-              .custom-toast-container {
-                  top: 10px;
-                  right: 10px;
-                  width: calc(100% - 20px);
-              }
-          }
-      `;
-      const styleSheet = document.createElement("style");
-      styleSheet.id = 'custom-toast-styles';
-      styleSheet.type = "text/css";
-      styleSheet.innerText = styles;
-      document.head.appendChild(styleSheet);
-  })();
-
-  // Toast displaying helper
-  function showToast(title, message, type = 'info', duration = 5000) {
-      let container = document.querySelector('.custom-toast-container');
-      if (!container) {
-          container = document.createElement('div');
-          container.className = 'custom-toast-container';
-          document.body.appendChild(container);
-      }
-      
-      // Limit to 2 toasts. Hide/remove the oldest one.
-      const activeToasts = container.querySelectorAll('.custom-toast.show:not(.hiding)');
-      if (activeToasts.length >= 2) {
-          const oldestToast = activeToasts[0];
-          oldestToast.classList.add('hiding');
-          oldestToast.classList.remove('show');
-          let removed = false;
-          const removeOldest = () => {
-              if (!removed) {
-                  removed = true;
-                  oldestToast.remove();
-              }
-          };
-          oldestToast.addEventListener('transitionend', removeOldest);
-          setTimeout(removeOldest, 400);
-      }
-      
-      const toast = document.createElement('div');
-      toast.className = `custom-toast custom-toast-${type}`;
-      
-      let iconClass = 'fa-info-circle';
-      if (type === 'success') iconClass = 'fa-check-circle';
-      else if (type === 'warning') iconClass = 'fa-exclamation-triangle';
-      else if (type === 'error') iconClass = 'fa-times-circle';
-      
-      toast.innerHTML = `
-          <span class="custom-toast-icon fas ${iconClass}"></span>
-          <div class="custom-toast-content">
-              <div class="custom-toast-title">${title}</div>
-              <div class="custom-toast-message">${message}</div>
-          </div>
-          <button class="custom-toast-close fas fa-times"></button>
-      `;
-      
-      container.appendChild(toast);
-      
-      // Force reflow
-      toast.offsetHeight;
-      toast.classList.add('show');
-      
-      const closeToast = () => {
-          toast.classList.remove('show');
-          toast.addEventListener('transitionend', () => {
-              toast.remove();
-          });
-      };
-      
-      let timer = setTimeout(closeToast, duration);
-      
-      toast.querySelector('.custom-toast-close').addEventListener('click', () => {
-          clearTimeout(timer);
-          closeToast();
-      });
-  }
 
   // Debounce helper (Requirement: Debounce reverse geocoding when dragging marker)
   function debounce(func, delay) {
@@ -1953,8 +1749,6 @@ function checkAndApplyVariant(container) {
               throw new Error("INVALID_COORDINATES");
           }
 
-          console.log(`[Geocoding] IP coords retrieved via backend proxy: lat=${lat}, lon=${lon} (Source: ${data.source})`);
-
           // Update Leaflet Map state
           updateMapFromLocation(lat, lon);
 
@@ -2017,7 +1811,10 @@ function checkAndApplyVariant(container) {
                           (stateInput && stateInput.value.trim() !== '');
 
       if (hasUserData) {
-          const confirmOverwrite = confirm("Địa chỉ hiện tại sẽ bị thay thế bởi vị trí mới. Bạn có muốn tiếp tục không?");
+          const confirmOverwrite = await SmashNotify.confirm({
+              title: 'Thay thế địa chỉ hiện tại?',
+              message: 'Địa chỉ hiện tại sẽ bị thay thế bởi vị trí mới. Bạn có muốn tiếp tục không?'
+          });
           if (!confirmOverwrite) {
               return; // Cancel
           }
@@ -2031,8 +1828,6 @@ function checkAndApplyVariant(container) {
               const now = Date.now();
               // Cache valid for 10 minutes (600,000ms)
               if (now - cache.timestamp < 600000 && cache.address && isValidCoordinates(cache.latitude, cache.longitude)) {
-                  console.log("[Geocoding] Using valid cached location coordinates:", cache.latitude, cache.longitude);
-                  
                   // Update map marker and inputs
                   updateMapFromLocation(cache.latitude, cache.longitude);
                   populateAddressFields(cache.address);
@@ -2056,8 +1851,6 @@ function checkAndApplyVariant(container) {
                       const lat = position.coords.latitude;
                       const lon = position.coords.longitude;
                       const accuracy = position.coords.accuracy;
-
-                      console.log(`[Geocoding] GPS coords retrieved: lat=${lat}, lon=${lon}, accuracy=${accuracy}m`);
 
                       // Validate coordinates (Requirement 5)
                       if (!isValidCoordinates(lat, lon)) {
@@ -2222,7 +2015,6 @@ function checkAndApplyVariant(container) {
       // If Edit form and NO coordinates are saved, geocode the text address via backend proxy
       if (!hasCoordinates && streetInput && streetInput.value && stateInput && stateInput.value) {
           const addressQuery = `${streetInput.value}, ${stateInput.value}`;
-          console.log("[Map] Edit Mode: Geocoding text address via backend proxy:", addressQuery);
           try {
               const response = await fetchWithTimeout(`/api/location/search?q=${encodeURIComponent(addressQuery)}`, { timeout: 5000 });
               if (response.ok) {
@@ -2243,7 +2035,6 @@ function checkAndApplyVariant(container) {
 
       // If Add form and NO coordinates are saved, center map using silent IP lookup (no UI alerts)
       if (!hasCoordinates && (!streetInput || !streetInput.value)) {
-          console.log("[Map] Add Mode: Attempting silent IP geolocate to center map...");
           try {
               const response = await fetchWithTimeout('/api/location/ip', { timeout: 4000 });
               if (response.ok) {
@@ -2275,7 +2066,13 @@ function checkAndApplyVariant(container) {
       var btn = $(this);
       var idDiaChi = btn.data('id');
 
-      if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
+      SmashNotify.confirm({
+          title: 'Xóa địa chỉ?',
+          message: 'Bạn có chắc chắn muốn xóa địa chỉ này?',
+          confirmText: 'Xóa',
+          danger: true
+      }).then(function(confirmed) {
+          if (!confirmed) return;
           // Làm mờ dòng đó đi để báo hiệu đang chờ máy chủ
           var tr = btn.closest('tr');
           tr.css('opacity', '0.5');
@@ -2310,7 +2107,7 @@ function checkAndApplyVariant(container) {
                   tr.css('opacity', '1');
               }
           });
-      }
+      });
   });
 
 /* ==============================================================
@@ -2536,8 +2333,7 @@ function persistQuantity(row, quantityToSave, state) {
 
                     const rawMsg = (res && res.message) || 'Không thể cập nhật số lượng.';
                     const msg = getFriendlyErrorMessage(rawMsg, 'Không thể cập nhật số lượng.');
-                    if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Cập nhật thất bại', text: msg });
-                    else alert(msg);
+                    showToast('Cập nhật thất bại: ' + msg, 'error');
                     reject(new Error(msg));
                 }
             },
@@ -2555,8 +2351,7 @@ function persistQuantity(row, quantityToSave, state) {
 
                 const rawMsg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Đã xảy ra lỗi khi cập nhật số lượng.';
                 const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
-                if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
-                else alert(msg);
+                showToast(msg, 'error');
                 reject(err);
             }
         });
@@ -2715,9 +2510,7 @@ function initializeCartPage() {
             try {
                 await flushAllQuantityUpdates();
             } catch (err) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'error', title: 'Chưa thể thanh toán', text: 'Vui lòng kiểm tra lại số lượng sản phẩm.' });
-                }
+                showToast('Vui lòng kiểm tra lại số lượng sản phẩm.', 'error');
                 checkoutBtn.textContent = originalText;
                 recalculateSelectedCartSummary();
                 return;
@@ -2735,15 +2528,7 @@ function initializeCartPage() {
             });
 
             if (selectedIds.length === 0) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Chưa chọn sản phẩm',
-                        text: 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.'
-                    });
-                } else {
-                    alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
-                }
+                showToast('Vui lòng chọn ít nhất một sản phẩm để thanh toán.', 'warning');
                 checkoutBtn.textContent = originalText;
                 recalculateSelectedCartSummary();
                 return;
@@ -2767,8 +2552,7 @@ function initializeCartPage() {
                     } else {
                         const rawMsg = (res && res.message) || 'Không thể khởi tạo thanh toán.';
                         const msg = getFriendlyErrorMessage(rawMsg, 'Không thể khởi tạo thanh toán. Vui lòng thử lại sau.');
-                        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
-                        else alert(msg);
+                        showToast(msg, 'error');
                         checkoutBtn.textContent = originalText;
                         recalculateSelectedCartSummary();
                     }
@@ -2776,8 +2560,7 @@ function initializeCartPage() {
                 error: function(err) {
                     const rawMsg = (err.responseJSON && err.responseJSON.message) || err.responseText || 'Có lỗi xảy ra, vui lòng thử lại.';
                     const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
-                    if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
-                    else alert(msg);
+                    showToast(msg, 'error');
                     checkoutBtn.textContent = originalText;
                     recalculateSelectedCartSummary();
                 }
@@ -2809,26 +2592,16 @@ function initializeCartPage() {
             const lineCount = selectedIds.length;
             const confirmText = `${lineCount} sản phẩm sẽ được xóa khỏi giỏ hàng.`;
 
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Xóa sản phẩm đã chọn?',
-                    text: confirmText,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ff4500',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'XÓA',
-                    cancelButtonText: 'HỦY'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        executeBulkDelete(selectedIds, selectedRows);
-                    }
-                });
-            } else {
-                if (confirm(`Xóa sản phẩm đã chọn?\n${confirmText}`)) {
+            SmashNotify.confirm({
+                title: 'Xóa sản phẩm đã chọn?',
+                message: confirmText,
+                confirmText: 'Xóa',
+                danger: true
+            }).then((confirmed) => {
+                if (confirmed) {
                     executeBulkDelete(selectedIds, selectedRows);
                 }
-            }
+            });
         });
     }
 
@@ -2901,15 +2674,13 @@ function executeBulkDelete(selectedIds, selectedRows) {
             } else {
                 const rawMsg = (res && (res.thongBao || res.message)) || 'Không thể xóa các sản phẩm đã chọn.';
                 const msg = getFriendlyErrorMessage(rawMsg, 'Không thể xóa các sản phẩm đã chọn.');
-                if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
-                else alert(msg);
+                showToast(msg, 'error');
             }
         },
         error: function(err) {
             const rawMsg = (err.responseJSON && (err.responseJSON.thongBao || err.responseJSON.message)) || 'Đã xảy ra lỗi khi xóa sản phẩm.';
             const msg = getFriendlyErrorMessage(rawMsg, 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
-            if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: msg });
-            else alert(msg);
+            showToast(msg, 'error');
         },
         complete: function() {
             window.__bulkCartDeleteInFlight = false;
@@ -2985,11 +2756,7 @@ async function startAllCartCheckout(button) {
         console.error("Flush quantity updates failed:", flushError);
         window.__miniCartCheckoutInFlight = false;
         setMiniCartCheckoutLoading(false);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({ icon: 'error', title: 'Lỗi cập nhật số lượng', text: 'Vui lòng kiểm tra lại số lượng sản phẩm.' });
-        } else {
-            alert('Vui lòng kiểm tra lại số lượng sản phẩm.');
-        }
+        showToast('Vui lòng kiểm tra lại số lượng sản phẩm.', 'error');
         return;
     }
 
@@ -3037,11 +2804,7 @@ async function startAllCartCheckout(button) {
     } catch (error) {
         console.error("startAllCartCheckout error:", error);
         const userMsg = getFriendlyErrorMessage(error, 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet và thử lại.');
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({ icon: 'error', title: 'Thanh toán thất bại', text: userMsg });
-        } else {
-            alert(userMsg);
-        }
+        showToast('Thanh toán thất bại: ' + userMsg, 'error');
     } finally {
         window.__miniCartCheckoutInFlight = false;
         setMiniCartCheckoutLoading(false);
@@ -3075,11 +2838,7 @@ if (!window.__miniCartCheckoutInitialized) {
             }
             window.location.href = checkoutUrl;
         } else {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Chưa có thông tin thanh toán cho sản phẩm này.' });
-            } else {
-                alert('Chưa có thông tin thanh toán cho sản phẩm này.');
-            }
+            showToast('Chưa có thông tin thanh toán cho sản phẩm này.', 'error');
         }
     });
 }

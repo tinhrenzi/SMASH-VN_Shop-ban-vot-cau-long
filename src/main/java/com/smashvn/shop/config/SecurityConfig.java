@@ -21,6 +21,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/user/dang-xuat",
                         "/admin/dang-xuat",
+                        "/admin/nhan-vien/approve-lock/**",
+                        "/admin/nhan-vien/reject-lock/**",
+                        "/admin/don-hang/approve-refund/**",
+                        "/admin/don-hang/reject-refund/**",
                         "/api/payment/zalopay/callback",
                         "/api/payment/sepay/ipn",
                         "/api/ghn/webhook",
@@ -41,6 +45,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                 // Cho phép truy cập công khai trang đăng nhập/đăng xuất admin và tài nguyên tĩnh
                 .requestMatchers("/admin/dang-nhap", "/admin/dang-xuat").permitAll()
+                .requestMatchers("/admin/nhan-vien/approve-lock/**", "/admin/nhan-vien/reject-lock/**").permitAll()
+                .requestMatchers("/admin/don-hang/approve-refund/**", "/admin/don-hang/reject-refund/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/webfonts/**", "/vendor/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
                 .requestMatchers("/api/chat/**").permitAll()

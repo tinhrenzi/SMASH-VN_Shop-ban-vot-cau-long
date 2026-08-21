@@ -6858,69 +6858,6 @@ input::-ms-clear {
   text-decoration: none !important;
 }
 
-/* Custom Toast Notifications */
-#custom-toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: none;
-}
-
-.custom-toast {
-  pointer-events: auto;
-  min-width: 280px;
-  max-width: 350px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 14px 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transform: translateX(120%);
-  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border-left: 4px solid #ff4500;
-}
-
-.custom-toast.show {
-  transform: translateX(0);
-}
-
-.custom-toast i {
-  font-size: 20px;
-}
-
-.custom-toast__message {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.custom-toast--success {
-  border-left-color: #10b981;
-}
-.custom-toast--success i {
-  color: #10b981;
-}
-
-.custom-toast--error {
-  border-left-color: #ef4444;
-}
-.custom-toast--error i {
-  color: #ef4444;
-}
-
-.custom-toast--info {
-  border-left-color: #ff4500;
-}
-.custom-toast--info i {
-  color: #ff4500;
-}
-
 /* ==============================================================
    # SHOPEE STYLE DISCOUNT BADGE
    ============================================================== */

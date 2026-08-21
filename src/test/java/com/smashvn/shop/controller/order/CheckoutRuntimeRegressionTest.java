@@ -37,6 +37,9 @@ public class CheckoutRuntimeRegressionTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Autowired
+    private com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private com.smashvn.shop.service.api.GhnService ghnService;
 
@@ -352,5 +355,105 @@ public class CheckoutRuntimeRegressionTest {
 
         List cartList = (List) cartResult.getModelAndView().getModel().get("danhSachCart");
         assertTrue(cartList.isEmpty(), "Cart items must be cleaned up after successful checkout");
+
+        // Verify Safe Guest Auto-login Session state
+        jakarta.servlet.http.HttpSession httpSession = submitResult.getRequest().getSession(false);
+        assertNotNull(httpSession);
+        assertNotNull(httpSession.getAttribute("idNguoiDung"), "Option B: New guest checkout must establish Guest Account Session with idNguoiDung");
+        assertEquals(Boolean.TRUE, httpSession.getAttribute("isGuestView"), "Option B: isGuestView must be TRUE for Guest Account Session");
+
+        List<?> accesses = (List<?>) httpSession.getAttribute("allowedGuestOrderAccesses");
+        assertNotNull(accesses);
+        assertEquals(1, accesses.size());
+        CheckoutController.GuestOrderAccess access = (CheckoutController.GuestOrderAccess) accesses.get(0);
+        assertEquals(respMap.get("orderId"), access.getOrderId());
+    }
+
+    @Test
+    @DisplayName("Option B Test: Existing Guest Checkout From Anonymous Session Does Not Grant Account ID")
+    void testOptionB_ExistingGuestFromAnonymousSession_NoAccountTakeover() throws Exception {
+        // Step 1: Create an existing GUEST account first
+        String guestEmail = "existingguest" + System.currentTimeMillis() + "@smashvn.com";
+        String guestPhone = "09" + String.valueOf(System.currentTimeMillis()).substring(3, 11);
+
+        MockHttpSession session1 = new MockHttpSession();
+        mockMvc.perform(post("/gio-hang/them").session(session1).param("idSanPhamChiTiet", "25").param("soLuong", "1"));
+        MvcResult startRes1 = mockMvc.perform(post("/checkout/start").session(session1).param("selectedItemIds", "25")).andReturn();
+        String token1 = (String) objectMapper.readValue(startRes1.getResponse().getContentAsString(), Map.class).get("checkoutToken");
+
+        MvcResult submitRes1 = mockMvc.perform(post("/checkout/submit")
+                .session(session1)
+                .param("checkoutToken", token1)
+                .param("hoTenNhan", "Khach Cu")
+                .param("sdtNhan", guestPhone)
+                .param("email", guestEmail)
+                .param("diaChiNhan", "123 Pham Van Dong, Cau Giay, Ha Noi")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1442")
+                .param("ghnToWardCode", "20101")
+                .param("phuongThucThanhToan", "COD")).andReturn();
+        
+        jakarta.servlet.http.HttpSession s1 = submitRes1.getRequest().getSession(false);
+        Integer existingAccountId = (Integer) s1.getAttribute("idNguoiDung");
+        assertNotNull(existingAccountId);
+
+        // Step 2: An attacker/another browser checks out with the same email in a brand new session
+        MockHttpSession attackerSession = new MockHttpSession();
+        mockMvc.perform(post("/gio-hang/them").session(attackerSession).param("idSanPhamChiTiet", "25").param("soLuong", "1"));
+        MvcResult startRes2 = mockMvc.perform(post("/checkout/start").session(attackerSession).param("selectedItemIds", "25")).andReturn();
+        String token2 = (String) objectMapper.readValue(startRes2.getResponse().getContentAsString(), Map.class).get("checkoutToken");
+
+        String diffPhone = "08" + String.valueOf(System.currentTimeMillis()).substring(3, 11);
+        MvcResult submitRes2 = mockMvc.perform(post("/checkout/submit")
+                .session(attackerSession)
+                .param("checkoutToken", token2)
+                .param("hoTenNhan", "Attacker Name")
+                .param("sdtNhan", diffPhone)
+                .param("email", guestEmail)
+                .param("diaChiNhan", "999 Le Duan, Da Nang")
+                .param("ghnProvinceId", "201")
+                .param("ghnToDistrictId", "1442")
+                .param("ghnToWardCode", "20101")
+                .param("phuongThucThanhToan", "COD")).andReturn();
+
+        jakarta.servlet.http.HttpSession s2 = submitRes2.getRequest().getSession(false);
+        assertNotNull(s2);
+        assertNull(s2.getAttribute("idNguoiDung"), "Option B Security: Reused existing guest account MUST NOT set idNguoiDung in unauthenticated session");
+        assertEquals(Boolean.TRUE, s2.getAttribute("isGuestView"));
+
+        List<?> s2Accesses = (List<?>) s2.getAttribute("allowedGuestOrderAccesses");
+        assertNotNull(s2Accesses);
+        assertEquals(1, s2Accesses.size(), "Attacker session only gets order access for its own newly placed order");
+    }
+
+    @Test
+    @DisplayName("Option B Test: Thiet Lap Mat Khau Guide & Resend Flow")
+    void testOptionB_ThietLapMatKhauGuideAndResend() throws Exception {
+        String guestEmail = "huongdan" + System.currentTimeMillis() + "@smashvn.com";
+        String guestPhone = "09" + String.valueOf(System.currentTimeMillis()).substring(3, 11);
+        com.smashvn.shop.service.order.GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Huong Dan", guestPhone, guestEmail);
+
+        MockHttpSession guestSession = new MockHttpSession();
+        // Setup Guest Account Session
+        guestSession.setAttribute("idNguoiDung", regResult.getTaiKhoan().getId());
+        guestSession.setAttribute("isGuestView", true);
+
+        // Anonymous user visits without token -> redirect to /user/dang-nhap
+        mockMvc.perform(get("/user/thiet-lap-mat-khau"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dang-nhap"));
+
+        // Guest Account Session visits without token -> renders set-password-by-token
+        mockMvc.perform(get("/user/thiet-lap-mat-khau").session(guestSession))
+                .andExpect(status().isOk())
+                .andExpect(view().name("set-password-by-token"))
+                .andExpect(model().attribute("guestEmail", guestEmail))
+                .andExpect(model().attributeDoesNotExist("token"));
+
+        // Guest Account Session clicks Resend -> calls /user/thiet-lap-mat-khau/gui-lai
+        mockMvc.perform(post("/user/thiet-lap-mat-khau/gui-lai").session(guestSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/thiet-lap-mat-khau"))
+                .andExpect(flash().attributeExists("thongBaoGuiLai"));
     }
 }

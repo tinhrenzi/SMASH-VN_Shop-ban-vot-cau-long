@@ -1,4 +1,12 @@
         <header class="header--style-1">
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script th:src="@{/js/notifications.js(v='1.0.0')}"></script>
+            <div th:if="${globalNotificationMessage != null}"
+                 data-smash-server-notification
+                 th:data-type="${globalNotificationType}"
+                 th:data-title="${globalNotificationTitle}"
+                 th:data-message="${globalNotificationMessage}"
+                 hidden></div>
             <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
             <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" />
             <div id="csrf-token-holder" 
@@ -130,7 +138,7 @@
 									    <a>
 									        <span style="position: relative; display: inline-block;">
 									            <i class="far fa-user-circle"></i>
-									            <span th:if="${session.idNguoiDung != null and session.activeRole != 'QL' and session.activeRole != 'NV' and unreadNotificationCount > 0}" style="position: absolute; top: 0px; right: -2px; width: 8px; height: 8px; background-color: #ff0000; border-radius: 50%; display: inline-block; border: 1.5px solid white; z-index: 10;"></span>
+									            <span th:if="${session.idNguoiDung != null and session.isGuestView != true and session.activeRole != 'QL' and session.activeRole != 'NV' and unreadNotificationCount > 0}" style="position: absolute; top: 0px; right: -2px; width: 8px; height: 8px; background-color: #ff0000; border-radius: 50%; display: inline-block; border: 1.5px solid white; z-index: 10;"></span>
 									        </span>
 									    </a>
 									    <span class="js-menu-toggle"></span>
@@ -145,11 +153,11 @@
 									                <a th:href="@{/admin/don-hang}"><i class="fas fa-user-tie u-s-m-r-6"></i>
 									                    <span th:text="${session.tenHienThi != null ? session.tenHienThi : 'Nhân viên'}">Nhân viên</span></a>
 									            </li>
-									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV'}">
+									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV' and session.isGuestView != true}">
 									                <a th:href="@{/user/dashboard}"><i class="fas fa-user-circle u-s-m-r-6"></i>
 									                    <span>Tài khoản</span></a>
 									            </li>
-									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV'}">
+									            <li th:if="${session.activeRole != 'QL' and session.activeRole != 'NV' and session.isGuestView != true}">
 									                <a th:href="@{/user/notifications}" style="display: flex; align-items: center;">
 									                    <span style="position: relative; display: inline-flex; align-items: center;">
 									                        <i class="fas fa-bell u-s-m-r-6"></i>
@@ -157,6 +165,14 @@
 									                    </span>
 									                    <span>Thông báo</span>
 									                </a>
+									            </li>
+									            <li th:if="${session.isGuestView == true}">
+									                <a th:href="@{/user/track-order}"><i class="fas fa-receipt u-s-m-r-6"></i>
+									                    <span>Tài khoản vãng lai</span></a>
+									            </li>
+									            <li th:if="${session.isGuestView == true}">
+									                <a th:href="@{/user/thiet-lap-mat-khau}"><i class="fas fa-key u-s-m-r-6"></i>
+									                    <span>Thiết lập mật khẩu</span></a>
 									            </li>
 
 									            <li>

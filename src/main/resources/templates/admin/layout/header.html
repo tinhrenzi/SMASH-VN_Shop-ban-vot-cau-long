@@ -3,6 +3,13 @@
 <body>
 
     <header th:fragment="header" class="admin-topbar">
+        <script th:src="@{/js/notifications.js(v='1.0.0')}"></script>
+        <div th:if="${globalNotificationMessage != null}"
+             data-smash-server-notification
+             th:data-type="${globalNotificationType}"
+             th:data-title="${globalNotificationTitle}"
+             th:data-message="${globalNotificationMessage}"
+             hidden></div>
         <!-- CSRF Token Holder (CRITICAL BACKEND BINDING) -->
         <div id="csrf-token-holder" 
              th:data-csrf-token="${_csrf != null ? _csrf.token : ''}" 

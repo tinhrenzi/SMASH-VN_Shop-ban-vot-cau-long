@@ -219,67 +219,7 @@ window.executeSearch = function () {
     window.location.href = "/admin/san-pham?q=" + encodeURIComponent(query);
 };
 
-// Global Toast Notification Helper
-window.showToast = function (message, type) {
-    type = type || 'info';
-    let container = document.getElementById('custom-toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'custom-toast-container';
-        document.body.appendChild(container);
-    }
-
-    let iconClass = 'fa-check-circle';
-    if (type === 'error' || type === 'danger') {
-        iconClass = 'fa-times-circle';
-        type = 'error';
-    } else if (type === 'warning') {
-        iconClass = 'fa-exclamation-triangle';
-    } else if (type === 'info') {
-        iconClass = 'fa-info-circle';
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'custom-toast toast-' + type;
-    toast.innerHTML = `
-        <div class="custom-toast-content">
-            <i class="fas ${iconClass}"></i>
-            <span class="custom-toast__message">${message}</span>
-        </div>
-        <button class="toast-close" type="button"><i class="fas fa-times"></i></button>
-    `;
-
-    container.appendChild(toast);
-    toast.offsetHeight;
-    toast.classList.add('show');
-
-    const dismissTimer = setTimeout(function () {
-        dismissToast(toast);
-    }, 4000);
-
-    const closeBtn = toast.querySelector('.toast-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function () {
-            clearTimeout(dismissTimer);
-            dismissToast(toast);
-        });
-    }
-};
-
-function dismissToast(toast) {
-    toast.classList.remove('show');
-    setTimeout(function () {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-        }
-    }, 400);
-}
-
-window.alert = function (message) {
-    window.showToast(message, 'warning');
-};
-
-// Global SweetAlert2 Form Confirmation Helper
+// Global form confirmation helper
 window.confirmSubmitForm = function (formElement, message) {
     if (formElement.dataset.confirmed === "true") {
         return true;
@@ -287,19 +227,12 @@ window.confirmSubmitForm = function (formElement, message) {
     const msgLower = (message || '').toLowerCase();
     const isDelete = msgLower.includes('xóa') || msgLower.includes('khóa') || msgLower.includes('tạm dừng') || msgLower.includes('ngừng') || msgLower.includes('ẩn');
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: isDelete ? 'Xác nhận thực hiện' : 'Xác nhận cập nhật',
-            text: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
-            icon: isDelete ? 'warning' : 'question',
-            showCancelButton: true,
-            confirmButtonColor: isDelete ? '#dc2626' : '#f4511e',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Xác nhận',
-            cancelButtonText: 'Hủy bỏ',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
+    window.SmashNotify.confirm({
+        title: isDelete ? 'Xác nhận thực hiện' : 'Xác nhận cập nhật',
+        message: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+        danger: isDelete
+    }).then((confirmed) => {
+            if (confirmed) {
                 formElement.dataset.confirmed = "true";
                 const submitBtn = formElement.querySelector("button[type='submit']");
                 if (submitBtn) {
@@ -308,41 +241,25 @@ window.confirmSubmitForm = function (formElement, message) {
                 }
                 formElement.submit();
             }
-        });
-        return false;
-    } else {
-        return confirm(message || 'Bạn có chắc chắn muốn thực hiện thao tác này?');
-    }
+    });
+    return false;
 };
 
-// Global SweetAlert2 Action Link Confirmation Helper
+// Global action-link confirmation helper
 window.confirmActionLink = function (event, linkElement, message) {
     if (event) event.preventDefault();
     const href = linkElement.getAttribute('href');
     const msgLower = (message || '').toLowerCase();
     const isDelete = msgLower.includes('xóa') || msgLower.includes('khóa') || msgLower.includes('tạm dừng') || msgLower.includes('ngừng') || msgLower.includes('ẩn');
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Xác nhận thực hiện',
-            text: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
-            icon: isDelete ? 'warning' : 'question',
-            showCancelButton: true,
-            confirmButtonColor: isDelete ? '#dc2626' : '#f4511e',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Xác nhận',
-            cancelButtonText: 'Hủy bỏ',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
+    window.SmashNotify.confirm({
+        title: 'Xác nhận thực hiện',
+        message: message || 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+        danger: isDelete
+    }).then((confirmed) => {
+            if (confirmed) {
                 window.location.href = href;
             }
-        });
-        return false;
-    } else {
-        if (confirm(message || 'Bạn có chắc chắn muốn thực hiện thao tác này?')) {
-            window.location.href = href;
-        }
-        return false;
-    }
+    });
+    return false;
 };

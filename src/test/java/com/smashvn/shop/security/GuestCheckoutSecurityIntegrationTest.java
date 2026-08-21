@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -111,7 +112,7 @@ public class GuestCheckoutSecurityIntegrationTest {
         com.smashvn.shop.entity.TokenKhoiPhuc token = tokenRepository.findByMaXacNhan(result.getToken());
         assertNotNull(token);
         assertEquals(result.getTaiKhoan().getId(), token.getTaiKhoan().getId());
-        assertEquals("EMAIL", token.getLoaiXacNhan());
+        assertEquals("GUEST_ACTIVATION", token.getLoaiXacNhan());
         assertFalse(token.isDaSuDung());
     }
 
@@ -162,18 +163,19 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void testGuestAccountSessionCanAccessDashboard() throws Exception {
+    void testGuestAccountSessionCannotAccessDashboard() throws Exception {
         String email = "guest-dashboard-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
 
         MockHttpSession guestSession = new MockHttpSession();
         guestSession.setAttribute("idNguoiDung", tk.getId());
+        guestSession.setAttribute("isGuestView", true);
         guestSession.setAttribute("guestCheckoutEmail", email);
         guestSession.setAttribute("vaiTro", "KH");
 
         mockMvc.perform(get("/user/dashboard").session(guestSession).requestAttr("_csrf", csrfToken))
-                .andExpect(status().isOk())
-                .andExpect(view().name("dashboard"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dang-nhap"));
     }
 
     @Test
@@ -456,7 +458,7 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void test12_ResetPasswordViaUserQuenMatKhauServiceUpgradesGuestToActive() {
+    void test12_ResetPasswordViaGuestCheckoutServiceUpgradesGuestToActive() {
         String email = "guest-reset-active-" + System.nanoTime() + "@example.com";
         String sdt = "09" + String.format("%08d", (int)(Math.random() * 100000000));
         GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest("Khach Reset", sdt, email);
@@ -465,7 +467,7 @@ public class GuestCheckoutSecurityIntegrationTest {
         TaiKhoan initialTk = taiKhoanRepository.findById(regResult.getTaiKhoan().getId()).orElseThrow();
         assertEquals(AccountStatus.GUEST, initialTk.getTrangThaiTaiKhoan());
 
-        userQuenMatKhauService.datLaiMatKhau(token, "NewPassword123");
+        guestCheckoutService.setPasswordByToken(token, "NewPassword123");
 
         TaiKhoan upgradedTk = taiKhoanRepository.findById(regResult.getTaiKhoan().getId()).orElseThrow();
         assertEquals(AccountStatus.ACTIVE, upgradedTk.getTrangThaiTaiKhoan());

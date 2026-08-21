@@ -324,6 +324,7 @@
                     })
                     .catch(err => {
                         console.error("Lỗi khi tải thuộc tính danh mục:", err);
+                        showToast('Không thể tải thuộc tính danh mục. Vui lòng chọn lại danh mục hoặc thử lại.', 'error');
                         updatePreview();
                     });
             }

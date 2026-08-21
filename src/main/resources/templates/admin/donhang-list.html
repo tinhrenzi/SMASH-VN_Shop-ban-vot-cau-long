@@ -294,14 +294,59 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center text-nowrap">
-                                                    <div class="d-flex gap-1 justify-content-center align-items-center">
-                                                        <button type="button" class="admin-btn admin-btn-icon"
-                                                            th:data-id="${hd.id}"
-                                                            onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
-                                                            title="Chi tiết đơn hàng">
-                                                            <i class="fas fa-eye text-primary"></i>
-                                                        </button>
-                                                    </div>
+                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+                                                         <!-- Nút Chi tiết đơn hàng -->
+                                                         <button type="button" class="admin-btn admin-btn-icon"
+                                                             th:data-id="${hd.id}"
+                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
+                                                             title="Chi tiết đơn hàng">
+                                                             <i class="fas fa-eye text-primary"></i>
+                                                         </button>
+
+                                                         <!-- Nút Chuyển trạng thái tiếp theo -->
+                                                         <form th:if="${nextStatusLabels[hd.id] != null}"
+                                                               th:data-next-status-label="${nextStatusLabels[hd.id]}"
+                                                               th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
+                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                             <button type="submit" class="admin-btn admin-btn-icon" 
+                                                                     th:title="'Chuyển sang: ' + ${nextStatusLabels[hd.id]}"
+                                                                     onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
+                                                                 <i class="fas fa-arrow-right text-success"></i>
+                                                             </button>
+                                                         </form>
+
+                                                         <!-- Nút Gửi đơn sang GHN (Khi sẵn sàng giao & chưa có mã GHN) -->
+                                                         <button th:if="${hd.trangThaiDonHang == 'san_sang_giao' &amp;&amp; (hd.ghnOrderCode == null || #strings.isEmpty(hd.ghnOrderCode))}"
+                                                                 type="button" class="admin-btn admin-btn-icon"
+                                                                 th:onclick="'pushOrderToGhn(' + ${hd.id} + ', this)'"
+                                                                 title="Gửi đơn sang GHN (Tạo vận đơn)">
+                                                             <i class="fas fa-shipping-fast text-warning"></i>
+                                                         </button>
+
+                                                         <!-- Nút Hủy đơn hàng -->
+                                                         <button th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_lay_hang' &amp;&amp; hd.trangThaiDonHang != 'dang_giao'}" 
+                                                                 type="button" class="admin-btn admin-btn-icon danger"
+                                                                 th:data-id="${hd.id}"
+                                                                 th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
+                                                                 th:data-status="${hd.trangThaiDonHang}"
+                                                                 onclick="openAdminCancelModal(this)"
+                                                                 title="Hủy đơn hàng">
+                                                             <i class="fas fa-times text-danger"></i>
+                                                         </button>
+
+                                                         <!-- Nút Hoàn tiền đơn hủy -->
+                                                         <form th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                               th:action="@{/admin/don-hang/approve-refund-ui}" method="post" class="d-inline-block m-0">
+                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
+                                                             <button type="submit" class="admin-btn admin-btn-icon" 
+                                                                     title="Xác nhận hoàn tiền"
+                                                                     onclick="return confirmSubmit(this, 'Xác nhận hoàn tiền thành công cho đơn hàng này?')">
+                                                                 <i class="fas fa-hand-holding-usd text-success"></i>
+                                                             </button>
+                                                         </form>
+                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr th:if="${danhSachDonHangOnline.isEmpty()}">
@@ -406,6 +451,12 @@
                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
                                                             title="Chi tiết đơn hàng">
                                                             <i class="fas fa-eye text-primary"></i>
+                                                        </button>
+                                                        <button th:if="${hd.trangThaiDonHang == 'cho_thanh_toan'}"
+                                                                type="button" class="admin-btn admin-btn-icon"
+                                                                th:onclick="'confirmPaymentPosModal(' + ${hd.id} + ')'"
+                                                                title="Xác nhận đã nhận tiền">
+                                                            <i class="fas fa-check-circle text-success"></i>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -1003,17 +1054,13 @@
         }
 
         function confirmSubmit(button, message) {
-            Swal.fire({
+            SmashNotify.confirm({
                 title: 'Xác nhận hành động',
-                text: message,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#198754',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Đồng ý',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (result.isConfirmed) {
+                message: message,
+                confirmText: 'Đồng ý',
+                cancelText: 'Hủy'
+            }).then((confirmed) => {
+                if (confirmed) {
                     button.form.submit();
                 }
             });
@@ -2261,7 +2308,7 @@
                             nextBtn.disabled = false;
                             nextBtn.innerHTML = 'Tiếp tục <i class="fas fa-arrow-right ms-1"></i>';
                         }
-                        alert('Không thể tải thông tin đơn hàng: ' + err.message);
+                        showToast('Không thể tải thông tin đơn hàng: ' + err.message, 'error');
                     });
                 return;
             }
@@ -2315,7 +2362,7 @@
                 console.error('Error in showCancelStep2:', err);
                 const step1Box = document.getElementById('adminCancelStep1Box');
                 if (step1Box) step1Box.style.display = 'block';
-                alert('Lỗi hiển thị bước xác nhận hủy: ' + err.message);
+                showToast('Lỗi hiển thị bước xác nhận hủy: ' + err.message, 'error');
             }
         }
 
@@ -2345,7 +2392,7 @@
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 if (file.size > 10 * 1024 * 1024) {
-                    alert('Kích thước ảnh tối đa là 10MB.');
+                    showToast('Kích thước ảnh tối đa là 10MB.', 'warning');
                     input.value = '';
                     return;
                 }
@@ -2371,18 +2418,14 @@
         window.validateCancelUnpaidForm = function (e, form) {
             if (e && e.preventDefault) e.preventDefault();
 
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Xác nhận hủy đơn hàng?',
-                    text: 'Đơn hàng chưa thanh toán này sẽ được chuyển sang trạng thái ĐÃ HỦY.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-times-circle me-1"></i> Xác nhận hủy đơn',
-                    cancelButtonText: 'Quay lại'
-                }).then((result) => {
-                    if (result.isConfirmed) {
+            SmashNotify.confirm({
+                title: 'Xác nhận hủy đơn hàng?',
+                message: 'Đơn hàng chưa thanh toán này sẽ được chuyển sang trạng thái ĐÃ HỦY.',
+                confirmText: 'Xác nhận hủy đơn',
+                cancelText: 'Quay lại',
+                danger: true
+            }).then((confirmed) => {
+                    if (confirmed) {
                         const submitBtn = document.getElementById('btnSubmitCancelUnpaid');
                         if (submitBtn) {
                             submitBtn.disabled = true;
@@ -2390,11 +2433,8 @@
                         }
                         form.submit();
                     }
-                });
-                return false;
-            } else {
-                return confirm('Bạn có chắc chắn muốn xác nhận hủy đơn hàng này không?');
-            }
+            });
+            return false;
         };
 
         window.validateCancelPaidForm = function (e, form) {
@@ -2406,47 +2446,24 @@
             const soTien = document.getElementById('cancelRefundSoTienHoan').value;
 
             if (pttt === 'CHUYEN_KHOAN' && !maGD) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Thiếu mã giao dịch',
-                        text: 'Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền cho khách.'
-                    }).then(() => {
-                        document.getElementById('cancelRefundMaGiaoDich').focus();
-                    });
-                } else {
-                    alert('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền cho khách.');
-                    document.getElementById('cancelRefundMaGiaoDich').focus();
-                }
+                showToast('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền cho khách.', 'warning');
+                document.getElementById('cancelRefundMaGiaoDich').focus();
                 return false;
             }
 
             if (!fileInput.files || fileInput.files.length === 0 || !fileInput.files[0]) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Thiếu ảnh chứng từ',
-                        text: 'Vui lòng chọn ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.'
-                    });
-                } else {
-                    alert('Vui lòng chọn ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.');
-                }
+                showToast('Vui lòng chọn ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.', 'warning');
                 return false;
             }
 
-            if (typeof Swal !== 'undefined') {
-                const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
-                Swal.fire({
-                    title: 'Xác nhận hủy & hoàn tiền?',
-                    html: `Xác nhận đã hoàn tiền <b>${formattedMoney}</b> cho khách hàng và hoàn tất hủy đơn hàng này?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý hủy & hoàn tiền',
-                    cancelButtonText: 'Quay lại'
-                }).then((result) => {
-                    if (result.isConfirmed) {
+            const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
+            SmashNotify.confirm({
+                title: 'Xác nhận hủy & hoàn tiền?',
+                message: `Xác nhận đã hoàn tiền ${formattedMoney} cho khách hàng và hoàn tất hủy đơn hàng này?`,
+                confirmText: 'Đồng ý hủy & hoàn tiền',
+                cancelText: 'Quay lại'
+            }).then((confirmed) => {
+                    if (confirmed) {
                         const submitBtn = document.getElementById('btnSubmitCancelPaid');
                         if (submitBtn) {
                             submitBtn.disabled = true;
@@ -2454,11 +2471,8 @@
                         }
                         form.submit();
                     }
-                });
-                return false;
-            } else {
-                return confirm('Bạn có chắc chắn muốn xác nhận hoàn tiền và hoàn tất hủy đơn hàng này không?');
-            }
+            });
+            return false;
         };
 
         window.closeDetailsAndCancel = function (btn) {
@@ -2586,17 +2600,8 @@
 
             if (optTuChoi && optTuChoi.checked) {
                 if (!lyDoTuChoi) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Thiếu lý do từ chối',
-                            text: 'Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.'
-                        }).then(() => {
-                            document.getElementById('restockLyDoTuChoi').focus();
-                        });
-                    } else {
-                        alert('Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.');
-                    }
+                    showToast('Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.', 'warning');
+                    document.getElementById('restockLyDoTuChoi').focus();
                     return false;
                 }
                 titleMsg = 'Xác nhận từ chối nhận hàng hoàn?';
@@ -2612,18 +2617,14 @@
                 btnColor = '#198754';
             }
 
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: titleMsg,
-                    text: textMsg,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: btnColor,
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý thực hiện',
-                    cancelButtonText: 'Quay lại'
-                }).then((result) => {
-                    if (result.isConfirmed) {
+            SmashNotify.confirm({
+                title: titleMsg,
+                message: textMsg,
+                confirmText: 'Đồng ý thực hiện',
+                cancelText: 'Quay lại',
+                danger: Boolean((optTuChoi && optTuChoi.checked) || (optLoi && optLoi.checked))
+            }).then((confirmed) => {
+                    if (confirmed) {
                         const submitBtn = document.getElementById('btnSubmitRestock');
                         if (submitBtn) {
                             submitBtn.disabled = true;
@@ -2631,11 +2632,8 @@
                         }
                         form.submit();
                     }
-                });
-                return false;
-            } else {
-                return confirm(titleMsg + '\n' + textMsg);
-            }
+            });
+            return false;
         };
 
         window.pushOrderToGhn = function (orderId, forceRetry = false) {
@@ -2672,23 +2670,11 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'ok') {
-                        Swal.fire({
-                            title: 'Thành công',
-                            text: 'Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || ''),
-                            icon: 'success',
-                            confirmButtonText: 'Đóng'
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                        showToast('Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || ''), 'success');
+                        setTimeout(() => window.location.reload(), 900);
                     } else if (data.status === 'already_exists') {
-                        Swal.fire({
-                            title: 'Đã tồn tại',
-                            text: data.message,
-                            icon: 'info',
-                            confirmButtonText: 'Đóng'
-                        }).then(() => {
-                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
-                        });
+                        showToast(data.message || 'Vận đơn đã tồn tại trên GHN.', 'info');
+                        if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
                     } else if (data.status === 'unknown_result' || data.ghnCreateUnknown === true) {
                         buttons.forEach(btn => btn.disabled = false);
                         Swal.fire({
@@ -2723,8 +2709,9 @@
                     console.error(err);
                     if (errorDiv) {
                         errorDiv.style.display = 'block';
-                        errorDiv.innerHTML = '<strong>Lỗi đẩy đơn GHN:</strong><br>' + err.message;
+                        errorDiv.textContent = 'Lỗi đẩy đơn GHN: ' + err.message;
                     }
+                    showToast('Không thể đẩy đơn lên GHN: ' + err.message, 'error');
                     buttons.forEach(btn => btn.disabled = false);
                 });
         };
@@ -2757,31 +2744,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'ok') {
-                        Swal.fire({
-                            title: 'Đồng bộ thành công',
-                            text: (data.message || '') + '\nTrạng thái GHN hiện tại: ' + (data.ghnStatusLabel || data.ghnStatus || ''),
-                            icon: 'success',
-                            confirmButtonText: 'Đóng'
-                        }).then(() => {
-                            if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
-                        });
+                        showToast((data.message || 'Đồng bộ thành công.') + ' Trạng thái GHN: ' + (data.ghnStatusLabel || data.ghnStatus || ''), 'success');
+                        if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
                     } else {
-                        Swal.fire({
-                            title: 'Không thể đồng bộ',
-                            text: data.message,
-                            icon: 'error',
-                            confirmButtonText: 'Đóng'
-                        });
+                        showToast(data.message || 'Không thể đồng bộ trạng thái GHN.', 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    Swal.fire({
-                        title: 'Lỗi',
-                        text: err.message,
-                        icon: 'error',
-                        confirmButtonText: 'Đóng'
-                    });
+                    showToast(err.message || 'Không thể đồng bộ trạng thái GHN.', 'error');
                 })
                 .finally(() => {
                     if (btn) {
@@ -2814,33 +2785,17 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'ok') {
-                        Swal.fire({
-                            title: 'Chuyển trạng thái Demo thành công',
-                            text: data.message || ('Trạng thái mới: ' + data.ghnStatusLabel),
-                            icon: 'success',
-                            confirmButtonText: 'Đóng'
-                        }).then(() => {
-                            if (window.openOrderDetailModal) {
-                                window.openOrderDetailModal(orderId);
-                            } else {
-                                window.location.reload();
-                            }
-                        });
+                        showToast(data.message || ('Trạng thái mới: ' + data.ghnStatusLabel), 'success');
+                        if (window.openOrderDetailModal) {
+                            window.openOrderDetailModal(orderId);
+                        } else {
+                            setTimeout(() => window.location.reload(), 900);
+                        }
                     } else if (data.status === 'terminal') {
-                        Swal.fire({
-                            title: 'Thông báo Demo',
-                            text: data.message || 'Vận đơn Demo đã ở trạng thái cuối.',
-                            icon: 'info',
-                            confirmButtonText: 'Đóng'
-                        });
+                        showToast(data.message || 'Vận đơn Demo đã ở trạng thái cuối.', 'info');
                         if (btn) btn.disabled = true;
                     } else {
-                        Swal.fire({
-                            title: 'Lỗi chuyển trạng thái Demo',
-                            text: data.message,
-                            icon: 'error',
-                            confirmButtonText: 'Đóng'
-                        });
+                        showToast(data.message || 'Không thể chuyển trạng thái Demo.', 'error');
                         if (btn) {
                             btn.disabled = false;
                             btn.innerHTML = origHtml;
@@ -2849,12 +2804,7 @@
                 })
                 .catch(err => {
                     console.error('Demo Simulator error:', err);
-                    Swal.fire({
-                        title: 'Lỗi hệ thống',
-                        text: 'Không thể kết nối máy chủ',
-                        icon: 'error',
-                        confirmButtonText: 'Đóng'
-                    });
+                    showToast('Không thể kết nối máy chủ.', 'error');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origHtml;
@@ -2863,17 +2813,13 @@
         };
 
         window.confirmPaymentPosModal = function (hoaDonId) {
-            Swal.fire({
+            SmashNotify.confirm({
                 title: 'Xác nhận thanh toán?',
-                text: 'Xác nhận ĐÃ NHẬN ĐỦ TIỀN cho đơn hàng POS này và hoàn tất đơn?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#198754',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Xác nhận đã nhận tiền',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (!result.isConfirmed) return;
+                message: 'Xác nhận ĐÃ NHẬN ĐỦ TIỀN cho đơn hàng POS này và hoàn tất đơn?',
+                confirmText: 'Xác nhận đã nhận tiền',
+                cancelText: 'Hủy'
+            }).then((confirmed) => {
+                if (!confirmed) return;
 
                 const csrfMeta = document.querySelector('meta[name="_csrf"]');
                 const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
@@ -2890,28 +2836,14 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire({
-                            title: 'Thành công',
-                            text: 'Xác nhận thanh toán đơn POS thành công!',
-                            icon: 'success',
-                            confirmButtonText: 'OK'
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                        showToast('Xác nhận thanh toán đơn POS thành công!', 'success');
+                        setTimeout(() => window.location.reload(), 900);
                     } else {
-                        Swal.fire({
-                            title: 'Lỗi',
-                            text: data.message || 'Xác nhận thất bại',
-                            icon: 'error'
-                        });
+                        showToast(data.message || 'Xác nhận thất bại.', 'error');
                     }
                 })
                 .catch(err => {
-                    Swal.fire({
-                        title: 'Lỗi kết nối',
-                        text: err.message,
-                        icon: 'error'
-                    });
+                    showToast(err.message || 'Không thể kết nối máy chủ.', 'error');
                 });
             });
         };
@@ -2925,29 +2857,13 @@
                 const file = input.files[0];
                 const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
                 if (!validTypes.includes(file.type.toLowerCase())) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Định dạng không hợp lệ',
-                            text: 'Chỉ chấp nhận file ảnh JPG, JPEG, PNG, WEBP.'
-                        });
-                    } else {
-                        alert('Chỉ chấp nhận file ảnh JPG, JPEG, PNG, WEBP.');
-                    }
+                    showToast('Chỉ chấp nhận file ảnh JPG, JPEG, PNG, WEBP.', 'warning');
                     input.value = '';
                     if (previewContainer) previewContainer.style.display = 'none';
                     return;
                 }
                 if (file.size > 5 * 1024 * 1024) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Dung lượng quá lớn',
-                            text: 'Dung lượng ảnh chứng từ không được vượt quá 5MB.'
-                        });
-                    } else {
-                        alert('Dung lượng ảnh chứng từ không được vượt quá 5MB.');
-                    }
+                    showToast('Dung lượng ảnh chứng từ không được vượt quá 5MB.', 'warning');
                     input.value = '';
                     if (previewContainer) previewContainer.style.display = 'none';
                     return;
@@ -2980,67 +2896,33 @@
             const fileInput = document.getElementById('refundFileChungTu');
 
             if (!soTien || parseFloat(soTien) <= 0) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Số tiền không hợp lệ',
-                        text: 'Vui lòng nhập số tiền cần hoàn lại cho khách hàng.'
-                    });
-                } else {
-                    alert('Vui lòng nhập số tiền cần hoàn lại cho khách hàng.');
-                }
+                showToast('Vui lòng nhập số tiền cần hoàn lại cho khách hàng.', 'warning');
                 return false;
             }
 
             if (pttt === 'CHUYEN_KHOAN' && !maGD) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Thiếu mã giao dịch',
-                        text: 'Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.'
-                    }).then(() => {
-                        document.getElementById('refundMaGiaoDich').focus();
-                    });
-                } else {
-                    alert('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.');
-                    document.getElementById('refundMaGiaoDich').focus();
-                }
+                showToast('Vui lòng nhập mã giao dịch chuyển khoản hoàn tiền.', 'warning');
+                document.getElementById('refundMaGiaoDich').focus();
                 return false;
             }
 
             if (!fileInput || !fileInput.files || fileInput.files.length === 0 || !fileInput.files[0]) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Thiếu ảnh chứng từ',
-                        text: 'Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.'
-                    });
-                } else {
-                    alert('Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.');
+                showToast('Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.', 'warning');
+                return false;
+            }
+
+            const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
+            SmashNotify.confirm({
+                title: 'Xác nhận hoàn tiền?',
+                message: `Xác nhận đã hoàn tiền ${formattedMoney} cho khách hàng?`,
+                confirmText: 'Đồng ý hoàn tiền',
+                cancelText: 'Quay lại'
+            }).then((confirmed) => {
+                if (confirmed) {
+                    form.submit();
                 }
-                return false;
-            }
-
-            if (typeof Swal !== 'undefined') {
-                const formattedMoney = window.formatCurrency ? window.formatCurrency(soTien) : (soTien + ' đ');
-                Swal.fire({
-                    title: 'Xác nhận hoàn tiền?',
-                    html: `Xác nhận đã hoàn tiền <b>${formattedMoney}</b> cho khách hàng?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-check-circle me-1"></i> Đồng ý hoàn tiền',
-                    cancelButtonText: 'Quay lại'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-                return false;
-            }
-
-            return true;
+            });
+            return false;
         };
 
         window.moModalConfirmRefund = function (idHoaDon, maDonHang, tongTien) {
@@ -3066,19 +2948,7 @@
                     icon.className = 'fas fa-check text-success';
                 }
 
-                if (typeof Swal !== 'undefined') {
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 1500,
-                        timerProgressBar: false
-                    });
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Đã sao chép: ' + text
-                    });
-                }
+                showToast('Đã sao chép: ' + text, 'success');
 
                 if (icon && oldClass) {
                     setTimeout(function () {
@@ -3093,19 +2963,7 @@
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    if (typeof Swal !== 'undefined') {
-                        const Toast = Swal.mixin({
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 1500,
-                            timerProgressBar: false
-                        });
-                        Toast.fire({
-                            icon: 'success',
-                            title: 'Đã sao chép: ' + text
-                        });
-                    }
+                    showToast('Đã sao chép: ' + text, 'success');
                 } catch (e) {
                     console.error('Fallback copy failed', e);
                 }

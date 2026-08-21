@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.smashvn.shop.dto.user.UserProfileEditDto;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.HoaDonRepository;
@@ -50,8 +51,11 @@ public class UserDashboardController {
     private final com.smashvn.shop.repository.NewsletterSubscriberRepository newsletterSubscriberRepository;
     private final com.smashvn.shop.service.common.FileStorageService fileStorageService;
 
-    // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang
+    // Hàm dùng chung để kiểm tra đăng nhập và lấy KhachHang (chỉ chấp nhận ACTIVE Member đã xác thực)
     private KhachHang getLoggedInCustomer(HttpSession session) {
+        if (session == null || Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return null;
+        }
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
         if (idTaiKhoan == null) {
             return null;
@@ -60,11 +64,62 @@ public class UserDashboardController {
         if (kh == null || kh.getTaiKhoan() == null) {
             return null;
         }
-        com.smashvn.shop.entity.AccountStatus status = kh.getTaiKhoan().getTrangThaiTaiKhoan();
-        if (status == com.smashvn.shop.entity.AccountStatus.LOCKED || status == com.smashvn.shop.entity.AccountStatus.PENDING_LOCK) {
+        TaiKhoan tk = kh.getTaiKhoan();
+        if (tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE
+                || (tk.getTrangThai() != null && !"hoat_dong".equalsIgnoreCase(tk.getTrangThai()))) {
             return null;
         }
         return kh;
+    }
+
+    private boolean isGuestAllowedOrder(HttpSession session, Integer targetId, HoaDon hd) {
+        if (session == null || targetId == null) {
+            return false;
+        }
+        Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
+        java.util.List<?> allowedAccessesRaw = (allowedAccessesAttr instanceof java.util.List<?>)
+                ? (java.util.List<?>) allowedAccessesAttr : null;
+
+        if (allowedAccessesRaw == null) {
+            return false;
+        }
+
+        com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess matchingAccess = null;
+        synchronized (session) {
+            java.util.Iterator<?> iterator = allowedAccessesRaw.iterator();
+            while (iterator.hasNext()) {
+                Object item = iterator.next();
+                if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
+                    if (access.isExpired()) {
+                        iterator.remove();
+                    } else if (access.getOrderId().equals(targetId)) {
+                        matchingAccess = access;
+                    }
+                }
+            }
+        }
+
+        if (matchingAccess == null) {
+            return false;
+        }
+
+        if (hd != null) {
+            String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
+                    ? hd.getKhachHang().getTaiKhoan().getUsername() : null;
+            if (orderEmail != null) {
+                if (matchingAccess.getGuestEmail() != null && !matchingAccess.getGuestEmail().isBlank()) {
+                    if (!orderEmail.equalsIgnoreCase(matchingAccess.getGuestEmail().trim())) {
+                        return false;
+                    }
+                } else {
+                    String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
+                    if (guestEmail == null || !orderEmail.equalsIgnoreCase(guestEmail.trim())) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private String checkRoleAndRedirect(HttpSession session) {
@@ -312,31 +367,58 @@ public class UserDashboardController {
     }
 
     @GetMapping("/track-order")
-    public String hienThiTrackOrder(HttpSession session, Model model) {
+    public String hienThiTrackOrder(
+            @RequestParam(value = "id", required = false) String paramId,
+            HttpSession session, Model model) {
         String redirect = checkRoleAndRedirect(session);
         if (redirect != null) {
             return redirect;
         }
 
-        KhachHang kh = getLoggedInCustomer(session);
-        if (kh == null) {
-            model.addAttribute("kh", null);
-            model.addAttribute("orderPlaced", 0);
-            model.addAttribute("cancelOrders", 0);
-            model.addAttribute("wishlist", 0);
+        if (paramId != null && !paramId.trim().isEmpty()) {
+            model.addAttribute("orderId", paramId.trim());
+        }
+
+        // 1. Kiểm tra phiên đăng nhập Member chính thức (AccountStatus.ACTIVE, isGuestView != true)
+        KhachHang memberKh = getLoggedInCustomer(session);
+        if (memberKh != null) {
+            model.addAttribute("kh", memberKh);
+            model.addAttribute("memberView", true);
+            model.addAttribute("isGuestView", false);
+            model.addAttribute("hasSidebar", true);
+
+            List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(memberKh.getId());
+            long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
+            long wishlistCount = wishlistRepository.countByKhachHang_Id(memberKh.getId());
+
+            model.addAttribute("orderPlaced", ordersList.size() - cancelled);
+            model.addAttribute("cancelOrders", cancelled);
+            model.addAttribute("wishlist", wishlistCount);
             return "dash-track-order";
         }
 
-        model.addAttribute("kh", kh);
+        // 2. Kiểm tra phiên Guest Account Session (idNguoiDung != null && isGuestView == true)
+        Integer idNguoiDung = (session != null) ? (Integer) session.getAttribute("idNguoiDung") : null;
+        boolean isGuest = (session != null) && Boolean.TRUE.equals(session.getAttribute("isGuestView"));
 
-        List<Map<String, Object>> ordersList = orderViewService.layDanhSachOrders(kh.getId());
-        long cancelled = ordersList.stream().filter(o -> "cancelled".equals(o.get("status"))).count();
-        long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+        if (idNguoiDung != null && isGuest) {
+            KhachHang guestKh = dashboardService.layThongTinKhachHang(idNguoiDung);
+            if (guestKh != null) {
+                model.addAttribute("kh", guestKh);
+            }
+            String tenHienThi = (String) session.getAttribute("tenHienThi");
+            if (tenHienThi != null) {
+                model.addAttribute("tenHienThi", tenHienThi);
+            }
+            model.addAttribute("guestAccountView", true);
+            model.addAttribute("isGuestView", true);
+            model.addAttribute("hasSidebar", true);
+            return "dash-track-order";
+        }
 
-        model.addAttribute("orderPlaced", ordersList.size() - cancelled);
-        model.addAttribute("cancelOrders", cancelled);
-        model.addAttribute("wishlist", wishlistCount);
-
+        // 3. Anonymous hoặc Existing Guest Order-only (idNguoiDung == null)
+        model.addAttribute("publicView", true);
+        model.addAttribute("hasSidebar", false);
         return "dash-track-order";
     }
 
@@ -352,6 +434,12 @@ public class UserDashboardController {
             return "redirect:/user/track-order";
         }
 
+        if (contactInfo == null || contactInfo.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("loi", "Vui lòng nhập Email hoặc Số điện thoại đặt hàng.");
+            redirectAttributes.addFlashAttribute("orderId", orderIdStr.trim());
+            return "redirect:/user/track-order";
+        }
+
         // Try lookup by maDonHang
         java.util.Optional<com.smashvn.shop.entity.HoaDon> hdOpt = hoaDonRepository.findByMaDonHang(orderIdStr.trim());
         if (hdOpt.isEmpty()) {
@@ -364,50 +452,39 @@ public class UserDashboardController {
 
         if (hdOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("loi", "Không tìm thấy đơn hàng tương ứng với mã cung cấp.");
+            redirectAttributes.addFlashAttribute("orderId", orderIdStr.trim());
             return "redirect:/user/track-order";
         }
 
         com.smashvn.shop.entity.HoaDon hd = hdOpt.get();
-        KhachHang loggedInKh = getLoggedInCustomer(session);
 
-        if (loggedInKh != null) {
-            // Logged in user: verify if the order belongs to them
-            if (hd.getKhachHang() == null || !hd.getKhachHang().getId().equals(loggedInKh.getId())) {
-                redirectAttributes.addFlashAttribute("loi", "Bạn không có quyền xem đơn hàng này.");
-                return "redirect:/user/track-order";
+        String searchVal = contactInfo.trim().toLowerCase();
+        String orderEmail = (hd.getEmailNguoiNhan() != null && !hd.getEmailNguoiNhan().trim().isEmpty())
+                ? hd.getEmailNguoiNhan().trim()
+                : ((hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
+                    ? hd.getKhachHang().getTaiKhoan().getUsername() : "");
+        String orderPhone = hd.getSdtNhan() != null ? hd.getSdtNhan().trim() : "";
+
+        boolean matchesEmail = !orderEmail.isEmpty() && orderEmail.toLowerCase().equals(searchVal);
+        boolean matchesPhone = !orderPhone.isEmpty() && (orderPhone.equals(searchVal) || com.smashvn.shop.util.PhoneUtils.normalize(orderPhone).equals(com.smashvn.shop.util.PhoneUtils.normalize(searchVal)));
+
+        if (!matchesEmail && !matchesPhone) {
+            redirectAttributes.addFlashAttribute("loi", "Thông tin email hoặc số điện thoại không khớp với đơn hàng.");
+            redirectAttributes.addFlashAttribute("orderId", orderIdStr.trim());
+            return "redirect:/user/track-order";
+        }
+
+        // Successfully validated: grant guest access in session
+        synchronized (session) {
+            List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses
+                    = (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
+            if (allowedAccesses == null) {
+                allowedAccesses = new java.util.ArrayList<>();
             }
-        } else {
-            // Guest user: verify that contactInfo matches the order's email or phone number
-            if (contactInfo == null || contactInfo.trim().isEmpty()) {
-                redirectAttributes.addFlashAttribute("loi", "Email hoặc số điện thoại là bắt buộc đối với khách vãng lai.");
-                return "redirect:/user/track-order";
-            }
-
-            String searchVal = contactInfo.trim().toLowerCase();
-            String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
-                    ? hd.getKhachHang().getTaiKhoan().getUsername() : "";
-            String orderPhone = hd.getSdtNhan() != null ? hd.getSdtNhan() : "";
-
-            boolean matchesEmail = !orderEmail.isEmpty() && orderEmail.toLowerCase().equals(searchVal);
-            boolean matchesPhone = !orderPhone.isEmpty() && (orderPhone.equals(searchVal) || com.smashvn.shop.util.PhoneUtils.normalize(orderPhone).equals(com.smashvn.shop.util.PhoneUtils.normalize(searchVal)));
-
-            if (!matchesEmail && !matchesPhone) {
-                redirectAttributes.addFlashAttribute("loi", "Thông tin email hoặc số điện thoại không khớp với đơn hàng.");
-                return "redirect:/user/track-order";
-            }
-
-            // Successfully validated: grant guest access in session
-            synchronized (session) {
-                List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> allowedAccesses
-                        = (List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess>) session.getAttribute("allowedGuestOrderAccesses");
-                if (allowedAccesses == null) {
-                    allowedAccesses = new java.util.ArrayList<>();
-                }
-                allowedAccesses.add(new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(hd.getId(), java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
-                session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
-                if (!orderEmail.isEmpty()) {
-                    session.setAttribute("guestCheckoutEmail", orderEmail);
-                }
+            allowedAccesses.add(new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(hd.getId(), orderEmail, java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
+            session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
+            if (!orderEmail.isEmpty()) {
+                session.setAttribute("guestCheckoutEmail", orderEmail);
             }
         }
 
@@ -450,56 +527,19 @@ public class UserDashboardController {
 
         KhachHang kh = getLoggedInCustomer(session);
         boolean isGuestView = false;
-        if (kh != null && kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
-            isGuestView = true;
-        }
 
         if (kh == null) {
-            // Guest check
-            String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
-            Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
-            java.util.List<?> allowedAccessesRaw = (allowedAccessesAttr instanceof java.util.List<?>)
-                    ? (java.util.List<?>) allowedAccessesAttr : null;
-
-            boolean isAllowed = false;
-            if (guestEmail != null && allowedAccessesRaw != null) {
-                synchronized (session) {
-                    java.util.Iterator<?> iterator = allowedAccessesRaw.iterator();
-                    while (iterator.hasNext()) {
-                        Object item = iterator.next();
-                        if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access
-                                && access.isExpired()) {
-                            iterator.remove();
-                        }
-                    }
-                    for (Object item : allowedAccessesRaw) {
-                        if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
-                            if (access.getOrderId().equals(targetId)) {
-                                isAllowed = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!isAllowed) {
+            if (!isGuestAllowedOrder(session, targetId, hd)) {
                 return "redirect:/user/dang-nhap";
             }
-
-            // Cross-email validation to prevent IDOR
-            String orderEmail = (hd.getKhachHang() != null && hd.getKhachHang().getTaiKhoan() != null)
-                    ? hd.getKhachHang().getTaiKhoan().getUsername() : null;
-            if (orderEmail == null || !orderEmail.equalsIgnoreCase(guestEmail)) {
-                return "redirect:/user/dang-nhap";
-            }
-
             kh = hd.getKhachHang();
+            isGuestView = true;
+        } else if (kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
             isGuestView = true;
         }
 
         try {
-            Map<String, Object> details = orderViewService.layChiTietOrder(targetId, kh.getId());
+            Map<String, Object> details = orderViewService.layChiTietOrder(targetId, kh != null ? kh.getId() : null);
             if (details == null) {
                 return "redirect:/user/my-order?loi=donhangkhongton";
             }
@@ -507,12 +547,12 @@ public class UserDashboardController {
             model.addAttribute("kh", kh);
             model.addAllAttributes(details);
 
-            long wishlistCount = wishlistRepository.countByKhachHang_Id(kh.getId());
+            long wishlistCount = (kh != null) ? wishlistRepository.countByKhachHang_Id(kh.getId()) : 0;
             model.addAttribute("wishlistCount", wishlistCount);
             model.addAttribute("isGuestView", isGuestView);
 
-            int soLanMua = (kh.getTaiKhoan() != null && kh.getTaiKhoan().getSoLanMuaThanhCong() != null) ? kh.getTaiKhoan().getSoLanMuaThanhCong() : 0;
-            boolean isFirstGuestOrder = isGuestView && (kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST && soLanMua <= 1);
+            int soLanMua = (kh != null && kh.getTaiKhoan() != null && kh.getTaiKhoan().getSoLanMuaThanhCong() != null) ? kh.getTaiKhoan().getSoLanMuaThanhCong() : 0;
+            boolean isFirstGuestOrder = isGuestView && (kh != null && kh.getTaiKhoan() != null && kh.getTaiKhoan().getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST && soLanMua <= 1);
             model.addAttribute("isFirstGuestOrder", isFirstGuestOrder);
 
             return "dash-manage-order";
@@ -533,9 +573,13 @@ public class UserDashboardController {
 
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
-            response.put("success", false);
-            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
-            return org.springframework.http.ResponseEntity.ok(response);
+            Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+            if (hdOpt.isEmpty() || !isGuestAllowedOrder(session, idHoaDon, hdOpt.get())) {
+                response.put("success", false);
+                response.put("message", "Bạn không có quyền thực hiện thao tác này.");
+                return org.springframework.http.ResponseEntity.ok(response);
+            }
+            kh = hdOpt.get().getKhachHang();
         }
 
         String ipAddress = request.getRemoteAddr();
@@ -565,9 +609,13 @@ public class UserDashboardController {
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
-            response.put("success", false);
-            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
-            return org.springframework.http.ResponseEntity.ok(response);
+            Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+            if (hdOpt.isEmpty() || !isGuestAllowedOrder(session, idHoaDon, hdOpt.get())) {
+                response.put("success", false);
+                response.put("message", "Bạn không có quyền thực hiện thao tác này.");
+                return org.springframework.http.ResponseEntity.ok(response);
+            }
+            kh = hdOpt.get().getKhachHang();
         }
 
         try {
@@ -599,9 +647,13 @@ public class UserDashboardController {
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         KhachHang kh = getLoggedInCustomer(session);
         if (kh == null) {
-            response.put("success", false);
-            response.put("message", "Vui lòng đăng nhập để thực hiện thao tác này.");
-            return org.springframework.http.ResponseEntity.ok(response);
+            Optional<HoaDon> hdOpt = hoaDonRepository.findById(idHoaDon);
+            if (hdOpt.isEmpty() || !isGuestAllowedOrder(session, idHoaDon, hdOpt.get())) {
+                response.put("success", false);
+                response.put("message", "Bạn không có quyền thực hiện thao tác này.");
+                return org.springframework.http.ResponseEntity.ok(response);
+            }
+            kh = hdOpt.get().getKhachHang();
         }
 
         List<String> bangChungPaths = new java.util.ArrayList<>();
@@ -689,21 +741,7 @@ public class UserDashboardController {
                 isAllowed = true;
             }
         } else {
-            String guestEmail = (String) session.getAttribute("guestCheckoutEmail");
-            Object allowedAccessesAttr = session.getAttribute("allowedGuestOrderAccesses");
-            java.util.List<?> allowedAccessesRaw = (allowedAccessesAttr instanceof java.util.List<?>)
-                    ? (java.util.List<?>) allowedAccessesAttr : null;
-
-            if (guestEmail != null && allowedAccessesRaw != null) {
-                for (Object item : allowedAccessesRaw) {
-                    if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access) {
-                        if (access.getOrderId().equals(id) && !access.isExpired()) {
-                            isAllowed = true;
-                            break;
-                        }
-                    }
-                }
-            }
+            isAllowed = isGuestAllowedOrder(session, id, hd);
         }
 
         if (!isAllowed) {
@@ -711,7 +749,7 @@ public class UserDashboardController {
         }
 
         try {
-            Map<String, Object> details = orderViewService.layChiTietOrder(id, hd.getKhachHang().getId());
+            Map<String, Object> details = orderViewService.layChiTietOrder(id, hd.getKhachHang() != null ? hd.getKhachHang().getId() : null);
             if (details == null) {
                 return "redirect:/user/my-order?loi=donhangkhongton";
             }

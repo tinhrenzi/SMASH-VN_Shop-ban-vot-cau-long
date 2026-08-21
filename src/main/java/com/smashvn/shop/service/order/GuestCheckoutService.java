@@ -52,6 +52,13 @@ public class GuestCheckoutService {
             return "NEW";
         }
 
+        // Chặn tài khoản bị khóa hoặc chờ khóa
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == AccountStatus.PENDING_LOCK
+                || "bi_khoa".equals(tk.getTrangThai()) || "cho_khoa".equals(tk.getTrangThai())) {
+            log.warn("[GUEST_CHECKOUT] Blocked locked account attempt for email: {}", email);
+            return "LOCKED";
+        }
+
         if (tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty()) {
             if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
                 log.info("[GUEST_CHECKOUT] Upgrading guest account with existing password to ACTIVE for email: {}", email);
@@ -89,10 +96,16 @@ public class GuestCheckoutService {
     public static class GuestRegisterResult {
         private final TaiKhoan taiKhoan;
         private final String token;
+        private final boolean newAccount;
 
         public GuestRegisterResult(TaiKhoan taiKhoan, String token) {
+            this(taiKhoan, token, false);
+        }
+
+        public GuestRegisterResult(TaiKhoan taiKhoan, String token, boolean newAccount) {
             this.taiKhoan = taiKhoan;
             this.token = token;
+            this.newAccount = newAccount;
         }
 
         public TaiKhoan getTaiKhoan() {
@@ -101,6 +114,10 @@ public class GuestCheckoutService {
 
         public String getToken() {
             return token;
+        }
+
+        public boolean isNewAccount() {
+            return newAccount;
         }
     }
 
@@ -133,35 +150,41 @@ public class GuestCheckoutService {
                 taiKhoanRepository.save(existingTk);
             }
 
-            KhachHang kh = khachHangRepository.findByTaiKhoan_Id(existingTk.getId());
-            if (kh != null) {
-                if (!normalizedPhone.isEmpty()) {
-                    KhachHang otherKh = khachHangRepository.findBySoDienThoaiKh(normalizedPhone);
-                    if (otherKh != null && !otherKh.getId().equals(kh.getId())) {
-                        throw new IllegalArgumentException("Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.");
-                    }
-                    kh.setSoDienThoaiKh(normalizedPhone);
+            // An toàn dữ liệu: KHÔNG ghi đè họ tên, số điện thoại của hồ sơ KhachHang cũ
+            // Tìm hoặc sinh token GUEST_ACTIVATION duy nhất còn hiệu lực
+            List<TokenKhoiPhuc> activeTokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(existingTk.getId(), "GUEST_ACTIVATION");
+            String tokenToUse = null;
+            LocalDateTime now = LocalDateTime.now();
+            for (TokenKhoiPhuc t : activeTokens) {
+                if (t.getThoiGianHetHan() != null && t.getThoiGianHetHan().isAfter(now)) {
+                    tokenToUse = t.getMaXacNhan();
+                    break;
+                } else {
+                    t.setDaSuDung(true);
                 }
-                
-                // Update name if provided
-                if (hoTen != null && !hoTen.trim().isEmpty()) {
-                    String name = hoTen.trim();
-                    String ho = "Khách";
-                    String ten = "Vãng Lai";
-                    int lastSpace = name.lastIndexOf(' ');
-                    if (lastSpace >= 0) {
-                        ho = name.substring(0, lastSpace).trim();
-                        ten = name.substring(lastSpace + 1).trim();
-                    } else {
-                        ho = "";
-                        ten = name;
-                    }
-                    kh.setHoKh(ho);
-                    kh.setTenKh(ten);
-                }
-                khachHangRepository.save(kh);
             }
-            return new GuestRegisterResult(existingTk, null);
+
+            if (tokenToUse == null) {
+                // Vô hiệu hóa token cũ
+                for (TokenKhoiPhuc t : activeTokens) {
+                    t.setDaSuDung(true);
+                }
+                if (!activeTokens.isEmpty()) {
+                    tokenRepository.saveAll(activeTokens);
+                }
+
+                String newToken = UUID.randomUUID().toString();
+                TokenKhoiPhuc tkp = new TokenKhoiPhuc();
+                tkp.setTaiKhoan(existingTk);
+                tkp.setMaXacNhan(newToken);
+                tkp.setLoaiXacNhan("GUEST_ACTIVATION");
+                tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30));
+                tkp.setDaSuDung(false);
+                tokenRepository.save(tkp);
+                tokenToUse = newToken;
+            }
+
+            return new GuestRegisterResult(existingTk, tokenToUse, false);
         }
 
         // Check duplicate phone conflict for new registration against all customers
@@ -204,12 +227,12 @@ public class GuestCheckoutService {
 
         khachHangRepository.save(kh);
         
-        // Generate and save token synchronously in the same transaction
+        // Generate and save token synchronously in the same transaction với loại GUEST_ACTIVATION
         String token = UUID.randomUUID().toString();
         TokenKhoiPhuc tkp = new TokenKhoiPhuc();
         tkp.setTaiKhoan(savedTk);
         tkp.setMaXacNhan(token);
-        tkp.setLoaiXacNhan("EMAIL");
+        tkp.setLoaiXacNhan("GUEST_ACTIVATION");
         tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30)); // 30 days validation limit
         tkp.setDaSuDung(false);
         tokenRepository.save(tkp);
@@ -231,9 +254,43 @@ public class GuestCheckoutService {
             log.error("[GUEST_CHECKOUT] Failed to create system notification for account ID {}: {}", savedTk.getId(), e.getMessage());
         }
 
-        log.info("[GUEST_CHECKOUT] Auto-registered GUEST account & generated token: {}", trimmedEmail);
+        log.info("[GUEST_CHECKOUT] Auto-registered GUEST account & generated activation token: {}", trimmedEmail);
 
-        return new GuestRegisterResult(savedTk, token);
+        return new GuestRegisterResult(savedTk, token, true);
+    }
+
+    @Transactional
+    public void resendGuestActivationEmail(Integer idTaiKhoan, String appUrl) {
+        if (idTaiKhoan == null) {
+            throw new IllegalArgumentException("Không tìm thấy thông tin tài khoản");
+        }
+        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan)
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại"));
+
+        if (tk.getTrangThaiTaiKhoan() != AccountStatus.GUEST) {
+            throw new IllegalStateException("Tài khoản này đã được kích hoạt hoặc không phải tài khoản khách vãng lai.");
+        }
+
+        // Revoke active old GUEST_ACTIVATION tokens
+        List<TokenKhoiPhuc> activeTokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "GUEST_ACTIVATION");
+        for (TokenKhoiPhuc oldTok : activeTokens) {
+            oldTok.setDaSuDung(true);
+            tokenRepository.save(oldTok);
+        }
+
+        // Generate new token (30 days)
+        String token = UUID.randomUUID().toString();
+        TokenKhoiPhuc tkp = new TokenKhoiPhuc();
+        tkp.setTaiKhoan(tk);
+        tkp.setMaXacNhan(token);
+        tkp.setLoaiXacNhan("GUEST_ACTIVATION");
+        tkp.setThoiGianHetHan(LocalDateTime.now().plusDays(30));
+        tkp.setDaSuDung(false);
+        tokenRepository.save(tkp);
+
+        // Send email asynchronously
+        sendOrderAndAccountNotification(tk.getUsername(), token, appUrl);
+        log.info("[GUEST_CHECKOUT] Resent GUEST_ACTIVATION email to: {}", tk.getUsername());
     }
 
     @Transactional
@@ -269,99 +326,15 @@ public class GuestCheckoutService {
 
         String activationUrl = appUrl + "/user/thiet-lap-mat-khau?token=" + token;
 
-        String htmlMsg = "<!DOCTYPE html>" +
-                "<html lang=\"vi\">" +
-                "<head>" +
-                "    <meta charset=\"UTF-8\">" +
-                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                "    <title>Xác nhận đặt hàng và kích hoạt tài khoản - Smash VN</title>" +
-                "</head>" +
-                "<body style=\"margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased;\">" +
-                "    <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"background-color: #f1f5f9; padding: 40px 10px;\">" +
-                "        <tr>" +
-                "            <td align=\"center\">" +
-                "                <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;\">" +
-                "                    <tr>" +
-                "                        <td style=\"background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 40px; text-align: center; border-bottom: 3px solid #ff4500;\">" +
-                "                            <h1 style=\"margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;\">" +
-                "                                SMASH <span style=\"color: #ff4500;\">VN</span>" +
-                "                            </h1>" +
-                "                            <p style=\"margin: 6px 0 0 0; color: #94a3b8; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px;\">" +
-                "                                Cửa Hàng Cầu Lông Chuyên Nghiệp" +
-                "                            </p>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                    <tr>" +
-                "                        <td style=\"padding: 36px 40px 20px 40px; text-align: center;\">" +
-                "                            <div style=\"display: inline-block; width: 64px; height: 64px; line-height: 64px; background-color: #ecfdf5; border-radius: 50%; color: #10b981; font-size: 32px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);\">" +
-                "                                &#10004;" +
-                "                            </div>" +
-                "                            <h2 style=\"margin: 0; color: #0f172a; font-size: 22px; font-weight: 700;\">" +
-                "                                Đặt Hàng Thành Công!" +
-                "                            </h2>" +
-                "                            <p style=\"margin: 10px 0 0 0; color: #64748b; font-size: 15px; line-height: 1.6;\">" +
-                "                                Cảm ơn bạn đã tin tưởng mua sắm tại <strong>Smash VN</strong>. Đơn hàng của bạn đã được ghi nhận thành công trên hệ thống." +
-                "                            </p>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                    <tr>" +
-                "                        <td style=\"padding: 0 40px 24px 40px;\">" +
-                "                            <div style=\"background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 12px; padding: 20px;\">" +
-                "                                <h3 style=\"margin: 0 0 8px 0; color: #1e293b; font-size: 15px; font-weight: 700;\">" +
-                "                                    &#128274; Tự Động Khởi Tạo Tài Khoản" +
-                "                                </h3>" +
-                "                                <p style=\"margin: 0; color: #475569; font-size: 14px; line-height: 1.6;\">" +
-                "                                    Để hỗ trợ bạn theo dõi tiến độ đơn hàng và mua sắm dễ dàng hơn trong tương lai, hệ thống đã tự động tạo một tài khoản liên kết với địa chỉ email này." +
-                "                                </p>" +
-                "                            </div>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                    <tr>" +
-                "                        <td style=\"padding: 0 40px 32px 40px; text-align: center;\">" +
-                "                            <p style=\"margin: 0 0 20px 0; color: #334155; font-size: 14px; font-weight: 600;\">" +
-                "                                Vui lòng thiết lập mật khẩu cho tài khoản bằng cách truy cập nút dưới đây:" +
-                "                            </p>" +
-                "                            <a href=\"" + activationUrl + "\" target=\"_blank\" style=\"display: inline-block; padding: 16px 36px; background: linear-gradient(135deg, #ff4500 0%, #e02424 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35); letter-spacing: 0.5px;\">" +
-                "                                THIẾT LẬP MẬT KHẨU NGAY &rarr;" +
-                "                            </a>" +
-                "                            <p style=\"margin: 16px 0 0 0; color: #94a3b8; font-size: 12px;\">" +
-                "                                (Liên kết kích hoạt có hiệu lực trong vòng 30 ngày)" +
-                "                            </p>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                    <tr>" +
-                "                        <td style=\"padding: 20px 40px; background-color: #f8fafc; border-top: 1px solid #f1f5f9;\">" +
-                "                            <p style=\"margin: 0 0 6px 0; color: #64748b; font-size: 12px; font-weight: 600;\">" +
-                "                                Nếu nút bấm trên không hoạt động, bạn có thể truy cập qua đường dẫn sau:" +
-                "                            </p>" +
-                "                            <p style=\"margin: 0; word-break: break-all; font-size: 12px;\">" +
-                "                                <a href=\"" + activationUrl + "\" style=\"color: #2563eb; text-decoration: underline;\">" + activationUrl + "</a>" +
-                "                            </p>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                    <tr>" +
-                "                        <td style=\"background-color: #0f172a; padding: 24px 40px; text-align: center;\">" +
-                "                            <p style=\"margin: 0 0 6px 0; color: #f8fafc; font-size: 13px; font-weight: 600;\">" +
-                "                                SMASH VN - Hệ Thống Shop Cầu Lông Chuyên Nghiệp" +
-                "                            </p>" +
-                "                            <p style=\"margin: 0; color: #64748b; font-size: 11px;\">" +
-                "                                &copy; 2026 Smash VN. All rights reserved." +
-                "                            </p>" +
-                "                        </td>" +
-                "                    </tr>" +
-                "                </table>" +
-                "            </td>" +
-                "        </tr>" +
-                "    </table>" +
-                "</body>" +
-                "</html>";
+        String htmlMsg = buildGuestActivationEmailHtml(activationUrl);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(recipientEmail);
-            helper.setSubject("Xác nhận đặt hàng thành công và kích hoạt tài khoản - Smash VN");
+            helper.setSubject("[Smash VN] Thiết lập mật khẩu và kích hoạt tài khoản");
             helper.setText(htmlMsg, true);
+            helper.addInline("smashLogo", new org.springframework.core.io.ClassPathResource("static/images/logo/logo-2.png"));
 
             mailSender.send(message);
             long endEmailThread = System.currentTimeMillis();
@@ -373,11 +346,124 @@ public class GuestCheckoutService {
         }
     }
 
+    static String buildGuestActivationEmailHtml(String activationUrl) {
+        String safeActivationUrl = org.springframework.web.util.HtmlUtils.htmlEscape(activationUrl);
+
+        return """
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <meta name="color-scheme" content="light">
+                    <title>Thiết lập mật khẩu tài khoản - Smash VN</title>
+                </head>
+                <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Open Sans', Arial, sans-serif; color: #333333; -webkit-font-smoothing: antialiased;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%; background-color: #f5f5f5;">
+                        <tr>
+                            <td align="center" style="padding: 28px 12px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width: 100%; max-width: 600px; background-color: #ffffff; border: 1px solid #e8e8e8; border-top: 4px solid #ff4500; border-radius: 10px; overflow: hidden;">
+                                    <tr>
+                                        <td align="center" style="padding: 16px 32px 14px; background-color: #ffffff; border-bottom: 1px solid #eeeeee;">
+                                            <img src="cid:smashLogo" width="75" alt="SMASH VN" style="display: block; width: 75px; max-width: 75px; height: auto; border: 0;">
+                                            <p style="margin: 5px 0 0; color: #777777; font-size: 10px; font-weight: 600; line-height: 1.4; letter-spacing: 1.2px; text-transform: uppercase;">
+                                                Cửa hàng vợt cầu lông chính hãng
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="padding: 30px 36px 18px;">
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td align="center" width="44" height="44" style="width: 44px; height: 44px; border-radius: 50%; background-color: #fff0eb; color: #ff4500; font-size: 24px; font-weight: 700; line-height: 44px;">
+                                                        &#10003;
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <h1 style="margin: 16px 0 0; color: #15171c; font-size: 24px; font-weight: 700; line-height: 1.35;">
+                                                Đặt hàng thành công!
+                                            </h1>
+                                            <p style="margin: 10px 0 0; color: #666666; font-size: 14px; line-height: 1.7;">
+                                                Cảm ơn bạn đã mua sắm tại <strong style="color: #15171c;">Smash VN</strong>.<br>
+                                                Đơn hàng của bạn đã được ghi nhận trên hệ thống.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0 36px 24px;">
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%; background-color: #fff7f3; border: 1px solid #ffd8ca; border-left: 4px solid #ff4500; border-radius: 8px;">
+                                                <tr>
+                                                    <td style="padding: 18px 20px;">
+                                                        <p style="margin: 0 0 5px; color: #ff4500; font-size: 11px; font-weight: 700; line-height: 1.4; letter-spacing: 0.8px; text-transform: uppercase;">
+                                                            Tài khoản khách hàng
+                                                        </p>
+                                                        <h2 style="margin: 0 0 8px; color: #15171c; font-size: 17px; font-weight: 700; line-height: 1.4;">
+                                                            Thiết lập mật khẩu lần đầu
+                                                        </h2>
+                                                        <p style="margin: 0; color: #5f5f5f; font-size: 13px; line-height: 1.65;">
+                                                            Smash VN đã tạo tài khoản theo email này để bạn lưu lịch sử mua hàng và theo dõi đơn thuận tiện hơn. Hãy tạo mật khẩu để hoàn tất kích hoạt tài khoản.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="padding: 0 36px 32px;">
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td align="center" bgcolor="#ff4500" style="background-color: #ff4500; border-radius: 6px;">
+                                                        <a href="{{ACTIVATION_URL}}" target="_blank" style="display: inline-block; padding: 14px 30px; color: #ffffff; font-size: 13px; font-weight: 700; line-height: 1.2; letter-spacing: 0.5px; text-decoration: none; text-transform: uppercase;">
+                                                            Thiết lập mật khẩu &nbsp;&rarr;
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <p style="margin: 14px 0 0; color: #999999; font-size: 11px; line-height: 1.5;">
+                                                Liên kết có hiệu lực trong 30 ngày.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 18px 36px; background-color: #fafafa; border-top: 1px solid #eeeeee;">
+                                            <p style="margin: 0 0 6px; color: #777777; font-size: 11px; font-weight: 600; line-height: 1.5;">
+                                                Nếu nút trên không hoạt động, hãy mở đường dẫn này:
+                                            </p>
+                                            <p style="margin: 0; font-size: 11px; line-height: 1.5; word-break: break-all;">
+                                                <a href="{{ACTIVATION_URL}}" style="color: #ff4500; text-decoration: underline;">{{ACTIVATION_URL}}</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="padding: 22px 32px; background-color: #000000;">
+                                            <p style="margin: 0 0 5px; color: #ffffff; font-size: 12px; font-weight: 700; line-height: 1.5; letter-spacing: 0.3px;">
+                                                SMASH VN
+                                            </p>
+                                            <p style="margin: 0; color: #9b9b9b; font-size: 10px; line-height: 1.5;">
+                                                Cửa hàng vợt cầu lông chính hãng &nbsp;&bull;&nbsp; &copy; 2026 Smash VN
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """.replace("{{ACTIVATION_URL}}", safeActivationUrl);
+    }
+
     @Transactional
     public void setPasswordForGuest(Integer idTaiKhoan, String password) {
         // Concurrency lock: Load TaiKhoan with Pessimistic Write Lock
         TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(idTaiKhoan)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
+
+        // Chặn tài khoản bị khóa hoặc chờ khóa
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == AccountStatus.PENDING_LOCK
+                || "bi_khoa".equals(tk.getTrangThai()) || "cho_khoa".equals(tk.getTrangThai())) {
+            throw new RuntimeException("Tài khoản này đã bị khóa hoặc đang chờ khóa. Vui lòng liên hệ quản trị viên!");
+        }
 
         // Password Activation Race Protection: only GUEST state allowed (unless password is missing)
         if (tk.getTrangThaiTaiKhoan() != AccountStatus.GUEST && (tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty())) {
@@ -410,14 +496,14 @@ public class GuestCheckoutService {
         if (tkp == null) {
             throw new RuntimeException("Đường link thiết lập mật khẩu không hợp lệ!");
         }
+        if (!"GUEST_ACTIVATION".equals(tkp.getLoaiXacNhan())) {
+            throw new RuntimeException("Đường link thiết lập mật khẩu không hợp lệ hoặc sai loại xác nhận!");
+        }
         if (tkp.isDaSuDung()) {
             throw new RuntimeException("Đường link này đã được sử dụng!");
         }
         if (tkp.getThoiGianHetHan().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Đường link này đã hết hạn!");
-        }
-        if (!"EMAIL".equals(tkp.getLoaiXacNhan())) {
-            throw new RuntimeException("Loại xác nhận không hợp lệ!");
         }
 
         TaiKhoan tk = tkp.getTaiKhoan();
@@ -425,6 +511,15 @@ public class GuestCheckoutService {
 
         tkp.setDaSuDung(true);
         tokenRepository.saveAndFlush(tkp);
+
+        // Vô hiệu hóa tất cả token GUEST_ACTIVATION còn lại của tài khoản này
+        List<TokenKhoiPhuc> otherTokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "GUEST_ACTIVATION");
+        for (TokenKhoiPhuc ot : otherTokens) {
+            ot.setDaSuDung(true);
+        }
+        if (!otherTokens.isEmpty()) {
+            tokenRepository.saveAll(otherTokens);
+        }
     }
 
     @org.springframework.scheduling.annotation.Async

@@ -195,7 +195,7 @@
 
                 if (!/^[A-Z0-9_]{2,50}$/.test(maPhieu)) {
                     e.preventDefault();
-                    alert('Mã phiếu chỉ được chứa chữ cái in hoa, số và dấu gạch dưới (từ 2 đến 50 ký tự)!');
+                    showToast('Mã phiếu chỉ được chứa chữ cái in hoa, số và dấu gạch dưới (từ 2 đến 50 ký tự)!', 'warning');
                     maPhieuInput.focus();
                     return;
                 }
@@ -203,26 +203,26 @@
                 const giaTriRaw = document.getElementById('giaTri').value.trim();
                 if (giaTriRaw.includes('.') || giaTriRaw.includes(',')) {
                     e.preventDefault();
-                    alert('Giá trị giảm phải là số nguyên, không được là số thập phân!');
+                    showToast('Giá trị giảm phải là số nguyên, không được là số thập phân!', 'warning');
                     document.getElementById('giaTri').focus();
                     return;
                 }
                 const giaTri = parseFloat(giaTriRaw);
                 if (isNaN(giaTri) || giaTri <= 0) {
                     e.preventDefault();
-                    alert('Giá trị giảm phải lớn hơn 0!');
+                    showToast('Giá trị giảm phải lớn hơn 0!', 'warning');
                     document.getElementById('giaTri').focus();
                     return;
                 }
                 if (donVi === '%' && giaTri > 100) {
                     e.preventDefault();
-                    alert('Giá trị giảm % không được vượt quá 100%!');
+                    showToast('Giá trị giảm % không được vượt quá 100%!', 'warning');
                     document.getElementById('giaTri').focus();
                     return;
                 }
                 if (donVi === 'VND' && giaTri > 100000000) {
                     e.preventDefault();
-                    alert('Giá trị giảm tiền không được vượt quá 100,000,000 VNĐ!');
+                    showToast('Giá trị giảm tiền không được vượt quá 100,000,000 VNĐ!', 'warning');
                     document.getElementById('giaTri').focus();
                     return;
                 }
@@ -230,21 +230,21 @@
                 const soLuongConLaiRaw = document.getElementById('soLuongConLai').value.trim();
                 if (soLuongConLaiRaw.includes('.') || soLuongConLaiRaw.includes(',')) {
                     e.preventDefault();
-                    alert('Số lượng voucher phải là số nguyên, không được là số thập phân!');
+                    showToast('Số lượng voucher phải là số nguyên, không được là số thập phân!', 'warning');
                     document.getElementById('soLuongConLai').focus();
                     return;
                 }
                 const soLuongConLai = parseFloat(soLuongConLaiRaw);
                 if (isNaN(soLuongConLai) || soLuongConLai <= 0 || soLuongConLai > 1000000) {
                     e.preventDefault();
-                    alert('Số lượng phát hành phải lớn hơn 0 và tối đa 1,000,000!');
+                    showToast('Số lượng phát hành phải lớn hơn 0 và tối đa 1,000,000!', 'warning');
                     document.getElementById('soLuongConLai').focus();
                     return;
                 }
 
                 if (!ngayBatDauStr || !ngayKetThucStr) {
                     e.preventDefault();
-                    alert('Vui lòng chọn đầy đủ thời gian hiệu lực và ngày hết hạn!');
+                    showToast('Vui lòng chọn đầy đủ thời gian hiệu lực và ngày hết hạn!', 'warning');
                     return;
                 }
 
@@ -252,7 +252,7 @@
                 const ngayKetThuc = new Date(ngayKetThucStr);
                 if (ngayBatDau >= ngayKetThuc) {
                     e.preventDefault();
-                    alert('Ngày bắt đầu phải xảy ra trước ngày kết thúc!');
+                    showToast('Ngày bắt đầu phải xảy ra trước ngày kết thúc!', 'warning');
                     document.getElementById('ngayBatDau').focus();
                     return;
                 }

@@ -36,8 +36,9 @@ public class AdminNhanVienService {
     private final JavaMailSender mailSender;
     private final KhachHangRepository khachHangRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final org.springframework.cache.CacheManager cacheManager;
 
-    @Value("${app.admin.emails}")
+    @Value("${app.admin.emails:}")
     private String adminEmailsConfig;
 
     public static String[] splitFullName(String fullName) {
@@ -318,12 +319,26 @@ public class AdminNhanVienService {
             tk.setMatKhau(passwordEncoder.encode(newPassword.trim()));
         }
         saveTaiKhoan(tk);
+        evictTaiKhoanStatusCache(tk.getId());
 
         // Soft deactivation via role flags is handled, NhanVien profile remains in database.
         // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
         if (actingUser != null) {
             auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Cập nhật thông tin và vai trò nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
+        }
+    }
+
+    private void evictTaiKhoanStatusCache(Integer idTaiKhoan) {
+        if (cacheManager != null && idTaiKhoan != null) {
+            try {
+                org.springframework.cache.Cache cache = cacheManager.getCache("taiKhoanStatus");
+                if (cache != null) {
+                    cache.evict(idTaiKhoan);
+                }
+            } catch (Exception e) {
+                // Ignore cache eviction errors
+            }
         }
     }
 
@@ -367,6 +382,7 @@ public class AdminNhanVienService {
 
         tk.setTrangThai(newStatus);
         taiKhoanRepository.save(tk);
+        evictTaiKhoanStatusCache(tk.getId());
 
         // 3. Lưu Audit Log
         TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
@@ -443,6 +459,7 @@ public class AdminNhanVienService {
         tk.setTrangThai("bi_khoa");
         tk.setTokenXacThucKhoa(null); // Clear token
         taiKhoanRepository.save(tk);
+        evictTaiKhoanStatusCache(tk.getId());
 
         if (actingUser == null) {
             auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản qua token Email", "SYSTEM_EMAIL");
@@ -484,6 +501,7 @@ public class AdminNhanVienService {
         tk.setTrangThai("hoat_dong");
         tk.setTokenXacThucKhoa(null); // Clear token
         taiKhoanRepository.save(tk);
+        evictTaiKhoanStatusCache(tk.getId());
 
         // Gửi mail thông báo từ chối khóa về các admin
         guiEmailTuChoiKhoa(nv, tk);

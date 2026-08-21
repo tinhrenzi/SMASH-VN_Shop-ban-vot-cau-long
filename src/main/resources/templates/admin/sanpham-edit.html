@@ -659,7 +659,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.error) {
-                        alert('Không thể tải chi tiết phiếu nhập: ' + data.error);
+                        showToast('Không thể tải chi tiết phiếu nhập: ' + data.error, 'error');
                         return;
                     }
                     document.getElementById('modalMaPhieuNhap').textContent = data.maPhieuNhap || 'PN';
@@ -709,7 +709,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Lỗi kết nối khi tải phiếu nhập!');
+                    showToast('Lỗi kết nối khi tải phiếu nhập!', 'error');
                 });
         }
 
@@ -1195,7 +1195,10 @@
                         xuLyChonDoiTuongSua(select.value);
                     }
                 })
-                .catch(err => console.error("Error loading category attributes:", err));
+                .catch(err => {
+                    console.error("Error loading category attributes:", err);
+                    showToast('Không thể tải thuộc tính danh mục. Vui lòng thử lại.', 'error');
+                });
         }
 
         document.addEventListener("DOMContentLoaded", function() {

@@ -108,6 +108,11 @@ public class UserDangNhapController {
             request.changeSessionId();
             session = request.getSession(true);
 
+            // Xóa bỏ hoàn toàn trạng thái Guest nếu có
+            session.removeAttribute("isGuestView");
+            session.removeAttribute("guestCheckoutEmail");
+            session.removeAttribute("allowedGuestOrderAccesses");
+
             // Lưu thông tin vào Session (giữ nguyên kiểu dữ liệu String cho nguoiDungDangNhap)
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getUsername());
             session.setAttribute("idNguoiDung", tkDangNhap.getId());

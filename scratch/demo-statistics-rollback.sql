@@ -30,7 +30,7 @@ BEGIN TRY
     JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan
     WHERE tk.username LIKE 'demo_stat_cust_%';
 
-    PRINT N'==> [3/5] Xóa Sổ địa chỉ Demo (SoDiaChi)...';
+    PRINT N'==> [3/6] Xóa Sổ địa chỉ Demo (SoDiaChi)...';
 
     DELETE dc
     FROM SoDiaChi dc
@@ -38,14 +38,32 @@ BEGIN TRY
     JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan
     WHERE tk.username LIKE 'demo_stat_cust_%';
 
-    PRINT N'==> [4/5] Xóa Khách hàng Demo (KhachHang)...';
+    PRINT N'==> [4/6] Xóa Giỏ hàng Demo nếu có (GioHangChiTiet, GioHang)...';
+
+    DELETE ghct
+    FROM GioHangChiTiet ghct
+    WHERE ghct.id_gio_hang IN (
+        SELECT gh.id
+        FROM GioHang gh
+        JOIN KhachHang kh ON kh.id = gh.id_khach_hang
+        JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan
+        WHERE tk.username LIKE 'demo_stat_cust_%'
+    );
+
+    DELETE gh
+    FROM GioHang gh
+    JOIN KhachHang kh ON kh.id = gh.id_khach_hang
+    JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan
+    WHERE tk.username LIKE 'demo_stat_cust_%';
+
+    PRINT N'==> [5/6] Xóa Khách hàng Demo (KhachHang)...';
 
     DELETE kh
     FROM KhachHang kh
     JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan
     WHERE tk.username LIKE 'demo_stat_cust_%';
 
-    PRINT N'==> [5/5] Xóa Tài khoản Demo (TaiKhoan)...';
+    PRINT N'==> [6/6] Xóa Tài khoản Demo (TaiKhoan)...';
 
     DELETE FROM TaiKhoan
     WHERE username LIKE 'demo_stat_cust_%';

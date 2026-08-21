@@ -19,10 +19,41 @@ public class UserQuenMatKhauController {
     private final UserQuenMatKhauService quenMatKhauService;
     private final ForgotPasswordRateLimiter forgotPasswordRateLimiter;
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:}")
+    private String configuredBaseUrl;
+
+    private String resolveBaseUrl(HttpServletRequest request) {
+        if (configuredBaseUrl != null && !configuredBaseUrl.trim().isEmpty()) {
+            return configuredBaseUrl.trim().replaceAll("/+$", "");
+        }
+        try {
+            return org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                    .fromContextPath(request)
+                    .build()
+                    .toUriString();
+        } catch (Exception e) {
+            String scheme = request.getScheme();
+            String serverName = request.getServerName();
+            int serverPort = request.getServerPort();
+            String contextPath = request.getContextPath();
+            if ((scheme.equalsIgnoreCase("http") && serverPort == 80) || (scheme.equalsIgnoreCase("https") && serverPort == 443)) {
+                return scheme + "://" + serverName + contextPath;
+            }
+            return scheme + "://" + serverName + ":" + serverPort + contextPath;
+        }
+    }
+
     // 1. Hiển thị trang nhập Email
     @GetMapping("/quen-mat-khau")
-    public String hienThiTrangQuenMK() {
+    public String hienThiTrangQuenMK(@RequestParam(value = "email", required = false) String email, Model model) {
+        if (email != null && !email.trim().isEmpty() && model != null) {
+            model.addAttribute("email", email.trim());
+        }
         return "lost-password"; 
+    }
+
+    public String hienThiTrangQuenMK() {
+        return hienThiTrangQuenMK(null, null);
     }
 
     // 1.5 API AJAX Quên mật khẩu dùng cho Modal Checkout
@@ -61,7 +92,7 @@ public class UserQuenMatKhauController {
         }
 
         try {
-            String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            String appUrl = resolveBaseUrl(request);
             quenMatKhauService.guiYeuCauKhoiPhuc(trimmedEmail, appUrl);
             forgotPasswordRateLimiter.forgotPasswordSucceeded(ip);
             response.put("success", true);
@@ -108,9 +139,7 @@ public class UserQuenMatKhauController {
         }
 
         try {
-            // Lấy địa chỉ gốc của web (VD: http://localhost:8080)
-            String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-            
+            String appUrl = resolveBaseUrl(request);
             quenMatKhauService.guiYeuCauKhoiPhuc(trimmedEmail, appUrl);
             forgotPasswordRateLimiter.forgotPasswordSucceeded(ip);
             model.addAttribute("thongBao", "Đường link khôi phục mật khẩu đã được gửi vào Email của bạn. Vui lòng kiểm tra hộp thư!");

@@ -11,6 +11,8 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script th:src="@{/js/notifications.js(v='1.0.0')}"></script>
     
     <style>
         :root {
@@ -337,22 +339,24 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        console.log('Simulation success triggered successfully:', response);
                     } else {
-                        alert('Mô phỏng thất bại: ' + response.message);
+                        showToast('Mô phỏng thất bại: ' + response.message, 'error');
                         btn.prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>Mô phỏng thanh toán thành công');
                     }
                 },
                 error: function(xhr, status, error) {
-                    alert('Lỗi kết nối: ' + error);
+                    showToast('Lỗi kết nối: ' + error, 'error');
                     btn.prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>Mô phỏng thanh toán thành công');
                 }
             });
         });
 
         // Trigger Cancel/Failure Simulation
-        $('#btnSimulateCancel').on('click', function() {
-            if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng của bạn sẽ ở trạng thái Chờ thanh toán.')) {
+        $('#btnSimulateCancel').on('click', async function() {
+            if (await SmashNotify.confirm({
+                title: 'Hủy thanh toán?',
+                message: 'Đơn hàng của bạn sẽ được giữ ở trạng thái Chờ thanh toán.'
+            })) {
                 if (isGuestUser && orderIdVal) {
                     window.location.href = '/user/manage-order/' + orderIdVal;
                 } else {

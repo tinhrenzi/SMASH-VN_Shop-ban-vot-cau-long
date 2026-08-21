@@ -12,6 +12,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import com.smashvn.shop.dto.order.GeneralMetricsDTO;
 import com.smashvn.shop.dto.order.GrowthMetricDTO;
@@ -30,6 +37,9 @@ import com.smashvn.shop.service.admin.AdminThongKeService.RevenueClassification;
 public class AuditThongKeIntegrationTest {
 
     @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    @Autowired
     private AdminThongKeService adminThongKeService;
 
     @Autowired
@@ -37,6 +47,116 @@ public class AuditThongKeIntegrationTest {
 
     @Autowired
     private HoaDonChiTietRepository hoaDonChiTietRepository;
+
+    @Test
+    public void testInspectPhuongThucThanhToan() {
+        System.out.println("================================================================================");
+        System.out.println("                 INSPECT DATABASE & PHUONG THUC THANH TOAN                      ");
+        System.out.println("================================================================================");
+
+        String currentDb = jdbcTemplate.queryForObject("SELECT DB_NAME() AS CurrentDatabase", String.class);
+        System.out.println("\n[CURRENT DATABASE]: " + currentDb);
+
+        List<Map<String, Object>> ptttList = jdbcTemplate.queryForList("SELECT * FROM PhuongThucThanhToan ORDER BY id");
+        System.out.println("\n[PHUONG THUC THANH TOAN TABLE CONTENT]: " + ptttList.size() + " rows");
+        for (var row : ptttList) {
+            System.out.println("  Row: " + row);
+        }
+
+        List<Map<String, Object>> tkList = jdbcTemplate.queryForList("SELECT id, username, vai_tro FROM TaiKhoan ORDER BY id");
+        System.out.println("\n[TAIKHOAN TABLE CONTENT]: " + tkList.size() + " rows");
+        for (var tk : tkList) {
+            System.out.println("  TaiKhoan: " + tk);
+        }
+
+        List<Map<String, Object>> khList = jdbcTemplate.queryForList("SELECT id, id_tai_khoan, ho_ten_kh FROM KhachHang ORDER BY id");
+        System.out.println("\n[KHACHHANG TABLE CONTENT]: " + khList.size() + " rows");
+        for (var kh : khList) {
+            System.out.println("  KhachHang: " + kh);
+        }
+
+        List<Map<String, Object>> allOrders = jdbcTemplate.queryForList("SELECT id, id_khach_hang, ngay_tao, tong_tien, trang_thai_don_hang, trang_thai_thanh_toan, ghi_chu FROM HoaDon ORDER BY id");
+        System.out.println("\n[HOADON TABLE CONTENT]: " + allOrders.size() + " rows");
+        for (var ord : allOrders) {
+            System.out.println("  Order: " + ord);
+        }
+        System.out.println("================================================================================");
+    }
+
+    @Test
+    public void testRawSqlScriptDryRun() throws Exception {
+        System.out.println("================================================================================");
+        System.out.println("                 TEST RAW SQL SCRIPT DRY RUN ON BadmintonShopDB1                ");
+        System.out.println("================================================================================");
+
+        String currentDb = jdbcTemplate.queryForObject("SELECT DB_NAME() AS CurrentDatabase", String.class);
+        System.out.println("\n[STEP 1: DATABASE VERIFICATION]: " + currentDb);
+        org.junit.jupiter.api.Assertions.assertEquals("BadmintonShopDB1", currentDb);
+
+        // Pre-check
+        int preDemo = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM TaiKhoan WHERE username LIKE 'demo_stat_%'", Integer.class);
+        System.out.println("  Pre-seed demo accounts: " + preDemo);
+        org.junit.jupiter.api.Assertions.assertEquals(0, preDemo);
+
+        // Read raw SQL script
+        String seedSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/demo-statistics-seed.sql"), java.nio.charset.StandardCharsets.UTF_8);
+        String rollbackSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/demo-statistics-rollback.sql"), java.nio.charset.StandardCharsets.UTF_8);
+
+        System.out.println("\n[STEP 2: EXECUTING RAW SQL SEED SCRIPT...]");
+        jdbcTemplate.execute(seedSql);
+        System.out.println("  ==> RAW SQL SEED EXECUTED SUCCESSFULLY WITHOUT ANY FOREIGN KEY ERRORS!");
+
+        try {
+            // Check PTTT FK consistency
+            List<Integer> distinctPtttInLedger = jdbcTemplate.queryForList(
+                "SELECT DISTINCT id_phuong_thuc_thanh_toan FROM HoaDon WHERE ghi_chu LIKE 'DEMO_STAT_D%'", Integer.class
+            );
+            List<Integer> validPtttIds = jdbcTemplate.queryForList(
+                "SELECT id FROM PhuongThucThanhToan", Integer.class
+            );
+            System.out.println("\n[STEP 3: FK PAYMENT METHODS CONSISTENCY]");
+            System.out.println("  Distinct PTTT IDs in demo orders: " + distinctPtttInLedger);
+            System.out.println("  Valid PTTT IDs in PhuongThucThanhToan: " + validPtttIds);
+            for (Integer ptttId : distinctPtttInLedger) {
+                org.junit.jupiter.api.Assertions.assertTrue(validPtttIds.contains(ptttId), "PTTT ID " + ptttId + " must exist in PhuongThucThanhToan");
+            }
+
+            // Row counts
+            int tkCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM TaiKhoan WHERE username LIKE 'demo_stat_cust_%'", Integer.class);
+            int khCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM KhachHang kh JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan WHERE tk.username LIKE 'demo_stat_cust_%'", Integer.class);
+            int dcCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SoDiaChi dc JOIN KhachHang kh ON kh.id = dc.id_khach_hang JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan WHERE tk.username LIKE 'demo_stat_cust_%'", Integer.class);
+            int hdDemoCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDon WHERE ghi_chu LIKE 'DEMO_STAT_D%'", Integer.class);
+            int hdctDemoCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDonChiTiet hdct JOIN HoaDon hd ON hd.id = hdct.id_hoa_don WHERE hd.ghi_chu LIKE 'DEMO_STAT_D%'", Integer.class);
+
+            System.out.println("\n[STEP 4: ROW COUNTS INSIDE SEED]");
+            System.out.println("  TaiKhoan demo: " + tkCount + " (Expected: 18)");
+            System.out.println("  KhachHang demo: " + khCount + " (Expected: 18)");
+            System.out.println("  SoDiaChi demo: " + dcCount + " (Expected: 18)");
+            System.out.println("  HoaDon demo: " + hdDemoCount + " (Expected: 41)");
+            System.out.println("  HoaDonChiTiet demo: " + hdctDemoCount + " (Expected: 41)");
+
+            org.junit.jupiter.api.Assertions.assertEquals(18, tkCount);
+            org.junit.jupiter.api.Assertions.assertEquals(18, khCount);
+            org.junit.jupiter.api.Assertions.assertEquals(18, dcCount);
+            org.junit.jupiter.api.Assertions.assertEquals(41, hdDemoCount);
+            org.junit.jupiter.api.Assertions.assertEquals(41, hdctDemoCount);
+
+        } finally {
+            System.out.println("\n[STEP 5: EXECUTING RAW SQL ROLLBACK SCRIPT...]");
+            jdbcTemplate.execute(rollbackSql);
+            System.out.println("  ==> RAW SQL ROLLBACK EXECUTED SUCCESSFULLY!");
+
+            int remainingDemo = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM TaiKhoan WHERE username LIKE 'demo_stat_%'", Integer.class);
+            int remainingHd = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDon", Integer.class);
+            System.out.println("  Remaining Demo Accounts: " + remainingDemo + " (Expected: 0)");
+            System.out.println("  Remaining Total Orders: " + remainingHd + " (Expected: 0 orders before seed)");
+
+            org.junit.jupiter.api.Assertions.assertEquals(0, remainingDemo);
+            org.junit.jupiter.api.Assertions.assertEquals(0, remainingHd);
+            System.out.println("\n==> [DRY RUN RESULT: 100% PASS - READY FOR SSMS EXECUTION]");
+        }
+        System.out.println("================================================================================");
+    }
 
     @Test
     public void runFullAudit() throws Exception {
@@ -435,6 +555,232 @@ public class AuditThongKeIntegrationTest {
             org.junit.jupiter.api.Assertions.assertEquals(7, remainingOrders);
             System.out.println("\n==> [DRY RUN SUCCESS] All assertions PASS and DB was cleanly rolled back to 7 original orders!");
         }
+        System.out.println("================================================================================");
+    }
+
+    @Test
+    public void executeOfficialSeedAndPostAudit() throws Exception {
+        System.out.println("================================================================================");
+        System.out.println("            OFFICIAL SEED EXECUTION & POST-SEED FULL AUDIT                      ");
+        System.out.println("================================================================================");
+
+        // 0. Ensure clean pre-seed state by cleaning any test garbage (id > 7)
+        jdbcTemplate.execute("DELETE FROM GioHangChiTiet WHERE id_gio_hang IN (SELECT id FROM GioHang WHERE id_khach_hang > 4)");
+        jdbcTemplate.execute("DELETE FROM GioHang WHERE id_khach_hang > 4");
+        jdbcTemplate.execute("DELETE FROM HoaDonChiTiet WHERE id_hoa_don > 7");
+        jdbcTemplate.execute("DELETE FROM HoaDon WHERE id > 7");
+        jdbcTemplate.execute("DELETE FROM SoDiaChi WHERE id_khach_hang > 4");
+        jdbcTemplate.execute("DELETE FROM KhachHang WHERE id > 4");
+        jdbcTemplate.execute("DELETE FROM MaKhoiPhuc WHERE id_tai_khoan > 6");
+        jdbcTemplate.execute("DELETE FROM TaiKhoan WHERE id > 6");
+
+        // Check pre-seed state
+        int preDemoTk = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM TaiKhoan WHERE username LIKE 'demo_stat_%'", Integer.class);
+        List<Map<String, Object>> existingHdList = jdbcTemplate.queryForList("SELECT id, ngay_tao, tong_tien, trang_thai_don_hang, trang_thai_thanh_toan, ghi_chu, id_khach_hang FROM HoaDon ORDER BY id");
+        System.out.println("\n[PRE-SEED STATE CHECK]");
+        System.out.println("  Pre-seed demo accounts: " + preDemoTk + " (Expected: 0)");
+        System.out.println("  Pre-seed total orders: " + existingHdList.size() + " (Expected: 7 original orders)");
+        for (var hd : existingHdList) {
+            System.out.println("    Original Order: " + hd);
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(0, preDemoTk, "Demo accounts must be 0 before seeding");
+        org.junit.jupiter.api.Assertions.assertEquals(7, existingHdList.size(), "Original orders must be exactly 7 before seeding");
+
+        // Read and execute official seed SQL script
+        String seedSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/demo-statistics-seed.sql"), java.nio.charset.StandardCharsets.UTF_8);
+        String rollbackSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/demo-statistics-rollback.sql"), java.nio.charset.StandardCharsets.UTF_8);
+
+        System.out.println("\n[EXECUTING OFFICIAL SEED SCRIPT]");
+        jdbcTemplate.execute(seedSql);
+        System.out.println("  ==> Seed script executed successfully!");
+
+        try {
+            // Verify row counts
+            int tkCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM TaiKhoan WHERE username LIKE 'demo_stat_cust_%'", Integer.class);
+            int khCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM KhachHang kh JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan WHERE tk.username LIKE 'demo_stat_cust_%'", Integer.class);
+            int dcCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SoDiaChi dc JOIN KhachHang kh ON kh.id = dc.id_khach_hang JOIN TaiKhoan tk ON tk.id = kh.id_tai_khoan WHERE tk.username LIKE 'demo_stat_cust_%'", Integer.class);
+            int hdDemoCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDon WHERE ghi_chu LIKE 'DEMO_STAT_D%'", Integer.class);
+            int hdctDemoCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDonChiTiet hdct JOIN HoaDon hd ON hd.id = hdct.id_hoa_don WHERE hd.ghi_chu LIKE 'DEMO_STAT_D%'", Integer.class);
+            int totalHdAll = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM HoaDon", Integer.class);
+
+            System.out.println("\n[POST-SEED ROW COUNT VERIFICATION]");
+            System.out.println("  Inserted TaiKhoan: " + tkCount + " (Expected: 18)");
+            System.out.println("  Inserted KhachHang: " + khCount + " (Expected: 18)");
+            System.out.println("  Inserted SoDiaChi: " + dcCount + " (Expected: 18)");
+            System.out.println("  Inserted HoaDon: " + hdDemoCount + " (Expected: 41 | Total in DB: " + totalHdAll + ")");
+            System.out.println("  Inserted HoaDonChiTiet: " + hdctDemoCount + " (Expected: 41)");
+
+            org.junit.jupiter.api.Assertions.assertEquals(18, tkCount);
+            org.junit.jupiter.api.Assertions.assertEquals(18, khCount);
+            org.junit.jupiter.api.Assertions.assertEquals(18, dcCount);
+            org.junit.jupiter.api.Assertions.assertEquals(41, hdDemoCount);
+            org.junit.jupiter.api.Assertions.assertEquals(41, hdctDemoCount);
+            org.junit.jupiter.api.Assertions.assertEquals(48, totalHdAll);
+
+            // FIXED DEMO RANGE AUDIT
+            LocalDateTime startCurr = LocalDateTime.of(2026, 7, 21, 0, 0, 0);
+            LocalDateTime endCurr = LocalDateTime.of(2026, 8, 19, 23, 59, 59, 999999999);
+
+            LocalDateTime startPrev = LocalDateTime.of(2026, 6, 21, 0, 0, 0);
+            LocalDateTime endPrev = LocalDateTime.of(2026, 7, 20, 23, 59, 59, 999999999);
+
+            System.out.println("\n[POST-SEED AUDIT - FIXED RANGE: " + startCurr + " -> " + endCurr + "]");
+            Map<String, Object> statsCurr = adminThongKeService.getStatisticsData("custom", startCurr, endCurr);
+            Map<String, Object> statsPrev = adminThongKeService.getStatisticsData("custom", startPrev, endPrev);
+
+            GeneralMetricsDTO mCurr = (GeneralMetricsDTO) statsCurr.get("metrics");
+            GeneralMetricsDTO mPrev = (GeneralMetricsDTO) statsPrev.get("metrics");
+
+            System.out.println("\n--- CURRENT METRICS ---");
+            System.out.println("  totalOrders: " + statsCurr.get("totalOrders") + " (Expected: 28)");
+            System.out.println("  successfulOrders: " + statsCurr.get("successfulOrders") + " (Expected: 22)");
+            System.out.println("  processingOrders: " + statsCurr.get("processingOrders") + " (Expected: 4)");
+            System.out.println("  cancelledOrders: " + statsCurr.get("cancelledOrders") + " (Expected: 2)");
+            System.out.println("  actualRevenue: " + statsCurr.get("actualRevenue") + " (Expected: 88263800.00)");
+            System.out.println("  AOV: " + mCurr.avgOrderValue() + " (Expected: 4011991)");
+            System.out.println("  newCustomers: " + statsCurr.get("newCustomers") + " (Expected: 11)");
+            System.out.println("  totalProductsSold: " + mCurr.totalProductsSold() + " (Expected: 26)");
+            System.out.println("  pendingRefund: " + statsCurr.get("pendingRefund") + " (Expected: 4806400.00)");
+
+            Double totalValidProductRevenue = hoaDonChiTietRepository.getTotalProductLineRevenueInPeriod(startCurr, endCurr);
+            System.out.println("  totalProductRevenue: " + totalValidProductRevenue + " (Expected: 86121000.0)");
+
+            org.junit.jupiter.api.Assertions.assertEquals(28L, statsCurr.get("totalOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(22L, statsCurr.get("successfulOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(4L, statsCurr.get("processingOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(2L, statsCurr.get("cancelledOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("88263800.00"), statsCurr.get("actualRevenue"));
+            org.junit.jupiter.api.Assertions.assertEquals(11L, statsCurr.get("newCustomers"));
+            org.junit.jupiter.api.Assertions.assertEquals(26L, mCurr.totalProductsSold());
+            org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("4806400.00"), statsCurr.get("pendingRefund"));
+            org.junit.jupiter.api.Assertions.assertEquals(86121000.0, totalValidProductRevenue);
+
+            System.out.println("\n--- PREVIOUS METRICS ---");
+            System.out.println("  prev totalOrders: " + statsPrev.get("totalOrders") + " (Expected: 20)");
+            System.out.println("  prev successfulOrders: " + statsPrev.get("successfulOrders") + " (Expected: 15)");
+            System.out.println("  prev processingOrders: " + statsPrev.get("processingOrders") + " (Expected: 2)");
+            System.out.println("  prev cancelledOrders: " + statsPrev.get("cancelledOrders") + " (Expected: 3)");
+            System.out.println("  prev actualRevenue: " + statsPrev.get("actualRevenue") + " (Expected: 61386000.00)");
+            System.out.println("  prev AOV: " + mPrev.avgOrderValue() + " (Expected: 4092400)");
+            System.out.println("  prev newCustomers: " + statsPrev.get("newCustomers") + " (Expected: 8)");
+
+            org.junit.jupiter.api.Assertions.assertEquals(20L, statsPrev.get("totalOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(15L, statsPrev.get("successfulOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(2L, statsPrev.get("processingOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(3L, statsPrev.get("cancelledOrders"));
+            org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("61386000.00"), statsPrev.get("actualRevenue"));
+            org.junit.jupiter.api.Assertions.assertEquals(8L, statsPrev.get("newCustomers"));
+
+            System.out.println("\n--- GROWTH AUDIT ---");
+            @SuppressWarnings("unchecked")
+            Map<String, GrowthMetricDTO> growth = (Map<String, GrowthMetricDTO>) statsCurr.get("growth");
+            if (growth != null) {
+                for (var e : growth.entrySet()) {
+                    System.out.printf("  %s: Current=%.2f | Prev=%.2f | Pct=%.2f%% | Formatted=%s | Dir=%s%n",
+                            e.getKey(), e.getValue().currentValue(), e.getValue().previousValue(),
+                            e.getValue().percentageChange() != null ? e.getValue().percentageChange() : 0.0,
+                            e.getValue().formattedChange(), e.getValue().direction());
+                }
+            }
+
+            System.out.println("\n--- TOP PRODUCTS AUDIT ---");
+            @SuppressWarnings("unchecked")
+            List<TopProductDTO> topProducts = (List<TopProductDTO>) statsCurr.get("topProducts");
+            for (TopProductDTO tp : topProducts) {
+                System.out.printf("  ID=%d | Name=%s | Cat=%s | SoldQty=%d | Revenue=%s | Pct=%.2f%%%n",
+                        tp.productId(), tp.productName(), tp.categoryName(), tp.soldQuantity(), tp.revenue(), tp.percentage());
+            }
+
+            System.out.println("\n--- BRAND REVENUE AUDIT ---");
+            @SuppressWarnings("unchecked")
+            List<BrandRevenueDTO> brandRevenues = (List<BrandRevenueDTO>) statsCurr.get("brandRevenues");
+            double sumBrandRev = 0.0;
+            for (BrandRevenueDTO br : brandRevenues) {
+                double r = br.revenue() != null ? br.revenue().doubleValue() : 0.0;
+                sumBrandRev += r;
+                System.out.printf("  Brand ID=%d | Name=%s | SoldQty=%d | Revenue=%s | Pct=%.2f%%%n",
+                        br.brandId(), br.brandName(), br.soldQuantity(), br.revenue(), br.percentage());
+            }
+            System.out.printf("  Total Brand Revenue Sum: %.2f (Expected: 86121000.0)%n", sumBrandRev);
+            org.junit.jupiter.api.Assertions.assertEquals(86121000.0, sumBrandRev, 0.01);
+
+            System.out.println("\n--- EXCEL EXPORT AUDIT ---");
+            byte[] excelBytes = adminThongKeService.exportToExcel(startCurr, endCurr);
+            System.out.println("  Generated Excel Size: " + excelBytes.length + " bytes");
+            org.junit.jupiter.api.Assertions.assertTrue(excelBytes.length > 5000, "Excel export must not be empty");
+
+            try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
+                int numSheets = wb.getNumberOfSheets();
+                System.out.println("  Excel Sheets count: " + numSheets + " (Expected: 6)");
+                org.junit.jupiter.api.Assertions.assertEquals(6, numSheets);
+                for (int s = 0; s < numSheets; s++) {
+                    Sheet sheet = wb.getSheetAt(s);
+                    System.out.printf("    Sheet %d: %s | Rows: %d%n", s + 1, sheet.getSheetName(), sheet.getPhysicalNumberOfRows());
+                    org.junit.jupiter.api.Assertions.assertTrue(sheet.getPhysicalNumberOfRows() >= 2, "Each sheet must contain header and data rows");
+                }
+            }
+
+            System.out.println("\n================================================================================");
+            System.out.println("     ALL POST-SEED AUDIT ASSERTIONS PASSED! SEED IS COMMITTED AND LOCKED.       ");
+            System.out.println("================================================================================");
+
+        } catch (Throwable t) {
+            System.err.println("\n[CRITICAL FAILURE IN POST-SEED AUDIT] Rolling back database to clean state...");
+            jdbcTemplate.execute(rollbackSql);
+            throw t;
+        }
+    }
+
+    @Test
+    public void testThongKeUIAndApiEndpoints() throws Exception {
+        System.out.println("================================================================================");
+        System.out.println("                 TESTING CONTROLLER UI & JSON API ENDPOINTS                     ");
+        System.out.println("================================================================================");
+
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        // 1. Test HTML Page rendering
+        System.out.println("\n[ENDPOINT TEST 1] GET /admin/thong-ke");
+        mockMvc.perform(get("/admin/thong-ke")
+                .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk());
+        System.out.println("  ==> /admin/thong-ke returned HTTP 200 OK!");
+
+        // 2. Test JSON API endpoint for custom fixed demo range
+        System.out.println("\n[ENDPOINT TEST 2] GET /admin/thong-ke/api?filter=custom&startDate=2026-07-21&endDate=2026-08-19");
+        mockMvc.perform(get("/admin/thong-ke/api")
+                .sessionAttr("vaiTro", "QL")
+                .param("filter", "custom")
+                .param("startDate", "2026-07-21")
+                .param("endDate", "2026-08-19"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.actualRevenue").value(88263800.00))
+                .andExpect(jsonPath("$.totalOrders").value(28))
+                .andExpect(jsonPath("$.successfulOrders").value(22))
+                .andExpect(jsonPath("$.processingOrders").value(4))
+                .andExpect(jsonPath("$.cancelledOrders").value(2))
+                .andExpect(jsonPath("$.newCustomers").value(11))
+                .andExpect(jsonPath("$.pendingRefund").value(4806400.00))
+                .andExpect(jsonPath("$.growth.revenue.currentValue").value(88263800.00))
+                .andExpect(jsonPath("$.growth.totalOrders.currentValue").value(28))
+                .andExpect(jsonPath("$.topProducts[0].productId").value(58))
+                .andExpect(jsonPath("$.topProducts[0].soldQuantity").value(9))
+                .andExpect(jsonPath("$.topProducts[1].productId").value(26))
+                .andExpect(jsonPath("$.topProducts[1].soldQuantity").value(7))
+                .andExpect(jsonPath("$.brandRevenues[0].brandName").value("Yonex"))
+                .andExpect(jsonPath("$.brandRevenues[1].brandName").value("Li-Ning"))
+                .andExpect(jsonPath("$.brandRevenues[2].brandName").value("Victor"));
+        System.out.println("  ==> /admin/thong-ke/api returned HTTP 200 OK with 100% verified JSON data!");
+
+        // 3. Test Excel Export Endpoint
+        System.out.println("\n[ENDPOINT TEST 3] GET /admin/thong-ke/export?startDate=2026-07-21&endDate=2026-08-19");
+        mockMvc.perform(get("/admin/thong-ke/export")
+                .sessionAttr("vaiTro", "QL")
+                .param("startDate", "2026-07-21")
+                .param("endDate", "2026-08-19"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        System.out.println("  ==> /admin/thong-ke/export returned HTTP 200 OK with valid Excel file!");
         System.out.println("================================================================================");
     }
 }

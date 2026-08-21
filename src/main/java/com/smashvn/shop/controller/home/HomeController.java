@@ -88,13 +88,14 @@ public class HomeController {
         }
         List<ThuongHieu> danhSachThuongHieu = new java.util.ArrayList<>(uniqueBrands.values());
 
-        // Lấy danh sách theo các tiêu chí (mỗi loại lấy tối đa 14 sản phẩm, riêng nổi bật lấy 4)
+        // Lấy danh sách theo các tiêu chí với giới hạn riêng cho từng khu vực trang chủ.
         Pageable pageLimit14 = PageRequest.of(0, 14);
         Pageable pageLimit4 = PageRequest.of(0, 4);
         List<SanPham> newProductsList = sanPhamRepository.findNewProducts(pageLimit14);
         
-        // Lấy danh sách sản phẩm bán chạy đầy đủ cho tất cả thương hiệu
-        Pageable pageLimitLarge = PageRequest.of(0, 100);
+        // Giới hạn số thẻ render ở trang chủ để tránh tải hàng trăm ảnh cùng lúc.
+        // Trang /shop vẫn giữ phân trang đầy đủ cho người dùng cần xem thêm.
+        Pageable pageLimitLarge = PageRequest.of(0, 24);
         List<SanPham> bestSellersList = sanPhamRepository.findBestSellers(pageLimitLarge);
         
         List<SanPham> featuredProductsList = sanPhamRepository.findFeaturedProducts(pageLimit4);

@@ -42,6 +42,9 @@ public class SepayOrderPaymentService {
     private final GioHangRepository gioHangRepository;
     private final GioHangChiTietRepository gioHangChiTietRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:}")
+    private String configuredBaseUrl;
+
     /**
      * Điều phối xử lý IPN Webhook từ SePay trong 1 Transaction kín.
      * Kiểm tra Idempotency dựa trên maGiaoDich SePay.
@@ -218,8 +221,12 @@ public class SepayOrderPaymentService {
 
                         Runnable emailTask = () -> {
                             try {
+                                String baseUrl = (configuredBaseUrl != null && !configuredBaseUrl.trim().isEmpty())
+                                        ? configuredBaseUrl.trim().replaceAll("/+$", "")
+                                        : "http://localhost:8080";
+
                                 log.info("[SepayOrderPaymentService] Transaction committed, triggering order confirmation email for order #{}", orderSnapshot.getMaDonHang());
-                                guestCheckoutService.sendOrderConfirmationEmail(recipient, orderSnapshot, "http://localhost:8080");
+                                guestCheckoutService.sendOrderConfirmationEmail(recipient, orderSnapshot, baseUrl);
 
                                 // Kiểm tra gửi email thiết lập mật khẩu cho Guest mua SePay lần đầu
                                 if (orderSnapshot.getKhachHang() != null && orderSnapshot.getKhachHang().getTaiKhoan() != null) {
@@ -228,7 +235,7 @@ public class SepayOrderPaymentService {
                                             || (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty());
 
                                     if (isGuest) {
-                                        List<TokenKhoiPhuc> tokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "EMAIL");
+                                        List<TokenKhoiPhuc> tokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "GUEST_ACTIVATION");
                                         LocalDateTime currentTime = LocalDateTime.now();
                                         Optional<TokenKhoiPhuc> validTokenOpt = tokens.stream()
                                                 .filter(t -> t.getThoiGianHetHan() != null && t.getThoiGianHetHan().isAfter(currentTime))
@@ -237,7 +244,7 @@ public class SepayOrderPaymentService {
                                         if (validTokenOpt.isPresent()) {
                                             String activationToken = validTokenOpt.get().getMaXacNhan();
                                             log.info("[SepayOrderPaymentService] Triggering guest password setup email for account ID {} (Order #{})", tk.getId(), orderSnapshot.getMaDonHang());
-                                            guestCheckoutService.sendOrderAndAccountNotification(recipient, activationToken, "http://localhost:8080");
+                                            guestCheckoutService.sendOrderAndAccountNotification(recipient, activationToken, baseUrl);
                                         } else {
                                             log.warn("[SepayOrderPaymentService] Account ID {} is GUEST but no valid unexpired setup token found. Skipped setup email for Order #{}", tk.getId(), orderSnapshot.getMaDonHang());
                                         }

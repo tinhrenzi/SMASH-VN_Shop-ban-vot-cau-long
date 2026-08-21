@@ -264,39 +264,6 @@
             color: #aaa;
             text-decoration: line-through;
         }
-        #pos-toast-container {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 99999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .pos-toast {
-            min-width: 260px;
-            max-width: 380px;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: #fff;
-            box-shadow: var(--admin-shadow-md);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: toastIn 0.25s ease;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-        .pos-toast.error   { background: #dc3545; }
-        .pos-toast.success { background: #198754; }
-        .pos-toast.warning { background: #ffc107; color: #000; }
-        .pos-toast.info    { background: #0dcaf0; color: #000; }
-        @keyframes toastIn {
-            from { transform: translateX(60px); opacity: 0; }
-            to   { transform: translateX(0);   opacity: 1; }
-        }
     </style>
 </head>
 <body class="admin-body">
@@ -306,9 +273,6 @@
         <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
         <div class="fw-bold">Đang xử lý giao dịch... Vui lòng không tải lại trang.</div>
     </div>
-
-    <!-- Toast Container -->
-    <div id="pos-toast-container"></div>
 
     <!-- Sidebar Layout Fragment -->
     <div th:replace="~{admin/layout/sidebar :: sidebar('pos')}"></div>
@@ -660,6 +624,7 @@
         let appliedVoucher = null;
         let pendingPrintUrl = null;
         let paymentPollInterval = null;
+        let paymentPollErrorCount = 0;
         let currentCheckoutHoaDonId = null;
         let currentCheckoutMaHoaDon = null;
 
@@ -1051,7 +1016,10 @@
                             list.appendChild(div);
                         });
                     })
-                    .catch(err => console.error(err));
+                    .catch(err => {
+                        console.error(err);
+                        showToast('Không thể tải gợi ý khách hàng. Vui lòng thử lại.', 'error');
+                    });
             });
 
             document.addEventListener("click", function(e) {
@@ -1097,7 +1065,7 @@
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const normalizedPhone = soDienThoai.replace(/[\s.-]/g, "").replace(/^\+84/, "0");
             if (!phoneRegex.test(normalizedPhone)) {
-                alert("Số điện thoại không hợp lệ!");
+                showToast("Số điện thoại không hợp lệ!", "warning");
                 return;
             }
 
@@ -1119,12 +1087,15 @@
                 if (!res.ok) return res.json().then(err => { throw new Error(err.message || 'Lỗi khi đăng ký!'); });
                 return res.json();
             })
-            .then(data => {
+            .then(async data => {
                 if (data.success) {
                     const modalEl = document.getElementById('registerCustomerModal');
                     const modal = bootstrap.Modal.getInstance(modalEl);
                     if (data.requiresConfirmation) {
-                        if (confirm(`SĐT này thuộc khách hàng '${data.customer.hoTen}'. Chọn khách hàng này?`)) {
+                        if (await SmashNotify.confirm({
+                            title: 'Khách hàng đã tồn tại',
+                            message: `SĐT này thuộc khách hàng '${data.customer.hoTen}'. Chọn khách hàng này?`
+                        })) {
                             selectCustomer(data.customer);
                             if (modal) modal.hide();
                         }
@@ -1134,10 +1105,10 @@
                         if (modal) modal.hide();
                     }
                 } else {
-                    alert(data.message || "Đăng ký thất bại!");
+                    showToast(data.message || "Đăng ký thất bại!", "error");
                 }
             })
-            .catch(err => alert(err.message || "Có lỗi xảy ra!"));
+            .catch(err => showToast(err.message || "Có lỗi xảy ra!", "error"));
         }
 
         function applyVoucher() {
@@ -1186,7 +1157,7 @@
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const normalizedSearch = searchInput.replace(/[\s.-]/g, "").replace(/^\+84/, "0");
             if (selectedCustomer === null && normalizedSearch !== "" && phoneRegex.test(normalizedSearch)) {
-                alert("Số điện thoại này chưa được đăng ký! Vui lòng đăng ký trước.");
+                showToast("Số điện thoại này chưa được đăng ký! Vui lòng đăng ký trước.", "warning");
                 openRegisterCustomerModal(normalizedSearch);
                 return;
             }
@@ -1358,10 +1329,12 @@
 
         function startPaymentPolling(maHoaDon, hoaDonId) {
             stopPaymentPolling();
+            paymentPollErrorCount = 0;
             paymentPollInterval = setInterval(() => {
                 fetch(`/api/payment/sepay/query/${encodeURIComponent(maHoaDon)}`)
                 .then(res => (res.status === 403 || res.status === 401) ? null : res.json())
                 .then(data => {
+                    paymentPollErrorCount = 0;
                     if (data && data.success) {
                         if (data.paymentStatus === 'paid' || data.trangThaiThanhToan === 'DA_THANH_TOAN' || data.orderStatus === 'da_giao') {
                             stopPaymentPolling();
@@ -1375,7 +1348,13 @@
                         }
                     }
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+                    paymentPollErrorCount += 1;
+                    if (paymentPollErrorCount === 3) {
+                        showToast('Kết nối kiểm tra thanh toán không ổn định. Hệ thống vẫn đang thử lại.', 'warning');
+                    }
+                });
             }, 3000);
         }
 
@@ -1581,24 +1560,6 @@
             img.src = qrUrl;
         }
 
-        function showToast(message, type) {
-            type = type || 'info';
-            const container = document.getElementById('pos-toast-container');
-            if (!container) return;
-
-            const icons = { error: 'fa-times-circle', success: 'fa-check-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-            const icon = icons[type] || icons.info;
-
-            const toast = document.createElement('div');
-            toast.className = `pos-toast ${type}`;
-            toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-            }, 3500);
-        }
     </script>
 
     <!-- Bootstrap 5.3.0 JS Bundle -->

@@ -228,6 +228,7 @@
             })
             .catch(error => {
                 console.error('Error initializing CKEditor:', error);
+                showToast('Không thể khởi tạo trình soạn thảo bài viết. Vui lòng tải lại trang.', 'error');
             });
 
         const summaryInput = document.getElementById('summary');
@@ -270,7 +271,7 @@
                     document.querySelector('#content').value = editorData;
                     
                     if (editorData.trim() === '') {
-                        alert('Nội dung bài viết không được để trống!');
+                        showToast('Nội dung bài viết không được để trống!', 'warning');
                         event.preventDefault();
                         return false;
                     }
@@ -282,14 +283,14 @@
                 const summary = document.getElementById('summary').value.trim();
 
                 if (title === '' || category === '' || author === '' || summary === '') {
-                    alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+                    showToast('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
                     event.preventDefault();
                     return false;
                 }
 
                 const fileInput = document.getElementById('imageFile');
                 if (fileInput.files[0] && fileInput.files[0].size > 5 * 1024 * 1024) {
-                    alert('Kích thước ảnh bìa không được vượt quá 5MB!');
+                    showToast('Kích thước ảnh bìa không được vượt quá 5MB!', 'warning');
                     event.preventDefault();
                     return false;
                 }

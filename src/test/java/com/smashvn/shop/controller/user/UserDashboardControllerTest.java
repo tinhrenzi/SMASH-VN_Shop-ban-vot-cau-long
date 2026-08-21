@@ -10,6 +10,7 @@ import com.smashvn.shop.service.order.OrderViewService;
 import com.smashvn.shop.service.user.UserDashboardService;
 import com.smashvn.shop.repository.NewsletterSubscriberRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -195,5 +196,271 @@ public class UserDashboardControllerTest {
         String view = controller.viewInvoice(100, session, model);
 
         assertEquals("redirect:/user/my-order?loi=donhangkhongton", view);
+    }
+
+    @Test
+    @DisplayName("TC-T01: Anonymous Track Order renders public view without sidebar")
+    void testHienThiTrackOrder_TC_T01_Anonymous() {
+        when(session.getAttribute("vaiTro")).thenReturn(null);
+        when(session.getAttribute("idNguoiDung")).thenReturn(null);
+        when(session.getAttribute("isGuestView")).thenReturn(null);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiTrackOrder(null, session, model);
+
+        assertEquals("dash-track-order", view);
+        assertEquals(Boolean.TRUE, model.getAttribute("publicView"));
+        assertEquals(Boolean.FALSE, model.getAttribute("hasSidebar"));
+        assertNull(model.getAttribute("kh"));
+        assertNull(model.getAttribute("orderPlaced"));
+    }
+
+    @Test
+    @DisplayName("TC-T02: Guest Account Session renders layout with guest sidebar")
+    void testHienThiTrackOrder_TC_T02_GuestAccountSession() {
+        when(session.getAttribute("vaiTro")).thenReturn("KH");
+        when(session.getAttribute("idNguoiDung")).thenReturn(99);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+        when(session.getAttribute("tenHienThi")).thenReturn("Khach Guest");
+
+        KhachHang guestKh = new KhachHang();
+        guestKh.setHoKh("Khach");
+        guestKh.setTenKh("Guest");
+        when(dashboardService.layThongTinKhachHang(99)).thenReturn(guestKh);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiTrackOrder(null, session, model);
+
+        assertEquals("dash-track-order", view);
+        assertEquals(Boolean.TRUE, model.getAttribute("hasSidebar"));
+        assertEquals(Boolean.TRUE, model.getAttribute("guestAccountView"));
+        assertEquals(Boolean.TRUE, model.getAttribute("isGuestView"));
+        assertEquals("Khach Guest", model.getAttribute("tenHienThi"));
+        assertNull(model.getAttribute("orderPlaced")); // No member stats
+    }
+
+    @Test
+    @DisplayName("TC-T03: Existing Guest Order-only Session renders public standalone view without account sidebar")
+    void testHienThiTrackOrder_TC_T03_ExistingGuestOrderOnly() {
+        when(session.getAttribute("vaiTro")).thenReturn(null);
+        when(session.getAttribute("idNguoiDung")).thenReturn(null);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiTrackOrder(null, session, model);
+
+        assertEquals("dash-track-order", view);
+        assertEquals(Boolean.TRUE, model.getAttribute("publicView"));
+        assertEquals(Boolean.FALSE, model.getAttribute("hasSidebar"));
+        assertNull(model.getAttribute("kh"));
+    }
+
+    @Test
+    @DisplayName("TC-T04: ACTIVE Member Session renders member dashboard layout with full sidebar")
+    void testHienThiTrackOrder_TC_T04_MemberSession() {
+        when(session.getAttribute("vaiTro")).thenReturn("KH");
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(false);
+
+        KhachHang memberKh = new KhachHang();
+        memberKh.setId(1);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setTrangThaiTaiKhoan(com.smashvn.shop.entity.AccountStatus.ACTIVE);
+        memberKh.setTaiKhoan(tk);
+        when(dashboardService.layThongTinKhachHang(1)).thenReturn(memberKh);
+        when(orderViewService.layDanhSachOrders(1)).thenReturn(java.util.Collections.emptyList());
+        when(wishlistRepository.countByKhachHang_Id(1)).thenReturn(0L);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiTrackOrder(null, session, model);
+
+        assertEquals("dash-track-order", view);
+        assertEquals(Boolean.TRUE, model.getAttribute("hasSidebar"));
+        assertEquals(Boolean.TRUE, model.getAttribute("memberView"));
+        assertEquals(Boolean.FALSE, model.getAttribute("isGuestView"));
+        assertEquals(memberKh, model.getAttribute("kh"));
+        assertEquals(0L, model.getAttribute("orderPlaced"));
+    }
+
+    @Test
+    void testHienThiTrackOrder_WithParamId_PrefillsOnly() {
+        when(session.getAttribute("vaiTro")).thenReturn(null);
+        when(session.getAttribute("idNguoiDung")).thenReturn(null);
+        when(session.getAttribute("isGuestView")).thenReturn(null);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiTrackOrder("DHSVN2026-TEST", session, model);
+
+        assertEquals("dash-track-order", view);
+        assertEquals("DHSVN2026-TEST", model.getAttribute("orderId"));
+        assertNull(model.getAttribute("order"));
+    }
+
+    @Test
+    void testSubmitTrackOrder_CorrectOrderId_WrongContactInfo_Rejected() {
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(50);
+        hd.setMaDonHang("DHSVN2026-TEST");
+        hd.setEmailNguoiNhan("customer@gmail.com");
+        hd.setSdtNhan("0912345678");
+
+        when(hoaDonRepository.findByMaDonHang("DHSVN2026-TEST")).thenReturn(java.util.Optional.of(hd));
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap redirectAttributes = new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap();
+        String view = controller.submitTrackOrder("DHSVN2026-TEST", "wrong@gmail.com", session, redirectAttributes);
+
+        assertEquals("redirect:/user/track-order", view);
+        assertEquals("Thông tin email hoặc số điện thoại không khớp với đơn hàng.", redirectAttributes.getFlashAttributes().get("loi"));
+        assertEquals("DHSVN2026-TEST", redirectAttributes.getFlashAttributes().get("orderId"));
+    }
+
+    @Test
+    void testSubmitTrackOrder_CorrectOrderId_CorrectEmail_Success() {
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(50);
+        hd.setMaDonHang("DHSVN2026-TEST");
+        hd.setEmailNguoiNhan("customer@gmail.com");
+        hd.setSdtNhan("0912345678");
+
+        when(hoaDonRepository.findByMaDonHang("DHSVN2026-TEST")).thenReturn(java.util.Optional.of(hd));
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap redirectAttributes = new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap();
+        String view = controller.submitTrackOrder("DHSVN2026-TEST", "customer@gmail.com", session, redirectAttributes);
+
+        assertEquals("redirect:/user/manage-order/50", view);
+        verify(session).setAttribute(eq("allowedGuestOrderAccesses"), any());
+        verify(session).setAttribute("guestCheckoutEmail", "customer@gmail.com");
+    }
+
+    @Test
+    void testSubmitTrackOrder_CorrectOrderId_CorrectPhone_Success() {
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(50);
+        hd.setMaDonHang("DHSVN2026-TEST");
+        hd.setEmailNguoiNhan("customer@gmail.com");
+        hd.setSdtNhan("0912345678");
+
+        when(hoaDonRepository.findByMaDonHang("DHSVN2026-TEST")).thenReturn(java.util.Optional.of(hd));
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap redirectAttributes = new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap();
+        String view = controller.submitTrackOrder("DHSVN2026-TEST", "0912345678", session, redirectAttributes);
+
+        assertEquals("redirect:/user/manage-order/50", view);
+        verify(session).setAttribute(eq("allowedGuestOrderAccesses"), any());
+    }
+
+    @Test
+    void testSubmitTrackOrder_MissingContactInfo_Rejected() {
+        org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap redirectAttributes = new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap();
+        String view = controller.submitTrackOrder("DHSVN2026-TEST", "", session, redirectAttributes);
+
+        assertEquals("redirect:/user/track-order", view);
+        assertEquals("Vui lòng nhập Email hoặc Số điện thoại đặt hàng.", redirectAttributes.getFlashAttributes().get("loi"));
+    }
+
+    @Test
+    void testOptionB_GuestAccountSession_BlockedFromMemberProfile() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiHoSo(session, model);
+
+        assertEquals("redirect:/user/dang-nhap", view);
+    }
+
+    @Test
+    void testOptionB_GuestAccountSession_BlockedFromDashboard() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiDashboard(session, model);
+
+        assertEquals("redirect:/user/dang-nhap", view);
+    }
+
+    @Test
+    void testOptionB_GuestAccountSession_ActivatedInDb_StillBlockedWithoutMemberLogin() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        KhachHang kh = new KhachHang();
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        tk.setTrangThaiTaiKhoan(com.smashvn.shop.entity.AccountStatus.ACTIVE);
+        tk.setTrangThai("hoat_dong");
+        kh.setTaiKhoan(tk);
+        when(dashboardService.layThongTinKhachHang(1)).thenReturn(kh);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiHoSo(session, model);
+
+        assertEquals("redirect:/user/dang-nhap", view, "Guest session must remain blocked even if DB account became ACTIVE elsewhere");
+    }
+
+    @Test
+    void testOptionB_GuestAccountSession_AllowedManageOrderWithOrderAccess() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(50);
+        hd.setMaDonHang("DHSVN2026-50");
+        KhachHang kh = new KhachHang();
+        kh.setId(10);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(1);
+        tk.setUsername("guest@gmail.com");
+        tk.setTrangThaiTaiKhoan(com.smashvn.shop.entity.AccountStatus.GUEST);
+        kh.setTaiKhoan(tk);
+        hd.setKhachHang(kh);
+
+        when(hoaDonRepository.findByMaDonHang("DHSVN2026-50")).thenReturn(java.util.Optional.of(hd));
+        when(hoaDonRepository.findById(50)).thenReturn(java.util.Optional.of(hd));
+
+        java.util.List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> accesses = new java.util.ArrayList<>();
+        accesses.add(new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(50, "guest@gmail.com", java.time.Instant.now().plusSeconds(1800)));
+        when(session.getAttribute("allowedGuestOrderAccesses")).thenReturn(accesses);
+
+        java.util.Map<String, Object> mockDetails = new java.util.HashMap<>();
+        mockDetails.put("order", hd);
+        when(orderViewService.layChiTietOrder(50, 10)).thenReturn(mockDetails);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiManageOrder("DHSVN2026-50", null, session, model);
+
+        assertEquals("dash-manage-order", view);
+        assertEquals(Boolean.TRUE, model.getAttribute("isGuestView"));
+    }
+
+    @Test
+    void testOptionB_GuestAccountSession_BlockedFromUnrelatedOrder() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(1);
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+
+        com.smashvn.shop.entity.HoaDon hd = new com.smashvn.shop.entity.HoaDon();
+        hd.setId(99);
+        hd.setMaDonHang("DHSVN2026-99");
+        KhachHang kh = new KhachHang();
+        kh.setId(20);
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(2);
+        tk.setUsername("other@gmail.com");
+        kh.setTaiKhoan(tk);
+        hd.setKhachHang(kh);
+
+        when(hoaDonRepository.findByMaDonHang("DHSVN2026-99")).thenReturn(java.util.Optional.of(hd));
+        when(hoaDonRepository.findById(99)).thenReturn(java.util.Optional.of(hd));
+
+        // Guest session only has access to order 50, not 99
+        java.util.List<com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess> accesses = new java.util.ArrayList<>();
+        accesses.add(new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(50, "guest@gmail.com", java.time.Instant.now().plusSeconds(1800)));
+        when(session.getAttribute("allowedGuestOrderAccesses")).thenReturn(accesses);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiManageOrder("DHSVN2026-99", null, session, model);
+
+        assertEquals("redirect:/user/dang-nhap", view, "Unrelated order access must be blocked for Guest session");
     }
 }

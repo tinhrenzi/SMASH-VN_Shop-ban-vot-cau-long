@@ -494,7 +494,7 @@
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt="">
+            <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64">
         </div>
     </div>
 
@@ -859,6 +859,8 @@
                                                        style="background-color: #ffffff !important;">
                                                         <img class="aspect__img"
                                                              th:src="@{${product.sanPhamChiTiets[0].hinhAnhUrl}}"
+                                                             loading="lazy"
+                                                             decoding="async"
                                                              onerror="this.onerror=null; this.src='/images/placeholder.png';"
                                                              alt=""
                                                              style="object-fit: contain; padding: 12px; background-color: #ffffff !important;">

@@ -327,7 +327,7 @@
                 if (typeof showToast !== 'undefined') {
                     showToast("Vui lòng nhập tên loại thuộc tính mới!", "warning");
                 } else {
-                    alert("Vui lòng nhập tên loại thuộc tính mới!");
+                    showToast("Vui lòng nhập tên loại thuộc tính mới!", "warning");
                 }
                 return;
             }
@@ -376,7 +376,7 @@
                     if (typeof showToast !== 'undefined') {
                         showToast(msg, "error");
                     } else {
-                        alert(msg);
+                        showToast(msg, 'error');
                     }
                 });
         }
@@ -442,7 +442,10 @@
                         }
                     });
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+                    showToast('Không thể tải danh sách thuộc tính của danh mục. Vui lòng thử lại.', 'error');
+                });
 
             clearErr(document.getElementById('errEditDanhMuc'), document.getElementById('btnSuaDanhMuc'));
             new bootstrap.Modal(document.getElementById('modalSuaDanhMuc')).show();

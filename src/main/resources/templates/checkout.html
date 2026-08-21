@@ -11,7 +11,6 @@
     <link rel="stylesheet" th:href="@{/css/vendor.css}">
     <link rel="stylesheet" th:href="@{/css/utility.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
@@ -233,7 +232,7 @@
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt="">
+            <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64">
         </div>
     </div>
 
@@ -605,7 +604,6 @@
         const baseTongTien = /*[[${tongTien}]]*/ 0;
         const addressMapJsonStr = /*[[${addressMapJson}]]*/ '{}';
         const addressMap = JSON.parse(addressMapJsonStr);
-        console.log("Address Map Object:", addressMap);
         /*]]>*/
 
         // Global variables and helper functions for matching GHN address dropdowns
@@ -855,7 +853,6 @@
                 return;
             }
             if ($('#ghnProvinceId option').length <= 1) {
-                console.log("[GHN] Provinces dropdown is not loaded yet, matching deferred.");
                 return;
             }
             
@@ -1259,7 +1256,6 @@
                     }, 150);
                     
                     // Always use text matching on Vietnamese address directly
-                    console.log("Matching GHN dropdowns with text address:", targetProvinceToMatch, targetAddressToMatch);
                     matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
                 } else {
                     $('#manual-address-fields').slideUp(200);
@@ -1485,6 +1481,7 @@
                     error: function(xhr, status, error) {
                         if (status !== 'abort') {
                             console.error("Lỗi tính phí vận chuyển:", error);
+                            showToast('Không thể tính phí vận chuyển. Vui lòng kiểm tra địa chỉ và thử lại.', 'error');
                             setShippingFeeLoadingState(false);
                         }
                     },
@@ -1794,13 +1791,11 @@
                         // Loader
                         $('.preloader').addClass('is-active');
 
-                        console.log('[Diagnostics] checkout submit start', submitData);
                         $.ajax({
                             url: '/checkout/submit',
                             type: 'POST',
                             data: submitData,
                             success: function(response) {
-                        console.log('[Diagnostics] API response received:', response);
                         $('.preloader').removeClass('is-active');
 
                         if (response.status === 'error' || response.errorCode === 'PAYMENT_INIT_FAILED') {
@@ -1815,9 +1810,6 @@
                             const redirectUrl = (paymentMethod === 'COD')
                                 ? (response.isGuest ? '/user/manage-order/' + orderId : '/user/my-order')
                                 : '/payment/sepay/simulate?maDonHang=' + encodeURIComponent(response.maDonHang);
-
-                            console.log('[Diagnostics] Redirect target URL:', redirectUrl);
-                            console.log('[Diagnostics] Payment initialization result: SUCCESS');
 
                             if (paymentMethod === 'COD') {
                                 if (response.isGuest === true && response.isNewAccount === true) {
@@ -1963,6 +1955,7 @@
                         if (window.queryConsecutiveErrors >= 5) {
                             if (pollingInterval) clearInterval(pollingInterval);
                             console.error('Stopped payment polling due to 5 consecutive network errors.');
+                            showToast('Mất kết nối khi kiểm tra thanh toán. Vui lòng tải lại trang hoặc kiểm tra đơn hàng sau.', 'error');
                         }
                     }
                 });
@@ -2003,6 +1996,7 @@
                 }
             }, function() {
                 console.warn('[GHN] Không thể tải danh sách tỉnh/thành');
+                showToast('Không thể tải danh sách tỉnh/thành từ đơn vị vận chuyển. Vui lòng thử lại.', 'warning');
             });
             request.always(function() {
                 ghnProvinceLoadPromise = null;
@@ -2033,6 +2027,7 @@
                 }
             }, function() {
                 console.warn('[GHN] Không thể tải danh sách quận/huyện');
+                showToast('Không thể tải danh sách quận/huyện. Vui lòng chọn lại tỉnh/thành hoặc thử lại.', 'warning');
             });
         };
 
@@ -2056,6 +2051,7 @@
                 }
             }, function() {
                 console.warn('[GHN] Không thể tải danh sách phường/xã');
+                showToast('Không thể tải danh sách phường/xã. Vui lòng chọn lại quận/huyện hoặc thử lại.', 'warning');
             });
         };
 
@@ -2095,6 +2091,7 @@
                     },
                     error: function() {
                         console.warn('[GHN] Không thể tải danh sách quận/huyện');
+                        showToast('Không thể tải danh sách quận/huyện. Vui lòng thử lại.', 'warning');
                     }
                 });
             });
@@ -2124,6 +2121,7 @@
                     },
                     error: function() {
                         console.warn('[GHN] Không thể tải danh sách phường/xã');
+                        showToast('Không thể tải danh sách phường/xã. Vui lòng thử lại.', 'warning');
                     }
                 });
             });

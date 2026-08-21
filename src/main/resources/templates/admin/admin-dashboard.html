@@ -37,7 +37,6 @@
                 </div>
 
                 <!-- Dynamic Alerts Container -->
-                <div id="dynamicAlertContainer"></div>
 
                 <div th:if="${param.pheDuyetThanhCong != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
                     <i class="fas fa-check-circle me-2"></i>Phê duyệt khóa tài khoản nhân viên thành công!
@@ -280,25 +279,11 @@
     <!-- Page Specific Script -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const dynamicAlertContainer = document.getElementById('dynamicAlertContainer');
         const pendingLockCard = document.getElementById('pendingLockCard');
         const pendingLockBadge = document.getElementById('pendingLockBadge');
 
         function showAlert(message, type = 'success') {
-            const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
-            const borderClass = type === 'success' ? 'border-success' : 'border-danger';
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            
-            const alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible fade show border-start ${borderClass} border-4 rounded-3 shadow-sm mb-4" role="alert">
-                    <i class="fas ${iconClass} me-2"></i>${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            if (dynamicAlertContainer) {
-                dynamicAlertContainer.innerHTML = alertHtml;
-                dynamicAlertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            showToast(message, type === 'danger' ? 'error' : type);
         }
 
         if (pendingLockCard) {
@@ -308,42 +293,23 @@
 
                 if (btnApprove) {
                     const id = btnApprove.getAttribute('data-id');
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Xác nhận phê duyệt',
-                            text: 'Bạn có chắc chắn muốn PHÊ DUYỆT KHÓA tài khoản này? Người này sẽ bị chặn truy cập hệ thống ngay lập tức.',
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#dc2626',
-                            cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Phê duyệt khóa',
-                            cancelButtonText: 'Hủy bỏ',
-                            reverseButtons: true
-                        }).then((result) => {
-                            if (result.isConfirmed) processLockAction(id, 'approve-lock');
-                        });
-                    } else if (confirm('Phê duyệt khóa tài khoản này?')) {
-                        processLockAction(id, 'approve-lock');
-                    }
+                    SmashNotify.confirm({
+                        title: 'Xác nhận phê duyệt',
+                        message: 'Bạn có chắc chắn muốn PHÊ DUYỆT KHÓA tài khoản này? Người này sẽ bị chặn truy cập hệ thống ngay lập tức.',
+                        confirmText: 'Phê duyệt khóa',
+                        danger: true
+                    }).then((confirmed) => {
+                        if (confirmed) processLockAction(id, 'approve-lock');
+                    });
                 } else if (btnReject) {
                     const id = btnReject.getAttribute('data-id');
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Xác nhận từ chối',
-                            text: 'Bạn có chắc chắn muốn TỪ CHỐI KHÓA tài khoản này? Trạng thái hoạt động của nhân viên sẽ được giữ nguyên.',
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonColor: '#0d6efd',
-                            cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Từ chối khóa',
-                            cancelButtonText: 'Hủy bỏ',
-                            reverseButtons: true
-                        }).then((result) => {
-                            if (result.isConfirmed) processLockAction(id, 'reject-lock');
-                        });
-                    } else if (confirm('Từ chối khóa tài khoản này?')) {
-                        processLockAction(id, 'reject-lock');
-                    }
+                    SmashNotify.confirm({
+                        title: 'Xác nhận từ chối',
+                        message: 'Bạn có chắc chắn muốn TỪ CHỐI KHÓA tài khoản này? Trạng thái hoạt động của nhân viên sẽ được giữ nguyên.',
+                        confirmText: 'Từ chối khóa'
+                    }).then((confirmed) => {
+                        if (confirmed) processLockAction(id, 'reject-lock');
+                    });
                 }
             });
         }
@@ -358,7 +324,9 @@
                 headers[header] = token;
             }
 
+            const basePath = window.location.pathname.startsWith('/admin') ? '' : '';
             fetch(`/admin/nhan-vien/${actionUrl}/${id}?ajax=true`, {
+                method: 'GET',
                 headers: headers
             })
                 .then(response => response.json())
@@ -386,7 +354,7 @@
                     showAlert('Lỗi kết nối hệ thống. Vui lòng thử lại!', 'danger');
                 });
         }
-    };
+    });
     </script>
 
     <!-- Bootstrap 5.3.0 JS Bundle -->

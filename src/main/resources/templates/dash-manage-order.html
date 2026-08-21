@@ -107,29 +107,6 @@
         }
         .btn-modal-cancel:hover { background: #e8e8e8; }
 
-        /* ===== Toast Notification ===== */
-        .toast-notify {
-            position: fixed;
-            bottom: 30px; right: 30px;
-            padding: 14px 22px;
-            border-radius: 9px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            z-index: 999999;
-            box-shadow: 0 6px 24px rgba(0,0,0,.18);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            max-width: 380px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity .3s, transform .3s;
-        }
-        .toast-notify.show { opacity: 1; transform: translateY(0); }
-        .toast-notify.success { background: #388e3c; }
-        .toast-notify.error   { background: #d32f2f; }
-
         /* ===== Guest First Order Success Modal ===== */
         .guest-success-modal-overlay {
             display: none;
@@ -379,7 +356,7 @@
 <body class="config">
     <div class="preloader is-active">
         <div class="preloader__wrap">
-            <img class="preloader__img" th:src="@{/images/preloader.gif}" alt=""></div>
+            <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64"></div>
     </div>
 
     <!--====== Ứng dụng chính ======-->
@@ -426,7 +403,7 @@
                                 <div class="col-lg-3 col-md-12">
                                     <div class="dash__box dash__box--bg-white dash__box--shadow u-s-m-b-30">
                                         <div class="dash__pad-1">
-                                            <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + ${kh.hoKh} + ' ' + ${kh.tenKh}"></span>
+                                            <span class="dash__text u-s-m-b-16" th:text="'Hello, ' + (${kh != null} ? (${kh.hoKh} + ' ' + ${kh.tenKh}) : 'Quý khách')"></span>
                                             <ul class="dash__f-list" th:if="${isGuestView != true}">
                                                  <li>
                                                      <a th:href="@{/user/dashboard}">Quản lý tài khoản</a></li>
@@ -447,10 +424,18 @@
                                              </ul>
                                              <ul class="dash__f-list" th:if="${isGuestView == true}">
                                                  <li>
-                                                     <a class="dash-active" th:href="@{/}">Trang chủ cửa hàng</a></li>
+                                                     <a th:href="@{/}">Trang chủ cửa hàng</a></li>
                                                  <li>
-                                                     <a th:href="@{/user/dang-nhap}">Đăng nhập thành viên</a></li>
+                                                     <a th:href="@{/user/track-order}">Theo dõi đơn hàng khác</a></li>
+                                                 <li>
+                                                     <a th:href="@{/user/thiet-lap-mat-khau}">Thiết lập mật khẩu</a></li>
                                              </ul>
+                                             <div class="u-s-m-t-20" th:if="${isGuestView == true}" style="background-color: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 14px; color: #9b2c2c; font-size: 13px; line-height: 1.5;">
+                                                 <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; color: #c53030;">
+                                                     <i class="fas fa-info-circle" style="margin-right: 6px;"></i> Tài khoản vãng lai
+                                                 </div>
+                                                 <span>Tài khoản của bạn chưa được thiết lập mật khẩu. Vui lòng kiểm tra email kích hoạt đã gửi tới hộp thư để hoàn tất kích hoạt tài khoản.</span>
+                                             </div>
                                          </div>
                                      </div>
                                      <div class="dash__box dash__box--bg-white dash__box--shadow dash__box--w" th:if="${isGuestView != true}">
@@ -1033,11 +1018,6 @@
         </div>
     </div>
 
-    <!-- =============================================
-         TOAST NOTIFICATION
-    ============================================= -->
-    <div class="toast-notify" id="toastNotify"></div>
-
     <!--====== Google Analytics ======-->
     <script>
         window.ga = function() { ga.q.push(arguments) };
@@ -1158,7 +1138,7 @@
             })
             .then(function (data) {
                 if (data.success) {
-                    hienToast('✅ ' + (data.message || 'Hủy đơn hàng thành công!'), 'success');
+                    showToast(data.message || 'Hủy đơn hàng thành công!', 'success');
                     _closeModal();
                     // Ẩn nút hủy và hiển thị thông báo đã hủy
                     const btnHuy = document.getElementById('btn-huy-don');
@@ -1170,22 +1150,25 @@
                         window.location.reload();
                     }, 2200);
                 } else {
-                    hienToast('❌ ' + (data.message || 'Không thể hủy đơn hàng.'), 'error');
+                    showToast(data.message || 'Không thể hủy đơn hàng.', 'error');
                     btnConfirm.disabled = false;
                     btnText.textContent = 'Xác nhận hủy';
                 }
             })
             .catch(function (err) {
                 console.error('[HuyDon] Lỗi:', err);
-                hienToast('❌ Có lỗi kết nối. Vui lòng thử lại.', 'error');
+                showToast('Có lỗi kết nối. Vui lòng thử lại.', 'error');
                 btnConfirm.disabled = false;
                 btnText.textContent = 'Xác nhận hủy';
             });
         };
 
         // ============ Xác nhận đã nhận được hàng (AJAX) ============
-        window.xacNhanNhanHang = function (orderId) {
-            if (!confirm('Bạn có chắc chắn đã nhận được hàng đầy đủ và đúng quy cách không?')) {
+        window.xacNhanNhanHang = async function (orderId) {
+            if (!(await SmashNotify.confirm({
+                title: 'Xác nhận đã nhận hàng?',
+                message: 'Bạn có chắc chắn đã nhận được hàng đầy đủ và đúng quy cách không?'
+            }))) {
                 return;
             }
 
@@ -1203,15 +1186,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    hienToast('✅ ' + data.message, 'success');
+                    showToast(data.message, 'success');
                     setTimeout(() => window.location.reload(), 1800);
                 } else {
-                    hienToast('❌ ' + data.message, 'error');
+                    showToast(data.message, 'error');
                 }
             })
             .catch(err => {
                 console.error('[XacNhanNhanHang] Lỗi:', err);
-                hienToast('❌ Có lỗi xảy ra khi xác nhận nhận hàng.', 'error');
+                showToast('Có lỗi xảy ra khi xác nhận nhận hàng.', 'error');
             });
         };
 
@@ -1351,7 +1334,7 @@
                     errorDiv.textContent = 'Vui lòng đính kèm video bằng chứng.';
                     errorDiv.style.display = 'block';
                 }
-                hienToast('⚠️ Vui lòng đính kèm video bằng chứng.', 'error');
+                showToast('Vui lòng đính kèm video bằng chứng.', 'error');
                 return;
             }
 
@@ -1363,7 +1346,7 @@
                     errorDiv.textContent = 'Video không được vượt quá 50MB.';
                     errorDiv.style.display = 'block';
                 }
-                hienToast('⚠️ Video không được vượt quá 50MB.', 'error');
+                showToast('Video không được vượt quá 50MB.', 'error');
                 return;
             }
 
@@ -1377,7 +1360,7 @@
                     errorDiv.textContent = 'Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.';
                     errorDiv.style.display = 'block';
                 }
-                hienToast('⚠️ Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.', 'error');
+                showToast('Video bằng chứng chỉ hỗ trợ MP4, WEBM hoặc MOV.', 'error');
                 return;
             }
 
@@ -1412,34 +1395,22 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    hienToast('✅ ' + data.message, 'success');
+                    showToast(data.message, 'success');
                     dongModalTraHang();
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
-                    hienToast('❌ ' + data.message, 'error');
+                    showToast(data.message, 'error');
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = 'Gửi Yêu Cầu';
                 }
             })
             .catch(err => {
                 console.error('[YeuCauTraHang] Lỗi:', err);
-                hienToast('❌ Có lỗi xảy ra khi gửi yêu cầu.', 'error');
+                showToast('Có lỗi xảy ra khi gửi yêu cầu.', 'error');
                 btnSubmit.disabled = false;
                 btnSubmit.textContent = 'Gửi Yêu Cầu';
             });
         };
-
-        // ============ Toast Notification ============
-        function hienToast(msg, type) {
-            const toast = document.getElementById('toastNotify');
-            if (!toast) return;
-            toast.textContent = msg;
-            toast.className = 'toast-notify ' + (type || 'success');
-            toast.classList.add('show');
-            setTimeout(function () {
-                toast.classList.remove('show');
-            }, 3500);
-        }
 
         window.copyOrderCodeToClipboard = function(text, el) {
             if (!text) return;
@@ -1448,7 +1419,7 @@
                 const oldClass = icon ? icon.className : '';
                 if (icon) icon.className = 'fas fa-check text-success';
                 
-                hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                showToast('Đã sao chép mã đơn hàng: ' + text, 'success');
                 
                 if (icon && oldClass) {
                     setTimeout(function() {
@@ -1463,7 +1434,7 @@
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    hienToast('Đã sao chép mã đơn hàng: ' + text, 'success');
+                    showToast('Đã sao chép mã đơn hàng: ' + text, 'success');
                 } catch(e) {}
                 document.body.removeChild(textArea);
             });
@@ -1488,7 +1459,7 @@
                 const modal = document.getElementById('guestSuccessModal');
                 if (modal) modal.classList.add('active');
             } else {
-                hienToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
+                showToast('Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.', 'success');
             }
             // Clean URL parameters without reloading
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;

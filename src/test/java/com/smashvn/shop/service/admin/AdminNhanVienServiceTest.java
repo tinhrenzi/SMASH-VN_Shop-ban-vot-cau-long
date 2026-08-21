@@ -37,18 +37,26 @@ class AdminNhanVienServiceTest {
     @Mock
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Mock
+    private org.springframework.cache.CacheManager cacheManager;
+
+    @Mock
+    private org.springframework.cache.Cache cache;
+
     private AdminNhanVienService adminNhanVienService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(cacheManager.getCache("taiKhoanStatus")).thenReturn(cache);
         adminNhanVienService = new AdminNhanVienService(
                 nhanVienRepository,
                 taiKhoanRepository,
                 auditService,
                 mailSender,
                 khachHangRepository,
-                passwordEncoder);
+                passwordEncoder,
+                cacheManager);
     }
 
     @Test
@@ -85,5 +93,95 @@ class AdminNhanVienServiceTest {
         assertEquals("Số điện thoại không đúng định dạng Việt Nam. Vui lòng nhập số bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số.", ex.getMessage());
         verify(taiKhoanRepository, never()).saveAndFlush(any());
         verify(nhanVienRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void approveLock_validManager_locksAccountAndEvictsCache() {
+        com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
+        tk.setId(10);
+        tk.setUsername("nv1@smash.vn");
+        tk.setTrangThai("cho_khoa");
+        tk.setVaiTro("NV");
+        tk.setTokenXacThucKhoa("valid-token");
+
+        com.smashvn.shop.entity.NhanVien nv = new com.smashvn.shop.entity.NhanVien();
+        nv.setId(5);
+        nv.setHoTenNv("Nguyen Staff");
+        nv.setChucVu("Sales");
+        nv.setSoDienThoaiNv("0987654321");
+        nv.setTaiKhoan(tk);
+
+        com.smashvn.shop.entity.TaiKhoan actingManager = new com.smashvn.shop.entity.TaiKhoan();
+        actingManager.setId(1);
+        actingManager.setVaiTro("QL");
+        actingManager.setUsername("manager@smash.vn");
+
+        when(nhanVienRepository.findById(5)).thenReturn(java.util.Optional.of(nv));
+        when(taiKhoanRepository.findById(1)).thenReturn(java.util.Optional.of(actingManager));
+
+        adminNhanVienService.approveLock(5, null, 1, "127.0.0.1");
+
+        assertEquals("bi_khoa", tk.getTrangThai());
+        org.junit.jupiter.api.Assertions.assertNull(tk.getTokenXacThucKhoa());
+        verify(taiKhoanRepository).save(tk);
+        verify(cache).evict(10);
+    }
+
+    @Test
+    void approveLock_validTokenWithoutSession_locksAccountAndEvictsCache() {
+        com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
+        tk.setId(10);
+        tk.setUsername("nv1@smash.vn");
+        tk.setTrangThai("cho_khoa");
+        tk.setVaiTro("NV");
+        tk.setTokenXacThucKhoa("secret-email-token");
+
+        com.smashvn.shop.entity.NhanVien nv = new com.smashvn.shop.entity.NhanVien();
+        nv.setId(5);
+        nv.setHoTenNv("Nguyen Staff");
+        nv.setChucVu("Sales");
+        nv.setSoDienThoaiNv("0987654321");
+        nv.setTaiKhoan(tk);
+
+        when(nhanVienRepository.findById(5)).thenReturn(java.util.Optional.of(nv));
+
+        adminNhanVienService.approveLock(5, "secret-email-token", null, "127.0.0.1");
+
+        assertEquals("bi_khoa", tk.getTrangThai());
+        org.junit.jupiter.api.Assertions.assertNull(tk.getTokenXacThucKhoa());
+        verify(taiKhoanRepository).save(tk);
+        verify(cache).evict(10);
+    }
+
+    @Test
+    void rejectLock_validManager_revertsToActiveAndEvictsCache() {
+        com.smashvn.shop.entity.TaiKhoan tk = new com.smashvn.shop.entity.TaiKhoan();
+        tk.setId(10);
+        tk.setUsername("nv1@smash.vn");
+        tk.setTrangThai("cho_khoa");
+        tk.setVaiTro("NV");
+        tk.setTokenXacThucKhoa("valid-token");
+
+        com.smashvn.shop.entity.NhanVien nv = new com.smashvn.shop.entity.NhanVien();
+        nv.setId(5);
+        nv.setHoTenNv("Nguyen Staff");
+        nv.setChucVu("Sales");
+        nv.setSoDienThoaiNv("0987654321");
+        nv.setTaiKhoan(tk);
+
+        com.smashvn.shop.entity.TaiKhoan actingManager = new com.smashvn.shop.entity.TaiKhoan();
+        actingManager.setId(1);
+        actingManager.setVaiTro("QL");
+        actingManager.setUsername("manager@smash.vn");
+
+        when(nhanVienRepository.findById(5)).thenReturn(java.util.Optional.of(nv));
+        when(taiKhoanRepository.findById(1)).thenReturn(java.util.Optional.of(actingManager));
+
+        adminNhanVienService.rejectLock(5, null, 1, "127.0.0.1");
+
+        assertEquals("hoat_dong", tk.getTrangThai());
+        org.junit.jupiter.api.Assertions.assertNull(tk.getTokenXacThucKhoa());
+        verify(taiKhoanRepository).save(tk);
+        verify(cache).evict(10);
     }
 }

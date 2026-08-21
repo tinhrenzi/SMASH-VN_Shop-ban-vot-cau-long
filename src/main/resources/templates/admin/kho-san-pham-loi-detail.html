@@ -506,11 +506,7 @@
 
                     if (!ghiChu) {
                         e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Thiếu ghi chú',
-                            text: 'Vui lòng nhập lý do / ghi chú xử lý!'
-                        });
+                        showToast('Vui lòng nhập lý do / ghi chú xử lý!', 'warning');
                         return;
                     }
 

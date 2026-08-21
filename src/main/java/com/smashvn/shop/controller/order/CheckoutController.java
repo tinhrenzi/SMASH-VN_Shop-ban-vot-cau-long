@@ -73,6 +73,29 @@ public class CheckoutController {
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:}")
+    private String configuredBaseUrl;
+
+    private String resolveBaseUrl(HttpServletRequest request) {
+        if (configuredBaseUrl != null && !configuredBaseUrl.trim().isEmpty()) {
+            return configuredBaseUrl.trim().replaceAll("/+$", "");
+        }
+        try {
+            return org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                    .fromContextPath(request)
+                    .build()
+                    .toUriString();
+        } catch (Exception e) {
+            String scheme = request.getScheme();
+            String serverName = request.getServerName();
+            int serverPort = request.getServerPort();
+            String contextPath = request.getContextPath();
+            if ((scheme.equalsIgnoreCase("http") && serverPort == 80) || (scheme.equalsIgnoreCase("https") && serverPort == 443)) {
+                return scheme + "://" + serverName + contextPath;
+            }
+            return scheme + "://" + serverName + ":" + serverPort + contextPath;
+        }
+    }
 
     private boolean isDangBan(String trangThai) {
         return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
@@ -595,7 +618,11 @@ public class CheckoutController {
             }
 
             emailStatus = guestCheckoutService.checkEmailStatus(guestEmail);
-            if ("ACTIVE".equals(emailStatus)) {
+            if ("LOCKED".equals(emailStatus)) {
+                response.put("trangThai", "loi");
+                response.put("message", "Tài khoản liên kết với email này đã bị khóa hoặc đang chờ khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ!");
+                return ResponseEntity.ok(response);
+            } else if ("ACTIVE".equals(emailStatus)) {
                 if (checkoutTk == null || !checkoutTk.getUsername().equalsIgnoreCase(guestEmail)) {
                     response.put("trangThai", "yeucaudangnhap");
                     response.put("email", guestEmail);
@@ -619,19 +646,32 @@ public class CheckoutController {
 
                     guestCartService.transferGuestCartToDb(session, kh.getId());
 
+                    boolean isNewlyCreatedGuest = regResult.isNewAccount();
+                    Integer currentSessionUserId = (Integer) session.getAttribute("idNguoiDung");
+                    boolean alreadyOwnsGuestSession = (currentSessionUserId != null && currentSessionUserId.equals(tk.getId()) && Boolean.TRUE.equals(session.getAttribute("isGuestView")));
+
                     request.changeSessionId();
                     session = request.getSession(true);
 
-                    session.setAttribute("nguoiDungDangNhap", tk.getUsername());
-                    session.setAttribute("idNguoiDung", tk.getId());
-                    session.setAttribute("vaiTro", "KH");
-                    session.setAttribute("tenHienThi", kh.getHoKh() + " " + kh.getTenKh());
-                    session.setAttribute("guestCheckoutEmail", tk.getUsername());
+                    if (isNewlyCreatedGuest || alreadyOwnsGuestSession) {
+                        // SAFE GUEST AUTO-LOGIN: Tạo / duy trì Guest Account Session cho email mới hoặc chính session sở hữu
+                        session.setAttribute("idNguoiDung", tk.getId());
+                        session.setAttribute("isGuestView", true);
+                        session.setAttribute("vaiTro", tk.getVaiTro());
+                        session.setAttribute("nguoiDungDangNhap", tk.getUsername());
+                        session.setAttribute("tenHienThi", hoTenNhan);
+                        session.setAttribute("guestCheckoutEmail", tk.getUsername());
+                    } else {
+                        // EXISTING GUEST TỪ BROWSER KHÁC (Chưa xác thực ownership):
+                        // TUYỆT ĐỐI KHÔNG gán idNguoiDung cũ để bảo vệ tài khoản nạn nhân
+                        session.setAttribute("isGuestView", true);
+                        session.setAttribute("guestCheckoutEmail", guestEmail);
+                        session.setAttribute("tenHienThi", hoTenNhan);
+                    }
 
-                    idNguoiDung = tk.getId();
                     checkoutTk = tk;
                     long endAccount = System.currentTimeMillis();
-                    log.info("[GuestCheckout] Auto-register guest account: {}ms - SUCCESS", (endAccount - startAccount));
+                    log.info("[GuestCheckout] Auto-register guest account: {}ms - SUCCESS (Safe Guest Auto-login: {})", (endAccount - startAccount), isNewlyCreatedGuest || alreadyOwnsGuestSession);
                 } catch (Exception e) {
                     long endAccount = System.currentTimeMillis();
                     log.error("[GuestCheckout] Create inactive account: {}ms - FAILED. Exception: {}", (endAccount - startAccount), e.getMessage(), e);
@@ -656,8 +696,9 @@ public class CheckoutController {
             }
         }
 
-        com.smashvn.shop.entity.KhachHang khachHang = khachHangRepository.findByTaiKhoan_Id(idNguoiDung);
-        Integer idKhachHang = (khachHang != null) ? khachHang.getId() : idNguoiDung;
+        Integer accountIdForOrder = (checkoutTk != null) ? checkoutTk.getId() : idNguoiDung;
+        com.smashvn.shop.entity.KhachHang khachHang = (accountIdForOrder != null) ? khachHangRepository.findByTaiKhoan_Id(accountIdForOrder) : null;
+        Integer idKhachHang = (khachHang != null) ? khachHang.getId() : accountIdForOrder;
 
         if (idDiaChiLuu != null) {
             try {
@@ -715,7 +756,7 @@ public class CheckoutController {
 
         // Save address to SoDiaChi first if applicable (so we can pass the ID to createOrder)
         if (idDiaChiLuu == null && khachHang != null) {
-            TaiKhoan currentTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            TaiKhoan currentTk = (idNguoiDung != null) ? taiKhoanRepository.findById(idNguoiDung).orElse(null) : checkoutTk;
             boolean shouldSave = false;
             boolean setAsDefault = false;
 
@@ -849,13 +890,13 @@ public class CheckoutController {
 
             if (isCod) {
                 orderResult = gioHangService.submitCodOrder(
-                        idNguoiDung, context, session,
+                        accountIdForOrder, context, session,
                         hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved,
                         ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId,
                         resolvedDiaChiLuuId, voucherCode);
             } else {
                 orderResult = gioHangService.createSepayPendingOrder(
-                        idNguoiDung, context, session,
+                        accountIdForOrder, context, session,
                         hoTenNhan, sdtNhan, diaChiNhan, idDonViVanChuyenResolved,
                         ghiChu, ghnToDistrictId, ghnToWardCode, ghnProvinceId,
                         resolvedDiaChiLuuId, voucherCode);
@@ -866,7 +907,7 @@ public class CheckoutController {
                         .maDonHang(hdPending.getMaDonHang())
                         .source(context.getSource())
                         .status(PendingCheckoutStatus.READY)
-                        .customerId(idNguoiDung)
+                        .customerId(accountIdForOrder)
                         .sessionId(session.getId())
                         .createdAt(LocalDateTime.now())
                         .expiresAt(LocalDateTime.now().plusMinutes(30))
@@ -881,13 +922,12 @@ public class CheckoutController {
             long endOrder = System.currentTimeMillis();
             log.info("[GuestCheckout] Create order: {}ms - SUCCESS", (endOrder - startOrder));
 
-
-            if (checkoutTk == null && idNguoiDung != null) {
-                checkoutTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            if (checkoutTk == null && accountIdForOrder != null) {
+                checkoutTk = taiKhoanRepository.findById(accountIdForOrder).orElse(null);
             }
             isGuestCheckout = (checkoutTk != null && checkoutTk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST);
 
-            // Guest checkout may create a GUEST account in-session; grant access only to the new order.
+            // Guest checkout: grant access only to the newly created order in session
             if (startedAsAnonymousGuest || isGuestCheckout) {
                 synchronized (session) {
                     Object attr = session.getAttribute("allowedGuestOrderAccesses");
@@ -899,26 +939,26 @@ public class CheckoutController {
                             }
                         }
                     }
-                    allowedAccesses.add(new GuestOrderAccess(hd.getId(), java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
+                    String guestEmailToRecord = (email != null && !email.trim().isEmpty()) ? email.trim() : (checkoutTk != null ? checkoutTk.getUsername() : null);
+                    allowedAccesses.add(new GuestOrderAccess(hd.getId(), guestEmailToRecord, java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES)));
                     session.setAttribute("allowedGuestOrderAccesses", allowedAccesses);
                 }
             }
 
-            if (isCod) {
-                guestCheckoutService.incrementPurchaseCount(idNguoiDung);
+            if (isCod && accountIdForOrder != null) {
+                guestCheckoutService.incrementPurchaseCount(accountIdForOrder);
             }
 
-
-            TaiKhoan tk = (checkoutTk != null) ? checkoutTk : taiKhoanRepository.findById(idNguoiDung).orElse(null);
+            TaiKhoan tk = (checkoutTk != null) ? checkoutTk : (accountIdForOrder != null ? taiKhoanRepository.findById(accountIdForOrder).orElse(null) : null);
             boolean isGuest = (tk != null) && (tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST);
             if (tk != null) {
                 response.put("isGuest", isGuest);
                 response.put("soLanMuaThanhCong", tk.getSoLanMuaThanhCong());
 
-                if (isCod && "NEW".equals(emailStatus)) {
+                if (isCod && isGuest && activationToken != null) {
                     long startEmail = System.currentTimeMillis();
                     try {
-                        String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                        String appUrl = resolveBaseUrl(request);
                         String contactEmail = tk.getUsername();
                         if (contactEmail != null && contactEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
                             guestCheckoutService.sendOrderAndAccountNotification(contactEmail, activationToken, appUrl);
@@ -950,7 +990,7 @@ public class CheckoutController {
                 }
                 if (userEmail != null && !userEmail.trim().isEmpty()) {
                     try {
-                        String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                        String appUrl = resolveBaseUrl(request);
                         guestCheckoutService.sendOrderConfirmationEmail(userEmail, hd, appUrl);
                     } catch (Exception e) {
                         log.error("Failed to trigger order confirmation email", e);
@@ -1217,11 +1257,32 @@ public class CheckoutController {
 
 
     @GetMapping("/user/thiet-lap-mat-khau")
-    public String viewThietLapMatKhau(@RequestParam("token") String token, Model model) {
+    public String viewThietLapMatKhau(
+            @RequestParam(value = "token", required = false) String token,
+            HttpSession session,
+            Model model) {
+        if (token == null || token.trim().isEmpty()) {
+            Integer idNguoiDung = (session != null) ? (Integer) session.getAttribute("idNguoiDung") : null;
+            boolean isGuest = (session != null) && Boolean.TRUE.equals(session.getAttribute("isGuestView"));
+            if (idNguoiDung != null && isGuest) {
+                TaiKhoan tk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
+                if (tk != null && tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
+                    model.addAttribute("guestEmail", tk.getUsername());
+                    model.addAttribute("token", null);
+                    return "set-password-by-token";
+                }
+            }
+            return "redirect:/user/dang-nhap";
+        }
         try {
             com.smashvn.shop.entity.TokenKhoiPhuc tkp = tokenRepository.findByMaXacNhan(token);
-            if (tkp == null || tkp.isDaSuDung() || tkp.getThoiGianHetHan().isBefore(java.time.LocalDateTime.now())) {
+            if (tkp == null || !"GUEST_ACTIVATION".equals(tkp.getLoaiXacNhan()) || tkp.isDaSuDung() || tkp.getThoiGianHetHan().isBefore(java.time.LocalDateTime.now())) {
                 model.addAttribute("loi", "Đường link thiết lập mật khẩu không hợp lệ hoặc đã hết hạn!");
+                return "signin";
+            }
+            TaiKhoan tk = tkp.getTaiKhoan();
+            if (tk == null || tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.PENDING_LOCK) {
+                model.addAttribute("loi", "Tài khoản liên kết với đường link này đã bị khóa!");
                 return "signin";
             }
             model.addAttribute("token", token);
@@ -1230,6 +1291,29 @@ public class CheckoutController {
             model.addAttribute("loi", e.getMessage());
             return "signin";
         }
+    }
+
+    @PostMapping("/user/thiet-lap-mat-khau/gui-lai")
+    public String resendThietLapMatKhau(
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        Integer idNguoiDung = (session != null) ? (Integer) session.getAttribute("idNguoiDung") : null;
+        boolean isGuest = (session != null) && Boolean.TRUE.equals(session.getAttribute("isGuestView"));
+
+        if (idNguoiDung == null || !isGuest) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        try {
+            String appUrl = resolveBaseUrl(request);
+            guestCheckoutService.resendGuestActivationEmail(idNguoiDung, appUrl);
+            redirectAttributes.addFlashAttribute("thongBaoGuiLai", "Hệ thống đã gửi lại email kích hoạt mới! Vui lòng kiểm tra hộp thư của bạn.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("loi", e.getMessage());
+        }
+
+        return "redirect:/user/thiet-lap-mat-khau";
     }
 
     @PostMapping("/user/thiet-lap-mat-khau")
@@ -1256,17 +1340,27 @@ public class CheckoutController {
 
     public static class GuestOrderAccess implements java.io.Serializable {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
         private final Integer orderId;
+        private final String guestEmail;
         private final java.time.Instant expiresAt;
 
         public GuestOrderAccess(Integer orderId, java.time.Instant expiresAt) {
+            this(orderId, null, expiresAt);
+        }
+
+        public GuestOrderAccess(Integer orderId, String guestEmail, java.time.Instant expiresAt) {
             this.orderId = orderId;
+            this.guestEmail = guestEmail;
             this.expiresAt = expiresAt;
         }
 
         public Integer getOrderId() {
             return orderId;
+        }
+
+        public String getGuestEmail() {
+            return guestEmail;
         }
 
         public java.time.Instant getExpiresAt() {

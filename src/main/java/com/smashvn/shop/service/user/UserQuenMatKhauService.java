@@ -54,20 +54,40 @@ public class UserQuenMatKhauService {
             throw new RuntimeException("Tài khoản không tồn tại trên hệ thống!");
         }
 
+        // Chặn tài khoản bị khóa hoặc chờ khóa
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == AccountStatus.PENDING_LOCK
+                || "bi_khoa".equals(tk.getTrangThai()) || "cho_khoa".equals(tk.getTrangThai())) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa hoặc đang chờ khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ!");
+        }
+
+        // Không cho phép tài khoản Guest chưa kích hoạt mật khẩu dùng tính năng Quên mật khẩu
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST && (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty())) {
+            throw new RuntimeException("Tài khoản này là tài khoản khách vãng lai chưa thiết lập mật khẩu. Vui lòng kiểm tra email kích hoạt tài khoản đã nhận khi đặt hàng!");
+        }
+
         // Check if the username is a valid email
         String destinationEmail = tk.getUsername();
         if (!destinationEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
             throw new RuntimeException("Tài khoản của bạn đăng ký bằng số điện thoại và không có email khôi phục. Vui lòng liên hệ quản trị viên để được hỗ trợ!");
         }
 
+        // Vô hiệu hóa tất cả token FORGOT_PASSWORD cũ chưa dùng của tài khoản này
+        java.util.List<TokenKhoiPhuc> oldTokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "FORGOT_PASSWORD");
+        for (TokenKhoiPhuc old : oldTokens) {
+            old.setDaSuDung(true);
+        }
+        if (!oldTokens.isEmpty()) {
+            tokenRepository.saveAll(oldTokens);
+        }
+
         // Tạo chuỗi Token ngẫu nhiên không trùng lặp
         String token = UUID.randomUUID().toString();
 
-        // Lưu vào Database
+        // Lưu vào Database với loại FORGOT_PASSWORD
         TokenKhoiPhuc tkp = new TokenKhoiPhuc();
         tkp.setTaiKhoan(tk);
         tkp.setMaXacNhan(token);
-        tkp.setLoaiXacNhan("EMAIL");
+        tkp.setLoaiXacNhan("FORGOT_PASSWORD");
         tkp.setThoiGianHetHan(LocalDateTime.now().plusMinutes(15)); // Hết hạn sau 15 phút
         tkp.setDaSuDung(false);
         tokenRepository.save(tkp);
@@ -88,11 +108,14 @@ public class UserQuenMatKhauService {
         mailSender.send(message);
     }
 
-    // 2. Xác thực Token có hợp lệ không (Chưa hết hạn, chưa dùng)
+    // 2. Xác thực Token có hợp lệ không (Chưa hết hạn, chưa dùng, đúng loại FORGOT_PASSWORD)
     public TokenKhoiPhuc kiemTraToken(String token) {
         TokenKhoiPhuc tkp = tokenRepository.findByMaXacNhan(token);
         if (tkp == null) {
             throw new RuntimeException("Đường link khôi phục không hợp lệ!");
+        }
+        if (!"FORGOT_PASSWORD".equals(tkp.getLoaiXacNhan())) {
+            throw new RuntimeException("Đường link khôi phục không hợp lệ hoặc sai loại xác nhận!");
         }
         if (tkp.isDaSuDung()) {
             throw new RuntimeException("Đường link này đã được sử dụng!");
@@ -100,6 +123,12 @@ public class UserQuenMatKhauService {
         if (tkp.getThoiGianHetHan().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Đường link này đã hết hạn!");
         }
+
+        TaiKhoan tk = tkp.getTaiKhoan();
+        if (tk == null || tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == AccountStatus.PENDING_LOCK) {
+            throw new RuntimeException("Tài khoản liên kết với link này đã bị khóa hoặc không hợp lệ!");
+        }
+
         return tkp;
     }
 
@@ -130,5 +159,14 @@ public class UserQuenMatKhauService {
 
         tkp.setDaSuDung(true);
         tokenRepository.saveAndFlush(tkp);
+
+        // Vô hiệu hóa mọi token FORGOT_PASSWORD còn lại của tài khoản này
+        java.util.List<TokenKhoiPhuc> otherTokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "FORGOT_PASSWORD");
+        for (TokenKhoiPhuc ot : otherTokens) {
+            ot.setDaSuDung(true);
+        }
+        if (!otherTokens.isEmpty()) {
+            tokenRepository.saveAll(otherTokens);
+        }
     }
 }

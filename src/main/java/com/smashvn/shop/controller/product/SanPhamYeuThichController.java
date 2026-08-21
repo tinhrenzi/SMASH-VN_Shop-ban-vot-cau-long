@@ -27,8 +27,8 @@ public class SanPhamYeuThichController {
     // 1. Hiển thị trang Wishlist
     @GetMapping
     public String hienThiWishlist(HttpSession session, Model model) {
+        if (!isActiveMember(session)) return "redirect:/user/dang-nhap";
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (!isActiveAccount(idNguoiDung)) return "redirect:/user/dang-nhap";
 
         model.addAttribute("listWishlist", yeuThichService.layDanhSachWishlist(idNguoiDung));
         return "wishlist"; 
@@ -38,12 +38,12 @@ public class SanPhamYeuThichController {
     @PostMapping("/them")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> themVaoWishlist(@RequestParam("idSanPham") Integer idSanPham, HttpSession session) {
-        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         Map<String, Object> result = new HashMap<>();
-        if (!isActiveAccount(idNguoiDung)) {
+        if (!isActiveMember(session)) {
             result.put("status", "chuadangnhap");
             return ResponseEntity.status(401).body(result);
         }
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
 
         try {
             String kq = yeuThichService.themVaoWishlist(idNguoiDung, idSanPham);
@@ -61,8 +61,8 @@ public class SanPhamYeuThichController {
     // 3. Xóa 1 sản phẩm
     @GetMapping("/xoa/{id}")
     public String xoaSanPham(@PathVariable("id") Integer idSanPham, HttpSession session) {
-        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (isActiveAccount(idNguoiDung)) {
+        if (isActiveMember(session)) {
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
             yeuThichService.xoaSanPham(idNguoiDung, idSanPham);
         }
         return "redirect:/wishlist";
@@ -71,8 +71,8 @@ public class SanPhamYeuThichController {
     // 4. Xóa sạch
     @GetMapping("/xoa-tat-ca")
     public String xoaTatCa(HttpSession session) {
-        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        if (isActiveAccount(idNguoiDung)) {
+        if (isActiveMember(session)) {
+            Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
             yeuThichService.xoaTatCa(idNguoiDung);
         }
         return "redirect:/wishlist";
@@ -82,12 +82,11 @@ public class SanPhamYeuThichController {
     @ResponseBody
     public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idSanPham, HttpSession session) {
         Map<String, String> response = new HashMap<>();
-        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        
-        if (!isActiveAccount(idNguoiDung)) {
+        if (!isActiveMember(session)) {
             response.put("trangThai", "chuadangnhap");
             return ResponseEntity.status(401).body(response);
         }
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         
         try {
             yeuThichService.xoaSanPham(idNguoiDung, idSanPham);
@@ -98,7 +97,11 @@ public class SanPhamYeuThichController {
         return ResponseEntity.ok(response);
     }
 
-    private boolean isActiveAccount(Integer idNguoiDung) {
+    private boolean isActiveMember(HttpSession session) {
+        if (session == null || Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return false;
+        }
+        Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
             return false;
         }

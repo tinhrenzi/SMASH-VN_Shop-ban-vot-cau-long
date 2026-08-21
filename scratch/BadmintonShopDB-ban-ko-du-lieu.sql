@@ -1578,8 +1578,9 @@ GO
 ALTER TABLE [dbo].[LichSuTrangThaiDonHang]  WITH CHECK ADD  CONSTRAINT [CK_LichSuTrangThaiDonHang_HanhDong] CHECK  (([hanh_dong]=N'GHI_CHU' OR [hanh_dong]=N'CAP_NHAT_MA_VAN_DON' OR [hanh_dong]=N'CAP_NHAT_TRANG_THAI' OR [hanh_dong]=N'XAC_NHAN_HOAN_TIEN' OR [hanh_dong]=N'XAC_NHAN_THANH_TOAN' OR [hanh_dong]=N'GIAO_HANG' OR [hanh_dong]=N'DONG_GOI' OR [hanh_dong]=N'HUY_DON' OR [hanh_dong]=N'XAC_NHAN_DON' OR [hanh_dong]=N'TAO_DON'))
 GO
 ALTER TABLE [dbo].[LichSuTrangThaiDonHang] CHECK CONSTRAINT [CK_LichSuTrangThaiDonHang_HanhDong]
+ALTER TABLE [dbo].[MaKhoiPhuc]  WITH CHECK ADD  CONSTRAINT [CK_MaKhoiPhuc_LoaiXacNhan] CHECK  (([loai_xac_nhan]='EMAIL' OR [loai_xac_nhan]='SMS' OR [loai_xac_nhan]='GUEST_ACTIVATION' OR [loai_xac_nhan]='FORGOT_PASSWORD'))
 GO
-ALTER TABLE [dbo].[MaKhoiPhuc]  WITH CHECK ADD CHECK  (([loai_xac_nhan]='SMS' OR [loai_xac_nhan]='EMAIL'))
+ALTER TABLE [dbo].[MaKhoiPhuc] CHECK CONSTRAINT [CK_MaKhoiPhuc_LoaiXacNhan]
 GO
 ALTER TABLE [dbo].[PhieuGiamGia]  WITH CHECK ADD CHECK  (([don_vi]='%' OR [don_vi]='VND'))
 GO

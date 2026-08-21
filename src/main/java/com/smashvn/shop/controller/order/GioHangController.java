@@ -60,7 +60,7 @@ public class GioHangController {
             HttpSession session) {
 
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         if (soLuong == null) {
             return ResponseEntity.status(400).body("Số lượng sản phẩm không được để trống.");
@@ -117,7 +117,7 @@ public class GioHangController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> layDuLieuMiniCart(HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         if (!activeAccount) {
             Map<String, Object> response = guestCartService.layDuLieuMiniCart(session);
@@ -132,7 +132,7 @@ public class GioHangController {
     @GetMapping
     public String hienThiGioHang(HttpSession session, Model model) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         List<CartItemView> danhSachCartView = new java.util.ArrayList<>();
         BigDecimal tongTien = BigDecimal.ZERO;
@@ -232,7 +232,7 @@ public class GioHangController {
     public ResponseEntity<Map<String, String>> xoaSanPhamAjax(@PathVariable("id") Integer idChiTiet, HttpSession session) {
         Map<String, String> response = new HashMap<>();
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         try {
             if (!activeAccount) {
@@ -256,7 +256,7 @@ public class GioHangController {
             HttpSession session) {
 
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         try {
             Map<String, Object> result;
@@ -282,7 +282,7 @@ public class GioHangController {
             @RequestParam(value = "soLuong", required = false) Integer soLuong,
             HttpSession session) {
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-        boolean activeAccount = isActiveAccount(idNguoiDung);
+        boolean activeAccount = isActiveAccount(session, idNguoiDung);
 
         if (soLuong == null) {
             return ResponseEntity.status(400).body("Số lượng sản phẩm không được để trống.");
@@ -330,7 +330,10 @@ public class GioHangController {
         }
     }
 
-    private boolean isActiveAccount(Integer idNguoiDung) {
+    private boolean isActiveAccount(HttpSession session, Integer idNguoiDung) {
+        if (session != null && Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return false;
+        }
         if (idNguoiDung == null) {
             return false;
         }

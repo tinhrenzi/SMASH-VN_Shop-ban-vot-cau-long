@@ -140,15 +140,39 @@
                                                     </button>
                                                 </form>
                                                 
-                                                <form th:if="${nv.taiKhoan.trangThai == 'cho_khoa'}" 
-                                                      th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
-                                                      method="POST" style="display: inline;"
-                                                      onsubmit="return confirmSubmitForm(this, 'Bạn có muốn hủy yêu cầu khóa tài khoản này không?');">
-                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                    <button type="submit" class="admin-btn admin-btn-icon ms-1" title="Hủy yêu cầu khóa">
-                                                        <i class="fas fa-undo"></i>
-                                                    </button>
-                                                </form>
+                                                <div th:if="${nv.taiKhoan.trangThai == 'cho_khoa'}" style="display: inline-flex; gap: 2px;">
+                                                    <!-- Phê duyệt khóa -->
+                                                    <form th:action="@{/admin/nhan-vien/approve-lock/{id}(id=${nv.id})}" 
+                                                          method="POST" style="display: inline;"
+                                                          onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn PHÊ DUYỆT KHÓA tài khoản này? Người này sẽ bị chặn truy cập hệ thống ngay lập tức.');">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <input type="hidden" name="redirectUrl" value="/admin/nhan-vien" />
+                                                        <button type="submit" class="admin-btn admin-btn-icon danger" title="Phê duyệt khóa tài khoản">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Từ chối khóa -->
+                                                    <form th:action="@{/admin/nhan-vien/reject-lock/{id}(id=${nv.id})}" 
+                                                          method="POST" style="display: inline;"
+                                                          onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn TỪ CHỐI KHÓA tài khoản này? Trạng thái hoạt động của nhân viên sẽ được giữ nguyên.');">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <input type="hidden" name="redirectUrl" value="/admin/nhan-vien" />
+                                                        <button type="submit" class="admin-btn admin-btn-icon" title="Từ chối khóa">
+                                                            <i class="fas fa-times text-danger"></i>
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Hủy yêu cầu khóa (toggle) -->
+                                                    <form th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
+                                                          method="POST" style="display: inline;"
+                                                          onsubmit="return confirmSubmitForm(this, 'Bạn có muốn hủy yêu cầu khóa tài khoản này không?');">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <button type="submit" class="admin-btn admin-btn-icon" title="Hủy yêu cầu khóa">
+                                                            <i class="fas fa-undo"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                                 
                                                 <form th:if="${nv.taiKhoan.trangThai == 'bi_khoa'}" 
                                                       th:action="@{/admin/nhan-vien/toggle/{id}(id=${nv.id})}" 
