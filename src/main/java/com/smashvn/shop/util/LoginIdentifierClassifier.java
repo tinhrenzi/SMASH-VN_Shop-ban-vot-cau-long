@@ -22,7 +22,7 @@ public class LoginIdentifierClassifier {
         String input = rawInput.trim();
 
         // 1. Check if it matches email format
-        if (input.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+        if (input.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,10}$")) {
             return new NormalizedLoginIdentifier(LoginIdentifierType.EMAIL, input.toLowerCase(Locale.ROOT));
         }
 

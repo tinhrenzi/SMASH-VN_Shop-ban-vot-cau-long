@@ -73,18 +73,21 @@ public class UserDangKyService {
             }
         }
 
-        // Validation password strength: 8-30 chars, containing both letters and numbers, no whitespace
+        // Password policy: 8-25 chars, at least one uppercase letter and one number, no whitespace
         if (matKhau == null || matKhau.isEmpty()) {
             throw new RuntimeException("Mật khẩu không được để trống!");
         }
-        if (matKhau.length() < 8 || matKhau.length() > 30) {
-            throw new RuntimeException("Mật khẩu phải dài từ 8 đến 30 ký tự!");
+        if (matKhau.length() < 8 || matKhau.length() > 25) {
+            throw new RuntimeException("Mật khẩu phải dài từ 8 đến 25 ký tự!");
         }
         if (matKhau.contains(" ") || matKhau.contains("\t") || matKhau.contains("\n") || matKhau.contains("\r")) {
             throw new RuntimeException("Mật khẩu không được chứa khoảng trắng!");
         }
-        if (!matKhau.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,30}$")) {
-            throw new RuntimeException("Mật khẩu phải chứa cả chữ và số!");
+        if (!matKhau.matches(".*[A-Z].*")) {
+            throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ in hoa!");
+        }
+        if (!matKhau.matches(".*\\d.*")) {
+            throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ số!");
         }
 
         // 2. Tạo Tài khoản

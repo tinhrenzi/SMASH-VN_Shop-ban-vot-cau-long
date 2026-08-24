@@ -13,11 +13,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.AccountLockedException;
 import com.smashvn.shop.exception.AccountNotFoundException;
+import com.smashvn.shop.exception.InvalidPasswordException;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
 import com.smashvn.shop.util.LoginIdentifierClassifier;
+import com.smashvn.shop.util.LoginIdentifierClassifier.LoginIdentifierType;
+import com.smashvn.shop.util.LoginIdentifierClassifier.NormalizedLoginIdentifier;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -61,36 +65,48 @@ public class UserDangNhapController {
         // Sanitize và Trim inputs
         String sanitizedUsername = sanitizeInput(username);
         String trimmedUsername = (sanitizedUsername != null) ? sanitizedUsername.trim() : "";
-        String loginLimitKey = buildLoginLimitKey(trimmedUsername);
+        model.addAttribute("usernameNhap", trimmedUsername);
 
-        // 1. Kiểm tra giới hạn số lần thử theo tài khoản, không khóa theo trình duyệt/IP
-        if (!loginLimitKey.isEmpty() && loginRateLimiter.isBlocked(loginLimitKey)) {
-            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
-            return "signin";
-        }
-
-        // Sơ bộ validation tại controller bằng classifier dùng chung
+        // Kiểm tra từng trường để người dùng biết chính xác nội dung cần sửa.
         boolean invalidInput = false;
-        try {
-            LoginIdentifierClassifier.classifyAndNormalize(trimmedUsername);
-        } catch (IllegalArgumentException e) {
+        NormalizedLoginIdentifier normalizedIdentifier = null;
+        if (trimmedUsername.isEmpty()) {
+            model.addAttribute("usernameError", "Vui lòng nhập email hoặc số điện thoại.");
             invalidInput = true;
+        } else {
+            try {
+                normalizedIdentifier = LoginIdentifierClassifier.classifyAndNormalize(trimmedUsername);
+                if (normalizedIdentifier.type() == LoginIdentifierType.USERNAME) {
+                    model.addAttribute("usernameError", identifierFormatError(trimmedUsername));
+                    invalidInput = true;
+                }
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("usernameError", identifierFormatError(trimmedUsername));
+                invalidInput = true;
+            }
         }
+
         if (matKhau == null || matKhau.isEmpty()) {
+            model.addAttribute("passwordError", "Vui lòng nhập mật khẩu.");
             invalidInput = true;
         }
 
         if (invalidInput) {
-            if (!loginLimitKey.isEmpty()) {
-                loginRateLimiter.loginFailed(loginLimitKey);
-            }
             log.warn("[SECURITY_EVENT] INVALID_LOGIN_INPUT: IP: {}, Username: {}", ip, trimmedUsername);
-            model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
+            return "signin";
+        }
+
+        String normalizedUsername = normalizedIdentifier.value();
+        String loginLimitKey = buildLoginLimitKey(normalizedUsername);
+
+        // 1. Kiểm tra giới hạn số lần thử theo tài khoản, không khóa theo trình duyệt/IP
+        if (loginRateLimiter.isBlocked(loginLimitKey)) {
+            model.addAttribute("loi", "Tài khoản tạm thời bị khóa đăng nhập do nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
             return "signin";
         }
 
         try {
-            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(trimmedUsername, matKhau);
+            TaiKhoan tkDangNhap = userDangNhapService.kiemTraDangNhap(normalizedUsername, matKhau);
 
             // Chỉ cho phép KH
             String userRole = tkDangNhap.getVaiTro();
@@ -130,21 +146,39 @@ public class UserDangNhapController {
             return "redirect:/";
 
         } catch (AccountNotFoundException e) {
-            // Đăng nhập thất bại do username chưa đăng ký -> Đưa ra luồng riêng
             loginRateLimiter.loginFailed(loginLimitKey);
-            log.warn("[SECURITY_EVENT] UNREGISTERED_USERNAME_LOGIN: Username: {}, IP: {}", trimmedUsername, ip);
-            model.addAttribute("emailChuaDangKy", true);
-            model.addAttribute("emailNhap", trimmedUsername);
+            log.warn("[SECURITY_EVENT] ACCOUNT_NOT_FOUND: Username: {}, IP: {}", trimmedUsername, ip);
+            String message = normalizedIdentifier.type() == LoginIdentifierType.EMAIL
+                    ? "Email này chưa được đăng ký."
+                    : "Số điện thoại này chưa được đăng ký.";
+            model.addAttribute("usernameError", message);
+            return "signin";
+        } catch (InvalidPasswordException e) {
+            loginRateLimiter.loginFailed(loginLimitKey);
+            log.warn("[SECURITY_EVENT] INVALID_PASSWORD: Username: {}, IP: {}", trimmedUsername, ip);
+            model.addAttribute("passwordError", e.getMessage());
+            return "signin";
+        } catch (AccountLockedException e) {
+            loginRateLimiter.loginFailed(loginLimitKey);
+            log.warn("[SECURITY_EVENT] LOCKED_ACCOUNT_LOGIN: Username: {}, IP: {}", trimmedUsername, ip);
+            model.addAttribute("loi", e.getMessage());
             return "signin";
         } catch (RuntimeException e) {
-            // Đăng nhập thất bại -> Tăng bộ đếm và ghi log an ninh ra file
             loginRateLimiter.loginFailed(loginLimitKey);
             log.warn("[SECURITY_EVENT] FAILED_LOGIN: Username: {}, IP: {}, Lỗi: {}", trimmedUsername, ip, e.getMessage());
-
-            // Luôn trả về thông báo lỗi chung
-            model.addAttribute("loi", "Email hoặc mật khẩu không chính xác!");
+            model.addAttribute("loi", "Không thể đăng nhập lúc này. Vui lòng thử lại sau.");
             return "signin";
         }
+    }
+
+    private String identifierFormatError(String value) {
+        if (value != null && value.contains("@")) {
+            return "Định dạng email không hợp lệ.";
+        }
+        if (value != null && value.trim().matches("^[+0-9].*")) {
+            return "Số điện thoại Việt Nam không hợp lệ.";
+        }
+        return "Vui lòng nhập email hoặc số điện thoại hợp lệ.";
     }
 
     private String sanitizeInput(String input) {

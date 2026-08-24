@@ -120,19 +120,19 @@ public class UserDangKyServiceTest {
             userDangKyService.dangKy(email, matKhau);
         });
 
-        assertEquals("Mật khẩu phải dài từ 8 đến 30 ký tự!", exception.getMessage());
+        assertEquals("Mật khẩu phải dài từ 8 đến 25 ký tự!", exception.getMessage());
     }
 
     @Test
     void testDangKy_Password_Long() {
         String email = "valid@gmail.com";
-        String matKhau = "A1" + "a".repeat(30); // > 30 chars
+        String matKhau = "A1" + "a".repeat(24); // 26 chars, over the 25-character limit
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             userDangKyService.dangKy(email, matKhau);
         });
 
-        assertEquals("Mật khẩu phải dài từ 8 đến 30 ký tự!", exception.getMessage());
+        assertEquals("Mật khẩu phải dài từ 8 đến 25 ký tự!", exception.getMessage());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class UserDangKyServiceTest {
     }
 
     @Test
-    void testDangKy_Password_LettersOnly() {
+    void testDangKy_Password_WithoutNumber() {
         String email = "valid@gmail.com";
         String matKhau = "SecureLettersOnly";
 
@@ -156,6 +156,32 @@ public class UserDangKyServiceTest {
             userDangKyService.dangKy(email, matKhau);
         });
 
-        assertEquals("Mật khẩu phải chứa cả chữ và số!", exception.getMessage());
+        assertEquals("Mật khẩu phải có ít nhất 1 chữ số!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_Password_WithoutUppercase() {
+        String email = "valid@gmail.com";
+        String matKhau = "securepass123";
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userDangKyService.dangKy(email, matKhau);
+        });
+
+        assertEquals("Mật khẩu phải có ít nhất 1 chữ in hoa!", exception.getMessage());
+    }
+
+    @Test
+    void testDangKy_Password_Exactly25Characters() {
+        String email = "valid@gmail.com";
+        String matKhau = "A1" + "a".repeat(23);
+
+        when(taiKhoanRepository.existsByUsername(email)).thenReturn(false);
+        when(taiKhoanRepository.save(any(TaiKhoan.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TaiKhoan result = userDangKyService.dangKy(email, matKhau);
+
+        assertNotNull(result);
+        assertEquals(matKhau, result.getMatKhau());
     }
 }

@@ -3390,6 +3390,66 @@ input::-ms-clear {
   .l-f-o .btn {
     font-weight: 600;
     padding: 12px 18px; }
+  .l-f-o .input-text.is-invalid {
+    border-color: #c62828 !important;
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.12); }
+  .form-field__help {
+    color: #667085;
+    display: block;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 6px; }
+  .form-field__help[hidden] {
+    display: none; }
+  .form-field__error {
+    color: #b42318;
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-top: 6px; }
+  .form-field__error[hidden] {
+    display: none; }
+  .form-alert {
+    align-items: flex-start;
+    border-radius: 6px;
+    display: flex;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 8px;
+    line-height: 1.5;
+    padding: 10px 12px; }
+  .form-alert--error {
+    background: #fff1f0;
+    border: 1px solid #f5b7b1;
+    color: #a61b1b; }
+  .password-requirements {
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-top: 8px; }
+  .password-requirements[hidden] {
+    display: none; }
+  .password-requirements__title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 3px; }
+  .password-requirements ul {
+    list-style: none;
+    margin: 0;
+    padding: 0; }
+  .password-requirements li {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    transition: color 0.15s ease; }
+  .password-requirements li span {
+    display: inline-block;
+    font-weight: 700;
+    text-align: center;
+    width: 12px; }
+  .password-requirements li.is-valid {
+    color: #137a46; }
   .l-f-o__create-link {
     font-size: 13px;
     text-align: center;

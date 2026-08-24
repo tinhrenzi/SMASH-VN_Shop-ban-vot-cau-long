@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.AccountStatus;
+import com.smashvn.shop.exception.AccountLockedException;
 import com.smashvn.shop.exception.AccountNotFoundException;
+import com.smashvn.shop.exception.InvalidPasswordException;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.util.LoginIdentifierClassifier;
@@ -68,12 +70,12 @@ public class UserDangNhapService {
         }
 
         if (!matches) {
-            throw new RuntimeException("Email hoặc mật khẩu không chính xác!");
+            throw new InvalidPasswordException();
         }
 
         // 6. Kiểm tra trạng thái tài khoản
         if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || "bi_khoa".equalsIgnoreCase(taiKhoan.getTrangThai())) {
-            throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+            throw new AccountLockedException();
         }
         if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST && (taiKhoan.getMatKhau() == null || taiKhoan.getMatKhau().trim().isEmpty())) {
             throw new RuntimeException("Tài khoản vãng lai chưa được kích hoạt mật khẩu. Vui lòng đăng nhập bằng Google hoặc kích hoạt qua email!");

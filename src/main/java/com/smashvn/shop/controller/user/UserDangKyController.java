@@ -43,6 +43,7 @@ public class UserDangKyController {
         // 1. Kiểm tra giới hạn số lần thử (Rate limiting)
         if (registerRateLimiter.isBlocked(ip)) {
             model.addAttribute("loi", "Hành động bị chặn tạm thời do đăng ký quá nhiều lần liên tiếp. Vui lòng thử lại sau 15 phút.");
+            model.addAttribute("username", username);
             return "signup";
         }
 
@@ -53,12 +54,14 @@ public class UserDangKyController {
         // Kiểm tra 2 mật khẩu có khớp nhau không
         if (matKhau == null || matKhau.isEmpty()) {
             registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Mật khẩu không được để trống!");
+            model.addAttribute("passwordError", "Mật khẩu không được để trống!");
+            model.addAttribute("username", trimmedUsername);
             return "signup";
         }
         if (!matKhau.equals(xacNhanMatKhau)) {
             registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", "Mật khẩu xác nhận không trùng khớp!");
+            model.addAttribute("confirmError", "Mật khẩu xác nhận không trùng khớp!");
+            model.addAttribute("username", trimmedUsername);
             return "signup";
         }
 
@@ -75,9 +78,26 @@ public class UserDangKyController {
         } catch (RuntimeException e) {
             // Thất bại -> Tăng bộ đếm và hiển thị lỗi
             registerRateLimiter.registerFailed(ip);
-            model.addAttribute("loi", e.getMessage());
+            addValidationError(model, e.getMessage());
             model.addAttribute("username", trimmedUsername);
             return "signup";
+        }
+    }
+
+    private void addValidationError(Model model, String message) {
+        String safeMessage = (message == null || message.isBlank())
+                ? "Không thể tạo tài khoản lúc này. Vui lòng thử lại sau."
+                : message;
+        String normalizedMessage = safeMessage.toLowerCase(java.util.Locale.ROOT);
+
+        if (normalizedMessage.startsWith("mật khẩu")) {
+            model.addAttribute("passwordError", safeMessage);
+        } else if (normalizedMessage.contains("email")
+                || normalizedMessage.contains("số điện thoại")
+                || normalizedMessage.contains("tên miền")) {
+            model.addAttribute("usernameError", safeMessage);
+        } else {
+            model.addAttribute("loi", safeMessage);
         }
     }
 

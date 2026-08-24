@@ -2,6 +2,9 @@ package com.smashvn.shop.controller.user;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.AccountLockedException;
+import com.smashvn.shop.exception.AccountNotFoundException;
+import com.smashvn.shop.exception.InvalidPasswordException;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.security.LoginRateLimiter;
 import com.smashvn.shop.service.user.UserDangNhapService;
@@ -60,6 +63,18 @@ public class UserDangNhapControllerTest {
     }
 
     @Test
+    void testHienThiFormFormDangNhap_InitialPageHasNoError() {
+        Model model = new ConcurrentModel();
+
+        String view = userDangNhapController.hienThiFormFormDangNhap(null, null, model);
+
+        assertEquals("signin", view);
+        assertNull(model.getAttribute("loi"));
+        assertNull(model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("passwordError"));
+    }
+
+    @Test
     void testXuLyDangNhap_Success() {
         String email = "customer@gmail.com";
         String matKhau = "password";
@@ -103,6 +118,7 @@ public class UserDangNhapControllerTest {
 
         assertEquals("signin", view);
         assertTrue(model.getAttribute("loi").toString().contains("tạm thời bị khóa"));
+        assertEquals(email, model.getAttribute("usernameNhap"));
         verifyNoInteractions(userDangNhapService);
     }
 
@@ -130,21 +146,82 @@ public class UserDangNhapControllerTest {
     }
 
     @Test
-    void testXuLyDangNhap_InvalidCredentials() {
+    void testXuLyDangNhap_WrongPasswordUsesPasswordFieldError() {
         String email = "wrong@gmail.com";
         String matKhau = "wrongpass";
         String accountKey = "wrong@gmail.com";
 
         when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
         when(userDangNhapService.kiemTraDangNhap(email, matKhau))
-                .thenThrow(new RuntimeException("Email hoặc mật khẩu không chính xác!"));
+                .thenThrow(new InvalidPasswordException());
 
         Model model = new ConcurrentModel();
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        assertEquals("Mật khẩu không chính xác.", model.getAttribute("passwordError"));
+        assertEquals(email, model.getAttribute("usernameNhap"));
+        assertNull(model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("loi"));
         verify(loginRateLimiter).loginFailed(accountKey);
+    }
+
+    @Test
+    void testXuLyDangNhap_AccountNotFoundUsesUsernameFieldErrorOnly() {
+        String email = "notfound@gmail.com";
+        String matKhau = "password";
+
+        when(loginRateLimiter.isBlocked(email)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau))
+                .thenThrow(new AccountNotFoundException(email));
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Email này chưa được đăng ký.", model.getAttribute("usernameError"));
+        assertEquals(email, model.getAttribute("usernameNhap"));
+        assertNull(model.getAttribute("passwordError"));
+        assertNull(model.getAttribute("loi"));
+        verify(loginRateLimiter).loginFailed(email);
+    }
+
+    @Test
+    void testXuLyDangNhap_LockedAccountUsesFormLevelError() {
+        String email = "locked@gmail.com";
+        String matKhau = "Password1";
+
+        when(loginRateLimiter.isBlocked(email)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau))
+                .thenThrow(new AccountLockedException());
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Tài khoản của bạn đã bị khóa.", model.getAttribute("loi"));
+        assertNull(model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("passwordError"));
+        verify(loginRateLimiter).loginFailed(email);
+    }
+
+    @Test
+    void testXuLyDangNhap_UnexpectedFailureUsesSystemError() {
+        String email = "customer@gmail.com";
+        String matKhau = "Password1";
+
+        when(loginRateLimiter.isBlocked(email)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, matKhau))
+                .thenThrow(new RuntimeException("database unavailable"));
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Không thể đăng nhập lúc này. Vui lòng thử lại sau.", model.getAttribute("loi"));
+        assertNull(model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("passwordError"));
+        verify(loginRateLimiter).loginFailed(email);
     }
 
     @Test
@@ -178,7 +255,8 @@ public class UserDangNhapControllerTest {
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
+        assertEquals("Vui lòng nhập email hoặc số điện thoại.", model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("loi"));
         verifyNoInteractions(loginRateLimiter);
         verifyNoInteractions(userDangNhapService);
     }
@@ -187,35 +265,59 @@ public class UserDangNhapControllerTest {
     void testXuLyDangNhap_BlankPassword() {
         String email = "customer@gmail.com";
         String matKhau = "";
-        String accountKey = "customer@gmail.com";
-
-        when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
-
         Model model = new ConcurrentModel();
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
-        verify(loginRateLimiter).loginFailed(accountKey);
+        assertEquals("Vui lòng nhập mật khẩu.", model.getAttribute("passwordError"));
+        assertEquals(email, model.getAttribute("usernameNhap"));
+        assertNull(model.getAttribute("loi"));
+        verifyNoInteractions(loginRateLimiter);
         verifyNoInteractions(userDangNhapService);
     }
 
     @Test
     void testXuLyDangNhap_InvalidEmailFormat() {
-        String email = "invalid-email";
+        String email = "invalid@email";
         String matKhau = "password";
-        String accountKey = "invalid-email";
-
-        when(loginRateLimiter.isBlocked(accountKey)).thenReturn(false);
-        when(userDangNhapService.kiemTraDangNhap(email, matKhau)).thenThrow(new RuntimeException("Định dạng email không hợp lệ!"));
 
         Model model = new ConcurrentModel();
         String view = userDangNhapController.xuLyDangNhap(email, matKhau, request, session, model);
 
         assertEquals("signin", view);
-        assertEquals("Email hoặc mật khẩu không chính xác!", model.getAttribute("loi"));
-        verify(loginRateLimiter).loginFailed(accountKey);
-        verify(userDangNhapService).kiemTraDangNhap(email, matKhau);
+        assertEquals("Định dạng email không hợp lệ.", model.getAttribute("usernameError"));
+        assertEquals(email, model.getAttribute("usernameNhap"));
+        assertNull(model.getAttribute("loi"));
+        verifyNoInteractions(loginRateLimiter);
+        verifyNoInteractions(userDangNhapService);
+    }
+
+    @Test
+    void testXuLyDangNhap_RejectsLegacyUsernameOnCustomerPage() {
+        String username = "admin";
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(username, "Password1", request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Vui lòng nhập email hoặc số điện thoại hợp lệ.", model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("loi"));
+        verifyNoInteractions(loginRateLimiter);
+        verifyNoInteractions(userDangNhapService);
+    }
+
+    @Test
+    void testXuLyDangNhap_InvalidPhoneFormatUsesPhoneError() {
+        String phone = "012345";
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(phone, "Password1", request, session, model);
+
+        assertEquals("signin", view);
+        assertEquals("Số điện thoại Việt Nam không hợp lệ.", model.getAttribute("usernameError"));
+        assertNull(model.getAttribute("loi"));
+        verifyNoInteractions(loginRateLimiter);
+        verifyNoInteractions(userDangNhapService);
     }
 
     @Test
@@ -242,6 +344,28 @@ public class UserDangNhapControllerTest {
 
         assertEquals("redirect:/", view);
         verify(userDangNhapService).kiemTraDangNhap("customer@gmail.com", matKhau);
+    }
+
+    @Test
+    void testXuLyDangNhap_NormalizesVietnamesePhone() {
+        String phoneInput = "+84 912-345-678";
+        String normalizedPhone = "0912345678";
+        String matKhau = "password";
+
+        TaiKhoan tk = new TaiKhoan();
+        tk.setId(6);
+        tk.setUsername(normalizedPhone);
+        tk.setVaiTro("KH");
+
+        when(loginRateLimiter.isBlocked(normalizedPhone)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(normalizedPhone, matKhau)).thenReturn(tk);
+
+        Model model = new ConcurrentModel();
+        String view = userDangNhapController.xuLyDangNhap(phoneInput, matKhau, request, session, model);
+
+        assertEquals("redirect:/", view);
+        verify(userDangNhapService).kiemTraDangNhap(normalizedPhone, matKhau);
+        verify(loginRateLimiter).loginSucceeded(normalizedPhone);
     }
 
     @Test
