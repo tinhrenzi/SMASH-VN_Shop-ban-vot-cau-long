@@ -56,6 +56,33 @@ public class AdminControllerRenderTest {
     private NhanVienRepository nhanVienRepository;
 
     @Test
+    public void testDashboardRenderAndMetricsContract() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");
+
+        mockMvc.perform(get("/admin/all")
+                        .requestAttr("_csrf", csrfToken)
+                        .sessionAttr("activeRole", "QL")
+                        .sessionAttr("vaiTro", "QL"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view()
+                        .name("admin/admin-dashboard"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model()
+                        .attributeExists(
+                                "soLuongNhanVien",
+                                "soLuongTaiKhoanNhanVienOnly",
+                                "soLuongTaiKhoanQuanLy",
+                                "soLuongTaiKhoanNhanVien",
+                                "soLuongTaiKhoanKhachHang",
+                                "soLuongSanPham",
+                                "soLuongSanPhamConHang",
+                                "danhSachTaiKhoanNhanVien",
+                                "danhSachTaiKhoanKhachHang",
+                                "danhSachSanPham",
+                                "danhSachChoKhoa"));
+    }
+
+    @Test
     public void testDonHangRender() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "mock-token-value");

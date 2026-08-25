@@ -29,6 +29,8 @@ public class AdminNhanVienService {
     private static final String MSG_DUPLICATE_EMAIL = "Email đã được sử dụng.";
     private static final String MSG_DUPLICATE_USERNAME = "Tên đăng nhập đã tồn tại.";
     private static final String MSG_DUPLICATE_EMPLOYEE_ACCOUNT = "Tài khoản nhân viên đã tồn tại.";
+    private static final long LOCK_TOKEN_TTL_SECONDS = 24 * 60 * 60;
+    private static final long LOCK_TOKEN_CLOCK_SKEW_SECONDS = 5 * 60;
 
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
@@ -85,6 +87,67 @@ public class AdminNhanVienService {
                 com.smashvn.shop.util.ValidationUtils.maskPhone(nv.getSoDienThoaiNv()),
                 tk.getVaiTro(),
                 tk.getTrangThai());
+    }
+
+    private String createLockConfirmationToken() {
+        long issuedAt = java.time.Instant.now().getEpochSecond();
+        return issuedAt + "." + java.util.UUID.randomUUID();
+    }
+
+    private boolean isValidLockConfirmationToken(String providedToken, String storedToken) {
+        if (providedToken == null || storedToken == null) {
+            return false;
+        }
+
+        byte[] providedBytes = providedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] storedBytes = storedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (!java.security.MessageDigest.isEqual(providedBytes, storedBytes)) {
+            return false;
+        }
+
+        int separatorIndex = storedToken.indexOf('.');
+        if (separatorIndex <= 0) {
+            return false;
+        }
+
+        try {
+            long issuedAt = Long.parseLong(storedToken.substring(0, separatorIndex));
+            long now = java.time.Instant.now().getEpochSecond();
+            return issuedAt <= now + LOCK_TOKEN_CLOCK_SKEW_SECONDS
+                    && now - issuedAt <= LOCK_TOKEN_TTL_SECONDS;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private TaiKhoan getActingManager(Integer actingTaiKhoanId) {
+        if (actingTaiKhoanId == null) {
+            return null;
+        }
+        TaiKhoan actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
+        return actingUser != null && "QL".equals(actingUser.getVaiTro()) ? actingUser : null;
+    }
+
+    private void validatePendingLockAuthorization(
+            TaiKhoan targetAccount,
+            String token,
+            TaiKhoan actingManager,
+            String actionDescription) {
+        if (!"cho_khoa".equals(targetAccount.getTrangThai())) {
+            throw new IllegalStateException("Tài khoản này không ở trạng thái chờ khóa!");
+        }
+        if (actingManager == null && !isValidLockConfirmationToken(token, targetAccount.getTokenXacThucKhoa())) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Bạn không có quyền thực hiện " + actionDescription + " tài khoản này hoặc liên kết xác nhận đã hết hạn!");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public NhanVien getPendingLockForConfirmation(Integer id, String token, Integer actingTaiKhoanId) {
+        NhanVien nv = findById(id);
+        TaiKhoan actingManager = getActingManager(actingTaiKhoanId);
+        validatePendingLockAuthorization(nv.getTaiKhoan(), token, actingManager, "xác nhận khóa");
+        return nv;
     }
 
     private String mapDataIntegrityMessage(Exception ex) {
@@ -363,8 +426,8 @@ public class AdminNhanVienService {
             newStatus = "cho_khoa"; // Chờ phê duyệt khóa
             logMessage = "Yêu cầu khóa tài khoản nhân viên (chờ phê duyệt): " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername());
 
-            // Tạo token ngẫu nhiên khi status chuyển thành cho_khoa
-            String token = java.util.UUID.randomUUID().toString();
+            // Token có dấu thời gian, chỉ dùng được trong 24 giờ.
+            String token = createLockConfirmationToken();
             tk.setTokenXacThucKhoa(token);
 
             // Gửi email cho các admin hệ thống kèm link phê duyệt/từ chối trực tiếp
@@ -412,6 +475,8 @@ public class AdminNhanVienService {
                         + "Vui lòng nhấp vào một trong các liên kết dưới đây để thực hiện hành động:\n"
                         + "1. PHÊ DUYỆT KHÓA TÀI KHOẢN: %s/admin/nhan-vien/approve-lock/%d?token=%s\n"
                         + "2. TỪ CHỐI KHÓA TÀI KHOẢN: %s/admin/nhan-vien/reject-lock/%d?token=%s\n\n"
+                        + "Các liên kết chỉ mở trang xác nhận, không tự động thay đổi trạng thái tài khoản.\n"
+                        + "Liên kết có hiệu lực trong 24 giờ.\n"
                         + "Yêu cầu này cũng hiển thị trên bảng điều khiển quản trị (Dashboard).\n"
                         + "Trân trọng,\n"
                         + "Hệ thống Quản trị Smash VN",
@@ -427,33 +492,12 @@ public class AdminNhanVienService {
     }
 
     @Transactional
-    public void approveLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
+    public TaiKhoan approveLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
         NhanVien nv = findById(id);
-        TaiKhoan tk = nv.getTaiKhoan();
-
-        if (!"cho_khoa".equals(tk.getTrangThai())) {
-            throw new RuntimeException("Tài khoản này không ở trạng thái chờ khóa!");
-        }
-
-        // Kiểm tra quyền: phải là Quản lý đăng nhập HOẶC token phải trùng khớp
-        boolean authorized = false;
-        TaiKhoan actingUser = null;
-        if (actingTaiKhoanId != null) {
-            actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-            if (actingUser != null && "QL".equals(actingUser.getVaiTro())) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
-            if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
-            throw new RuntimeException("Bạn không có quyền thực hiện phê duyệt khóa tài khoản này!");
-        }
+        TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(nv.getTaiKhoan().getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản nhân viên!"));
+        TaiKhoan actingManager = getActingManager(actingTaiKhoanId);
+        validatePendingLockAuthorization(tk, token, actingManager, "phê duyệt khóa");
 
         String oldStateStr = formatState(nv, tk);
         tk.setTrangThai("bi_khoa");
@@ -461,41 +505,21 @@ public class AdminNhanVienService {
         taiKhoanRepository.save(tk);
         evictTaiKhoanStatusCache(tk.getId());
 
-        if (actingUser == null) {
+        if (actingManager == null) {
             auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản qua token Email", "SYSTEM_EMAIL");
         } else {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Phê duyệt khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingManager.getVaiTro());
         }
+        return tk;
     }
 
     @Transactional
-    public void rejectLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
+    public TaiKhoan rejectLock(Integer id, String token, Integer actingTaiKhoanId, String ipAddress) {
         NhanVien nv = findById(id);
-        TaiKhoan tk = nv.getTaiKhoan();
-
-        if (!"cho_khoa".equals(tk.getTrangThai())) {
-            throw new RuntimeException("Tài khoản này không ở trạng thái chờ khóa!");
-        }
-
-        // Kiểm tra quyền: phải là Quản lý đăng nhập HOẶC token phải trùng khớp
-        boolean authorized = false;
-        TaiKhoan actingUser = null;
-        if (actingTaiKhoanId != null) {
-            actingUser = taiKhoanRepository.findById(actingTaiKhoanId).orElse(null);
-            if (actingUser != null && "QL".equals(actingUser.getVaiTro())) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
-            if (token != null && token.equals(tk.getTokenXacThucKhoa())) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
-            throw new RuntimeException("Bạn không có quyền thực hiện từ chối khóa tài khoản này!");
-        }
+        TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(nv.getTaiKhoan().getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản nhân viên!"));
+        TaiKhoan actingManager = getActingManager(actingTaiKhoanId);
+        validatePendingLockAuthorization(tk, token, actingManager, "từ chối khóa");
 
         String oldStateStr = formatState(nv, tk);
         tk.setTrangThai("hoat_dong");
@@ -506,11 +530,12 @@ public class AdminNhanVienService {
         // Gửi mail thông báo từ chối khóa về các admin
         guiEmailTuChoiKhoa(nv, tk);
 
-        if (actingUser == null) {
+        if (actingManager == null) {
             auditService.log(tk.getId(), "TaiKhoan", tk.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản qua token Email", "SYSTEM_EMAIL");
         } else {
-            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingUser.getVaiTro());
+            auditService.log(actingTaiKhoanId, "NhanVien", nv.getId().longValue(), "UPDATE", oldStateStr, formatState(nv, tk), ipAddress, "Từ chối khóa tài khoản nhân viên: " + com.smashvn.shop.util.ValidationUtils.maskEmail(tk.getUsername()), actingManager.getVaiTro());
         }
+        return tk;
     }
 
     private void guiEmailTuChoiKhoa(NhanVien nv, TaiKhoan tk) {

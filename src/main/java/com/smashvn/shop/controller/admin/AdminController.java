@@ -55,17 +55,33 @@ public class AdminController {
 
     @GetMapping("/all")
     public String hienThiDashboard(Model model) {
-        java.util.List<TaiKhoan> nvAccounts = taiKhoanRepository.findByVaiTroIn(java.util.List.of("NV", "QL"));
-        java.util.List<TaiKhoan> khAccounts = taiKhoanRepository.findByVaiTro("KH");
+        java.util.List<String> employeeRoles = java.util.List.of("NV", "QL");
+        java.util.List<TaiKhoan> recentEmployeeAccounts = taiKhoanRepository
+                .findTop10ByVaiTroInOrderByIdDesc(employeeRoles);
+        java.util.List<TaiKhoan> recentCustomerAccounts = taiKhoanRepository
+                .findTop10ByVaiTroOrderByIdDesc("KH");
+        java.util.List<com.smashvn.shop.entity.SanPham> recentProducts = sanPhamRepository
+                .findTop10ByOrderByIdDesc();
+
         long employeeCount = nhanVienRepository.count();
+        long staffAccountCount = taiKhoanRepository.countByVaiTro("NV");
+        long managerAccountCount = taiKhoanRepository.countByVaiTro("QL");
+        long employeeAccountCount = taiKhoanRepository.countByVaiTroIn(employeeRoles);
+        long customerAccountCount = taiKhoanRepository.countByVaiTro("KH");
+        long productCount = sanPhamRepository.count();
+        long inStockProductCount = sanPhamRepository.countActiveProductsWithStock();
 
-        model.addAttribute("danhSachTaiKhoanNhanVien", nvAccounts);
-        model.addAttribute("danhSachTaiKhoanKhachHang", khAccounts);
+        model.addAttribute("danhSachTaiKhoanNhanVien", recentEmployeeAccounts);
+        model.addAttribute("danhSachTaiKhoanKhachHang", recentCustomerAccounts);
         model.addAttribute("soLuongNhanVien", employeeCount);
-        model.addAttribute("soLuongTaiKhoanNhanVien", nvAccounts.size());
-        model.addAttribute("soLuongTaiKhoanKhachHang", khAccounts.size());
+        model.addAttribute("soLuongTaiKhoanNhanVienOnly", staffAccountCount);
+        model.addAttribute("soLuongTaiKhoanQuanLy", managerAccountCount);
+        model.addAttribute("soLuongTaiKhoanNhanVien", employeeAccountCount);
+        model.addAttribute("soLuongTaiKhoanKhachHang", customerAccountCount);
+        model.addAttribute("soLuongSanPham", productCount);
+        model.addAttribute("soLuongSanPhamConHang", inStockProductCount);
 
-        model.addAttribute("danhSachSanPham", sanPhamRepository.findAllByOrderByIdDesc());
+        model.addAttribute("danhSachSanPham", recentProducts);
         model.addAttribute("danhSachChoKhoa", nhanVienRepository.findPendingLockEmployees());
         return "admin/admin-dashboard";
     }

@@ -18,6 +18,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
 
     List<SanPham> findAllByOrderByIdDesc();
 
+    List<SanPham> findTop10ByOrderByIdDesc();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT sp FROM SanPham sp WHERE sp.id = :id")
     Optional<SanPham> findByIdWithLock(@Param("id") Integer id);
@@ -179,6 +181,10 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
 
     @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.trangThaiValue = true AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true)")
     long countActiveProducts();
+
+    @Query("SELECT COUNT(DISTINCT sp.id) FROM SanPham sp JOIN sp.sanPhamChiTiets spct " +
+           "WHERE sp.trangThaiValue = true AND spct.trangThaiValue = true AND spct.soLuongTon > 0")
+    long countActiveProductsWithStock();
 
     @Query("SELECT sp FROM SanPham sp WHERE sp.trangThaiValue = false AND (" +
            "LOWER(sp.tenSanPham) = LOWER(:query) OR " +

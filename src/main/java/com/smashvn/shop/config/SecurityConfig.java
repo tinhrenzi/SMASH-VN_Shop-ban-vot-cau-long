@@ -21,8 +21,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/user/dang-xuat",
                         "/admin/dang-xuat",
-                        "/admin/nhan-vien/approve-lock/**",
-                        "/admin/nhan-vien/reject-lock/**",
                         "/admin/don-hang/approve-refund/**",
                         "/admin/don-hang/reject-refund/**",
                         "/api/payment/zalopay/callback",
