@@ -85,16 +85,16 @@
                                 <textarea name="moTa" class="admin-form-control form-control" rows="3" placeholder="Nhập mô tả giới thiệu chi tiết dòng sản phẩm này..." th:text="${requestDto != null ? requestDto.moTa : ''}"></textarea>
                             </div>
 
-                            <!-- SECTION 2: CẤU HÌNH ẢNH SẢN PHẨM MẶC ĐỊNH -->
-                            <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-image me-2"></i>2. Cấu Hình Ảnh &amp; Giá Mặc Định</h6>
+                            <!-- SECTION 2: CẤU HÌNH ẢNH SẢN PHẨM & GIÁ -->
+                            <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-image me-2"></i>2. Cấu Hình Ảnh Sản Phẩm &amp; Giá Bán</h6>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="admin-form-label">Hình ảnh sản phẩm gốc <span class="text-danger">*</span></label>
                                     <input type="file" name="fileAnh" class="admin-form-control form-control" accept="image/*" required>
                                 </div>
                                 <div class="col-md-6" id="boxGiaMacDinh">
-                                    <label class="admin-form-label">Giá bán mặc định <span class="text-danger">*</span></label>
-                                    <input type="number" name="giaBanDefault" id="giaBanDefault" class="admin-form-control form-control" min="1000" step="1000" value="3500000" required>
+                                    <label class="admin-form-label">Giá bán áp dụng chung <small class="text-muted fw-normal">(tùy chọn / để trống nếu nhập theo từng biến thể)</small></label>
+                                    <input type="number" name="giaBanDefault" id="giaBanDefault" class="admin-form-control form-control" min="1000" step="1000" placeholder="VD: 2500000">
                                     <input type="hidden" name="soLuongTonDefault" id="soLuongTonDefault" value="0">
                                 </div>
                             </div>
@@ -360,8 +360,8 @@
             };
 
             function createVariantRow(mauVal = "", sizeVal = "", giaNhapVal = "0", giaBanVal = "", soLuongTonVal = "0") {
-                const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "3500000") : "3500000";
-                if (!giaBanVal) giaBanVal = defGia;
+                const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "") : "";
+                if (!giaBanVal && defGia) giaBanVal = defGia;
 
                 const categoryId = selectDanhMuc ? selectDanhMuc.value : null;
                 const catType = categoryId ? (CATEGORY_TYPES[categoryId] || "OTHER") : "OTHER";
@@ -383,15 +383,15 @@
                 tr.appendChild(tdSize);
 
                 const tdGiaNhap = document.createElement("td");
-                tdGiaNhap.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" value="${giaNhapVal}">`;
+                tdGiaNhap.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="0" value="${giaNhapVal}">`;
                 tr.appendChild(tdGiaNhap);
 
                 const tdGiaBan = document.createElement("td");
-                tdGiaBan.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-ban" min="1000" step="1000" required value="${giaBanVal}">`;
+                tdGiaBan.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-ban" min="1000" step="1000" placeholder="VD: 2500000" required value="${giaBanVal}">`;
                 tr.appendChild(tdGiaBan);
 
                 const tdKho = document.createElement("td");
-                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" required value="${soLuongTonVal}">`;
+                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" placeholder="0" required value="${soLuongTonVal}">`;
                 tr.appendChild(tdKho);
 
                 const tdAction = document.createElement("td");
@@ -597,7 +597,7 @@
                 });
 
                 if (attrGroups.length > 0) {
-                    const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "3500000") : "3500000";
+                    const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "") : "";
 
                     function cartesian(args) {
                         var r = [], max = args.length - 1;
@@ -646,7 +646,7 @@
 
             if (btnAddManualRow) {
                 btnAddManualRow.addEventListener("click", function() {
-                    const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "3500000") : "3500000";
+                    const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "") : "";
                     const tr = createVariantRow("", "", "0", defGia, "0");
                     previewTbody.appendChild(tr);
                     reindexVariantRows();
@@ -666,12 +666,18 @@
                 });
 
                 previewTbody.addEventListener("input", function(e) {
+                    if (e.target && e.target.classList.contains("var-gia-ban")) {
+                        e.target.dataset.userEdited = "true";
+                    }
                     if (e.target && (e.target.classList.contains("var-mau-sac") || e.target.classList.contains("var-size-weight"))) {
                         reindexVariantRows();
                     }
                 });
 
                 previewTbody.addEventListener("change", function(e) {
+                    if (e.target && e.target.classList.contains("var-gia-ban")) {
+                        e.target.dataset.userEdited = "true";
+                    }
                     if (e.target && (e.target.classList.contains("var-mau-sac") || e.target.classList.contains("var-size-weight"))) {
                         reindexVariantRows();
                     }
