@@ -12,11 +12,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.admin.AdminNhanVienService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
 
@@ -178,12 +180,71 @@ public class AdminNhanVienController {
         }
     }
 
-    @org.springframework.web.bind.annotation.RequestMapping(value = "/approve-lock/{id}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
+    private HttpStatus resolveLockActionErrorStatus(Exception ex) {
+        if (ex instanceof org.springframework.security.access.AccessDeniedException) {
+            return HttpStatus.FORBIDDEN;
+        }
+        if (ex instanceof IllegalStateException) {
+            return HttpStatus.CONFLICT;
+        }
+        if (ex.getMessage() != null && ex.getMessage().contains("Không tìm thấy")) {
+            return HttpStatus.NOT_FOUND;
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private String showLockConfirmation(
+            Integer id,
+            String token,
+            String actionType,
+            HttpSession session,
+            Model model) {
+        try {
+            Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
+            NhanVien nv = adminNhanVienService.getPendingLockForConfirmation(id, token, actingTaiKhoanId);
+            boolean approve = "approve".equals(actionType);
+
+            model.addAttribute("nv", nv);
+            model.addAttribute("token", token == null ? "" : token);
+            model.addAttribute("actionType", actionType);
+            model.addAttribute("actionUrl", "/admin/nhan-vien/" + (approve ? "approve-lock/" : "reject-lock/") + id);
+            model.addAttribute("title", approve ? "Xác Nhận Khóa Tài Khoản" : "Xác Nhận Từ Chối Khóa");
+            model.addAttribute("message", approve
+                    ? "Thao tác này sẽ khóa tài khoản nhân viên và chặn truy cập hệ thống."
+                    : "Thao tác này sẽ hủy yêu cầu khóa và giữ tài khoản nhân viên hoạt động.");
+            return "admin/lock-confirm";
+        } catch (Exception e) {
+            model.addAttribute("success", false);
+            model.addAttribute("title", "Liên Kết Xác Nhận Không Hợp Lệ");
+            model.addAttribute("message", friendlyErrorMessage(e));
+            return "admin/confirm-result";
+        }
+    }
+
+    @GetMapping("/approve-lock/{id}")
+    public String hienThiXacNhanPheDuyetKhoa(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "token", required = false) String token,
+            HttpSession session,
+            Model model) {
+        return showLockConfirmation(id, token, "approve", session, model);
+    }
+
+    @GetMapping("/reject-lock/{id}")
+    public String hienThiXacNhanTuChoiKhoa(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "token", required = false) String token,
+            HttpSession session,
+            Model model) {
+        return showLockConfirmation(id, token, "reject", session, model);
+    }
+
+    @PostMapping("/approve-lock/{id}")
     public Object xuLyPheDuyetKhoa(
             @PathVariable("id") Integer id,
             @RequestParam(value = "token", required = false) String token,
             @RequestParam(value = "ajax", required = false) Boolean ajax,
-            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            @RequestParam(value = "returnToList", defaultValue = "false") boolean returnToList,
             HttpSession session,
             HttpServletRequest request,
             Model model,
@@ -192,13 +253,18 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.approveLock(id, token, actingTaiKhoanId, ipAddress);
+            TaiKhoan updatedAccount = adminNhanVienService.approveLock(id, token, actingTaiKhoanId, ipAddress);
             if (Boolean.TRUE.equals(ajax)) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "Đã phê duyệt khóa tài khoản thành công!"));
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Đã phê duyệt khóa tài khoản thành công!",
+                        "accountId", updatedAccount.getId(),
+                        "status", updatedAccount.getTrangThai(),
+                        "statusLabel", "Ngừng hoạt động"));
             }
-            if (redirectUrl != null && !redirectUrl.isBlank()) {
+            if (returnToList && actingTaiKhoanId != null) {
                 redirectAttributes.addFlashAttribute("success", "Đã phê duyệt khóa tài khoản thành công!");
-                return "redirect:" + redirectUrl;
+                return "redirect:/admin/nhan-vien";
             }
             model.addAttribute("success", true);
             model.addAttribute("title", "Phê Duyệt Khóa Thành Công");
@@ -207,12 +273,13 @@ public class AdminNhanVienController {
         } catch (Exception e) {
             String errorMsg = friendlyErrorMessage(e);
             if (Boolean.TRUE.equals(ajax)) {
-                return ResponseEntity.status(500).body(Map.of("success", false, "message", errorMsg));
+                return ResponseEntity.status(resolveLockActionErrorStatus(e))
+                        .body(Map.of("success", false, "message", errorMsg));
             }
-            if (redirectUrl != null && !redirectUrl.isBlank()) {
+            if (returnToList && session.getAttribute("idNguoiDung") != null) {
                 redirectAttributes.addFlashAttribute("error", errorMsg);
                 redirectAttributes.addFlashAttribute("loi", errorMsg);
-                return "redirect:" + redirectUrl;
+                return "redirect:/admin/nhan-vien";
             }
             model.addAttribute("success", false);
             model.addAttribute("title", "Lỗi Thao Tác");
@@ -221,12 +288,12 @@ public class AdminNhanVienController {
         }
     }
 
-    @org.springframework.web.bind.annotation.RequestMapping(value = "/reject-lock/{id}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
+    @PostMapping("/reject-lock/{id}")
     public Object xuLyTuChoiKhoa(
             @PathVariable("id") Integer id,
             @RequestParam(value = "token", required = false) String token,
             @RequestParam(value = "ajax", required = false) Boolean ajax,
-            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            @RequestParam(value = "returnToList", defaultValue = "false") boolean returnToList,
             HttpSession session,
             HttpServletRequest request,
             Model model,
@@ -235,13 +302,18 @@ public class AdminNhanVienController {
             Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
             String ipAddress = request.getRemoteAddr();
 
-            adminNhanVienService.rejectLock(id, token, actingTaiKhoanId, ipAddress);
+            TaiKhoan updatedAccount = adminNhanVienService.rejectLock(id, token, actingTaiKhoanId, ipAddress);
             if (Boolean.TRUE.equals(ajax)) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "Đã từ chối khóa tài khoản nhân viên."));
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Đã từ chối khóa tài khoản nhân viên.",
+                        "accountId", updatedAccount.getId(),
+                        "status", updatedAccount.getTrangThai(),
+                        "statusLabel", "Hoạt động"));
             }
-            if (redirectUrl != null && !redirectUrl.isBlank()) {
+            if (returnToList && actingTaiKhoanId != null) {
                 redirectAttributes.addFlashAttribute("success", "Đã từ chối khóa tài khoản nhân viên. Trạng thái hoạt động của nhân viên được giữ nguyên.");
-                return "redirect:" + redirectUrl;
+                return "redirect:/admin/nhan-vien";
             }
             model.addAttribute("success", true);
             model.addAttribute("title", "Từ Chối Khóa Thành Công");
@@ -250,12 +322,13 @@ public class AdminNhanVienController {
         } catch (Exception e) {
             String errorMsg = friendlyErrorMessage(e);
             if (Boolean.TRUE.equals(ajax)) {
-                return ResponseEntity.status(500).body(Map.of("success", false, "message", errorMsg));
+                return ResponseEntity.status(resolveLockActionErrorStatus(e))
+                        .body(Map.of("success", false, "message", errorMsg));
             }
-            if (redirectUrl != null && !redirectUrl.isBlank()) {
+            if (returnToList && session.getAttribute("idNguoiDung") != null) {
                 redirectAttributes.addFlashAttribute("error", errorMsg);
                 redirectAttributes.addFlashAttribute("loi", errorMsg);
-                return "redirect:" + redirectUrl;
+                return "redirect:/admin/nhan-vien";
             }
             model.addAttribute("success", false);
             model.addAttribute("title", "Lỗi Thao Tác");

@@ -14,7 +14,8 @@
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Admin Custom CSS -->
-    <link rel="stylesheet" th:href="@{/css/admin-custom.css(v='2.1')}">
+    <link rel="stylesheet" th:href="@{/css/admin-custom.css(v='2.4')}">
+    <script th:src="@{/js/admin-layout-state.js(v='1.0')}"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -630,6 +631,7 @@
         let paymentPollErrorCount = 0;
         let currentCheckoutHoaDonId = null;
         let currentCheckoutMaHoaDon = null;
+        let searchAbortController = null;
 
         function getProductImageUrl(hinhAnh) {
             if (!hinhAnh || hinhAnh === 'product9.jpg' || hinhAnh === 'default.jpg' || hinhAnh.trim() === '') {
@@ -658,7 +660,6 @@
             }
 
             let searchDebounceTimer = null;
-            let searchAbortController = null;
 
             const searchInput = document.getElementById("productSearchInput");
             if (searchInput) {
@@ -696,7 +697,13 @@
                 grid.innerHTML = `<div class="text-center text-muted py-5" style="grid-column: 1 / -1;"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><p class="mb-0">Đang tải sản phẩm...</p></div>`;
             }
             posCurrentPage = 0;
-            fetch(`/admin/pos/search-products?q=${encodeURIComponent(query)}&danhMucId=${categoryId}&thuongHieuId=${brandId}`)
+            if (searchAbortController) searchAbortController.abort();
+            const requestController = new AbortController();
+            searchAbortController = requestController;
+
+            fetch(`/admin/pos/search-products?q=${encodeURIComponent(query)}&danhMucId=${categoryId}&thuongHieuId=${brandId}`, {
+                signal: requestController.signal
+            })
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     return res.json();
@@ -706,11 +713,15 @@
                     renderProductGrid();
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
                     console.error("Lỗi tải sản phẩm: ", err);
                     allVariants = [];
                     if (grid) {
                         grid.innerHTML = `<div class="text-center text-danger py-5" style="grid-column: 1 / -1;"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p class="mb-1 fw-bold">Không tải được danh sách sản phẩm.</p><button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="refreshProducts()">Thử lại</button></div>`;
                     }
+                })
+                .finally(() => {
+                    if (searchAbortController === requestController) searchAbortController = null;
                 });
         }
 
@@ -1588,6 +1599,12 @@
             document.getElementById("voucherStatus").innerHTML = "";
             document.getElementById("orderNote").value = "";
             document.getElementById("productSearchInput").value = "";
+            if (typeof window.syncAdminGlobalProductSearch === 'function') {
+                window.syncAdminGlobalProductSearch('');
+            }
+            if (typeof window.updateAdminProductSearchUrl === 'function') {
+                window.updateAdminProductSearchUrl('');
+            }
             document.getElementById("filterCategory").value = "-1";
             document.getElementById("filterBrand").value = "-1";
             selectGuestCustomer();
@@ -1637,6 +1654,6 @@
     <!-- Bootstrap 5.3.0 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Admin Layout JS -->
-    <script th:src="@{/js/admin-layout.js(v='2.1')}"></script>
+    <script th:src="@{/js/admin-layout.js(v='2.4')}"></script>
 </body>
 </html>
