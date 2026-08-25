@@ -115,11 +115,13 @@
                                         <div class="col-md-6">
                                             <label for="ngayBatDau" class="admin-form-label">Hiệu Lực Từ Ngày <span class="text-danger">*</span></label>
                                             <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${ngayBatDau}" class="admin-form-control form-control" required>
+                                            <div class="form-text">Thời gian bắt đầu áp dụng voucher (không được trong quá khứ).</div>
                                         </div>
 
                                         <div class="col-md-6">
                                             <label for="ngayKetThuc" class="admin-form-label">Hết Hạn Vào Ngày <span class="text-danger">*</span></label>
                                             <input type="datetime-local" id="ngayKetThuc" name="ngayKetThuc" th:value="${ngayKetThuc}" class="admin-form-control form-control" required>
+                                            <div class="form-text">Thời điểm hết hạn của voucher (phải sau ngày bắt đầu).</div>
                                         </div>
 
                                         <div class="col-12 mt-4 pt-3 border-top d-flex justify-content-end gap-2">
@@ -251,6 +253,15 @@
 
                 const ngayBatDau = new Date(ngayBatDauStr);
                 const ngayKetThuc = new Date(ngayKetThucStr);
+                const now = new Date(Date.now() - 60000); // 1 phút buffer
+
+                if (ngayBatDau < now) {
+                    e.preventDefault();
+                    showToast('Thời gian bắt đầu không được nằm trong quá khứ!', 'warning');
+                    document.getElementById('ngayBatDau').focus();
+                    return;
+                }
+
                 if (ngayBatDau >= ngayKetThuc) {
                     e.preventDefault();
                     showToast('Ngày bắt đầu phải xảy ra trước ngày kết thúc!', 'warning');

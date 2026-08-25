@@ -402,7 +402,9 @@ public class AdminPosService {
 
         // 9. Ghi nhật ký kiểm toán
         String ptLabel = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt";
-        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null, null, clientIp,
+        String initialStatus = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? OrderStatus.CHO_THANH_TOAN.getValue() : OrderStatus.DA_GIAO.getValue();
+        auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "INSERT", null,
+                "status=" + initialStatus + ", paymentStatus=" + hd.getPaymentStatus() + ", trangThaiThanhToan=" + hd.getTrangThaiThanhToan(), clientIp,
                 "Thanh toán POS - " + ptLabel + " - Tổng tiền: " + tongTienCuoi + " đ (Mã: " + hd.getMaDonHang() + ")", nvTk.getVaiTro());
 
         return hd;
@@ -430,7 +432,7 @@ public class AdminPosService {
         hoaDonRepository.save(hd);
 
         auditService.log(nvTk.getId(), "HoaDon", Long.valueOf(hd.getId()), "UPDATE",
-                OrderStatus.CHO_THANH_TOAN.getValue(), OrderStatus.DA_GIAO.getValue(), "127.0.0.1",
+                "status=" + OrderStatus.CHO_THANH_TOAN.getValue(), "status=" + OrderStatus.DA_GIAO.getValue(), "127.0.0.1",
                 "Nhân viên xác nhận thanh toán chuyển khoản thủ công cho đơn POS. Mã: " + hd.getMaDonHang(), nvTk.getVaiTro());
     }
 

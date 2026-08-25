@@ -147,15 +147,16 @@ public class AdminKhuyenMaiService {
         if (sanitizedTen.length() < 2 || sanitizedTen.length() > 100) {
             throw new PromotionValidationException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
         }
-        // 3. Validation ngày
-        validateCampaignDates(start, end);
 
-        // 4. Validation % giảm
+        // 2. Validation ngày (không cho chọn thời gian bắt đầu trong quá khứ khi tạo mới)
+        validateCampaignDates(start, end, false);
+
+        // 3. Validation % giảm
         if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
             throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
 
-        // 5. Resolve danh sách sản phẩm theo kiểu áp dụng
+        // 4. Resolve danh sách sản phẩm theo kiểu áp dụng
         ApDungKieu kieuApDung = ApDungKieu.fromString(kieuApDungStr);
         List<Integer> finalProductIds;
         if (kieuApDung == ApDungKieu.PRICE_RANGE) {
@@ -176,16 +177,16 @@ public class AdminKhuyenMaiService {
             finalProductIds = productIds;
         }
 
-        // 6. Kiểm tra không chồng đợt giảm giá lên nhau (cùng sản phẩm, cùng thời gian)
+        // 5. Kiểm tra không chồng đợt giảm giá lên nhau (cùng sản phẩm, cùng thời gian)
         checkCampaignOverlaps(finalProductIds, start, end, null);
 
-        // 7. Lấy thông tin nhân viên thực hiện
+        // 6. Lấy thông tin nhân viên thực hiện
         NhanVien nv = nhanVienRepository.findByTaiKhoanId(actingTaiKhoanId);
         if (nv == null) {
             throw new PromotionValidationException("Tài khoản đang thực hiện không có thông tin nhân viên!");
         }
 
-        // 8. Tạo và lưu entity
+        // 7. Tạo và lưu entity
         DotGiamGia dgg = new DotGiamGia();
         dgg.setTenChienDich(sanitizedTen);
         dgg.setNgayBatDau(start);
@@ -267,7 +268,7 @@ public class AdminKhuyenMaiService {
             throw new PromotionValidationException("Tên chiến dịch phải có độ dài từ 2 đến 100 ký tự!");
         }
 
-        validateCampaignDates(start, end);
+        validateCampaignDates(start, end, true);
         if (phanTramGiam == null || phanTramGiam < 1 || phanTramGiam > PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT) {
             throw new PromotionValidationException("Phần trăm giảm giá phải nằm trong khoảng từ 1% đến " + PromotionValidationConstants.MAX_CAMPAIGN_DISCOUNT_PERCENT + "%!");
         }
@@ -463,11 +464,14 @@ public class AdminKhuyenMaiService {
         return result;
     }
 
-    private void validateCampaignDates(LocalDateTime start, LocalDateTime end) {
+    private void validateCampaignDates(LocalDateTime start, LocalDateTime end, boolean isUpdate) {
         if (start == null || end == null) {
             throw new PromotionValidationException("Thời gian bắt đầu và kết thúc không được để trống!");
         }
-        if (start.isAfter(end) || start.isEqual(end)) {
+        if (!isUpdate && start.isBefore(LocalDateTime.now().minusMinutes(2))) {
+            throw new PromotionValidationException("Thời gian bắt đầu không được nằm trong quá khứ!");
+        }
+        if (!end.isAfter(start)) {
             throw new PromotionValidationException("Ngày bắt đầu phải trước ngày kết thúc!");
         }
     }
@@ -617,7 +621,7 @@ public class AdminKhuyenMaiService {
         // Chuẩn hóa mã phiếu: luôn in hoa để nhất quán khi so sánh
         String uppercaseCode = maPhieu.trim().toUpperCase();
 
-        // 1. Validate toàn bộ đầu vào (isUpdate = false → số lượng phải > 0)
+        // 1. Validate toàn bộ đầu vào (isUpdate = false → số lượng phải > 0, ngày bắt đầu không trong quá khứ)
         validateVoucherInputs(uppercaseCode, giaTri, donVi, start, end, soLuongConLai, giaTriDonHangToiThieu, loaiGiamGia, giaTriGiamToiDa, false);
 
         // 2. Kiểm tra mã phiếu không trùng với phiếu nào đã tồn tại
@@ -900,9 +904,12 @@ public class AdminKhuyenMaiService {
 
         // Validate ngày
         if (start == null || end == null) {
-            throw new PromotionValidationException("Ngày bắt đầu và ngày kết thúc không được để trống!");
+            throw new PromotionValidationException("Thời gian bắt đầu và kết thúc không được để trống!");
         }
-        if (start.isAfter(end) || start.isEqual(end)) {
+        if (!isUpdate && start.isBefore(LocalDateTime.now().minusMinutes(2))) {
+            throw new PromotionValidationException("Thời gian bắt đầu không được nằm trong quá khứ!");
+        }
+        if (!end.isAfter(start)) {
             throw new PromotionValidationException("Ngày bắt đầu phải trước ngày kết thúc!");
         }
 

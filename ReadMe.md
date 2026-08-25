@@ -1,5 +1,20 @@
+# SMASH-VN — Hệ thống bán vợt cầu lông
 
-## 🌐Socials
+SMASH-VN là website demo hỗ trợ kinh doanh các sản phẩm cầu lông. Hệ thống cung cấp các chức năng cơ bản cho khách hàng như xem và tìm kiếm sản phẩm, quản lý giỏ hàng, đặt hàng, áp dụng khuyến mãi và theo dõi đơn hàng; đồng thời hỗ trợ phía quản trị quản lý sản phẩm, tồn kho, đơn hàng, khách hàng, khuyến mãi, bán hàng tại quầy (POS) và báo cáo doanh thu.
+
+## Trạng thái dự án
+
+> [!IMPORTANT]
+> Đây là dự án mang tính chất **demo/phục vụ học tập** và **chưa được áp dụng vào thực tế**. Không sử dụng hệ thống trong môi trường vận hành hoặc cho giao dịch thực tế khi chưa được kiểm thử, hoàn thiện bảo mật và triển khai phù hợp.
+
+## Tác giả
+
+Dự án được xây dựng và phát triển bởi:
+
+- **LuongHiep334**
+- **Tinhrenzi**
+
+## 🌐 Socials
 [![Discord](https://img.shields.io/badge/Discord-%237289DA.svg?logo=discord&logoColor=white)](htttps://discord.gg/tinhxuannn) [![Facebook](https://img.shields.io/badge/Facebook-%231877F2.svg?logo=Facebook&logoColor=white)](https://facebook.com/TinhXuannn) [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/TinhXuannn) 
 
 # 💻Tech Stack

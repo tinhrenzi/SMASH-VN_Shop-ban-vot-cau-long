@@ -449,7 +449,7 @@
                                                 </div>
                                                 <div class="col-4">
                                                     <label class="admin-form-label">Số lượng kho <span class="text-danger">*</span></label>
-                                                    <input type="number" name="soLuongTon" class="admin-form-control form-control" required min="0" value="10">
+                                                    <input type="number" name="soLuongTon" class="admin-form-control form-control" required min="0" placeholder="VD: 10">
                                                 </div>
                                             </div>
 
@@ -519,8 +519,7 @@
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-info text-white py-2">
                     <h6 class="modal-title fw-bold" id="modalLichSuBienTheLabel">
-                        <i class="fas fa-history me-2"></i>Lịch Sử Đợt Nhập Hàng:
-                        <span id="modalBienTen_tenBT" class="fw-normal ms-1">--</span>
+                        <i class="fas fa-history me-2"></i>Lịch Sử Đợt Nhập Hàng<span id="modalBienTen_colon" style="display: none;">: </span><span id="modalBienTen_tenBT" class="fw-normal"></span>
                     </h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -690,7 +689,7 @@
                                 <td class="text-center">${idx + 1}</td>
                                 <td>
                                     <strong class="d-block text-dark">${item.tenSanPham || ''}</strong>
-                                    <small class="text-muted">${item.phanLoaiHienThi || ''}</small>
+                                    <small class="text-muted">${(item.phanLoaiHienThi && item.phanLoaiHienThi !== 'Mặc định') ? item.phanLoaiHienThi : ''}</small>
                                 </td>
                                 <td class="text-center fw-semibold">${item.soLuong || 0}</td>
                                 <td class="text-end">${Number(price).toLocaleString('vi-VN')} đ</td>
@@ -1059,10 +1058,19 @@
 
             // Lấy tên biến thể từ bảng (ô phân loại cùng hàng)
             const row = btn.closest('tr');
-            const tenBT = row ? (row.querySelector('td strong') || {}).textContent || ('Biến thể #' + btId) : ('Biến thể #' + btId);
+            const rawTenBT = row ? ((row.querySelector('td strong') || {}).textContent || '').trim() : '';
+            const tenBT = (rawTenBT && rawTenBT !== 'Mặc định' && rawTenBT !== '—' && rawTenBT !== '--' && !rawTenBT.startsWith('Biến thể #')) ? rawTenBT : '';
 
-            // Điền tên vào header modal
-            document.getElementById('modalBienTen_tenBT').textContent = tenBT;
+            // Điền tên vào header modal (ẩn nếu không có phân loại cụ thể / là Mặc định)
+            const colonEl = document.getElementById('modalBienTen_colon');
+            const tenBTEl = document.getElementById('modalBienTen_tenBT');
+            if (tenBT) {
+                if (colonEl) colonEl.style.display = 'inline';
+                if (tenBTEl) tenBTEl.textContent = tenBT;
+            } else {
+                if (colonEl) colonEl.style.display = 'none';
+                if (tenBTEl) tenBTEl.textContent = '';
+            }
 
             // Điền giá bán & tồn kho ngay từ data attribute (không cần đợi AJAX)
             document.getElementById('modalBT_giaBan').textContent = giaBanRaw

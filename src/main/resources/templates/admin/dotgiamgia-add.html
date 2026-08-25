@@ -97,7 +97,7 @@
                                         <div class="col-md-6">
                                             <label for="ngayBatDau" class="admin-form-label">Ngày &amp; Giờ Bắt Đầu <span class="text-danger">*</span></label>
                                             <input type="datetime-local" id="ngayBatDau" name="ngayBatDau" th:value="${ngayBatDau}" class="admin-form-control form-control" required>
-                                            <div class="helper-text">Ngày giờ bắt đầu áp dụng chương trình.</div>
+                                            <div class="helper-text">Ngày giờ bắt đầu áp dụng chương trình (không được trong quá khứ).</div>
                                         </div>
 
                                         <div class="col-md-6">
@@ -400,6 +400,15 @@
 
                 const ngayBatDau = new Date(ngayBatDauStr);
                 const ngayKetThuc = new Date(ngayKetThucStr);
+                const now = new Date(Date.now() - 60000); // 1 phút buffer
+
+                if (ngayBatDau < now) {
+                    e.preventDefault();
+                    showToast('Thời gian bắt đầu không được nằm trong quá khứ!', 'warning');
+                    document.getElementById('ngayBatDau').focus();
+                    return;
+                }
+
                 if (ngayBatDau >= ngayKetThuc) {
                     e.preventDefault();
                     showToast('Ngày bắt đầu phải xảy ra trước ngày kết thúc!', 'warning');

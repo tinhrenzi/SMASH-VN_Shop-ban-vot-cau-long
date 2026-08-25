@@ -1184,22 +1184,23 @@ public class OrderViewService {
             for (com.smashvn.shop.entity.EditLog log : logs) {
                 String giaTriMoi = log.getGiaTriMoi();
                 if (giaTriMoi != null) {
-                    if (giaTriMoi.contains("status=da_xac_nhan") || giaTriMoi.contains("trangThaiDonHang=da_xac_nhan")) {
+                    String lower = giaTriMoi.toLowerCase();
+                    if (lower.contains("da_xac_nhan")) {
                         times.putIfAbsent("da_xac_nhan", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=dang_lay_hang") || giaTriMoi.contains("trangThaiDonHang=dang_lay_hang")) {
+                    if (lower.contains("dang_lay_hang")) {
                         times.putIfAbsent("dang_lay_hang", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=dang_giao") || giaTriMoi.contains("trangThaiDonHang=dang_giao")) {
+                    if (lower.contains("dang_giao")) {
                         times.putIfAbsent("dang_giao", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=da_giao") || giaTriMoi.contains("trangThaiDonHang=da_giao")) {
+                    if (lower.contains("da_giao") || lower.contains("delivered")) {
                         times.putIfAbsent("da_giao", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=hoan_thanh") || giaTriMoi.contains("trangThaiDonHang=hoan_thanh")) {
+                    if (lower.contains("hoan_thanh")) {
                         times.putIfAbsent("hoan_thanh", log.getThoiGian());
                     }
-                    if (giaTriMoi.contains("status=da_huy") || giaTriMoi.contains("trangThaiDonHang=da_huy")) {
+                    if (lower.contains("da_huy") || lower.contains("cancelled")) {
                         times.putIfAbsent("da_huy", log.getThoiGian());
                     }
                 }
@@ -1902,7 +1903,21 @@ public class OrderViewService {
         if (hd == null || hd.getId() == null) {
             return null;
         }
-        // Authoritative EditLog transition to da_giao or customer-confirmed hoan_thanh
+
+        // 1. Đối với đơn hàng bán tại quầy (POS - có nhân viên hoặc mã HDSVN):
+        // Hàng được giao ngay tại quầy khi thanh toán thành công
+        boolean isPosOrder = (hd.getNhanVien() != null) || (hd.getMaDonHang() != null && hd.getMaDonHang().startsWith("HDSVN"));
+        if (isPosOrder) {
+            String st = hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang().toLowerCase() : "";
+            if ("da_giao".equals(st) || "hoan_thanh".equals(st) || "delivered".equals(st) || "da_thanh_toan".equals(st)) {
+                if (hd.getThoiGianXacNhan() != null) return hd.getThoiGianXacNhan();
+                if (hd.getPaidAt() != null) return hd.getPaidAt();
+                if (hd.getNgayThanhToan() != null) return hd.getNgayThanhToan();
+                if (hd.getNgayTao() != null) return hd.getNgayTao();
+            }
+        }
+
+        // 2. Authoritative EditLog transition to da_giao or customer-confirmed hoan_thanh
         Map<String, LocalDateTime> times = getStatusTransitionTimes(hd.getId());
         if (times != null) {
             if (times.get("da_giao") != null) {
@@ -1912,7 +1927,8 @@ public class OrderViewService {
                 return times.get("hoan_thanh");
             }
         }
-        // Strictly return null if no delivery record exists. NEVER fall back to ngayThanhToan, paidAt, or thoiGianXacNhan.
+
+        // Đơn hàng Online chưa có bản ghi xác nhận giao hàng thực tế trong EditLog -> không tính được hạn
         return null;
     }
 

@@ -111,10 +111,20 @@ public class AdminKhuyenMaiServiceTest {
                 List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
         ));
 
+        // Create second product so there is no conflict on the same product
+        SanPham sp2 = new SanPham();
+        sp2.setTenSanPham("Test San Pham Promo 2 " + UUID.randomUUID().toString().substring(0, 8));
+        sp2.setTrangThai("dang_ban");
+        sp2.setMoTa("Test description 2");
+        sp2.setDanhMuc(testSanPham.getDanhMuc());
+        sp2.setThuongHieu(testSanPham.getThuongHieu());
+        sp2.setNhanVien(testSanPham.getNhanVien());
+        sp2 = sanPhamRepository.save(sp2);
+
         // Boundary 40: phanTramGiam = 40
         assertNotNull(adminKhuyenMaiService.createDotGiamGia(
                 "Super Sale 40", startTime.plusDays(10), endTime.plusDays(10), 40, "Theo Phần Trăm",
-                List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
+                List.of(sp2.getId()), testTaiKhoan.getId(), "127.0.0.1"
         ));
     }
 
@@ -481,5 +491,70 @@ public class AdminKhuyenMaiServiceTest {
                     testTaiKhoan.getId(), "127.0.0.1"
             );
         });
+    }
+
+    // =========================================================================
+    // 7. NEW TIMING RULE TESTS ("TẠO LÀ BẮT ĐẦU NGAY")
+    // =========================================================================
+
+    // =========================================================================
+    // 7. TIMING RULE TESTS ("KHÔNG CHO CHỌN THỜI GIAN TRONG QUÁ KHỨ")
+    // =========================================================================
+
+    @Test
+    void testCampaignTiming_RejectPastStartDate() {
+        // Start in past -> REJECT
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.createDotGiamGia(
+                    "Past Start Campaign", LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(2), 20, "Theo Phần Trăm",
+                    List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
+            );
+        });
+    }
+
+    @Test
+    void testCampaignTiming_RejectEndDateBeforeStartDate() {
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.createDotGiamGia(
+                    "End Before Start Campaign", LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(1), 20, "Theo Phần Trăm",
+                    List.of(testSanPham.getId()), testTaiKhoan.getId(), "127.0.0.1"
+            );
+        });
+    }
+
+    @Test
+    void testVoucherTiming_RejectPastStartDate() {
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.createPhieuGiamGia(
+                    "VOUCHER_PAST_START", new BigDecimal("50000"), "VND",
+                    LocalDateTime.now().minusDays(2), LocalDateTime.now().plusDays(3), 20,
+                    BigDecimal.ZERO, "Giảm trực tiếp", null, testTaiKhoan.getId(), "127.0.0.1"
+            );
+        });
+    }
+
+    @Test
+    void testVoucherTiming_RejectEndDateBeforeStartDate() {
+        assertThrows(PromotionValidationException.class, () -> {
+            adminKhuyenMaiService.createPhieuGiamGia(
+                    "VOUCHER_END_BEFORE_START", new BigDecimal("50000"), "VND",
+                    LocalDateTime.now().plusDays(3), LocalDateTime.now().plusDays(1), 20,
+                    BigDecimal.ZERO, "Giảm trực tiếp", null, testTaiKhoan.getId(), "127.0.0.1"
+            );
+        });
+    }
+
+    @Test
+    void testVoucherTiming_ValidFutureDates() {
+        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(5);
+        PhieuGiamGia voucher = adminKhuyenMaiService.createPhieuGiamGia(
+                "VOUCHER_VALID_DATES", new BigDecimal("20"), "%",
+                start, end, 20,
+                BigDecimal.ZERO, "Giảm phần trăm", new BigDecimal("50000"), testTaiKhoan.getId(), "127.0.0.1"
+        );
+        assertNotNull(voucher);
+        assertEquals(start, voucher.getNgayBatDau());
+        assertEquals(end, voucher.getNgayKetThuc());
     }
 }

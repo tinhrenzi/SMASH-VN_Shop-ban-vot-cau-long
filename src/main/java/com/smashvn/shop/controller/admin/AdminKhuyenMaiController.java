@@ -147,7 +147,7 @@ public class AdminKhuyenMaiController {
     @PostMapping("/dot-giam-gia/them")
     public String processThemDotGiamGia(
             @RequestParam("tenChienDich") String tenChienDich,
-            @RequestParam("ngayBatDau") String ngayBatDauStr,
+            @RequestParam(value = "ngayBatDau", required = false) String ngayBatDauStr,
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("phanTramGiam") String phanTramGiamStr,
             @RequestParam("loaiGiamGia") String loaiGiamGia,
@@ -258,7 +258,7 @@ public class AdminKhuyenMaiController {
     public String processSuaDotGiamGia(
             @PathVariable("id") Integer id,
             @RequestParam("tenChienDich") String tenChienDich,
-            @RequestParam("ngayBatDau") String ngayBatDauStr,
+            @RequestParam(value = "ngayBatDau", required = false) String ngayBatDauStr,
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("phanTramGiam") String phanTramGiamStr,
             @RequestParam("loaiGiamGia") String loaiGiamGia,
@@ -393,7 +393,7 @@ public class AdminKhuyenMaiController {
             @RequestParam("maPhieu") String maPhieu,
             @RequestParam("giaTri") String giaTriStr,
             @RequestParam("donVi") String donVi,
-            @RequestParam("ngayBatDau") String ngayBatDauStr,
+            @RequestParam(value = "ngayBatDau", required = false) String ngayBatDauStr,
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("soLuongConLai") String soLuongConLaiStr,
             @RequestParam(value = "giaTriDonHangToiThieu", required = false) String giaTriDonHangToiThieuStr,
@@ -485,7 +485,7 @@ public class AdminKhuyenMaiController {
             @RequestParam("maPhieu") String maPhieu,
             @RequestParam("giaTri") String giaTriStr,
             @RequestParam("donVi") String donVi,
-            @RequestParam("ngayBatDau") String ngayBatDauStr,
+            @RequestParam(value = "ngayBatDau", required = false) String ngayBatDauStr,
             @RequestParam("ngayKetThuc") String ngayKetThucStr,
             @RequestParam("soLuongConLai") String soLuongConLaiStr,
             @RequestParam(value = "giaTriDonHangToiThieu", required = false) String giaTriDonHangToiThieuStr,

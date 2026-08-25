@@ -359,7 +359,7 @@
                 updatePreview();
             };
 
-            function createVariantRow(mauVal = "", sizeVal = "", giaNhapVal = "0", giaBanVal = "", soLuongTonVal = "0") {
+            function createVariantRow(mauVal = "", sizeVal = "", giaNhapVal = "", giaBanVal = "", soLuongTonVal = "") {
                 const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "") : "";
                 if (!giaBanVal && defGia) giaBanVal = defGia;
 
@@ -383,7 +383,7 @@
                 tr.appendChild(tdSize);
 
                 const tdGiaNhap = document.createElement("td");
-                tdGiaNhap.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="0" value="${giaNhapVal}">`;
+                tdGiaNhap.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="VD: 1800000" value="${giaNhapVal}">`;
                 tr.appendChild(tdGiaNhap);
 
                 const tdGiaBan = document.createElement("td");
@@ -391,7 +391,7 @@
                 tr.appendChild(tdGiaBan);
 
                 const tdKho = document.createElement("td");
-                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" placeholder="0" required value="${soLuongTonVal}">`;
+                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" placeholder="VD: 10" required value="${soLuongTonVal}">`;
                 tr.appendChild(tdKho);
 
                 const tdAction = document.createElement("td");
