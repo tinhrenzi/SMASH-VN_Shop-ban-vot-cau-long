@@ -264,7 +264,10 @@
                                                             </td>
                                                             <td>
                                                                 <span class="manage-o__badge" 
-                                                                      th:classappend="${order.rawStatus == 'cho_thanh_toan' ? 'badge--pending' :
+                                                                      th:classappend="${order.trangThaiHoanHang == 'REFUNDED' or order.trangThaiHoanHang == 'RETURNED' or order.trangThaiHoanHang == 'EXCHANGED' ? 'badge--delivered' :
+                                                                                      (order.trangThaiHoanHang == 'REJECTED' ? 'badge--cancelled' :
+                                                                                      (order.trangThaiHoanHang != null ? 'badge--processing' :
+                                                                                      (order.rawStatus == 'cho_thanh_toan' ? 'badge--pending' :
                                                                                       (order.rawStatus == 'cho_xac_nhan'  ? 'badge--processing' :
                                                                                       (order.rawStatus == 'da_xac_nhan'   ? 'badge--confirmed' :
                                                                                       (order.rawStatus == 'dang_chuan_bi_hang' ? 'badge--processing' :
@@ -275,8 +278,13 @@
                                                                                       (order.rawStatus == 'dang_giao'     ? 'badge--shipping' :
                                                                                       (order.rawStatus == 'da_giao'       ? 'badge--delivered' :
                                                                                       (order.rawStatus == 'da_huy'        ? 'badge--cancelled' :
-                                                                                      (order.rawStatus == 'stock_conflict'? 'badge--conflict'  : 'badge--processing')))))))))))}" 
-                                                                      th:text="${order.rawStatus == 'cho_thanh_toan' ? 'Chờ thanh toán' :
+                                                                                      (order.rawStatus == 'stock_conflict'? 'badge--conflict'  : 'badge--processing'))))))))))))))}" 
+                                                                      th:text="${order.trangThaiHoanHang == 'REFUNDED' ? 'Đã Hoàn Tiền' :
+                                                                                (order.trangThaiHoanHang == 'RETURNED' ? 'Đã Trả Hàng' :
+                                                                                (order.trangThaiHoanHang == 'EXCHANGED' ? 'Đã Đổi Hàng' :
+                                                                                (order.trangThaiHoanHang == 'REJECTED' ? 'Từ Chối Trả Hàng' :
+                                                                                (order.trangThaiHoanHang != null ? ('Trả hàng: ' + order.trangThaiHoanHangLabel) :
+                                                                                (order.rawStatus == 'cho_thanh_toan' ? 'Chờ thanh toán' :
                                                                                 (order.rawStatus == 'cho_xac_nhan'  ? 'Chờ xác nhận' :
                                                                                 (order.rawStatus == 'da_xac_nhan'   ? 'Đã xác nhận' :
                                                                                 (order.rawStatus == 'dang_chuan_bi_hang' ? 'Đang chuẩn bị hàng' :
@@ -287,7 +295,7 @@
                                                                                 (order.rawStatus == 'dang_giao'     ? 'Đang giao' :
                                                                                 (order.rawStatus == 'da_giao'       ? 'Đã giao' :
                                                                                 (order.rawStatus == 'da_huy'        ? 'Đã hủy' :
-                                                                                (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus)))))))))))}"
+                                                                                (order.rawStatus == 'stock_conflict'? 'Trùng kho' : order.rawStatus))))))))))))))))}"
                                                                 >Đang xử lý</span>
                                                             </td>
                                                              <td class="text-center" style="white-space: nowrap;">

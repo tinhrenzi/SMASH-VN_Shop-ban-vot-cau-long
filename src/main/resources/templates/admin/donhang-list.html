@@ -114,7 +114,7 @@
                         <ul class="nav nav-tabs border-bottom-0" id="orderTypeTabs" role="tablist">
                             <li class="nav-item text-nowrap" role="presentation">
                                 <button class="nav-link active fw-bold px-3 py-2" id="online-tab" data-bs-toggle="tab"
-                                    data-bs-target="#online-orders" type="button" role="tab"
+                                    data-bs-target="#online-orders" data-tab-name="online" type="button" role="tab"
                                     aria-controls="online-orders" aria-selected="true">
                                     <i class="fas fa-globe me-2"></i>Bán Online
                                     <span class="admin-status admin-status-info ms-1"
@@ -123,7 +123,7 @@
                             </li>
                             <li class="nav-item text-nowrap" role="presentation">
                                 <button class="nav-link fw-bold px-3 py-2" id="pos-tab" data-bs-toggle="tab"
-                                    data-bs-target="#pos-orders" type="button" role="tab" aria-controls="pos-orders"
+                                    data-bs-target="#pos-orders" data-tab-name="pos" type="button" role="tab" aria-controls="pos-orders"
                                     aria-selected="false">
                                     <i class="fas fa-desktop me-2"></i>Bán hàng tại quầy
                                     <span class="admin-status admin-status-info ms-1"
@@ -132,7 +132,7 @@
                             </li>
                             <li class="nav-item text-nowrap" role="presentation">
                                 <button class="nav-link fw-bold px-3 py-2" id="return-tab" data-bs-toggle="tab"
-                                    data-bs-target="#return-orders" type="button" role="tab"
+                                    data-bs-target="#return-orders" data-tab-name="return" type="button" role="tab"
                                     aria-controls="return-orders" aria-selected="false">
                                     <i class="fas fa-undo me-2"></i>Đơn Hoàn Trả
                                     <span class="admin-status admin-status-warning ms-1"
@@ -170,9 +170,9 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr th:each="hd, iterStat : ${danhSachDonHangOnline}">
+                                            <tr th:each="hd, iterStat : ${danhSachDonHangOnline}" th:id="'order-row-' + ${hd.id}" th:data-order-id="${hd.id}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
-                                                <td class="text-nowrap">
+                                                <td class="text-nowrap order-code-cell">
                                                      <div class="d-inline-flex align-items-center gap-1">
                                                          <code class="text-dark order-code-text fw-bold me-1"
                                                              style="font-size: 0.85rem; cursor: pointer;"
@@ -189,7 +189,7 @@
                                                          </button>
                                                      </div>
                                                      <div th:if="${hd.ghnOrderCode != null &amp;&amp; !#strings.isEmpty(hd.ghnOrderCode)}"
-                                                          class="mt-1">
+                                                          class="mt-1 ghn-order-code-box">
                                                           <span th:class="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'admin-status admin-status-warning text-nowrap d-inline-flex align-items-center gap-1' : 'admin-status admin-status-info text-nowrap d-inline-flex align-items-center gap-1'}"
                                                               style="font-size: 0.72rem; cursor: pointer;"
                                                               th:title="${#strings.startsWith(hd.ghnOrderCode, 'DEMO-GHN-') ? 'Mã vận đơn Demo GHN Fallback (Hệ thống SMASH-VN tự quản lý)' : 'Click để sao chép mã GHN: ' + hd.ghnOrderCode}"
@@ -248,7 +248,7 @@
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HÀNG TIẾT KIỆM') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'GIAO HANG TIET KIEM') ? 'GHTK' : 
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHN</span>
                                                 </td>
-                                                <td class="text-nowrap">
+                                                <td class="text-nowrap order-status-cell">
                                                     <span th:if="${hd.trangThaiDonHang == 'hoan_thanh'}"
                                                         class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Hoàn thành
@@ -293,7 +293,7 @@
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td class="text-center text-nowrap">
+                                                <td class="text-center text-nowrap order-action-cell">
                                                      <div class="d-flex gap-1 justify-content-center align-items-center">
                                                          <!-- Nút Chi tiết đơn hàng -->
                                                          <button type="button" class="admin-btn admin-btn-icon"
@@ -303,18 +303,15 @@
                                                              <i class="fas fa-eye text-primary"></i>
                                                          </button>
 
-                                                         <!-- Nút Chuyển trạng thái tiếp theo -->
-                                                         <form th:if="${nextStatusLabels[hd.id] != null}"
-                                                               th:data-next-status-label="${nextStatusLabels[hd.id]}"
-                                                               th:action="@{/admin/don-hang/next-status}" method="post" class="d-inline-block m-0">
-                                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                                             <input type="hidden" name="idHoaDon" th:value="${hd.id}" />
-                                                             <button type="submit" class="admin-btn admin-btn-icon" 
-                                                                     th:title="'Chuyển sang: ' + ${nextStatusLabels[hd.id]}"
-                                                                     onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.form.getAttribute('data-next-status-label') + '?')">
-                                                                 <i class="fas fa-arrow-right text-success"></i>
-                                                             </button>
-                                                         </form>
+                                                         <!-- Nút Chuyển trạng thái tiếp theo (AJAX không reload trang) -->
+                                                         <button th:if="${nextStatusLabels[hd.id] != null}"
+                                                                 type="button" class="admin-btn admin-btn-icon btn-next-status" 
+                                                                 th:title="'Chuyển sang: ' + ${nextStatusLabels[hd.id]}"
+                                                                 th:data-id="${hd.id}"
+                                                                 th:data-label="${nextStatusLabels[hd.id]}"
+                                                                 onclick="submitOrderAction('/admin/don-hang/next-status', { idHoaDon: this.getAttribute('data-id') }, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.getAttribute('data-label') + '?', this.getAttribute('data-id'), this)">
+                                                             <i class="fas fa-arrow-right text-success"></i>
+                                                         </button>
 
                                                          <!-- Nút Gửi đơn sang GHN (Khi sẵn sàng giao & chưa có mã GHN) -->
                                                          <button th:if="${hd.trangThaiDonHang == 'san_sang_giao' &amp;&amp; (hd.ghnOrderCode == null || #strings.isEmpty(hd.ghnOrderCode))}"
@@ -364,8 +361,7 @@
                                         <thead>
                                             <tr>
                                                 <th style="width: 60px;" class="text-center text-nowrap">STT</th>
-                                                <th class="text-nowrap">Mã HĐ</th>
-                                                <th class="text-nowrap">Mã Đơn Hàng</th>
+                                                <th class="text-nowrap">Mã Hóa Đơn</th>
                                                 <th class="text-nowrap">Khách Hàng</th>
                                                 <th class="text-nowrap">Ngày Tạo</th>
                                                 <th class="text-nowrap">Tổng Tiền</th>
@@ -375,15 +371,24 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr th:each="hd, iterStat : ${danhSachDonHangPos}">
+                                            <tr th:each="hd, iterStat : ${danhSachDonHangPos}" th:id="'order-row-' + ${hd.id}" th:data-order-id="${hd.id}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
-                                                <td class="fw-bold text-dark text-nowrap" th:text="'#' + ${hd.id}">HĐ1
-                                                </td>
-                                                <td class="text-nowrap">
-                                                    <code class="text-dark order-code-text fw-bold"
-                                                        style="font-size: 0.85rem;"
-                                                        th:title="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
-                                                        th:text="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}">DHSVN...</code>
+                                                <td class="text-nowrap order-code-cell">
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <code class="text-dark order-code-text fw-bold me-1"
+                                                            style="font-size: 0.85rem; cursor: pointer;"
+                                                            th:title="'Click để sao chép: ' + ${hd.maDonHang != null ? hd.maDonHang : 'HDSVN#' + hd.id}"
+                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : 'HDSVN#' + hd.id}"
+                                                            onclick="copyToClipboard(this.getAttribute('data-code'), this)"
+                                                            th:text="${hd.maDonHang != null ? hd.maDonHang : 'HDSVN#' + hd.id}">HDSVN...</code>
+                                                        <button type="button" class="btn btn-link text-muted p-0 border-0 shadow-none btn-copy-icon"
+                                                            th:data-code="${hd.maDonHang != null ? hd.maDonHang : 'HDSVN#' + hd.id}"
+                                                            onclick="copyToClipboard(this.getAttribute('data-code'), this)"
+                                                            title="Sao chép mã hóa đơn"
+                                                            style="font-size: 0.8rem; text-decoration: none; line-height: 1;">
+                                                            <i class="far fa-copy"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div class="fw-bold text-dark text-nowrap"
@@ -413,7 +418,7 @@
                                                     </div>
                                                 </td>
 
-                                                <td class="text-nowrap">
+                                                <td class="text-nowrap order-status-cell">
                                                     <span th:if="${hd.trangThaiDonHang == 'da_giao'}"
                                                         class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Hoàn thành
@@ -443,7 +448,7 @@
                                                         th:text="${currentStatusLabels[hd.id]}">
                                                     </span>
                                                 </td>
-                                                <td class="text-center text-nowrap">
+                                                <td class="text-center text-nowrap order-action-cell">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
@@ -461,8 +466,8 @@
                                                 </td>
                                             </tr>
                                             <tr th:if="${danhSachDonHangPos == null || danhSachDonHangPos.isEmpty()}">
-                                                <td colspan="9" class="text-center text-muted py-4">Chưa có hóa đơn bán
-                                                    tại quầy nào trong hệ thống.</td>
+                                                <td colspan="8" class="text-center text-muted py-4">Chưa có hóa đơn bán
+                                                     tại quầy nào trong hệ thống.</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -486,9 +491,9 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr th:each="hd, iterStat : ${danhSachDonHangReturn}">
+                                            <tr th:each="hd, iterStat : ${danhSachDonHangReturn}" th:id="'order-row-' + ${hd.id}" th:data-order-id="${hd.id}">
                                                 <td class="text-center text-nowrap" th:text="${iterStat.count}">1</td>
-                                                <td class="text-nowrap">
+                                                <td class="text-nowrap order-code-cell">
                                                     <div class="fw-bold text-primary"
                                                         th:text="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}">
                                                         #123</div>
@@ -519,7 +524,7 @@
                                                         th:class="'badge ' + (${hd.paymentMethod == 'COD'} ? 'bg-dark' : 'bg-primary')"
                                                         th:text="${hd.paymentMethod != null ? hd.paymentMethod : 'COD'}">COD</span>
                                                 </td>
-                                                <td class="text-nowrap">
+                                                <td class="text-nowrap order-status-cell">
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
                                                         class="admin-status admin-status-warning">
@@ -560,7 +565,7 @@
                                                         style="max-width:200px; font-size:11px;"
                                                         th:text="'Lý do: ' + ${hd.lyDoHoanTien}"></div>
                                                 </td>
-                                                <td class="text-center text-nowrap">
+                                                <td class="text-center text-nowrap order-action-cell">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
@@ -918,11 +923,19 @@
                     <input type="hidden" name="_csrf" id="adminRestockCsrf" />
                     <input type="hidden" name="idHoaDon" id="adminRestockIdHoaDon" />
 
-                    <div class="modal-header bg-primary text-white py-3">
-                        <h5 class="modal-title fw-bold" id="adminRestockModalLabel">
-                            <i class="fas fa-boxes me-2"></i>Kiểm Định &amp; Chọn Kho Nhập Hàng Hoàn <span id="restockModalHeaderCode"></span>
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header py-3" style="background-color: var(--admin-surface, #ffffff); border-bottom: 1px solid var(--admin-border, #e5e7eb);">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="modal-header-icon" style="width: 38px; height: 38px; border-radius: var(--admin-radius-sm, 8px); background-color: var(--admin-primary-soft, #fff1eb); color: var(--admin-primary, #f4511e); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold text-dark mb-0" id="adminRestockModalLabel">
+                                    Kiểm định &amp; Chọn kho nhập hàng hoàn <span id="restockModalHeaderCode" style="color: var(--admin-primary, #f4511e);"></span>
+                                </h5>
+                                <small class="text-muted">Phân loại hàng hóa và cập nhật trạng thái kho lưu trữ</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
 
                     <div class="modal-body p-4" style="background-color: #ffffff;">
@@ -941,7 +954,7 @@
                                 </div>
 
                                 <div class="mt-3 pt-2 border-top">
-                                    <div class="fw-bold text-dark small mb-2"><i class="fas fa-list-check me-1 text-primary"></i>Danh sách sản phẩm trong kiện hoàn trả:</div>
+                                    <div class="fw-bold text-dark small mb-2"><i class="fas fa-list-check me-1" style="color: var(--admin-primary, #f4511e);"></i>Danh sách sản phẩm trong kiện hoàn trả:</div>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-bordered bg-white mb-0" style="font-size: 12px;">
                                             <thead class="table-light">
@@ -962,7 +975,7 @@
                         <!-- Chọn Kho Nhập / Kết quả kiểm định -->
                         <div class="mb-3">
                             <label class="form-label fw-bold text-dark">
-                                <i class="fas fa-warehouse me-1 text-primary"></i>Kết quả kiểm định thực tế - Chọn kho nhập <span class="text-danger">*</span>:
+                                <i class="fas fa-warehouse me-1" style="color: var(--admin-primary, #f4511e);"></i>Kết quả kiểm định thực tế - Chọn kho nhập <span class="text-danger">*</span>:
                             </label>
 
                             <div class="d-flex flex-column gap-2 mt-2">
@@ -972,13 +985,13 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <span class="fw-bold text-danger fs-6">
-                                                <i class="fas fa-triangle-exclamation me-1"></i> Nhập vào Kho Sản Phẩm Lỗi
+                                                <i class="fas fa-warehouse me-1"></i> Nhập vào Kho sản phẩm lỗi
                                             </span>
-                                            <span class="badge bg-danger">Cách ly tồn kho bán</span>
+                                            <span class="badge bg-secondary">Cách ly tồn kho bán</span>
                                         </div>
                                         <div class="small text-muted">
-                                            Sản phẩm bị lỗi hỏng do nhà sản xuất, trầy xước hoặc hư hại trong quá trình vận chuyển. 
-                                            Số lượng sẽ được chuyển cách ly vào <strong>Kho Sản Phẩm Lỗi (<code>soLuongSpLoi</code>)</strong> để theo dõi xử lý riêng, <span class="text-danger fw-bold">TUYỆT ĐỐI KHÔNG</span> cộng vào tồn kho bán hàng bình thường.
+                                            Sản phẩm bị lỗi hỏng do nhà sản xuất, trầy xước hoặc hư hại trong quá trình sử dụng / vận chuyển. 
+                                            Số lượng sẽ được chuyển vào <strong>Kho sản phẩm lỗi</strong> để theo dõi và xử lý riêng, <span class="text-danger fw-semibold">không được cộng vào tồn kho bán</span>.
                                         </div>
                                     </div>
                                 </label>
@@ -989,13 +1002,13 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <span class="fw-bold text-success fs-6">
-                                                <i class="fas fa-check-circle me-1"></i> Nhập vào Kho Bán Bình Thường
+                                                <i class="fas fa-box-open me-1"></i> Nhập vào Kho bán bình thường
                                             </span>
                                             <span class="badge bg-success">Tồn kho kinh doanh</span>
                                         </div>
                                         <div class="small text-muted">
                                             Sản phẩm còn mới 100%, nguyên tem niêm phong, không có bất kỳ hư hại nào và đủ điều kiện tiếp tục kinh doanh. 
-                                            Số lượng sẽ được hoàn lại vào <strong>Tồn kho bán hàng (<code>soLuongTon</code>)</strong> theo thuật toán FIFO.
+                                            Số lượng sẽ được hoàn lại vào <strong>Tồn kho bán hàng</strong>.
                                         </div>
                                     </div>
                                 </label>
@@ -1011,7 +1024,7 @@
                                             <span class="badge bg-secondary">Không nhập kho</span>
                                         </div>
                                         <div class="small text-muted">
-                                            Hàng gửi về không đúng quy định (bị tráo hàng, hàng bị cố ý phá hoại bởi người dùng...). Hệ thống <strong>sẽ KHÔNG nhập kho</strong> và tự động tạo đơn giao hàng gửi trả lại cho khách hàng.
+                                            Hàng gửi về không đúng quy định (bị tráo hàng, hàng bị cố ý phá hoại bởi người dùng...). Hệ thống <strong>sẽ không nhập kho</strong> và tự động ghi nhận để gửi trả lại cho khách hàng.
                                         </div>
                                     </div>
                                 </label>
@@ -1030,7 +1043,7 @@
                     <div class="modal-footer bg-light">
                         <button type="button" class="admin-btn admin-btn-secondary" data-bs-dismiss="modal">Đóng</button>
                         <button type="submit" class="admin-btn admin-btn-primary" id="btnSubmitRestock">
-                            <i class="fas fa-check-double me-1"></i> Xác Nhận Nhập Kho / Xử Lý
+                            <i class="fas fa-check-double me-1"></i> Xác nhận nhập kho / Xử lý
                         </button>
                     </div>
                 </form>
@@ -1106,15 +1119,304 @@
             }
         }
 
+        window.getActiveOrderTab = function() {
+            const activeTabBtn = document.querySelector('#orderTypeTabs button.nav-link.active');
+            if (activeTabBtn) {
+                const tabName = activeTabBtn.getAttribute('data-tab-name');
+                if (tabName) return tabName;
+                if (activeTabBtn.id === 'pos-tab' || activeTabBtn.getAttribute('data-bs-target') === '#pos-orders') return 'pos';
+                if (activeTabBtn.id === 'return-tab' || activeTabBtn.getAttribute('data-bs-target') === '#return-orders') return 'return';
+                return 'online';
+            }
+            return sessionStorage.getItem('adminOrderActiveTab') || 'online';
+        };
+
+        window.submitOrderAction = function (url, params, confirmMsg, orderId, btn) {
+            const doSubmit = function () {
+                const origHtml = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+                }
+
+                const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+                const formData = new URLSearchParams();
+                if (params) {
+                    for (const key in params) {
+                        if (params.hasOwnProperty(key) && params[key] !== null && params[key] !== undefined) {
+                            formData.append(key, params[key]);
+                        }
+                    }
+                }
+                if (csrfToken && !formData.has('_csrf')) {
+                    formData.append('_csrf', csrfToken);
+                }
+                const activeTab = window.getActiveOrderTab ? window.getActiveOrderTab() : 'online';
+                formData.append('activeTab', activeTab);
+
+                const headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                };
+                if (csrfToken) {
+                    headers[csrfHeaderName] = csrfToken;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData.toString(),
+                    credentials: 'same-origin'
+                })
+                .then(async response => {
+                    const contentType = response.headers.get('content-type') || '';
+                    let data = null;
+                    if (contentType.includes('application/json')) {
+                        try {
+                            data = await response.json();
+                        } catch (jsonErr) {
+                            data = null;
+                        }
+                    }
+                    if (!response.ok) {
+                        const errMsg = (data && data.message) ? data.message : ('Lỗi máy chủ (' + response.status + ')');
+                        throw new Error(errMsg);
+                    }
+                    return data || { success: true, message: 'Thao tác thành công!' };
+                })
+                .then(result => {
+                    const successMsg = result.message || 'Thao tác thành công!';
+                    showToast(successMsg, 'success');
+
+                    const targetOrderId = orderId || (result.idHoaDon ? result.idHoaDon : null);
+                    if (targetOrderId) {
+                        // Refresh modal in place if modal is open
+                        const modalEl = document.getElementById('orderDetailModal');
+                        if (modalEl && modalEl.classList.contains('show')) {
+                            if (window.openOrderDetailModal) {
+                                window.openOrderDetailModal(targetOrderId);
+                            }
+                        }
+                        // Refresh row in table
+                        if (window.updateTableRowStatus) {
+                            window.updateTableRowStatus(targetOrderId);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Order Action Error:', err);
+                    showToast(err.message || 'Đã xảy ra lỗi khi thực hiện thao tác.', 'error');
+                })
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                });
+            };
+
+            if (confirmMsg) {
+                SmashNotify.confirm({
+                    title: 'Xác nhận thao tác?',
+                    message: confirmMsg,
+                    confirmText: 'Đồng ý',
+                    cancelText: 'Hủy'
+                }).then(confirmed => {
+                    if (confirmed) doSubmit();
+                });
+            } else {
+                doSubmit();
+            }
+        };
+
+        window.updateTableRowStatus = function(orderId) {
+            if (!orderId) return;
+            fetch('/admin/don-hang/detail-json?id=' + orderId, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.error) return;
+                const rows = document.querySelectorAll(`tr[data-order-id="${orderId}"], tr#order-row-${orderId}`);
+                rows.forEach(row => {
+                    // Update status cell
+                    const statusCell = row.querySelector('.order-status-cell');
+                    if (statusCell) {
+                        let badgeClass = 'admin-status-neutral';
+                        const st = (data.trangThaiRaw || '').toLowerCase();
+                        if (st === 'hoan_thanh' || st === 'da_giao') {
+                            badgeClass = 'admin-status-success';
+                        } else if (st === 'da_huy') {
+                            badgeClass = (data.paymentStatus === 'CHO_HOAN_TIEN') ? 'admin-status-warning' : 'admin-status-danger';
+                        } else if (st === 'cho_xac_nhan') {
+                            badgeClass = 'admin-status-warning';
+                        } else if (st === 'da_xac_nhan' || st === 'dang_chuan_bi_hang' || st === 'san_sang_giao' || st === 'da_tao_van_don_ghn' || st === 'dang_lay_hang' || st === 'dang_giao') {
+                            badgeClass = 'admin-status-info';
+                        } else if (st === 'giao_that_bai') {
+                            badgeClass = 'admin-status-danger';
+                        }
+                        
+                        let iconClass = 'fa-info-circle';
+                        if (st === 'hoan_thanh' || st === 'da_giao') iconClass = 'fa-check-circle';
+                        else if (st === 'da_huy') iconClass = 'fa-times-circle';
+
+                        let returnBadgeHtml = '';
+                        if (data.trangThaiHoanHang) {
+                            const rSt = data.trangThaiHoanHang;
+                            let rClass = (rSt === 'PENDING_APPROVAL' || rSt === 'PENDING_RETURN') ? 'admin-status-warning' : (rSt === 'REJECTED' ? 'admin-status-danger' : (rSt === 'WAITING_FOR_PICKUP' || rSt === 'DELIVERED_TO_SHOP' ? 'admin-status-info' : 'admin-status-success'));
+                            returnBadgeHtml = `
+                                <div class="mt-1">
+                                    <span class="admin-status ${rClass}" style="font-size:11px;">
+                                        <i class="fas fa-undo me-1"></i>Trả hàng: <span>${escapeHtml(data.trangThaiHoanHangLabel || rSt)}</span>
+                                    </span>
+                                </div>
+                            `;
+                        }
+
+                        statusCell.innerHTML = `
+                            <span class="admin-status ${badgeClass}">
+                                <i class="fas ${iconClass} me-1"></i>${escapeHtml(data.trangThai || 'N/A')}
+                            </span>
+                            ${returnBadgeHtml}
+                        `;
+                    }
+
+                    // Update action cell
+                    const actionCell = row.querySelector('.order-action-cell');
+                    if (actionCell) {
+                        let actionHtml = `
+                            <button type="button" class="admin-btn admin-btn-icon" data-id="${data.id}" onclick="openOrderDetailModal(this.getAttribute('data-id'), this)" title="Chi tiết đơn hàng">
+                                <i class="fas fa-eye text-primary"></i>
+                            </button>
+                        `;
+
+                        if (data.nextStatusLabel) {
+                            actionHtml += `
+                                <button type="button" class="admin-btn admin-btn-icon btn-next-status" 
+                                        title="Chuyển sang: ${escapeHtml(data.nextStatusLabel)}"
+                                        data-id="${data.id}"
+                                        data-label="${escapeHtml(data.nextStatusLabel)}"
+                                        onclick="submitOrderAction('/admin/don-hang/next-status', { idHoaDon: this.getAttribute('data-id') }, 'Xác nhận chuyển đơn hàng sang trạng thái: ' + this.getAttribute('data-label') + '?', this.getAttribute('data-id'), this)">
+                                    <i class="fas fa-arrow-right text-success"></i>
+                                </button>
+                            `;
+                        }
+
+                        if (data.trangThaiRaw === 'san_sang_giao' && (!data.ghnOrderCode || data.ghnOrderCode.trim() === '')) {
+                            actionHtml += `
+                                <button type="button" class="admin-btn admin-btn-icon" onclick="pushOrderToGhn(${data.id}, this)" title="Gửi đơn sang GHN (Tạo vận đơn)">
+                                    <i class="fas fa-shipping-fast text-warning"></i>
+                                </button>
+                            `;
+                        }
+
+                        if (data.canCancel) {
+                            actionHtml += `
+                                <button type="button" class="admin-btn admin-btn-icon danger" 
+                                        data-id="${data.id}" 
+                                        data-code="${escapeHtml(data.maDonHang || ('#' + data.id))}" 
+                                        data-status="${escapeHtml(data.trangThaiRaw)}" 
+                                        onclick="openAdminCancelModal(this)" 
+                                        title="Hủy đơn hàng">
+                                    <i class="fas fa-times text-danger"></i>
+                                </button>
+                            `;
+                        }
+
+                        if (data.trangThaiRaw === 'da_huy' && data.paymentStatus === 'CHO_HOAN_TIEN') {
+                            actionHtml += `
+                                <button type="button" class="admin-btn admin-btn-icon" 
+                                        title="Xác nhận hoàn tiền" 
+                                        data-id="${data.id}" 
+                                        data-code="${escapeHtml(data.maDonHang || ('#' + data.id))}" 
+                                        data-amount="${data.tongTien || 0}" 
+                                        onclick="moModalConfirmRefund(this.getAttribute('data-id'), this.getAttribute('data-code'), this.getAttribute('data-amount'))">
+                                    <i class="fas fa-hand-holding-usd text-success"></i>
+                                </button>
+                            `;
+                        }
+
+                        actionCell.innerHTML = `<div class="d-flex gap-1 justify-content-center align-items-center">${actionHtml}</div>`;
+                    }
+
+                    // Update GHN badge in code cell if any
+                    const codeCell = row.querySelector('.order-code-cell');
+                    if (codeCell && data.ghnOrderCode) {
+                        let ghnContainer = codeCell.querySelector('.ghn-order-code-box');
+                        if (!ghnContainer) {
+                            ghnContainer = document.createElement('div');
+                            ghnContainer.className = 'mt-1 ghn-order-code-box';
+                            codeCell.appendChild(ghnContainer);
+                        }
+                        const isDemo = data.ghnOrderCode.startsWith('DEMO-GHN-');
+                        ghnContainer.innerHTML = `
+                            <span class="${isDemo ? 'admin-status admin-status-warning text-nowrap d-inline-flex align-items-center gap-1' : 'admin-status admin-status-info text-nowrap d-inline-flex align-items-center gap-1'}"
+                                  style="font-size: 0.72rem; cursor: pointer;"
+                                  data-code="${escapeHtml(data.ghnOrderCode)}"
+                                  onclick="copyToClipboard(this.getAttribute('data-code'), this)">
+                                <i class="${isDemo ? 'fas fa-flask me-1' : 'fas fa-shipping-fast me-1'}"></i>
+                                <span>${isDemo ? 'Demo GHN' : 'GHN'}</span>: ${escapeHtml(data.ghnOrderCode)}
+                                <i class="far fa-copy ms-1 text-muted" style="font-size: 0.65rem;"></i>
+                            </span>
+                        `;
+                    }
+                });
+            })
+            .catch(err => console.warn('Could not update table row in background:', err));
+        };
+
         document.addEventListener("DOMContentLoaded", function () {
-            const tabElList = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            // Tab Persistence logic
+            const tabElList = document.querySelectorAll('#orderTypeTabs button[data-bs-toggle="tab"]');
             tabElList.forEach(tabEl => {
                 tabEl.addEventListener('shown.bs.tab', function (event) {
+                    const targetId = event.target.getAttribute('data-bs-target');
+                    let tabName = 'online';
+                    if (targetId === '#pos-orders') tabName = 'pos';
+                    else if (targetId === '#return-orders') tabName = 'return';
+
+                    sessionStorage.setItem('adminOrderActiveTab', tabName);
+                    localStorage.setItem('adminOrderActiveTab', tabName);
+
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('activeTab', tabName);
+                    window.history.replaceState({}, '', url.toString());
+
                     filterOrders();
                 });
             });
 
+            // Restore active tab
             const urlParams = new URLSearchParams(window.location.search);
+            const activeTabFromUrl = urlParams.get('activeTab');
+            const storedTab = activeTabFromUrl || sessionStorage.getItem('adminOrderActiveTab') || localStorage.getItem('adminOrderActiveTab');
+
+            if (storedTab === 'pos') {
+                const posTabBtn = document.getElementById('pos-tab');
+                if (posTabBtn) {
+                    const tab = bootstrap.Tab.getOrCreateInstance(posTabBtn);
+                    tab.show();
+                }
+            } else if (storedTab === 'return') {
+                const returnTabBtn = document.getElementById('return-tab');
+                if (returnTabBtn) {
+                    const tab = bootstrap.Tab.getOrCreateInstance(returnTabBtn);
+                    tab.show();
+                }
+            } else {
+                const onlineTabBtn = document.getElementById('online-tab');
+                if (onlineTabBtn) {
+                    const tab = bootstrap.Tab.getOrCreateInstance(onlineTabBtn);
+                    tab.show();
+                }
+            }
+
             const searchVal = urlParams.get('search');
             if (searchVal) {
                 const input = document.getElementById('orderSearchInput');
@@ -2003,13 +2305,9 @@
 
                     if (!isPosOrder && !isGhnShippingState && nextStatusLabel) {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/next-status" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận chuyển đơn hàng sang trạng thái: ${escapeHtml(nextStatusLabel)}?')">
-                                <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${escapeHtml(nextStatusLabel)})
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="submitOrderAction('/admin/don-hang/next-status', { idHoaDon: ${data.id} }, 'Xác nhận chuyển đơn hàng sang trạng thái: ${escapeHtml(nextStatusLabel)}?', ${data.id}, this)">
+                            <i class="fas fa-arrow-right me-1"></i> Tiếp theo (${escapeHtml(nextStatusLabel)})
+                        </button>
                     `;
                     }
 
@@ -2039,15 +2337,9 @@
 
                     if (stRaw === 'dang_giao' && !hasGhnCode) {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/update-status" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <input type="hidden" name="expectedStatus" value="${data.trangThaiRaw}" />
-                            <input type="hidden" name="trangThai" value="da_giao" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận HOÀN THÀNH đơn hàng này?')">
-                                <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="submitOrderAction('/admin/don-hang/update-status', { idHoaDon: ${data.id}, expectedStatus: '${escapeHtml(data.trangThaiRaw)}', trangThai: 'da_giao' }, 'Xác nhận HOÀN THÀNH đơn hàng này?', ${data.id}, this)">
+                            <i class="fas fa-check-circle me-1"></i> Hoàn thành đơn hàng
+                        </button>
                     `;
                     }
 
@@ -2056,7 +2348,7 @@
                         <button type="button" class="admin-btn admin-btn-danger" 
                                 data-id="${data.id}" 
                                 data-code="${escapeHtml(data.maDonHang || ('#' + data.id))}" 
-                                data-status="${escapeHtml(data.trangThaiRaw)}"
+                                data-status="${escapeHtml(data.trangThaiRaw)}" 
                                 onclick="closeDetailsAndCancel(this)">
                             <i class="fas fa-times me-1"></i> Hủy đơn
                         </button>
@@ -2068,32 +2360,20 @@
                         <button type="button" class="admin-btn admin-btn-primary" onclick="moModalConfirmRefund(${data.id}, '${escapeHtml(data.maDonHang || ('#' + data.id))}', ${data.tongTien || 0})">
                             <i class="fas fa-hand-holding-usd me-1"></i> Hoàn tiền
                         </button>
-                        <form action="/admin/don-hang/reject-refund-ui" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận từ chối hoàn tiền?')">
-                                <i class="fas fa-ban me-1"></i> Từ chối
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-secondary" onclick="submitOrderAction('/admin/don-hang/reject-refund-ui', { idHoaDon: ${data.id} }, 'Xác nhận từ chối hoàn tiền?', ${data.id}, this)">
+                            <i class="fas fa-ban me-1"></i> Từ chối
+                        </button>
                     `;
                     }
 
                     if (data.trangThaiHoanHang === 'PENDING_APPROVAL' || data.trangThaiHoanHang === 'PENDING_RETURN') {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/approve-return" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-primary" onclick="return confirmSubmit(this, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?')">
-                                <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng
-                            </button>
-                        </form>
-                        <form action="/admin/don-hang/reject-return" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirmSubmit(this, 'Xác nhận từ chối yêu cầu trả hàng?')">
-                                <i class="fas fa-times-circle me-1"></i> Từ chối
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="submitOrderAction('/admin/don-hang/approve-return', { idHoaDon: ${data.id} }, 'Xác nhận duyệt yêu cầu trả hàng và tự động tạo đơn thu hồi GHN?', ${data.id}, this)">
+                            <i class="fas fa-check-circle me-1"></i> Duyệt trả hàng
+                        </button>
+                        <button type="button" class="admin-btn admin-btn-danger" onclick="submitOrderAction('/admin/don-hang/reject-return', { idHoaDon: ${data.id} }, 'Xác nhận từ chối yêu cầu trả hàng?', ${data.id}, this)">
+                            <i class="fas fa-times-circle me-1"></i> Từ chối
+                        </button>
                     `;
                     } else if (data.trangThaiHoanHang === 'WAITING_FOR_PICKUP') {
                         const isDemoReturn = data.ghnReturnOrderCode && data.ghnReturnOrderCode.startsWith('DEMO-GHN-RETURN-');
@@ -2104,13 +2384,9 @@
                         </span>
                         `;
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/cancel-return-pickup" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-secondary" onclick="return confirmSubmit(this, 'Xác nhận hủy vận đơn thu hồi?')">
-                                <i class="fas fa-ban me-1"></i> Hủy vận đơn thu hồi
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-secondary" onclick="submitOrderAction('/admin/don-hang/cancel-return-pickup', { idHoaDon: ${data.id} }, 'Xác nhận hủy vận đơn thu hồi?', ${data.id}, this)">
+                            <i class="fas fa-ban me-1"></i> Hủy vận đơn thu hồi
+                        </button>
                     `;
                     } else if (data.trangThaiHoanHang === 'PICKED_UP' || data.trangThaiHoanHang === 'RETURNING') {
                         actionsLeftHtml += `
@@ -2130,13 +2406,9 @@
                     } else if (data.trangThaiHoanHang === 'RETURNED') {
                         if (data.loaiYeuCauDoiTra === 'DOI') {
                             actionsRightHtml += `
-                            <form action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
-                                <input type="hidden" name="_csrf" value="${csrfToken}" />
-                                <input type="hidden" name="idHoaDon" value="${data.id}" />
-                                <button type="submit" class="admin-btn admin-btn-success" onclick="return confirmSubmit(this, 'Xác nhận phân bổ tồn kho và giao hàng đổi mới?')">
-                                    <i class="fas fa-shipping-fast me-1"></i> Giao hàng đổi mới
-                                </button>
-                            </form>
+                            <button type="button" class="admin-btn admin-btn-success" onclick="submitOrderAction('/admin/don-hang/confirm-exchange-shipment', { idHoaDon: ${data.id} }, 'Xác nhận phân bổ tồn kho và giao hàng đổi mới?', ${data.id}, this)">
+                                <i class="fas fa-shipping-fast me-1"></i> Giao hàng đổi mới
+                            </button>
                             `;
                         } else {
                             actionsRightHtml += `
@@ -2147,13 +2419,9 @@
                         }
                     } else if (data.trangThaiHoanHang === 'EXCHANGE_STOCK_ALLOCATED') {
                         actionsRightHtml += `
-                        <form action="/admin/don-hang/confirm-exchange-shipment" method="post" class="d-inline-block m-0">
-                            <input type="hidden" name="_csrf" value="${csrfToken}" />
-                            <input type="hidden" name="idHoaDon" value="${data.id}" />
-                            <button type="submit" class="admin-btn admin-btn-success" onclick="return confirmSubmit(this, 'Thử lại tạo vận đơn GHN hàng đổi?')">
-                                <i class="fas fa-shipping-fast me-1"></i> Thử lại vận đơn GHN
-                            </button>
-                        </form>
+                        <button type="button" class="admin-btn admin-btn-success" onclick="submitOrderAction('/admin/don-hang/confirm-exchange-shipment', { idHoaDon: ${data.id} }, 'Thử lại tạo vận đơn GHN hàng đổi?', ${data.id}, this)">
+                            <i class="fas fa-shipping-fast me-1"></i> Thử lại vận đơn GHN
+                        </button>
                         `;
                     } else if (data.trangThaiHoanHang === 'REFUNDED') {
                         actionsLeftHtml += `
@@ -2450,14 +2718,20 @@
                 cancelText: 'Quay lại',
                 danger: true
             }).then((confirmed) => {
-                    if (confirmed) {
-                        const submitBtn = document.getElementById('btnSubmitCancelUnpaid');
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
-                        }
-                        form.submit();
-                    }
+                if (confirmed) {
+                    const submitBtn = document.getElementById('btnSubmitCancelUnpaid');
+                    const orderId = document.getElementById('adminCancelUnpaidId').value;
+                    const lyDoHuy = document.getElementById('adminCancelUnpaidReason').value;
+
+                    const modalEl = document.getElementById('adminCancelOrderModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    submitOrderAction('/admin/don-hang/cancel-unpaid', {
+                        idHoaDon: orderId,
+                        lyDoHuy: lyDoHuy
+                    }, null, orderId, submitBtn);
+                }
             });
             return false;
         };
@@ -2488,14 +2762,66 @@
                 confirmText: 'Đồng ý hủy & hoàn tiền',
                 cancelText: 'Quay lại'
             }).then((confirmed) => {
-                    if (confirmed) {
-                        const submitBtn = document.getElementById('btnSubmitCancelPaid');
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
-                        }
-                        form.submit();
+                if (confirmed) {
+                    const submitBtn = document.getElementById('btnSubmitCancelPaid');
+                    const origHtml = submitBtn ? submitBtn.innerHTML : '';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
                     }
+
+                    const formData = new FormData(form);
+                    formData.append('activeTab', window.getActiveOrderTab ? window.getActiveOrderTab() : 'online');
+                    const orderId = document.getElementById('adminCancelPaidId').value;
+
+                    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                    const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+                    const headers = {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    };
+                    if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+                    fetch(form.action || '/admin/don-hang/cancel-paid-refund', {
+                        method: 'POST',
+                        headers: headers,
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message || 'Đã xác nhận hoàn tiền và hủy đơn!', 'success');
+                            const modalEl = document.getElementById('adminCancelOrderModal');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+                            
+                            const detailModalEl = document.getElementById('orderDetailModal');
+                            if (detailModalEl && detailModalEl.classList.contains('show')) {
+                                if (window.openOrderDetailModal) {
+                                    window.openOrderDetailModal(orderId);
+                                }
+                            }
+                            if (window.updateTableRowStatus) {
+                                window.updateTableRowStatus(orderId);
+                            }
+                        } else {
+                            showToast(data.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        showToast('Lỗi gửi yêu cầu: ' + err.message, 'error');
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = origHtml;
+                        }
+                    });
+                }
             });
             return false;
         };
@@ -2540,18 +2866,21 @@
                         document.getElementById('restockSummaryCustomer').textContent = data.khachHang || 'Khách lẻ';
                         document.getElementById('restockSummaryCustomerReason').textContent = data.lyDoHoanTra || 'Khách hàng yêu cầu đổi/trả sản phẩm';
 
+                        let totalQty = 0;
                         const tbody = document.getElementById('restockProductList');
                         if (tbody) {
                             tbody.innerHTML = '';
                             if (data.items && data.items.length > 0) {
                                 data.items.forEach(it => {
+                                    const qty = Number(it.soLuong) || 1;
+                                    totalQty += qty;
                                     const tr = document.createElement('tr');
                                     tr.innerHTML = `
                                         <td>
                                             <div class="fw-bold text-dark">${escapeHtml(it.tenSanPham || 'Sản phẩm')}</div>
                                             <small class="text-muted">${escapeHtml(it.thuocTinh || '')}</small>
                                         </td>
-                                        <td class="text-center fw-bold text-primary">${it.soLuong || 1}</td>
+                                        <td class="text-center fw-bold text-primary">${qty}</td>
                                     `;
                                     tbody.appendChild(tr);
                                 });
@@ -2559,6 +2888,7 @@
                                 tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Không có chi tiết sản phẩm</td></tr>';
                             }
                         }
+                        window.currentRestockTotalQty = totalQty || 1;
                     })
                     .catch(err => {
                         console.error('Error loading return order details for restock:', err);
@@ -2619,44 +2949,45 @@
             const optTuChoi = document.getElementById('restockOptTuChoi');
             const lyDoTuChoi = document.getElementById('restockLyDoTuChoi') ? document.getElementById('restockLyDoTuChoi').value.trim() : '';
 
-            let titleMsg = '';
-            let textMsg = '';
-            let btnColor = '#0d6efd';
+            const submitBtn = document.getElementById('btnSubmitRestock');
+            const orderId = document.getElementById('adminRestockIdHoaDon').value;
+
+            let ketQua = 'BAN_LAI';
+            let confirmMsg = 'Xác nhận nhập sản phẩm vào kho bán bình thường?';
 
             if (optTuChoi && optTuChoi.checked) {
+                ketQua = 'TU_CHOI';
                 if (!lyDoTuChoi) {
                     showToast('Vui lòng nhập lý do từ chối nhận kiện hàng hoàn này.', 'warning');
                     document.getElementById('restockLyDoTuChoi').focus();
                     return false;
                 }
-                titleMsg = 'Xác nhận từ chối nhận hàng hoàn?';
-                textMsg = 'Hệ thống sẽ KHÔNG nhập kho và tự động tạo vận đơn gửi trả lại kiện hàng cho khách.';
-                btnColor = '#6c757d';
+                confirmMsg = 'Xác nhận từ chối nhận hàng hoàn?';
             } else if (optLoi && optLoi.checked) {
-                titleMsg = 'Xác nhận nhập vào KHO SẢN PHẨM LỖI?';
-                textMsg = 'Sản phẩm sẽ được chuyển cách ly vào Kho Sản Phẩm Lỗi (soLuongSpLoi) và KHÔNG cộng vào kho bán.';
-                btnColor = '#dc3545';
+                ketQua = 'HANG_LOI';
+                confirmMsg = 'Xác nhận nhập sản phẩm vào kho sản phẩm lỗi?';
             } else {
-                titleMsg = 'Xác nhận nhập vào KHO BÁN BÌNH THƯỜNG?';
-                textMsg = 'Sản phẩm nguyên vẹn sẽ được cộng lại vào Tồn kho bán (soLuongTon) để tiếp tục kinh doanh.';
-                btnColor = '#198754';
+                ketQua = 'BAN_LAI';
+                confirmMsg = 'Xác nhận nhập sản phẩm vào kho bán bình thường?';
             }
 
             SmashNotify.confirm({
-                title: titleMsg,
-                message: textMsg,
-                confirmText: 'Đồng ý thực hiện',
-                cancelText: 'Quay lại',
-                danger: Boolean((optTuChoi && optTuChoi.checked) || (optLoi && optLoi.checked))
+                title: 'Xác nhận thao tác?',
+                message: confirmMsg,
+                confirmText: 'Đồng ý',
+                cancelText: 'Hủy'
             }).then((confirmed) => {
-                    if (confirmed) {
-                        const submitBtn = document.getElementById('btnSubmitRestock');
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
-                        }
-                        form.submit();
-                    }
+                if (confirmed) {
+                    const modalEl = document.getElementById('adminRestockModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    submitOrderAction('/admin/don-hang/confirm-restock', {
+                        idHoaDon: orderId,
+                        ketQua: ketQua,
+                        lyDoTuChoi: lyDoTuChoi
+                    }, null, orderId, submitBtn);
+                }
             });
             return false;
         };
@@ -2696,7 +3027,12 @@
                 .then(data => {
                     if (data.status === 'ok') {
                         showToast('Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || ''), 'success');
-                        setTimeout(() => window.location.reload(), 900);
+                        if (window.openOrderDetailModal) {
+                            window.openOrderDetailModal(orderId);
+                        }
+                        if (window.updateTableRowStatus) {
+                            window.updateTableRowStatus(orderId);
+                        }
                     } else if (data.status === 'already_exists') {
                         showToast(data.message || 'Vận đơn đã tồn tại trên GHN.', 'info');
                         if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
@@ -2771,6 +3107,7 @@
                     if (data.status === 'ok') {
                         showToast((data.message || 'Đồng bộ thành công.') + ' Trạng thái GHN: ' + (data.ghnStatusLabel || data.ghnStatus || ''), 'success');
                         if (window.openOrderDetailModal) window.openOrderDetailModal(orderId);
+                        if (window.updateTableRowStatus) window.updateTableRowStatus(orderId);
                     } else {
                         showToast(data.message || 'Không thể đồng bộ trạng thái GHN.', 'error');
                     }
@@ -2813,8 +3150,9 @@
                         showToast(data.message || ('Trạng thái mới: ' + data.ghnStatusLabel), 'success');
                         if (window.openOrderDetailModal) {
                             window.openOrderDetailModal(orderId);
-                        } else {
-                            setTimeout(() => window.location.reload(), 900);
+                        }
+                        if (window.updateTableRowStatus) {
+                            window.updateTableRowStatus(orderId);
                         }
                     } else if (data.status === 'terminal') {
                         showToast(data.message || 'Vận đơn Demo đã ở trạng thái cuối.', 'info');
@@ -2862,7 +3200,12 @@
                 .then(data => {
                     if (data.success) {
                         showToast('Xác nhận thanh toán đơn POS thành công!', 'success');
-                        setTimeout(() => window.location.reload(), 900);
+                        if (window.openOrderDetailModal) {
+                            window.openOrderDetailModal(hoaDonId);
+                        }
+                        if (window.updateTableRowStatus) {
+                            window.updateTableRowStatus(hoaDonId);
+                        }
                     } else {
                         showToast(data.message || 'Xác nhận thất bại.', 'error');
                     }
@@ -2944,7 +3287,64 @@
                 cancelText: 'Quay lại'
             }).then((confirmed) => {
                 if (confirmed) {
-                    form.submit();
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const origHtml = submitBtn ? submitBtn.innerHTML : '';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+                    }
+
+                    const formData = new FormData(form);
+                    formData.append('activeTab', window.getActiveOrderTab ? window.getActiveOrderTab() : 'return');
+                    const orderId = document.getElementById('refundIdHoaDon').value;
+
+                    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                    const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+                    const headers = {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    };
+                    if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+                    fetch(form.action || '/admin/don-hang/confirm-refund', {
+                        method: 'POST',
+                        headers: headers,
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message || 'Xác nhận hoàn tiền thành công!', 'success');
+                            const modalEl = document.getElementById('modalConfirmRefund');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+
+                            const detailModalEl = document.getElementById('orderDetailModal');
+                            if (detailModalEl && detailModalEl.classList.contains('show')) {
+                                if (window.openOrderDetailModal) {
+                                    window.openOrderDetailModal(orderId);
+                                }
+                            }
+                            if (window.updateTableRowStatus) {
+                                window.updateTableRowStatus(orderId);
+                            }
+                        } else {
+                            showToast(data.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        showToast('Lỗi: ' + err.message, 'error');
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = origHtml;
+                        }
+                    });
                 }
             });
             return false;

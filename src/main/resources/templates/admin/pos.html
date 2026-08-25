@@ -513,6 +513,9 @@
                                 <input type="number" id="inputCashReceived" class="form-control text-end fw-bold" placeholder="0" oninput="calculateChange()">
                                 <span class="input-group-text fw-bold">đ</span>
                             </div>
+                            <div id="cashReceivedFeedback" class="text-danger small mt-1 fw-semibold" style="display: none;">
+                                <i class="fas fa-exclamation-circle me-1"></i><span></span>
+                            </div>
                             <div class="mt-2 d-flex flex-wrap gap-2 justify-content-end" id="quickCashButtons">
                             </div>
                         </div>
@@ -1193,37 +1196,68 @@
             if (paymentMethod === "TIEN_MAT") {
                 document.getElementById("modalCashSection").classList.remove("d-none");
                 document.getElementById("modalBankSection").classList.add("d-none");
-                document.getElementById("inputCashReceived").value = "";
-                document.getElementById("confirmCashChange").innerText = formatVND(0);
+                const cashInput = document.getElementById("inputCashReceived");
+                cashInput.value = "";
+                cashInput.classList.remove("is-invalid", "is-valid");
+                const feedbackEl = document.getElementById("cashReceivedFeedback");
+                if (feedbackEl) feedbackEl.style.display = "none";
+                const confirmCashChangeSpan = document.getElementById("confirmCashChange");
+                confirmCashChangeSpan.innerText = formatVND(0);
+                confirmCashChangeSpan.className = "fs-4 fw-bold text-muted";
                 btnConfirm.innerText = "Xác nhận đã nhận tiền (Tiền mặt)";
-                btnConfirm.disabled = true;
+                btnConfirm.disabled = false;
                 btnConfirm.onclick = () => {
-                    const cashVal = document.getElementById("inputCashReceived").value;
-                    const cashNum = parseCurrencyToNumber(cashVal);
-                    const change = cashNum - grandTotal;
-                    Swal.fire({
-                        title: 'Xác nhận thanh toán tiền mặt',
-                        html: `
-                            <div class="text-start fs-6 lh-base p-2">
-                                <p class="mb-2"><strong>Tổng thanh toán:</strong> <span class="text-danger fw-bold fs-5">${formatVND(grandTotal)}</span></p>
-                                <p class="mb-2"><strong>Tiền khách đưa:</strong> <span class="text-primary fw-bold fs-5">${formatVND(cashNum)}</span></p>
-                                <p class="mb-0"><strong>Tiền thừa:</strong> <span class="text-success fw-bold fs-5">${formatVND(change)}</span></p>
-                            </div>
-                        `,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#0d6efd',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Đồng ý',
-                        cancelButtonText: 'Hủy'
-                    }).then((result) => {
-                        if (result.isConfirmed) executeCheckout();
+                    const cashVal = cashInput.value.trim();
+                    const cashNum = parseFloat(cashVal);
+                    const feedback = document.getElementById("cashReceivedFeedback");
+                    const feedbackTxt = feedback ? feedback.querySelector("span") : null;
+
+                    if (!cashVal || isNaN(cashNum) || cashNum <= 0) {
+                        cashInput.classList.add("is-invalid");
+                        cashInput.classList.remove("is-valid");
+                        if (feedback && feedbackTxt) {
+                            feedbackTxt.innerText = "Vui lòng nhập số tiền khách đưa (tối thiểu " + formatVND(grandTotal) + ")";
+                            feedback.style.display = "block";
+                        }
+                        cashInput.focus();
+                        showToast("Vui lòng nhập số tiền khách đưa!", "warning");
+                        return;
+                    }
+
+                    if (cashNum < grandTotal) {
+                        const thieu = grandTotal - cashNum;
+                        cashInput.classList.add("is-invalid");
+                        cashInput.classList.remove("is-valid");
+                        if (feedback && feedbackTxt) {
+                            feedbackTxt.innerText = "Số tiền khách đưa chưa đủ! Còn thiếu " + formatVND(thieu);
+                            feedback.style.display = "block";
+                        }
+                        cashInput.focus();
+                        showToast("Số tiền khách đưa chưa đủ! Còn thiếu " + formatVND(thieu) + ".", "warning");
+                        return;
+                    }
+
+                    SmashNotify.confirm({
+                        title: 'Xác nhận thao tác?',
+                        message: 'Xác nhận đã nhận đủ tiền và hoàn tất thanh toán đơn hàng này?',
+                        confirmText: 'Đồng ý',
+                        cancelText: 'Hủy'
+                    }).then((confirmed) => {
+                        if (confirmed) executeCheckout();
                     });
                 };
                 
+                cashInput.onkeydown = (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        btnConfirm.click();
+                    }
+                };
+
                 setupQuickCashButtons(grandTotal);
                 let modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 modal.show();
+                setTimeout(() => cashInput.focus(), 300);
             } else {
                 // CHUYEN_KHOAN -> Khởi tạo đơn hàng chờ thanh toán trong DB để nhận Webhook SePay tự động
                 executeCheckout();
@@ -1231,39 +1265,48 @@
         }
 
         function confirmPaymentManually(hoaDonId) {
-            stopPaymentPolling();
-            const overlay = document.getElementById("posLoadingOverlay");
-            overlay.style.display = "flex";
-            closePaymentConfirmModal();
+            SmashNotify.confirm({
+                title: 'Xác nhận thao tác?',
+                message: 'Xác nhận đã nhận đủ tiền chuyển khoản và hoàn tất thanh toán đơn hàng này?',
+                confirmText: 'Đồng ý',
+                cancelText: 'Hủy'
+            }).then((confirmed) => {
+                if (!confirmed) return;
 
-            const csrfMeta = document.querySelector('meta[name="_csrf"]');
-            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-            const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
-            const headers = { "Content-Type": "application/json" };
-            if (csrfToken) headers[csrfHeaderName] = csrfToken;
+                stopPaymentPolling();
+                const overlay = document.getElementById("posLoadingOverlay");
+                overlay.style.display = "flex";
+                closePaymentConfirmModal();
 
-            fetch(`/admin/pos/confirm-payment/${hoaDonId}`, {
-                method: "POST",
-                headers: headers
-            })
-            .then(res => res.json())
-            .then(data => {
-                overlay.style.display = "none";
-                if (data.success) {
-                    pendingPrintUrl = `/admin/pos/print/${hoaDonId}`;
-                    document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${currentCheckoutMaHoaDon}`;
-                    const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
-                    myModal.show();
-                    clearPOSState();
-                    showToast("Xác nhận thanh toán thủ công thành công!", "success");
-                } else {
-                    showToast(`Lỗi: ${data.message}`, "error");
-                }
-            })
-            .catch(err => {
-                overlay.style.display = "none";
-                showToast("Đã xảy ra lỗi khi xác nhận.", "error");
+                const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+                const headers = { "Content-Type": "application/json" };
+                if (csrfToken) headers[csrfHeaderName] = csrfToken;
+
+                fetch(`/admin/pos/confirm-payment/${hoaDonId}`, {
+                    method: "POST",
+                    headers: headers
+                })
+                .then(res => res.json())
+                .then(data => {
+                    overlay.style.display = "none";
+                    if (data.success) {
+                        pendingPrintUrl = `/admin/pos/print/${hoaDonId}`;
+                        document.getElementById("txtInvoiceCodePrint").innerText = `Mã hóa đơn: ${currentCheckoutMaHoaDon}`;
+                        const myModal = new bootstrap.Modal(document.getElementById('printConfirmModal'));
+                        myModal.show();
+                        clearPOSState();
+                        showToast("Xác nhận thanh toán thủ công thành công!", "success");
+                    } else {
+                        showToast(`Lỗi: ${data.message}`, "error");
+                    }
+                })
+                .catch(err => {
+                    overlay.style.display = "none";
+                    showToast("Đã xảy ra lỗi khi xác nhận.", "error");
+                });
             });
         }
 
@@ -1274,8 +1317,17 @@
                 return;
             }
 
-            // Click Hủy đơn -> Hủy hẳn đơn sang da_huy và hoàn lại kho lập tức
-            executeCancelPendingOrder(currentCheckoutHoaDonId);
+            SmashNotify.confirm({
+                title: 'Hủy đơn chờ thanh toán?',
+                message: 'Bạn có chắc chắn muốn hủy đơn hàng chuyển khoản này và hoàn trả tồn kho?',
+                confirmText: 'Xác nhận hủy',
+                cancelText: 'Quay lại',
+                danger: true
+            }).then((confirmed) => {
+                if (confirmed) {
+                    executeCancelPendingOrder(currentCheckoutHoaDonId);
+                }
+            });
         }
 
         function saveAsPendingPayment() {
@@ -1396,20 +1448,40 @@
 
         function calculateChange() {
             const grandTotal = parseCurrencyToNumber(document.getElementById("confirmGrandTotal").innerText);
-            const cashReceivedVal = parseFloat(document.getElementById("inputCashReceived").value);
-            const cashReceived = isNaN(cashReceivedVal) ? 0 : cashReceivedVal;
-            const change = cashReceived - grandTotal;
+            const cashInput = document.getElementById("inputCashReceived");
+            const feedback = document.getElementById("cashReceivedFeedback");
+            const feedbackText = feedback ? feedback.querySelector("span") : null;
             const confirmCashChangeSpan = document.getElementById("confirmCashChange");
-            const btnConfirm = document.getElementById("btnConfirmPayment");
+            const valStr = cashInput.value.trim();
+            const cashReceivedVal = parseFloat(valStr);
+
+            if (!valStr || isNaN(cashReceivedVal) || cashReceivedVal === 0) {
+                confirmCashChangeSpan.innerText = "0 đ";
+                confirmCashChangeSpan.className = "fs-4 fw-bold text-muted";
+                cashInput.classList.remove("is-invalid", "is-valid");
+                if (feedback) feedback.style.display = "none";
+                return;
+            }
+
+            const cashReceived = cashReceivedVal;
+            const change = cashReceived - grandTotal;
 
             if (cashReceived < grandTotal) {
-                confirmCashChangeSpan.innerText = "Chưa đủ tiền";
+                const thieu = grandTotal - cashReceived;
+                confirmCashChangeSpan.innerText = "Thiếu " + formatVND(thieu);
                 confirmCashChangeSpan.className = "fs-4 fw-bold text-danger";
-                btnConfirm.disabled = true;
+                cashInput.classList.add("is-invalid");
+                cashInput.classList.remove("is-valid");
+                if (feedback && feedbackText) {
+                    feedbackText.innerText = "Số tiền khách đưa chưa đủ (còn thiếu " + formatVND(thieu) + ")";
+                    feedback.style.display = "block";
+                }
             } else {
                 confirmCashChangeSpan.innerText = formatVND(change);
                 confirmCashChangeSpan.className = "fs-4 fw-bold text-success";
-                btnConfirm.disabled = false;
+                cashInput.classList.remove("is-invalid");
+                cashInput.classList.add("is-valid");
+                if (feedback) feedback.style.display = "none";
             }
         }
 

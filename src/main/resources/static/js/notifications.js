@@ -280,24 +280,40 @@
         if (typeof options === 'string') options = { message: options };
         options = options || {};
         const settings = {
-            title: String(options.title || 'Xác nhận thực hiện'),
+            title: String(options.title || 'Xác nhận thao tác?'),
             message: String(options.message || 'Bạn có chắc chắn muốn thực hiện thao tác này?'),
-            confirmText: String(options.confirmText || 'Xác nhận'),
-            cancelText: String(options.cancelText || 'Hủy bỏ'),
-            danger: options.danger === true
+            confirmText: String(options.confirmText || 'Đồng ý'),
+            cancelText: String(options.cancelText || 'Hủy'),
+            danger: options.danger === true,
+            html: options.html || null,
+            note: options.note !== undefined ? options.note : 'Vui lòng kiểm tra kỹ trước khi xác nhận.'
         };
 
         if (window.Swal && typeof window.Swal.fire === 'function') {
+            let htmlContent = settings.html;
+            if (!htmlContent) {
+                let noteHtml = settings.note ? `
+                    <div style="margin-top: 14px; padding: 10px 14px; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; font-size: 13px; color: #c2410c; display: flex; align-items: center; justify-content: center; gap: 6px; line-height: 1.4;">
+                        <i class="fas fa-info-circle" style="color: #f97316;"></i>
+                        <span>${settings.note}</span>
+                    </div>` : '';
+                htmlContent = `
+                    <div style="font-size: 14px; line-height: 1.6; color: #334155; padding: 4px 8px;">
+                        <p style="margin-bottom: 0; font-size: 15px; font-weight: 600; color: #1e293b;">${settings.message}</p>
+                        ${noteHtml}
+                    </div>`;
+            }
+
             return window.Swal.fire({
                 title: settings.title,
-                text: settings.message,
+                html: htmlContent,
                 icon: settings.danger ? 'warning' : 'question',
                 showCancelButton: true,
-                confirmButtonColor: settings.danger ? '#dc2626' : '#ff4500',
+                confirmButtonColor: settings.danger ? '#dc2626' : '#f4511e',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: settings.confirmText,
                 cancelButtonText: settings.cancelText,
-                reverseButtons: true,
+                reverseButtons: false,
                 focusCancel: settings.danger
             }).then(function (result) { return result.isConfirmed === true; });
         }

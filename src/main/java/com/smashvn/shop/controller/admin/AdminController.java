@@ -360,84 +360,152 @@ public class AdminController {
         return "admin/khuyenmai-list";
     }
 
+    private boolean isAjaxRequest(HttpServletRequest request) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        String accept = request.getHeader("Accept");
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith)
+                || (accept != null && accept.contains("application/json"));
+    }
+
+    private String redirectWithTab(String activeTab) {
+        if (activeTab != null && !activeTab.trim().isEmpty()) {
+            return "redirect:/admin/don-hang?activeTab=" + activeTab.trim();
+        }
+        return "redirect:/admin/don-hang";
+    }
+
     @PostMapping("/don-hang/update-status")
-    public String capNhatTrangThaiDonHang(
+    public Object capNhatTrangThaiDonHang(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam("trangThai") String trangThai,
             @RequestParam("expectedStatus") String expectedStatus,
             @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.updateOrderStatusByAdmin(idHoaDon, trangThai, expectedStatus, actingTaiKhoanId, request.getRemoteAddr(), lyDoHuy);
-            redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!");
+            String msg = "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            String errorMsg = "Lỗi: Bạn không có quyền thực hiện chức năng này.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @PostMapping("/don-hang/next-status")
-    public String moveOrderToNextStatus(
+    public Object moveOrderToNextStatus(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.moveOrderToNextStatus(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!");
+            String msg = "Cập nhật trạng thái đơn hàng #" + idHoaDon + " thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            String errorMsg = "Lỗi: Bạn không có quyền thực hiện chức năng này.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @PostMapping("/don-hang/cancel-unpaid")
-    public String cancelOrderUnpaid(
+    public Object cancelOrderUnpaid(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.cancelOrderUnpaid(idHoaDon, lyDoHuy, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Hủy đơn hàng #" + idHoaDon + " thành công!");
+            String msg = "Hủy đơn hàng #" + idHoaDon + " thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            String errorMsg = "Lỗi: Bạn không có quyền thực hiện chức năng này.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hủy đơn: " + e.getMessage());
+            String errorMsg = "Lỗi hủy đơn: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @PostMapping("/don-hang/cancel-paid-refund")
-    public String cancelOrderPaidWithRefund(
+    public Object cancelOrderPaidWithRefund(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam(value = "lyDoHuy", required = false) String lyDoHuy,
             @RequestParam(value = "phuongThucHoanTien", required = false) String phuongThucHoanTien,
@@ -445,12 +513,17 @@ public class AdminController {
             @RequestParam(value = "maGiaoDichHoanTien", required = false) String maGiaoDichHoanTien,
             @RequestParam(value = "ghiChuHoanTien", required = false) String ghiChuHoanTien,
             @RequestParam(value = "fileChungTu", required = false) org.springframework.web.multipart.MultipartFile fileChungTu,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
@@ -475,7 +548,11 @@ public class AdminController {
                     actingTaiKhoanId,
                     request.getRemoteAddr()
             );
-            redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền và hủy đơn hàng #" + idHoaDon + " thành công!");
+            String msg = "Đã xác nhận hoàn tiền và hủy đơn hàng #" + idHoaDon + " thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
             if (savedNames != null && !savedNames.isEmpty()) {
                 try {
@@ -484,10 +561,14 @@ public class AdminController {
                     log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
                 }
             }
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hoàn tiền & hủy đơn: " + e.getMessage());
+            String errorMsg = "Lỗi hoàn tiền & hủy đơn: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @GetMapping("/don-hang/approve-refund")
@@ -527,14 +608,19 @@ public class AdminController {
     }
 
     @PostMapping("/don-hang/approve-refund-ui")
-    public String approveRefundUi(
+    public Object approveRefundUi(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
         try {
@@ -552,23 +638,36 @@ public class AdminController {
             }
 
             orderViewService.approveRefund(idHoaDon, token, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã phê duyệt hoàn tiền thành công cho đơn hàng #" + idHoaDon);
+            String msg = "Đã phê duyệt hoàn tiền thành công cho đơn hàng #" + idHoaDon;
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi phê duyệt hoàn tiền: " + e.getMessage());
+            String errorMsg = "Lỗi phê duyệt hoàn tiền: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @PostMapping("/don-hang/reject-refund-ui")
-    public String rejectRefundUi(
+    public Object rejectRefundUi(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
@@ -587,12 +686,20 @@ public class AdminController {
             }
 
             orderViewService.rejectRefund(idHoaDon, token, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối hoàn tiền cho đơn hàng #" + idHoaDon);
+            String msg = "Đã từ chối hoàn tiền cho đơn hàng #" + idHoaDon;
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi từ chối hoàn tiền: " + e.getMessage());
+            String errorMsg = "Lỗi từ chối hoàn tiền: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab);
     }
 
     @GetMapping("/don-hang/detail-json")
@@ -856,138 +963,218 @@ public class AdminController {
     }
 
     @PostMapping("/don-hang/update-return-status")
-    public String updateReturnStatus(
+    public Object updateReturnStatus(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam("trangThaiHoanHang") String trangThaiHoanHang,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.updateReturnStatusByAdmin(idHoaDon, trangThaiHoanHang, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Cập nhật trạng thái hoàn hàng thành công!");
+            String msg = "Cập nhật trạng thái hoàn hàng thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: Bạn không có quyền thực hiện chức năng này.");
+            String errorMsg = "Lỗi: Bạn không có quyền thực hiện chức năng này.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
 
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     @PostMapping("/don-hang/approve-return")
-    public String approveReturn(
+    public Object approveReturn(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             String ghnCode = orderViewService.duyetYeuCauTraHangVaTaoDonGhn(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã duyệt yêu cầu trả hàng và tạo vận đơn GHN thu hồi thành công: " + ghnCode);
+            String msg = "Đã duyệt yêu cầu trả hàng và tạo vận đơn GHN thu hồi thành công: " + ghnCode;
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon, "ghnReturnOrderCode", ghnCode != null ? ghnCode : ""));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     @PostMapping("/don-hang/reject-return")
-    public String rejectReturn(
+    public Object rejectReturn(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam(value = "lyDoTuChoi", required = false) String lyDoTuChoi,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.tuChoiYeuCauTraHang(idHoaDon, lyDoTuChoi, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối yêu cầu trả hàng.");
+            String msg = "Đã từ chối yêu cầu trả hàng.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     @PostMapping("/don-hang/cancel-return-pickup")
-    public String cancelReturnPickup(
+    public Object cancelReturnPickup(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.huyDonThuHoiGhn(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã hủy vận đơn thu hồi GHN thành công.");
+            String msg = "Đã hủy vận đơn thu hồi GHN thành công.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     @PostMapping("/don-hang/confirm-restock")
-    public String confirmRestock(
+    public Object confirmRestock(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam(value = "ketQua", required = false, defaultValue = "BAN_LAI") String ketQua,
             @RequestParam(value = "lyDoTuChoi", required = false) String lyDoTuChoi,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.xacNhanKiemKhoVaNhapKho(idHoaDon, ketQua, lyDoTuChoi, actingTaiKhoanId, request.getRemoteAddr());
+            String msg;
             if ("TU_CHOI".equalsIgnoreCase(ketQua)) {
-                redirectAttributes.addFlashAttribute("successMsg", "Đã từ chối nhận hàng hoàn và tạo vận đơn gửi trả lại cho khách hàng thành công!");
+                msg = "Đã từ chối nhận hàng hoàn và tạo vận đơn gửi trả lại cho khách hàng thành công!";
             } else if ("HANG_LOI".equalsIgnoreCase(ketQua)) {
-                redirectAttributes.addFlashAttribute("successMsg", "Đã kiểm hàng thành công và chuyển sản phẩm vào kho hàng lỗi!");
+                msg = "Đã kiểm hàng thành công và chuyển sản phẩm vào kho hàng lỗi!";
             } else {
-                redirectAttributes.addFlashAttribute("successMsg", "Đã kiểm hàng thành công và hoàn lại tồn kho bán!");
+                msg = "Đã kiểm hàng thành công và hoàn lại tồn kho bán!";
             }
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi: " + e.getMessage());
+            String errorMsg = "Lỗi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     @PostMapping("/don-hang/confirm-refund")
-    public String confirmRefund(
+    public Object confirmRefund(
             @RequestParam("idHoaDon") Integer idHoaDon,
             @RequestParam(value = "phuongThucHoanTien", required = false) String phuongThucHoanTien,
             @RequestParam(value = "soTienHoan", required = false) java.math.BigDecimal soTienHoan,
             @RequestParam(value = "maGiaoDichHoanTien", required = false) String maGiaoDichHoanTien,
             @RequestParam(value = "ghiChuHoanTien", required = false) String ghiChuHoanTien,
             @RequestParam(value = "fileChungTu", required = false) org.springframework.web.multipart.MultipartFile fileChungTu,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         if (fileChungTu == null || fileChungTu.isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.");
-            return "redirect:/admin/don-hang";
+            String errorMsg = "Vui lòng tải lên ảnh / chứng từ xác nhận đã hoàn tiền cho khách hàng.";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return redirectWithTab(activeTab != null ? activeTab : "return");
         }
 
         java.util.List<String> savedNames = null;
@@ -1008,7 +1195,11 @@ public class AdminController {
                     actingTaiKhoanId,
                     request.getRemoteAddr()
             );
-            redirectAttributes.addFlashAttribute("successMsg", "Đã xác nhận hoàn tiền thành công cho khách hàng!");
+            String msg = "Đã xác nhận hoàn tiền thành công cho khách hàng!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
             if (savedNames != null && !savedNames.isEmpty()) {
                 try {
@@ -1017,9 +1208,13 @@ public class AdminController {
                     log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
                 }
             }
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi hoàn tiền: " + e.getMessage());
+            String errorMsg = "Lỗi hoàn tiền: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     /**
@@ -1027,24 +1222,37 @@ public class AdminController {
      * cho khách hàng (Phase 6)
      */
     @PostMapping("/don-hang/confirm-exchange-shipment")
-    public String confirmExchangeShipment(
+    public Object confirmExchangeShipment(
             @RequestParam("idHoaDon") Integer idHoaDon,
+            @RequestParam(value = "activeTab", required = false) String activeTab,
             HttpSession session,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         Integer actingTaiKhoanId = (Integer) session.getAttribute("idNguoiDung");
         if (actingTaiKhoanId == null) {
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Phiên làm việc đã hết hạn."));
+            }
             return "redirect:/admin/dang-nhap";
         }
 
         try {
             orderViewService.xacNhanGiaoHangDoiMoiChoKhach(idHoaDon, actingTaiKhoanId, request.getRemoteAddr());
-            redirectAttributes.addFlashAttribute("successMsg", "Đã phân bổ kho và khởi tạo vận đơn giao hàng đổi thành công!");
+            String msg = "Đã phân bổ kho và khởi tạo vận đơn giao hàng đổi thành công!";
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.ok(java.util.Map.of("success", true, "message", msg, "idHoaDon", idHoaDon));
+            }
+            redirectAttributes.addFlashAttribute("successMsg", msg);
         } catch (Exception e) {
             log.error("Lỗi chuẩn bị/giao hàng đổi cho đơn #{}: {}", idHoaDon, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi xử lý giao hàng đổi: " + e.getMessage());
+            String errorMsg = "Lỗi xử lý giao hàng đổi: " + e.getMessage();
+            if (isAjaxRequest(request)) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", errorMsg));
+            }
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
         }
-        return "redirect:/admin/don-hang";
+        return redirectWithTab(activeTab != null ? activeTab : "return");
     }
 
     // ── PHASE 1: KHO SAN PHAM LOI ────────────────────────────────────────────

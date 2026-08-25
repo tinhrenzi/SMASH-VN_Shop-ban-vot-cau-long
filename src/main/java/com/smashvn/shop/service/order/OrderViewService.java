@@ -119,6 +119,10 @@ public class OrderViewService {
         orderMap.put("ghnOrderCode", hd.getGhnOrderCode());
         orderMap.put("ghnReturnOrderCode", resolveGhnReturnOrderCode(hd.getId(), hd));
 
+        ReturnStatus returnStatus = resolveReturnStatus(hd.getId(), hd);
+        orderMap.put("trangThaiHoanHang", returnStatus != null ? returnStatus.name() : null);
+        orderMap.put("trangThaiHoanHangLabel", returnStatus != null ? returnStatus.getLabel() : "");
+
         List<HoaDonChiTiet> items = hoaDonChiTietRepository.findByHoaDon_Id(hd.getId());
         List<Map<String, Object>> itemMaps = new ArrayList<>();
         for (HoaDonChiTiet ct : items) {

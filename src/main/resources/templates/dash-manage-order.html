@@ -504,14 +504,14 @@
                                                     <!-- ===== Badge trạng thái đầy đủ ===== -->
                                                     <div>
                                                         <span class="manage-o__badge"
-                                                              th:classappend="${order['trangThaiHoanHang'] != null ? (order['trangThaiHoanHang'] == 'REFUNDED' or order['trangThaiHoanHang'] == 'RETURNED' ? 'badge--delivered' : (order['trangThaiHoanHang'] == 'REJECTED' ? 'badge--cancelled' : 'badge--pending')) : (order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'badge--delivered' : (order['trangThaiDonHang'] == 'da_huy' or order['trangThaiDonHang'] == 'giao_that_bai' ? 'badge--cancelled' : (order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'badge--pending' : 'badge--processing')))}"
-                                                              th:text="${order['trangThaiHoanHang'] != null ? ('Trả hàng: ' + order['trangThaiHoanHangLabel']) : (order['trangThaiDonHangLabel'] != null ? order['trangThaiDonHangLabel'] : order['trangThaiDonHang'])}"
+                                                              th:classappend="${order['trangThaiHoanHang'] == 'REFUNDED' or order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'EXCHANGED' ? 'badge--delivered' : (order['trangThaiHoanHang'] == 'REJECTED' ? 'badge--cancelled' : (order['trangThaiHoanHang'] != null ? 'badge--processing' : (order['trangThaiDonHang'] == 'da_giao' or order['trangThaiDonHang'] == 'hoan_thanh' ? 'badge--delivered' : (order['trangThaiDonHang'] == 'da_huy' or order['trangThaiDonHang'] == 'giao_that_bai' ? 'badge--cancelled' : (order['trangThaiDonHang'] == 'cho_thanh_toan' ? 'badge--pending' : 'badge--processing')))))}"
+                                                              th:text="${order['trangThaiHoanHang'] == 'REFUNDED' ? 'Đã Hoàn Tiền' : (order['trangThaiHoanHang'] == 'RETURNED' ? 'Đã Trả Hàng' : (order['trangThaiHoanHang'] == 'EXCHANGED' ? 'Đã Đổi Hàng' : (order['trangThaiHoanHang'] != null ? ('Trả hàng: ' + order['trangThaiHoanHangLabel']) : (order['trangThaiDonHangLabel'] != null ? order['trangThaiDonHangLabel'] : order['trangThaiDonHang']))))}"
                                                         >Trạng thái</span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                                                                <!-- ===== Nút Thao tác đơn hàng ===== -->
+                                            <!-- ===== Nút Thao tác đơn hàng ===== -->
                                              <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center; flex-wrap: wrap;">
                                                  <!-- Nút thanh toán VNPAY/SePay -->
                                                  <a th:if="${order['trangThaiDonHang'] == 'cho_thanh_toan' and order['paymentMethod'] == 'sepay'}"
@@ -584,28 +584,40 @@
                                                      </div>
                                                  </div>
 
-                                                 <!-- Step 7 & 8: RETURNED / REFUNDED / EXCHANGE -->
-                                                 <div th:if="${order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'REFUNDED' or order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' or order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' or order['trangThaiHoanHang'] == 'EXCHANGED'}"
+                                                 <!-- Step 7: REFUNDED (Đã Hoàn Tiền Cho Khách) -->
+                                                 <div th:if="${order['trangThaiHoanHang'] == 'REFUNDED'}"
+                                                      style="padding: 16px 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius: 8px; font-size: 13px; color: #166534; line-height: 1.6;">
+                                                     <div style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; color: #15803d;">
+                                                         <i class="fas fa-check-circle" style="font-size: 18px; color: #16a34a;"></i>
+                                                         <span>Thông báo: Đơn hàng đã được hoàn tiền thành công</span>
+                                                     </div>
+                                                     <div style="margin-top: 6px; color: #166534;">
+                                                         Shop đã hoàn tất thủ tục hoàn tiền cho đơn hàng này. Quý khách vui lòng kiểm tra số dư tài khoản ngân hàng hoặc phương thức thanh toán đã nhận tiền hoàn.
+                                                     </div>
+                                                     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #86efac; font-size: 13px; color: #14532d;">
+                                                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                                                             <div><strong>Số tiền hoàn:</strong> <span style="font-size: 15px; font-weight: 700; color: #dc2626;" th:text="${#numbers.formatDecimal(order['soTienHoan'] != null ? order['soTienHoan'] : order['tongTien'], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span></div>
+                                                             <div><strong>Phương thức hoàn:</strong> <span th:text="${order['phuongThucHoanTien'] != null and !#strings.isEmpty(order['phuongThucHoanTien']) ? order['phuongThucHoanTien'] : 'Chuyển khoản ngân hàng'}"></span></div>
+                                                             <div th:if="${order['maGiaoDichHoanTien'] != null and !#strings.isEmpty(order['maGiaoDichHoanTien'])}"><strong>Mã giao dịch hoàn:</strong> <code style="background: #dcfce7; padding: 2px 6px; border-radius: 4px; color: #166534; font-weight: 600;" th:text="${order['maGiaoDichHoanTien']}"></code></div>
+                                                             <div th:if="${order['thoiGianHoanTien'] != null and !#strings.isEmpty(order['thoiGianHoanTien'])}"><strong>Thời gian hoàn:</strong> <span th:text="${order['thoiGianHoanTien']}"></span></div>
+                                                         </div>
+                                                         <div th:if="${order['ghiChuHoanTien'] != null and !#strings.isEmpty(order['ghiChuHoanTien'])}" style="margin-top: 8px;">
+                                                             <strong>Ghi chú từ Shop:</strong> <span th:text="${order['ghiChuHoanTien']}"></span>
+                                                         </div>
+                                                         <div th:if="${order['anhChungTuHoanTien'] != null and !#strings.isEmpty(order['anhChungTuHoanTien'])}" style="margin-top: 10px;">
+                                                             <a th:href="${order['anhChungTuHoanTien']}" target="_blank" class="btn btn-sm" style="font-size: 12px; padding: 6px 14px; border-radius: 6px; background-color: #16a34a; color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                                                                 <i class="fas fa-file-invoice-dollar"></i> Xem chứng từ chuyển khoản hoàn tiền
+                                                             </a>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+
+                                                 <!-- Step 8: RETURNED / EXCHANGE -->
+                                                 <div th:if="${order['trangThaiHoanHang'] == 'RETURNED' or order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' or order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' or order['trangThaiHoanHang'] == 'EXCHANGED'}"
                                                       style="padding: 14px 18px; background: #f4fbf7; border-left: 4px solid #198754; border-radius: 8px; font-size: 13px; color: #198754; line-height: 1.6;">
                                                      <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
                                                          <i class="fas fa-check-double" style="font-size: 16px;"></i>
-                                                         <span th:text="${order['trangThaiHoanHang'] == 'EXCHANGED' ? 'Đã hoàn tất đổi hàng thành công!' : (order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' ? 'Sản phẩm thay thế đang trên đường giao tới bạn!' : (order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' ? 'Shop đã chuẩn bị sản phẩm thay thế và đang tạo đơn giao hàng.' : (order['trangThaiHoanHang'] == 'REFUNDED' ? 'Shop đã hoàn tất thủ tục Trả hàng & Hoàn tiền thành công cho bạn!' : (order['loaiYeuCauDoiTra'] == 'DOI' ? 'Shop đã kiểm tra kiện hàng và chuẩn bị sản phẩm đổi.' : 'Shop đã kiểm tra kiện hàng và nhập kho thành công. Đang tiến hành hoàn tiền.'))))}"></span>
-                                                     </div>
-                                                     <div th:if="${order['trangThaiHoanHang'] == 'REFUNDED'}" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(25, 135, 84, 0.3); font-size: 12px; color: #145a32;">
-                                                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                                                             <div><strong>Số tiền hoàn:</strong> <span style="font-size: 14px; font-weight: 700; color: #d9534f;" th:text="${#numbers.formatDecimal(order['soTienHoan'] != null ? order['soTienHoan'] : order['tongTien'], 0, 'COMMA', 0, 'POINT')} + 'đ'"></span></div>
-                                                             <div><strong>Phương thức:</strong> <span th:text="${order['phuongThucHoanTien'] != null and !#strings.isEmpty(order['phuongThucHoanTien']) ? order['phuongThucHoanTien'] : 'Chuyển khoản ngân hàng'}"></span></div>
-                                                             <div th:if="${order['maGiaoDichHoanTien'] != null and !#strings.isEmpty(order['maGiaoDichHoanTien'])}"><strong>Mã giao dịch:</strong> <code th:text="${order['maGiaoDichHoanTien']}"></code></div>
-                                                             <div th:if="${order['thoiGianHoanTien'] != null and !#strings.isEmpty(order['thoiGianHoanTien'])}"><strong>Thời gian:</strong> <span th:text="${order['thoiGianHoanTien']}"></span></div>
-                                                         </div>
-                                                         <div th:if="${order['ghiChuHoanTien'] != null and !#strings.isEmpty(order['ghiChuHoanTien'])}" style="margin-top: 6px;">
-                                                             <strong>Ghi chú từ Shop:</strong> <span th:text="${order['ghiChuHoanTien']}"></span>
-                                                         </div>
-                                                         <div th:if="${order['anhChungTuHoanTien'] != null and !#strings.isEmpty(order['anhChungTuHoanTien'])}" style="margin-top: 8px;">
-                                                             <a th:href="${order['anhChungTuHoanTien']}" target="_blank" class="btn btn-sm btn-outline-success" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid #198754; color: #198754; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                                                 <i class="fas fa-file-invoice-dollar"></i> Xem chứng từ chuyển khoản
-                                                             </a>
-                                                         </div>
+                                                         <span th:text="${order['trangThaiHoanHang'] == 'EXCHANGED' ? 'Đã hoàn tất đổi hàng thành công!' : (order['trangThaiHoanHang'] == 'EXCHANGE_SHIPPING' ? 'Sản phẩm thay thế đang trên đường giao tới bạn!' : (order['trangThaiHoanHang'] == 'EXCHANGE_STOCK_ALLOCATED' ? 'Shop đã chuẩn bị sản phẩm thay thế và đang tạo đơn giao hàng.' : (order['loaiYeuCauDoiTra'] == 'DOI' ? 'Shop đã kiểm tra kiện hàng và chuẩn bị sản phẩm đổi.' : 'Shop đã kiểm tra kiện hàng và nhập kho thành công. Đang tiến hành xử lý.')))}"></span>
                                                      </div>
                                                  </div>
                                              </div>
