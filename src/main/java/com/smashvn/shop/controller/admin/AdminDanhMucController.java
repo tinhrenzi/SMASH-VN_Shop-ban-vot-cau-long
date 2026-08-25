@@ -70,9 +70,10 @@ public class AdminDanhMucController {
             @PathVariable("id") Integer id,
             @RequestParam(value = "tenDanhMuc", required = false) String tenDanhMuc,
             @RequestParam(value = "thuocTinhIds", required = false) List<Integer> thuocTinhIds,
+            @RequestParam(value = "capNhatThuocTinh", defaultValue = "false") boolean capNhatThuocTinh,
             RedirectAttributes redirectAttributes) {
         try {
-            danhMucService.suaDanhMuc(id, tenDanhMuc, thuocTinhIds);
+            danhMucService.suaDanhMuc(id, tenDanhMuc, thuocTinhIds, capNhatThuocTinh);
             redirectAttributes.addFlashAttribute("successMessage", "Cập nhật danh mục thành công!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());

@@ -10,6 +10,7 @@ import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.user.UserAddressService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,6 +84,9 @@ public class CheckoutControllerTest {
     @Mock
     private com.smashvn.shop.repository.GioHangChiTietRepository gioHangChiTietRepository;
 
+    @Mock
+    private ProductAvailabilityService productAvailabilityService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -110,8 +114,11 @@ public class CheckoutControllerTest {
                 soDiaChiRepository,
                 checkoutContextService,
                 pendingCheckoutRegistry,
-                gioHangChiTietRepository
+                gioHangChiTietRepository,
+                productAvailabilityService
         );
+
+        when(productAvailabilityService.isVariantPublished(any())).thenReturn(true);
 
         when(pricingService.calculateCurrentSellingPrice(any())).thenAnswer(invocation -> {
             SanPhamChiTiet arg = invocation.getArgument(0);

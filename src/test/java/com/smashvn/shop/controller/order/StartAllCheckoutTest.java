@@ -15,6 +15,7 @@ import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.order.CheckoutContextService;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,9 @@ public class StartAllCheckoutTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private ProductAvailabilityService productAvailabilityService;
+
     private CheckoutContextService checkoutContextService;
     private CheckoutController checkoutController;
 
@@ -60,7 +64,8 @@ public class StartAllCheckoutTest {
                 guestCartService,
                 gioHangService,
                 sanPhamChiTietRepository,
-                taiKhoanRepository
+                taiKhoanRepository,
+                productAvailabilityService
         );
 
         checkoutController = new CheckoutController(
@@ -80,8 +85,11 @@ public class StartAllCheckoutTest {
                 null,
                 checkoutContextService,
                 null,
-                null
+                null,
+                productAvailabilityService
         );
+
+        when(productAvailabilityService.isVariantPublished(any())).thenReturn(true);
     }
 
     // 1. testStartAllOneLineQuantityFive

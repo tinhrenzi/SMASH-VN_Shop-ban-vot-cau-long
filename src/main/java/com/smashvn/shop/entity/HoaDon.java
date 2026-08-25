@@ -175,7 +175,10 @@ public class HoaDon {
     @Transient
     private NhanVien nhanVienXacNhan;
 
-    @org.hibernate.annotations.Formula("CASE WHEN trang_thai_thanh_toan = 'REFUNDED' THEN 'COMPLETED' WHEN trang_thai_thanh_toan = 'CHO_HOAN_TIEN' THEN 'PENDING' ELSE NULL END")
+    @org.hibernate.annotations.Formula("CASE "
+            + "WHEN trang_thai_thanh_toan IN ('REFUNDED', 'DA_HOAN_TIEN') OR trang_thai_hoan_hang = 'REFUNDED' THEN 'COMPLETED' "
+            + "WHEN trang_thai_thanh_toan = 'CHO_HOAN_TIEN' OR (loai_yeu_cau_doi_tra = 'TRA' AND trang_thai_hoan_hang = 'RETURNED') THEN 'PENDING' "
+            + "ELSE NULL END")
     @Enumerated(EnumType.STRING)
     private RefundStatus refundStatus;
 

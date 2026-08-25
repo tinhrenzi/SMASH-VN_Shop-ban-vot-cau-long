@@ -19,6 +19,7 @@ import com.smashvn.shop.dto.order.FullCartCheckoutResult;
 import com.smashvn.shop.dto.order.InvalidCartItemView;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class CheckoutContextService {
     private final GioHangService gioHangService;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final ProductAvailabilityService productAvailabilityService;
 
 
     public static final String SESSION_CONTEXTS_KEY = "checkoutContexts";
@@ -234,17 +236,6 @@ public class CheckoutContextService {
                 && "hoat_dong".equalsIgnoreCase(tk.getTrangThai());
     }
 
-    private boolean isDangBan(String trangThai) {
-        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
-    }
-
-    public boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
-        return spct != null
-                && spct.getSanPham() != null
-                && isDangBan(spct.getSanPham().getTrangThai())
-                && isDangBan(spct.getTrangThai());
-    }
-
     public FullCartCheckoutResult createFullCartContext(HttpSession session, Integer idNguoiDung) {
         boolean activeAccount = isActiveAccount(idNguoiDung);
 
@@ -288,7 +279,7 @@ public class CheckoutContextService {
                 }
 
                 String tenSp = (spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "Sản phẩm";
-                if (!isSanPhamChiTietDangBan(spct)) {
+                if (!productAvailabilityService.isVariantPublished(spct)) {
                     invalidItems.add(InvalidCartItemView.builder()
                             .idSanPhamChiTiet(spctId)
                             .tenSanPham(tenSp)
@@ -355,7 +346,7 @@ public class CheckoutContextService {
                 }
 
                 String tenSp = (spct.getSanPham() != null) ? spct.getSanPham().getTenSanPham() : "Sản phẩm";
-                if (!isSanPhamChiTietDangBan(spct)) {
+                if (!productAvailabilityService.isVariantPublished(spct)) {
                     invalidItems.add(InvalidCartItemView.builder()
                             .idSanPhamChiTiet(spct.getId())
                             .tenSanPham(tenSp)

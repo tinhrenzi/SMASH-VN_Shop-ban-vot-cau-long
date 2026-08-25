@@ -55,6 +55,7 @@ import com.smashvn.shop.dto.order.PurchasedItemSnapshot;
 
 import com.smashvn.shop.service.product.PriceSnapshot;
 import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import com.smashvn.shop.util.PhoneUtils;
 import com.smashvn.shop.util.VoucherCalculator;
 import jakarta.servlet.http.HttpSession;
@@ -90,18 +91,7 @@ public class GioHangService {
     private final ThongBaoRepository thongBaoRepository;
     private final GuestCartService guestCartService;
     private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
-
-
-    private boolean isDangBan(String trangThai) {
-        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
-    }
-
-    private boolean isSanPhamChiTietDangBan(SanPhamChiTiet spct) {
-        return spct != null
-                && spct.getSanPham() != null
-                && isDangBan(spct.getSanPham().getTrangThai())
-                && isDangBan(spct.getTrangThai());
-    }
+    private final ProductAvailabilityService productAvailabilityService;
 
     private KhachHang getOrCreateKhachHang(Integer idTaiKhoan) {
         KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
@@ -154,7 +144,7 @@ public class GioHangService {
         SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
-        if (!isSanPhamChiTietDangBan(spct)) {
+        if (!productAvailabilityService.isVariantPublished(spct)) {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Phân loại sản phẩm này đã ngừng bán!");
         }
 
@@ -235,7 +225,10 @@ public class GioHangService {
         for (GioHangChiTiet item : danhSach) {
             SanPham sp = item.getSanPhamChiTiet().getSanPham();
             int tonKho = item.getSanPhamChiTiet().getSoLuongTon();
-            boolean hopLe = tonKho > 0 && isSanPhamChiTietDangBan(item.getSanPhamChiTiet()) && item.getSoLuong() != null && item.getSoLuong() > 0;
+            boolean hopLe = tonKho > 0
+                    && productAvailabilityService.isVariantPublished(item.getSanPhamChiTiet())
+                    && item.getSoLuong() != null
+                    && item.getSoLuong() > 0;
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(item.getSanPhamChiTiet());
 
             if (hopLe) {
@@ -358,6 +351,10 @@ public class GioHangService {
         // Chống IDOR: Xác minh sản phẩm giỏ hàng thuộc về người dùng đang thao tác
         if (!chiTiet.getGioHang().getKhachHang().getId().equals(khachHang.getId())) {
             throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền cập nhật giỏ hàng này!");
+        }
+
+        if (!productAvailabilityService.isVariantPublished(chiTiet.getSanPhamChiTiet())) {
+            throw new RuntimeException("Phân loại sản phẩm này đã ngừng bán!");
         }
 
         // Chống sửa vượt quá tồn kho (H-7)
@@ -572,7 +569,7 @@ public class GioHangService {
             int tonKho = lockedSpct.getSoLuongTon();
             int buyQty = itemCtx.getSoLuong() != null ? itemCtx.getSoLuong() : 0;
 
-            boolean hopLe = buyQty > 0 && tonKho >= buyQty && isSanPhamChiTietDangBan(lockedSpct);
+            boolean hopLe = productAvailabilityService.isVariantPurchasable(lockedSpct, buyQty);
             if (!hopLe) {
                 throw new RuntimeException("Sản phẩm '" + sp.getTenSanPham() + "' không đủ hàng tồn kho hoặc phân loại đã ngưng kinh doanh!");
             }

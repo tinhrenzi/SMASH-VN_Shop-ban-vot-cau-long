@@ -13,8 +13,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -45,6 +47,7 @@ import com.smashvn.shop.dto.payment.TransactionHistoryDTO;
 import com.smashvn.shop.entity.RefundStatus;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
+import com.smashvn.shop.repository.PaymentTransactionRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -55,6 +58,7 @@ public class AdminThongKeService {
 
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
     private final SanPhamRepository sanPhamRepository;
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -66,7 +70,6 @@ public class AdminThongKeService {
 
     public enum RevenueClassification {
         ACTUAL_REVENUE,
-        ACTUAL_REVENUE_REVERSAL,
         PROJECTED_REVENUE,
         EXCLUDED
     }
@@ -80,38 +83,85 @@ public class AdminThongKeService {
                 RefundStatus refundStatus,
                 boolean isCod) {
 
-            String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
-            String pStatus = paymentStatus != null ? paymentStatus.toLowerCase() : "";
-            String tStatus = trangThaiThanhToan != null ? trangThaiThanhToan.toUpperCase() : "";
+            String status = normalizeLower(trangThaiDonHang);
 
-            // 1. Actual Revenue: only successful/delivered orders
-            if ("da_giao".equals(status) || "hoan_thanh".equals(status) || "delivered".equals(status)) {
-                // If it is refunded, it is a reversal
-                if ("refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
-                    return RevenueClassification.ACTUAL_REVENUE_REVERSAL;
+            // Doanh thu thực tế được xác định theo đóng góp của từng đơn. Đơn đã
+            // hoàn tiền bị loại, không tạo một khoản âm để trừ ở bước khác.
+            if (isDelivered(status)) {
+                if (isRefundCompleted(paymentStatus, trangThaiThanhToan, refundStatus)) {
+                    return RevenueClassification.EXCLUDED;
                 }
                 return RevenueClassification.ACTUAL_REVENUE;
             }
 
-            // 2. Projected Revenue:
-            boolean isRefunded = "refunded".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus;
-            if (isRefunded) {
+            // Đơn đang/đã hoàn tiền không còn là doanh thu dự kiến.
+            if (isRefundCompleted(paymentStatus, trangThaiThanhToan, refundStatus)
+                    || isRefundPending(trangThaiThanhToan, refundStatus)) {
                 return RevenueClassification.EXCLUDED;
             }
 
-            if (isCod) {
-                // Đơn hàng COD thì sẽ được tính vào doanh thu tạm thời khi ở các trạng thái hoạt động (chưa hủy, chưa hoàn thành)
-                if ("cho_xac_nhan".equals(status) || "da_xac_nhan".equals(status) || "dang_chuan_bi_hang".equals(status) || "san_sang_giao".equals(status) || "da_tao_van_don_ghn".equals(status) || "da_ban_giao_ghn".equals(status) || "dang_lay_hang".equals(status) || "dang_giao".equals(status)) {
-                    return RevenueClassification.PROJECTED_REVENUE;
-                }
-            } else {
-                // Đơn hàng online thanh toán trước, chỉ tính doanh thu tạm thời khi đang giao (dang_giao)
-                if ("dang_giao".equals(status)) {
-                    return RevenueClassification.PROJECTED_REVENUE;
-                }
+            // COD đang hoạt động được dự kiến thu khi giao; online chỉ được dự
+            // kiến khi đã có bằng chứng thanh toán, kể cả chưa tới bước đang giao.
+            if (isActive(status) && (isCod || hasPaymentReceived(paymentStatus, trangThaiThanhToan))) {
+                return RevenueClassification.PROJECTED_REVENUE;
             }
 
             return RevenueClassification.EXCLUDED;
+        }
+
+        static boolean isDelivered(String status) {
+            String normalized = normalizeLower(status);
+            return "da_giao".equals(normalized)
+                    || "hoan_thanh".equals(normalized)
+                    || "delivered".equals(normalized);
+        }
+
+        static boolean isActive(String status) {
+            return switch (normalizeLower(status)) {
+                case "cho_thanh_toan", "cho_xac_nhan", "da_xac_nhan", "dang_chuan_bi_hang",
+                        "san_sang_giao", "da_tao_van_don_ghn", "da_ban_giao_ghn",
+                        "dang_lay_hang", "dang_giao", "processing", "shipping" -> true;
+                default -> false;
+            };
+        }
+
+        static boolean isRefundCompleted(
+                String paymentStatus,
+                String trangThaiThanhToan,
+                RefundStatus refundStatus) {
+            String pStatus = normalizeUpper(paymentStatus);
+            String tStatus = normalizeUpper(trangThaiThanhToan);
+            return RefundStatus.COMPLETED == refundStatus
+                    || "REFUNDED".equals(pStatus)
+                    || "REFUNDED".equals(tStatus)
+                    || "HOAN_TIEN".equals(tStatus)
+                    || "DA_HOAN_TIEN".equals(tStatus);
+        }
+
+        static boolean isRefundPending(String trangThaiThanhToan, RefundStatus refundStatus) {
+            return RefundStatus.PENDING == refundStatus
+                    || "CHO_HOAN_TIEN".equals(normalizeUpper(trangThaiThanhToan));
+        }
+
+        static boolean hasPaymentReceived(String paymentStatus, String trangThaiThanhToan) {
+            String pStatus = normalizeUpper(paymentStatus);
+            String tStatus = normalizeUpper(trangThaiThanhToan);
+            return "PAID".equals(pStatus)
+                    || "PAID".equals(tStatus)
+                    || "DA_THANH_TOAN".equals(tStatus)
+                    || "CHO_HOAN_TIEN".equals(tStatus)
+                    || "REFUNDED".equals(pStatus)
+                    || "REFUNDED".equals(tStatus)
+                    || "HOAN_TIEN".equals(tStatus)
+                    || "DA_HOAN_TIEN".equals(tStatus);
+        }
+
+        private static String normalizeLower(String value) {
+            return value == null ? "" : value.trim().toLowerCase();
+        }
+
+        private static String normalizeUpper(String value) {
+            return value == null ? "" : value.trim().toUpperCase();
         }
     }
 
@@ -369,6 +419,26 @@ public class AdminThongKeService {
         }
     }
 
+    private void addRevenueContribution(
+            Map<String, BigDecimal> groupedRevenue,
+            String grouping,
+            LocalDateTime occurredAt,
+            BigDecimal amount) {
+        if (occurredAt == null || amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
+            return;
+        }
+
+        String key;
+        if ("HOUR".equals(grouping)) {
+            key = String.valueOf(occurredAt.getHour());
+        } else if ("DAY".equals(grouping)) {
+            key = String.format("%02d/%02d", occurredAt.getDayOfMonth(), occurredAt.getMonthValue());
+        } else {
+            key = String.format("%02d/%d", occurredAt.getMonthValue(), occurredAt.getYear());
+        }
+        groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(amount));
+    }
+
     private String standardizePaymentMethod(String raw) {
         if (raw == null) {
             return "CASH";
@@ -479,16 +549,19 @@ public class AdminThongKeService {
     @Cacheable(value = "thongke", key = "(#preset != null ? #preset : 'default') + '-' + #start.toString() + '-' + #end.toString()")
     public Map<String, Object> getStatisticsData(String preset, LocalDateTime start, LocalDateTime end) {
         List<Object[]> rawOrders = hoaDonRepository.findAllOrdersInPeriod(start, end);
+        List<Object[]> refundEvents = paymentTransactionRepository.findSuccessfulRefundEventsInPeriod(start, end);
 
         long totalOrders = rawOrders.size();
         long successfulOrders = 0;
         long processingOrders = 0;
         long cancelledOrders = 0;
         long refundedOrders = 0;
+        BigDecimal grossRevenue = BigDecimal.ZERO;
         BigDecimal actualRevenue = BigDecimal.ZERO;
         BigDecimal expectedRevenue = BigDecimal.ZERO;
-        BigDecimal refundedRevenue = BigDecimal.ZERO; // New Metric: total value of refunded orders
+        BigDecimal refundedRevenue = BigDecimal.ZERO;
         BigDecimal pendingRefund = BigDecimal.ZERO;
+        Set<Integer> refundedOrderIds = new HashSet<>();
 
         List<BigDecimal> successfulOrderAmounts = new ArrayList<>();
 
@@ -516,7 +589,7 @@ public class AdminThongKeService {
             BigDecimal tongTien = (BigDecimal) row[12];
             RefundStatus refundStatus = (RefundStatus) row[13];
 
-            if (tongTien == null) {
+            if (tongTien == null || tongTien.compareTo(BigDecimal.ZERO) <= 0) {
                 tongTien = BigDecimal.ZERO;
             }
 
@@ -527,33 +600,20 @@ public class AdminThongKeService {
             RevenueClassification classification = OrderClassifier.classify(trangThaiDonHang, paymentStatus, trangThaiThanhToan, refundStatus, isCod);
 
             BigDecimal revenueContribution = BigDecimal.ZERO;
+            if (OrderClassifier.isDelivered(trangThaiDonHang)) {
+                grossRevenue = grossRevenue.add(tongTien);
+            }
             if (classification == RevenueClassification.ACTUAL_REVENUE) {
+                // Mỗi đơn chỉ đóng góp một lần khi đã giao và chưa hoàn tiền.
                 actualRevenue = actualRevenue.add(tongTien);
+                revenueContribution = tongTien;
                 successfulOrders++;
                 successfulOrderAmounts.add(tongTien);
-                revenueContribution = tongTien;
-            } else if (classification == RevenueClassification.ACTUAL_REVENUE_REVERSAL) {
-                actualRevenue = actualRevenue.subtract(tongTien);
-                refundedRevenue = refundedRevenue.add(tongTien); // Add to new metric
-                refundedOrders++;
-                revenueContribution = tongTien.negate();
             } else if (classification == RevenueClassification.PROJECTED_REVENUE) {
                 expectedRevenue = expectedRevenue.add(tongTien);
             }
 
-            // If the order has actual revenue contribution (regular or reversal), add to chart grouping
-            if (revenueContribution.compareTo(BigDecimal.ZERO) != 0) {
-                if ("HOUR".equals(grouping)) {
-                    String key = String.valueOf(ngayTao.getHour());
-                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
-                } else if ("DAY".equals(grouping)) {
-                    String key = String.format("%02d/%02d", ngayTao.getDayOfMonth(), ngayTao.getMonthValue());
-                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
-                } else { // MONTH
-                    String key = String.format("%02d/%d", ngayTao.getMonthValue(), ngayTao.getYear());
-                    groupedRevenue.put(key, groupedRevenue.getOrDefault(key, BigDecimal.ZERO).add(revenueContribution));
-                }
-            }
+            addRevenueContribution(groupedRevenue, grouping, ngayTao, revenueContribution);
 
             // Count order categories
             String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
@@ -567,7 +627,9 @@ public class AdminThongKeService {
             }
 
             // Count pending refund
-            if (RefundStatus.PENDING == refundStatus) {
+            if (OrderClassifier.isRefundPending(trangThaiThanhToan, refundStatus)
+                    && OrderClassifier.hasPaymentReceived(paymentStatus, trangThaiThanhToan)
+                    && !OrderClassifier.isRefundCompleted(paymentStatus, trangThaiThanhToan, refundStatus)) {
                 pendingRefund = pendingRefund.add(tongTien);
             }
 
@@ -602,12 +664,9 @@ public class AdminThongKeService {
                     if ("PAID".equals(pStatus)) {
                         onlineSuccess++;
                         // Revenue: only count if delivered AND gateway-confirmed
-                        if ("da_giao".equalsIgnoreCase(trangThaiDonHang) || "hoan_thanh".equalsIgnoreCase(trangThaiDonHang) || "delivered".equalsIgnoreCase(trangThaiDonHang)) {
-                            if ("REFUNDED".equals(pStatus) || "REFUNDED".equals(tStatus) || "HOAN_TIEN".equals(tStatus) || "DA_HOAN_TIEN".equals(tStatus) || RefundStatus.COMPLETED == refundStatus) {
-                                onlineRevenue = onlineRevenue.subtract(tongTien);
-                            } else {
-                                onlineRevenue = onlineRevenue.add(tongTien);
-                            }
+                        if (OrderClassifier.isDelivered(trangThaiDonHang)
+                                && !OrderClassifier.isRefundCompleted(paymentStatus, trangThaiThanhToan, refundStatus)) {
+                            onlineRevenue = onlineRevenue.add(tongTien);
                         }
                     } else if ("FAILED".equals(pStatus) || "THAT_BAI".equalsIgnoreCase(pStatus) || "FAILED".equals(tStatus)) {
                         onlineFailed++;
@@ -619,6 +678,21 @@ public class AdminThongKeService {
                 }
             }
         }
+
+        // Hoàn tiền là một bút toán tài chính độc lập: dùng đúng số tiền và thời
+        // điểm của REFUND_SUCCESS, không dùng tổng tiền/trạng thái cuối của đơn.
+        for (Object[] refundEvent : refundEvents) {
+            Integer orderId = (Integer) refundEvent[0];
+            BigDecimal refundAmount = (BigDecimal) refundEvent[1];
+            if (refundAmount == null || refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            refundedRevenue = refundedRevenue.add(refundAmount);
+            if (orderId != null) {
+                refundedOrderIds.add(orderId);
+            }
+        }
+        refundedOrders = refundedOrderIds.size();
 
         // Avg order value
         double avgOrderValue = 0.0;
@@ -775,8 +849,9 @@ public class AdminThongKeService {
         data.put("brandChartValues", brandChartValues);
         data.put("grouping", grouping);
         data.put("expectedRevenue", expectedRevenue);
+        data.put("grossRevenue", grossRevenue);
         data.put("actualRevenue", actualRevenue);
-        data.put("refundedRevenue", refundedRevenue); // New Metric: Refund Revenue
+        data.put("refundedRevenue", refundedRevenue);
         data.put("pendingRefund", pendingRefund);
 
         // Put Online statistics
@@ -818,7 +893,7 @@ public class AdminThongKeService {
                 BigDecimal tongTien = (BigDecimal) row[12];
                 RefundStatus refundStatus = (RefundStatus) row[13];
 
-                if (tongTien == null) {
+                if (tongTien == null || tongTien.compareTo(BigDecimal.ZERO) <= 0) {
                     tongTien = BigDecimal.ZERO;
                 }
 
@@ -831,8 +906,6 @@ public class AdminThongKeService {
                     prevActualRevenue = prevActualRevenue.add(tongTien);
                     prevSuccessfulOrders++;
                     prevSuccessfulOrderAmounts.add(tongTien);
-                } else if (classification == RevenueClassification.ACTUAL_REVENUE_REVERSAL) {
-                    prevActualRevenue = prevActualRevenue.subtract(tongTien);
                 }
 
                 String status = trangThaiDonHang != null ? trangThaiDonHang.toLowerCase() : "";
@@ -840,7 +913,6 @@ public class AdminThongKeService {
                     prevCancelledOrders++;
                 }
             }
-
             double prevAvgOrderValue = 0.0;
             if (!prevSuccessfulOrderAmounts.isEmpty()) {
                 BigDecimal sum = prevSuccessfulOrderAmounts.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -929,12 +1001,12 @@ public class AdminThongKeService {
 
             String[] kpiNames = {
                 "Tổng số đơn hàng", "Đơn hàng thành công", "Đơn hàng đã hủy",
-                "Doanh thu thực tế", "Doanh thu dự kiến", "Doanh thu đã hoàn", "Giá trị trung bình đơn hàng",
+                "Doanh thu trước hoàn", "Doanh thu thực tế", "Doanh thu dự kiến", "Tiền đã hoàn", "Đang chờ hoàn", "Giá trị trung bình đơn hàng",
                 "Tổng sản phẩm đã bán", "Khách hàng mới", "Tỷ lệ hủy đơn"
             };
             Object[] kpiValues = {
                 metrics.totalOrders(), metrics.successfulOrders(), metrics.cancelledOrders(),
-                stats.get("actualRevenue"), stats.get("expectedRevenue"), stats.get("refundedRevenue"), metrics.avgOrderValue(),
+                stats.get("grossRevenue"), stats.get("actualRevenue"), stats.get("expectedRevenue"), stats.get("refundedRevenue"), stats.get("pendingRefund"), metrics.avgOrderValue(),
                 metrics.totalProductsSold(), newCustomers, cancellationRate
             };
 

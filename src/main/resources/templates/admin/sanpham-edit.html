@@ -200,14 +200,14 @@
                                                         </button>
 
                                                         <!-- Nút ẨN -->
-                                                        <a th:if="${(categoryIds['HOP_CAU'] == null or sp.danhMuc.id != categoryIds['HOP_CAU']) and (bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban')}"
+                                                        <a th:if="${categoryType != 'HOP_CAU' and (bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban')}"
                                                            th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                                            class="admin-btn admin-btn-sm admin-btn-secondary text-danger"
                                                            onclick="return confirmActionLink(event, this, 'Ẩn phân loại này khỏi khách hàng?');">
                                                             <i class="fas fa-eye-slash me-1"></i>Ẩn
                                                         </a>
                                                         <!-- Nút MỞ LẠI -->
-                                                        <a th:if="${(categoryIds['HOP_CAU'] == null or sp.danhMuc.id != categoryIds['HOP_CAU']) and (bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban')}"
+                                                        <a th:if="${categoryType != 'HOP_CAU' and (bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban')}"
                                                            th:href="@{/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                                            class="admin-btn admin-btn-sm admin-btn-secondary text-success"
                                                            onclick="return confirmActionLink(event, this, 'Bạn có chắc chắn muốn mở bán lại phân loại này?');">
@@ -244,7 +244,7 @@
                                         </button>
                                     </li>
 
-                                    <li class="nav-item" role="presentation" th:if="${categoryIds['HOP_CAU'] == null or sp.danhMuc.id != categoryIds['HOP_CAU']}">
+                                    <li class="nav-item" role="presentation" th:if="${categoryType != 'HOP_CAU'}">
                                         <button class="nav-link px-3 py-1.5 fw-bold" id="pills-add-tab" data-bs-toggle="pill" data-bs-target="#pills-add" type="button" role="tab">
                                             <i class="fas fa-plus me-1"></i>Thêm Mới
                                         </button>
@@ -431,7 +431,7 @@
                                     </div>
 
                                     <!-- TAB 3: FORM THÊM BIẾN THỂ MỚI -->
-                                    <div class="tab-pane fade" id="pills-add" role="tabpanel" th:if="${categoryIds['HOP_CAU'] == null or sp.danhMuc.id != categoryIds['HOP_CAU']}">
+                                    <div class="tab-pane fade" id="pills-add" role="tabpanel" th:if="${categoryType != 'HOP_CAU'}">
                                         <form id="formThemBienThe"
                                               th:action="@{/admin/san-pham/{id}/bien-the/them(id=${sp.id})}"
                                               method="post" enctype="multipart/form-data"
@@ -480,7 +480,7 @@
 
                                             <div class="row g-3 mb-3">
                                                 <!-- Vợt: trọng lượng -->
-                                                <div class="col-6" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                                <div class="col-6" th:if="${categoryType == 'VOT'}">
                                                     <label class="admin-form-label">Trọng lượng <span class="text-danger">*</span></label>
                                                     <input type="text" name="trongLuong" id="addTrongLuong" class="admin-form-control form-control mb-2" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
                                                     <div class="d-flex flex-wrap gap-1">
@@ -490,7 +490,7 @@
                                                     </div>
                                                 </div>
                                                 <!-- Vợt: sức căng -->
-                                                <div class="col-6" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                                <div class="col-6" th:if="${categoryType == 'VOT'}">
                                                     <label class="admin-form-label">Sức căng</label>
                                                     <input type="text" name="mucCang" id="addMucCang" class="admin-form-control form-control mb-2" maxlength="50" placeholder="VD: 20 - 28 lbs">
                                                     <div class="d-flex flex-wrap gap-1">
@@ -640,14 +640,8 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const catIds = {
-            VOT:        /*[[${categoryIds['VOT']}]]*/ null,
-            GIAY:       /*[[${categoryIds['GIAY']}]]*/ null,
-            TRANG_PHUC: /*[[${categoryIds['TRANG_PHUC']}]]*/ null,
-            HOP_CAU:    /*[[${categoryIds['HOP_CAU']}]]*/ null
-        };
+        const categoryType  = /*[[${categoryType}]]*/ 'OTHER';
         const spDanhMucId  = /*[[${sp.danhMuc.id}]]*/ null;
-        const spDanhMucTen = /*[[${sp.danhMuc.tenDanhMuc}]]*/ '';
         const spId         = /*[[${sp.id}]]*/ null;
         /*]]>*/
 
@@ -841,7 +835,7 @@
             } else {
                 noteBulk.style.display = 'none';
                 noteSingle.style.display = 'block';
-                attrWrap.style.display = (spDanhMucId == catIds.HOP_CAU) ? 'none' : 'flex';
+                attrWrap.style.display = (categoryType === 'HOP_CAU') ? 'none' : 'flex';
                 wrapFile.style.display = 'block';
 
                 document.getElementById('directGiaBan').required = true;
@@ -878,7 +872,7 @@
                         const foundKey = Object.keys(attrsMap).find(k => k.toLowerCase() === attrName.toLowerCase());
                         if (foundKey) val = attrsMap[foundKey];
                     }
-                    if (attrName.toLowerCase().includes('màu') && spDanhMucId != catIds.HOP_CAU && val) {
+                    if (attrName.toLowerCase().includes('màu') && categoryType !== 'HOP_CAU' && val) {
                         val = val.replace(/,\s*Mặc\s*định/gi, '').trim();
                     }
                     input.value = val || '';
@@ -886,7 +880,7 @@
 
                 if (document.getElementById('directMauSac')) {
                     let cleanMau = mauSac;
-                    if (spDanhMucId != catIds.HOP_CAU && cleanMau) cleanMau = cleanMau.replace(/,\s*Mặc\s*định/gi, '').trim();
+                    if (categoryType !== 'HOP_CAU' && cleanMau) cleanMau = cleanMau.replace(/,\s*Mặc\s*định/gi, '').trim();
                     document.getElementById('directMauSac').value = cleanMau || attrsMap['Màu sắc'] || '';
                 }
                 if (document.getElementById('directTrongLuong')) document.getElementById('directTrongLuong').value = trongLuong || attrsMap['Trọng lượng'] || '';
@@ -903,7 +897,7 @@
                 }
                 imgRow.style.display = 'block';
 
-                const isHopCau = (spDanhMucId == catIds.HOP_CAU);
+                const isHopCau = (categoryType === 'HOP_CAU');
                 document.getElementById('directHopCauNote').style.display = isHopCau ? '' : 'none';
                 const inputMauSac = document.getElementById('directMauSac');
                 if (isHopCau) {
@@ -913,10 +907,9 @@
                     inputMauSac.readOnly = false;
                 }
 
-                const dmTenLower = (spDanhMucTen || '').toLowerCase();
-                const isVot   = (catIds.VOT && spDanhMucId == catIds.VOT) || dmTenLower.includes('vợt');
-                const isGiay  = (catIds.GIAY && spDanhMucId == catIds.GIAY) || dmTenLower.includes('giày') || dmTenLower.includes('giay');
-                const isPhuc  = (catIds.TRANG_PHUC && spDanhMucId == catIds.TRANG_PHUC) || dmTenLower.includes('trang phục') || dmTenLower.includes('áo') || dmTenLower.includes('quần') || dmTenLower.includes('váy') || dmTenLower.includes('tất') || dmTenLower.includes('vớ') || dmTenLower.includes('băng');
+                const isVot   = categoryType === 'VOT';
+                const isGiay  = categoryType === 'GIAY';
+                const isPhuc  = categoryType === 'TRANG_PHUC';
 
                 document.getElementById('directWrapTrongLuong').style.display = isVot ? 'block' : 'none';
                 document.getElementById('directWrapMucCang').style.display    = isVot ? 'block' : 'none';
@@ -1145,8 +1138,7 @@
                     if (!attributes || attributes.length === 0) return;
 
                     attrWrap.innerHTML = '';
-                    const catType = (catIds && Object.keys(catIds).find(k => catIds[k] == spDanhMucId)) || 'OTHER';
-                    const dmLower = (spDanhMucTen || '').toLowerCase();
+                    const catType = categoryType || 'OTHER';
 
                     attributes.forEach((att, idx) => {
                         const attName = att.tenThuocTinh || '';
@@ -1178,7 +1170,7 @@
                         } else if (lowerName.includes('size') || lowerName.includes('kích thước')) {
                             fieldName = 'kichThuoc';
                             inputId = 'directKichThuoc';
-                            if (catType === 'GIAY' || dmLower.includes('giày') || dmLower.includes('giay')) {
+                            if (catType === 'GIAY') {
                                 presetItems = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
                                 placeholderText = 'VD: 36, 37... 46';
                             } else {

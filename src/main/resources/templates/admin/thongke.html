@@ -122,6 +122,10 @@
                         <p class="admin-page-subtitle">Theo dõi doanh thu, hiệu suất đơn hàng, phân tích thương hiệu và cảnh báo tồn kho</p>
                     </div>
                     <div class="admin-toolbar">
+                        <span id="lastUpdatedText" class="small text-muted">Chưa cập nhật</span>
+                        <button id="btnRefreshStats" type="button" class="admin-btn admin-btn-secondary">
+                            <i class="fas fa-sync-alt me-1"></i> Làm mới
+                        </button>
                         <button id="btnExportExcel" class="admin-btn admin-btn-primary">
                             <i class="fas fa-file-excel me-1"></i> Xuất Excel Báo Cáo
                         </button>
@@ -276,13 +280,13 @@
                             </div>
                         </div>
 
-                        <!-- Card 8: Doanh Thu Đã Hoàn & Tiền Chờ Hoàn -->
+                        <!-- Card 8: Tiền Đã Hoàn & Tiền Chờ Hoàn -->
                         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                             <div class="admin-stat-card">
                                 <div class="admin-stat-info">
-                                    <div class="stat-label">Doanh Thu Đã Hoàn</div>
+                                    <div class="stat-label">Tiền Đã Hoàn</div>
                                     <div class="stat-value text-secondary" id="valRefundedRevenue" style="font-size: 1.35rem;">0 đ</div>
-                                    <small class="text-muted" style="font-size: 0.75rem;" id="valPendingRefundText">Chờ hoàn: 0 đ</small>
+                                    <small class="text-muted" style="font-size: 0.75rem;" id="valPendingRefundText">Đang chờ hoàn: 0 đ</small>
                                 </div>
                                 <div class="admin-stat-icon info">
                                     <i class="fas fa-undo-alt"></i>
@@ -477,6 +481,8 @@
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         let currentPreset = "last_30_days";
+        let currentStartDate = "";
+        let currentEndDate = "";
         let chartRevenueInstance = null;
         let chartStatusInstance = null;
         let chartBrandInstance = null;
@@ -488,6 +494,8 @@
         const loader = document.getElementById("statsLoader");
         const statsContent = document.getElementById("statsContent");
         const btnExportExcel = document.getElementById("btnExportExcel");
+        const btnRefreshStats = document.getElementById("btnRefreshStats");
+        const lastUpdatedText = document.getElementById("lastUpdatedText");
 
         // Gắn sự kiện click cho các nút lọc nhanh
         quickFilters.forEach(btn => {
@@ -526,17 +534,27 @@
             });
         }
 
+        if (btnRefreshStats) {
+            btnRefreshStats.addEventListener("click", function() {
+                loadStatistics(currentPreset, currentStartDate, currentEndDate);
+            });
+        }
+
         // Hàm gọi API lấy dữ liệu thống kê
         function loadStatistics(preset, start, end) {
+            currentPreset = preset;
+            currentStartDate = start || "";
+            currentEndDate = end || "";
             if (loader) loader.classList.remove("d-none");
             if (statsContent) statsContent.style.opacity = "0.5";
+            if (btnRefreshStats) btnRefreshStats.disabled = true;
 
             let url = `/admin/thong-ke/api?preset=${encodeURIComponent(preset)}`;
             if (preset === "custom") {
                 url += `&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
             }
 
-            fetch(url)
+            fetch(url, { cache: "no-store" })
                 .then(res => {
                     if (!res.ok) throw new Error("Mã phản hồi HTTP: " + res.status);
                     return res.json();
@@ -548,6 +566,9 @@
                     updateSlowMovingProducts(data);
                     updateInsights(data);
                     updateTransactions(data);
+                    if (lastUpdatedText) {
+                        lastUpdatedText.textContent = "Cập nhật lúc " + new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                    }
                 })
                 .catch(err => {
                     console.error("[ThongKe] Lỗi khi tải dữ liệu thống kê:", err);
@@ -555,6 +576,7 @@
                 .finally(() => {
                     if (loader) loader.classList.add("d-none");
                     if (statsContent) statsContent.style.opacity = "1";
+                    if (btnRefreshStats) btnRefreshStats.disabled = false;
                 });
         }
 
@@ -611,7 +633,7 @@
                 const elPendingRefund = document.getElementById("valPendingRefundText");
                 if (elPendingRefund) {
                     const pRefund = data.pendingRefund != null ? data.pendingRefund : 0;
-                    elPendingRefund.textContent = "Chờ hoàn: " + formatVND(pRefund);
+                    elPendingRefund.textContent = "Đang chờ hoàn: " + formatVND(pRefund);
                 }
 
                 // Badges so sánh kỳ trước
@@ -1113,6 +1135,14 @@
 
         // Tải dữ liệu mặc định ban đầu
         loadStatistics("last_30_days", "", "");
+
+        // Trang có thể được mở song song với tab quản lý đơn hàng. Chỉ tự làm
+        // mới khi tab thống kê đang hiển thị để tránh gọi API không cần thiết.
+        window.setInterval(function() {
+            if (document.visibilityState === "visible") {
+                loadStatistics(currentPreset, currentStartDate, currentEndDate);
+            }
+        }, 60000);
     });
     </script>
 

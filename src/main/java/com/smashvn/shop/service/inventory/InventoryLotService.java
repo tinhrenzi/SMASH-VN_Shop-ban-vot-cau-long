@@ -663,7 +663,7 @@ public class InventoryLotService {
         if (attrs == null || attrs.isEmpty()) return "DEFAULT";
 
         com.smashvn.shop.constant.CategoryType catType = (spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null)
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(spct.getSanPham().getDanhMuc())
                 : com.smashvn.shop.constant.CategoryType.OTHER;
 
         List<SanPhamChiTietThuocTinh> validAttrs = attrs.stream()
@@ -696,7 +696,7 @@ public class InventoryLotService {
         if (attrs == null || attrs.isEmpty()) return spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "";
 
         com.smashvn.shop.constant.CategoryType catType = (spct.getSanPham() != null && spct.getSanPham().getDanhMuc() != null)
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(spct.getSanPham().getDanhMuc())
                 : com.smashvn.shop.constant.CategoryType.OTHER;
 
         List<String> values = attrs.stream()

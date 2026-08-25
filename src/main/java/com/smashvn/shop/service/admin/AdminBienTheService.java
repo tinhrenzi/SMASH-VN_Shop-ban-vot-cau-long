@@ -72,7 +72,7 @@ public class AdminBienTheService {
         SanPham sp = sanPhamRepository.findById(idSanPham)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm gốc"));
 
-        com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(sp.getDanhMuc(), sp.getDanhMuc().getId());
+        com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromDanhMuc(sp.getDanhMuc());
         if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
             throw new IllegalArgumentException("Hộp cầu chỉ được phép có duy nhất một biến thể mặc định!");
         }
@@ -212,7 +212,7 @@ public class AdminBienTheService {
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idBienThe)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biến thể để sửa"));
 
-        com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(spct.getSanPham().getDanhMuc(), spct.getSanPham().getDanhMuc().getId());
+        com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromDanhMuc(spct.getSanPham().getDanhMuc());
         if (catType == com.smashvn.shop.constant.CategoryType.HOP_CAU) {
             mauSac = "Mặc định";
             trongLuong = null;

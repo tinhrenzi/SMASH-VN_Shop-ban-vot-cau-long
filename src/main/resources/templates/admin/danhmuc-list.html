@@ -236,6 +236,7 @@
                 </div>
                 <form id="formSuaDanhMuc" method="POST" novalidate onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn lưu các thay đổi cho danh mục này không?');">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <input type="hidden" id="capNhatThuocTinh" name="capNhatThuocTinh" value="false">
                     <div class="modal-body admin-modal-body">
                         <div class="mb-3">
                             <label for="editTenDanhMuc" class="admin-form-label">Tên Danh Mục *</label>
@@ -430,6 +431,7 @@
             editDanhMucId = btn.dataset.id;
             document.getElementById('formSuaDanhMuc').action = '/admin/danh-muc/sua/' + editDanhMucId;
             document.getElementById('editTenDanhMuc').value = btn.dataset.ten;
+            document.getElementById('capNhatThuocTinh').value = 'false';
 
             document.querySelectorAll('#editThuocTinhBox .edit-tt-cb').forEach(cb => cb.checked = false);
 
@@ -442,6 +444,7 @@
                             cb.checked = true;
                         }
                     });
+                    document.getElementById('capNhatThuocTinh').value = 'true';
                 })
                 .catch(err => {
                     console.error(err);

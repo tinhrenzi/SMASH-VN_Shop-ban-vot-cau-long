@@ -10,7 +10,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.service.admin.AdminBienTheService;
 
@@ -22,7 +21,6 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 public class AdminBienTheController {
 
     private final SanPhamRepository sanPhamRepository;
-    private final DanhMucRepository danhMucRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final AdminBienTheService adminBienTheService;
     private final com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
@@ -34,7 +32,8 @@ public class AdminBienTheController {
         SanPham sp = sanPhamRepository.findById(idSanPham).orElseThrow();
         model.addAttribute("sp", sp);
         model.addAttribute("danhSachBienThe", adminBienTheService.layDanhSachBienThe(idSanPham));
-        populateCategoryIds(model);
+        model.addAttribute("categoryType",
+                com.smashvn.shop.constant.CategoryType.fromDanhMuc(sp.getDanhMuc()).name());
         return "admin/bienthe-list";
     }
 
@@ -188,15 +187,4 @@ public class AdminBienTheController {
         }
     }
 
-
-    private void populateCategoryIds(Model model) {
-        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
-        for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {
-            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
-            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
-                categoryIds.put(type.name(), dm.getId());
-            }
-        }
-        model.addAttribute("categoryIds", categoryIds);
-    }
 }

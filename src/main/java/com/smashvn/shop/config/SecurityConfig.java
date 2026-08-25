@@ -3,6 +3,7 @@ package com.smashvn.shop.config;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -30,9 +31,7 @@ public class SecurityConfig {
                         "/api/chat/**",
                         "/api/chatbot/**",
                         "/api/newsletter/subscribe",
-                        "/api/newsletter/unsubscribe-ajax",
-                        "/api/attributes",
-                        "/api/categories/**"
+                        "/api/newsletter/unsubscribe-ajax"
                 ))
                 // Cấu hình các Header bảo mật nâng cao
                 .headers(headers -> {
@@ -49,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("/user/**").permitAll()
                 .requestMatchers("/api/chat/**").permitAll()
                 .requestMatchers("/api/chatbot/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/attributes").hasAnyRole("QL", "NV")
                 // Phân quyền chi tiết cho Admin/Staff theo Backend Enforcement (cả endpoint gốc và sub-paths)
                 .requestMatchers("/admin/nguoi-dung", "/admin/nguoi-dung/**").hasRole("QL")
                 .requestMatchers("/admin/nhan-vien", "/admin/nhan-vien/**").hasRole("QL")

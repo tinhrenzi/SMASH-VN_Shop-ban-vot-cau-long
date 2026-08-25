@@ -13,6 +13,10 @@ public interface SanPhamChiTietThuocTinhRepository extends JpaRepository<SanPham
 
     void deleteBySanPhamChiTiet_Id(Integer sanPhamChiTietId);
 
+    boolean existsByThuocTinh_IdAndSanPhamChiTiet_SanPham_DanhMuc_Id(
+            Integer thuocTinhId,
+            Integer danhMucId);
+
     @Query("""
             SELECT DISTINCT s.giaTri FROM SanPhamChiTietThuocTinh s
             WHERE LOWER(s.thuocTinh.tenThuocTinh) = LOWER(:tenThuocTinh)

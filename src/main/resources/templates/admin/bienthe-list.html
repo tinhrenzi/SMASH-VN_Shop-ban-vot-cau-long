@@ -57,7 +57,7 @@
                 </div>
 
                 <!-- Form thêm biến thể -->
-                <div class="admin-card mb-4" th:if="${sp.danhMuc.id != categoryIds['HOP_CAU']}">
+                <div class="admin-card mb-4" th:if="${categoryType != 'HOP_CAU'}">
                     <div class="admin-card-header">
                         <h5 class="admin-card-title"><i class="fas fa-plus-circle text-primary me-2"></i>Thêm Phân Loại Biến Thể Mới</h5>
                     </div>
@@ -85,22 +85,22 @@
                                     <input type="text" name="mauSac" class="admin-form-control form-control" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
                                 </div>
 
-                                <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                <div class="col-md-4" th:if="${categoryType == 'VOT'}">
                                     <label class="admin-form-label">Trọng lượng *</label>
                                     <input type="text" name="trongLuong" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
                                 </div>
 
-                                <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['GIAY']}">
+                                <div class="col-md-4" th:if="${categoryType == 'GIAY'}">
                                     <label class="admin-form-label">Size giày *</label>
                                     <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 36, 37... 46">
                                 </div>
 
-                                <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['TRANG_PHUC']}">
+                                <div class="col-md-4" th:if="${categoryType == 'TRANG_PHUC'}">
                                     <label class="admin-form-label">Size trang phục *</label>
                                     <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: S, M, L, XL...">
                                 </div>
 
-                                <div class="col-md-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                <div class="col-md-4" th:if="${categoryType == 'VOT'}">
                                     <label class="admin-form-label">Sức căng khuyến nghị</label>
                                     <input type="text" name="mucCang" class="admin-form-control form-control" maxlength="50" placeholder="VD: 20 - 28 lbs">
                                 </div>
@@ -110,7 +110,7 @@
                     </div>
                 </div>
 
-                <div class="alert alert-info border-0 shadow-sm mb-4" th:if="${sp.danhMuc.id == categoryIds['HOP_CAU']}">
+                <div class="alert alert-info border-0 shadow-sm mb-4" th:if="${categoryType == 'HOP_CAU'}">
                     <i class="fas fa-info-circle me-2"></i> Sản phẩm <strong>Hộp Cầu</strong> chỉ sử dụng 1 biến thể duy nhất mặc định. Vui lòng chỉnh sửa giá bán và tồn kho bên dưới nếu cần.
                 </div>
 
@@ -154,13 +154,13 @@
                                             <a th:href="@{/admin/san-pham/{idSP}/bien-the/sua/{idBT}(idSP=${sp.id}, idBT=${bt.id})}" class="admin-btn admin-btn-icon" title="Sửa Biến Thể">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and (bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban')}"
+                                            <a th:if="${categoryType != 'HOP_CAU' and (bt.trangThai == null or bt.trangThai == '' or bt.trangThai == 'dang_ban')}"
                                                th:href="@{/admin/san-pham/{idSP}/bien-the/xoa/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                                class="admin-btn admin-btn-icon danger ms-1" title="Ẩn Biến Thể"
                                                onclick="return confirmActionLink(event, this, 'Ẩn phân loại này khỏi khách hàng? Admin vẫn có thể mở bán lại sau.');">
                                                 <i class="fas fa-eye-slash"></i>
                                             </a>
-                                            <a th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and (bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban')}"
+                                            <a th:if="${categoryType != 'HOP_CAU' and (bt.trangThai == 'ngung_kinh_doanh' or bt.trangThai == 'ngung_ban')}"
                                                th:href="@{/admin/san-pham/{idSP}/bien-the/mo-ban-lai/{idBT}(idSP=${sp.id}, idBT=${bt.id})}"
                                                class="admin-btn admin-btn-icon ms-1 text-success" title="Mở Bán Lại"
                                                onclick="return confirmActionLink(event, this, 'Bạn có chắc chắn muốn mở bán lại phân loại này?');">
