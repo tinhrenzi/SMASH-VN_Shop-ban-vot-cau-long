@@ -284,13 +284,13 @@
                                                         th:text="${currentStatusLabels[hd.id]}">
                                                     </span>
 
-                                                    <!-- Trạng thái Trả Hàng -->
+                                                    <!-- Trạng thái Trả / Đổi Hàng -->
                                                     <div th:if="${hd.trangThaiHoanHang != null}" class="mt-1">
                                                         <span
-                                                            th:class="'admin-status ' + (${hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN'} ? 'admin-status-warning' : (${hd.trangThaiHoanHang.name() == 'REJECTED'} ? 'admin-status-danger' : (${hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP' or hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP'} ? 'admin-status-info' : 'admin-status-success')))"
+                                                            th:class="'admin-status ' + (${hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN' or hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED'} ? 'admin-status-warning' : (${hd.trangThaiHoanHang.name() == 'REJECTED' or hd.trangThaiHoanHang.name() == 'LOST' or hd.trangThaiHoanHang.name() == 'DAMAGED'} ? 'admin-status-danger' : (${hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP' or hd.trangThaiHoanHang.name() == 'PICKED_UP' or hd.trangThaiHoanHang.name() == 'RETURNING' or hd.trangThaiHoanHang.name() == 'DELIVERED_TO_SHOP' or hd.trangThaiHoanHang.name() == 'EXCHANGE_SHIPPING'} ? 'admin-status-info' : 'admin-status-success')))"
                                                             style="font-size:11px;">
-                                                            <i class="fas fa-undo me-1"></i>Trả hàng: <span
-                                                                th:text="${hd.trangThaiHoanHang.label}">Chờ duyệt</span>
+                                                            <i th:class="${hd.loaiYeuCauDoiTra == 'DOI' ? 'fas fa-sync-alt me-1' : 'fas fa-undo me-1'}"></i>
+                                                            <span th:text="${(hd.loaiYeuCauDoiTra == 'DOI' ? 'Đổi hàng: ' : 'Trả hàng: ') + hd.trangThaiHoanHang.label}">Chờ duyệt</span>
                                                         </span>
                                                     </div>
                                                 </td>
@@ -529,17 +529,17 @@
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PENDING_APPROVAL' or hd.trangThaiHoanHang.name() == 'PENDING_RETURN')}"
                                                         class="admin-status admin-status-warning">
-                                                        <i class="fas fa-clock me-1"></i> Chờ duyệt trả
+                                                        <i class="fas fa-clock me-1"></i> <span th:text="${hd.loaiYeuCauDoiTra == 'DOI' ? 'Chờ duyệt đổi' : 'Chờ duyệt trả'}">Chờ duyệt</span>
                                                     </span>
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REJECTED'}"
                                                         class="admin-status admin-status-danger">
-                                                        <i class="fas fa-times-circle me-1"></i> Đã từ chối
+                                                        <i class="fas fa-times-circle me-1"></i> <span th:text="${hd.loaiYeuCauDoiTra == 'DOI' ? 'Từ chối đổi' : 'Từ chối trả'}">Từ chối</span>
                                                     </span>
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'WAITING_FOR_PICKUP'}"
                                                         class="admin-status admin-status-info">
-                                                        <i class="fas fa-truck-loading me-1"></i> Chờ lấy hàng trả
+                                                        <i class="fas fa-truck-loading me-1"></i> Chờ lấy hàng thu hồi
                                                     </span>
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'PICKED_UP' or hd.trangThaiHoanHang.name() == 'RETURNING')}"
@@ -554,12 +554,32 @@
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'RETURNED'}"
                                                         class="admin-status admin-status-success">
-                                                        <i class="fas fa-boxes me-1"></i> Đã kiểm &amp; Nhập kho
+                                                        <i class="fas fa-boxes me-1"></i> <span th:text="${hd.loaiYeuCauDoiTra == 'DOI' ? 'Đã kiểm kiện (Chờ giao đổi)' : 'Đã kiểm &amp; Nhập kho'}">Đã kiểm kiện</span>
+                                                    </span>
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'EXCHANGE_STOCK_ALLOCATED'}"
+                                                        class="admin-status admin-status-warning">
+                                                        <i class="fas fa-box me-1"></i> Đã chuẩn bị hàng đổi
+                                                    </span>
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'EXCHANGE_SHIPPING'}"
+                                                        class="admin-status admin-status-info">
+                                                        <i class="fas fa-shipping-fast me-1"></i> Đang giao hàng đổi mới
+                                                    </span>
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'EXCHANGED'}"
+                                                        class="admin-status admin-status-success">
+                                                        <i class="fas fa-check-double me-1"></i> Đã hoàn tất đổi hàng
                                                     </span>
                                                     <span
                                                         th:if="${hd.trangThaiHoanHang != null and hd.trangThaiHoanHang.name() == 'REFUNDED'}"
                                                         class="admin-status admin-status-success">
                                                         <i class="fas fa-check-double me-1"></i> Đã hoàn tiền
+                                                    </span>
+                                                    <span
+                                                        th:if="${hd.trangThaiHoanHang != null and (hd.trangThaiHoanHang.name() == 'LOST' or hd.trangThaiHoanHang.name() == 'DAMAGED')}"
+                                                        class="admin-status admin-status-danger">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i> <span th:text="${hd.trangThaiHoanHang.label}">Hỏng / Mất</span>
                                                     </span>
                                                     <div th:if="${hd.lyDoHoanTien != null and !#strings.isEmpty(hd.lyDoHoanTien)}"
                                                         class="small text-muted mt-1"
@@ -1521,22 +1541,56 @@
             return map[s] || status;
         };
 
-        window.formatReturnStatus = function (status) {
+        window.formatReturnStatus = function (status, loaiYeuCau) {
             if (!status) return 'Chưa có yêu cầu';
             const s = String(status).toUpperCase();
+            const isDoi = (loaiYeuCau && String(loaiYeuCau).toUpperCase() === 'DOI');
             const map = {
-                'PENDING_APPROVAL': 'Chờ duyệt trả hàng',
-                'PENDING_RETURN': 'Chờ trả hàng',
-                'WAITING_FOR_PICKUP': 'Chờ GHN lấy hàng hoàn',
-                'PICKED_UP': 'GHN đã lấy hàng hoàn',
-                'RETURNING': 'Đang vận chuyển hoàn',
-                'DELIVERED_TO_SHOP': 'Đã về đến shop (Chờ kiểm kiện)',
-                'RETURNED': 'Đã nhập kho hoàn (Chờ hoàn tiền)',
+                'PENDING_APPROVAL': isDoi ? 'Chờ duyệt đổi hàng' : 'Chờ duyệt trả hàng',
+                'PENDING_RETURN': isDoi ? 'Chờ thu hồi hàng đổi' : 'Chờ thu hồi hàng trả',
+                'WAITING_FOR_PICKUP': 'Chờ GHN lấy hàng thu hồi',
+                'PICKED_UP': 'GHN đã lấy hàng thu hồi',
+                'RETURNING': 'Đang chuyển hàng về Shop',
+                'DELIVERED_TO_SHOP': 'Hàng đã về Shop (Chờ kiểm kiện)',
+                'RETURNED': isDoi ? 'Đã kiểm hàng (Chờ giao hàng mới)' : 'Đã nhập kho hoàn (Chờ hoàn tiền)',
                 'REFUNDED': 'Đã hoàn tiền hoàn tất',
-                'REJECTED': 'Từ chối trả hàng',
-                'CANCELLED': 'Đã hủy yêu cầu'
+                'REJECTED': isDoi ? 'Shop từ chối đổi hàng' : 'Shop từ chối trả hàng',
+                'CANCELLED': 'Đã hủy yêu cầu',
+                'EXCHANGE_STOCK_ALLOCATED': 'Đã phân bổ tồn kho hàng đổi',
+                'EXCHANGE_SHIPPING': 'Đang giao sản phẩm đổi mới',
+                'EXCHANGED': 'Đã hoàn tất đổi hàng',
+                'LOST': 'Mất hàng (Không hoàn kho)',
+                'DAMAGED': 'Hỏng hàng (Không hoàn kho)'
             };
             return map[s] || status;
+        };
+
+        window.getReturnStatusBadgeClass = function(status) {
+            if (!status) return 'badge-soft-secondary';
+            const s = String(status).toUpperCase();
+            switch (s) {
+                case 'PENDING_APPROVAL':
+                case 'PENDING_RETURN':
+                case 'EXCHANGE_STOCK_ALLOCATED':
+                    return 'badge-soft-warning';
+                case 'WAITING_FOR_PICKUP':
+                case 'PICKED_UP':
+                case 'RETURNING':
+                case 'DELIVERED_TO_SHOP':
+                case 'EXCHANGE_SHIPPING':
+                    return 'badge-soft-info';
+                case 'RETURNED':
+                case 'REFUNDED':
+                case 'EXCHANGED':
+                    return 'badge-soft-success';
+                case 'REJECTED':
+                case 'LOST':
+                case 'DAMAGED':
+                case 'CANCELLED':
+                    return 'badge-soft-danger';
+                default:
+                    return 'badge-soft-primary';
+            }
         };
 
         window.getReturnRequestTypeLabel = function (type) {
@@ -1865,7 +1919,20 @@
                                             ${data.ghnReturnOrderCode.startsWith('DEMO-GHN-RETURN-') ? '<span class="badge bg-warning text-dark me-1"><i class="fas fa-flask me-1"></i>Demo GHN Return Fallback</span>' : ''}
                                             <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnReturnOrderCode)}</span>
                                             <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnReturnOrderCode)}', this)" title="Sao chép mã thu hồi" aria-label="Sao chép mã thu hồi"><i class="far fa-copy"></i></button>
-                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this)" title="Đồng bộ GHN thu hồi" aria-label="Đồng bộ GHN thu hồi">
+                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this, 'GHN_RETURN')" title="Đồng bộ GHN thu hồi" aria-label="Đồng bộ GHN thu hồi">
+                                                <i class="fas fa-sync-alt me-1"></i>Đồng bộ
+                                            </button>
+                                        </span>
+                                    </div>
+                                    ` : ''}
+
+                                    ${data.ghnExchangeOrderCode && data.ghnExchangeOrderCode !== data.ghnOrderCode && !data.ghnExchangeOrderCode.startsWith('GHN-EXCHANGE-SIMULATED-') && !data.ghnExchangeOrderCode.startsWith('GHNEXC') ? `
+                                    <div class="order-detail-field">
+                                        <span class="order-detail-label">Mã GHN Đổi Mới</span>
+                                        <span class="order-detail-value">
+                                            <span class="order-detail-code-inline me-1">${escapeHtml(data.ghnExchangeOrderCode)}</span>
+                                            <button type="button" class="btn-copy-code me-1" onclick="copyToClipboard('${escapeHtml(data.ghnExchangeOrderCode)}', this)" title="Sao chép mã giao đổi" aria-label="Sao chép mã giao đổi"><i class="far fa-copy"></i></button>
+                                            <button type="button" class="admin-btn admin-btn-sm admin-btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="syncGhnStatus(${data.id}, this, 'GHN_EXCHANGE')" title="Đồng bộ GHN đổi hàng" aria-label="Đồng bộ GHN đổi hàng">
                                                 <i class="fas fa-sync-alt me-1"></i>Đồng bộ
                                             </button>
                                         </span>
@@ -1881,17 +1948,17 @@
                                     ${data.trangThaiHoanHang ? `
                                     <div class="pt-2 border-top mt-2">
                                         <div class="order-detail-field">
-                                            <span class="order-detail-label">Trạng thái trả hàng</span>
-                                            <span class="order-detail-value"><span class="badge-soft badge-soft-warning">${escapeHtml(formatReturnStatus(data.trangThaiHoanHang))}</span></span>
+                                            <span class="order-detail-label">Trạng thái ${data.loaiYeuCauDoiTra === 'DOI' ? 'đổi hàng' : 'trả hàng'}</span>
+                                            <span class="order-detail-value"><span class="badge-soft ${getReturnStatusBadgeClass(data.trangThaiHoanHang)}">${escapeHtml(formatReturnStatus(data.trangThaiHoanHang, data.loaiYeuCauDoiTra))}</span></span>
                                         </div>
                                         ${data.ngayXacNhanHoanHang ? `
                                         <div class="order-detail-field mt-1">
-                                            <span class="order-detail-label">Ngày hoàn kho</span>
+                                            <span class="order-detail-label">Ngày xử lý</span>
                                             <span class="order-detail-value">${formatDateTime(data.ngayXacNhanHoanHang)}</span>
                                         </div>` : ''}
                                         ${data.nhanVienXacNhan ? `
                                         <div class="order-detail-field mt-1">
-                                            <span class="order-detail-label">NV hoàn kho</span>
+                                            <span class="order-detail-label">NV xử lý</span>
                                             <span class="order-detail-value">${escapeHtml(data.nhanVienXacNhan)}</span>
                                         </div>` : ''}
                                     </div>
@@ -2097,7 +2164,8 @@
 
                     if (hasReturnData) {
                         const loaiYeuCauLabel = getReturnRequestTypeLabel(data.loaiYeuCauDoiTra);
-                        const returnStatusLabel = formatReturnStatus(data.trangThaiHoanHang);
+                        const returnStatusLabel = formatReturnStatus(data.trangThaiHoanHang, data.loaiYeuCauDoiTra);
+                        const returnBadgeClass = getReturnStatusBadgeClass(data.trangThaiHoanHang);
                         const lyDoKhachHang = data.lyDoHoanTra ? escapeHtml(data.lyDoHoanTra) : 'Không có lý do chi tiết';
                         const evidenceList = parseReturnEvidence(data.bangChungHoanTra);
 
@@ -2140,7 +2208,7 @@
                                     <h6 class="order-detail-card-title text-warning-emphasis mb-0" style="font-weight: 700;">
                                         <i class="fas fa-undo-alt me-1 text-warning"></i> THÔNG TIN YÊU CẦU ĐỔI / TRẢ
                                     </h6>
-                                    <span class="badge-soft badge-soft-warning fw-bold">${escapeHtml(returnStatusLabel)}</span>
+                                    <span class="badge-soft ${returnBadgeClass} fw-bold">${escapeHtml(returnStatusLabel)}</span>
                                 </div>
                                 <div class="order-detail-fields p-3">
                                     <div class="row g-2 mb-3">
@@ -2153,7 +2221,7 @@
                                         <div class="col-md-6">
                                             <div class="order-detail-field">
                                                 <span class="order-detail-label">Trạng thái yêu cầu:</span>
-                                                <span class="order-detail-value"><span class="badge-soft badge-soft-warning">${escapeHtml(returnStatusLabel)}</span></span>
+                                                <span class="order-detail-value"><span class="badge-soft ${returnBadgeClass}">${escapeHtml(returnStatusLabel)}</span></span>
                                             </div>
                                         </div>
                                         <div class="col-12">

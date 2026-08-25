@@ -813,6 +813,7 @@ public class AdminController {
 
             map.put("ghnOrderCode", hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "");
             map.put("ghnReturnOrderCode", returnCode != null ? returnCode : "");
+            map.put("ghnExchangeOrderCode", orderViewService.resolveGhnExchangeOrderCode(hd.getId()) != null ? orderViewService.resolveGhnExchangeOrderCode(hd.getId()) : "");
 
             // Phương thức thanh toán — null-safe
             String tenPhuongThuc = "N/A";
