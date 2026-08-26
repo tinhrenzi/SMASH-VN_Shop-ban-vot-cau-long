@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@Transactional
 public class Phase4InventoryInspectionTest {
 
     @Autowired
@@ -125,6 +127,8 @@ public class Phase4InventoryInspectionTest {
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.RETURNED, updated.getTrangThaiHoanHang());
         assertEquals(ReturnInventoryStatus.DA_HOAN_KHO, updated.getTrangThaiXuLyHangHoan());
+        assertEquals("CHO_HOAN_TIEN", updated.getTrangThaiThanhToan());
+        assertEquals(RefundStatus.PENDING, updated.getRefundStatus());
         assertEquals(initialStock + 3, getLatestSpct(testSpct.getId()).getSoLuongTon());
         assertEquals(initialFaulty, getLatestSpct(testSpct.getId()).getSoLuongSpLoi() != null ? getLatestSpct(testSpct.getId()).getSoLuongSpLoi() : 0);
     }
@@ -141,6 +145,8 @@ public class Phase4InventoryInspectionTest {
         HoaDon updated = hoaDonRepository.findById(hd.getId()).orElseThrow();
         assertEquals(ReturnStatus.RETURNED, updated.getTrangThaiHoanHang());
         assertEquals(ReturnInventoryStatus.DA_CHUYEN_KHO_LOI, updated.getTrangThaiXuLyHangHoan());
+        assertEquals("CHO_HOAN_TIEN", updated.getTrangThaiThanhToan());
+        assertEquals(RefundStatus.PENDING, updated.getRefundStatus());
         assertEquals(initialStock, getLatestSpct(testSpct.getId()).getSoLuongTon());
         assertEquals(initialFaulty + 4, getLatestSpct(testSpct.getId()).getSoLuongSpLoi() != null ? getLatestSpct(testSpct.getId()).getSoLuongSpLoi() : 0);
     }
@@ -248,6 +254,19 @@ public class Phase4InventoryInspectionTest {
         assertEquals(initialStock + 5, getLatestSpct(testSpct.getId()).getSoLuongTon());
     }
 
+    @Test
+    @DisplayName("Đơn ĐỔI sau kiểm hàng không được chuyển sang chờ hoàn tiền")
+    void testExchangeInspectionDoesNotCreatePendingRefund() {
+        HoaDon hd = createTestOrder("DOI", ReturnStatus.DELIVERED_TO_SHOP, 1);
+
+        orderViewService.xacNhanKiemKhoVaNhapKho(hd.getId(), "BAN_LAI", null, adminTaiKhoanId, "127.0.0.1");
+
+        HoaDon updated = hoaDonRepository.findById(hd.getId()).orElseThrow();
+        assertEquals(ReturnStatus.RETURNED, updated.getTrangThaiHoanHang());
+        assertEquals("DA_THANH_TOAN", updated.getTrangThaiThanhToan());
+        assertNull(updated.getRefundStatus());
+    }
+
     private SanPhamChiTiet getLatestSpct(Integer id) {
         return sanPhamChiTietRepository.findById(id).orElseThrow();
     }
@@ -260,6 +279,7 @@ public class Phase4InventoryInspectionTest {
         hd.setSdtNhan("0909998888");
         hd.setNgayTao(java.time.LocalDateTime.now());
         hd.setTrangThaiDonHang("da_giao");
+        hd.setTrangThaiThanhToan("DA_THANH_TOAN");
         hd.setLoaiYeuCauDoiTra(loaiYeuCau);
         hd.setLyDoHoanTra("Khách hàng báo sản phẩm bị lỗi sản xuất");
         hd.setTrangThaiHoanHang(returnStatus);

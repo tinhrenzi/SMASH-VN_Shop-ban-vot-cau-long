@@ -35,6 +35,7 @@ import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
 import com.smashvn.shop.service.order.GuestCheckoutService;
 import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.service.user.UserDangNhapService;
 import com.smashvn.shop.dto.order.*;
@@ -71,6 +72,7 @@ public class CheckoutController {
     private final CheckoutContextService checkoutContextService;
     private final PendingCheckoutRegistry pendingCheckoutRegistry;
     private final GioHangChiTietRepository gioHangChiTietRepository;
+    private final ProductAvailabilityService productAvailabilityService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @org.springframework.beans.factory.annotation.Value("${app.base-url:}")
@@ -95,17 +97,6 @@ public class CheckoutController {
             }
             return scheme + "://" + serverName + ":" + serverPort + contextPath;
         }
-    }
-
-    private boolean isDangBan(String trangThai) {
-        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
-    }
-
-    private boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
-        return spct != null
-                && spct.getSanPham() != null
-                && isDangBan(spct.getSanPham().getTrangThai())
-                && isDangBan(spct.getTrangThai());
     }
 
     @PostMapping("/checkout/start-all")
@@ -175,7 +166,7 @@ public class CheckoutController {
                     response.put("message", "Sản phẩm đã chọn không tồn tại trong hệ thống.");
                     return ResponseEntity.ok(response);
                 }
-                boolean dangBan = isSanPhamChiTietDangBan(spct);
+                boolean dangBan = productAvailabilityService.isVariantPublished(spct);
                 if (!dangBan) {
                     response.put("trangThai", "loi");
                     response.put("message", "Sản phẩm \"" + (spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "") + "\" đã ngừng kinh doanh.");
@@ -216,7 +207,7 @@ public class CheckoutController {
                     response.put("message", "Sản phẩm trong giỏ không hợp lệ.");
                     return ResponseEntity.ok(response);
                 }
-                boolean dangBan = isSanPhamChiTietDangBan(spct);
+                boolean dangBan = productAvailabilityService.isVariantPublished(spct);
                 if (!dangBan) {
                     response.put("trangThai", "loi");
                     response.put("message", "Sản phẩm \"" + (spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "") + "\" đã ngừng kinh doanh.");
@@ -277,7 +268,7 @@ public class CheckoutController {
         }
 
         com.smashvn.shop.entity.SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet).orElse(null);
-        if (spct == null || !isSanPhamChiTietDangBan(spct)) {
+        if (!productAvailabilityService.isVariantPublished(spct)) {
             response.put("trangThai", "loi");
             response.put("message", "Sản phẩm hoặc phân loại đã ngưng kinh doanh.");
             return ResponseEntity.ok(response);
@@ -332,7 +323,7 @@ public class CheckoutController {
             if (reqQty <= 0) {
                 return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Số lượng sản phẩm không hợp lệ!", java.nio.charset.StandardCharsets.UTF_8);
             }
-            if (!isSanPhamChiTietDangBan(spct)) {
+            if (!productAvailabilityService.isVariantPublished(spct)) {
                 return "redirect:/gio-hang?loi=" + java.net.URLEncoder.encode("Phân loại sản phẩm '" + sp.getTenSanPham() + "' đã ngưng kinh doanh!", java.nio.charset.StandardCharsets.UTF_8);
             }
             if (tonKho <= 0) {

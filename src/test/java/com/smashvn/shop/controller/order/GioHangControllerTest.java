@@ -9,6 +9,7 @@ import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
 import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,12 +53,17 @@ class GioHangControllerTest {
     @Mock
     private com.smashvn.shop.repository.GioHangChiTietRepository gioHangChiTietRepository;
 
+    @Mock
+    private ProductAvailabilityService productAvailabilityService;
+
     private GioHangController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new GioHangController(gioHangService, pricingService, guestCartService, sanPhamChiTietRepository, taiKhoanRepository, checkoutContextService, gioHangChiTietRepository);
+        controller = new GioHangController(gioHangService, pricingService, guestCartService,
+                sanPhamChiTietRepository, taiKhoanRepository, checkoutContextService,
+                gioHangChiTietRepository, productAvailabilityService);
         com.smashvn.shop.dto.order.CheckoutContext dummyContext = com.smashvn.shop.dto.order.CheckoutContext.builder().token("dummy-token").build();
         when(checkoutContextService.createQuickAddContext(any(), any(), any(), any(), any())).thenReturn(dummyContext);
     }

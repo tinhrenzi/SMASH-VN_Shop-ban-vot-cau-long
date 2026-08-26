@@ -296,7 +296,7 @@ public class SanPhamChiTiet {
             return "Mặc định";
         }
         com.smashvn.shop.constant.CategoryType catType = (sanPham != null && sanPham.getDanhMuc() != null)
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(sanPham.getDanhMuc(), sanPham.getDanhMuc().getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(sanPham.getDanhMuc())
                 : com.smashvn.shop.constant.CategoryType.OTHER;
 
         List<SanPhamChiTietThuocTinh> validAttrs = sanPhamChiTietThuocTinhs.stream()

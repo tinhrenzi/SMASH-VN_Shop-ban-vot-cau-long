@@ -25,6 +25,7 @@ import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.SanPhamYeuThichRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.product.DanhGiaService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.List;
@@ -44,6 +45,7 @@ public class SanPhamController {
     private final SanPhamYeuThichRepository wishlistRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final DanhGiaService danhGiaService;
+    private final ProductAvailabilityService productAvailabilityService;
 
     @GetMapping("/san-pham/{id}")
     public String hienThiChiTietSanPham(@PathVariable("id") Integer id, Model model, HttpSession session) {
@@ -51,7 +53,7 @@ public class SanPhamController {
         SanPham sanPham = sanPhamRepository.findById(id)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
         
-        if ("ngung_ban".equals(sanPham.getTrangThai()) || "ngung_kinh_doanh".equals(sanPham.getTrangThai())) {
+        if (!productAvailabilityService.isProductPublished(sanPham)) {
             return "redirect:/shop?loi=" + java.net.URLEncoder.encode("Sản phẩm này đã ngừng kinh doanh tại cửa hàng!", java.nio.charset.StandardCharsets.UTF_8);
         }
         
@@ -152,7 +154,7 @@ public class SanPhamController {
         }
 
         com.smashvn.shop.constant.CategoryType catType = sanPham.getDanhMuc() != null
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(sanPham.getDanhMuc(), sanPham.getDanhMuc().getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(sanPham.getDanhMuc())
                 : com.smashvn.shop.constant.CategoryType.OTHER;
         ensureCategoryRequiredAttributes(catType, sanPham, dynamicAttributes, allAttributes, listBienTheJS);
 
@@ -165,7 +167,7 @@ public class SanPhamController {
             }
         }
 
-        boolean sanPhamKhaDung = sanPham.getTrangThai() == null || "dang_ban".equals(sanPham.getTrangThai());
+        boolean sanPhamKhaDung = productAvailabilityService.isProductPublished(sanPham);
         boolean daMuaHang = false;
         boolean daDanhGia = false;
         DanhGia oldDanhGia = null;
@@ -258,11 +260,11 @@ public class SanPhamController {
     @GetMapping("/modal/quick-look/{id}")
     public String layQuickLookModal(@PathVariable("id") Integer id, Model model, HttpSession session) {
         SanPham sanPham = sanPhamRepository.findById(id).orElse(null);
-        if (sanPham == null) {
+        if (!productAvailabilityService.isProductPublished(sanPham)) {
             return "layout/modals :: quick-look-fragment";
         }
 
-        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
+        List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findActiveBySanPham_Id(id);
         String anhDaiDien = !danhSachChiTiet.isEmpty() ? danhSachChiTiet.get(0).getHinhAnhUrl() : null;
 
         List<String> listMauSac = danhSachChiTiet.stream().map(SanPhamChiTiet::getMauSac).filter(s -> s != null && !s.isBlank()).distinct().collect(Collectors.toList());
@@ -321,7 +323,7 @@ public class SanPhamController {
         }
 
         com.smashvn.shop.constant.CategoryType catTypeQuick = sanPham.getDanhMuc() != null
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(sanPham.getDanhMuc(), sanPham.getDanhMuc().getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(sanPham.getDanhMuc())
                 : com.smashvn.shop.constant.CategoryType.OTHER;
         ensureCategoryRequiredAttributes(catTypeQuick, sanPham, dynamicAttributes, new java.util.LinkedHashMap<>(), listBienTheJS);
 
@@ -353,7 +355,7 @@ public class SanPhamController {
         String norm = attrName.toLowerCase().trim();
 
         com.smashvn.shop.constant.CategoryType catType = (dm != null)
-                ? com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId())
+                ? com.smashvn.shop.constant.CategoryType.fromDanhMuc(dm)
                 : com.smashvn.shop.constant.CategoryType.OTHER;
 
         switch (catType) {

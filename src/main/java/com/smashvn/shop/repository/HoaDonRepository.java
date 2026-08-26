@@ -139,7 +139,11 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
                 (SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = hd.id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC) AS ghnOrderCode,
                 (SELECT TOP 1 t.ma_van_don FROM TichHopVanChuyen t WHERE t.id_hoa_don = hd.id AND t.nha_cung_cap = 'GHN_RETURN' ORDER BY t.id DESC) AS ghnReturnOrderCode,
                 (SELECT TOP 1 t.trang_thai FROM TichHopVanChuyen t WHERE t.id_hoa_don = hd.id AND t.nha_cung_cap = 'GHN' ORDER BY t.id DESC) AS ghnStatus,
-                CASE WHEN hd.trang_thai_thanh_toan = 'REFUNDED' THEN 'COMPLETED' WHEN hd.trang_thai_thanh_toan = 'CHO_HOAN_TIEN' THEN 'PENDING' ELSE NULL END AS refundStatus
+                CASE
+                    WHEN hd.trang_thai_thanh_toan IN ('REFUNDED', 'DA_HOAN_TIEN') OR hd.trang_thai_hoan_hang = 'REFUNDED' THEN 'COMPLETED'
+                    WHEN hd.trang_thai_thanh_toan = 'CHO_HOAN_TIEN' OR (hd.loai_yeu_cau_doi_tra = 'TRA' AND hd.trang_thai_hoan_hang = 'RETURNED') THEN 'PENDING'
+                    ELSE NULL
+                END AS refundStatus
             FROM HoaDon hd
             WHERE hd.trang_thai_don_hang IN ('cho_xac_nhan', 'dang_lay_hang', 'dang_giao')
               AND EXISTS (

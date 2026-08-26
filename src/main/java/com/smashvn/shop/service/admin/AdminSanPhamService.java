@@ -2,8 +2,6 @@ package com.smashvn.shop.service.admin;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,14 +25,12 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smashvn.shop.constant.DanhMucIds;
 import com.smashvn.shop.dto.AttributeValueRequest;
 import com.smashvn.shop.dto.BienTheCreateRequest;
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.NhanVien;
 import com.smashvn.shop.entity.SanPham;
-import com.smashvn.shop.entity.ThuongHieu;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.TaiKhoan;
@@ -45,7 +41,6 @@ import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
-import com.smashvn.shop.repository.ThuocTinhRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.util.RacketSpecUtils;
@@ -64,7 +59,6 @@ public class AdminSanPhamService {
     private final ThuongHieuRepository thuongHieuRepository;
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
-    private final ThuocTinhRepository thuocTinhRepository;
     private final AuditService auditService;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -172,8 +166,8 @@ public class AdminSanPhamService {
                 throw new IllegalArgumentException("Danh mục này đã bị ẩn, không thể thêm sản phẩm mới vào danh mục!");
             }
 
-            com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, idDanhMuc);
-            if (catType == com.smashvn.shop.constant.CategoryType.OTHER && !DanhMucIds.isSupported(idDanhMuc)) {
+            com.smashvn.shop.constant.CategoryType catType = com.smashvn.shop.constant.CategoryType.fromDanhMuc(dm);
+            if (catType == com.smashvn.shop.constant.CategoryType.OTHER && dm.getThuocTinhList().isEmpty()) {
                 throw new IllegalArgumentException("Danh mục chưa được cấu hình thuộc tính");
             }
 
@@ -314,7 +308,7 @@ public class AdminSanPhamService {
                 spct.setNgayCapNhat(thoiGianNhap);
 
 
-                saveVariantAttribute(spct, "Màu sắc", "Mặc định");
+                saveConfiguredVariantAttributeIfPresent(spct, dm, "Màu sắc", "Mặc định");
                 sanPhamChiTietRepository.save(spct);
                 savedCount = 1;
             } else {
@@ -343,7 +337,7 @@ public class AdminSanPhamService {
                     }
                     Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : (request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0);
 
-                    String combKey = normMau.toLowerCase() + "|" + (normTrong != null ? normTrong.toLowerCase() : "") + "|" + (normKich != null ? normKich.toLowerCase() : "");
+                    String combKey = buildVariantCombinationKey(v, normMau, normTrong, normKich);
                     if (checkDuplicates.contains(combKey)) {
                         throw new IllegalArgumentException("Có biến thể bị trùng lặp trong danh sách nhập!");
                     }
@@ -364,16 +358,24 @@ public class AdminSanPhamService {
 
 
                     if (v.getAttributes() != null && !v.getAttributes().isEmpty()) {
+                        Set<Integer> savedAttributeIds = new HashSet<>();
                         for (AttributeValueRequest attrReq : v.getAttributes()) {
-                            if (attrReq.getAttributeName() != null && attrReq.getValue() != null && !attrReq.getValue().isBlank()) {
-                                saveVariantAttribute(spct, attrReq.getAttributeName(), attrReq.getValue());
+                            if (attrReq == null || attrReq.getValue() == null || attrReq.getValue().isBlank()) {
+                                continue;
                             }
+                            ThuocTinh configuredAttribute = resolveConfiguredAttribute(dm, attrReq);
+                            if (!savedAttributeIds.add(configuredAttribute.getId())) {
+                                throw new IllegalArgumentException(
+                                        "Thuộc tính \"" + configuredAttribute.getTenThuocTinh()
+                                                + "\" bị lặp trong cùng một biến thể.");
+                            }
+                            saveVariantAttribute(spct, configuredAttribute, attrReq.getValue());
                         }
                     } else {
-                        saveVariantAttribute(spct, "Màu sắc", normMau);
-                        saveVariantAttribute(spct, "Trọng lượng", normTrong);
-                        saveVariantAttribute(spct, "Kích thước", normKich);
-                        saveVariantAttribute(spct, "Sức căng", normCang);
+                        saveConfiguredVariantAttributeIfPresent(spct, dm, "Màu sắc", normMau);
+                        saveConfiguredVariantAttributeIfPresent(spct, dm, "Trọng lượng", normTrong);
+                        saveConfiguredVariantAttributeIfPresent(spct, dm, "Kích thước", normKich);
+                        saveConfiguredVariantAttributeIfPresent(spct, dm, "Sức căng", normCang);
                     }
 
                     sanPhamChiTietRepository.save(spct);
@@ -397,15 +399,64 @@ public class AdminSanPhamService {
         }
     }
 
-    private void saveVariantAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
+    private String buildVariantCombinationKey(
+            BienTheCreateRequest variant,
+            String normalizedColor,
+            String normalizedWeight,
+            String normalizedSize) {
+        if (variant.getAttributes() == null || variant.getAttributes().isEmpty()) {
+            return normalizedColor.toLowerCase() + "|"
+                    + (normalizedWeight != null ? normalizedWeight.toLowerCase() : "") + "|"
+                    + (normalizedSize != null ? normalizedSize.toLowerCase() : "");
+        }
+
+        return variant.getAttributes().stream()
+                .filter(attribute -> attribute != null
+                        && attribute.getValue() != null
+                        && !attribute.getValue().isBlank())
+                .map(attribute -> {
+                    String identity = attribute.getAttributeId() != null
+                            ? "id:" + attribute.getAttributeId()
+                            : "name:" + String.valueOf(attribute.getAttributeName()).trim().toLowerCase();
+                    return identity + "=" + attribute.getValue().trim().toLowerCase();
+                })
+                .sorted()
+                .collect(java.util.stream.Collectors.joining("|"));
+    }
+
+    private ThuocTinh resolveConfiguredAttribute(DanhMuc category, AttributeValueRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Thuộc tính biến thể không hợp lệ.");
+        }
+        return category.getThuocTinhList().stream()
+                .filter(attribute -> request.getAttributeId() != null
+                        ? request.getAttributeId().equals(attribute.getId())
+                        : request.getAttributeName() != null
+                                && request.getAttributeName().trim().equalsIgnoreCase(attribute.getTenThuocTinh()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Thuộc tính \"" + request.getAttributeName()
+                                + "\" không được cấu hình cho danh mục này."));
+    }
+
+    private void saveConfiguredVariantAttributeIfPresent(
+            SanPhamChiTiet spct,
+            DanhMuc category,
+            String attributeName,
+            String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        category.getThuocTinhList().stream()
+                .filter(attribute -> attributeName.equalsIgnoreCase(attribute.getTenThuocTinh()))
+                .findFirst()
+                .ifPresent(attribute -> saveVariantAttribute(spct, attribute, value));
+    }
+
+    private void saveVariantAttribute(SanPhamChiTiet spct, ThuocTinh tt, String giaTri) {
         if (giaTri == null || giaTri.isBlank()) {
             return;
         }
-        ThuocTinh tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(tenThuocTinh)
-                .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
-                .tenThuocTinh(tenThuocTinh.trim())
-                .trangThai(true)
-                .build()));
         SanPhamChiTietThuocTinh attVal = SanPhamChiTietThuocTinh.builder()
                 .sanPhamChiTiet(spct)
                 .thuocTinh(tt)

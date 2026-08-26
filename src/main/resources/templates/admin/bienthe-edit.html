@@ -71,7 +71,7 @@
                                     </div>
 
                                     <!-- Category Specific Attributes -->
-                                    <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['VOT']}">
+                                    <div class="row g-3 mb-4" th:if="${categoryType == 'VOT'}">
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
                                             <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
@@ -103,7 +103,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['GIAY']}">
+                                    <div class="row g-3 mb-4" th:if="${categoryType == 'GIAY'}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
                                             <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh">
@@ -123,7 +123,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="row g-3 mb-4" th:if="${sp.danhMuc.id == categoryIds['TRANG_PHUC']}">
+                                    <div class="row g-3 mb-4" th:if="${categoryType == 'TRANG_PHUC'}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
                                             <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ">
@@ -142,14 +142,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="row g-3 mb-4" th:if="${sp.danhMuc.id != categoryIds['HOP_CAU'] and sp.danhMuc.id != categoryIds['VOT'] and sp.danhMuc.id != categoryIds['GIAY'] and sp.danhMuc.id != categoryIds['TRANG_PHUC']}">
+                                    <div class="row g-3 mb-4" th:if="${categoryType != 'HOP_CAU' and categoryType != 'VOT' and categoryType != 'GIAY' and categoryType != 'TRANG_PHUC'}">
                                         <div class="col-12">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
                                             <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Tiêu chuẩn">
                                         </div>
                                     </div>
 
-                                    <div class="row mb-4" th:if="${sp.danhMuc.id == categoryIds['HOP_CAU']}">
+                                    <div class="row mb-4" th:if="${categoryType == 'HOP_CAU'}">
                                         <div class="col-12">
                                             <input type="hidden" name="mauSac" value="Mặc định">
                                             <div class="alert alert-info border-0 shadow-sm mb-0">

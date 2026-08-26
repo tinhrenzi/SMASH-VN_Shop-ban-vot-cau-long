@@ -313,6 +313,7 @@ public class SepayOrderPaymentService {
      * Chuyển trạng thái sang DA_HUY & REFUNDED mà TUYỆT ĐỐI KHÔNG gọi hoanKhoHangLoat (vì đơn chưa từng trừ kho).
      */
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void finalizeRefundWithoutRestock(Integer idHoaDon, Integer actingUserId) {
         HoaDon order = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng ID: " + idHoaDon));
@@ -325,10 +326,14 @@ public class SepayOrderPaymentService {
 
         // 2. Strict Transaction Guard: Chỉ chấp nhận transaction có status PAID_INSUFFICIENT_STOCK
         List<PaymentTransaction> txs = paymentTransactionRepository.findByOrder_Id(idHoaDon);
-        boolean hasInsufficientStockTx = txs != null && txs.stream()
-                .anyMatch(t -> "PAID_INSUFFICIENT_STOCK".equalsIgnoreCase(t.getStatus()));
+        PaymentTransaction insufficientStockPayment = txs != null
+                ? txs.stream()
+                        .filter(t -> "PAID_INSUFFICIENT_STOCK".equalsIgnoreCase(t.getStatus()))
+                        .findFirst()
+                        .orElse(null)
+                : null;
 
-        if (!hasInsufficientStockTx) {
+        if (insufficientStockPayment == null) {
             String txStatuses = (txs != null && !txs.isEmpty()) 
                     ? txs.stream().map(PaymentTransaction::getStatus).reduce((a, b) -> a + ", " + b).orElse("NONE")
                     : "NONE";
@@ -344,7 +349,24 @@ public class SepayOrderPaymentService {
             throw new IllegalStateException("Trạng thái đơn hàng không hợp lệ để hoàn tiền do thiếu kho.");
         }
 
-        // 4. Finalize refund mà KHÔNG tác động tồn kho
+        // 4. Ghi bút toán hoàn tiền riêng để thống kê dùng đúng số tiền và
+        // thời điểm hoàn, đồng thời giữ nguyên giao dịch nhận tiền ban đầu.
+        if (!paymentTransactionRepository.existsByOrder_IdAndStatus(idHoaDon, "REFUND_SUCCESS")) {
+            BigDecimal refundAmount = insufficientStockPayment.getAmount() != null
+                    ? insufficientStockPayment.getAmount()
+                    : order.getTongTien();
+            PaymentTransaction refundTx = new PaymentTransaction();
+            refundTx.setOrder(order);
+            refundTx.setTransactionId("REFUND-STOCK-" + idHoaDon + "-" + System.currentTimeMillis());
+            refundTx.setAmount(refundAmount);
+            refundTx.setGateway("MANUAL_REFUND");
+            refundTx.setStatus("REFUND_SUCCESS");
+            refundTx.setRawPayload("{\"transactionType\":\"INSUFFICIENT_STOCK_REFUND\"}");
+            refundTx.setCreatedAt(LocalDateTime.now());
+            paymentTransactionRepository.saveAndFlush(refundTx);
+        }
+
+        // 5. Finalize refund mà KHÔNG tác động tồn kho
         order.setTrangThaiDonHang("DA_HUY");
         order.setTrangThaiThanhToan("REFUNDED");
         order.setRefundStatus(RefundStatus.COMPLETED);

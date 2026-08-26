@@ -254,6 +254,7 @@
                             const cardDiv = document.createElement("div");
                             cardDiv.className = "col-md-4 attr-card";
                             cardDiv.dataset.attrName = attName;
+                            cardDiv.dataset.attrId = att.id;
 
                             let presetItems = [];
                             let displayTitle = attName;
@@ -359,7 +360,7 @@
                 updatePreview();
             };
 
-            function createVariantRow(mauVal = "", sizeVal = "", giaNhapVal = "", giaBanVal = "", soLuongTonVal = "") {
+            function createVariantRow(mauVal = "", sizeVal = "", giaNhapVal = "", giaBanVal = "", soLuongTonVal = "", attributes = []) {
                 const defGia = giaBanDefaultInput ? (giaBanDefaultInput.value || "") : "";
                 if (!giaBanVal && defGia) giaBanVal = defGia;
 
@@ -372,6 +373,7 @@
                 else if (catType === 'VOT') sizePlaceholder = "VD: 4U";
 
                 const tr = document.createElement("tr");
+                tr.dataset.variantAttributes = JSON.stringify(Array.isArray(attributes) ? attributes : []);
 
                 const tdMau = document.createElement("td");
                 tdMau.innerHTML = `<input type="text" class="admin-form-control form-control form-control-sm var-mau-sac" list="listMauSacDatalist" placeholder="VD: Đỏ" required value="${mauVal}">`;
@@ -380,6 +382,11 @@
                 const tdSize = document.createElement("td");
                 tdSize.className = "td-attr2";
                 tdSize.innerHTML = `<input type="text" class="admin-form-control form-control form-control-sm var-size-weight" list="listSizeWeightDatalist" placeholder="${sizePlaceholder}" value="${sizeVal}">`;
+                if (Array.isArray(attributes) && attributes.length > 0) {
+                    const summaryInput = tdSize.querySelector('.var-size-weight');
+                    summaryInput.readOnly = true;
+                    summaryInput.title = 'Tóm tắt các thuộc tính đã chọn. Muốn thay đổi, hãy chọn lại thuộc tính phía trên.';
+                }
                 tr.appendChild(tdSize);
 
                 const tdGiaNhap = document.createElement("td");
@@ -405,6 +412,8 @@
             function reindexVariantRows() {
                 const rows = previewTbody.querySelectorAll("tr");
                 const total = rows.length;
+                const selectedCategoryId = selectDanhMuc ? selectDanhMuc.value : null;
+                const catType = selectedCategoryId ? (CATEGORY_TYPES[selectedCategoryId] || 'OTHER') : 'OTHER';
 
                 if (total === 0) {
                     previewCount.textContent = "Chưa có biến thể nào. Chọn thuộc tính ở trên hoặc bấm 'Thêm 1 Dòng Biến Thể Thủ Công'.";
@@ -460,47 +469,75 @@
                     hColorIdx.value = colorIdx;
                     tr.appendChild(hColorIdx);
 
-                    if (mauVal) {
-                        const hA1Name = document.createElement("input");
-                        hA1Name.type = "hidden";
-                        hA1Name.name = `variants[${index}].attributes[0].attributeName`;
-                        hA1Name.value = "Màu sắc";
-                        tr.appendChild(hA1Name);
-
-                        const hA1Val = document.createElement("input");
-                        hA1Val.type = "hidden";
-                        hA1Val.name = `variants[${index}].attributes[0].value`;
-                        hA1Val.value = mauVal;
-                        tr.appendChild(hA1Val);
+                    let variantAttributes = [];
+                    try {
+                        variantAttributes = JSON.parse(tr.dataset.variantAttributes || '[]');
+                    } catch (e) {
+                        variantAttributes = [];
                     }
 
-                    if (sizeVal) {
-                        const attr2Name = sizeVal.includes("U") ? "Trọng lượng" : "Kích thước";
-                        const hA2Name = document.createElement("input");
-                        hA2Name.type = "hidden";
-                        hA2Name.name = `variants[${index}].attributes[1].attributeName`;
-                        hA2Name.value = attr2Name;
-                        tr.appendChild(hA2Name);
-
-                        const hA2Val = document.createElement("input");
-                        hA2Val.type = "hidden";
-                        hA2Val.name = `variants[${index}].attributes[1].value`;
-                        hA2Val.value = sizeVal;
-                        tr.appendChild(hA2Val);
-
-                        if (sizeVal.includes("U")) {
-                            const hTrong = document.createElement("input");
-                            hTrong.type = "hidden";
-                            hTrong.name = `variants[${index}].trongLuong`;
-                            hTrong.value = sizeVal;
-                            tr.appendChild(hTrong);
-                        } else {
-                            const hKich = document.createElement("input");
-                            hKich.type = "hidden";
-                            hKich.name = `variants[${index}].kichThuoc`;
-                            hKich.value = sizeVal;
-                            tr.appendChild(hKich);
+                    if (variantAttributes.length === 0) {
+                        if (mauVal) {
+                            variantAttributes.push({ attributeId: null, attrName: 'Màu sắc', value: mauVal });
                         }
+                        if (sizeVal) {
+                            const manualAttrName = catType === 'VOT' ? 'Trọng lượng' : 'Kích thước';
+                            variantAttributes.push({ attributeId: null, attrName: manualAttrName, value: sizeVal });
+                        }
+                    } else {
+                        const colorAttr = variantAttributes.find(item => (item.attrName || '').toLowerCase().includes('màu'));
+                        if (colorAttr) colorAttr.value = mauVal;
+                        tr.dataset.variantAttributes = JSON.stringify(variantAttributes);
+                    }
+
+                    const uniqueAttributes = [];
+                    const seenAttributeKeys = new Set();
+                    variantAttributes.forEach(item => {
+                        const attrName = (item.attrName || '').trim();
+                        const attrValue = (item.value || '').trim();
+                        const key = item.attributeId ? `id:${item.attributeId}` : `name:${attrName.toLowerCase()}`;
+                        if (!attrName || !attrValue || seenAttributeKeys.has(key)) return;
+                        seenAttributeKeys.add(key);
+                        uniqueAttributes.push({ attributeId: item.attributeId || null, attrName, value: attrValue });
+                    });
+
+                    uniqueAttributes.forEach((item, attrIndex) => {
+                        if (item.attributeId) {
+                            const hId = document.createElement('input');
+                            hId.type = 'hidden';
+                            hId.name = `variants[${index}].attributes[${attrIndex}].attributeId`;
+                            hId.value = item.attributeId;
+                            tr.appendChild(hId);
+                        }
+
+                        const hName = document.createElement('input');
+                        hName.type = 'hidden';
+                        hName.name = `variants[${index}].attributes[${attrIndex}].attributeName`;
+                        hName.value = item.attrName;
+                        tr.appendChild(hName);
+
+                        const hValue = document.createElement('input');
+                        hValue.type = 'hidden';
+                        hValue.name = `variants[${index}].attributes[${attrIndex}].value`;
+                        hValue.value = item.value;
+                        tr.appendChild(hValue);
+                    });
+
+                    const weightAttr = uniqueAttributes.find(item => item.attrName.toLowerCase().includes('trọng lượng'));
+                    const sizeAttr = uniqueAttributes.find(item => item.attrName.toLowerCase().includes('kích thước') || item.attrName.toLowerCase().includes('size'));
+                    if (weightAttr) {
+                        const hTrong = document.createElement('input');
+                        hTrong.type = 'hidden';
+                        hTrong.name = `variants[${index}].trongLuong`;
+                        hTrong.value = weightAttr.value;
+                        tr.appendChild(hTrong);
+                    }
+                    if (sizeAttr) {
+                        const hKich = document.createElement('input');
+                        hKich.type = 'hidden';
+                        hKich.name = `variants[${index}].kichThuoc`;
+                        hKich.value = sizeAttr.value;
+                        tr.appendChild(hKich);
                     }
 
                     if (inGiaNhap) inGiaNhap.name = `variants[${index}].giaNhap`;
@@ -590,9 +627,10 @@
                 const attrGroups = [];
                 attrCards.forEach(card => {
                     const attrName = card.dataset.attrName;
+                    const attributeId = parseInt(card.dataset.attrId, 10);
                     const checkedVals = Array.from(card.querySelectorAll(".dynamic-attr-cb:checked")).map(cb => cb.value);
                     if (checkedVals.length > 0) {
-                        attrGroups.push({ attrName: attrName, values: checkedVals });
+                        attrGroups.push({ attributeId: attributeId, attrName: attrName, values: checkedVals });
                     }
                 });
 
@@ -604,7 +642,7 @@
                         function helper(arr, i) {
                             for (var j = 0, l = args[i].values.length; j < l; j++) {
                                 var a = arr.slice(0);
-                                a.push({ attrName: args[i].attrName, value: args[i].values[j] });
+                                a.push({ attributeId: args[i].attributeId, attrName: args[i].attrName, value: args[i].values[j] });
                                 if (i == max)
                                     r.push(a);
                                 else
@@ -620,21 +658,17 @@
 
                     combinations.forEach(combo => {
                         let mauVal = "";
-                        let sizeWeightVal = "";
+                        const otherAttributeValues = [];
                         combo.forEach(item => {
                             const lower = item.attrName.toLowerCase();
                             if (lower.includes("màu")) {
                                 mauVal = item.value;
                             } else {
-                                if (sizeWeightVal !== "") sizeWeightVal += " / ";
-                                sizeWeightVal += item.value;
+                                otherAttributeValues.push(item.value);
                             }
                         });
-                        if (!mauVal && combo.length > 0) {
-                            mauVal = combo[0].value;
-                        }
 
-                        const tr = createVariantRow(mauVal, sizeWeightVal, "0", defGia, "0");
+                        const tr = createVariantRow(mauVal, otherAttributeValues.join(' / '), "0", defGia, "0", combo);
                         fragment.appendChild(tr);
                     });
 

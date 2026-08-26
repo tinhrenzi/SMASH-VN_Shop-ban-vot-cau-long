@@ -75,16 +75,11 @@ public class AdminSanPhamController {
         model.addAttribute("listDanhMuc", activeCategories);
         model.addAttribute("listThuongHieu", thuongHieuRepository.findByTrangThaiTrue());
 
-        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
         java.util.Map<Integer, String> categoryTypes = new java.util.HashMap<>();
         for (com.smashvn.shop.entity.DanhMuc dm : activeCategories) {
-            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
+            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromDanhMuc(dm);
             categoryTypes.put(dm.getId(), type.name());
-            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
-                categoryIds.put(type.name(), dm.getId());
-            }
         }
-        model.addAttribute("categoryIds", categoryIds);
         model.addAttribute("categoryTypes", categoryTypes);
 
         model.addAttribute("listMauSac", com.smashvn.shop.constant.SanPhamAttributeConfig.DEFAULT_MAU_SAC);
@@ -121,14 +116,8 @@ public class AdminSanPhamController {
         model.addAttribute("lichSuNhapHang", inventoryLotService.getLichSuNhapHang(id));
         model.addAttribute("categoryAttributes", sp.getDanhMuc().getThuocTinhList());
 
-        java.util.Map<String, Integer> categoryIds = new java.util.HashMap<>();
-        for (com.smashvn.shop.entity.DanhMuc dm : danhMucRepository.findAll()) {
-            com.smashvn.shop.constant.CategoryType type = com.smashvn.shop.constant.CategoryType.fromIdOrName(dm, dm.getId());
-            if (type != com.smashvn.shop.constant.CategoryType.OTHER) {
-                categoryIds.put(type.name(), dm.getId());
-            }
-        }
-        model.addAttribute("categoryIds", categoryIds);
+        model.addAttribute("categoryType",
+                com.smashvn.shop.constant.CategoryType.fromDanhMuc(sp.getDanhMuc()).name());
 
         return "admin/sanpham-edit";
     }

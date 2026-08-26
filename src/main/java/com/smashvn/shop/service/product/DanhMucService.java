@@ -3,8 +3,11 @@ package com.smashvn.shop.service.product;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.DanhMucThuocTinh;
 import com.smashvn.shop.entity.ThuocTinh;
+import com.smashvn.shop.constant.CategoryType;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.DanhMucThuocTinhRepository;
+import com.smashvn.shop.repository.SanPhamChiTietThuocTinhRepository;
+import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuocTinhRepository;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -15,7 +18,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +35,8 @@ public class DanhMucService {
     private final DanhMucRepository danhMucRepository;
     private final DanhMucThuocTinhRepository danhMucThuocTinhRepository;
     private final ThuocTinhRepository thuocTinhRepository;
+    private final SanPhamRepository sanPhamRepository;
+    private final SanPhamChiTietThuocTinhRepository sanPhamChiTietThuocTinhRepository;
 
     public DanhMuc themDanhMuc(String tenDanhMuc) {
         return themDanhMuc(tenDanhMuc, List.of());
@@ -70,12 +81,22 @@ public class DanhMucService {
         return dm;
     }
 
+    @Transactional
     public DanhMuc suaDanhMuc(Integer id, String tenDanhMuc) {
-        return suaDanhMuc(id, tenDanhMuc, List.of());
+        return suaDanhMuc(id, tenDanhMuc, null, false);
     }
 
     @Transactional
     public DanhMuc suaDanhMuc(Integer id, String tenDanhMuc, List<Integer> thuocTinhIds) {
+        return suaDanhMuc(id, tenDanhMuc, thuocTinhIds, true);
+    }
+
+    @Transactional
+    public DanhMuc suaDanhMuc(
+            Integer id,
+            String tenDanhMuc,
+            List<Integer> thuocTinhIds,
+            boolean capNhatThuocTinh) {
         String normalized = normalize(tenDanhMuc);
         validateLength(normalized);
 
@@ -87,30 +108,76 @@ public class DanhMucService {
 
         DanhMuc dm = danhMucRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + id));
+
+        CategoryType oldType = CategoryType.fromDanhMuc(dm);
+        CategoryType newType = CategoryType.fromName(normalized);
+        if (sanPhamRepository.existsByDanhMucId(id) && oldType != newType) {
+            throw new IllegalArgumentException(
+                    "Không thể đổi tên làm thay đổi loại nghiệp vụ từ " + oldType
+                            + " sang " + newType + " vì danh mục đang được gán cho sản phẩm.");
+        }
+
         dm.setTenDanhMuc(normalized);
 
-        // Xóa toàn bộ thuộc tính cũ và FLUSH NGAY để DB thực thi DELETE
-        // trước khi INSERT bản ghi mới (tránh vi phạm UNIQUE constraint)
-        dm.getDanhMucThuocTinhs().clear();
-        DanhMuc flushedDm = danhMucRepository.saveAndFlush(dm);
+        if (capNhatThuocTinh) {
+            updateAttributeMappings(dm, thuocTinhIds);
+        }
 
-        // Thêm lại các thuộc tính mới
-        if (thuocTinhIds != null && !thuocTinhIds.isEmpty()) {
-            for (Integer ttId : thuocTinhIds) {
-                if (ttId != null) {
-                    thuocTinhRepository.findById(ttId).ifPresent(tt -> {
-                        DanhMucThuocTinh mapping = DanhMucThuocTinh.builder()
-                                .danhMuc(flushedDm)
-                                .thuocTinh(tt)
-                                .trangThai(true)
-                                .build();
-                        flushedDm.getDanhMucThuocTinhs().add(mapping);
-                    });
-                }
+        return danhMucRepository.save(dm);
+    }
+
+    private void updateAttributeMappings(DanhMuc dm, List<Integer> rawAttributeIds) {
+        Set<Integer> requestedIds = rawAttributeIds == null
+                ? Set.of()
+                : rawAttributeIds.stream()
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<DanhMucThuocTinh> mappings = dm.getDanhMucThuocTinhs();
+        Map<Integer, DanhMucThuocTinh> existingByAttributeId = mappings.stream()
+                .filter(mapping -> mapping.getThuocTinh() != null && mapping.getThuocTinh().getId() != null)
+                .collect(Collectors.toMap(
+                        mapping -> mapping.getThuocTinh().getId(),
+                        Function.identity(),
+                        (first, ignored) -> first));
+
+        Set<Integer> removedIds = mappings.stream()
+                .filter(mapping -> Boolean.TRUE.equals(mapping.getTrangThai()))
+                .map(DanhMucThuocTinh::getThuocTinh)
+                .filter(java.util.Objects::nonNull)
+                .map(ThuocTinh::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+        removedIds.removeAll(requestedIds);
+        for (Integer removedId : removedIds) {
+            if (sanPhamChiTietThuocTinhRepository
+                    .existsByThuocTinh_IdAndSanPhamChiTiet_SanPham_DanhMuc_Id(removedId, dm.getId())) {
+                ThuocTinh usedAttribute = existingByAttributeId.get(removedId).getThuocTinh();
+                throw new IllegalArgumentException(
+                        "Không thể bỏ thuộc tính \"" + usedAttribute.getTenThuocTinh()
+                                + "\" vì biến thể sản phẩm trong danh mục đang sử dụng thuộc tính này.");
             }
         }
 
-        return danhMucRepository.save(flushedDm);
+        for (DanhMucThuocTinh mapping : mappings) {
+            Integer attributeId = mapping.getThuocTinh() == null ? null : mapping.getThuocTinh().getId();
+            mapping.setTrangThai(attributeId != null && requestedIds.contains(attributeId));
+        }
+
+        for (Integer requestedId : requestedIds) {
+            DanhMucThuocTinh existing = existingByAttributeId.get(requestedId);
+            if (existing != null) {
+                existing.setTrangThai(true);
+                continue;
+            }
+            ThuocTinh attribute = thuocTinhRepository.findById(requestedId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thuộc tính với ID: " + requestedId));
+            mappings.add(DanhMucThuocTinh.builder()
+                    .danhMuc(dm)
+                    .thuocTinh(attribute)
+                    .trangThai(true)
+                    .build());
+        }
     }
 
     @Transactional

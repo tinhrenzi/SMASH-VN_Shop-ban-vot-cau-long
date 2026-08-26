@@ -1,35 +1,60 @@
 package com.smashvn.shop.constant;
 
 import com.smashvn.shop.entity.DanhMuc;
+import java.text.Normalizer;
+import java.util.Locale;
 
 public enum CategoryType {
     VOT, GIAY, TRANG_PHUC, HOP_CAU, CUOC, BALO, QUAN_CAN, BANG_QUAN, OTHER;
 
     public static CategoryType fromDanhMuc(DanhMuc dm) {
-        if (dm == null || dm.getTenDanhMuc() == null) return OTHER;
-        String name = dm.getTenDanhMuc().toLowerCase().trim();
-        if (name.contains("vợt") || name.contains("vot")) return VOT;
-        if (name.contains("giày") || name.contains("giay")) return GIAY;
-        if (name.contains("trang phục") || name.contains("quần") || name.contains("áo") || name.contains("trang phuc")) return TRANG_PHUC;
-        if (name.contains("hộp cầu") || name.contains("quả cầu") || name.contains("hop cau")) return HOP_CAU;
-        if (name.contains("cước") || name.contains("cuoc")) return CUOC;
-        if (name.contains("balo") || name.contains("túi")) return BALO;
-        if (name.contains("quấn cán") || name.contains("quan can")) return QUAN_CAN;
-        if (name.contains("băng quấn") || name.contains("bang quan")) return BANG_QUAN;
+        return dm == null ? OTHER : fromName(dm.getTenDanhMuc());
+    }
+
+    public static CategoryType fromName(String rawName) {
+        String name = normalize(rawName);
+        if (name.isEmpty()) return OTHER;
+
+        // Ưu tiên tiền tố mô tả loại hàng. Cách này tránh nhận nhầm
+        // "Túi đựng vợt" thành VOT chỉ vì tên có chứa chữ "vợt".
+        if (startsWithAny(name, "tui", "balo")) return BALO;
+        if (startsWithAny(name, "quan can")) return QUAN_CAN;
+        if (startsWithAny(name, "bang quan")) return BANG_QUAN;
+        if (startsWithAny(name, "hop cau", "qua cau")) return HOP_CAU;
+        if (startsWithAny(name, "day cuoc", "cuoc")) return CUOC;
+        if (startsWithAny(name, "giay")) return GIAY;
+        if (startsWithAny(name, "trang phuc", "ao", "quan", "vay", "tat", "vo")) return TRANG_PHUC;
+        if (startsWithAny(name, "vot")) return VOT;
         return OTHER;
     }
 
+    /**
+     * Giữ chữ ký cũ để các tích hợp ngoài dự án không bị vỡ, nhưng ID không còn
+     * tham gia phân loại nghiệp vụ.
+     */
+    @Deprecated(forRemoval = true)
     public static CategoryType fromIdOrName(DanhMuc dm, Integer id) {
-        if (id != null) {
-            if (id == DanhMucIds.VOT) return VOT;
-            if (id == DanhMucIds.GIAY) return GIAY;
-            if (id == DanhMucIds.TRANG_PHUC) return TRANG_PHUC;
-            if (id == DanhMucIds.HOP_CAU) return HOP_CAU;
-            if (id == DanhMucIds.CUOC) return CUOC;
-            if (id == DanhMucIds.BALO) return BALO;
-            if (id == DanhMucIds.QUAN_CAN) return QUAN_CAN;
-            if (id == DanhMucIds.BANG_QUAN) return BANG_QUAN;
-        }
         return fromDanhMuc(dm);
+    }
+
+    private static boolean startsWithAny(String value, String... prefixes) {
+        for (String prefix : prefixes) {
+            if (value.equals(prefix) || value.startsWith(prefix + " ") || value.startsWith(prefix + "-")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalize(String value) {
+        if (value == null) return "";
+        String decomposed = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .replaceAll("\\p{M}+", "");
+        return decomposed.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim()
+                .replaceAll("\\s+", " ");
     }
 }

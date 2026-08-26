@@ -39,6 +39,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH spct.hinhAnhSanPhams ha
             LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
+              AND dm.trangThai = true
+              AND th.trangThai = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
             """)
@@ -54,6 +56,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH sp.thuongHieu th
             LEFT JOIN spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
+              AND dm.trangThai = true
+              AND th.trangThai = true
               AND spct.trangThaiValue = true
               AND spct.soLuongTon > 0
               AND (:keyword IS NULL OR
@@ -144,6 +148,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH spct.hinhAnhSanPhams imgs
             LEFT JOIN spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
+              AND dm.trangThai = true
+              AND th.trangThai = true
               AND spct.trangThaiValue = true
               AND (:idDanhMuc IS NULL OR :idDanhMuc = -1 OR dm.id = :idDanhMuc)
               AND (:idThuongHieu IS NULL OR :idThuongHieu = -1 OR th.id = :idThuongHieu)

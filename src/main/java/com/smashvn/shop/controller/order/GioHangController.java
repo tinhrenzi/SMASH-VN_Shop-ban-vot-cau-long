@@ -23,6 +23,7 @@ import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.order.GioHangService;
 import com.smashvn.shop.service.order.GuestCartService;
 import com.smashvn.shop.service.product.PricingService;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -39,17 +40,7 @@ public class GioHangController {
     private final TaiKhoanRepository taiKhoanRepository;
     private final com.smashvn.shop.service.order.CheckoutContextService checkoutContextService;
     private final GioHangChiTietRepository gioHangChiTietRepository;
-
-    private boolean isDangBan(String trangThai) {
-        return trangThai == null || trangThai.isBlank() || "dang_ban".equals(trangThai);
-    }
-
-    private boolean isSanPhamChiTietDangBan(com.smashvn.shop.entity.SanPhamChiTiet spct) {
-        return spct != null
-                && spct.getSanPham() != null
-                && isDangBan(spct.getSanPham().getTrangThai())
-                && isDangBan(spct.getTrangThai());
-    }
+    private final ProductAvailabilityService productAvailabilityService;
 
     // HÀM 1: THÊM VÀO GIỎ (Dùng cho AJAX)
     @PostMapping("/them")
@@ -196,9 +187,7 @@ public class GioHangController {
 
         int tonKho = spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0;
         boolean hetHang = tonKho <= 0;
-        boolean ngungBanSp = sp != null && !isDangBan(sp.getTrangThai());
-        boolean ngungBanBienThe = !isDangBan(spct.getTrangThai());
-        boolean ngungBan = ngungBanSp || ngungBanBienThe;
+        boolean ngungBan = !productAvailabilityService.isVariantPublished(spct);
         boolean hopLe = !hetHang && !ngungBan && soLuong != null && soLuong > 0;
 
         BigDecimal donGia = pricingService.calculateCurrentSellingPrice(spct);

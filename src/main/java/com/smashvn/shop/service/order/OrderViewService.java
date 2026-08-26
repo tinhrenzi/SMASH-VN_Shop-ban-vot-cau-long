@@ -498,11 +498,13 @@ public class OrderViewService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void updateOrderStatusByAdmin(Integer idHoaDon, String newStatus, String expectedStatus, Integer actingTaiKhoanId, String clientIp) {
         updateOrderStatusByAdmin(idHoaDon, newStatus, expectedStatus, actingTaiKhoanId, clientIp, null);
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void updateOrderStatusByAdmin(Integer idHoaDon, String newStatus, String expectedStatus, Integer actingTaiKhoanId, String clientIp, String lyDoHuy) {
         // 1. Service-Level Authorization
         if (actingTaiKhoanId == null) {
@@ -2381,11 +2383,13 @@ public class OrderViewService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void xacNhanKiemKhoVaNhapKho(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
         xacNhanKiemKhoVaNhapKho(idHoaDon, "BAN_LAI", null, actingTaiKhoanId, clientIp);
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void xacNhanKiemKhoVaNhapKho(Integer idHoaDon, String ketQuaInput, String lyDoTuChoiInput, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
@@ -2442,6 +2446,7 @@ public class OrderViewService {
             hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
             hd.setNgayXacNhanHoanHang(LocalDateTime.now());
             hd.setDaNhapKhoHoan(true);
+            markRefundPendingAfterInspection(hd);
             hoaDonRepository.save(hd);
 
             auditService.log(
@@ -2450,7 +2455,7 @@ public class OrderViewService {
                     Long.valueOf(hd.getId()),
                     "UPDATE",
                     "trangThaiHoanHang=DELIVERED_TO_SHOP, trangThaiXuLyHangHoan=CHUA_XU_LY",
-                    "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_HOAN_KHO",
+                    "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_HOAN_KHO, trangThaiThanhToan=" + hd.getTrangThaiThanhToan(),
                     clientIp,
                     "[KIEM_HANG_BAN_LAI] Kiểm hàng hoàn thành công: Sản phẩm đủ điều kiện bán lại ➔ Đã hoàn kho bán (so_luong_ton).",
                     roleStr
@@ -2475,6 +2480,7 @@ public class OrderViewService {
             hd.setTrangThaiHoanHang(ReturnStatus.RETURNED);
             hd.setNgayXacNhanHoanHang(LocalDateTime.now());
             hd.setDaNhapKhoHoan(true);
+            markRefundPendingAfterInspection(hd);
             hoaDonRepository.save(hd);
 
             auditService.log(
@@ -2483,7 +2489,7 @@ public class OrderViewService {
                     Long.valueOf(hd.getId()),
                     "UPDATE",
                     "trangThaiHoanHang=DELIVERED_TO_SHOP, trangThaiXuLyHangHoan=CHUA_XU_LY",
-                    "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_CHUYEN_KHO_LOI",
+                    "trangThaiHoanHang=RETURNED, trangThaiXuLyHangHoan=DA_CHUYEN_KHO_LOI, trangThaiThanhToan=" + hd.getTrangThaiThanhToan(),
                     clientIp,
                     "[KIEM_HANG_HANG_LOI] Kiểm hàng hoàn thành công: Sản phẩm bị lỗi ➔ Đã chuyển vào kho hàng lỗi (so_luong_sp_loi).",
                     roleStr
@@ -2534,12 +2540,30 @@ public class OrderViewService {
         }
     }
 
+    /**
+     * Sau khi yêu cầu TRẢ đã kiểm hàng đạt, khoản tiền chính thức đi vào hàng
+     * đợi hoàn. Yêu cầu ĐỔI không được làm thay đổi trạng thái thanh toán.
+     */
+    private void markRefundPendingAfterInspection(HoaDon hd) {
+        if (!"TRA".equalsIgnoreCase(hd.getLoaiYeuCauDoiTra())) {
+            return;
+        }
+        if ("REFUNDED".equalsIgnoreCase(hd.getTrangThaiThanhToan())
+                || "DA_HOAN_TIEN".equalsIgnoreCase(hd.getTrangThaiThanhToan())) {
+            return;
+        }
+        hd.setTrangThaiThanhToan("CHO_HOAN_TIEN");
+        hd.setRefundStatus(RefundStatus.PENDING);
+    }
+
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void xacNhanHoanTienChoKhach(Integer idHoaDon, Integer actingTaiKhoanId, String clientIp) {
         xacNhanHoanTienChoKhach(idHoaDon, "CHUYEN_KHOAN", null, null, null, null, actingTaiKhoanId, clientIp);
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void xacNhanHoanTienChoKhach(Integer idHoaDon, String phuongThucHoanTienInput, BigDecimal soTienHoanInput, String maGiaoDichHoanTienInput, String ghiChuHoanTienInput, String anhChungTuHoanTienInput, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này.");
@@ -2770,6 +2794,7 @@ public class OrderViewService {
      * kho nếu đơn thực tế đã từng trừ kho (e.g. đã được xác nhận).
      */
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void cancelOrderUnpaid(Integer idHoaDon, String lyDoHuy, Integer actingTaiKhoanId, String clientIp) {
         if (actingTaiKhoanId == null) {
             throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền hủy đơn hàng.");
@@ -2901,6 +2926,7 @@ public class OrderViewService {
      * PaymentTransaction REFUND_SUCCESS riêng biệt.
      */
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "thongke", allEntries = true)
     public void cancelOrderPaidWithRefund(
             Integer idHoaDon,
             String lyDoHuy,
