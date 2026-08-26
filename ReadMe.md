@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="logo-1-git.png" alt="SMASH-VN Logo" width="180" style="border-radius: 12px;" />
-</p>
-
 <h1 align="center">🏸 SMASH-VN — HỆ THỐNG THƯƠNG MẠI ĐIỆN TỬ & BÁN HÀNG CẦU LÔNG ĐA KÊNH</h1>
 
 <p align="center">
