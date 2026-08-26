@@ -62,6 +62,7 @@ public class AdminThongKeService {
     private final SanPhamRepository sanPhamRepository;
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final int TRANSACTION_PREVIEW_LIMIT = 5;
 
     // Ngưỡng cảnh báo dashboard nội bộ để phục vụ theo dõi vận hành
     private static final double INTERNAL_HIGH_CANCEL_RATE_THRESHOLD = 15.0; // 15%
@@ -462,27 +463,63 @@ public class AdminThongKeService {
         return "CASH";
     }
 
-    private String standardizePaymentStatus(String status, String trangThaiDonHang) {
-        if (status == null) {
-            return "PENDING";
-        }
-        status = status.toUpperCase().trim();
-        if ("PAID".equals(status) || "DA_THANH_TOAN".equals(status)) {
-            return "PAID";
-        }
-        if ("CANCELLED".equals(status) || "DA_HUY".equals(status) || "da_huy".equalsIgnoreCase(trangThaiDonHang)) {
-            return "CANCELLED";
-        }
-        if ("FAILED".equals(status) || "THAT_BAI".equals(status)) {
-            return "FAILED";
-        }
-        if ("REFUNDED".equals(status) || "HOAN_TIEN".equals(status)) {
+    static String standardizePaymentStatus(String status, String trangThaiDonHang) {
+        String normalizedStatus = status == null ? "" : status.trim().toUpperCase();
+
+        // Ưu tiên trạng thái thanh toán thực tế. Một đơn đã hủy vẫn có thể đang
+        // chờ hoàn hoặc đã hoàn tiền, nên không được để trạng thái đơn ghi đè.
+        if ("REFUNDED".equals(normalizedStatus)
+                || "HOAN_TIEN".equals(normalizedStatus)
+                || "DA_HOAN_TIEN".equals(normalizedStatus)) {
             return "REFUNDED";
         }
-        if ("PENDING".equals(status) || "CHO_THANH_TOAN".equals(status)) {
+        if ("CHO_HOAN_TIEN".equals(normalizedStatus)) {
+            return "REFUND_PENDING";
+        }
+        if ("PAID".equals(normalizedStatus)
+                || "DA_THANH_TOAN".equals(normalizedStatus)
+                || "SUCCESS".equals(normalizedStatus)
+                || "SUCCESSFUL".equals(normalizedStatus)
+                || "THANH_CONG".equals(normalizedStatus)) {
+            return "PAID";
+        }
+        if ("FAILED".equals(normalizedStatus) || "THAT_BAI".equals(normalizedStatus)) {
+            return "FAILED";
+        }
+        if ("EXPIRED".equals(normalizedStatus) || "HET_HAN".equals(normalizedStatus)) {
+            return "EXPIRED";
+        }
+        if ("PENDING".equals(normalizedStatus)
+                || "CHO_THANH_TOAN".equals(normalizedStatus)
+                || "CHUA_THANH_TOAN".equals(normalizedStatus)) {
             return "PENDING";
         }
-        return "PENDING";
+        if ("CANCELLED".equals(normalizedStatus)
+                || "CANCELED".equals(normalizedStatus)
+                || "DA_HUY".equals(normalizedStatus)
+                || "HUY".equals(normalizedStatus)) {
+            return "CANCELLED";
+        }
+
+        // Chỉ dùng trạng thái đơn làm dữ liệu dự phòng khi cột thanh toán trống
+        // hoặc chứa một mã cũ không nhận diện được.
+        if ("da_huy".equalsIgnoreCase(trangThaiDonHang)) {
+            return "CANCELLED";
+        }
+        return normalizedStatus.isEmpty() ? "PENDING" : "UNKNOWN";
+    }
+
+    static String paymentStatusLabel(String paymentStatus) {
+        return switch (paymentStatus != null ? paymentStatus : "UNKNOWN") {
+            case "PAID" -> "Thành công";
+            case "PENDING" -> "Chờ thanh toán";
+            case "FAILED" -> "Thất bại";
+            case "REFUNDED" -> "Đã hoàn tiền";
+            case "REFUND_PENDING" -> "Chờ hoàn tiền";
+            case "CANCELLED" -> "Đã hủy";
+            case "EXPIRED" -> "Hết hạn thanh toán";
+            default -> "Không xác định";
+        };
     }
 
     public List<TransactionHistoryDTO> getTransactionHistory(LocalDateTime start, LocalDateTime end, Integer limit) {
@@ -522,6 +559,7 @@ public class AdminThongKeService {
 
             String rawStatus = ps != null && !ps.trim().isEmpty() ? ps : tttt;
             String paymentStatus = standardizePaymentStatus(rawStatus, ttdh);
+            String paymentStatusLabel = paymentStatusLabel(paymentStatus);
 
             String transactionId = tid != null && !tid.trim().isEmpty() ? tid : appTransId;
             if (transactionId == null || transactionId.trim().isEmpty()) {
@@ -538,6 +576,7 @@ public class AdminThongKeService {
                     ngayTao,
                     paymentMethod,
                     paymentStatus,
+                    paymentStatusLabel,
                     transactionId,
                     amount != null ? amount : BigDecimal.ZERO
             ));
@@ -863,7 +902,7 @@ public class AdminThongKeService {
 
         // Transaction history
         Long totalTransactions = hoaDonRepository.countTransactionsInPeriod(start, end);
-        List<TransactionHistoryDTO> transactions = getTransactionHistory(start, end, 100);
+        List<TransactionHistoryDTO> transactions = getTransactionHistory(start, end, TRANSACTION_PREVIEW_LIMIT);
         data.put("totalTransactions", totalTransactions != null ? totalTransactions : 0L);
         data.put("displayedTransactions", transactions.size());
         data.put("transactions", transactions);
@@ -1237,8 +1276,9 @@ public class AdminThongKeService {
                 cell.setCellStyle(headerStyle);
             }
 
-            @SuppressWarnings("unchecked")
-            List<TransactionHistoryDTO> transactionsList = (List<TransactionHistoryDTO>) stats.get("transactions");
+            // Bảng trên dashboard chỉ xem nhanh 5 dòng; file Excel phải giữ đầy
+            // đủ lịch sử giao dịch trong khoảng thời gian được chọn.
+            List<TransactionHistoryDTO> transactionsList = getTransactionHistory(start, end, null);
             if (transactionsList != null) {
                 DateTimeFormatter excelDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
                 for (int i = 0; i < transactionsList.size(); i++) {
@@ -1267,7 +1307,7 @@ public class AdminThongKeService {
                     cellAmt.setCellStyle(currencyStyle);
 
                     // Trạng Thái Thanh Toán (String)
-                    row.createCell(6).setCellValue(tx.paymentStatus());
+                    row.createCell(6).setCellValue(tx.paymentStatusLabel());
                 }
             }
 

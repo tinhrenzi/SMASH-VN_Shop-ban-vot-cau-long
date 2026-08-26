@@ -445,6 +445,7 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <span class="admin-status admin-status-neutral">Tổng giao dịch: <strong id="lblTotalTxCount">0</strong></span>
                                 <span class="admin-status admin-status-info">Đang hiển thị: <strong id="lblShowingTxCount">0</strong></span>
+                                <a th:href="@{/admin/don-hang}" class="admin-btn admin-btn-secondary admin-btn-sm">Xem tất cả</a>
                             </div>
                         </div>
                         <div class="admin-card-body p-0">
@@ -1073,14 +1074,31 @@
 
             list.forEach(tx => {
                 const tr = document.createElement("tr");
-                let badgeClass = "admin-status-neutral";
-                let badgeText = tx.paymentStatus;
-                if (tx.paymentStatus === "PAID") { badgeClass = "admin-status-success"; badgeText = "Thành công"; }
-                else if (tx.paymentStatus === "PENDING") { badgeClass = "admin-status-warning"; badgeText = "Chờ thanh toán"; }
-                else if (tx.paymentStatus === "FAILED") { badgeClass = "admin-status-danger"; badgeText = "Thất bại"; }
-                else if (tx.paymentStatus === "REFUNDED") { badgeClass = "admin-status-info"; badgeText = "Hoàn tiền"; }
+                const statusStyles = {
+                    PAID: "admin-status-success",
+                    PENDING: "admin-status-warning",
+                    FAILED: "admin-status-danger",
+                    REFUNDED: "admin-status-info",
+                    REFUND_PENDING: "admin-status-warning",
+                    CANCELLED: "admin-status-danger",
+                    EXPIRED: "admin-status-neutral",
+                    UNKNOWN: "admin-status-neutral"
+                };
+                const statusLabels = {
+                    PAID: "Thành công",
+                    PENDING: "Chờ thanh toán",
+                    FAILED: "Thất bại",
+                    REFUNDED: "Đã hoàn tiền",
+                    REFUND_PENDING: "Chờ hoàn tiền",
+                    CANCELLED: "Đã hủy",
+                    EXPIRED: "Hết hạn thanh toán",
+                    UNKNOWN: "Không xác định"
+                };
+                const paymentStatus = String(tx.paymentStatus || "UNKNOWN").toUpperCase();
+                const badgeClass = statusStyles[paymentStatus] || statusStyles.UNKNOWN;
+                const badgeText = tx.paymentStatusLabel || statusLabels[paymentStatus] || statusLabels.UNKNOWN;
 
-                const statusBadge = `<span class="admin-status ${badgeClass}">${badgeText}</span>`;
+                const statusBadge = `<span class="admin-status ${badgeClass}">${escapeHtml(badgeText)}</span>`;
 
                 let methodHtml = `<span class="fw-semibold text-dark">${escapeHtml(tx.paymentMethod)}</span>`;
                 if (tx.paymentMethod === "ZALOPAY") methodHtml = `<span class="fw-semibold text-primary"><i class="fas fa-wallet me-1"></i>ZaloPay</span>`;
