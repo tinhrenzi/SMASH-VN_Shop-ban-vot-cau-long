@@ -174,7 +174,7 @@
 								                <span id="js-variant-stock-badge" class="js-variant-stock-badge pd-detail__stock" style="margin-left:8px;"></span>
 								            </div>
 								        
-								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" th:value="${listChiTiet != null and listChiTiet.size() == 1 ? listChiTiet[0].id : ''}" required>
+								            <input type="hidden" name="idSanPhamChiTiet" class="js-variant-id" th:value="${listChiTiet != null and listChiTiet.size() == 1 ? listChiTiet[0].id : ''}">
 								        
 								            <div class="pd-detail-action-row u-s-m-b-15">
 								                <div class="pd-detail-action-row__counter">
@@ -185,8 +185,8 @@
 								                    </div>
 								                </div>
 								                <div class="pd-detail-action-row__btn" style="display: flex; gap: 8px;">
-								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit">THÊM VÀO GIỎ</button>
-								                    <button class="js-btn-buy-now btn btn--e-brand-b-2" type="button" style="background-color: #e65100; border-color: #e65100;">MUA NGAY</button>
+								                    <button class="js-btn-add-cart btn btn--e-brand-b-2" type="submit">Thêm vào giỏ</button>
+								                    <button class="js-btn-buy-now btn btn--e-brand-b-2" type="button" style="background-color: #e65100; border-color: #e65100;">Mua ngay</button>
 								                </div>
 								            </div>
 								        </form>
@@ -727,7 +727,7 @@
     <script th:src="@{/js/jquery.shopnav.js}"></script>
 
     <!--====== Ứng dụng ======-->
-    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/app.js(v=1.0.4)}"></script>
 
     <!--====== Khi không hỗ trợ JavaScript ======-->
     <noscript>
@@ -810,11 +810,36 @@
             $('.js-btn-buy-now').on('click', function(e) {
                 e.preventDefault();
                 let $form = $(this).closest('form');
+                let container = $(this).closest('.pd-detail');
                 let spctId = $form.find('.js-variant-id').val();
                 let qty = $form.find('.js-quantity-input').val() || 1;
 
-                if (!spctId) {
-                    showToast('Vui lòng chọn đầy đủ thuộc tính phân loại sản phẩm!', 'warning');
+                let hasColorOptions = container.find('.color-btn').length > 0;
+                let hasSizeOptions = container.find('.size-btn').length > 0;
+                let selectedColor = container.attr('data-selected-color');
+                let selectedSize = container.attr('data-selected-size');
+                
+                let dynamicButtons = container.find('.dynamic-attr-btn');
+                let dynamicAttrNames = Array.from(new Set(Array.from(dynamicButtons).map(btn => $(btn).attr('data-attr-name'))));
+                let hasMissingDynamic = false;
+                for (let i = 0; i < dynamicAttrNames.length; i++) {
+                    let key = 'data-selected-attr-' + dynamicAttrNames[i].replace(/\s+/g, '_').toLowerCase();
+                    if (!container.attr(key)) {
+                        hasMissingDynamic = true;
+                        break;
+                    }
+                }
+
+                if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize) || hasMissingDynamic || !spctId) {
+                    let stockStatus = container.find('.js-stock-status');
+                    if (stockStatus.length) {
+                        stockStatus.html('<i class="fas fa-exclamation-circle"></i> Vui lòng chọn đầy đủ các thuộc tính phân loại sản phẩm.');
+                        stockStatus.attr('class', 'js-stock-status u-s-m-b-15 text-danger fw-bold');
+                        stockStatus.css('display', 'block');
+                    }
+                    if (typeof showToast === 'function') {
+                        showToast('Vui lòng chọn đầy đủ các thuộc tính phân loại sản phẩm trước khi mua ngay!', 'warning');
+                    }
                     return;
                 }
 

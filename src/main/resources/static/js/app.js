@@ -758,7 +758,10 @@ function checkAndApplyVariant(container) {
         }
     }
 
+    const btnBuyNow = container.querySelector('.js-btn-buy-now');
+
     if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize) || hasMissingAttr) {
+        if (inputId) inputId.value = '';
         if(stockStatus) {
             stockStatus.style.display = 'block';
             stockStatus.innerHTML = '<i class="fas fa-info-circle"></i> Vui lòng chọn đầy đủ các thuộc tính phân loại.';
@@ -766,10 +769,16 @@ function checkAndApplyVariant(container) {
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if (btnAdd) {
-            btnAdd.disabled = true;
-            btnAdd.innerText = 'THÊM VÀO GIỎ';
-            btnAdd.style.backgroundColor = '#cccccc';
-            btnAdd.style.borderColor = '#cccccc';
+            btnAdd.disabled = false;
+            btnAdd.innerText = 'Thêm vào giỏ';
+            btnAdd.style.backgroundColor = '';
+            btnAdd.style.borderColor = '';
+        }
+        if (btnBuyNow) {
+            btnBuyNow.disabled = false;
+            btnBuyNow.innerText = 'Mua ngay';
+            btnBuyNow.style.backgroundColor = '#e65100';
+            btnBuyNow.style.borderColor = '#e65100';
         }
         return;
     }
@@ -834,6 +843,18 @@ function checkAndApplyVariant(container) {
                 btnAdd.innerText = 'Hết hàng';
                 btnAdd.style.backgroundColor = '#a0a0a0';
                 btnAdd.style.borderColor = '#a0a0a0';
+            }
+        }
+        if (btnBuyNow) {
+            btnBuyNow.disabled = !conHang;
+            if (conHang) {
+                btnBuyNow.innerText = 'Mua ngay';
+                btnBuyNow.style.backgroundColor = '#e65100';
+                btnBuyNow.style.borderColor = '#e65100';
+            } else {
+                btnBuyNow.innerText = 'Hết hàng';
+                btnBuyNow.style.backgroundColor = '#a0a0a0';
+                btnBuyNow.style.borderColor = '#a0a0a0';
             }
         }
         
@@ -942,6 +963,12 @@ function checkAndApplyVariant(container) {
             btnAdd.innerText = 'Hết hàng';
             btnAdd.style.backgroundColor = '#a0a0a0';
             btnAdd.style.borderColor = '#a0a0a0';
+        }
+        if (btnBuyNow) {
+            btnBuyNow.disabled = true;
+            btnBuyNow.innerText = 'Hết hàng';
+            btnBuyNow.style.backgroundColor = '#a0a0a0';
+            btnBuyNow.style.borderColor = '#a0a0a0';
         }
         if (stockInfoPanel) stockInfoPanel.style.display = 'none';
         if(stockStatus) {
@@ -1088,19 +1115,34 @@ function checkAndApplyVariant(container) {
       
       // 1. Kiểm tra xem đã chọn thuộc tính chưa
       var container = form.closest('.pd-detail');
+      var spctId = form.find('.js-variant-id').val();
       if (container.length) {
           var selectedColor = container.attr('data-selected-color');
           var selectedSize = container.attr('data-selected-size');
           var hasColorOptions = container.find('.color-btn').length > 0;
           var hasSizeOptions = container.find('.size-btn').length > 0;
           
-          if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize)) {
+          var dynamicButtons = container.find('.dynamic-attr-btn');
+          var dynamicAttrNames = Array.from(new Set(Array.from(dynamicButtons).map(btn => $(btn).attr('data-attr-name'))));
+          var hasMissingDynamic = false;
+          for (var i = 0; i < dynamicAttrNames.length; i++) {
+              var key = 'data-selected-attr-' + dynamicAttrNames[i].replace(/\s+/g, '_').toLowerCase();
+              if (!container.attr(key)) {
+                  hasMissingDynamic = true;
+                  break;
+              }
+          }
+          
+          if ((hasColorOptions && !selectedColor) || (hasSizeOptions && !selectedSize) || hasMissingDynamic || !spctId) {
               e.preventDefault();
               var stockStatus = container.find('.js-stock-status');
               if (stockStatus.length) {
-                  stockStatus.html('<i class="fas fa-info-circle"></i> Vui lòng chọn Màu sắc và Kích thước.');
+                  stockStatus.html('<i class="fas fa-exclamation-circle"></i> Vui lòng chọn đầy đủ các thuộc tính phân loại sản phẩm.');
                   stockStatus.attr('class', 'js-stock-status u-s-m-b-15 text-danger fw-bold');
                   stockStatus.css('display', 'block');
+              }
+              if (typeof showToast === 'function') {
+                  showToast('Vui lòng chọn đầy đủ các thuộc tính phân loại sản phẩm trước khi thêm vào giỏ hàng!', 'warning');
               }
               return false;
           }

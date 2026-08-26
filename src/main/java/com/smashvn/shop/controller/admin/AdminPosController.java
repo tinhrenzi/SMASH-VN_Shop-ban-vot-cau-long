@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import jakarta.servlet.http.HttpSession;
 
+import com.smashvn.shop.config.SepayConfig;
+import com.smashvn.shop.dto.user.PosCustomerResponse;
+import com.smashvn.shop.dto.user.PosRegisterCustomerRequest;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.TaiKhoan;
@@ -25,11 +27,8 @@ import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.admin.AdminPosService;
-import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.product.PriceSnapshot;
-import com.smashvn.shop.config.SepayConfig;
-import com.smashvn.shop.dto.user.PosRegisterCustomerRequest;
-import com.smashvn.shop.dto.user.PosCustomerResponse;
+import com.smashvn.shop.service.product.PricingService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -373,7 +372,7 @@ public class AdminPosController {
             @jakarta.validation.Valid @RequestBody PosRegisterCustomerRequest req,
             org.springframework.validation.BindingResult result,
             HttpSession session) {
-        
+
         Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
         if (idNguoiDung == null) {
             return ResponseEntity.status(401).body(PosCustomerResponse.builder()

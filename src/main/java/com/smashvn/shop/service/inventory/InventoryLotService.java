@@ -67,7 +67,8 @@ public class InventoryLotService {
         }
 
         List<Integer> sortedProductIds = repSpctMap.values().stream()
-                .map(spct -> spct.getSanPham().getId())
+                .map(spct -> (spct != null && spct.getSanPham() != null) ? spct.getSanPham().getId() : null)
+                .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());

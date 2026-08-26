@@ -435,12 +435,12 @@
                             <div class="mb-3">
                                 <label class="admin-form-label fw-bold small"><i class="fas fa-credit-card me-1"></i> Phương Thức Thanh Toán</label>
                                 <div class="d-flex gap-2">
-                                    <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="TIEN_MAT" checked autocomplete="off">
+                                    <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="TIEN_MAT" checked autocomplete="off" onchange="recalculateTotals()">
                                     <label class="btn btn-outline-primary flex-fill py-2 text-uppercase fw-bold text-xs" for="payCash">
                                         <i class="fas fa-money-bill-wave me-1"></i> Tiền mặt
                                     </label>
 
-                                    <input type="radio" class="btn-check" name="paymentMethod" id="payBank" value="CHUYEN_KHOAN" autocomplete="off">
+                                    <input type="radio" class="btn-check" name="paymentMethod" id="payBank" value="CHUYEN_KHOAN" autocomplete="off" onchange="recalculateTotals()">
                                     <label class="btn btn-outline-primary flex-fill py-2 text-uppercase fw-bold text-xs" for="payBank">
                                         <i class="fas fa-university me-1"></i> Chuyển khoản
                                     </label>
@@ -947,6 +947,16 @@
             recalculateTotals();
         }
 
+        function roundCashAmount(amount) {
+            if (!amount || amount <= 0) return 0;
+            const remainder = amount % 1000;
+            if (remainder < 500) {
+                return Math.floor(amount / 1000) * 1000;
+            } else {
+                return Math.ceil(amount / 1000) * 1000;
+            }
+        }
+
         function recalculateTotals() {
             let subtotal = 0;
             cart.forEach(item => {
@@ -976,11 +986,18 @@
                 }
             }
 
-            const grandTotal = subtotal - discount;
+            let grandTotal = subtotal - discount;
+            if (grandTotal < 0) grandTotal = 0;
+
+            const paymentMethodRadio = document.querySelector('input[name="paymentMethod"]:checked');
+            const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : "TIEN_MAT";
+            if (paymentMethod === "TIEN_MAT") {
+                grandTotal = roundCashAmount(grandTotal);
+            }
 
             document.getElementById("txtSubTotal").innerText = formatVND(subtotal);
             document.getElementById("txtDiscount").innerText = formatVND(discount);
-            document.getElementById("txtGrandTotal").innerText = formatVND(grandTotal >= 0 ? grandTotal : 0);
+            document.getElementById("txtGrandTotal").innerText = formatVND(grandTotal);
         }
 
         function setupCustomerAutocomplete() {
@@ -1197,7 +1214,12 @@
                 discount = Math.round(discount);
                 if (discount > subtotal) discount = subtotal;
             }
-            const grandTotal = subtotal - discount;
+            let grandTotal = subtotal - discount;
+            if (grandTotal < 0) grandTotal = 0;
+
+            if (paymentMethod === "TIEN_MAT") {
+                grandTotal = roundCashAmount(grandTotal);
+            }
 
             document.getElementById("confirmGrandTotal").innerText = formatVND(grandTotal);
 

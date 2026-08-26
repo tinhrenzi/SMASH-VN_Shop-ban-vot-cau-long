@@ -298,4 +298,28 @@ public class PosCancelFifoInventoryTest {
         lotA = sanPhamChiTietRepository.findById(lotA.getId()).orElseThrow();
         Assertions.assertEquals(22, lotA.getSoLuongTon(), "Chỉ hoàn 10 cái của Đơn A, 8 cái của Đơn B vẫn giữ nguyên");
     }
+
+    @Test
+    @DisplayName("TEST 6: Quy tắc làm tròn tiền mặt POS (Dưới 500đ làm tròn xuống, từ 500đ trở lên làm tròn lên)")
+    void test6_RoundCashAmountRules() {
+        // Dưới 500đ -> làm tròn xuống
+        Assertions.assertEquals(BigDecimal.valueOf(9000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9400)));
+        Assertions.assertEquals(BigDecimal.valueOf(9000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9200)));
+        Assertions.assertEquals(BigDecimal.valueOf(9000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9499)));
+        Assertions.assertEquals(BigDecimal.valueOf(0), AdminPosService.roundCashAmount(BigDecimal.valueOf(400)));
+        Assertions.assertEquals(BigDecimal.valueOf(0), AdminPosService.roundCashAmount(BigDecimal.valueOf(499)));
+
+        // Từ 500đ trở lên -> làm tròn lên
+        Assertions.assertEquals(BigDecimal.valueOf(10000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9500)));
+        Assertions.assertEquals(BigDecimal.valueOf(10000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9600)));
+        Assertions.assertEquals(BigDecimal.valueOf(10000), AdminPosService.roundCashAmount(BigDecimal.valueOf(9800)));
+        Assertions.assertEquals(BigDecimal.valueOf(1000), AdminPosService.roundCashAmount(BigDecimal.valueOf(500)));
+        Assertions.assertEquals(BigDecimal.valueOf(1000), AdminPosService.roundCashAmount(BigDecimal.valueOf(750)));
+
+        // Số tiền tròn chục nghìn / trăm nghìn
+        Assertions.assertEquals(BigDecimal.valueOf(10000), AdminPosService.roundCashAmount(BigDecimal.valueOf(10000)));
+        Assertions.assertEquals(BigDecimal.valueOf(50000), AdminPosService.roundCashAmount(BigDecimal.valueOf(50000)));
+        Assertions.assertEquals(BigDecimal.ZERO, AdminPosService.roundCashAmount(BigDecimal.ZERO));
+        Assertions.assertEquals(BigDecimal.ZERO, AdminPosService.roundCashAmount(null));
+    }
 }

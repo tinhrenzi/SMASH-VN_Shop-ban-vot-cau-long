@@ -331,6 +331,10 @@ public class AdminPosService {
             tongTienCuoi = BigDecimal.ZERO;
         }
 
+        if ("TIEN_MAT".equalsIgnoreCase(phuongThucPos)) {
+            tongTienCuoi = roundCashAmount(tongTienCuoi);
+        }
+
         // 7. Tạo hóa đơn
         HoaDon hd = new HoaDon();
         hd.setKhachHang(khachHang);
@@ -563,6 +567,26 @@ public class AdminPosService {
                         .sdt(savedKh.getSoDienThoaiKh())
                         .build())
                 .build();
+    }
+
+    /**
+     * Quy tắc làm tròn tiền mặt tại quầy POS:
+     * - Phần lẻ dưới 500đ (< 500) -> Làm tròn xuống nghìn gần nhất.
+     * - Phần lẻ từ 500đ trở lên (>= 500) -> Làm tròn lên nghìn gần nhất.
+     */
+    public static BigDecimal roundCashAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        long rawAmount = amount.longValue();
+        long remainder = rawAmount % 1000;
+        long roundedAmount;
+        if (remainder < 500) {
+            roundedAmount = (rawAmount / 1000) * 1000;
+        } else {
+            roundedAmount = ((rawAmount / 1000) + 1) * 1000;
+        }
+        return BigDecimal.valueOf(Math.max(0, roundedAmount));
     }
 }
 

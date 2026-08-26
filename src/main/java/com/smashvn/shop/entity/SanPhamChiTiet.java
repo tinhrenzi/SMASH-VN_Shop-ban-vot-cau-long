@@ -18,12 +18,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @Entity
@@ -86,15 +86,107 @@ public class SanPhamChiTiet {
     @Transient
     private String hinhAnhSanPham;
 
+    public Integer getId() {
+        return id;
+    }
+
+    public Integer getIdSanPhamChiTiet() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public SanPham getSanPham() {
+        return sanPham;
+    }
+
+    public void setSanPham(SanPham sanPham) {
+        this.sanPham = sanPham;
+    }
+
+    public BigDecimal getGiaBan() {
+        return giaBan;
+    }
+
+    public void setGiaBan(BigDecimal giaBan) {
+        this.giaBan = giaBan;
+    }
+
+    public Integer getSoLuongTon() {
+        return soLuongTon != null ? soLuongTon : 0;
+    }
+
+    public void setSoLuongTon(Integer soLuongTon) {
+        this.soLuongTon = soLuongTon;
+    }
+
+    public Integer getSoLuongSpLoi() {
+        return soLuongSpLoi != null ? soLuongSpLoi : 0;
+    }
+
+    public void setSoLuongSpLoi(Integer soLuongSpLoi) {
+        this.soLuongSpLoi = soLuongSpLoi;
+    }
+
+    public BigDecimal getGiaNhap() {
+        return giaNhap;
+    }
+
+    public void setGiaNhap(BigDecimal giaNhap) {
+        this.giaNhap = giaNhap;
+    }
+
+    public LocalDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(LocalDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
+
+    public LocalDateTime getNgayCapNhat() {
+        return ngayCapNhat;
+    }
+
+    public void setNgayCapNhat(LocalDateTime ngayCapNhat) {
+        this.ngayCapNhat = ngayCapNhat;
+    }
+
+    public Boolean getTrangThaiValue() {
+        return trangThaiValue;
+    }
+
+    public void setTrangThaiValue(Boolean trangThaiValue) {
+        this.trangThaiValue = trangThaiValue;
+    }
+
+    public List<HinhAnhSanPham> getHinhAnhSanPhams() {
+        return hinhAnhSanPhams;
+    }
+
+    public void setHinhAnhSanPhams(List<HinhAnhSanPham> hinhAnhSanPhams) {
+        this.hinhAnhSanPhams = hinhAnhSanPhams;
+    }
+
+    public java.util.Set<SanPhamChiTietThuocTinh> getSanPhamChiTietThuocTinhs() {
+        return sanPhamChiTietThuocTinhs;
+    }
+
+    public void setSanPhamChiTietThuocTinhs(java.util.Set<SanPhamChiTietThuocTinh> sanPhamChiTietThuocTinhs) {
+        this.sanPhamChiTietThuocTinhs = sanPhamChiTietThuocTinhs;
+    }
+
     public String getHinhAnhSanPham() {
         if (hinhAnhSanPhams != null && !hinhAnhSanPhams.isEmpty()) {
             HinhAnhSanPham mainImg = hinhAnhSanPhams.stream()
                     .filter(img -> Boolean.TRUE.equals(img.getLaAnhChinh()))
                     .findFirst()
                     .orElseGet(() -> hinhAnhSanPhams.stream()
-                            .filter(img -> img.getThuTu() != null)
-                            .min(java.util.Comparator.comparing(HinhAnhSanPham::getThuTu))
-                            .orElse(hinhAnhSanPhams.get(0)));
+                    .filter(img -> img.getThuTu() != null)
+                    .min(java.util.Comparator.comparing(HinhAnhSanPham::getThuTu))
+                    .orElse(hinhAnhSanPhams.get(0)));
             if (mainImg != null && mainImg.getUrlHinhAnh() != null) {
                 return mainImg.getUrlHinhAnh();
             }
@@ -137,13 +229,17 @@ public class SanPhamChiTiet {
      * Dynamic attribute getters (reads from sanPhamChiTietThuocTinhs list)
      */
     public String getGiaTriThuocTinh(String tenThuocTinh) {
-        if (sanPhamChiTietThuocTinhs == null || tenThuocTinh == null) return null;
+        if (sanPhamChiTietThuocTinhs == null || tenThuocTinh == null) {
+            return null;
+        }
         String val = sanPhamChiTietThuocTinhs.stream()
                 .filter(tt -> tt.getThuocTinh() != null && tenThuocTinh.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()))
                 .map(SanPhamChiTietThuocTinh::getGiaTri)
                 .findFirst()
                 .orElse(null);
-        if (val != null) return val;
+        if (val != null) {
+            return val;
+        }
 
         if ("Kích thước".equalsIgnoreCase(tenThuocTinh) || "Size".equalsIgnoreCase(tenThuocTinh)) {
             return sanPhamChiTietThuocTinhs.stream()
@@ -227,8 +323,8 @@ public class SanPhamChiTiet {
         final String finalTargetName = targetName;
         SanPhamChiTietThuocTinh existing = this.sanPhamChiTietThuocTinhs.stream()
                 .filter(tt -> tt.getThuocTinh() != null && (finalTargetName.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())
-                        || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
-                        && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
+                || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
+                && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
                 .findFirst()
                 .orElse(null);
 
@@ -248,11 +344,12 @@ public class SanPhamChiTiet {
                 if (repo != null) {
                     tt = repo.findByTenThuocTinhIgnoreCase(finalTargetName.trim())
                             .orElseGet(() -> repo.save(ThuocTinh.builder()
-                                    .tenThuocTinh(finalTargetName.trim())
-                                    .trangThai(true)
-                                    .build()));
+                            .tenThuocTinh(finalTargetName.trim())
+                            .trangThai(true)
+                            .build()));
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (tt == null) {
                 tt = ThuocTinh.builder()
@@ -271,9 +368,13 @@ public class SanPhamChiTiet {
     }
 
     public String getDisplayNameForAttribute(SanPhamChiTietThuocTinh tt) {
-        if (tt == null || tt.getThuocTinh() == null) return "";
+        if (tt == null || tt.getThuocTinh() == null) {
+            return "";
+        }
         String dbName = tt.getThuocTinh().getTenThuocTinh();
-        if (dbName == null) return "";
+        if (dbName == null) {
+            return "";
+        }
 
         if (this.sanPham != null && this.sanPham.getDanhMuc() != null && this.sanPham.getDanhMuc().getThuocTinhList() != null) {
             for (ThuocTinh catAtt : this.sanPham.getDanhMuc().getThuocTinhList()) {
@@ -325,7 +426,6 @@ public class SanPhamChiTiet {
                 .collect(Collectors.joining(", "));
     }
 
-
     public void setTrangThai(String trangThai) {
         this.trangThaiValue = !"ngung_ban".equalsIgnoreCase(String.valueOf(trangThai))
                 && !"ngung_kinh_doanh".equalsIgnoreCase(String.valueOf(trangThai))
@@ -354,9 +454,7 @@ public class SanPhamChiTiet {
         }
     }
 
-
     public boolean isDangBan() {
         return !Boolean.FALSE.equals(trangThaiValue);
     }
 }
-

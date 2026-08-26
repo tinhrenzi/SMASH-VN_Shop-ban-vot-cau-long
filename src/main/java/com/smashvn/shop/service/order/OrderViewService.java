@@ -541,10 +541,10 @@ public class OrderViewService {
                 || "dang_giao".equalsIgnoreCase(currentStatus)
                 || "hoan_thanh".equalsIgnoreCase(currentStatus)
                 || (hasGhnCode && ("dang_lay_hang".equalsIgnoreCase(currentStatus)
-                        || "da_tao_van_don_ghn".equalsIgnoreCase(currentStatus)
-                        || "san_sang_giao".equalsIgnoreCase(currentStatus)
-                        || "da_ban_giao_ghn".equalsIgnoreCase(currentStatus)
-                        || "giao_that_bai".equalsIgnoreCase(currentStatus)))) {
+                || "da_tao_van_don_ghn".equalsIgnoreCase(currentStatus)
+                || "san_sang_giao".equalsIgnoreCase(currentStatus)
+                || "da_ban_giao_ghn".equalsIgnoreCase(currentStatus)
+                || "giao_that_bai".equalsIgnoreCase(currentStatus)))) {
             throw new IllegalArgumentException("Đơn hàng đã được giao cho đơn vị vận chuyển GHN (Mã: "
                     + (hd.getGhnOrderCode() != null ? hd.getGhnOrderCode() : "")
                     + "). Trạng thái vận chuyển được đồng bộ tự động từ GHN và không thể chuyển thủ công trên hệ thống!");
@@ -1912,10 +1912,18 @@ public class OrderViewService {
         if (isPosOrder) {
             String st = hd.getTrangThaiDonHang() != null ? hd.getTrangThaiDonHang().toLowerCase() : "";
             if ("da_giao".equals(st) || "hoan_thanh".equals(st) || "delivered".equals(st) || "da_thanh_toan".equals(st)) {
-                if (hd.getThoiGianXacNhan() != null) return hd.getThoiGianXacNhan();
-                if (hd.getPaidAt() != null) return hd.getPaidAt();
-                if (hd.getNgayThanhToan() != null) return hd.getNgayThanhToan();
-                if (hd.getNgayTao() != null) return hd.getNgayTao();
+                if (hd.getThoiGianXacNhan() != null) {
+                    return hd.getThoiGianXacNhan();
+                }
+                if (hd.getPaidAt() != null) {
+                    return hd.getPaidAt();
+                }
+                if (hd.getNgayThanhToan() != null) {
+                    return hd.getNgayThanhToan();
+                }
+                if (hd.getNgayTao() != null) {
+                    return hd.getNgayTao();
+                }
             }
         }
 

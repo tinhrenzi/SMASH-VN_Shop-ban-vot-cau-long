@@ -62,6 +62,78 @@ public class SanPham {
     @org.hibernate.annotations.BatchSize(size = 30)
     private List<SanPhamChiTiet> sanPhamChiTiets;
 
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public DanhMuc getDanhMuc() {
+        return danhMuc;
+    }
+
+    public void setDanhMuc(DanhMuc danhMuc) {
+        this.danhMuc = danhMuc;
+    }
+
+    public ThuongHieu getThuongHieu() {
+        return thuongHieu;
+    }
+
+    public void setThuongHieu(ThuongHieu thuongHieu) {
+        this.thuongHieu = thuongHieu;
+    }
+
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
+    }
+
+    public String getTenSanPham() {
+        return tenSanPham;
+    }
+
+    public void setTenSanPham(String tenSanPham) {
+        this.tenSanPham = tenSanPham;
+    }
+
+    public Boolean getTrangThaiValue() {
+        return trangThaiValue;
+    }
+
+    public void setTrangThaiValue(Boolean trangThaiValue) {
+        this.trangThaiValue = trangThaiValue;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public Set<DotGiamGia> getCacDotGiamGia() {
+        return cacDotGiamGia;
+    }
+
+    public void setCacDotGiamGia(Set<DotGiamGia> cacDotGiamGia) {
+        this.cacDotGiamGia = cacDotGiamGia;
+    }
+
+    public List<SanPhamChiTiet> getSanPhamChiTiets() {
+        return sanPhamChiTiets;
+    }
+
+    public void setSanPhamChiTiets(List<SanPhamChiTiet> sanPhamChiTiets) {
+        this.sanPhamChiTiets = sanPhamChiTiets;
+    }
+
     public int getTongSoLuongTon() {
         if (sanPhamChiTiets == null || sanPhamChiTiets.isEmpty()) {
             return 0;
