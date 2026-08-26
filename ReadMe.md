@@ -454,12 +454,26 @@ SMASH-VN_Shop-ban-vot-cau-long/
 
 Dự án được xây dựng và phát triển bởi:
 
-- **LuongHiep334** — *Developer*
-- **Tinhrenzi** — *Developer*
+| Tác giả | Vai trò | GitHub Profile | Liên hệ |
+| :--- | :--- | :--- | :--- |
+| **Tinhrenzi** (Xuân Tính) | Lead Developer | [![GitHub](https://img.shields.io/badge/GitHub-tinhrenzi-181717?style=flat-square&logo=github)](https://github.com/tinhrenzi) | [![Facebook](https://img.shields.io/badge/Facebook-TinhXuannn-1877F2?style=flat-square&logo=facebook)](https://facebook.com/TinhXuannn) [![Instagram](https://img.shields.io/badge/Instagram-TinhXuannn-E4405F?style=flat-square&logo=instagram)](https://instagram.com/TinhXuannn) |
+| **LuongHiep334** | Developer | [![GitHub](https://img.shields.io/badge/GitHub-LuongHiep334-181717?style=flat-square&logo=github)](https://github.com/LuongHiep334) | [![GitHub](https://img.shields.io/badge/Profile-LuongHiep334-blue?style=flat-square&logo=github)](https://github.com/LuongHiep334) |
 
-<p align="left">
-  <a href="https://github.com/tinhrenzi"><img src="https://github-readme-stats.vercel.app/api?username=tinhrenzi&theme=tokyonight&hide_border=false&include_all_commits=true&count_private=true" alt="GitHub Stats" /></a>
-  <a href="https://github.com/tinhrenzi"><img src="https://github-readme-streak-stats.herokuapp.com/?user=tinhrenzi&theme=tokyonight&hide_border=false" alt="GitHub Streak" /></a>
+### 📊 Thống kê hoạt động GitHub
+
+<p align="center">
+  <a href="https://github.com/tinhrenzi">
+    <img src="https://github-readme-stats.vercel.app/api?username=tinhrenzi&show_icons=true&theme=tokyonight&hide_border=false&count_private=true" alt="Tinhrenzi GitHub Stats" />
+  </a>
+  <a href="https://github.com/tinhrenzi">
+    <img src="https://streak-stats.demolab.com/?user=tinhrenzi&theme=tokyonight&hide_border=false" alt="Tinhrenzi GitHub Streak" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/tinhrenzi">
+    <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=tinhrenzi&layout=compact&theme=tokyonight&hide_border=false" alt="Top Languages" />
+  </a>
 </p>
 
 ---
