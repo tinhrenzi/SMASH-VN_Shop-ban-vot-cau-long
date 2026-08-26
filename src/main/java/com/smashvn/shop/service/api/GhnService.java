@@ -10,6 +10,9 @@ import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.SoDiaChi;
+import com.smashvn.shop.repository.SoDiaChiRepository;
+import com.smashvn.shop.exception.GhnCreateIndeterminateException;
+import com.smashvn.shop.exception.GhnUnsupportedRouteException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
@@ -21,8 +24,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +37,32 @@ public class GhnService {
     private final GhnConfig ghnConfig;
     private final RestTemplate restTemplate;
     private final DonViVanChuyenDAO donViVanChuyenDAO;
+    private final SoDiaChiRepository soDiaChiRepository;
+    private final GhnShipmentPersistenceService ghnShipmentPersistenceService;
+    private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int LOCK_STRIPE_COUNT = 256;
+    private final Object[] orderCreationLocks = new Object[LOCK_STRIPE_COUNT];
+
+    {
+        for (int i = 0; i < LOCK_STRIPE_COUNT; i++) {
+            orderCreationLocks[i] = new Object();
+        }
+    }
+
+    private Object getOrderLock(Integer orderId) {
+        if (orderId == null) {
+            return orderCreationLocks[0];
+        }
+        int index = Math.abs(orderId.hashCode() % LOCK_STRIPE_COUNT);
+        return orderCreationLocks[index];
+    }
+
     private String resolvedShopId = null;
 
     private static final String API_FEE = "/shiip/public-api/v2/shipping-order/fee";
     private static final String API_CREATE = "/shiip/public-api/v2/shipping-order/create";
+    private static final String API_AVAILABLE_SERVICES = "/shiip/public-api/v2/shipping-order/available-services";
     private static final String API_DETAIL = "/shiip/public-api/v2/shipping-order/detail";
     private static final String API_DISTRICT = "/shiip/public-api/master-data/district";
     private static final String API_WARD = "/shiip/public-api/master-data/ward";
@@ -45,9 +71,7 @@ public class GhnService {
     private DonViVanChuyen getGhnCarrier() {
         try {
             return donViVanChuyenDAO.findAll().stream()
-                    .filter(dv -> dv.getTenDonVi() != null && 
-                            (dv.getTenDonVi().toUpperCase().contains("GIAO HÀNG NHANH") || 
-                             dv.getTenDonVi().toUpperCase().contains("GHN")))
+                    .filter(dv -> DonViVanChuyen.isGhnCarrier(dv))
                     .findFirst()
                     .orElse(null);
         } catch (Exception e) {
@@ -210,15 +234,18 @@ public class GhnService {
      */
     public BigDecimal calculateShipFee(Integer toDistrictId, String toWardCode, Integer insuranceValue) {
         try {
+            GhnServiceInfo serviceInfo = resolveAvailableService(getGhnShopId(), ghnConfig.getFromDistrictId(), toDistrictId);
             GhnShipFeeRequestDTO req = new GhnShipFeeRequestDTO();
             req.setFromDistrictId(ghnConfig.getFromDistrictId());
             req.setFromWardCode(ghnConfig.getFromWardCode());
             req.setToDistrictId(toDistrictId);
             req.setToWardCode(toWardCode);
             req.setInsuranceValue(insuranceValue);
+            req.setServiceId(serviceInfo.getServiceId());
+            req.setServiceTypeId(serviceInfo.getServiceTypeId());
 
             String url = ghnConfig.getBaseUrl() + API_FEE;
-            HttpEntity<GhnShipFeeRequestDTO> request = new HttpEntity<>(req, buildSimpleHeaders());
+            HttpEntity<GhnShipFeeRequestDTO> request = new HttpEntity<>(req, buildHeaders());
 
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
             Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
@@ -237,6 +264,194 @@ public class GhnService {
         }
         // Fallback: 30,000đ
         return new BigDecimal("30000");
+    }
+
+    @SuppressWarnings("unchecked")
+    private GhnServiceInfo resolveAvailableService(String shopId, Integer fromDistrictId, Integer toDistrictId) {
+        if (fromDistrictId == null || toDistrictId == null) {
+            throw new IllegalArgumentException("Thiếu quận/huyện gửi hoặc nhận để kiểm tra dịch vụ GHN.");
+        }
+
+        try {
+            Map<String, Object> body = Map.of(
+                    "shop_id", Integer.valueOf(shopId),
+                    "from_district", fromDistrictId,
+                    "to_district", toDistrictId
+            );
+            String url = ghnConfig.getBaseUrl() + API_AVAILABLE_SERVICES;
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildSimpleHeaders());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+            Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+            Integer code = response.get("code") instanceof Number ? ((Number) response.get("code")).intValue() : null;
+            if (code != null && code == 200) {
+                List<Map<String, Object>> services = (List<Map<String, Object>>) response.get("data");
+                if (services != null && !services.isEmpty()) {
+                    Map<String, Object> selected = services.stream()
+                            .filter(s -> intValue(s.get("service_type_id")) != null && intValue(s.get("service_type_id")) == 2)
+                            .findFirst()
+                            .orElse(services.get(0));
+                    Integer serviceId = intValue(selected.get("service_id"));
+                    Integer serviceTypeId = intValue(selected.get("service_type_id"));
+                    if (serviceId != null || serviceTypeId != null) {
+                        log.debug("GHN service selected for route {} -> {}: service_id={}, service_type_id={}",
+                                fromDistrictId, toDistrictId, serviceId, serviceTypeId);
+                        return new GhnServiceInfo(serviceId, serviceTypeId != null ? serviceTypeId : 2);
+                    }
+                }
+            }
+
+            String msg = response.get("message") != null ? response.get("message").toString() : "Không có dịch vụ khả dụng";
+            throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+        } catch (GhnUnsupportedRouteException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String msg = e.getResponseBodyAsString();
+            try {
+                Map<String, Object> response = objectMapper.readValue(msg, new TypeReference<>() {});
+                if (response.get("message") != null) {
+                    msg = response.get("message").toString();
+                }
+            } catch (Exception ignored) {
+                // Keep raw response body.
+            }
+            throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg, e);
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GhnUnsupportedRouteException("Lỗi kiểm tra dịch vụ GHN: " + e.getMessage(), e);
+        }
+    }
+
+    private Integer intValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value != null) {
+            try {
+                return Integer.valueOf(value.toString());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Tra cứu mã vận đơn GHN đã tồn tại trong database (TichHopVanChuyen)
+     */
+    public String findExistingGhnCode(Integer idHoaDon) {
+        if (idHoaDon == null) return null;
+        try {
+            List<String> codes = jdbcTemplate.query(
+                "SELECT ma_van_don FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap IN ('GHN', 'GHN_FALLBACK') AND ma_van_don IS NOT NULL AND RTRIM(LTRIM(ma_van_don)) <> '' ORDER BY id DESC",
+                (rs, rowNum) -> rs.getString("ma_van_don"),
+                idHoaDon
+            );
+            if (!codes.isEmpty() && codes.get(0) != null && !codes.get(0).isBlank()) {
+                return codes.get(0).trim();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to check existing GHN code for HoaDon #{}: {}", idHoaDon, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra xem đơn hàng có đang ở trạng thái GHN_CREATE_UNKNOWN do timeout lần trước hay không
+     */
+    public boolean hasUnknownGhnCreateStatus(Integer idHoaDon) {
+        if (idHoaDon == null) return false;
+        try {
+            List<String> statuses = jdbcTemplate.query(
+                "SELECT trang_thai FROM TichHopVanChuyen WHERE id_hoa_don = ? AND nha_cung_cap = 'GHN' ORDER BY id DESC",
+                (rs, rowNum) -> rs.getString("trang_thai"),
+                idHoaDon
+            );
+            return !statuses.isEmpty() && "GHN_CREATE_UNKNOWN".equalsIgnoreCase(statuses.get(0));
+        } catch (Exception e) {
+            log.warn("Failed to check unknown GHN create status for HoaDon #{}: {}", idHoaDon, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Tra cứu thông tin vận đơn GHN theo client_order_code (mã đơn shop)
+     * Theo tài liệu chính thức GHN API v2, response có trường "data" là Array/List các order.
+     * Phương thức này trích xuất Map chi tiết đơn hàng (hoặc phần tử đầu tiên hợp lệ) từ data.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getOrderDetailByClientOrderCode(String clientOrderCode) {
+        if (clientOrderCode == null || clientOrderCode.isBlank()) {
+            return null;
+        }
+        try {
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/shipping-order/detail-by-client-code";
+            Map<String, Object> body = Map.of("client_order_code", clientOrderCode.trim());
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildSimpleHeaders());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+            if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.getBody() != null) {
+                Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+                Integer code = (Integer) response.get("code");
+                if (code != null && code == 200) {
+                    Object dataObj = response.get("data");
+                    if (dataObj instanceof List<?> list) {
+                        for (Object item : list) {
+                            if (item instanceof Map<?, ?> itemMap) {
+                                Object orderCode = itemMap.get("order_code");
+                                if (orderCode != null && !String.valueOf(orderCode).trim().isBlank()) {
+                                    return (Map<String, Object>) itemMap;
+                                }
+                            }
+                        }
+                    } else if (dataObj instanceof Map<?, ?> map) {
+                        Object orderCode = map.get("order_code");
+                        if (orderCode != null && !String.valueOf(orderCode).trim().isBlank()) {
+                            return (Map<String, Object>) map;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("GHN detail-by-client-code query failed for client_order_code {}: {}", clientOrderCode, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Tự động Reconcile với GHN nếu đơn hàng từng bị timeout
+     */
+    public String reconcileExistingGhnOrder(HoaDon hoaDon) {
+        if (hoaDon == null || hoaDon.getMaDonHang() == null) return null;
+        try {
+            Map<String, Object> detail = getOrderDetailByClientOrderCode(hoaDon.getMaDonHang());
+            if (detail != null && detail.get("order_code") != null) {
+                String orderCode = String.valueOf(detail.get("order_code")).trim();
+                if (!orderCode.isBlank()) {
+                    log.info("[GHN_RECONCILE_SUCCESS] Reconciled GHN shipping order {} by client_order_code {} for HoaDon #{}",
+                            orderCode, hoaDon.getMaDonHang(), hoaDon.getId());
+                    ghnShipmentPersistenceService.saveShipment(hoaDon.getId(), orderCode, "GHN", "ready_to_pick");
+                    hoaDon.setGhnOrderCode(orderCode);
+                    hoaDon.setGhnStatus("ready_to_pick");
+                    return orderCode;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[GHN_RECONCILE] Reconcile attempt failed for HoaDon #{}: {}", hoaDon.getId(), e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Trả về số lượng fixed striped locks
+     */
+    public int getLockStripeCount() {
+        return orderCreationLocks.length;
+    }
+
+    public int getActiveOrderCreationLocksCount() {
+        return orderCreationLocks.length;
     }
 
     /**
@@ -295,35 +510,311 @@ public class GhnService {
 
     public String createShippingOrderOrThrow(HoaDon hoaDon, List<HoaDonChiTiet> items,
                                              Integer toDistrictId, String toWardCode) throws Exception {
-        String shopIdStr = getGhnShopId();
-        String tokenStr = getGhnToken();
-        try {
-            return executeCreateOrderCall(shopIdStr, tokenStr, hoaDon, items, toDistrictId, toWardCode);
-        } catch (Exception e) {
-            if (e.getMessage() != null && (e.getMessage().contains("SERVER_ERR_COMMON") || e.getMessage().contains("không lấy được thông tin kho"))) {
-                log.warn("GHN: Primary Shop ID {} failed with SERVER_ERR_COMMON. Attempting fallback to Hanoi Shop if available...", shopIdStr);
-                String fallbackShopId = findFallbackHanoiShop(tokenStr);
-                if (fallbackShopId != null && !fallbackShopId.equals(shopIdStr)) {
-                    log.info("GHN: Retrying order creation with fallback Hanoi Shop ID {}", fallbackShopId);
+        return createShippingOrderOrThrow(hoaDon, items, toDistrictId, toWardCode, false);
+    }
+
+    public String createShippingOrderOrThrow(HoaDon hoaDon, List<HoaDonChiTiet> items,
+                                             Integer toDistrictId, String toWardCode,
+                                             boolean forceRetry) throws Exception {
+        if (hoaDon == null) {
+            throw new IllegalArgumentException("Không thể tạo vận đơn cho đơn hàng null.");
+        }
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("Không thể tạo vận đơn cho đơn hàng không có sản phẩm.");
+        }
+
+        // Fast check outside lock: Reconcile / Idempotency
+        String existingCode = findExistingGhnCode(hoaDon.getId());
+        if (existingCode != null && !existingCode.isBlank()) {
+            log.info("[GHN_CONCURRENCY] Order #{} already has GHN code: {}. Returning existing code without calling GHN API.", hoaDon.getId(), existingCode);
+            hoaDon.setGhnOrderCode(existingCode);
+            return existingCode;
+        }
+
+        // Fixed Striped Lock: prevents concurrent threads/requests from double-calling GHN for the same orderId
+        Object lock = getOrderLock(hoaDon.getId());
+        synchronized (lock) {
+            // Double check inside lock
+            existingCode = findExistingGhnCode(hoaDon.getId());
+            if (existingCode != null && !existingCode.isBlank()) {
+                log.info("[GHN_CONCURRENCY] Order #{} already has GHN code (double-check inside lock): {}. Returning existing code.", hoaDon.getId(), existingCode);
+                hoaDon.setGhnOrderCode(existingCode);
+                return existingCode;
+            }
+
+            // Check if order is currently in GHN_CREATE_UNKNOWN state
+            if (hasUnknownGhnCreateStatus(hoaDon.getId())) {
+                // Try reconciling with GHN first
+                String reconciledCode = reconcileExistingGhnOrder(hoaDon);
+                if (reconciledCode != null && !reconciledCode.isBlank()) {
+                    log.info("[GHN_RECONCILE] Successfully resolved existing shipping order {} for HoaDon #{} from GHN.",
+                            reconciledCode, hoaDon.getId());
+                    return reconciledCode;
+                }
+
+                // If reconcile did not find order and admin did not explicitly confirm force retry -> BLOCK
+                if (!forceRetry) {
+                    log.warn("[GHN_CREATE_UNKNOWN_BLOCKED] Order #{} is in GHN_CREATE_UNKNOWN state. Blocked automatic retry.", hoaDon.getId());
+                    throw new GhnCreateIndeterminateException("Kết quả tạo vận đơn GHN trước đó chưa xác định (GHN_CREATE_UNKNOWN). Vui lòng kiểm tra trên GHN trước khi tạo lại để tránh tạo trùng vận đơn.");
+                } else {
+                    log.info("[GHN_FORCE_RETRY] Admin confirmed force retry for HoaDon #{}.", hoaDon.getId());
+                }
+            }
+
+            if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
+                if (hoaDon.getDiaChi() != null && hoaDon.getDiaChi().getDistrictId() != null && hoaDon.getDiaChi().getWardCode() != null) {
+                    toDistrictId = hoaDon.getDiaChi().getDistrictId();
+                    toWardCode = hoaDon.getDiaChi().getWardCode();
+                } else if (hoaDon.getKhachHang() != null) {
                     try {
-                        return executeCreateOrderCall(fallbackShopId, tokenStr, hoaDon, items, toDistrictId, toWardCode);
-                    } catch (Exception ex) {
-                        log.error("GHN: Fallback to Hanoi Shop failed: {}", ex.getMessage());
+                        List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                        if (addresses != null) {
+                            for (SoDiaChi sdc : addresses) {
+                                if (sdc.getSdtNguoiNhan() != null 
+                                        && sdc.getSdtNguoiNhan().trim().equalsIgnoreCase(hoaDon.getSdtNhan().trim())
+                                        && sdc.getGhnDistrictId() != null 
+                                        && sdc.getGhnWardCode() != null) {
+                                    toDistrictId = sdc.getGhnDistrictId();
+                                    toWardCode = sdc.getGhnWardCode();
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to resolve district/ward from SoDiaChi for GHN order: {}", e.getMessage());
                     }
                 }
             }
-            throw e;
+
+            if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
+                log.error("[RESOLVE_ADDRESS_FAILED] HoaDon #{} (maDonHang: {}) missing district/ward code for GHN",
+                        hoaDon.getId(), hoaDon.getMaDonHang());
+                throw new IllegalArgumentException("Đơn hàng #" + hoaDon.getId() + " thiếu mã Quận/Huyện hoặc Phường/Xã GHN hợp lệ.");
+            }
+
+            // Phase 1: RESOLVE_SHOP
+            String shopIdStr;
+            String tokenStr;
+            Map<String, Object> shopDetails = null;
+            try {
+                shopIdStr = getGhnShopId();
+                tokenStr = getGhnToken();
+                shopDetails = getShopDetails(shopIdStr, tokenStr);
+            } catch (Exception shopEx) {
+                log.error("[GHN][RESOLVE_SHOP] Failed to resolve GHN shop/token for HoaDon #{} (maDonHang: {}, districtId: {}, wardCode: {}): {} - {}",
+                        hoaDon.getId(), hoaDon.getMaDonHang(), toDistrictId, toWardCode,
+                        shopEx.getClass().getSimpleName(), shopEx.getMessage());
+                if (isSandboxEnvironment() && isEligibleForSandboxFallback(shopEx)) {
+                    log.info("[GHN][SANDBOX_FALLBACK] HoaDon #{} -> Generating Sandbox Demo fallback due to resolve shop error", hoaDon.getId());
+                    return createFallbackShippingOrder(hoaDon, shopEx);
+                }
+                throw shopEx;
+            }
+
+            // Phase 2: RESOLVE_SERVICE
+            GhnServiceInfo serviceInfo = null;
+            Integer fromDistrictId = (shopDetails != null && shopDetails.get("district_id") != null)
+                    ? ((Number) shopDetails.get("district_id")).intValue()
+                    : ghnConfig.getFromDistrictId();
+            try {
+                serviceInfo = resolveAvailableService(shopIdStr, fromDistrictId, toDistrictId);
+            } catch (Exception serviceEx) {
+                log.error("[GHN][RESOLVE_SERVICE] Failed to resolve available service for HoaDon #{} (route {} -> {}): {} - {}",
+                        hoaDon.getId(), fromDistrictId, toDistrictId,
+                        serviceEx.getClass().getSimpleName(), serviceEx.getMessage());
+                if (isSandboxEnvironment() && isEligibleForSandboxFallback(serviceEx)) {
+                    log.info("[GHN][SANDBOX_FALLBACK] HoaDon #{} -> Generating Sandbox Demo fallback due to resolve service error", hoaDon.getId());
+                    return createFallbackShippingOrder(hoaDon, serviceEx);
+                }
+                throw serviceEx;
+            }
+
+            // Phase 3: CREATE_ORDER
+            try {
+                return executeCreateOrderCall(shopIdStr, tokenStr, hoaDon, items, toDistrictId, toWardCode, serviceInfo, shopDetails);
+            } catch (GhnCreateIndeterminateException ghnIndEx) {
+                // Record GHN_CREATE_UNKNOWN in TichHopVanChuyen so subsequent retries are protected
+                ghnShipmentPersistenceService.saveShipment(hoaDon.getId(), null, "GHN", "GHN_CREATE_UNKNOWN");
+                log.error("[GHN][GHN_CREATE_RESULT_UNKNOWN] Indeterminate create result for HoaDon #{} (maDonHang: {}, districtId: {}, wardCode: {}): {} - {}",
+                        hoaDon.getId(), hoaDon.getMaDonHang(), toDistrictId, toWardCode,
+                        ghnIndEx.getClass().getSimpleName(), ghnIndEx.getMessage());
+                throw ghnIndEx;
+            } catch (Exception e) {
+                Exception lastException = e;
+                if (e.getMessage() != null && (e.getMessage().contains("SERVER_ERR_COMMON") || e.getMessage().contains("không lấy được thông tin kho"))) {
+                    log.warn("GHN: Primary Shop ID {} failed with SERVER_ERR_COMMON. Attempting fallback to Hanoi Shop if available...", shopIdStr);
+                    String fallbackShopId = findFallbackHanoiShop(tokenStr);
+                    if (fallbackShopId != null && !fallbackShopId.equals(shopIdStr)) {
+                        log.info("GHN: Retrying order creation with fallback Hanoi Shop ID {}", fallbackShopId);
+                        try {
+                            Map<String, Object> fallbackDetails = getShopDetails(fallbackShopId, tokenStr);
+                            Integer fallbackFromDist = (fallbackDetails != null && fallbackDetails.get("district_id") != null)
+                                    ? ((Number) fallbackDetails.get("district_id")).intValue()
+                                    : ghnConfig.getFromDistrictId();
+                            GhnServiceInfo fallbackServiceInfo = resolveAvailableService(fallbackShopId, fallbackFromDist, toDistrictId);
+                            return executeCreateOrderCall(fallbackShopId, tokenStr, hoaDon, items, toDistrictId, toWardCode, fallbackServiceInfo, fallbackDetails);
+                        } catch (GhnCreateIndeterminateException ghnIndEx) {
+                            ghnShipmentPersistenceService.saveShipment(hoaDon.getId(), null, "GHN", "GHN_CREATE_UNKNOWN");
+                            log.error("[GHN][GHN_CREATE_RESULT_UNKNOWN] Indeterminate create result on fallback shop for HoaDon #{} (maDonHang: {}): {}",
+                                    hoaDon.getId(), hoaDon.getMaDonHang(), ghnIndEx.getMessage());
+                            throw ghnIndEx;
+                        } catch (Exception ex) {
+                            log.error("GHN: Fallback to Hanoi Shop failed: {}", ex.getMessage());
+                            lastException = ex;
+                        }
+                    }
+                }
+
+                log.error("[GHN][CREATE_ORDER] Failed for HoaDon #{} (maDonHang: {}, districtId: {}, wardCode: {}): {} - {}",
+                        hoaDon.getId(), hoaDon.getMaDonHang(), toDistrictId, toWardCode,
+                        lastException.getClass().getSimpleName(), lastException.getMessage());
+
+                if (isSandboxEnvironment() && isEligibleForSandboxFallback(lastException)) {
+                    log.info("[GHN][SANDBOX_FALLBACK] HoaDon #{} -> Generating Sandbox Demo fallback due to create order error", hoaDon.getId());
+                    return createFallbackShippingOrder(hoaDon, lastException);
+                }
+                throw lastException;
+            }
         }
     }
 
+    /**
+     * Kiểm tra xem môi trường hiện tại có phải GHN Sandbox hay không.
+     * Smart Fallback CHỈ được phép kích hoạt trên Sandbox.
+     */
+    public boolean isSandboxEnvironment() {
+        String baseUrl = ghnConfig.getBaseUrl();
+        if (baseUrl == null) return false;
+        String lower = baseUrl.toLowerCase().trim();
+        return lower.contains("dev.ghn.vn") || lower.contains("5sao") || lower.contains("dev-online-gateway") || lower.contains("sandbox");
+    }
+
+    /**
+     * Phân loại exception: Chỉ cho phép Fallback với lỗi dịch vụ/network/Sandbox của GHN.
+     * KHÔNG fallback với lỗi dữ liệu nội bộ (null address, invalid items, NPE, DB errors, validation errors, 401/403 credentials).
+     * KHÔNG fallback cho lỗi kết quả không xác định (GhnCreateIndeterminateException).
+     */
+    public boolean isEligibleForSandboxFallback(Exception e) {
+        if (!isSandboxEnvironment()) {
+            log.info("GHN: Environment is PRODUCTION. Smart Fallback is disabled.");
+            return false;
+        }
+        if (e == null) {
+            return false;
+        }
+
+        // BỎ QUA: Lỗi không xác định kết quả POST create -> KHÔNG ĐƯỢC FALLBACK để tránh duplicate
+        if (e instanceof GhnCreateIndeterminateException) {
+            log.warn("GHN: GhnCreateIndeterminateException (POST create timeout). Skipping Smart Fallback to prevent duplicate.");
+            return false;
+        }
+
+        // ĐỦ ĐIỀU KIỆN Fallback: Sandbox không hỗ trợ tuyến giao hàng
+        if (e instanceof GhnUnsupportedRouteException) {
+            log.info("GHN: GhnUnsupportedRouteException detected on Sandbox. Eligible for Smart Fallback.");
+            return true;
+        }
+
+        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi mạng / Timeout kết nối GHN trước khi create (ví dụ lúc resolve shop/services)
+        if (e instanceof org.springframework.web.client.ResourceAccessException) {
+            log.info("GHN: ResourceAccessException [{}] detected (Network/Timeout before POST create). Eligible for Smart Fallback.", e.getMessage());
+            return true;
+        }
+
+        // BỎ QUA không fallback cho các lỗi dữ liệu nội bộ / lập trình / database
+        if (e instanceof IllegalArgumentException ||
+            e instanceof NullPointerException ||
+            e instanceof IllegalStateException ||
+            e instanceof org.springframework.dao.DataAccessException ||
+            e instanceof jakarta.persistence.PersistenceException) {
+            log.warn("GHN: Exception [{}] is internal data/validation error. Skipping Smart Fallback.", e.getClass().getSimpleName());
+            return false;
+        }
+
+        // Phân loại HttpStatusCodeException từ RestTemplate
+        if (e instanceof org.springframework.web.client.HttpStatusCodeException httpEx) {
+            int statusCode = httpEx.getStatusCode().value();
+            // HTTP 401 (Unauthorized), HTTP 403 (Forbidden): Lỗi sai Token / Shop ID / Phân quyền -> KHÔNG FALLBACK
+            if (statusCode == 401 || statusCode == 403) {
+                log.warn("GHN: HttpStatusCodeException [{}] (Unauthorized/Forbidden). Credentials/Permission error. Skipping Smart Fallback.", statusCode);
+                return false;
+            }
+            // HTTP 500, 502, 503, 504: Lỗi máy chủ / dịch vụ GHN không khả dụng -> FALLBACK
+            if (statusCode >= 500) {
+                log.info("GHN: Server Error [{}] detected from GHN Sandbox API. Eligible for Smart Fallback.", statusCode);
+                return true;
+            }
+            // HTTP 400 / 404 / 4xx khác: Chỉ fallback nếu response body chứa lỗi Sandbox kho/tuyến đã biết
+            String responseBody = httpEx.getResponseBodyAsString();
+            if (responseBody != null && (responseBody.contains("SERVER_ERR_COMMON") || responseBody.contains("không lấy được thông tin kho") || responseBody.contains("kho") || responseBody.contains("tuyến") || responseBody.contains("route") || responseBody.contains("service_id") || responseBody.contains("service"))) {
+                log.info("GHN: Known Sandbox warehouse/route bug [{}] in HTTP [{}] response. Eligible for Smart Fallback.", responseBody, statusCode);
+                return true;
+            }
+            log.warn("GHN: HttpStatusCodeException [{}] with body [{}] is request/validation error. Skipping Smart Fallback.", statusCode, responseBody);
+            return false;
+        }
+
+        Throwable cause = e.getCause();
+        if (cause instanceof Exception causeEx && isEligibleForSandboxFallback(causeEx)) {
+            return true;
+        }
+
+        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi response Sandbox GHN đã biết
+        String msg = e.getMessage() != null ? e.getMessage() : "";
+        if (msg.contains("SERVER_ERR_COMMON") ||
+            msg.contains("không lấy được thông tin kho") ||
+            msg.contains("Lỗi kết nối GHN") ||
+            msg.contains("Không thể kết nối đơn vị vận chuyển GHN") ||
+            msg.contains("GHN chưa hỗ trợ tuyến") ||
+            msg.contains("Không có dịch vụ khả dụng")) {
+            log.info("GHN: Known Sandbox API error message detected [{}] Eligible for Smart Fallback.", msg);
+            return true;
+        }
+
+        log.warn("GHN: Exception [{}: {}] is not classified for Sandbox Fallback.", e.getClass().getSimpleName(), msg);
+        return false;
+    }
+
+    /**
+     * Sinh mã vận đơn DEMO Fallback và lưu vào bảng TichHopVanChuyen với nha_cung_cap = 'GHN_FALLBACK'.
+     * Tái sử dụng GhnShipmentPersistenceService.saveShipment (với REQUIRES_NEW transaction) và cập nhật HoaDon.
+     */
+    public String createFallbackShippingOrder(HoaDon hoaDon, Exception cause) {
+        if (!isSandboxEnvironment()) {
+            throw new IllegalStateException("Không thể tạo mã vận đơn Demo trên môi trường Production.");
+        }
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String uniqueSuffix = String.format("%04d", (int)(Math.random() * 10000));
+        Integer orderId = hoaDon != null ? hoaDon.getId() : 0;
+        String demoCode = "DEMO-GHN-" + timestamp + "-" + orderId + "-" + uniqueSuffix;
+
+        log.warn("[GHN][SANDBOX_FALLBACK] GHN Sandbox unavailable for HoaDon #{}. Generating Fallback Code: {} (Reason: {})",
+                orderId, demoCode, cause != null ? cause.getMessage() : "Unknown");
+
+        try {
+            ghnShipmentPersistenceService.saveShipment(orderId, demoCode, "GHN_FALLBACK", "ready_to_pick");
+            if (hoaDon != null) {
+                hoaDon.setGhnOrderCode(demoCode);
+                hoaDon.setGhnStatus("ready_to_pick");
+                jdbcTemplate.update("UPDATE HoaDon SET ghn_order_code = ?, ghn_status = ? WHERE id = ?", demoCode, "ready_to_pick", orderId);
+            }
+            log.info("[GHN][SANDBOX_FALLBACK] Successfully persisted fallback shipment mapping (GHN_FALLBACK) for HoaDon #{}", orderId);
+        } catch (Exception dbEx) {
+            log.error("[GHN][SANDBOX_FALLBACK] Failed to persist fallback shipment mapping for HoaDon #{}: {}", orderId, dbEx.getMessage(), dbEx);
+        }
+
+        return demoCode;
+    }
+
     private String executeCreateOrderCall(String shopId, String token, HoaDon hoaDon, List<HoaDonChiTiet> items,
-                                          Integer toDistrictId, String toWardCode) throws Exception {
+                                          Integer toDistrictId, String toWardCode,
+                                          GhnServiceInfo serviceInfo, Map<String, Object> shopDetails) throws Exception {
         GhnOrderCreateRequestDTO req = new GhnOrderCreateRequestDTO();
+        req.setClient_order_code(hoaDon.getMaDonHang());
         
         req.setFrom_name("SmashVN Shop");
         req.setFrom_phone("0835420088");
         
-        Map<String, Object> shopDetails = getShopDetails(shopId, token);
         if (shopDetails != null) {
             req.setFrom_address(shopDetails.get("address") != null ? shopDetails.get("address").toString() : ghnConfig.getFromAddress());
             req.setFrom_district_id(shopDetails.get("district_id") != null ? ((Number) shopDetails.get("district_id")).intValue() : ghnConfig.getFromDistrictId());
@@ -334,23 +825,58 @@ public class GhnService {
             req.setFrom_ward_code(ghnConfig.getFromWardCode());
         }
 
-        req.setTo_name(hoaDon.getSdtNhan());
+        String receiverName = null;
+        if (hoaDon.getKhachHang() != null) {
+            try {
+                List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                if (addresses != null) {
+                    for (SoDiaChi sdc : addresses) {
+                        if (sdc.getSdtNguoiNhan() != null && sdc.getSdtNguoiNhan().trim().equals(hoaDon.getSdtNhan().trim())) {
+                            receiverName = (sdc.getHoNguoiNhan() + " " + sdc.getTenNguoiNhan()).trim();
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to lookup receiver name from SoDiaChi: {}", e.getMessage());
+            }
+            if (receiverName == null || receiverName.isEmpty()) {
+                receiverName = (hoaDon.getKhachHang().getHoKh() + " " + hoaDon.getKhachHang().getTenKh()).trim();
+            }
+        }
+        if (receiverName == null || receiverName.isEmpty()) {
+            receiverName = "Khách hàng";
+        }
+
+        req.setTo_name(receiverName);
         req.setTo_phone(hoaDon.getSdtNhan());
         req.setTo_address(hoaDon.getDiaChiNhan());
         req.setTo_district_id(toDistrictId);
         req.setTo_ward_code(toWardCode);
+        if (serviceInfo != null) {
+            req.setService_id(serviceInfo.getServiceId());
+            req.setService_type_id(serviceInfo.getServiceTypeId());
+        }
 
         // COD amount = 0 nếu đã thanh toán online
         boolean isOnlinePaid = "PAID".equals(hoaDon.getPaymentStatus()) || "ZaloPay".equalsIgnoreCase(hoaDon.getPaymentMethod());
         req.setCod_amount(isOnlinePaid ? 0 : hoaDon.getTongTien().intValue());
+        req.setInsurance_value(hoaDon.getTongTien().intValue());
 
         req.setNote(hoaDon.getGhiChu() != null ? hoaDon.getGhiChu() : "");
+
+        // Tính toán tổng số lượng và thiết lập kích thước/trọng lượng động cho gói hàng
+        int totalQty = items.stream().mapToInt(HoaDonChiTiet::getSoLuong).sum();
+        req.setWeight(totalQty * 500); // 500g mỗi vợt (kèm bao và hộp đóng gói)
+        req.setHeight(Math.min(150, 10 + (totalQty - 1) * 2)); // Tăng chiều cao hộp khi gửi nhiều cây vợt
 
         // Build items
         List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
         for (HoaDonChiTiet ct : items) {
             GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
-            item.setName(ct.getSanPhamChiTiet().getSanPham().getTenSanPham());
+            String classification = ct.getSanPhamChiTiet().getPhanLoaiHienThi();
+            String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() + (!classification.isEmpty() ? " [" + classification + "]" : "");
+            item.setName(detailName);
             item.setCode("SP-" + ct.getSanPhamChiTiet().getId());
             item.setQuantity(ct.getSoLuong());
             item.setPrice(ct.getDonGia().intValue());
@@ -377,23 +903,269 @@ public class GhnService {
                 if (data != null) {
                     String orderCode = (String) data.get("order_code");
                     log.info("GHN: Created shipping order {} for HoaDon #{} using Shop ID {}", orderCode, hoaDon.getId(), shopId);
+                    try {
+                        jdbcTemplate.update(
+                            "MERGE INTO TichHopVanChuyen WITH (HOLDLOCK) AS target " +
+                            "USING (SELECT ? AS id_hoa_don, ? AS ma_van_don, ? AS trang_thai) AS source " +
+                            "ON target.id_hoa_don = source.id_hoa_don AND target.nha_cung_cap = 'GHN' " +
+                            "WHEN MATCHED THEN UPDATE SET ma_van_don = COALESCE(source.ma_van_don, target.ma_van_don), " +
+                            "                             ma_don_hang_ngoai = COALESCE(source.ma_van_don, target.ma_don_hang_ngoai), " +
+                            "                             trang_thai = COALESCE(source.trang_thai, target.trang_thai) " +
+                            "WHEN NOT MATCHED THEN INSERT (id_hoa_don, nha_cung_cap, ma_don_hang_ngoai, ma_van_don, trang_thai, ngay_tao) " +
+                            "VALUES (source.id_hoa_don, 'GHN', source.ma_van_don, source.ma_van_don, source.trang_thai, GETDATE());",
+                            hoaDon.getId(), orderCode, "ready_to_pick"
+                        );
+                        log.info("GHN: Successfully saved shipping mapping in TichHopVanChuyen for HoaDon #{}", hoaDon.getId());
+                    } catch (Exception dbEx) {
+                        log.error("GHN: Failed to save shipping mapping in TichHopVanChuyen for HoaDon #{}: {}", hoaDon.getId(), dbEx.getMessage(), dbEx);
+                    }
                     return orderCode;
                 }
             }
             String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
-            throw new RuntimeException("GHN từ chối tạo đơn: " + msg);
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn: " + msg);
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            log.error("[GHN][GHN_CREATE_RESULT_UNKNOWN] Timeout/Network error during POST create for HoaDon #{} (maDonHang: {}, districtId: {}, wardCode: {}): {}",
+                    hoaDon.getId(), hoaDon.getMaDonHang(), toDistrictId, toWardCode, e.getMessage());
+            throw new GhnCreateIndeterminateException("Kết nối tới GHN bị timeout khi tạo vận đơn. Chưa thể xác định đơn vị vận chuyển đã tạo đơn hay chưa. Vui lòng kiểm tra lại trên hệ thống GHN hoặc thử lại sau.", e);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String body = e.getResponseBodyAsString();
+            String msg = null;
+            try {
+                Map<String, Object> response = objectMapper.readValue(body, new TypeReference<>() {});
+                msg = (String) response.get("message");
+            } catch (Exception ignored) {}
+            if (msg == null || msg.isBlank()) {
+                msg = "HTTP " + e.getStatusCode() + ": " + body;
+            }
+            log.error("[GHN][CREATE_ORDER] HTTP Error {}: {}", e.getStatusCode(), body);
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn: " + msg, e);
+        }
+    }
+
+    /**
+     * Tạo vận đơn GHN chiều trả (từ Khách hàng về lại Shop) khi Admin duyệt yêu cầu trả hàng
+     */
+    @SuppressWarnings("unchecked")
+    public String createReturnShippingOrder(HoaDon hoaDon, List<HoaDonChiTiet> items) {
+        try {
+            Integer toDistrictId = ghnConfig.getFromDistrictId();
+            String toWardCode = ghnConfig.getFromWardCode();
+            Integer fromDistrictId = hoaDon.getDiaChi() != null ? hoaDon.getDiaChi().getDistrictId() : ghnConfig.getFromDistrictId();
+            String fromWardCode = hoaDon.getDiaChi() != null ? hoaDon.getDiaChi().getWardCode() : ghnConfig.getFromWardCode();
+            
+            String shopIdStr = getGhnShopId();
+            String tokenStr = getGhnToken();
+            
+            GhnOrderCreateRequestDTO req = new GhnOrderCreateRequestDTO();
+            String senderName = (hoaDon.getKhachHang() != null ? (hoaDon.getKhachHang().getHoKh() + " " + hoaDon.getKhachHang().getTenKh()) : "Khách hàng").trim();
+            req.setFrom_name(senderName);
+            req.setFrom_phone(hoaDon.getSdtNhan() != null ? hoaDon.getSdtNhan() : "0900000000");
+            req.setFrom_address(hoaDon.getDiaChiNhan() != null ? hoaDon.getDiaChiNhan() : "Địa chỉ khách hàng");
+            req.setFrom_district_id(fromDistrictId != null ? fromDistrictId : ghnConfig.getFromDistrictId());
+            req.setFrom_ward_code(fromWardCode != null ? fromWardCode : ghnConfig.getFromWardCode());
+            
+            req.setTo_name("SmashVN Shop (Kho Nhận Hàng Trả)");
+            req.setTo_phone("0835420088");
+            req.setTo_address(ghnConfig.getFromAddress());
+            req.setTo_district_id(toDistrictId);
+            req.setTo_ward_code(toWardCode);
+            
+            req.setCod_amount(0);
+            req.setInsurance_value(hoaDon.getTongTien() != null ? hoaDon.getTongTien().intValue() : 0);
+            req.setNote("ĐƠN HÀNG THU HỒI TRẢ VỀ SHOP - " + (hoaDon.getLyDoHoanTien() != null ? hoaDon.getLyDoHoanTien() : ""));
+            
+            int totalQty = items != null ? items.stream().mapToInt(HoaDonChiTiet::getSoLuong).sum() : 1;
+            req.setWeight(totalQty * 500);
+            
+            List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
+            if (items != null) {
+                for (HoaDonChiTiet ct : items) {
+                    GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
+                    item.setName(ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getSanPham().getTenSanPham() : "Sản phẩm trả");
+                    item.setQuantity(ct.getSoLuong());
+                    item.setPrice(ct.getDonGia().intValue());
+                    ghnItems.add(item);
+                }
+            }
+            req.setItems(ghnItems);
+            
+            String url = ghnConfig.getBaseUrl() + API_CREATE;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Token", tokenStr);
+            headers.set("ShopId", shopIdStr);
+            
+            HttpEntity<GhnOrderCreateRequestDTO> request = new HttpEntity<>(req, headers);
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+            Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+            Integer code = (Integer) response.get("code");
+            if (code != null && code == 200) {
+                Map<String, Object> data = (Map<String, Object>) response.get("data");
+                if (data != null && data.get("order_code") != null) {
+                    String orderCode = (String) data.get("order_code");
+                    log.info("GHN: Created return order {} for HoaDon #{}", orderCode, hoaDon.getId());
+                    return orderCode;
+                }
+            }
+            String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn thu hồi: " + msg);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             String body = e.getResponseBodyAsString();
             try {
                 Map<String, Object> response = objectMapper.readValue(body, new TypeReference<>() {});
                 String msg = (String) response.get("message");
                 if (msg != null && !msg.isBlank()) {
-                    throw new RuntimeException("GHN lỗi: " + msg);
+                    throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn thu hồi: " + msg);
                 }
-            } catch (Exception jsonEx) {
-                // ignore
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Exception ignored) {}
+            log.error("Lỗi kết nối GHN API (HTTP {}): {}", e.getStatusCode(), body);
+            throw new RuntimeException("Không thể kết nối đơn vị vận chuyển GHN. Vui lòng thử lại sau.");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("GHN createReturnShippingOrder API call failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể tạo vận đơn GHN thu hồi. Vui lòng thử lại sau.", e);
+        }
+    }
+
+    /**
+     * Tạo vận đơn GHN giao sản phẩm đổi mới (Shop -> Khách) với COD = 0.
+     * CHỈ gọi GHN API và trả về orderCode, KHÔNG tự MERGE TichHopVanChuyen hay update DB.
+     */
+    public String createExchangeShippingOrderOrThrow(HoaDon hoaDon, List<HoaDonChiTiet> items,
+                                                     Integer toDistrictId, String toWardCode) throws Exception {
+        if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
+            if (hoaDon.getDiaChi() != null && hoaDon.getDiaChi().getDistrictId() != null && hoaDon.getDiaChi().getWardCode() != null) {
+                toDistrictId = hoaDon.getDiaChi().getDistrictId();
+                toWardCode = hoaDon.getDiaChi().getWardCode();
+            } else if (hoaDon.getKhachHang() != null) {
+                try {
+                    List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                    if (addresses != null) {
+                        for (SoDiaChi sdc : addresses) {
+                            if (sdc.getSdtNguoiNhan() != null 
+                                    && sdc.getSdtNguoiNhan().trim().equalsIgnoreCase(hoaDon.getSdtNhan().trim())
+                                    && sdc.getGhnDistrictId() != null 
+                                    && sdc.getGhnWardCode() != null) {
+                                toDistrictId = sdc.getGhnDistrictId();
+                                toWardCode = sdc.getGhnWardCode();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to resolve district/ward from SoDiaChi for GHN exchange order: {}", e.getMessage());
+                }
             }
-            throw new RuntimeException("Lỗi kết nối GHN (" + e.getStatusCode() + "): " + body);
+        }
+        if (toDistrictId == null) {
+            toDistrictId = ghnConfig.getFromDistrictId();
+        }
+        if (toWardCode == null || toWardCode.isBlank()) {
+            toWardCode = ghnConfig.getFromWardCode();
+        }
+        String shopIdStr = getGhnShopId();
+        String tokenStr = getGhnToken();
+
+        GhnOrderCreateRequestDTO req = new GhnOrderCreateRequestDTO();
+        req.setClient_order_code("EXCHANGE-HD-" + hoaDon.getId());
+        req.setFrom_name("SmashVN Shop");
+        req.setFrom_phone("0835420088");
+        
+        Map<String, Object> shopDetails = getShopDetails(shopIdStr, tokenStr);
+        if (shopDetails != null) {
+            req.setFrom_address(shopDetails.get("address") != null ? shopDetails.get("address").toString() : ghnConfig.getFromAddress());
+            req.setFrom_district_id(shopDetails.get("district_id") != null ? ((Number) shopDetails.get("district_id")).intValue() : ghnConfig.getFromDistrictId());
+            req.setFrom_ward_code(shopDetails.get("ward_code") != null ? shopDetails.get("ward_code").toString() : ghnConfig.getFromWardCode());
+        } else {
+            req.setFrom_address(ghnConfig.getFromAddress());
+            req.setFrom_district_id(ghnConfig.getFromDistrictId());
+            req.setFrom_ward_code(ghnConfig.getFromWardCode());
+        }
+
+        String receiverName = null;
+        if (hoaDon.getKhachHang() != null) {
+            try {
+                List<SoDiaChi> addresses = soDiaChiRepository.findByKhachHang_Id(hoaDon.getKhachHang().getId());
+                if (addresses != null) {
+                    for (SoDiaChi sdc : addresses) {
+                        if (sdc.getSdtNguoiNhan() != null && sdc.getSdtNguoiNhan().trim().equals(hoaDon.getSdtNhan().trim())) {
+                            receiverName = (sdc.getHoNguoiNhan() + " " + sdc.getTenNguoiNhan()).trim();
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to lookup receiver name from SoDiaChi: {}", e.getMessage());
+            }
+            if (receiverName == null || receiverName.isEmpty()) {
+                receiverName = (hoaDon.getKhachHang().getHoKh() + " " + hoaDon.getKhachHang().getTenKh()).trim();
+            }
+        }
+        if (receiverName == null || receiverName.isEmpty()) {
+            receiverName = "Khách hàng";
+        }
+
+        req.setTo_name(receiverName);
+        req.setTo_phone(hoaDon.getSdtNhan());
+        req.setTo_address(hoaDon.getDiaChiNhan());
+        req.setTo_district_id(toDistrictId);
+        req.setTo_ward_code(toWardCode);
+        GhnServiceInfo serviceInfo = resolveAvailableService(shopIdStr, req.getFrom_district_id(), toDistrictId);
+        req.setService_id(serviceInfo.getServiceId());
+        req.setService_type_id(serviceInfo.getServiceTypeId());
+
+        // COD = 0 CHO ĐƠN ĐỔI HÀNG THAY THẾ
+        req.setCod_amount(0);
+        req.setInsurance_value(hoaDon.getTongTien() != null ? hoaDon.getTongTien().intValue() : 0);
+        req.setNote("Đổi hàng thay thế cho đơn #" + hoaDon.getId() + ". " + (hoaDon.getGhiChu() != null ? hoaDon.getGhiChu() : ""));
+
+        int totalQty = items.stream().mapToInt(HoaDonChiTiet::getSoLuong).sum();
+        req.setWeight(totalQty * 500);
+        req.setHeight(Math.min(150, 10 + (totalQty - 1) * 2));
+
+        List<GhnOrderCreateRequestDTO.GhnItemDTO> ghnItems = new ArrayList<>();
+        for (HoaDonChiTiet ct : items) {
+            GhnOrderCreateRequestDTO.GhnItemDTO item = new GhnOrderCreateRequestDTO.GhnItemDTO();
+            String classification = ct.getSanPhamChiTiet().getPhanLoaiHienThi();
+            String detailName = ct.getSanPhamChiTiet().getSanPham().getTenSanPham() + (!classification.isEmpty() ? " [" + classification + "]" : "");
+            item.setName(detailName);
+            item.setCode("SP-" + ct.getSanPhamChiTiet().getId());
+            item.setQuantity(ct.getSoLuong());
+            item.setPrice(ct.getDonGia().intValue());
+            ghnItems.add(item);
+        }
+        req.setItems(ghnItems);
+
+        String url = ghnConfig.getBaseUrl() + API_CREATE;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Token", tokenStr);
+        headers.set("ShopId", shopIdStr);
+
+        HttpEntity<GhnOrderCreateRequestDTO> request = new HttpEntity<>(req, headers);
+        try {
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+            Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+            Integer code = (Integer) response.get("code");
+            if (code != null && code == 200) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = (Map<String, Object>) response.get("data");
+                if (data != null) {
+                    String orderCode = (String) data.get("order_code");
+                    log.info("GHN: Created exchange shipping order {} for HoaDon #{}", orderCode, hoaDon.getId());
+                    return orderCode;
+                }
+            }
+            String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
+            throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn giao hàng đổi: " + msg);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String body = e.getResponseBodyAsString();
+            log.error("Lỗi kết nối GHN API (HTTP {}): {}", e.getStatusCode(), body);
+            throw new RuntimeException("Không thể kết nối đơn vị vận chuyển GHN. Vui lòng thử lại sau.");
         }
     }
 
@@ -405,6 +1177,10 @@ public class GhnService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> trackOrder(String orderCode) {
+        if (orderCode == null || orderCode.isBlank() || orderCode.startsWith("DEMO-GHN-")) {
+            log.debug("GHN trackOrder skipped for Demo orderCode: {}", orderCode);
+            return null;
+        }
         try {
             Map<String, Object> body = Map.of("order_code", orderCode);
             String url = ghnConfig.getBaseUrl() + API_DETAIL;
@@ -487,6 +1263,66 @@ public class GhnService {
         return List.of();
     }
 
+    /**
+     * Hủy đơn hàng / vận đơn trên hệ thống GHN.
+     * Hỗ trợ xử lý an toàn cho cả mã DEMO / Fallback và mã GHN thật.
+     *
+     * @param ghnOrderCode Mã vận đơn GHN cần hủy
+     * @return true nếu hủy thành công hoặc mã demo, false nếu có lỗi
+     */
+    public boolean cancelOrder(String ghnOrderCode) {
+        if (ghnOrderCode == null || ghnOrderCode.trim().isEmpty()) {
+            return false;
+        }
+        String cleanCode = ghnOrderCode.trim();
+        log.info("[GHN_CANCEL] Đang yêu cầu hủy vận đơn GHN: {}", cleanCode);
+
+        // Trường hợp đơn DEMO / Fallback nội bộ
+        if (cleanCode.startsWith("DEMO-") || cleanCode.startsWith("FALLBACK-")) {
+            try {
+                jdbcTemplate.update("UPDATE TichHopVanChuyen SET trang_thai = 'cancel' WHERE ma_van_don = ?", cleanCode);
+            } catch (Exception dbEx) {
+                log.warn("[GHN_CANCEL] Lỗi cập nhật trạng thái bảng TichHopVanChuyen cho mã {}: {}", cleanCode, dbEx.getMessage());
+            }
+            log.info("[GHN_CANCEL] Đã đánh dấu hủy vận đơn nội bộ: {}", cleanCode);
+            return true;
+        }
+
+        try {
+            String url = ghnConfig.getBaseUrl() + "/shiip/public-api/v2/switch-status/cancel";
+            Map<String, Object> body = Map.of("order_codes", List.of(cleanCode));
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
+
+            if (responseEntity.getBody() != null) {
+                Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+                Integer code = (Integer) response.get("code");
+                if (code != null && code == 200) {
+                    try {
+                        jdbcTemplate.update("UPDATE TichHopVanChuyen SET trang_thai = 'cancel' WHERE ma_van_don = ?", cleanCode);
+                    } catch (Exception dbEx) {
+                        log.warn("[GHN_CANCEL] Lỗi cập nhật trạng thái bảng TichHopVanChuyen: {}", dbEx.getMessage());
+                    }
+                    log.info("[GHN_CANCEL] Hủy vận đơn GHN thành công trên hệ thống GHN cho mã: {}", cleanCode);
+                    return true;
+                } else {
+                    log.warn("[GHN_CANCEL] GHN trả về phản hồi khi hủy vận đơn {}: code={}, message={}",
+                            cleanCode, code, response.get("message"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("[GHN_CANCEL] Lỗi kết nối khi gọi API hủy vận đơn GHN {}: {}", cleanCode, e.getMessage());
+        }
+        return false;
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class GhnServiceInfo {
+        private Integer serviceId;
+        private Integer serviceTypeId;
+    }
+
     @Data
     @AllArgsConstructor
     public static class GhnAddressMapping {
@@ -518,6 +1354,14 @@ public class GhnService {
 
     public GhnAddressMapping resolveGhnAddress(SoDiaChi dc) {
         if (dc == null) return null;
+
+        // Bypass fuzzy matching only when all GHN fields are fully present and valid
+        if (dc.getProvinceId() != null && dc.getDistrictId() != null && 
+            dc.getWardCode() != null && !dc.getWardCode().trim().isEmpty()) {
+            log.info("Using pre-saved GHN address mapping for address ID {}: provinceId={}, districtId={}, wardCode={}",
+                     dc.getId(), dc.getProvinceId(), dc.getDistrictId(), dc.getWardCode());
+            return new GhnAddressMapping(dc.getProvinceId(), dc.getDistrictId(), dc.getWardCode().trim());
+        }
 
         String userProvince = dc.getTinhThanh();
         String userDistrict = dc.getDiaChiCuThe();
@@ -739,6 +1583,22 @@ public class GhnService {
         log.debug("GHN Ward matched: {} -> {}",
                 userWard,
                 (String) matchedWard.get("WardName"));
+
+        // Backfill GHN IDs to SoDiaChi to avoid future fuzzy match/API calls
+        if (dc.getId() != null) {
+            dc.setProvinceId(provinceId);
+            dc.setDistrictId(districtId);
+            dc.setWardCode(wardCode);
+            dc.setProvinceName(matchedProvince != null && matchedProvince.get("ProvinceName") != null ? matchedProvince.get("ProvinceName").toString() : null);
+            dc.setDistrictName(matchedDistrict != null && matchedDistrict.get("DistrictName") != null ? matchedDistrict.get("DistrictName").toString() : null);
+            dc.setWardName(matchedWard != null && matchedWard.get("WardName") != null ? matchedWard.get("WardName").toString() : null);
+            try {
+                soDiaChiRepository.save(dc);
+                log.info("[GHN_BACKFILL] Successfully backfilled GHN IDs to SoDiaChi ID {}", dc.getId());
+            } catch (Exception e) {
+                log.warn("[GHN_BACKFILL] Failed to backfill GHN IDs for SoDiaChi ID {}: {}", dc.getId(), e.getMessage());
+            }
+        }
 
         return new GhnAddressMapping(provinceId, districtId, wardCode);
     }

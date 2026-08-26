@@ -47,11 +47,11 @@ public class UserAddressIntegrationTest {
 
         // Seed customer user
         testUser = new TaiKhoan();
-        testUser.setEmail("address_tester@gmail.com");
+        testUser.setUsername("address_tester@gmail.com");
         testUser.setMatKhau("testpass123");
         testUser.setVaiTro("KH");
         testUser.setTrangThai("hoat_dong");
-        testUser.setLaKhachHang(true);
+
         testUser = taiKhoanRepository.save(testUser);
 
         testKhachHang = new KhachHang();
@@ -68,9 +68,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "<script>alert(1)</script>Nguyễn")
                         .param("tenNguoiNhan", "<img src=x onerror=alert(2)>Đặng")
                         .param("sdtNguoiNhan", "0912345678")
@@ -106,9 +103,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "")
                         .param("tenNguoiNhan", "Đặng")
                         .param("sdtNguoiNhan", "0912345678")
@@ -123,9 +117,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "   ")
                         .param("tenNguoiNhan", "Đặng")
                         .param("sdtNguoiNhan", "0912345678")
@@ -143,9 +134,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "Nguyễn")
                         .param("tenNguoiNhan", "Đặng")
                         .param("sdtNguoiNhan", "09123456")
@@ -160,9 +148,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "Nguyễn")
                         .param("tenNguoiNhan", "Đặng")
                         .param("sdtNguoiNhan", "1234567890")
@@ -181,9 +166,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/add")
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", tooLongName)
                         .param("tenNguoiNhan", "Đặng")
                         .param("sdtNguoiNhan", "0912345678")
@@ -213,9 +195,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/edit/" + dc.getId())
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "Lê")
                         .param("tenNguoiNhan", "Lợi")
                         .param("sdtNguoiNhan", "0987654322")
@@ -238,11 +217,11 @@ public class UserAddressIntegrationTest {
     void testEditAddress_Unauthorized_Rejected() throws Exception {
         // Create another user
         TaiKhoan otherUser = new TaiKhoan();
-        otherUser.setEmail("other@gmail.com");
+        otherUser.setUsername("other@gmail.com");
         otherUser.setMatKhau("pass123");
         otherUser.setVaiTro("KH");
         otherUser.setTrangThai("hoat_dong");
-        otherUser.setLaKhachHang(true);
+
         otherUser = taiKhoanRepository.save(otherUser);
 
         KhachHang otherKh = new KhachHang();
@@ -269,9 +248,6 @@ public class UserAddressIntegrationTest {
         mockMvc.perform(post("/user/address/edit/" + otherAddress.getId())
                         .sessionAttr("idNguoiDung", testUser.getId())
                         .sessionAttr("vaiTro", "KH")
-                        .sessionAttr("laKhachHang", true)
-                        .sessionAttr("laNhanVien", false)
-                        .sessionAttr("laQuanLy", false)
                         .param("hoNguoiNhan", "Hacker")
                         .param("tenNguoiNhan", "Target")
                         .param("sdtNguoiNhan", "0987654321")

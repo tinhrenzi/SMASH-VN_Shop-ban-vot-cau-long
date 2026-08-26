@@ -80,7 +80,7 @@ public class UserAddressService {
             dc.setDefaultBilling(true);
         } else {
             // Kiểm tra nếu đây là địa chỉ ĐẦU TIÊN thì tự động cho nó làm mặc định luôn
-            long count = soDiaChiRepository.countByKhachHang_IdAndDefaultShippingTrue(khachHang.getId());
+            long count = soDiaChiRepository.countByKhachHang_IdAndDiaChiMacDinhTrue(khachHang.getId());
             if (count == 0) {
                 dc.setDefaultShipping(true);
                 dc.setDefaultBilling(true);

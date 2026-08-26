@@ -23,5 +23,8 @@ public class GioHangChiTiet {
     private TrangThaiGioHang trangThai;
 	
 	@Column(name = "so_luong", nullable = false)
-	Integer soLuong;
+	private Integer soLuong;
+
+	@Column(name = "ngay_tao")
+	private java.time.LocalDateTime ngayTao = java.time.LocalDateTime.now();
 }

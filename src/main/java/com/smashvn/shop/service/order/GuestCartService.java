@@ -4,6 +4,7 @@ import com.smashvn.shop.entity.*;
 import com.smashvn.shop.repository.*;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.product.PriceSnapshot;
+import com.smashvn.shop.service.product.ProductAvailabilityService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class GuestCartService {
     private final KhachHangRepository khachHangRepository;
     private final TrangThaiGioHangRepository trangThaiGioHangRepository;
     private final PricingService pricingService;
+    private final ProductAvailabilityService productAvailabilityService;
 
     public static class GuestCartItem implements Serializable {
         private static final long serialVersionUID = 1L;
@@ -84,6 +86,9 @@ public class GuestCartService {
 
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+        if (!productAvailabilityService.isVariantPublished(spct)) {
+            throw new RuntimeException("Phân loại sản phẩm này đã ngừng bán!");
+        }
 
         List<GuestCartItem> cart = getGuestCartItems(session);
         GuestCartItem existingItem = null;
@@ -129,6 +134,9 @@ public class GuestCartService {
 
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(idSanPhamChiTiet)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+        if (!productAvailabilityService.isVariantPublished(spct)) {
+            throw new RuntimeException("Phân loại sản phẩm này đã ngừng bán!");
+        }
 
         if (spct.getSoLuongTon() < soLuongMoi) {
             throw new RuntimeException("Số lượng tồn kho không đủ! Chỉ còn " + spct.getSoLuongTon() + " sản phẩm.");
@@ -159,6 +167,44 @@ public class GuestCartService {
         log.info("[GUEST_CART] Removed product details ID {} from session cart.", idSanPhamChiTiet);
     }
 
+    public Map<String, Object> xoaNhieuKhoiGuestCart(HttpSession session, List<Integer> selectedItemIds) {
+        Map<String, Object> response = new HashMap<>();
+
+        if (selectedItemIds == null || selectedItemIds.isEmpty()) {
+            response.put("trangThai", "ok");
+            response.put("deletedCount", 0);
+            Map<String, Object> miniCartData = layDuLieuMiniCart(session);
+            response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+            response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+            response.put("cartTotal", miniCartData.get("tongTien"));
+            return response;
+        }
+
+        List<Integer> distinctIds = selectedItemIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+
+        List<GuestCartItem> cart = getGuestCartItems(session);
+        int initialSize = cart.size();
+
+        // Checkbox value for guest cart is idSanPhamChiTiet
+        cart.removeIf(item -> item.getIdSanPhamChiTiet() != null && distinctIds.contains(item.getIdSanPhamChiTiet()));
+
+        int deletedCount = initialSize - cart.size();
+        session.setAttribute(SESSION_CART_KEY, cart);
+
+        response.put("trangThai", "ok");
+        response.put("deletedCount", deletedCount);
+
+        Map<String, Object> miniCartData = layDuLieuMiniCart(session);
+        response.put("cartItemCount", miniCartData.get("tongSoLuong"));
+        response.put("cartTotalQuantity", miniCartData.get("tongSoLuong"));
+        response.put("cartTotal", miniCartData.get("tongTien"));
+
+        return response;
+    }
+
     public void clearGuestCart(HttpSession session) {
         session.removeAttribute(SESSION_CART_KEY);
         log.info("[GUEST_CART] Cleared guest session cart.");
@@ -176,9 +222,10 @@ public class GuestCartService {
 
             SanPham sp = spct.getSanPham();
             int tonKho = spct.getSoLuongTon();
-            String trangThai = sp.getTrangThai();
-
-            boolean hopLe = tonKho > 0 && (trangThai == null || trangThai.equals("dang_ban")) && item.getSoLuong() != null && item.getSoLuong() > 0;
+            boolean hopLe = tonKho > 0
+                    && productAvailabilityService.isVariantPublished(spct)
+                    && item.getSoLuong() != null
+                    && item.getSoLuong() > 0;
             PriceSnapshot priceSnapshot = pricingService.buildPriceSnapshot(spct);
 
             if (hopLe) {
@@ -200,6 +247,7 @@ public class GuestCartService {
             map.put("idSanPham", sp.getId());
             map.put("mauSac", spct.getMauSac());
             map.put("trongLuong", spct.getTrongLuong());
+            map.put("kichThuoc", spct.getKichThuoc());
             danhSachMini.add(map);
         }
 
@@ -237,6 +285,9 @@ public class GuestCartService {
             // Khóa dòng sản phẩm bằng Pessimistic Write Lock để chống race condition
             SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(item.getIdSanPhamChiTiet())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại: ID " + item.getIdSanPhamChiTiet()));
+            if (!productAvailabilityService.isVariantPublished(lockedSpct)) {
+                throw new RuntimeException("Phân loại sản phẩm '" + lockedSpct.getSanPham().getTenSanPham() + "' đã ngừng bán!");
+            }
 
             GioHangChiTiet chiTiet = gioHangChiTietRepository.findByGioHang_IdAndSanPhamChiTiet_Id(gioHang.getId(), item.getIdSanPhamChiTiet());
 
@@ -266,4 +317,38 @@ public class GuestCartService {
         clearGuestCart(session);
         log.info("[GUEST_CART] Successfully merged guest session cart into database cart for KhachHang ID {}.", idKhachHang);
     }
+
+    public void removePurchasedItemsFromGuestCart(HttpSession session, List<com.smashvn.shop.dto.order.PurchasedItemSnapshot> purchasedItems) {
+        if (session == null || purchasedItems == null || purchasedItems.isEmpty()) {
+            return;
+        }
+        List<GuestCartItem> cart = getGuestCartItems(session);
+        if (cart.isEmpty()) return;
+
+        for (com.smashvn.shop.dto.order.PurchasedItemSnapshot purchased : purchasedItems) {
+            if (purchased == null || !purchased.isFromCart()) {
+                continue;
+            }
+            GuestCartItem target = null;
+            for (GuestCartItem item : cart) {
+                if (item.getIdSanPhamChiTiet().equals(purchased.getIdSanPhamChiTiet())) {
+                    target = item;
+                    break;
+                }
+            }
+            if (target != null) {
+                int currentQty = target.getSoLuong() != null ? target.getSoLuong() : 0;
+                int purchasedQty = purchased.getSoLuongDaMua() != null ? purchased.getSoLuongDaMua() : 0;
+                int newQty = currentQty - purchasedQty;
+                if (newQty <= 0) {
+                    cart.remove(target);
+                } else {
+                    target.setSoLuong(newQty);
+                }
+            }
+        }
+        session.setAttribute(SESSION_CART_KEY, cart);
+        log.info("[GUEST_CART] Removed purchased items from guest session cart.");
+    }
 }
+

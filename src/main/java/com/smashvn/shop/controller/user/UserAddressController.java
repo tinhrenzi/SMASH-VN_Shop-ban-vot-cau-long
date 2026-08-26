@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.smashvn.shop.dto.user.UserAddressDto;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.service.user.UserDashboardService;
@@ -40,8 +41,23 @@ public class UserAddressController {
     private final SanPhamYeuThichRepository wishlistRepository;
 
     private KhachHang getLoggedInCustomer(HttpSession session) {
+        if (session == null || Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return null;
+        }
         Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
-        return (idTaiKhoan != null) ? dashboardService.layThongTinKhachHang(idTaiKhoan) : null;
+        if (idTaiKhoan == null) {
+            return null;
+        }
+        KhachHang kh = dashboardService.layThongTinKhachHang(idTaiKhoan);
+        if (kh == null || kh.getTaiKhoan() == null) {
+            return null;
+        }
+        TaiKhoan tk = kh.getTaiKhoan();
+        if (tk == null || tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.ACTIVE
+                || (tk.getTrangThai() != null && !"hoat_dong".equalsIgnoreCase(tk.getTrangThai()))) {
+            return null;
+        }
+        return kh;
     }
 
     private String checkRoleAndRedirect(HttpSession session) {
@@ -297,7 +313,27 @@ public class UserAddressController {
             response.put("trangThai", "ok");
         } catch (RuntimeException e) {
             response.put("trangThai", "loi");
-            response.put("message", e.getMessage());
+            
+            // Check if it's a data integrity / constraint violation / database exception
+            Throwable cause = e;
+            boolean isConstraintViolation = false;
+            while (cause != null) {
+                String name = cause.getClass().getName();
+                if (name.contains("ConstraintViolationException") || name.contains("DataIntegrityViolationException") || name.contains("SQLServerException")) {
+                    isConstraintViolation = true;
+                    break;
+                }
+                cause = cause.getCause();
+            }
+            
+            if (isConstraintViolation) {
+                response.put("message", "Không thể xóa địa chỉ này vì đang được sử dụng cho các đơn hàng. Vui lòng giữ lại để lưu trữ lịch sử giao hàng!");
+            } else {
+                response.put("message", e.getMessage());
+            }
+        } catch (Exception e) {
+            response.put("trangThai", "loi");
+            response.put("message", "Đã xảy ra lỗi hệ thống khi xóa địa chỉ.");
         }
         return ResponseEntity.ok(response);
     }
