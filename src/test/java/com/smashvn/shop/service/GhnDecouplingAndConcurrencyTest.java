@@ -4,9 +4,11 @@ import com.smashvn.shop.config.GhnConfig;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
 import com.smashvn.shop.entity.*;
 import com.smashvn.shop.exception.GhnCreateIndeterminateException;
+import com.smashvn.shop.exception.GhnSandboxLimitationException;
 import com.smashvn.shop.exception.GhnUnsupportedRouteException;
 import com.smashvn.shop.repository.*;
 import com.smashvn.shop.service.api.GhnService;
+import com.smashvn.shop.service.api.LocationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +72,15 @@ public class GhnDecouplingAndConcurrencyTest {
     @MockitoBean
     private RestTemplate restTemplate;
 
+    @MockitoBean
+    private LocationService locationService;
+
+    @MockitoBean
+    private org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager oauth2AuthorizedClientManager;
+
+    @MockitoBean(name = "filterChain")
+    private org.springframework.security.web.SecurityFilterChain securityFilterChain;
+
     private final List<Integer> createdHoaDonIds = new CopyOnWriteArrayList<>();
 
     private KhachHang testKh;
@@ -101,12 +113,14 @@ public class GhnDecouplingAndConcurrencyTest {
     }
 
     @Test
-    @DisplayName("Test 1: Sandbox classification logic for GhnUnsupportedRouteException and internal errors")
+    @DisplayName("Test 1: Sandbox classification logic for supported demo fallbacks and internal errors")
     void testSandboxClassification() {
         assertTrue(ghnService.isSandboxEnvironment(), "Default config should be sandbox environment");
 
         // GhnUnsupportedRouteException is eligible for sandbox fallback
         assertTrue(ghnService.isEligibleForSandboxFallback(new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến")));
+        assertTrue(ghnService.isEligibleForSandboxFallback(
+                new GhnSandboxLimitationException("Lỗi hệ thống - không lấy được thông tin kho")));
 
         // GhnCreateIndeterminateException is NOT eligible for sandbox fallback
         assertFalse(ghnService.isEligibleForSandboxFallback(new GhnCreateIndeterminateException("Timeout POST create")));
@@ -120,8 +134,8 @@ public class GhnDecouplingAndConcurrencyTest {
         assertFalse(ghnService.isEligibleForSandboxFallback(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized")));
         assertFalse(ghnService.isEligibleForSandboxFallback(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden")));
 
-        // HTTP 500 server error is eligible for fallback
-        assertTrue(ghnService.isEligibleForSandboxFallback(new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error")));
+        // HTTP 500 is an outage, not proof that the recipient route is unsupported
+        assertFalse(ghnService.isEligibleForSandboxFallback(new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error")));
     }
 
     @Test
@@ -468,9 +482,14 @@ public class GhnDecouplingAndConcurrencyTest {
         HoaDon hd = createDummyHoaDon("TEST-FALLBACK-A-");
         List<HoaDonChiTiet> items = createDummyItems(hd);
 
-        // Mock available-services returning unsupported route 400
+        // Mock available-services returning an explicit unsupported-route response body
         when(restTemplate.postForEntity(contains("available-services"), any(), eq(String.class)))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Tuyến đường không hỗ trợ"));
+                .thenThrow(HttpClientErrorException.create(
+                        HttpStatus.BAD_REQUEST,
+                        "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        "{\"message\":\"Tuyến đường không hỗ trợ\"}".getBytes(StandardCharsets.UTF_8),
+                        StandardCharsets.UTF_8));
 
         String code = ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101");
         assertNotNull(code);
@@ -481,8 +500,8 @@ public class GhnDecouplingAndConcurrencyTest {
     }
 
     @Test
-    @DisplayName("Test B: Sandbox - RESOLVE_SERVICE throws ResourceAccessException -> DEMO-GHN fallback is created")
-    void testB_SandboxResolveServiceThrowsResourceAccessExceptionFallback() throws Exception {
+    @DisplayName("Test B: Sandbox - lỗi mạng ở RESOLVE_SERVICE không được che bằng DEMO-GHN")
+    void testB_SandboxResolveServiceNetworkErrorDoesNotFallback() {
         HoaDon hd = createDummyHoaDon("TEST-FALLBACK-B-");
         List<HoaDonChiTiet> items = createDummyItems(hd);
 
@@ -490,16 +509,15 @@ public class GhnDecouplingAndConcurrencyTest {
         when(restTemplate.postForEntity(contains("available-services"), any(), eq(String.class)))
                 .thenThrow(new ResourceAccessException("Connection timeout during available-services"));
 
-        String code = ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101");
-        assertNotNull(code);
-        assertTrue(code.startsWith("DEMO-GHN-"), "Should generate DEMO-GHN code on Sandbox for network error before create");
-        assertEquals(code, hd.getGhnOrderCode());
-        assertEquals(code, ghnService.findExistingGhnCode(hd.getId()));
+        assertThrows(ResourceAccessException.class,
+                () -> ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101"));
+        assertNull(hd.getGhnOrderCode());
+        assertNull(ghnService.findExistingGhnCode(hd.getId()));
     }
 
     @Test
-    @DisplayName("Test C: Sandbox - RESOLVE_SHOP throws ResourceAccessException -> DEMO-GHN fallback is created")
-    void testC_SandboxResolveShopThrowsResourceAccessExceptionFallback() throws Exception {
+    @DisplayName("Test C: Sandbox - lỗi lookup shop không được che bằng DEMO-GHN")
+    void testC_SandboxResolveShopErrorDoesNotFallback() {
         HoaDon hd = createDummyHoaDon("TEST-FALLBACK-C-");
         List<HoaDonChiTiet> items = createDummyItems(hd);
 
@@ -507,10 +525,10 @@ public class GhnDecouplingAndConcurrencyTest {
         when(restTemplate.postForEntity(contains("shop/all"), any(), eq(String.class)))
                 .thenThrow(new ResourceAccessException("Connection timeout during shop lookup"));
 
-        String code = ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101");
-        assertNotNull(code);
-        assertTrue(code.startsWith("DEMO-GHN-"), "Should generate DEMO-GHN code on Sandbox for shop lookup network error");
-        assertEquals(code, hd.getGhnOrderCode());
+        assertThrows(Exception.class,
+                () -> ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101"));
+        assertNull(hd.getGhnOrderCode());
+        assertNull(ghnService.findExistingGhnCode(hd.getId()));
     }
 
     @Test
@@ -586,8 +604,8 @@ public class GhnDecouplingAndConcurrencyTest {
     }
 
     @Test
-    @DisplayName("Test G: ghnOrderCode = DEMO-GHN-123 -> Admin transition to DA_TAO_VAN_DON_GHN is allowed")
-    void testG_AdminTransitionToDaTaoVanDonGhnAllowedWithDemoCode() {
+    @DisplayName("Test G: mã DEMO-GHN chỉ được chuyển qua Demo Simulator, không qua luồng admin chung")
+    void testG_AdminTransitionIsBlockedForDemoCode() {
         HoaDon hd = createDummyHoaDon("TEST-STATUS-G-");
         hd.setTrangThaiDonHang(OrderStatus.SAN_SANG_GIAO.getValue());
         hd = hoaDonRepository.save(hd);
@@ -599,13 +617,39 @@ public class GhnDecouplingAndConcurrencyTest {
         TaiKhoan adminUser = taiKhoanRepository.findAll().stream()
                 .filter(tk -> "QL".equals(tk.getVaiTro()) || "NV".equals(tk.getVaiTro()))
                 .findFirst().orElse(null);
+        HoaDon reloaded = hoaDonRepository.findById(hdId).orElseThrow();
+        assertNull(orderViewService.getNextStatus(reloaded));
         if (adminUser != null) {
             final Integer adminId = adminUser.getId();
-            orderViewService.updateOrderStatusByAdmin(hdId, OrderStatus.DA_TAO_VAN_DON_GHN.getValue(), OrderStatus.SAN_SANG_GIAO.getValue(), adminId, "127.0.0.1");
-            HoaDon updated = hoaDonRepository.findById(hdId).orElseThrow();
-            assertEquals(OrderStatus.DA_TAO_VAN_DON_GHN.getValue(), updated.getTrangThaiDonHang());
-            assertEquals("DEMO-GHN-20260818-123-9999", updated.getGhnOrderCode());
+            assertThrows(IllegalArgumentException.class, () ->
+                    orderViewService.updateOrderStatusByAdmin(
+                            hdId,
+                            OrderStatus.DA_TAO_VAN_DON_GHN.getValue(),
+                            OrderStatus.SAN_SANG_GIAO.getValue(),
+                            adminId,
+                            "127.0.0.1"));
         }
+    }
+
+    @Test
+    @DisplayName("Test H: Sandbox báo không lấy được thông tin kho -> tạo DEMO-GHN sau nhánh thử kho dự phòng")
+    void testH_SandboxWarehouseInformationLimitationCreatesDemoFallback() throws Exception {
+        HoaDon hd = createDummyHoaDon("TEST-FALLBACK-H-");
+        List<HoaDonChiTiet> items = createDummyItems(hd);
+
+        String availableServicesJson = "{\"code\":200,\"data\":[{\"service_id\":53320,\"service_type_id\":2}]}";
+        String warehouseLimitationJson = "{\"code\":400,\"message\":\"Lỗi hệ thống - không lấy được thông tin kho\",\"data\":null}";
+        when(restTemplate.postForEntity(contains("available-services"), any(), eq(String.class)))
+                .thenReturn(new org.springframework.http.ResponseEntity<>(availableServicesJson, HttpStatus.OK));
+        when(restTemplate.postForEntity(contains("shipping-order/create"), any(), eq(String.class)))
+                .thenReturn(new org.springframework.http.ResponseEntity<>(warehouseLimitationJson, HttpStatus.OK));
+
+        String code = ghnService.createShippingOrderOrThrow(hd, items, 1442, "20101");
+
+        assertNotNull(code);
+        assertTrue(code.startsWith("DEMO-GHN-"));
+        assertEquals(code, hd.getGhnOrderCode());
+        assertEquals(code, ghnService.findExistingGhnCode(hd.getId()));
     }
 
     private HoaDon createDummyHoaDon(String prefix) {

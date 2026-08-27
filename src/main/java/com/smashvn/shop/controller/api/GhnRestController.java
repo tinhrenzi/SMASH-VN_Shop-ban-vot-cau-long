@@ -61,13 +61,15 @@ public class GhnRestController {
     @GetMapping("/provinces")
     public ResponseEntity<?> getProvinces() {
         try {
-            List<Map<String, Object>> provinces = ghnService.getProvinces();
+            List<Map<String, Object>> provinces = ghnService.getProvincesOrThrow();
             Map<String, Object> result = new HashMap<>();
             result.put("status", "ok");
             result.put("data", provinces);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
+            log.warn("Unable to load delivery provinces: {}", e.getMessage());
+            return ResponseEntity.ok(Map.of("status", "error",
+                    "message", "Không thể tải danh sách Tỉnh/Thành phố. Vui lòng thử lại."));
         }
     }
 
@@ -77,13 +79,15 @@ public class GhnRestController {
     @GetMapping("/districts")
     public ResponseEntity<?> getDistricts(@RequestParam Integer provinceId) {
         try {
-            List<Map<String, Object>> districts = ghnService.getDistricts(provinceId);
+            List<Map<String, Object>> districts = ghnService.getDistrictsOrThrow(provinceId);
             Map<String, Object> result = new HashMap<>();
             result.put("status", "ok");
             result.put("data", districts);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
+            log.warn("Unable to load delivery districts for province {}: {}", provinceId, e.getMessage());
+            return ResponseEntity.ok(Map.of("status", "error",
+                    "message", "Không thể tải danh sách Quận/Huyện. Vui lòng thử lại."));
         }
     }
 
@@ -93,13 +97,15 @@ public class GhnRestController {
     @GetMapping("/wards")
     public ResponseEntity<?> getWards(@RequestParam Integer districtId) {
         try {
-            List<Map<String, Object>> wards = ghnService.getWards(districtId);
+            List<Map<String, Object>> wards = ghnService.getWardsOrThrow(districtId);
             Map<String, Object> result = new HashMap<>();
             result.put("status", "ok");
             result.put("data", wards);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
+            log.warn("Unable to load delivery wards for district {}: {}", districtId, e.getMessage());
+            return ResponseEntity.ok(Map.of("status", "error",
+                    "message", "Không thể tải danh sách Phường/Xã. Vui lòng thử lại."));
         }
     }
 
@@ -249,10 +255,14 @@ public class GhnRestController {
             }
 
             if (hd.getGhnOrderCode() != null && !hd.getGhnOrderCode().isBlank()) {
+                boolean isDemoFallback = hd.getGhnOrderCode().startsWith("DEMO-GHN-");
                 return ResponseEntity.ok(Map.of(
                         "status", "already_exists",
-                        "message", "Đơn này đã có mã GHN: " + hd.getGhnOrderCode(),
-                        "ghnOrderCode", hd.getGhnOrderCode()
+                        "message", isDemoFallback
+                                ? "Đơn này đã có vận đơn Demo Fallback: " + hd.getGhnOrderCode()
+                                : "Đơn này đã có mã GHN: " + hd.getGhnOrderCode(),
+                        "ghnOrderCode", hd.getGhnOrderCode(),
+                        "isDemoFallback", isDemoFallback
                 ));
             }
 
@@ -274,7 +284,7 @@ public class GhnRestController {
                         finalDistrictId = dc.getDistrictId();
                         finalWardCode = dc.getWardCode();
                     } else {
-                        GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(dc);
+                        GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddressOrThrow(dc);
                         if (mapping != null && mapping.getDistrictId() != null && mapping.getWardCode() != null) {
                             finalDistrictId = mapping.getDistrictId();
                             finalWardCode = mapping.getWardCode();
@@ -291,7 +301,7 @@ public class GhnRestController {
                     if (parts.length > 0) {
                         tempDc.setTinhThanh(parts[parts.length - 1].trim());
                     }
-                    GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddress(tempDc);
+                    GhnService.GhnAddressMapping mapping = ghnService.resolveGhnAddressOrThrow(tempDc);
                     if (mapping != null && mapping.getDistrictId() != null && mapping.getWardCode() != null) {
                         finalDistrictId = mapping.getDistrictId();
                         finalWardCode = mapping.getWardCode();
@@ -299,27 +309,37 @@ public class GhnRestController {
                 }
             }
 
-            // Fallback cho môi trường Sandbox khi địa chỉ text không thể phân giải đầy đủ Quận/Huyện
-            if ((finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) && ghnService.isSandboxEnvironment()) {
-                log.warn("[ADMIN_GHN_SANDBOX] Order ID {} has unresolvable address '{}', falling back to default Sandbox district (1442) and ward (20101)",
-                        orderId, hd.getDiaChiNhan());
-                finalDistrictId = 1442;
-                finalWardCode = "20101";
-            }
+            boolean useSandboxAddressFallback = (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank())
+                    && ghnService.isSandboxEnvironment();
 
-            if (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank()) {
+            if (!useSandboxAddressFallback && (finalDistrictId == null || finalWardCode == null || finalWardCode.isBlank())) {
                 return ResponseEntity.ok(Map.of(
                         "status", "error",
                         "message", "Đơn hàng thiếu mã Quận/Huyện hoặc Phường/Xã để đẩy lên GHN. Hãy đảm bảo khách hàng có địa chỉ hợp lệ."
                 ));
             }
 
-            // Cập nhật lại vào entity
-            hd.setGhnToDistrictId(finalDistrictId);
-            hd.setGhnToWardCode(finalWardCode);
+            if (!useSandboxAddressFallback) {
+                hd.setGhnToDistrictId(finalDistrictId);
+                hd.setGhnToWardCode(finalWardCode);
+            }
 
-            String ghnCode = ghnService.createShippingOrderOrThrow(hd, items, finalDistrictId, finalWardCode, forceRetry);
+            String ghnCode;
+            if (useSandboxAddressFallback) {
+                if (ghnService.hasUnknownGhnCreateStatus(orderId)) {
+                    throw new GhnCreateIndeterminateException(
+                            "Đơn hàng từng có kết quả tạo vận đơn GHN chưa xác định. Không thể chuyển sang Demo Fallback cho đến khi đã đối soát trên GHN.");
+                }
+                log.warn("[ADMIN_GHN_SANDBOX] Order ID {} has unresolvable address '{}'. Creating internal Demo Fallback without sending fake district/ward data to GHN.",
+                        orderId, hd.getDiaChiNhan());
+                ghnCode = ghnService.createFallbackShippingOrder(
+                        hd,
+                        new GhnUnsupportedRouteException("GHN Sandbox không thể phân giải địa chỉ nhận của khách hàng."));
+            } else {
+                ghnCode = ghnService.createShippingOrderOrThrow(hd, items, finalDistrictId, finalWardCode, forceRetry);
+            }
             if (ghnCode != null && !ghnCode.isBlank()) {
+                boolean isDemoFallback = ghnCode.startsWith("DEMO-GHN-");
                 hd.setGhnOrderCode(ghnCode);
                 hd.setGhnStatus("ready_to_pick");
                 String currentStatus = hd.getTrangThaiDonHang();
@@ -331,12 +351,17 @@ public class GhnRestController {
                     hd.setTrangThaiDonHang(OrderStatus.DA_TAO_VAN_DON_GHN.getValue());
                 }
                 hoaDonRepository.save(hd);
-                log.info("[ADMIN] Đã push đơn #{} lên GHN thành công, mã: {}", orderId, ghnCode);
+                log.info("[ADMIN] Đã tạo {} cho đơn #{}, mã: {}",
+                        isDemoFallback ? "vận đơn Demo GHN Fallback" : "vận đơn GHN", orderId, ghnCode);
                 return ResponseEntity.ok(Map.of(
                         "status", "ok",
-                        "message", "Tạo đơn GHN thành công!",
+                        "message", isDemoFallback
+                                ? "GHN Sandbox không hỗ trợ đầy đủ địa chỉ/tuyến hoặc dữ liệu kho thử nghiệm. Hệ thống đã tạo vận đơn Demo Fallback để mô phỏng."
+                                : "Tạo đơn GHN thành công!",
                         "ghnOrderCode", ghnCode,
-                        "orderId", orderId
+                        "orderId", orderId,
+                        "isDemoFallback", isDemoFallback,
+                        "shipmentProvider", isDemoFallback ? "GHN_FALLBACK" : "GHN"
                 ));
             } else {
                 return ResponseEntity.ok(Map.of("status", "error", "message", "GHN không trả về mã vận đơn"));

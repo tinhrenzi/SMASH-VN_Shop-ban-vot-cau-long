@@ -21,7 +21,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
 import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,6 +64,32 @@ public class UserDashboardControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         controller = new UserDashboardController(dashboardService, orderViewService, wishlistRepository, thongBaoRepository, hoaDonRepository, newsletterSubscriberRepository, fileStorageService);
+    }
+
+    @Test
+    void testHienThiMyOrders_StaleGuestTabUsesOrderSummaryModel() {
+        var access = new com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess(
+                100,
+                "guest@example.com",
+                Instant.now().plusSeconds(1800));
+        when(session.getAttribute("isGuestView")).thenReturn(true);
+        when(session.getAttribute("allowedGuestOrderAccesses")).thenReturn(List.of(access));
+
+        Map<String, Object> orderSummary = new java.util.HashMap<>();
+        orderSummary.put("id", 100);
+        orderSummary.put("maDonHang", "DHSVN-100");
+        orderSummary.put("status", "processing");
+        when(orderViewService.layChiTietDonHangChoCustomer(100, null)).thenReturn(orderSummary);
+
+        Model model = new ConcurrentModel();
+        String view = controller.hienThiMyOrders(session, model);
+
+        assertEquals("dash-my-order", view);
+        assertEquals(List.of(orderSummary), model.getAttribute("orders"));
+        assertEquals(1, model.getAttribute("orderPlaced"));
+        assertEquals(Boolean.TRUE, model.getAttribute("isGuestView"));
+        verify(orderViewService).layChiTietDonHangChoCustomer(100, null);
+        verify(orderViewService, never()).layChiTietOrder(any(), any());
     }
 
     @Test

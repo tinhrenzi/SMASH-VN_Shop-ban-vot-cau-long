@@ -148,6 +148,7 @@ public class UserAddressController {
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             model.addAttribute("loi", errorMessage);
             model.addAttribute("fromPage", from);
             return "dash-address-add";
@@ -158,12 +159,21 @@ public class UserAddressController {
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Đã thêm địa chỉ mới thành công!");
             return successRedirect;
         } catch (IllegalArgumentException e) {
+            addFieldValidationError(bindingResult, e.getMessage());
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
+            model.addAttribute("loi", e.getMessage());
+            model.addAttribute("fromPage", from);
+            return "dash-address-add";
+        } catch (IllegalStateException e) {
+            model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             model.addAttribute("loi", e.getMessage());
             model.addAttribute("fromPage", from);
             return "dash-address-add";
         } catch (Exception e) {
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             model.addAttribute("loi", "Có lỗi xảy ra khi thêm địa chỉ.");
             model.addAttribute("fromPage", from);
             return "dash-address-add";
@@ -198,6 +208,11 @@ public class UserAddressController {
                         .diaChiCuThe(dc.getDiaChiCuThe())
                         .tinhThanh(dc.getTinhThanh())
                         .quocGia(dc.getQuocGia())
+                        .ghnProvinceId(dc.getProvinceId())
+                        .ghnDistrictId(dc.getDistrictId())
+                        .ghnWardCode(dc.getWardCode())
+                        .quanHuyen(dc.getQuanHuyen())
+                        .phuongXa(dc.getPhuongXa())
                         .latitude(dc.getLatitude())
                         .longitude(dc.getLongitude())
                         .defaultAddress(dc.isDefaultShipping())
@@ -240,6 +255,7 @@ public class UserAddressController {
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             try {
                 SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
                 model.addAttribute("dc", dc);
@@ -254,7 +270,19 @@ public class UserAddressController {
             redirectAttributes.addFlashAttribute("thongBaoThanhCong", "Cập nhật địa chỉ thành công!");
             return "redirect:/user/address";
         } catch (IllegalArgumentException e) {
+            addFieldValidationError(bindingResult, e.getMessage());
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
+            try {
+                SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
+                model.addAttribute("dc", dc);
+            } catch (Exception ignored) {
+            }
+            model.addAttribute("loi", e.getMessage());
+            return "dash-address-edit";
+        } catch (IllegalStateException e) {
+            model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             try {
                 SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
                 model.addAttribute("dc", dc);
@@ -264,6 +292,7 @@ public class UserAddressController {
             return "dash-address-edit";
         } catch (Exception e) {
             model.addAttribute("kh", kh);
+            populateUserStats(kh, model);
             try {
                 SoDiaChi dc = addressService.layDiaChiTheoId(idDiaChi, kh.getId());
                 model.addAttribute("dc", dc);
@@ -271,6 +300,21 @@ public class UserAddressController {
             }
             model.addAttribute("loi", "Có lỗi xảy ra khi cập nhật địa chỉ.");
             return "dash-address-edit";
+        }
+    }
+
+    private void addFieldValidationError(BindingResult bindingResult, String message) {
+        if (message == null || message.isBlank()) return;
+        String field = null;
+        if (message.startsWith("Họ ")) field = "hoNguoiNhan";
+        else if (message.startsWith("Tên ")) field = "tenNguoiNhan";
+        else if (message.startsWith("Số điện thoại")) field = "sdtNguoiNhan";
+        else if (message.startsWith("Địa chỉ cụ thể")) field = "diaChiCuThe";
+        else if (message.startsWith("Phường/Xã")) field = "ghnWardCode";
+        else if (message.startsWith("Quận/Huyện")) field = "ghnDistrictId";
+        else if (message.startsWith("Tỉnh/Thành phố")) field = "ghnProvinceId";
+        if (field != null && !bindingResult.hasFieldErrors(field)) {
+            bindingResult.rejectValue(field, "address.invalid", message);
         }
     }
 

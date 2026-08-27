@@ -3061,7 +3061,7 @@
             return false;
         };
 
-        window.pushOrderToGhn = function (orderId, forceRetry = false) {
+        window.pushOrderToGhn = function (orderId, btn = null, forceRetry = false) {
             const errorDiv = document.getElementById('ghn-push-error-' + orderId);
             const pushBox = document.getElementById('ghn-push-box-' + orderId);
 
@@ -3085,7 +3085,7 @@
                 headers[csrfHeaderName] = csrfToken;
             }
 
-            const url = '/api/ghn/admin/push/' + orderId + (forceRetry ? '?forceRetry=true' : '');
+            const url = '/api/ghn/admin/push/' + orderId + (forceRetry === true ? '?forceRetry=true' : '');
 
             fetch(url, {
                 method: 'POST',
@@ -3095,7 +3095,11 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'ok') {
-                        showToast('Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || ''), 'success');
+                        if (data.isDemoFallback === true) {
+                            showToast(data.message || ('Đã tạo vận đơn Demo Fallback: ' + (data.ghnOrderCode || '')), 'warning');
+                        } else {
+                            showToast(data.message || ('Đã tạo đơn vận chuyển trên GHN thành công! Mã: ' + (data.ghnOrderCode || '')), 'success');
+                        }
                         if (window.openOrderDetailModal) {
                             window.openOrderDetailModal(orderId);
                         }
@@ -3128,7 +3132,7 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.pushOrderToGhn(orderId, true);
+                                window.pushOrderToGhn(orderId, null, true);
                             }
                         });
                     } else {

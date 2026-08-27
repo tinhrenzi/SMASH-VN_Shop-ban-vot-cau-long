@@ -21,6 +21,9 @@ import org.springframework.ui.Model;
 import jakarta.servlet.http.HttpSession;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -211,6 +214,9 @@ public class CheckoutControllerTest {
         dc.setSdtNguoiNhan("0987654321");
         dc.setDiaChiCuThe("123 Duong ABC");
         dc.setTinhThanh("Ha Noi");
+        dc.setProvinceId(244);
+        dc.setDistrictId(1639);
+        dc.setWardCode("120125");
         dc.setQuocGia("Viet Nam");
         dc.setDefaultShipping(false);
         addresses.add(dc);
@@ -233,6 +239,10 @@ public class CheckoutControllerTest {
         assertEquals("Nguyen An", details.get("hoTen"));
         assertEquals("0987654321", details.get("sdt"));
         assertEquals("123 Duong ABC, Ha Noi, Viet Nam", details.get("diaChi"));
+        assertEquals(244, details.get("ghnProvinceId"));
+        assertEquals(1639, details.get("ghnDistrictId"));
+        assertEquals("120125", details.get("ghnWardCode"));
+        assertEquals(true, details.get("ghnReady"));
     }
 
     @Test
@@ -319,5 +329,33 @@ public class CheckoutControllerTest {
         verify(userAddressService, never()).layDanhSachDiaChi(anyInt());
         verify(gioHangService, never()).layDanhSachSanPhamTrongGio(guestAccountId);
         verify(gioHangService, never()).cleanPendingOrders(guestAccountId);
+    }
+
+    @Test
+    void checkoutTemplateInitializesShippingStateBeforeSavedAddressTrigger() throws Exception {
+        String template = Files.readString(
+                Path.of("src/main/resources/templates/checkout.html"),
+                StandardCharsets.UTF_8);
+
+        int readyHandler = template.indexOf("$(document).ready(function() {");
+        int pendingRequestDeclaration = template.indexOf(
+                "let pendingShippingRequest = null;", readyHandler);
+        int shippingFeeDeclaration = template.indexOf(
+                "let currentShippingFee = 0;", readyHandler);
+        int voucherDeclaration = template.indexOf(
+                "let voucherDiscount = 0;", readyHandler);
+        int savedAddressTrigger = template.indexOf(
+                "$('#selectDiaChiLuu').trigger('change');", readyHandler);
+
+        assertTrue(readyHandler >= 0);
+        assertTrue(pendingRequestDeclaration > readyHandler
+                        && pendingRequestDeclaration < savedAddressTrigger,
+                "pendingShippingRequest must exist before the initial saved-address change event");
+        assertTrue(shippingFeeDeclaration > readyHandler
+                        && shippingFeeDeclaration < savedAddressTrigger,
+                "currentShippingFee must exist before calculateShippingFee can run");
+        assertTrue(voucherDeclaration > readyHandler
+                        && voucherDeclaration < savedAddressTrigger,
+                "voucherDiscount must exist before updateUITotal can run");
     }
 }

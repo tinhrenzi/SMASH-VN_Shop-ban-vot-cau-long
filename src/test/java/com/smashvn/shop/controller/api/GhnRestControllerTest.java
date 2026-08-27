@@ -3,8 +3,11 @@ package com.smashvn.shop.controller.api;
 import com.smashvn.shop.config.GhnConfig;
 import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.HoaDon;
+import com.smashvn.shop.entity.HoaDonChiTiet;
 import com.smashvn.shop.entity.KhachHang;
+import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.exception.GhnUnsupportedRouteException;
 import com.smashvn.shop.repository.HoaDonChiTietRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
@@ -19,13 +22,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -151,6 +158,81 @@ class GhnRestControllerTest {
 
         verifyNoInteractions(hoaDonRepository);
         verifyNoInteractions(ghnService);
+    }
+
+    @Test
+    void adminPushCreatesDemoFallbackDirectlyWhenSandboxAddressCannotBeResolved() throws Exception {
+        HoaDon order = new HoaDon();
+        order.setId(20);
+        order.setTrangThaiDonHang(OrderStatus.SAN_SANG_GIAO.getValue());
+        order.setDiaChiNhan("Địa chỉ khách đặt nhưng GHN Sandbox chưa hỗ trợ");
+
+        HoaDonChiTiet item = new HoaDonChiTiet();
+        when(hoaDonRepository.findById(20)).thenReturn(Optional.of(order));
+        when(hoaDonChiTietRepository.findByHoaDon_Id(20)).thenReturn(List.of(item));
+        when(ghnService.resolveGhnAddressOrThrow(any())).thenReturn(null);
+        when(ghnService.isSandboxEnvironment()).thenReturn(true);
+        when(ghnService.hasUnknownGhnCreateStatus(20)).thenReturn(false);
+        when(ghnService.createFallbackShippingOrder(eq(order), any(GhnUnsupportedRouteException.class)))
+                .thenReturn("DEMO-GHN-20260826-20-0001");
+        when(hoaDonRepository.save(any(HoaDon.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post("/api/ghn/admin/push/20")
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("idNguoiDung", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"))
+                .andExpect(jsonPath("$.isDemoFallback").value(true))
+                .andExpect(jsonPath("$.shipmentProvider").value("GHN_FALLBACK"))
+                .andExpect(jsonPath("$.ghnOrderCode").value("DEMO-GHN-20260826-20-0001"));
+
+        verify(ghnService).createFallbackShippingOrder(eq(order), any(GhnUnsupportedRouteException.class));
+        verify(ghnService, never()).createShippingOrderOrThrow(any(), any(), any(), any(), any(Boolean.class));
+    }
+
+    @Test
+    void adminPushDoesNotConvertUnknownGhnCreateIntoDemoFallback() throws Exception {
+        HoaDon order = new HoaDon();
+        order.setId(21);
+        order.setTrangThaiDonHang(OrderStatus.SAN_SANG_GIAO.getValue());
+        order.setDiaChiNhan("Địa chỉ không phân giải được");
+
+        when(hoaDonRepository.findById(21)).thenReturn(Optional.of(order));
+        when(hoaDonChiTietRepository.findByHoaDon_Id(21)).thenReturn(List.of(new HoaDonChiTiet()));
+        when(ghnService.resolveGhnAddressOrThrow(any())).thenReturn(null);
+        when(ghnService.isSandboxEnvironment()).thenReturn(true);
+        when(ghnService.hasUnknownGhnCreateStatus(21)).thenReturn(true);
+
+        mockMvc.perform(post("/api/ghn/admin/push/21")
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("idNguoiDung", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("unknown_result"))
+                .andExpect(jsonPath("$.ghnCreateUnknown").value(true));
+
+        verify(ghnService, never()).createFallbackShippingOrder(any(), any());
+    }
+
+    @Test
+    void adminPushDoesNotCreateDemoFallbackWhenAddressLookupFails() throws Exception {
+        HoaDon order = new HoaDon();
+        order.setId(22);
+        order.setTrangThaiDonHang(OrderStatus.SAN_SANG_GIAO.getValue());
+        order.setDiaChiNhan("Phường Bến Nghé, Quận 1, TP Hồ Chí Minh");
+
+        when(hoaDonRepository.findById(22)).thenReturn(Optional.of(order));
+        when(hoaDonChiTietRepository.findByHoaDon_Id(22)).thenReturn(List.of(new HoaDonChiTiet()));
+        when(ghnService.resolveGhnAddressOrThrow(any()))
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("GHN address API timeout"));
+
+        mockMvc.perform(post("/api/ghn/admin/push/22")
+                        .sessionAttr("vaiTro", "QL")
+                        .sessionAttr("idNguoiDung", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verify(ghnService, never()).createFallbackShippingOrder(any(), any());
+        verify(ghnService, never()).createShippingOrderOrThrow(any(), any(), any(), any(), any(Boolean.class));
     }
 
     private TaiKhoan activeCustomer(Integer id) {

@@ -613,6 +613,22 @@
         let quickAddressParseSeq = 0;
         let diaChiNhanTouchedByUser = false;
         let isShippingLoading = false;
+        let selectedSavedGhnMapping = null;
+
+        function getEffectiveGhnMapping() {
+            const savedAddressId = $('#selectDiaChiLuu').val();
+            if (savedAddressId
+                    && savedAddressId !== 'new_address'
+                    && selectedSavedGhnMapping
+                    && selectedSavedGhnMapping.addressId === String(savedAddressId)) {
+                return selectedSavedGhnMapping;
+            }
+            return {
+                provinceId: $('#ghnProvinceId').val() || '',
+                districtId: $('#ghnDistrictId').val() || '',
+                wardCode: $('#ghnWardCode').val() || ''
+            };
+        }
 
         function setShippingFeeLoadingState(isLoading) {
             isShippingLoading = isLoading;
@@ -988,6 +1004,14 @@
         }
 
         $(document).ready(function() {
+            // Initialize checkout state before the saved-address change handler
+            // can synchronously call calculateShippingFee().
+            let appliedVoucherCode = null;
+            let voucherDiscount = 0;
+            let currentShippingFee = 0;
+            let pendingShippingRequest = null;
+            let debounceTimeout = null;
+
             // Helper sanitize user-facing messages
             function getSafeCheckoutMessage(msg, fallback) {
                 if (!msg || typeof msg !== 'string') return fallback;
@@ -1217,6 +1241,7 @@
             // Autofill registered address or toggle new address
             $('#selectDiaChiLuu').on('change', function() {
                 // Clear target and reset GHN dropdowns first
+                selectedSavedGhnMapping = null;
                 targetProvinceToMatch = null;
                 targetAddressToMatch = null;
                 isGhnLoadingMasterData = false;
@@ -1245,9 +1270,6 @@
                     $('#sdtNhan').val(details.sdt);
                     $('#diaChiNhan').val(details.diaChiCuThe || details.diaChi).trigger('change');
                     
-                    targetProvinceToMatch = details.tinhThanh;
-                    targetAddressToMatch = details.diaChi;
-                    
                     // Validate autofilled fields
                     setTimeout(function() {
                         validateHoTen();
@@ -1255,8 +1277,29 @@
                         validateDiaChi();
                     }, 150);
                     
-                    // Always use text matching on Vietnamese address directly
-                    matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
+                    if (details.ghnReady
+                            && details.ghnProvinceId
+                            && details.ghnDistrictId
+                            && details.ghnWardCode) {
+                        // A normalized address book entry already contains the exact
+                        // GHN mapping. Reuse it directly instead of guessing from the
+                        // Vietnamese display text again.
+                        selectedSavedGhnMapping = {
+                            addressId: String(addressId),
+                            provinceId: String(details.ghnProvinceId),
+                            districtId: String(details.ghnDistrictId),
+                            wardCode: String(details.ghnWardCode)
+                        };
+                        isGhnLoadingMasterData = false;
+                        calculateShippingFee();
+                    } else {
+                        // Compatibility path for legacy rows created before GHN IDs
+                        // were stored. A successful match is submitted once so the
+                        // server can auto-heal that saved address.
+                        targetProvinceToMatch = details.tinhThanh;
+                        targetAddressToMatch = details.diaChi;
+                        matchAndSelectProvince(targetProvinceToMatch, targetAddressToMatch);
+                    }
                 } else {
                     $('#manual-address-fields').slideUp(200);
                     $('#hoTenNhan').val('');
@@ -1321,9 +1364,6 @@
 
 
             // Voucher logic
-            let appliedVoucherCode = null;
-            let voucherDiscount = 0;
-            let currentShippingFee = 0;
 
             function updateUITotal() {
                 const totalAmount = Math.max(0, baseTongTien - voucherDiscount) + currentShippingFee;
@@ -1395,8 +1435,6 @@
             });
 
             // Recalculate Shipping Fee dynamically
-            let pendingShippingRequest = null;
-            let debounceTimeout = null;
 
             function calculateShippingFee() {
                 const carrierId = $('#idDonViVanChuyen').val();
@@ -1413,9 +1451,10 @@
                 const carrierText = $('#idDonViVanChuyen option:selected').text().toUpperCase();
                 const isGhn = carrierText.includes('GIAO HÀNG NHANH') || carrierText.includes('GHN');
                 
-                const provinceVal = $('#ghnProvinceId').val();
-                const districtVal = $('#ghnDistrictId').val();
-                const wardVal = $('#ghnWardCode').val();
+                const effectiveGhnMapping = getEffectiveGhnMapping();
+                const provinceVal = effectiveGhnMapping.provinceId;
+                const districtVal = effectiveGhnMapping.districtId;
+                const wardVal = effectiveGhnMapping.wardCode;
 
                 if (isGhn) {
                     if (!provinceVal || !districtVal || !wardVal) {
@@ -1683,9 +1722,10 @@
                         showToast('Hệ thống đang chuẩn hóa địa chỉ GHN, vui lòng đợi trong giây lát.', 'warning');
                         return;
                     }
-                    const provinceVal = $('#ghnProvinceId').val();
-                    const districtVal = $('#ghnDistrictId').val();
-                    const wardVal = $('#ghnWardCode').val();
+                    const effectiveGhnMapping = getEffectiveGhnMapping();
+                    const provinceVal = effectiveGhnMapping.provinceId;
+                    const districtVal = effectiveGhnMapping.districtId;
+                    const wardVal = effectiveGhnMapping.wardCode;
                     if (!provinceVal || !districtVal || !wardVal) {
                         if (addressType === 'saved') {
                             showToast('Địa chỉ đã lưu của bạn chưa được chuẩn hóa địa chỉ GHN. Vui lòng cập nhật sổ địa chỉ hoặc chọn "Nhập địa chỉ mới" để chọn thủ công.', 'error');
@@ -1731,6 +1771,7 @@
                 }
 
                 // Call submitCheckout
+                const effectiveGhnMapping = getEffectiveGhnMapping();
                 const submitData = {
                     checkoutToken: $('#checkoutToken').val() || '',
                     hoTenNhan: hoTen,
@@ -1740,9 +1781,9 @@
                     idDonViVanChuyen: parseInt(dvvcId),
                     phuongThucThanhToan: paymentMethod,
                     ghiChu: ghiChu,
-                    ghnToDistrictId: $('#ghnDistrictId').val() || '',
-                    ghnToWardCode: $('#ghnWardCode').val() || '',
-                    ghnProvinceId: $('#ghnProvinceId').val() || '',
+                    ghnToDistrictId: effectiveGhnMapping.districtId,
+                    ghnToWardCode: effectiveGhnMapping.wardCode,
+                    ghnProvinceId: effectiveGhnMapping.provinceId,
                     voucherCode: appliedVoucherCode || '',
                     tinhThanhText: $('#ghnProvinceId option:selected').val() ? $('#ghnProvinceId option:selected').text().trim() : '',
                     thanhPhoText: $('#ghnDistrictId option:selected').val() ? $('#ghnDistrictId option:selected').text().trim() : '',
