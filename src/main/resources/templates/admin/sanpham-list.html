@@ -37,9 +37,12 @@
                     </div>
                     <div class="admin-toolbar">
                         <a th:href="@{/admin/san-pham/them}" class="admin-btn admin-btn-primary">
-                            <i class="fas fa-plus-circle me-1"></i>Thêm Sản Phẩm Mới
+                            <i class="fas fa-plus-circle me-1"></i> Thêm Sản Phẩm Mới
                         </a>
-                                <!-- Alert Messages -->
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
                 <div th:if="${success != null}" class="alert alert-success alert-dismissible fade show border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
                     <i class="fas fa-check-circle me-2"></i><span th:text="${success}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>

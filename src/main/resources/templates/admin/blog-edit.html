@@ -117,7 +117,15 @@
                         <h1 class="admin-page-title"><i class="fas fa-edit text-brand me-2"></i>Chỉnh Sửa Bài Viết</h1>
                         <p class="admin-page-subtitle">Sửa thông tin chi tiết bài viết blog</p>
                     </div>
-                    <div class="admin-toolbar">
+                    <div class="admin-toolbar d-flex align-items-center gap-2">
+                        <a href="javascript:void(0)" 
+                           th:data-url="@{/admin/blog/preview/{id}(id=${blog.id})}" 
+                           th:data-title="${blog.title}" 
+                           onclick="openBlogPreviewModal(this.getAttribute('data-url'), this.getAttribute('data-title'))" 
+                           class="admin-btn admin-btn-info btn-preview-edit" 
+                           title="Xem trước bài viết (không cần mở tab mới)">
+                            <i class="fas fa-eye me-1"></i> Xem trước
+                        </a>
                         <a th:href="@{/admin/blog}" class="admin-btn admin-btn-secondary btn-back-normal">
                             <i class="fas fa-arrow-left me-1"></i> Quay lại
                         </a>
@@ -313,6 +321,96 @@
                 }
             });
         }
+    </script>
+
+    <!-- Modal Xem Trước Bài Viết (In-page Preview với Device Switcher) -->
+    <div class="modal fade" id="blogPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1180px; margin: 1.5rem auto;">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden; height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.25);">
+                <div class="modal-header admin-modal-header py-2 px-3" style="flex-shrink: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-eye me-1"></i>Xem Trước</span>
+                        <h6 class="modal-title mb-0 fw-bold text-dark text-truncate" style="max-width: 450px;" id="blogPreviewModalLabel">
+                            Xem Trước Bài Viết
+                        </h6>
+                    </div>
+
+                    <!-- Responsive Viewport Switcher & External Link -->
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Device view">
+                            <button type="button" class="btn btn-outline-secondary active" id="btnBlogViewDesktop" onclick="setBlogPreviewDevice('100%')" title="Xem dạng Máy tính">
+                                <i class="fas fa-desktop me-1"></i> Desktop
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnBlogViewTablet" onclick="setBlogPreviewDevice('768px')" title="Xem dạng Máy tính bảng">
+                                <i class="fas fa-tablet-alt me-1"></i> Tablet
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnBlogViewMobile" onclick="setBlogPreviewDevice('390px')" title="Xem dạng Điện thoại">
+                                <i class="fas fa-mobile-alt me-1"></i> Mobile
+                            </button>
+                        </div>
+                        <a id="btnOpenNewTabBlogPreview" href="#" target="_blank" class="btn btn-sm btn-outline-primary" title="Mở bài viết trong tab mới nếu muốn">
+                            <i class="fas fa-external-link-alt me-1"></i> Tab mới
+                        </a>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body p-0" style="flex: 1; height: calc(100% - 55px); overflow: hidden; background-color: #f1f5f9; display: flex; justify-content: center; align-items: stretch;">
+                    <div id="blogPreviewFrameContainer" style="width: 100%; height: 100%; transition: width 0.3s ease; background-color: #ffffff; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                        <iframe id="blogPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let blogPreviewModal = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const blogPreviewModalEl = document.getElementById('blogPreviewModal');
+            if (blogPreviewModalEl && typeof bootstrap !== 'undefined') {
+                blogPreviewModal = new bootstrap.Modal(blogPreviewModalEl);
+                blogPreviewModalEl.addEventListener('hidden.bs.modal', function () {
+                    const iframe = document.getElementById('blogPreviewIframe');
+                    if (iframe) iframe.src = '';
+                });
+            }
+
+            window.openBlogPreviewModal = function(url, title) {
+                const modalLabel = document.getElementById('blogPreviewModalLabel');
+                const iframe = document.getElementById('blogPreviewIframe');
+                const newTabBtn = document.getElementById('btnOpenNewTabBlogPreview');
+
+                if (modalLabel) modalLabel.textContent = title || 'Xem Trước Bài Viết';
+                if (iframe) iframe.src = url;
+                if (newTabBtn) newTabBtn.href = url;
+
+                setBlogPreviewDevice('100%');
+                if (blogPreviewModal) {
+                    blogPreviewModal.show();
+                } else if (blogPreviewModalEl) {
+                    const modal = new bootstrap.Modal(blogPreviewModalEl);
+                    modal.show();
+                }
+            };
+
+            window.setBlogPreviewDevice = function(width) {
+                const container = document.getElementById('blogPreviewFrameContainer');
+                const btnDesktop = document.getElementById('btnBlogViewDesktop');
+                const btnTablet = document.getElementById('btnBlogViewTablet');
+                const btnMobile = document.getElementById('btnBlogViewMobile');
+
+                if (container) container.style.width = width;
+                if (btnDesktop) btnDesktop.classList.remove('active');
+                if (btnTablet) btnTablet.classList.remove('active');
+                if (btnMobile) btnMobile.classList.remove('active');
+
+                if (width === '100%' && btnDesktop) btnDesktop.classList.add('active');
+                if (width === '768px' && btnTablet) btnTablet.classList.add('active');
+                if (width === '390px' && btnMobile) btnMobile.classList.add('active');
+            };
+        });
     </script>
 
     <!-- Bootstrap 5.3.0 JS Bundle -->

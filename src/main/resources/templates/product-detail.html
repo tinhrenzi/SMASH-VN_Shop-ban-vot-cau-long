@@ -21,11 +21,48 @@
     <!--====== Ứng dụng ======-->
     <link rel="stylesheet" th:href="@{/css/app.css}">
     
-    <style th:if="${previewMode}">
-        body {
-            background-color: #ffffff !important;
-            overflow-x: hidden;
+    <style>
+        .iframe-mode header,
+        .iframe-mode footer,
+        .iframe-mode .header--style-1,
+        .iframe-mode .outer-footer,
+        .iframe-mode .lower-footer,
+        .iframe-mode .footer,
+        .iframe-mode #smashvn-chatbot-container,
+        .iframe-mode #chatbot-trigger,
+        .iframe-mode #chatbot-window,
+        .iframe-mode #floating-cart,
+        .iframe-mode .floating-cart,
+        .iframe-mode .floating-cart-dropdown,
+        .iframe-mode #topScroll,
+        .iframe-mode .app-setting,
+        .iframe-mode .pd-breadcrumb,
+        .iframe-mode .btn-floating-cart,
+        .iframe-mode .btn-back-to-top,
+        .iframe-mode .preloader,
+        .iframe-mode #preloader,
+        .iframe-mode .sticky-header {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
+        body.iframe-mode {
+            background-color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        body.iframe-mode .app-content {
+            padding-top: 0 !important;
+            padding-bottom: 20px !important;
+        }
+    </style>
+
+    <style th:if="${previewMode or isPreview != null}">
         header,
         footer,
         .header--style-1,
@@ -35,10 +72,16 @@
         #smashvn-chatbot-container,
         #chatbot-trigger,
         #chatbot-window,
+        #floating-cart,
+        .floating-cart,
+        .floating-cart-dropdown,
+        #topScroll,
+        .app-setting,
         .pd-breadcrumb,
         .btn-floating-cart,
         .btn-back-to-top,
-        .app-setting,
+        .preloader,
+        #preloader,
         .sticky-header {
             display: none !important;
             visibility: hidden !important;
@@ -46,15 +89,37 @@
             margin: 0 !important;
             padding: 0 !important;
             overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        body {
+            background-color: #ffffff !important;
+            overflow-x: hidden;
         }
         .app-content {
+            padding-top: 0 !important;
             padding-bottom: 20px !important;
         }
     </style>
+
+    <script>
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('iframe-mode');
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.classList.add('iframe-mode');
+                // Force remove any remaining floating widgets in preview iframe
+                ['smashvn-chatbot-container', 'topScroll', 'floating-cart'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.remove();
+                });
+                document.querySelectorAll('footer, .outer-footer, .lower-footer').forEach(f => f.remove());
+            });
+        }
+    </script>
 </head>
 
-<body class="config">
-    <th:block th:unless="${previewMode}">
+<body class="config" th:classappend="${previewMode or isPreview != null} ? 'iframe-mode' : ''">
+    <th:block th:unless="${previewMode or isPreview != null}">
         <div class="preloader is-active">
             <div class="preloader__wrap">
                 <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64">
@@ -86,7 +151,7 @@
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div style="font-size: 13.5px;">
                                     <i class="fas fa-eye me-2 text-warning"></i>
-                                    <strong>Chế độ xem trước (Preview Mode):</strong>
+                                    <strong>Chế độ xem trước:</strong>
                                     <span th:if="${sp.trangThai == 'ngung_kinh_doanh' or sp.trangThaiValue == false}">Sản phẩm hiện chưa đăng bán cho khách hàng. Mọi thao tác mua hàng / đánh giá đã bị vô hiệu hóa.</span>
                                     <span th:if="${sp.trangThai == 'dang_ban' and sp.trangThaiValue != false}">Sản phẩm hiện đang được hiển thị công khai trên cửa hàng.</span>
                                 </div>

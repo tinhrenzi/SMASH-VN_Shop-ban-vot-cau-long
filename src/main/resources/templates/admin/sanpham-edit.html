@@ -505,7 +505,6 @@
                                             </div>
 
                                             <div class="mb-3">
-                                            <div class="mb-3">
                                                 <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
                                                 <input type="text" name="mauSac" id="addMauSac" class="admin-form-control form-control mb-2" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
                                                 <div class="d-flex flex-wrap gap-1">
@@ -541,9 +540,42 @@
                                                         <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addMucCang')">24 - 32 lbs</button>
                                                     </div>
                                                 </div>
+
+                                                <!-- Giày: size giày -->
+                                                <div class="col-12" th:if="${categoryType == 'GIAY'}">
+                                                    <label class="admin-form-label">Size giày <span class="text-danger">*</span></label>
+                                                    <input type="text" name="kichThuoc" id="addKichThuocGiay" class="admin-form-control form-control mb-2" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">38</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">39</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">40</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">41</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">42</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocGiay')">43</button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Trang phục: size quần áo -->
+                                                <div class="col-12" th:if="${categoryType == 'TRANG_PHUC'}">
+                                                    <label class="admin-form-label">Size trang phục <span class="text-danger">*</span></label>
+                                                    <input type="text" name="kichThuoc" id="addKichThuocAo" class="admin-form-control form-control mb-2" required maxlength="50" placeholder="VD: S, M, L, XL...">
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocAo')">S</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocAo')">M</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocAo')">L</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocAo')">XL</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this, 'addKichThuocAo')">2XL</button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                         </div>
-                                     </div>
+
+                                            <div class="text-end pt-2">
+                                                <button type="submit" class="admin-btn admin-btn-primary w-100">
+                                                    <i class="fas fa-plus-circle me-1"></i>Thêm Biến Thể Mới
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
 
                                  </div>
                             </div>

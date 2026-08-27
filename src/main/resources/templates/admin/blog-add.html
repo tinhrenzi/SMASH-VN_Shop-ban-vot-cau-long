@@ -132,7 +132,7 @@
                 <!-- Add Form Card -->
                 <div class="admin-card mb-5">
                     <div class="admin-card-body p-4">
-                        <form th:object="${blog}" th:action="${isIframe} ? @{/admin/blog/add(iframe=true)} : @{/admin/blog/add}" method="POST" enctype="multipart/form-data" id="addBlogForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn đăng bài viết mới này không?');">
+                        <form th:object="${blog}" th:action="${isIframe} ? @{/admin/blog/add(iframe=true)} : @{/admin/blog/add}" method="POST" enctype="multipart/form-data" id="addBlogForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn tạo bài viết mới này không?');">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
                             <div class="row g-4">
@@ -201,7 +201,7 @@
                                         <i class="fas fa-times me-1"></i>Hủy
                                     </button>
                                     <button type="reset" class="admin-btn admin-btn-secondary px-4" th:unless="${isIframe}">Nhập lại</button>
-                                    <button type="submit" class="admin-btn admin-btn-primary px-4"><i class="fas fa-save me-1"></i>Đăng Bài Viết</button>
+                                    <button type="submit" class="admin-btn admin-btn-primary px-4"><i class="fas fa-save me-1"></i>Tạo Bài Viết</button>
                                 </div>
                             </div>
                         </form>

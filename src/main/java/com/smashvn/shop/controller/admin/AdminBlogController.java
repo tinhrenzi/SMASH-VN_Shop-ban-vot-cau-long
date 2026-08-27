@@ -222,7 +222,11 @@ public class AdminBlogController {
 
             model.addAttribute("blog", blog);
             model.addAttribute("recentBlogs", recentBlogs);
-            model.addAttribute("isPreview", true); // To optionally show a preview ribbon
+            model.addAttribute("isPreview", true);
+            model.addAttribute("previewMode", true);
+            
+            List<com.smashvn.shop.dto.blog.BlogCommentDTO> comments = blogService.getCommentsForBlog(blog.getId());
+            model.addAttribute("comments", comments);
             return "blog-detail";
         } catch (Exception e) {
             return "redirect:/admin/blog";
