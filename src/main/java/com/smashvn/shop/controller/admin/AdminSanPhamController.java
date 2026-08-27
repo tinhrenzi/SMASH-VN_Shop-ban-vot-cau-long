@@ -35,6 +35,7 @@ public class AdminSanPhamController {
     private final AdminSanPhamService adminSanPhamService;
     private final AdminBienTheService adminBienTheService;
     private final InventoryLotService inventoryLotService;
+    private final com.smashvn.shop.controller.product.SanPhamController sanPhamController;
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
@@ -142,26 +143,48 @@ public class AdminSanPhamController {
         }
     }
 
-    @PostMapping("/xoa/{id}")
-    public String xuLyXoaSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
+    @PostMapping({"/ngung-hien-thi/{id}", "/xoa/{id}"})
+    public String xuLyNgungHienThiSanPham(@PathVariable("id") Integer id, 
+                                          @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+                                          HttpSession session, 
+                                          HttpServletRequest request,
+                                          RedirectAttributes redirectAttributes) {
+        String target = (redirectUrl != null && !redirectUrl.isBlank()) ? redirectUrl : "redirect:/admin/san-pham";
         try {
             Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-            adminSanPhamService.xoaSanPham(id, idNguoiDung, request.getRemoteAddr());
-            return "redirect:/admin/san-pham?xoaThanhCong";
+            adminSanPhamService.ngungHienThi(id, idNguoiDung, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("success", "Đã ngưng hiển thị sản phẩm thành công!");
+            return target.startsWith("redirect:") ? target : "redirect:" + target;
         } catch (Exception e) {
-            return "redirect:/admin/san-pham?loiXoa";
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi ngưng hiển thị: " + e.getMessage());
+            return target.startsWith("redirect:") ? target : "redirect:" + target;
         }
     }
 
-    @PostMapping("/mo-ban-lai/{id}")
-    public String xuLyMoBanLaiSanPham(@PathVariable("id") Integer id, HttpSession session, HttpServletRequest request) {
+    @PostMapping({"/dang-ban/{id}", "/mo-ban-lai/{id}"})
+    public String xuLyDangBanSanPham(@PathVariable("id") Integer id, 
+                                     @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+                                     HttpSession session, 
+                                     HttpServletRequest request,
+                                     RedirectAttributes redirectAttributes) {
+        String target = (redirectUrl != null && !redirectUrl.isBlank()) ? redirectUrl : "redirect:/admin/san-pham";
         try {
             Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
-            adminSanPhamService.moBanLaiSanPham(id, idNguoiDung, request.getRemoteAddr());
-            return "redirect:/admin/san-pham?moBanLaiThanhCong";
+            adminSanPhamService.dangBan(id, idNguoiDung, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("success", "Đã đăng bán sản phẩm thành công!");
+            return target.startsWith("redirect:") ? target : "redirect:" + target;
         } catch (Exception e) {
-            return "redirect:/admin/san-pham?loiMoBanLai";
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return target.startsWith("redirect:") ? target : "redirect:" + target;
         }
+    }
+
+    @GetMapping("/xem-truoc/{id}")
+    public String xemTruocSanPham(@PathVariable("id") Integer id, Model model, HttpSession session) {
+        SanPham sp = sanPhamRepository.findById(id)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
+        sanPhamController.populateProductDetailModel(sp, model, session, true);
+        return "product-detail";
     }
 
     // ─── API: lịch sử nhập hàng theo biến thể ───────────────────────────────

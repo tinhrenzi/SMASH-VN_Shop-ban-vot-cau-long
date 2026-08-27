@@ -53,7 +53,49 @@
                             Danh mục: <strong class="text-dark" th:text="${sp.danhMuc.tenDanhMuc}"></strong> &bull; Thương hiệu: <strong class="text-dark" th:text="${sp.thuongHieu.tenThuongHieu}"></strong>
                         </p>
                     </div>
-                    <div class="admin-toolbar">
+                    <div class="admin-toolbar d-flex align-items-center gap-2">
+                        <!-- Badge trạng thái hiện tại -->
+                        <span th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" class="admin-status admin-status-success px-3 py-2">
+                            <i class="fas fa-eye me-1"></i> Đang hiển thị
+                        </span>
+                        <span th:if="${sp.trangThai == 'ngung_kinh_doanh'}" class="admin-status admin-status-neutral px-3 py-2">
+                            <i class="fas fa-eye-slash me-1"></i> Ngưng hiển thị
+                        </span>
+
+                        <!-- Nút Xem trước -->
+                        <a href="javascript:void(0)" 
+                           th:data-url="@{/admin/san-pham/xem-truoc/{id}(id=${sp.id})}" 
+                           th:data-name="${sp.tenSanPham}" 
+                           onclick="openProductPreviewModal(this.getAttribute('data-url'), this.getAttribute('data-name'))" 
+                           class="admin-btn admin-btn-info" 
+                           title="Xem trước giao diện khách hàng (không cần mở tab mới)">
+                            <i class="fas fa-eye me-1"></i> Xem trước
+                        </a>
+
+                        <!-- Nút Ngưng hiển thị (khi đang hiển thị) -->
+                        <form th:if="${sp.trangThai == null or sp.trangThai == 'dang_ban'}" 
+                              th:action="@{/admin/san-pham/ngung-hien-thi/{id}(id=${sp.id})}" 
+                              method="POST" style="display: inline;"
+                              onsubmit="return confirmSubmitForm(this, 'Ngưng hiển thị sản phẩm?&#10;&#10;Sản phẩm sẽ không còn xuất hiện trên cửa hàng và khách hàng không thể phát sinh giao dịch mới với sản phẩm này.&#10;&#10;Các đơn hàng đã phát sinh trước đó vẫn tiếp tục được xử lý.');">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" name="redirectUrl" th:value="@{/admin/san-pham/sua/{id}(id=${sp.id})}" />
+                            <button type="submit" class="admin-btn admin-btn-danger" title="Ngưng hiển thị sản phẩm">
+                                <i class="fas fa-eye-slash me-1"></i> Ngưng hiển thị
+                            </button>
+                        </form>
+
+                        <!-- Nút Đăng bán (khi đang ngưng hiển thị) -->
+                        <form th:if="${sp.trangThai == 'ngung_kinh_doanh'}" 
+                              th:action="@{/admin/san-pham/dang-ban/{id}(id=${sp.id})}" 
+                              method="POST" style="display: inline;"
+                              onsubmit="return confirmSubmitForm(this, 'Đăng bán sản phẩm?&#10;&#10;Sản phẩm sẽ được hiển thị trên cửa hàng và khách hàng có thể bắt đầu đặt mua.');">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" name="redirectUrl" th:value="@{/admin/san-pham/sua/{id}(id=${sp.id})}" />
+                            <button type="submit" class="admin-btn admin-btn-success" title="Đăng bán sản phẩm ra cửa hàng">
+                                <i class="fas fa-cloud-upload-alt me-1"></i> Đăng bán
+                            </button>
+                        </form>
+
                         <a th:href="@{/admin/san-pham}" class="admin-btn admin-btn-secondary">
                             <i class="fas fa-arrow-left me-1"></i> Quay lại Kho Hàng
                         </a>
@@ -1209,9 +1251,90 @@
                 xuLyChonDoiTuongSua(select.value);
             }
         });
+    </script>
 
+    <!-- Modal Xem Trước Sản Phẩm (In-page Preview) -->
+    <div class="modal fade" id="productPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1180px; margin: 1.5rem auto;">
+            <div class="modal-content admin-modal-content" style="border-radius: 16px; overflow: hidden; height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.25);">
+                <div class="modal-header admin-modal-header py-2 px-3" style="flex-shrink: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-eye me-1"></i>Xem Trước</span>
+                        <h6 class="modal-title mb-0 fw-bold text-dark text-truncate" style="max-width: 450px;" id="productPreviewModalLabel">
+                            Xem Trước Sản Phẩm
+                        </h6>
+                    </div>
 
+                    <!-- Responsive Viewport Switcher & External Link -->
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Device view">
+                            <button type="button" class="btn btn-outline-secondary active" id="btnViewDesktop" onclick="setPreviewDevice('100%')" title="Xem dạng Máy tính">
+                                <i class="fas fa-desktop me-1"></i> Desktop
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnViewTablet" onclick="setPreviewDevice('768px')" title="Xem dạng Máy tính bảng">
+                                <i class="fas fa-tablet-alt me-1"></i> Tablet
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnViewMobile" onclick="setPreviewDevice('390px')" title="Xem dạng Điện thoại">
+                                <i class="fas fa-mobile-alt me-1"></i> Mobile
+                            </button>
+                        </div>
+                        <a id="btnOpenNewTabPreview" href="#" target="_blank" class="btn btn-sm btn-outline-primary" title="Mở trang trong tab mới nếu muốn">
+                            <i class="fas fa-external-link-alt me-1"></i> Tab mới
+                        </a>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
 
+                <div class="modal-body p-0" style="flex: 1; height: calc(100% - 55px); overflow: hidden; background-color: #f1f5f9; display: flex; justify-content: center; align-items: stretch;">
+                    <div id="previewFrameContainer" style="width: 100%; height: 100%; transition: width 0.3s ease; background-color: #ffffff; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                        <iframe id="productPreviewIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let productPreviewModal = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const previewModalEl = document.getElementById("productPreviewModal");
+            if (previewModalEl && typeof bootstrap !== "undefined") {
+                productPreviewModal = new bootstrap.Modal(previewModalEl);
+                previewModalEl.addEventListener("hidden.bs.modal", function () {
+                    const iframe = document.getElementById("productPreviewIframe");
+                    if (iframe) iframe.src = "";
+                });
+            }
+        });
+
+        function openProductPreviewModal(url, productName) {
+            const modalLabel = document.getElementById("productPreviewModalLabel");
+            const iframe = document.getElementById("productPreviewIframe");
+            const newTabBtn = document.getElementById("btnOpenNewTabPreview");
+            
+            if (modalLabel) modalLabel.textContent = productName || "Xem Trước Sản Phẩm";
+            if (iframe) iframe.src = url;
+            if (newTabBtn) newTabBtn.href = url;
+            
+            setPreviewDevice('100%');
+            if (productPreviewModal) {
+                productPreviewModal.show();
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        function setPreviewDevice(width) {
+            const container = document.getElementById("previewFrameContainer");
+            if (container) {
+                container.style.width = width;
+            }
+            document.querySelectorAll("#btnViewDesktop, #btnViewTablet, #btnViewMobile").forEach(btn => btn.classList.remove("active"));
+            if (width === '100%') document.getElementById("btnViewDesktop")?.classList.add("active");
+            else if (width === '768px') document.getElementById("btnViewTablet")?.classList.add("active");
+            else if (width === '390px') document.getElementById("btnViewMobile")?.classList.add("active");
+        }
     </script>
 
     <!-- Bootstrap 5.3.0 JS Bundle -->

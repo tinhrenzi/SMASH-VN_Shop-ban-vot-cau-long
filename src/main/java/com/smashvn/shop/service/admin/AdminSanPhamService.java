@@ -508,24 +508,89 @@ public class AdminSanPhamService {
         sanPhamRepository.save(sp);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void dangBan(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
+        SanPham sp = layTheoId(idSanPham);
+
+        // 1. Kiểm tra tên sản phẩm
+        if (sp.getTenSanPham() == null || sp.getTenSanPham().trim().isEmpty()) {
+            throw new IllegalArgumentException("Không thể đăng bán: Tên sản phẩm không được để trống!");
+        }
+
+        // 2. Kiểm tra danh mục
+        if (sp.getDanhMuc() == null) {
+            throw new IllegalArgumentException("Không thể đăng bán: Sản phẩm chưa được gán danh mục!");
+        }
+        if (Boolean.FALSE.equals(sp.getDanhMuc().getTrangThai())) {
+            throw new IllegalArgumentException("Không thể đăng bán: Danh mục '" + sp.getDanhMuc().getTenDanhMuc() + "' hiện đang bị ẩn!");
+        }
+
+        // 3. Kiểm tra thương hiệu
+        if (sp.getThuongHieu() == null) {
+            throw new IllegalArgumentException("Không thể đăng bán: Sản phẩm chưa được gán thương hiệu!");
+        }
+        if (Boolean.FALSE.equals(sp.getThuongHieu().getTrangThai())) {
+            throw new IllegalArgumentException("Không thể đăng bán: Thương hiệu '" + sp.getThuongHieu().getTenThuongHieu() + "' hiện đang bị ẩn!");
+        }
+
+        // 4. Kiểm tra có ít nhất một biến thể
+        List<SanPhamChiTiet> variants = sp.getSanPhamChiTiets();
+        if (variants == null || variants.isEmpty()) {
+            throw new IllegalArgumentException("Không thể đăng bán: Sản phẩm phải có ít nhất một biến thể (phân loại hàng)!");
+        }
+
+        // 5. Kiểm tra có ít nhất một biến thể có giá bán hợp lệ (> 0)
+        boolean hasValidPriceVariant = variants.stream()
+                .anyMatch(v -> v.getGiaBan() != null && v.getGiaBan().compareTo(BigDecimal.ZERO) > 0);
+        if (!hasValidPriceVariant) {
+            throw new IllegalArgumentException("Không thể đăng bán: Sản phẩm phải có ít nhất một biến thể với giá bán hợp lệ (> 0 VNĐ)!");
+        }
+
+        sp.setTrangThai("dang_ban");
+        sp.setNgayCapNhat(LocalDateTime.now());
+        sanPhamRepository.save(sp);
+
+        String role = "Quản trị viên";
+        if (idNguoiDung != null) {
+            NhanVien nv = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
+            if (nv != null && nv.getChucVu() != null) {
+                role = nv.getChucVu();
+            }
+        }
+        auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", "ngung_kinh_doanh", "dang_ban", remoteAddr, "Đăng bán sản phẩm: " + sp.getTenSanPham(), role);
+        log.info("[PRODUCT_CMS] Product ID: {} ({}) set to DANG_BAN by user: {}", sp.getId(), sp.getTenSanPham(), idNguoiDung);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void ngungHienThi(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
+        SanPham sp = layTheoId(idSanPham);
+        sp.setTrangThai("ngung_kinh_doanh");
+        sp.setNgayCapNhat(LocalDateTime.now());
+        sanPhamRepository.save(sp);
+
+        String role = "Quản trị viên";
+        if (idNguoiDung != null) {
+            NhanVien nv = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
+            if (nv != null && nv.getChucVu() != null) {
+                role = nv.getChucVu();
+            }
+        }
+        auditService.log(idNguoiDung, "SanPham", sp.getId().longValue(), "UPDATE", "dang_ban", "ngung_kinh_doanh", remoteAddr, "Ngưng hiển thị sản phẩm: " + sp.getTenSanPham(), role);
+        log.info("[PRODUCT_CMS] Product ID: {} ({}) set to NGUNG_HIEN_THI by user: {}", sp.getId(), sp.getTenSanPham(), idNguoiDung);
+    }
+
     @Transactional
     public void xoaSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
-        ngungKinhDoanhSanPham(idSanPham, idNguoiDung, remoteAddr);
+        ngungHienThi(idSanPham, idNguoiDung, remoteAddr);
     }
 
     @Transactional
     public void ngungKinhDoanhSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
-        SanPham sp = sanPhamRepository.findById(idSanPham)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm id: " + idSanPham));
-        sp.setTrangThai("ngung_kinh_doanh");
-        sanPhamRepository.save(sp);
+        ngungHienThi(idSanPham, idNguoiDung, remoteAddr);
     }
 
     @Transactional
     public void moBanLaiSanPham(Integer idSanPham, Integer idNguoiDung, String remoteAddr) {
-        SanPham sp = sanPhamRepository.findById(idSanPham)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm id: " + idSanPham));
-        sp.setTrangThai("dang_ban");
-        sanPhamRepository.save(sp);
+        dangBan(idSanPham, idNguoiDung, remoteAddr);
     }
 }

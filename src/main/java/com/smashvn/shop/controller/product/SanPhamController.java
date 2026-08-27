@@ -54,10 +54,19 @@ public class SanPhamController {
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm này!"));
         
         if (!productAvailabilityService.isProductPublished(sanPham)) {
-            return "redirect:/shop?loi=" + java.net.URLEncoder.encode("Sản phẩm này đã ngừng kinh doanh tại cửa hàng!", java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/shop?loi=" + java.net.URLEncoder.encode("Sản phẩm này hiện đã ngưng hiển thị tại cửa hàng!", java.nio.charset.StandardCharsets.UTF_8);
         }
         
+        populateProductDetailModel(sanPham, model, session, false);
+        return "product-detail";
+    }
+
+    public void populateProductDetailModel(SanPham sanPham, Model model, HttpSession session, boolean isPreview) {
+        Integer id = sanPham.getId();
         List<SanPhamChiTiet> danhSachChiTiet = sanPhamChiTietRepository.findActiveBySanPham_Id(id);
+        if (isPreview && danhSachChiTiet.isEmpty()) {
+            danhSachChiTiet = sanPhamChiTietRepository.findBySanPham_Id(id);
+        }
         String anhDaiDien = danhSachChiTiet.isEmpty() ? "" : danhSachChiTiet.get(0).getHinhAnhUrl();
 
         // 1. Lấy danh sách Màu Sắc không trùng lặp
@@ -167,7 +176,7 @@ public class SanPhamController {
             }
         }
 
-        boolean sanPhamKhaDung = productAvailabilityService.isProductPublished(sanPham);
+        boolean sanPhamKhaDung = isPreview || productAvailabilityService.isProductPublished(sanPham);
         boolean daMuaHang = false;
         boolean daDanhGia = false;
         DanhGia oldDanhGia = null;
@@ -203,6 +212,7 @@ public class SanPhamController {
         model.addAttribute("inWishlist", inWishlist);
         model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));
 
+        model.addAttribute("previewMode", isPreview);
         model.addAttribute("sanPhamKhaDung", sanPhamKhaDung);
         model.addAttribute("daMuaHang", daMuaHang);
         model.addAttribute("daDanhGia", daDanhGia);
@@ -225,8 +235,6 @@ public class SanPhamController {
                     .collect(Collectors.toList());
         }
         model.addAttribute("relatedProducts", relatedProducts);
-        
-        return "product-detail"; 
     }
 
     @PostMapping("/san-pham/{id}/danh-gia")
