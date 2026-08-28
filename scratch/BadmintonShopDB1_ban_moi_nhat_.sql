@@ -1735,7 +1735,6 @@ INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (6, 3, 1, N'Túi cầu lông Victor BR5651CNY - Trắng đỏ chính hãng', N'Sản phẩm Túi cầu lông Victor BR5651CNY - Trắng đỏ chính hãng chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (6, 1, 1, N'Túi cầu lông Yonex BA92026EX xám chính hãng', N'Sản phẩm Túi cầu lông Yonex BA92026EX xám chính hãng chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (6, 1, 1, N'Túi Xách Cầu Lông Yonex 3D 2241R (BKDBL)', N'Sản phẩm Túi Xách Cầu Lông Yonex 3D 2241R (BKDBL) chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
-INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (7, 5, 1, N'Dây cước căng vợt GOSEN Ryzonic 62', N'Sản phẩm Dây cước căng vợt GOSEN Ryzonic 62 chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (7, 6, 1, N'Dây cước căng vợt Kizuna Z65X', N'Sản phẩm Dây cước căng vợt Kizuna Z65X chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (7, 1, 1, N'Dây cước căng vợt Yonex BG 66 Ultimax', N'Sản phẩm Dây cước căng vợt Yonex BG 66 Ultimax chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
 INSERT INTO [dbo].[SanPham] ([id_danh_muc],[id_thuong_hieu],[id_nhan_vien],[ten_san_pham],[mo_ta],[trang_thai],[so_luot_danh_gia],[diem_trung_binh],[ngay_tao]) VALUES (7, 1, 1, N'Dây cước căng vợt Yonex BG SKY', N'Sản phẩm Dây cước căng vợt Yonex BG SKY chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.', 1, 0, 0.0, GETDATE());
@@ -1861,7 +1860,6 @@ INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (55, 80000, 150000, 30, 1, GETDATE()); -- spct_114
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (56, 80000, 150000, 30, 1, GETDATE()); -- spct_115
 INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (57, 80000, 150000, 30, 1, GETDATE()); -- spct_116
-INSERT INTO [dbo].[SanPhamChiTiet] ([id_san_pham],[gia_nhap],[gia_ban],[so_luong_ton],[trang_thai],[ngay_tao]) VALUES (58, 80000, 150000, 30, 1, GETDATE()); -- spct_117
 
 GO
 
@@ -2119,27 +2117,23 @@ INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_s
 INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (109, N'Túi Xách/Túi cầu lông Victor BR5651CNY - Trắng đỏ chính hãng/anh.png', N'Trắng đỏ chính hãng', 1, 1);
 INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (110, N'Túi Xách/Túi cầu lông Yonex BA92026EX xám chính hãng/anh.png', N'Màu mặc định', 1, 1);
 INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (111, N'Túi Xách/Túi Xách Cầu Lông Yonex 3D 2241R (BKDBL)/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt GOSEN Ryzonic 62/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt GOSEN Ryzonic 62/anh1.png', N'Màu mặc định', 0, 2);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt GOSEN Ryzonic 62/anh2.png', N'Màu mặc định', 0, 3);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt GOSEN Ryzonic 62/anh3.png', N'Màu mặc định', 0, 4);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh1.png', N'Màu mặc định', 0, 2);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh2.png', N'Màu mặc định', 0, 3);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh3.png', N'Màu mặc định', 0, 4);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh4.png', N'Màu mặc định', 0, 5);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Kizuna Z65X/anh5.png', N'Màu mặc định', 0, 6);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (114, N'Cước/Dây cước căng vợt Yonex BG 66 Ultimax/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (114, N'Cước/Dây cước căng vợt Yonex BG 66 Ultimax/anh1.png', N'Màu mặc định', 0, 2);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (115, N'Cước/Dây cước căng vợt Yonex BG SKY/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Cước/Dây cước căng vợt Yonex Nanogy BG 95/anh.png', N'Màu mặc định', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh.png', N'30 EX (Túi 2 cuộn)', 1, 1);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh1.png', N'30 EX (Túi 2 cuộn)', 0, 2);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh2.png', N'30 EX (Túi 2 cuộn)', 0, 3);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh3.png', N'30 EX (Túi 2 cuộn)', 0, 4);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh4.png', N'30 EX (Túi 2 cuộn)', 0, 5);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh5.png', N'30 EX (Túi 2 cuộn)', 0, 6);
-INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (117, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh6.png', N'30 EX (Túi 2 cuộn)', 0, 7);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh.png', N'Màu mặc định', 1, 1);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh1.png', N'Màu mặc định', 0, 2);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh2.png', N'Màu mặc định', 0, 3);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh3.png', N'Màu mặc định', 0, 4);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh4.png', N'Màu mặc định', 0, 5);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (112, N'Cước/Dây cước căng vợt Kizuna Z65X/anh5.png', N'Màu mặc định', 0, 6);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Yonex BG 66 Ultimax/anh.png', N'Màu mặc định', 1, 1);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (113, N'Cước/Dây cước căng vợt Yonex BG 66 Ultimax/anh1.png', N'Màu mặc định', 0, 2);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (114, N'Cước/Dây cước căng vợt Yonex BG SKY/anh.png', N'Màu mặc định', 1, 1);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (115, N'Cước/Dây cước căng vợt Yonex Nanogy BG 95/anh.png', N'Màu mặc định', 1, 1);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh.png', N'30 EX (Túi 2 cuộn)', 1, 1);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh1.png', N'30 EX (Túi 2 cuộn)', 0, 2);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh2.png', N'30 EX (Túi 2 cuộn)', 0, 3);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh3.png', N'30 EX (Túi 2 cuộn)', 0, 4);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh4.png', N'30 EX (Túi 2 cuộn)', 0, 5);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh5.png', N'30 EX (Túi 2 cuộn)', 0, 6);
+INSERT INTO [dbo].[HinhAnhSanPham] ([id_san_pham_chi_tiet],[url_hinh_anh],[mau_sac],[la_anh_chinh],[thu_tu]) VALUES (116, N'Quấn cán/Quấn cán Yonex xịn AC102-30 EX (Túi 2 cuộn)/anh6.png', N'30 EX (Túi 2 cuộn)', 0, 7);
 
 GO
 
