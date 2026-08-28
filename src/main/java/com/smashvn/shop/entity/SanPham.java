@@ -139,6 +139,15 @@ public class SanPham {
             return 0;
         }
         return sanPhamChiTiets.stream()
+                .mapToInt(spct -> spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
+                .sum();
+    }
+
+    public int getTongSoLuongTonDangBan() {
+        if (sanPhamChiTiets == null || sanPhamChiTiets.isEmpty()) {
+            return 0;
+        }
+        return sanPhamChiTiets.stream()
                 .filter(spct -> spct.getTrangThai() == null || spct.getTrangThai().isBlank() || "dang_ban".equals(spct.getTrangThai()))
                 .mapToInt(spct -> spct.getSoLuongTon() != null ? spct.getSoLuongTon() : 0)
                 .sum();

@@ -250,37 +250,37 @@
                                                                     (#strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUẦY') || #strings.contains(#strings.toUpperCase(hd.donViVanChuyen.tenDonVi), 'QUAY') ? 'Tại quầy' : hd.donViVanChuyen.tenDonVi))) : 'N/A'}">GHN</span>
                                                 </td>
                                                 <td class="text-nowrap order-status-cell">
-                                                    <span th:if="${hd.trangThaiDonHang == 'hoan_thanh'}"
+                                                    <span th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'hoan_thanh')}"
                                                         class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Hoàn thành
                                                     </span>
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}"
+                                                    <span th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_giao')}"
                                                         class="admin-status admin-status-success">
                                                         <i class="fas fa-check-circle me-1"></i>Đã giao
                                                     </span>
                                                     <span
-                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                        th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') &amp;&amp; #strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'CHO_HOAN_TIEN')}"
                                                         class="admin-status admin-status-warning">
                                                         <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
                                                     </span>
                                                     <span
-                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}"
+                                                        th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'CHO_HOAN_TIEN')}"
                                                         class="admin-status admin-status-danger">
                                                         <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                     </span>
                                                     <span
-                                                        th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
+                                                        th:if="${hd.trangThaiDonHang != null &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_giao') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'hoan_thanh') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy')}"
                                                         th:class="'admin-status ' + 
-                                                                    (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'admin-status-neutral' : 
-                                                                    (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'admin-status-warning' : 
-                                                                    (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_chuan_bi_hang'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'san_sang_giao'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'da_tao_van_don_ghn'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'admin-status-neutral' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_giao'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'giao_that_bai'} ? 'admin-status-danger' : 'admin-status-neutral'))))))))))"
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'cho_thanh_toan')} ? 'admin-status-neutral' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'cho_xac_nhan')} ? 'admin-status-warning' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_xac_nhan')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'dang_chuan_bi_hang')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'san_sang_giao')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_tao_van_don_ghn')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_ban_giao_ghn')} ? 'admin-status-neutral' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'dang_lay_hang')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'dang_giao')} ? 'admin-status-info' : 
+                                                                    (${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'giao_that_bai')} ? 'admin-status-danger' : 'admin-status-neutral'))))))))))"
                                                         th:text="${currentStatusLabels[hd.id]}">
                                                     </span>
 
@@ -323,7 +323,7 @@
                                                          </button>
 
                                                          <!-- Nút Hủy đơn hàng -->
-                                                         <button th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'hoan_thanh' &amp;&amp; hd.trangThaiDonHang != 'da_huy' &amp;&amp; hd.trangThaiDonHang != 'da_ban_giao_ghn' &amp;&amp; hd.trangThaiDonHang != 'dang_lay_hang' &amp;&amp; hd.trangThaiDonHang != 'dang_giao'}" 
+                                                         <button th:if="${hd.trangThaiDonHang != null &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_giao') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'hoan_thanh') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_ban_giao_ghn') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'dang_lay_hang') &amp;&amp; !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'dang_giao')}" 
                                                                  type="button" class="admin-btn admin-btn-icon danger"
                                                                  th:data-id="${hd.id}"
                                                                  th:data-code="${hd.maDonHang != null ? hd.maDonHang : '#' + hd.id}"
@@ -334,7 +334,7 @@
                                                          </button>
 
                                                          <!-- Nút Hoàn tiền đơn hủy -->
-                                                         <button th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
+                                                         <button th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') &amp;&amp; #strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'CHO_HOAN_TIEN')}"
                                                                  type="button" class="admin-btn admin-btn-icon" 
                                                                  title="Xác nhận hoàn tiền"
                                                                  th:data-id="${hd.id}"
@@ -420,44 +420,38 @@
                                                 </td>
 
                                                 <td class="text-nowrap order-status-cell">
-                                                    <span th:if="${hd.trangThaiDonHang == 'da_giao'}"
+                                                    <!-- Đã thanh toán / Hoàn thành -->
+                                                    <span th:if="${hd.trangThaiDonHang != null and (#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_giao') or #strings.equalsIgnoreCase(hd.trangThaiDonHang, 'hoan_thanh') or #strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_thanh_toan') or (#strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'DA_THANH_TOAN') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy')))}"
                                                         class="admin-status admin-status-success">
-                                                        <i class="fas fa-check-circle me-1"></i>Hoàn thành
+                                                        <i class="fas fa-check-circle me-1"></i>Đã thanh toán
                                                     </span>
-                                                    <span
-                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan == 'CHO_HOAN_TIEN'}"
-                                                        class="admin-status admin-status-warning">
-                                                        <i class="fas fa-exclamation-circle me-1"></i>Chờ hoàn tiền
-                                                    </span>
-                                                    <span
-                                                        th:if="${hd.trangThaiDonHang == 'da_huy' &amp;&amp; hd.trangThaiThanhToan != 'CHO_HOAN_TIEN'}"
+                                                    <!-- Đã hủy -->
+                                                    <span th:if="${hd.trangThaiDonHang != null and #strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy')}"
                                                         class="admin-status admin-status-danger">
                                                         <i class="fas fa-times-circle me-1"></i>Đã hủy
                                                     </span>
-                                                    <span
-                                                        th:if="${hd.trangThaiDonHang != null &amp;&amp; hd.trangThaiDonHang != 'da_giao' &amp;&amp; hd.trangThaiDonHang != 'da_huy'}"
-                                                        th:class="'admin-status ' + 
-                                                                    (${hd.trangThaiDonHang == 'cho_thanh_toan'} ? 'admin-status-neutral' : 
-                                                                    (${hd.trangThaiDonHang == 'cho_xac_nhan'} ? 'admin-status-warning' : 
-                                                                    (${hd.trangThaiDonHang == 'da_xac_nhan'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_chuan_bi_hang'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'san_sang_giao'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'da_tao_van_don_ghn'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'da_ban_giao_ghn'} ? 'admin-status-neutral' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_lay_hang'} ? 'admin-status-info' : 
-                                                                    (${hd.trangThaiDonHang == 'dang_giao'} ? 'admin-status-info' : 'admin-status-neutral')))))))))"
-                                                        th:text="${currentStatusLabels[hd.id]}">
+                                                    <!-- Chờ thanh toán -->
+                                                    <span th:if="${hd.trangThaiDonHang != null and #strings.equalsIgnoreCase(hd.trangThaiDonHang, 'cho_thanh_toan') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') and !#strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'DA_THANH_TOAN')}"
+                                                        class="admin-status admin-status-warning">
+                                                        <i class="fas fa-clock me-1"></i>Chờ thanh toán
+                                                    </span>
+                                                    <!-- Khác (fallback) -->
+                                                    <span th:if="${hd.trangThaiDonHang != null and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_giao') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'hoan_thanh') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_thanh_toan') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'da_huy') and !#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'cho_thanh_toan') and !#strings.equalsIgnoreCase(hd.trangThaiThanhToan, 'DA_THANH_TOAN')}"
+                                                        class="admin-status admin-status-neutral">
+                                                        <i class="fas fa-info-circle me-1"></i><span th:text="${currentStatusLabels[hd.id]}"></span>
                                                     </span>
                                                 </td>
                                                 <td class="text-center text-nowrap order-action-cell">
                                                     <div class="d-flex gap-1 justify-content-center align-items-center">
+                                                        <!-- Chi tiết hóa đơn -->
                                                         <button type="button" class="admin-btn admin-btn-icon"
                                                             th:data-id="${hd.id}"
                                                             onclick="openOrderDetailModal(this.getAttribute('data-id'), this)"
-                                                            title="Chi tiết đơn hàng">
+                                                            title="Chi tiết hóa đơn">
                                                             <i class="fas fa-eye text-primary"></i>
                                                         </button>
-                                                        <button th:if="${hd.trangThaiDonHang == 'cho_thanh_toan'}"
+                                                        <!-- Xác nhận thanh toán (nếu chờ thanh toán) -->
+                                                        <button th:if="${#strings.equalsIgnoreCase(hd.trangThaiDonHang, 'cho_thanh_toan')}"
                                                                 type="button" class="admin-btn admin-btn-icon"
                                                                 th:onclick="'confirmPaymentPosModal(' + ${hd.id} + ')'"
                                                                 title="Xác nhận đã nhận tiền">
@@ -1809,7 +1803,10 @@
                     `;
                     });
 
-                    const isPosOrder = (data.isPosOrder !== undefined) ? data.isPosOrder : (data.diaChi === 'Bán tại quầy');
+                    const isPosOrder = (data.isPosOrder !== undefined && data.isPosOrder !== null) 
+                        ? Boolean(data.isPosOrder) 
+                        : ((data.diaChi && (data.diaChi.toLowerCase().includes('quầy') || data.diaChi.toLowerCase().includes('quay')))
+                        || (data.maDonHang && data.maDonHang.startsWith('HDSVN')));
 
                     let paymentBadgeClass = 'badge-soft-secondary';
                     if (data.paymentStatusBadgeClass) {

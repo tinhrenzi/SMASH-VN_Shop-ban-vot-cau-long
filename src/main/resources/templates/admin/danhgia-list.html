@@ -110,10 +110,10 @@
                                         <td class="text-center" th:text="${iterStat.count}">1</td>
                                         <td class="fw-bold text-dark">
                                             <span th:text="'ĐG' + ${dg.id}">ĐG1</span>
-                                            <div th:if="${dg.daXoa}" class="admin-status admin-status-danger mt-1">Đã xóa mềm</div>
+                                            <div th:if="${dg.daXoa}" class="admin-status admin-status-danger mt-1">Đã xóa</div>
                                             
                                             <div th:if="${dg.daXoa}" class="audit-info audit-info-red mt-1">
-                                                <div><i class="fas fa-trash-alt me-1"></i>Xóa mềm bởi:</div>
+                                                <div><i class="fas fa-trash-alt me-1"></i>Xóa bởi:</div>
                                                 <div class="fw-bold" th:text="${dg.nguoiXoa != null ? dg.nguoiXoa.username : 'Hệ thống'}">admin</div>
                                                 <div th:text="${#temporals.format(dg.ngayXoa, 'dd/MM/yyyy HH:mm')}">16/06/2026</div>
                                             </div>
@@ -186,7 +186,7 @@
                                         </td>
                                         
                                         <td>
-                                            <span th:if="${dg.daXoa}" class="admin-status admin-status-danger">Đã Xóa Mềm</span>
+                                            <span th:if="${dg.daXoa}" class="admin-status admin-status-danger">Đã Xóa</span>
                                             <span th:unless="${dg.daXoa}" class="admin-status admin-status-success">Đang Hoạt Động</span>
                                         </td>
                                         
@@ -215,9 +215,9 @@
                                                 </form>
 
                                                  <form th:if="${!dg.daXoa}" th:action="@{'/admin/danh-gia/xoa/' + ${dg.id}}" method="post" 
-                                                       onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn xóa mềm đánh giá này không? Khách hàng sẽ không nhìn thấy điểm số và bình luận nữa.');">
+                                                       onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn xóa đánh giá này không? Khách hàng sẽ không nhìn thấy điểm số và bình luận nữa.');">
                                                     <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger w-100" style="font-size: 0.75rem;">
-                                                        <i class="fas fa-trash me-1"></i>Xóa Mềm
+                                                        <i class="fas fa-trash me-1"></i>Xóa
                                                     </button>
                                                 </form>
                                             </div>

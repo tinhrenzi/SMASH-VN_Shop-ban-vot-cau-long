@@ -806,7 +806,11 @@ public class AdminController {
             String nextStatusLabel = nextStatus != null ? orderViewService.getStatusLabel(nextStatus) : "";
             map.put("nextStatus", nextStatus != null ? nextStatus : "");
             map.put("nextStatusLabel", nextStatusLabel);
-            boolean isPos = "Bán tại quầy".equalsIgnoreCase(hd.getDiaChiNhan()) || (hd.getDonViVanChuyen() != null && "Tại quầy".equalsIgnoreCase(hd.getDonViVanChuyen().getTenDonVi()));
+            boolean isPos = (hd.getMaDonHang() != null && hd.getMaDonHang().startsWith("HDSVN"))
+                    || hd.getNhanVien() != null
+                    || "Bán tại quầy".equalsIgnoreCase(hd.getDiaChiNhan())
+                    || (hd.getDiaChiNhan() != null && (hd.getDiaChiNhan().toLowerCase().contains("quầy") || hd.getDiaChiNhan().toLowerCase().contains("quay")))
+                    || (hd.getDonViVanChuyen() != null && hd.getDonViVanChuyen().getTenDonVi() != null && (hd.getDonViVanChuyen().getTenDonVi().toLowerCase().contains("quầy") || hd.getDonViVanChuyen().getTenDonVi().toLowerCase().contains("quay")));
             map.put("isPosOrder", isPos);
             String returnCode = orderViewService.resolveGhnReturnOrderCode(hd.getId(), hd);
             com.smashvn.shop.entity.ReturnStatus resolvedReturnStatus = orderViewService.resolveReturnStatus(hd.getId(), hd);
@@ -833,17 +837,32 @@ public class AdminController {
             map.put("paymentStatusBadgeClass", paymentInfo.badgeClass());
 
             map.put("maGiaoDich", hd.getMaGiaoDich() != null ? hd.getMaGiaoDich() : "");
-            map.put("nguoiXacNhan", hd.getNguoiXacNhanThanhToan() != null ? hd.getNguoiXacNhanThanhToan() : "Nhân viên hệ thống");
+            String nvName = hd.getNguoiXacNhanThanhToan();
+            if (nvName == null || nvName.isBlank()) {
+                if (hd.getNhanVien() != null && hd.getNhanVien().getHoTenNv() != null) {
+                    nvName = hd.getNhanVien().getHoTenNv();
+                } else {
+                    nvName = "Nhân viên hệ thống";
+                }
+            }
+            map.put("nguoiXacNhan", nvName);
+
+            java.time.LocalDateTime xnTime = hd.getThoiGianXacNhan() != null 
+                    ? hd.getThoiGianXacNhan() 
+                    : (hd.getPaidAt() != null ? hd.getPaidAt() : (hd.getNgayThanhToan() != null ? hd.getNgayThanhToan() : hd.getNgayTao()));
             String formattedXacNhanAt = "";
-            if (hd.getThoiGianXacNhan() != null) {
-                formattedXacNhanAt = hd.getThoiGianXacNhan().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+            if (xnTime != null) {
+                formattedXacNhanAt = xnTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
             }
             map.put("thoiGianXacNhan", formattedXacNhanAt);
 
             // Additional payment transaction fields
+            java.time.LocalDateTime paidTime = hd.getPaidAt() != null 
+                    ? hd.getPaidAt() 
+                    : (hd.getNgayThanhToan() != null ? hd.getNgayThanhToan() : ("DA_THANH_TOAN".equalsIgnoreCase(hd.getTrangThaiThanhToan()) ? hd.getNgayTao() : null));
             String formattedPaidAt = "";
-            if (hd.getPaidAt() != null) {
-                formattedPaidAt = hd.getPaidAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+            if (paidTime != null) {
+                formattedPaidAt = paidTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
             }
             map.put("thoiGianThanhToan", formattedPaidAt);
             map.put("transactionId", hd.getTransactionId() != null ? hd.getTransactionId() : "");
