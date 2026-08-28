@@ -62,7 +62,7 @@
         }
     </style>
 
-    <style th:if="${previewMode or isPreview != null}">
+    <style th:if="${previewMode == true or isPreview == true}">
         header,
         footer,
         .header--style-1,
@@ -118,8 +118,8 @@
     </script>
 </head>
 
-<body class="config" th:classappend="${previewMode or isPreview != null} ? 'iframe-mode' : ''">
-    <th:block th:unless="${previewMode or isPreview != null}">
+<body class="config" th:classappend="${previewMode == true or isPreview == true} ? 'iframe-mode' : ''">
+    <th:block th:unless="${previewMode == true or isPreview == true}">
         <div class="preloader is-active">
             <div class="preloader__wrap">
                 <img class="preloader__img" th:src="@{/images/preloader.svg}" alt="Đang tải" width="64" height="64">
@@ -465,26 +465,26 @@
                                                 </div>
 
                                                 <!-- Trường hợp 1: Sản phẩm ngưng hiển thị -->
-                                                <div th:if="${!previewMode and !sanPhamKhaDung}" class="alert alert-warning text-center p-4" style="border-left: 5px solid #ffc107; background-color: #fff3cd; color: #856404; border-radius: 8px;">
+                                                <div th:if="${previewMode != true and !sanPhamKhaDung}" class="alert alert-warning text-center p-4" style="border-left: 5px solid #ffc107; background-color: #fff3cd; color: #856404; border-radius: 8px;">
                                                     <i class="fas fa-exclamation-triangle fa-2x mb-2" style="margin-bottom: 8px;"></i>
                                                     <p class="font-weight-bold mb-0" style="font-weight: bold; margin-bottom: 0;">Sản phẩm này hiện đã ngưng hiển thị. Không thể thực hiện đánh giá.</p>
                                                 </div>
 
                                                 <!-- Trường hợp 2: Chưa đăng nhập -->
-                                                <div th:if="${!previewMode and sanPhamKhaDung and session.idNguoiDung == null}" class="alert alert-info text-center p-4" style="border-left: 5px solid #17a2b8; background-color: #d1ecf1; color: #0c5460; border-radius: 8px;">
+                                                <div th:if="${previewMode != true and sanPhamKhaDung and session.idNguoiDung == null}" class="alert alert-info text-center p-4" style="border-left: 5px solid #17a2b8; background-color: #d1ecf1; color: #0c5460; border-radius: 8px;">
                                                     <i class="fas fa-info-circle fa-2x mb-2" style="margin-bottom: 8px;"></i>
                                                     <p style="margin-bottom: 10px;">Bạn cần đăng nhập để đánh giá sản phẩm này.</p>
                                                     <a th:href="@{/user/dang-nhap}" class="btn btn-primary btn-sm" style="background-color: #17a2b8; border-color: #17a2b8; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; display: inline-block;">Đăng nhập ngay</a>
                                                 </div>
 
                                                 <!-- Trường hợp 3: Đã đăng nhập nhưng chưa mua hàng -->
-                                                <div th:if="${!previewMode and sanPhamKhaDung and session.idNguoiDung != null and !daMuaHang}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
+                                                <div th:if="${previewMode != true and sanPhamKhaDung and session.idNguoiDung != null and !daMuaHang}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
                                                     <i class="fas fa-shopping-cart fa-2x mb-2" style="margin-bottom: 8px;"></i>
                                                     <p class="mb-0" style="margin-bottom: 0;">Bạn chỉ có thể đánh giá sản phẩm này sau khi mua hàng thành công và đơn hàng ở trạng thái đã giao hoặc hoàn thành.</p>
                                                 </div>
 
                                                 <!-- Trường hợp 5: Tài khoản bị khóa bình luận do vi phạm -->
-                                                <div th:if="${!previewMode and sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and biKhoaBinhLuan}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
+                                                <div th:if="${previewMode != true and sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and biKhoaBinhLuan}" class="alert alert-danger text-center p-4" style="border-left: 5px solid #dc3545; background-color: #f8d7da; color: #721c24; border-radius: 8px;">
                                                     <i class="fas fa-ban fa-2x mb-2" style="margin-bottom: 8px;"></i>
                                                     <p class="font-weight-bold mb-1" style="font-weight: bold; margin-bottom: 4px;">Tài khoản của bạn đang bị khóa tính năng bình luận/đánh giá do vi phạm tiêu chuẩn cộng đồng (spam từ tục tĩu).</p>
                                                     <p class="mb-0" style="margin-bottom: 0;" th:if="${ngayKhoaDen != null && ngayKhoaDen.year < 9999}">
@@ -496,7 +496,7 @@
                                                 </div>
 
                                                 <!-- Trường hợp 4: Đủ điều kiện đánh giá -->
-                                                <form th:if="${!previewMode and sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and !biKhoaBinhLuan}" 
+                                                <form th:if="${previewMode != true and sanPhamKhaDung and session.idNguoiDung != null and daMuaHang and !biKhoaBinhLuan}" 
                                                       class="pd-tab__rev-f2" 
                                                       th:action="@{'/san-pham/' + ${sp.id} + '/danh-gia'}" 
                                                       method="POST" 

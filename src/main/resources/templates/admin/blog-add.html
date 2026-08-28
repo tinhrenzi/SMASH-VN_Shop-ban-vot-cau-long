@@ -133,7 +133,7 @@
                 <div class="admin-card mb-5">
                     <div class="admin-card-body p-4">
                         <form th:object="${blog}" th:action="${isIframe} ? @{/admin/blog/add(iframe=true)} : @{/admin/blog/add}" method="POST" enctype="multipart/form-data" id="addBlogForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn tạo bài viết mới này không?');">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
                             <div class="row g-4">
                                 <!-- Title -->
