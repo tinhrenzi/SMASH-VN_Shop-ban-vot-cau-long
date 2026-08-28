@@ -12,6 +12,7 @@ import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.exception.GhnCreateIndeterminateException;
+import com.smashvn.shop.exception.GhnSandboxLimitationException;
 import com.smashvn.shop.exception.GhnUnsupportedRouteException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,14 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -301,27 +307,63 @@ public class GhnService {
             }
 
             String msg = response.get("message") != null ? response.get("message").toString() : "Không có dịch vụ khả dụng";
-            throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+            if ((code != null && code == 200) || isUnsupportedRouteResponse(msg)) {
+                throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+            }
+            throw new IllegalStateException("GHN không thể kiểm tra dịch vụ cho tuyến giao hàng: " + msg);
         } catch (GhnUnsupportedRouteException e) {
             throw e;
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            String msg = e.getResponseBodyAsString();
+            String responseBody = e.getResponseBodyAsString();
+            String msg = responseBody;
             try {
-                Map<String, Object> response = objectMapper.readValue(msg, new TypeReference<>() {});
+                Map<String, Object> response = objectMapper.readValue(responseBody, new TypeReference<>() {});
                 if (response.get("message") != null) {
                     msg = response.get("message").toString();
                 }
             } catch (Exception ignored) {
                 // Keep raw response body.
             }
-            throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg, e);
+            if (isUnsupportedRouteResponse(msg) || isUnsupportedRouteResponse(responseBody)) {
+                throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg, e);
+            }
+            throw e;
         } catch (org.springframework.web.client.ResourceAccessException e) {
             throw e;
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new GhnUnsupportedRouteException("Lỗi kiểm tra dịch vụ GHN: " + e.getMessage(), e);
+            throw new IllegalStateException("Không thể xử lý phản hồi dịch vụ GHN.", e);
         }
+    }
+
+    private boolean isUnsupportedRouteResponse(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String normalized = normalizeString(value);
+        return normalized.contains("khong ho tro tuyen")
+                || normalized.contains("tuyen duong khong ho tro")
+                || normalized.contains("khong co dich vu kha dung")
+                || normalized.contains("khong tim thay dich vu")
+                || normalized.contains("route not supported")
+                || normalized.contains("unsupported route")
+                || normalized.contains("service not available")
+                || normalized.contains("no available service");
+    }
+
+    private boolean isKnownSandboxWarehouseLimitation(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String normalized = normalizeString(value);
+        return normalized.contains("khong lay duoc thong tin kho")
+                || normalized.contains("khong tim thay thong tin kho")
+                || normalized.contains("cannot get shop information")
+                || normalized.contains("failed to get shop information")
+                || normalized.contains("shop information not found");
     }
 
     private Integer intValue(Object value) {
@@ -641,8 +683,8 @@ public class GhnService {
                 throw ghnIndEx;
             } catch (Exception e) {
                 Exception lastException = e;
-                if (e.getMessage() != null && (e.getMessage().contains("SERVER_ERR_COMMON") || e.getMessage().contains("không lấy được thông tin kho"))) {
-                    log.warn("GHN: Primary Shop ID {} failed with SERVER_ERR_COMMON. Attempting fallback to Hanoi Shop if available...", shopIdStr);
+                if (isKnownSandboxWarehouseLimitation(e.getMessage())) {
+                    log.warn("GHN: Primary Shop ID {} hit the known Sandbox warehouse-information limitation. Attempting fallback shop if available...", shopIdStr);
                     String fallbackShopId = findFallbackHanoiShop(tokenStr);
                     if (fallbackShopId != null && !fallbackShopId.equals(shopIdStr)) {
                         log.info("GHN: Retrying order creation with fallback Hanoi Shop ID {}", fallbackShopId);
@@ -690,7 +732,7 @@ public class GhnService {
     }
 
     /**
-     * Phân loại exception: Chỉ cho phép Fallback với lỗi dịch vụ/network/Sandbox của GHN.
+     * Phân loại exception: Chỉ cho phép Fallback khi GHN Sandbox xác nhận tuyến/dịch vụ không được hỗ trợ.
      * KHÔNG fallback với lỗi dữ liệu nội bộ (null address, invalid items, NPE, DB errors, validation errors, 401/403 credentials).
      * KHÔNG fallback cho lỗi kết quả không xác định (GhnCreateIndeterminateException).
      */
@@ -715,12 +757,6 @@ public class GhnService {
             return true;
         }
 
-        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi mạng / Timeout kết nối GHN trước khi create (ví dụ lúc resolve shop/services)
-        if (e instanceof org.springframework.web.client.ResourceAccessException) {
-            log.info("GHN: ResourceAccessException [{}] detected (Network/Timeout before POST create). Eligible for Smart Fallback.", e.getMessage());
-            return true;
-        }
-
         // BỎ QUA không fallback cho các lỗi dữ liệu nội bộ / lập trình / database
         if (e instanceof IllegalArgumentException ||
             e instanceof NullPointerException ||
@@ -739,19 +775,21 @@ public class GhnService {
                 log.warn("GHN: HttpStatusCodeException [{}] (Unauthorized/Forbidden). Credentials/Permission error. Skipping Smart Fallback.", statusCode);
                 return false;
             }
-            // HTTP 500, 502, 503, 504: Lỗi máy chủ / dịch vụ GHN không khả dụng -> FALLBACK
-            if (statusCode >= 500) {
-                log.info("GHN: Server Error [{}] detected from GHN Sandbox API. Eligible for Smart Fallback.", statusCode);
-                return true;
-            }
-            // HTTP 400 / 404 / 4xx khác: Chỉ fallback nếu response body chứa lỗi Sandbox kho/tuyến đã biết
+            // Chỉ fallback nếu chính phản hồi xác nhận tuyến/dịch vụ không được hỗ trợ.
             String responseBody = httpEx.getResponseBodyAsString();
-            if (responseBody != null && (responseBody.contains("SERVER_ERR_COMMON") || responseBody.contains("không lấy được thông tin kho") || responseBody.contains("kho") || responseBody.contains("tuyến") || responseBody.contains("route") || responseBody.contains("service_id") || responseBody.contains("service"))) {
-                log.info("GHN: Known Sandbox warehouse/route bug [{}] in HTTP [{}] response. Eligible for Smart Fallback.", responseBody, statusCode);
+            if (isUnsupportedRouteResponse(responseBody)) {
+                log.info("GHN: Unsupported Sandbox route response [{}] in HTTP [{}]. Eligible for Smart Fallback.", responseBody, statusCode);
                 return true;
             }
-            log.warn("GHN: HttpStatusCodeException [{}] with body [{}] is request/validation error. Skipping Smart Fallback.", statusCode, responseBody);
+            log.warn("GHN: HttpStatusCodeException [{}] with body [{}] is not an unsupported-route error. Skipping Smart Fallback.", statusCode, responseBody);
             return false;
+        }
+
+        // GHN đã phản hồi dứt khoát một giới hạn nghiệp vụ đã biết của Sandbox.
+        // Đây không phải timeout nên không có rủi ro kết quả tạo đơn chưa xác định.
+        if (e instanceof GhnSandboxLimitationException) {
+            log.info("GHN: Known Sandbox limitation detected. Eligible for Demo Fallback.");
+            return true;
         }
 
         Throwable cause = e.getCause();
@@ -759,18 +797,7 @@ public class GhnService {
             return true;
         }
 
-        // ĐỦ ĐIỀU KIỆN Fallback: Lỗi response Sandbox GHN đã biết
         String msg = e.getMessage() != null ? e.getMessage() : "";
-        if (msg.contains("SERVER_ERR_COMMON") ||
-            msg.contains("không lấy được thông tin kho") ||
-            msg.contains("Lỗi kết nối GHN") ||
-            msg.contains("Không thể kết nối đơn vị vận chuyển GHN") ||
-            msg.contains("GHN chưa hỗ trợ tuyến") ||
-            msg.contains("Không có dịch vụ khả dụng")) {
-            log.info("GHN: Known Sandbox API error message detected [{}] Eligible for Smart Fallback.", msg);
-            return true;
-        }
-
         log.warn("GHN: Exception [{}: {}] is not classified for Sandbox Fallback.", e.getClass().getSimpleName(), msg);
         return false;
     }
@@ -783,25 +810,26 @@ public class GhnService {
         if (!isSandboxEnvironment()) {
             throw new IllegalStateException("Không thể tạo mã vận đơn Demo trên môi trường Production.");
         }
+        if (!isEligibleForSandboxFallback(cause)) {
+            throw new IllegalArgumentException(
+                    "Chỉ được tạo vận đơn Demo khi GHN Sandbox xác nhận tuyến/dịch vụ không hỗ trợ hoặc gặp giới hạn kho đã biết.",
+                    cause);
+        }
+        if (hoaDon == null || hoaDon.getId() == null) {
+            throw new IllegalArgumentException("Không thể tạo vận đơn Demo cho hóa đơn chưa được lưu.");
+        }
         String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String uniqueSuffix = String.format("%04d", (int)(Math.random() * 10000));
-        Integer orderId = hoaDon != null ? hoaDon.getId() : 0;
+        Integer orderId = hoaDon.getId();
         String demoCode = "DEMO-GHN-" + timestamp + "-" + orderId + "-" + uniqueSuffix;
 
-        log.warn("[GHN][SANDBOX_FALLBACK] GHN Sandbox unavailable for HoaDon #{}. Generating Fallback Code: {} (Reason: {})",
+        log.warn("[GHN][SANDBOX_FALLBACK] GHN Sandbox cannot complete the supported demo flow for HoaDon #{}. Generating Fallback Code: {} (Reason: {})",
                 orderId, demoCode, cause != null ? cause.getMessage() : "Unknown");
 
-        try {
-            ghnShipmentPersistenceService.saveShipment(orderId, demoCode, "GHN_FALLBACK", "ready_to_pick");
-            if (hoaDon != null) {
-                hoaDon.setGhnOrderCode(demoCode);
-                hoaDon.setGhnStatus("ready_to_pick");
-                jdbcTemplate.update("UPDATE HoaDon SET ghn_order_code = ?, ghn_status = ? WHERE id = ?", demoCode, "ready_to_pick", orderId);
-            }
-            log.info("[GHN][SANDBOX_FALLBACK] Successfully persisted fallback shipment mapping (GHN_FALLBACK) for HoaDon #{}", orderId);
-        } catch (Exception dbEx) {
-            log.error("[GHN][SANDBOX_FALLBACK] Failed to persist fallback shipment mapping for HoaDon #{}: {}", orderId, dbEx.getMessage(), dbEx);
-        }
+        ghnShipmentPersistenceService.saveShipment(orderId, demoCode, "GHN_FALLBACK", "ready_to_pick");
+        hoaDon.setGhnOrderCode(demoCode);
+        hoaDon.setGhnStatus("ready_to_pick");
+        log.info("[GHN][SANDBOX_FALLBACK] Successfully persisted fallback shipment mapping (GHN_FALLBACK) for HoaDon #{}", orderId);
 
         return demoCode;
     }
@@ -923,6 +951,12 @@ public class GhnService {
                 }
             }
             String msg = response.get("message") != null ? response.get("message").toString() : "Không rõ lý do";
+            if (isKnownSandboxWarehouseLimitation(msg)) {
+                throw new GhnSandboxLimitationException("GHN Sandbox không lấy được thông tin kho: " + msg);
+            }
+            if (isUnsupportedRouteResponse(msg)) {
+                throw new GhnUnsupportedRouteException("GHN chưa hỗ trợ tuyến giao hàng này: " + msg);
+            }
             throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn: " + msg);
         } catch (org.springframework.web.client.ResourceAccessException e) {
             log.error("[GHN][GHN_CREATE_RESULT_UNKNOWN] Timeout/Network error during POST create for HoaDon #{} (maDonHang: {}, districtId: {}, wardCode: {}): {}",
@@ -939,6 +973,9 @@ public class GhnService {
                 msg = "HTTP " + e.getStatusCode() + ": " + body;
             }
             log.error("[GHN][CREATE_ORDER] HTTP Error {}: {}", e.getStatusCode(), body);
+            if (isKnownSandboxWarehouseLimitation(msg) || isKnownSandboxWarehouseLimitation(body)) {
+                throw new GhnSandboxLimitationException("GHN Sandbox không lấy được thông tin kho: " + msg, e);
+            }
             throw new RuntimeException("Đơn vị vận chuyển GHN từ chối tạo đơn: " + msg, e);
         }
     }
@@ -1204,6 +1241,15 @@ public class GhnService {
      */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getProvinces() {
+        return getProvinces(false);
+    }
+
+    public List<Map<String, Object>> getProvincesOrThrow() {
+        return getProvinces(true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> getProvinces(boolean failOnLookupError) {
         try {
             String url = ghnConfig.getBaseUrl() + API_PROVINCE;
             HttpEntity<Void> request = new HttpEntity<>(buildSimpleHeaders());
@@ -1211,10 +1257,18 @@ public class GhnService {
             Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
             Integer code = (Integer) response.get("code");
             if (code != null && code == 200) {
-                return (List<Map<String, Object>>) response.get("data");
+                Object data = response.get("data");
+                if (data instanceof List<?>) {
+                    return (List<Map<String, Object>>) data;
+                }
+                throw new IllegalStateException("GHN trả về dữ liệu Tỉnh/Thành phố không hợp lệ.");
             }
+            throw new IllegalStateException("GHN từ chối tra cứu Tỉnh/Thành phố: " + response.get("message"));
         } catch (Exception e) {
             log.error("GHN getProvinces error: {}", e.getMessage());
+            if (failOnLookupError) {
+                throw addressLookupFailure("Tỉnh/Thành phố", e);
+            }
         }
         return List.of();
     }
@@ -1224,6 +1278,15 @@ public class GhnService {
      */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getDistricts(Integer provinceId) {
+        return getDistricts(provinceId, false);
+    }
+
+    public List<Map<String, Object>> getDistrictsOrThrow(Integer provinceId) {
+        return getDistricts(provinceId, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> getDistricts(Integer provinceId, boolean failOnLookupError) {
         try {
             Map<String, Object> body = Map.of("province_id", provinceId);
             String url = ghnConfig.getBaseUrl() + API_DISTRICT;
@@ -1233,10 +1296,18 @@ public class GhnService {
             Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
             Integer code = (Integer) response.get("code");
             if (code != null && code == 200) {
-                return (List<Map<String, Object>>) response.get("data");
+                Object data = response.get("data");
+                if (data instanceof List<?>) {
+                    return (List<Map<String, Object>>) data;
+                }
+                throw new IllegalStateException("GHN trả về dữ liệu Quận/Huyện không hợp lệ.");
             }
+            throw new IllegalStateException("GHN từ chối tra cứu Quận/Huyện: " + response.get("message"));
         } catch (Exception e) {
             log.error("GHN getDistricts error: {}", e.getMessage());
+            if (failOnLookupError) {
+                throw addressLookupFailure("Quận/Huyện", e);
+            }
         }
         return List.of();
     }
@@ -1246,6 +1317,15 @@ public class GhnService {
      */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getWards(Integer districtId) {
+        return getWards(districtId, false);
+    }
+
+    public List<Map<String, Object>> getWardsOrThrow(Integer districtId) {
+        return getWards(districtId, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> getWards(Integer districtId, boolean failOnLookupError) {
         try {
             Map<String, Object> body = Map.of("district_id", districtId);
             String url = ghnConfig.getBaseUrl() + API_WARD;
@@ -1255,12 +1335,30 @@ public class GhnService {
             Map<String, Object> response = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
             Integer code = (Integer) response.get("code");
             if (code != null && code == 200) {
-                return (List<Map<String, Object>>) response.get("data");
+                Object data = response.get("data");
+                if (data instanceof List<?>) {
+                    return (List<Map<String, Object>>) data;
+                }
+                throw new IllegalStateException("GHN trả về dữ liệu Phường/Xã không hợp lệ.");
             }
+            throw new IllegalStateException("GHN từ chối tra cứu Phường/Xã: " + response.get("message"));
         } catch (Exception e) {
             log.error("GHN getWards error: {}", e.getMessage());
+            if (failOnLookupError) {
+                throw addressLookupFailure("Phường/Xã", e);
+            }
         }
         return List.of();
+    }
+
+    private RuntimeException addressLookupFailure(String level, Exception cause) {
+        if (cause instanceof org.springframework.web.client.RestClientException restClientException) {
+            return restClientException;
+        }
+        if (cause instanceof IllegalStateException illegalStateException) {
+            return illegalStateException;
+        }
+        return new IllegalStateException("Không thể tra cứu danh mục " + level + " từ GHN.", cause);
     }
 
     /**
@@ -1331,6 +1429,17 @@ public class GhnService {
         private String wardCode;
     }
 
+    @Data
+    @AllArgsConstructor
+    public static class GhnAddressDetails {
+        private Integer provinceId;
+        private String provinceName;
+        private Integer districtId;
+        private String districtName;
+        private String wardCode;
+        private String wardName;
+    }
+
     public String normalizeString(String value) {
         if (value == null) {
             return "";
@@ -1340,19 +1449,283 @@ public class GhnService {
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(java.util.Locale.ROOT);
 
-        normalized = normalized.replace("đ", "d"); // compatibility for input without accents
-
-        normalized = normalized
-                .replaceAll("\\btp\\.?\\b", " thanh pho ")
-                .replaceAll("\\bq\\.?\\b", " quan ")
-                .replaceAll("\\bp\\.?\\b", " phuong ")
-                .replaceAll("\\bh\\.?\\b", " huyen ")
-                .replaceAll("\\btx\\.?\\b", " thi xa ");
+        normalized = normalized.replace("đ", "d")
+                .replaceAll("[^\\p{Alnum}]+", " ")
+                .replaceAll("\\bt\\s*p\\b", " thanh pho ")
+                .replaceAll("\\btp\\b", " thanh pho ")
+                .replaceAll("\\bq\\b", " quan ")
+                .replaceAll("\\bp\\b", " phuong ")
+                .replaceAll("\\bh\\b", " huyen ")
+                .replaceAll("\\btx\\b", " thi xa ");
 
         return normalized.replaceAll("\\s+", " ").trim();
     }
 
+    /**
+     * Kiểm tra lại toàn bộ quan hệ Province -> District -> Ward ở backend và
+     * lấy tên chuẩn từ danh mục. Không tin các hidden text do trình duyệt gửi.
+     */
+    public GhnAddressDetails validateSelectedAddress(Integer provinceId, Integer districtId, String wardCode) {
+        if (provinceId == null || provinceId <= 0 || districtId == null || districtId <= 0
+                || wardCode == null || wardCode.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã.");
+        }
+
+        Map<String, Object> province = findByNumber(
+                getProvincesOrThrow(), "ProvinceID", provinceId);
+        if (province == null) {
+            throw new IllegalArgumentException("Tỉnh/Thành phố đã chọn không hợp lệ.");
+        }
+
+        Map<String, Object> district = findByNumber(
+                getDistrictsOrThrow(provinceId), "DistrictID", districtId);
+        if (district == null) {
+            throw new IllegalArgumentException("Quận/Huyện không thuộc Tỉnh/Thành phố đã chọn.");
+        }
+
+        Map<String, Object> ward = getWardsOrThrow(districtId).stream()
+                .filter(item -> wardCode.trim().equals(String.valueOf(item.get("WardCode"))))
+                .findFirst()
+                .orElse(null);
+        if (ward == null) {
+            throw new IllegalArgumentException("Phường/Xã không thuộc Quận/Huyện đã chọn.");
+        }
+
+        return detailsOf(province, district, ward);
+    }
+
+    /**
+     * Ưu tiên match theo từng cấp hành chính. Mỗi cấp chỉ dùng so sánh exact sau
+     * chuẩn hóa (kể cả NameExtension), không dùng contains. Khi provider thiếu
+     * District, Ward chỉ được dùng để suy ra hierarchy nếu duy nhất trong
+     * Province đã match.
+     */
+    public GhnAddressDetails resolveAdministrativeAddress(
+            List<String> provinceCandidates,
+            List<String> districtCandidates,
+            List<String> wardCandidates) {
+        Map<String, Object> province = findUniqueAdministrativeMatch(
+                getProvincesOrThrow(), "ProvinceName", "ProvinceID", provinceCandidates);
+        if (province == null) {
+            return emptyAddressDetails();
+        }
+
+        Integer provinceId = intValue(province.get("ProvinceID"));
+        List<Map<String, Object>> districts;
+        Map<String, Object> district;
+        try {
+            districts = getDistrictsOrThrow(provinceId);
+            district = findUniqueAdministrativeMatch(
+                    districts, "DistrictName", "DistrictID", districtCandidates);
+        } catch (Exception exception) {
+            log.warn("Unable to continue automatic address resolution after province {}: {}",
+                    provinceId, exception.getMessage());
+            return new GhnAddressDetails(provinceId, stringValue(province.get("ProvinceName")),
+                    null, null, null, null);
+        }
+        if (district == null) {
+            try {
+                GhnAddressDetails inferred = inferUniqueDistrictFromWard(
+                        province, districts, wardCandidates);
+                if (inferred != null) return inferred;
+            } catch (Exception exception) {
+                log.warn("Unable to infer district from ward candidates in province {}: {}",
+                        provinceId, exception.getMessage());
+            }
+            return new GhnAddressDetails(provinceId, stringValue(province.get("ProvinceName")),
+                    null, null, null, null);
+        }
+
+        Integer districtId = intValue(district.get("DistrictID"));
+        Map<String, Object> ward;
+        try {
+            ward = findUniqueAdministrativeMatch(
+                    getWardsOrThrow(districtId), "WardName", "WardCode", wardCandidates);
+        } catch (Exception exception) {
+            log.warn("Unable to continue automatic address resolution after district {}: {}",
+                    districtId, exception.getMessage());
+            return new GhnAddressDetails(provinceId, stringValue(province.get("ProvinceName")),
+                    districtId, stringValue(district.get("DistrictName")), null, null);
+        }
+        if (ward == null) {
+            return new GhnAddressDetails(provinceId, stringValue(province.get("ProvinceName")),
+                    districtId, stringValue(district.get("DistrictName")), null, null);
+        }
+
+        return detailsOf(province, district, ward);
+    }
+
+    /**
+     * Fallback cho provider chỉ trả Province và Ward. Quét toàn bộ Ward trong
+     * Province đã match và chỉ suy ra hierarchy khi đúng một cặp District/Ward
+     * khớp exact sau normalize/NameExtension. Bất kỳ lỗi lookup nào được ném ra
+     * để caller giữ partial resolution ở cấp Province.
+     */
+    private GhnAddressDetails inferUniqueDistrictFromWard(
+            Map<String, Object> province,
+            List<Map<String, Object>> districts,
+            List<String> wardCandidates) {
+        if (districts == null || districts.isEmpty()
+                || wardCandidates == null || wardCandidates.isEmpty()) {
+            return null;
+        }
+
+        Map<String, WardDistrictMatch> matches = new LinkedHashMap<>();
+        for (Map<String, Object> candidateDistrict : districts) {
+            Integer districtId = intValue(candidateDistrict.get("DistrictID"));
+            if (districtId == null) continue;
+
+            for (Map<String, Object> candidateWard : getWardsOrThrow(districtId)) {
+                String wardCode = stringValue(candidateWard.get("WardCode"));
+                if (wardCode == null || wardCode.isBlank()
+                        || !matchesAnyAdministrativeCandidate(
+                                candidateWard, "WardName", wardCandidates)) {
+                    continue;
+                }
+                matches.putIfAbsent(
+                        districtId + ":" + wardCode,
+                        new WardDistrictMatch(candidateDistrict, candidateWard));
+            }
+        }
+
+        if (matches.size() != 1) {
+            if (matches.size() > 1) {
+                log.info("Ward-to-district fallback remains ambiguous in province {}: matchCount={}",
+                        province.get("ProvinceID"), matches.size());
+            }
+            return null;
+        }
+
+        WardDistrictMatch uniqueMatch = matches.values().iterator().next();
+        log.info("Inferred GHN district {} and ward {} from unique ward match in province {}",
+                uniqueMatch.district().get("DistrictID"),
+                uniqueMatch.ward().get("WardCode"),
+                province.get("ProvinceID"));
+        return detailsOf(province, uniqueMatch.district(), uniqueMatch.ward());
+    }
+
+    private boolean matchesAnyAdministrativeCandidate(
+            Map<String, Object> item, String nameKey, List<String> candidates) {
+        for (String candidate : candidates) {
+            for (String alias : administrativeNames(item, nameKey)) {
+                if (administrativeMatchScore(candidate, alias) > 0) return true;
+            }
+        }
+        return false;
+    }
+
+    private record WardDistrictMatch(
+            Map<String, Object> district,
+            Map<String, Object> ward) {
+    }
+
+    private GhnAddressDetails detailsOf(Map<String, Object> province,
+            Map<String, Object> district, Map<String, Object> ward) {
+        return new GhnAddressDetails(
+                intValue(province.get("ProvinceID")), stringValue(province.get("ProvinceName")),
+                intValue(district.get("DistrictID")), stringValue(district.get("DistrictName")),
+                stringValue(ward.get("WardCode")), stringValue(ward.get("WardName")));
+    }
+
+    private GhnAddressDetails emptyAddressDetails() {
+        return new GhnAddressDetails(null, null, null, null, null, null);
+    }
+
+    private Map<String, Object> findByNumber(List<Map<String, Object>> items, String key, Integer expected) {
+        return items.stream()
+                .filter(item -> Objects.equals(expected, intValue(item.get(key))))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Map<String, Object> findUniqueAdministrativeMatch(List<Map<String, Object>> items,
+            String nameKey, String idKey, List<String> candidates) {
+        if (items == null || items.isEmpty() || candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+
+        // Provider candidates are ordered from the most authoritative field to
+        // progressively weaker fallbacks. Resolve one candidate at a time so a
+        // neighbourhood name cannot invalidate a unique administrative ward.
+        for (String candidate : candidates) {
+            Map<String, Object> bestMatch = null;
+            int bestScore = 0;
+            boolean ambiguous = false;
+
+            for (Map<String, Object> item : items) {
+                int itemScore = 0;
+                for (String alias : administrativeNames(item, nameKey)) {
+                    itemScore = Math.max(itemScore, administrativeMatchScore(candidate, alias));
+                }
+
+                if (itemScore > bestScore) {
+                    bestScore = itemScore;
+                    bestMatch = item;
+                    ambiguous = false;
+                } else if (itemScore > 0 && itemScore == bestScore && bestMatch != null
+                        && !Objects.equals(String.valueOf(item.get(idKey)), String.valueOf(bestMatch.get(idKey)))) {
+                    ambiguous = true;
+                }
+            }
+
+            if (bestScore > 0 && !ambiguous) return bestMatch;
+        }
+
+        return null;
+    }
+
+    private int administrativeMatchScore(String left, String right) {
+        String normalizedLeft = normalizeString(left);
+        String normalizedRight = normalizeString(right);
+        if (normalizedLeft.isEmpty() || normalizedRight.isEmpty()) return 0;
+        if (normalizedLeft.equals(normalizedRight)) return 100;
+
+        String coreLeft = stripAdministrativePrefix(normalizedLeft);
+        String coreRight = stripAdministrativePrefix(normalizedRight);
+        return !coreLeft.isEmpty() && coreLeft.equals(coreRight) ? 90 : 0;
+    }
+
+    private String stripAdministrativePrefix(String value) {
+        return value.replaceFirst(
+                "^(tinh|thanh pho|quan|huyen|thi xa|phuong|xa|thi tran)\\s+", "").trim();
+    }
+
+    private Set<String> administrativeNames(Map<String, Object> item, String primaryNameKey) {
+        Set<String> names = new LinkedHashSet<>();
+        addAdministrativeName(names, item.get(primaryNameKey));
+        Object extensions = item.get("NameExtension");
+        if (extensions instanceof Collection<?> collection) {
+            collection.forEach(value -> addAdministrativeName(names, value));
+        } else {
+            addAdministrativeName(names, extensions);
+        }
+        return names;
+    }
+
+    private void addAdministrativeName(Set<String> names, Object value) {
+        if (value == null) return;
+        String text = String.valueOf(value).trim();
+        if (!text.isEmpty()) names.add(text);
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
+    }
+
     public GhnAddressMapping resolveGhnAddress(SoDiaChi dc) {
+        return resolveGhnAddress(dc, false);
+    }
+
+    /**
+     * Phân giải địa chỉ cho luồng tạo vận đơn Admin. Lỗi gọi API/dữ liệu GHN được ném ra
+     * để không bị hiểu nhầm thành địa chỉ không được Sandbox hỗ trợ.
+     */
+    public GhnAddressMapping resolveGhnAddressOrThrow(SoDiaChi dc) {
+        return resolveGhnAddress(dc, true);
+    }
+
+    private GhnAddressMapping resolveGhnAddress(SoDiaChi dc, boolean failOnLookupError) {
         if (dc == null) return null;
 
         // Bypass fuzzy matching only when all GHN fields are fully present and valid
@@ -1368,7 +1741,7 @@ public class GhnService {
         String userWard = dc.getDiaChiCuThe();
 
         // 1. Fetch provinces and match dc.getTinhThanh() or dc.getDiaChiCuThe()
-        List<Map<String, Object>> provinces = getProvinces();
+        List<Map<String, Object>> provinces = getProvinces(failOnLookupError);
         String targetProvince = normalizeString(userProvince);
         Integer provinceId = null;
         Map<String, Object> matchedProvince = null;
@@ -1410,7 +1783,7 @@ public class GhnService {
                 .replaceAll("^(tinh|thanh pho|tp)\\s+", "").trim();
 
         // 2. Fetch districts and match dc.getDiaChiCuThe() first, then fallback to dc.getThanhPho()
-        List<Map<String, Object>> districts = getDistricts(provinceId);
+        List<Map<String, Object>> districts = getDistricts(provinceId, failOnLookupError);
         String streetAddress = normalizeString(dc.getDiaChiCuThe());
         String fallbackDistrict = normalizeString(dc.getThanhPho());
         Integer districtId = null;
@@ -1505,7 +1878,7 @@ public class GhnService {
                 (String) matchedDistrict.get("DistrictName"));
 
         // 3. Fetch wards and match within dc.getDiaChiCuThe() first, then other fields
-        List<Map<String, Object>> wards = getWards(districtId);
+        List<Map<String, Object>> wards = getWards(districtId, failOnLookupError);
         String targetStreet = streetAddress; // dc.getDiaChiCuThe() normalized
         String targetOtherFields = normalizeString(dc.getTinhThanh() + " " + dc.getThanhPho());
         String wardCode = null;

@@ -1517,204 +1517,15 @@ function checkAndApplyVariant(container) {
       return !isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
   }
 
-  // Helper to check if a string is a valid province/city name
-  function isValidProvinceName(name) {
-      if (!name) return false;
-      const lower = name.toLowerCase();
-      const invalidKeywords = ["phường", "xã", "quận", "huyện", "thị xã", "thị trấn", "đường", "ngõ", "ngách", "hẻm", "ấp", "thôn", "tổ", "kiệt"];
-      return !invalidKeywords.some(keyword => lower.includes(keyword));
-  }
-
-  // Parser: Smart Vietnam Administrative Mapping (Requirement 3)
-  function parseNominatimAddress(data) {
-      const address = data.address || {};
-      let displayParts = [];
-      if (data.display_name) {
-          displayParts = data.display_name.split(',').map(p => p.trim());
-      }
-
-      // Province mapping: filter out ward/district names
-      let province = "";
-      const provinceCandidates = [address.province, address.state, address.city, address.county];
-      for (let c of provinceCandidates) {
-          if (c && c.trim() && isValidProvinceName(c)) {
-              province = c.trim();
-              break;
-          }
-      }
-      
-      // District mapping
-      let district = address.city_district || address.district || address.county || "";
-      if (address.city && address.city.trim() && address.city.trim() !== province) {
-          if (!district) {
-              district = address.city.trim();
-          }
-      }
-      
-      // Ward / Commune mapping
-      let ward = address.suburb || address.neighbourhood || address.quarter || address.village || address.town || "";
-
-      // Road mapping
-      let road = address.road || address.street || address.footway || address.path || address.pedestrian || "";
-
-      // Specific house/building
-      const buildingCandidates = [
-          address.house_number,
-          address.building,
-          address.office,
-          address.amenity,
-          address.shop,
-          address.historic,
-          address.tourism,
-          address.leisure
-      ];
-      let localDetails = [];
-      buildingCandidates.forEach(val => {
-          if (val && val.trim() !== "" && !localDetails.includes(val.trim())) {
-              localDetails.push(val.trim());
-          }
-      });
-      let building = localDetails.join(' ');
-
-      let diaChiCuThe = "";
-      let tinhThanh = province;
-      let quocGia = address.country || "Việt Nam";
-
-      // Build structured diaChiCuThe
-      let specificParts = [];
-      if (building) specificParts.push(building);
-      if (road) specificParts.push(road);
-      if (ward) specificParts.push(ward);
-      if (district) specificParts.push(district);
-
-      specificParts = specificParts.map(p => p.trim()).filter(Boolean);
-      
-      // Deduplicate parts
-      let uniqueParts = [];
-      specificParts.forEach(p => {
-          if (!uniqueParts.includes(p)) {
-              uniqueParts.push(p);
-          }
-      });
-
-      if (uniqueParts.length > 0) {
-          diaChiCuThe = uniqueParts.join(', ');
-      }
-
-      // Fallback to display_name slice if structured parts are too sparse
-      if (!diaChiCuThe || uniqueParts.length < 2) {
-          if (displayParts.length >= 2) {
-              quocGia = displayParts[displayParts.length - 1];
-              let penIdx = displayParts.length - 2;
-              let penValue = displayParts[penIdx];
-              if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
-                  if (!tinhThanh) {
-                      for (let i = penIdx - 1; i >= 0; i--) {
-                          if (isValidProvinceName(displayParts[i])) {
-                              tinhThanh = displayParts[i];
-                              break;
-                          }
-                      }
-                  }
-                  diaChiCuThe = displayParts.slice(0, penIdx - 1).join(', ');
-              } else {
-                  if (!tinhThanh) {
-                      for (let i = penIdx; i >= 0; i--) {
-                          if (isValidProvinceName(displayParts[i])) {
-                              tinhThanh = displayParts[i];
-                              break;
-                          }
-                      }
-                  }
-                  diaChiCuThe = displayParts.slice(0, penIdx).join(', ');
-              }
-          } else {
-              diaChiCuThe = data.display_name || "";
-          }
-      }
-
-      if (!tinhThanh && displayParts.length >= 2) {
-          let penIdx = displayParts.length - 2;
-          let penValue = displayParts[penIdx];
-          if (/^\d+$/.test(penValue) && penIdx - 1 >= 0) {
-              for (let i = penIdx - 1; i >= 0; i--) {
-                  if (isValidProvinceName(displayParts[i])) {
-                      tinhThanh = displayParts[i];
-                      break;
-                  }
-              }
-          } else {
-              for (let i = penIdx; i >= 0; i--) {
-                  if (isValidProvinceName(displayParts[i])) {
-                      tinhThanh = displayParts[i];
-                      break;
-                  }
-              }
-          }
-      }
-
-      // Format cleanups
-      if (tinhThanh) {
-          tinhThanh = tinhThanh.replace(/\d+/g, '').trim();
-      }
-      if (quocGia) {
-          quocGia = quocGia.trim();
-      }
-
-      return {
-          diaChiCuThe: diaChiCuThe,
-          tinhThanh: tinhThanh,
-          quocGia: quocGia
-      };
-  }
-
-  // Provider abstraction with Zoom level fallbacks (Requirement 7 & 8)
+  // Reverse geocoding and administrative matching are handled by the backend.
   async function reverseGeocode(latitude, longitude) {
       if (!navigator.onLine) {
           throw new Error("OFFLINE_ERROR");
       }
-
-      const zoomLevels = [18, 17, 16];
-      let fallbackResult = null;
-
-      for (let zoom of zoomLevels) {
-          try {
-              const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&accept-language=vi`;
-              const response = await fetchWithTimeout(apiUrl, { timeout: 6000 });
-              
-              if (!response.ok) {
-                  if (response.status === 429 || response.status >= 500) {
-                      throw new Error("PROVIDER_ERROR");
-                  }
-                  continue; // Try next zoom level on other errors
-              }
-
-              const data = await response.json();
-              const parsed = parseNominatimAddress(data);
-
-              // Check if details are sufficient (Requirement 7)
-              const partsCount = parsed.diaChiCuThe ? parsed.diaChiCuThe.split(',').length : 0;
-              if (partsCount >= 3) {
-                  return parsed; // Excellent detail level, return immediately
-              }
-              
-              // Keep as fallback if it contains at least some address structure
-              if (!fallbackResult || partsCount > (fallbackResult.diaChiCuThe ? fallbackResult.diaChiCuThe.split(',').length : 0)) {
-                  fallbackResult = parsed;
-              }
-          } catch (err) {
-              console.warn(`[Geocoding] Zoom ${zoom} failed:`, err.message);
-              if (err.message === "OFFLINE_ERROR" || err.message === "PROVIDER_ERROR") {
-                  throw err; // Propagate blocking network or provider-rate-limit errors immediately
-              }
-          }
+      if (!window.SmashAddressBook || typeof window.SmashAddressBook.resolveCoordinates !== 'function') {
+          throw new Error("GEOCODE_FAILED");
       }
-
-      if (fallbackResult && fallbackResult.diaChiCuThe) {
-          return fallbackResult;
-      }
-
-      throw new Error("GEOCODE_FAILED");
+      return window.SmashAddressBook.resolveCoordinates(latitude, longitude);
   }
 
   // Debounced reverse geocoding to update UI and inputs (Requirement: Debounce reverse geocoding when dragging marker)
@@ -1722,7 +1533,7 @@ function checkAndApplyVariant(container) {
       try {
           const parsedAddress = await reverseGeocode(lat, lon);
           populateAddressFields(parsedAddress);
-          showToast('Đã cập nhật', 'Đã tự động cập nhật địa chỉ theo toạ độ bản đồ!', 'success');
+          showAddressResolutionResult(parsedAddress, 'Đã cập nhật');
       } catch (err) {
           console.error('[Geocoding] Debounced geocoding error:', err);
           handleGeocodingError(err);
@@ -1732,21 +1543,31 @@ function checkAndApplyVariant(container) {
   // Populate UI inputs with geocoding results
   function populateAddressFields(addressObj) {
       const streetInput = document.getElementById('address-street');
-      const stateInput = document.getElementById('address-state');
-      const countryInput = document.getElementById('address-country');
 
-      if (addressObj.diaChiCuThe && streetInput) {
-          streetInput.value = addressObj.diaChiCuThe;
+      const addressDetail = addressObj.addressDetail || addressObj.diaChiCuThe;
+      if (addressDetail && streetInput) {
+          streetInput.value = addressDetail;
           streetInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      if (addressObj.tinhThanh && stateInput) {
-          stateInput.value = addressObj.tinhThanh;
-          stateInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      if (addressObj.quocGia && countryInput) {
-          countryInput.value = addressObj.quocGia;
-          countryInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+  }
+
+  function addressResolutionLevel(addressObj) {
+      if (addressObj?.resolutionLevel) return addressObj.resolutionLevel;
+      if (addressObj?.wardCode) return 'WARD';
+      if (addressObj?.districtId) return 'DISTRICT';
+      if (addressObj?.provinceId) return 'PROVINCE';
+      return 'NONE';
+  }
+
+  function showAddressResolutionResult(addressObj, successTitle) {
+      const level = addressResolutionLevel(addressObj);
+      const completed = level === 'WARD';
+      const partial = level === 'PROVINCE' || level === 'DISTRICT';
+      showToast(completed ? successTitle : (partial ? 'Đã điền một phần' : 'Cần kiểm tra lại'),
+              addressObj?.message || (completed
+                      ? 'Đã tự động cập nhật khu vực theo vị trí.'
+                      : 'Không thể xác định chính xác khu vực. Vui lòng chọn địa chỉ bên dưới.'),
+              completed ? 'success' : (partial ? 'info' : 'warning'));
   }
 
   // Update map marker and inputs when getting location from GPS/IP button (Requirement 10)
@@ -1762,61 +1583,6 @@ function checkAndApplyVariant(container) {
           const lonInput = document.getElementById('address-lon');
           if (latInput) latInput.value = lat.toFixed(6);
           if (lonInput) lonInput.value = lon.toFixed(6);
-      }
-  }
-
-  // Fallback to IP Geolocation through backend proxy (Requirement 1 & 9)
-  async function triggerIpFallback(btn, originalText) {
-      if (!navigator.onLine) {
-          showToast('Lỗi kết nối', 'Không có kết nối mạng. Vui lòng thử lại.', 'error');
-          resetButton(btn, originalText);
-          return;
-      }
-
-      try {
-          // Fetch coordinates from backend IP proxy
-          const response = await fetchWithTimeout('/api/location/ip', { timeout: 6000 });
-          if (!response.ok) {
-              if (response.status === 429) {
-                  throw new Error("RATE_LIMITED");
-              }
-              throw new Error("BACKEND_PROXY_FAILED");
-          }
-
-          const data = await response.json();
-          const lat = data.latitude;
-          const lon = data.longitude;
-
-          if (!isValidCoordinates(lat, lon)) {
-              throw new Error("INVALID_COORDINATES");
-          }
-
-          // Update Leaflet Map state
-          updateMapFromLocation(lat, lon);
-
-          // Reverse geocode IP coordinates
-          const parsedAddress = await reverseGeocode(lat, lon);
-
-          // Save success result to cache
-          try {
-              localStorage.setItem('location_geocode_cache', JSON.stringify({
-                  latitude: lat,
-                  longitude: lon,
-                  address: parsedAddress,
-                  timestamp: Date.now()
-              }));
-          } catch (cacheStoreErr) {
-              console.warn("[Geocoding] Failed to save to localStorage:", cacheStoreErr);
-          }
-
-          populateAddressFields(parsedAddress);
-          showToast('Định vị qua IP', 'Đã tự động xác định và điền địa chỉ của bạn thành công qua IP!', 'success');
-
-      } catch (err) {
-          console.error('[Geocoding] IP Fallback failed:', err);
-          handleGeocodingError(err);
-      } finally {
-          resetButton(btn, originalText);
       }
   }
 
@@ -1839,18 +1605,48 @@ function checkAndApplyVariant(container) {
       btn.disabled = false;
   }
 
+  function geolocationErrorName(code) {
+      if (code === 1) return 'PERMISSION_DENIED';
+      if (code === 2) return 'POSITION_UNAVAILABLE';
+      if (code === 3) return 'TIMEOUT';
+      return 'UNKNOWN';
+  }
+
+  async function inspectGeolocationPermission(btn) {
+      let permissionState = 'UNSUPPORTED';
+      try {
+          if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+              const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+              permissionState = String(permissionStatus.state || 'UNKNOWN').toUpperCase();
+          }
+      } catch (error) {
+          permissionState = 'QUERY_FAILED';
+          console.warn('[Geolocation] Permissions API query failed:', error.message);
+      }
+
+      btn.dataset.geolocationPermissionState = permissionState;
+      console.info('[Geolocation] permission.state =', permissionState);
+      return permissionState;
+  }
+
   // Geolocation main controller (Requirement 2, 4, 5, 6, 9)
   async function getCurrentLocation() {
       const btn = document.getElementById('btn-get-location');
       if (!btn || btn.disabled) return; // Prevent double trigger
 
       const originalText = btn.innerHTML;
+      delete btn.dataset.geolocationErrorCode;
+      delete btn.dataset.geolocationErrorName;
+      delete btn.dataset.geolocationErrorMessage;
+      delete btn.dataset.geolocationLatitude;
+      delete btn.dataset.geolocationLongitude;
+      btn.dataset.geolocationStage = 'PERMISSION_CHECK';
+      await inspectGeolocationPermission(btn);
 
       // 1. Protect user entered data (Requirement 6)
       const streetInput = document.getElementById('address-street');
-      const stateInput = document.getElementById('address-state');
       const hasUserData = (streetInput && streetInput.value.trim() !== '') || 
-                          (stateInput && stateInput.value.trim() !== '');
+                          Boolean(document.getElementById('ghnProvinceId')?.value);
 
       if (hasUserData) {
           const confirmOverwrite = await SmashNotify.confirm({
@@ -1862,30 +1658,20 @@ function checkAndApplyVariant(container) {
           }
       }
 
-      // 2. Check localStorage cache (Requirement 4)
+      // The old cache stored failed/partial responses and made later clicks
+      // replay stale data instead of requesting the current browser position.
       try {
-          const cachedData = localStorage.getItem('location_geocode_cache');
-          if (cachedData) {
-              const cache = JSON.parse(cachedData);
-              const now = Date.now();
-              // Cache valid for 10 minutes (600,000ms)
-              if (now - cache.timestamp < 600000 && cache.address && isValidCoordinates(cache.latitude, cache.longitude)) {
-                  // Update map marker and inputs
-                  updateMapFromLocation(cache.latitude, cache.longitude);
-                  populateAddressFields(cache.address);
-                  showToast('Bộ nhớ tạm', 'Đã tự động điền vị trí từ bộ nhớ tạm thời của bạn!', 'info');
-                  return;
-              }
-          }
+          localStorage.removeItem('location_geocode_cache_v2');
       } catch (cacheErr) {
-          console.warn("[Geocoding] Cache lookup error:", cacheErr);
+          console.warn("[Geocoding] Unable to clear legacy location cache:", cacheErr);
       }
 
-      // 3. Set loading state and request protection (Requirement 5)
+      // 2. Set loading state and request protection (Requirement 5)
       btn.innerHTML = '<i class="fas fa-spinner fa-spin u-s-m-r-8"></i> Đang lấy vị trí hiện tại...';
       btn.disabled = true;
+      btn.dataset.geolocationStage = 'REQUESTED';
 
-      // 4. Try browser GPS location first
+      // 3. Try browser GPS location first
       if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
               async function(position) {
@@ -1893,6 +1679,14 @@ function checkAndApplyVariant(container) {
                       const lat = position.coords.latitude;
                       const lon = position.coords.longitude;
                       const accuracy = position.coords.accuracy;
+                      btn.dataset.geolocationStage = 'SUCCESS';
+                      btn.dataset.geolocationLatitude = String(lat);
+                      btn.dataset.geolocationLongitude = String(lon);
+                      console.info('[Geolocation] getCurrentPosition succeeded:', {
+                          latitude: lat,
+                          longitude: lon,
+                          accuracy: accuracy
+                      });
 
                       // Validate coordinates (Requirement 5)
                       if (!isValidCoordinates(lat, lon)) {
@@ -1910,20 +1704,8 @@ function checkAndApplyVariant(container) {
                       // Call reverse geocoding abstraction
                       const parsedAddress = await reverseGeocode(lat, lon);
 
-                      // Save success result to cache (Requirement 4)
-                      try {
-                          localStorage.setItem('location_geocode_cache', JSON.stringify({
-                              latitude: lat,
-                              longitude: lon,
-                              address: parsedAddress,
-                              timestamp: Date.now()
-                          }));
-                      } catch (cacheStoreErr) {
-                          console.warn("[Geocoding] Failed to save to localStorage:", cacheStoreErr);
-                      }
-
                       populateAddressFields(parsedAddress);
-                      showToast('Thành công', 'Đã tự động định vị và điền vị trí của bạn thành công!', 'success');
+                      showAddressResolutionResult(parsedAddress, 'Thành công');
 
                   } catch (err) {
                       console.error('[Geocoding] GPS success branch error:', err);
@@ -1933,12 +1715,23 @@ function checkAndApplyVariant(container) {
                   }
               },
               function(error) {
-                  console.warn('[Geocoding] GPS lookup failed or denied. Transitioning to IP fallback...');
-                  // GPS failure: Trigger fallback automatically (Requirement 9)
-                  if (error.code === 1) { // PERMISSION_DENIED
-                      showToast('Chuyển hướng IP', 'Không thể truy cập GPS. Hệ thống sẽ thử xác định vị trí qua IP.', 'info', 4000);
-                  }
-                  triggerIpFallback(btn, originalText);
+                   const errorCode = Number(error && error.code);
+                   const errorName = geolocationErrorName(errorCode);
+                   const errorMessage = error && error.message ? String(error.message) : '';
+                   btn.dataset.geolocationStage = 'ERROR';
+                   btn.dataset.geolocationErrorCode = String(errorCode);
+                   btn.dataset.geolocationErrorName = errorName;
+                   btn.dataset.geolocationErrorMessage = errorMessage;
+                   console.warn('[Geolocation] getCurrentPosition failed:', {
+                       code: errorCode,
+                       name: errorName,
+                       message: errorMessage,
+                       permissionState: btn.dataset.geolocationPermissionState || 'UNKNOWN'
+                   });
+                   showToast('Không thể lấy vị trí',
+                           'Không thể truy cập vị trí hiện tại. Vui lòng chọn địa chỉ bên dưới.',
+                           'warning', 6000);
+                   resetButton(btn, originalText);
               },
               {
                   enableHighAccuracy: true,
@@ -1947,8 +1740,10 @@ function checkAndApplyVariant(container) {
               }
           );
       } else {
-          console.warn('[Geocoding] Browser does not support Geolocation. Transitioning to IP fallback...');
-          triggerIpFallback(btn, originalText);
+           console.warn('[Geocoding] Browser does not support Geolocation.');
+           showToast('Không hỗ trợ định vị',
+                   'Trình duyệt không hỗ trợ lấy vị trí. Vui lòng chọn địa chỉ bên dưới.', 'warning');
+           resetButton(btn, originalText);
       }
   }
 
@@ -1957,7 +1752,6 @@ function checkAndApplyVariant(container) {
       const latInput = document.getElementById('address-lat');
       const lonInput = document.getElementById('address-lon');
       const streetInput = document.getElementById('address-street');
-      const stateInput = document.getElementById('address-state');
 
       let initialLat = 21.0285;
       let initialLon = 105.8542;
@@ -2054,10 +1848,22 @@ function checkAndApplyVariant(container) {
           debouncedReverseGeocode(lat, lng);
       });
 
-      // If Edit form and NO coordinates are saved, geocode the text address via backend proxy
-      if (!hasCoordinates && streetInput && streetInput.value && stateInput && stateInput.value) {
-          const addressQuery = `${streetInput.value}, ${stateInput.value}`;
+      // If Edit form has no saved coordinates, center it using the canonical
+      // option labels already loaded from the backend delivery-area catalog.
+      if (!hasCoordinates && streetInput && streetInput.value && window.SmashAddressBook?.ready) {
           try {
+              await window.SmashAddressBook.ready();
+              const selectedText = function (selectId) {
+                  const select = document.getElementById(selectId);
+                  const option = select?.options[select.selectedIndex];
+                  return option && option.value ? option.textContent.trim() : '';
+              };
+              const addressQuery = [streetInput.value,
+                  selectedText('ghnWardCode'),
+                  selectedText('ghnDistrictId'),
+                  selectedText('ghnProvinceId'),
+                  'Việt Nam'].filter(Boolean).join(', ');
+              if (!addressQuery) return;
               const response = await fetchWithTimeout(`/api/location/search?q=${encodeURIComponent(addressQuery)}`, { timeout: 5000 });
               if (response.ok) {
                   const data = await response.json();
@@ -2098,6 +1904,10 @@ function checkAndApplyVariant(container) {
       const mapDiv = document.getElementById('map');
       if (mapDiv) {
           initLocationMap(mapDiv);
+      }
+      const locationButton = document.getElementById('btn-get-location');
+      if (locationButton) {
+          locationButton.addEventListener('click', getCurrentLocation);
       }
   });
   /*==============================================================

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @Transactional
 public class UserAddressIntegrationTest {
+
+    @MockitoBean
+    private com.smashvn.shop.service.api.LocationService locationService;
+
+    @MockitoBean
+    private com.smashvn.shop.service.api.GhnService ghnService;
+
+    @MockitoBean
+    private org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager oauth2AuthorizedClientManager;
+
+    @MockitoBean(name = "filterChain")
+    private org.springframework.security.web.SecurityFilterChain securityFilterChain;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -44,6 +57,9 @@ public class UserAddressIntegrationTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        org.mockito.Mockito.when(ghnService.validateSelectedAddress(201, 1442, "20101"))
+                .thenReturn(new com.smashvn.shop.service.api.GhnService.GhnAddressDetails(
+                        201, "Hà Nội", 1442, "Quận Ba Đình", "20101", "Phường Phúc Xá"));
 
         // Seed customer user
         testUser = new TaiKhoan();
@@ -74,6 +90,11 @@ public class UserAddressIntegrationTest {
                         .param("diaChiCuThe", "123 Đường Láng <iframe src=\"javascript:alert(3)\"></iframe>")
                         .param("tinhThanh", "Hà Nội")
                         .param("quocGia", "Việt Nam")
+                        .param("ghnProvinceId", "201")
+                        .param("ghnDistrictId", "1442")
+                        .param("ghnWardCode", "20101")
+                        .param("quanHuyen", "Quận Ba Đình")
+                        .param("phuongXa", "Phường Phúc Xá")
                         .param("latitude", "21.0285")
                         .param("longitude", "105.8542")
                         .param("defaultAddress", "true"))
@@ -92,6 +113,11 @@ public class UserAddressIntegrationTest {
         assertEquals("123 Đường Láng", saved.getDiaChiCuThe());
         assertEquals("Hà Nội", saved.getTinhThanh());
         assertEquals("Việt Nam", saved.getQuocGia());
+        assertEquals(201, saved.getProvinceId());
+        assertEquals(1442, saved.getDistrictId());
+        assertEquals("20101", saved.getWardCode());
+        assertEquals("Quận Ba Đình", saved.getQuanHuyen());
+        assertEquals("Phường Phúc Xá", saved.getPhuongXa());
         assertEquals(21.0285, saved.getLatitude());
         assertEquals(105.8542, saved.getLongitude());
         assertTrue(saved.isDefaultShipping());
@@ -201,6 +227,11 @@ public class UserAddressIntegrationTest {
                         .param("diaChiCuThe", "789 Kim Mã")
                         .param("tinhThanh", "Hà Nội")
                         .param("quocGia", "Việt Nam")
+                        .param("ghnProvinceId", "201")
+                        .param("ghnDistrictId", "1442")
+                        .param("ghnWardCode", "20101")
+                        .param("quanHuyen", "Quận Ba Đình")
+                        .param("phuongXa", "Phường Phúc Xá")
                         .param("defaultAddress", "false"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/address"))
@@ -211,6 +242,9 @@ public class UserAddressIntegrationTest {
         assertEquals("Lợi", updated.getTenNguoiNhan());
         assertEquals("0987654322", updated.getSdtNguoiNhan());
         assertEquals("789 Kim Mã", updated.getDiaChiCuThe());
+        assertEquals(201, updated.getProvinceId());
+        assertEquals(1442, updated.getDistrictId());
+        assertEquals("20101", updated.getWardCode());
     }
 
     @Test

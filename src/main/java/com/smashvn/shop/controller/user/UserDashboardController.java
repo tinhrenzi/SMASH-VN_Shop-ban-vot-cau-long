@@ -284,9 +284,9 @@ public class UserDashboardController {
                 List<Map<String, Object>> guestOrdersList = new java.util.ArrayList<>();
                 for (Object item : list) {
                     if (item instanceof com.smashvn.shop.controller.order.CheckoutController.GuestOrderAccess access && !access.isExpired()) {
-                        Map<String, Object> orderDetail = orderViewService.layChiTietOrder(access.getOrderId(), null);
-                        if (orderDetail != null) {
-                            guestOrdersList.add(orderDetail);
+                        Map<String, Object> orderSummary = orderViewService.layChiTietDonHangChoCustomer(access.getOrderId(), null);
+                        if (orderSummary != null) {
+                            guestOrdersList.add(orderSummary);
                         }
                     }
                 }

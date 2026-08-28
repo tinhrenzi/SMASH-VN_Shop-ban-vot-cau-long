@@ -400,6 +400,17 @@ public class CheckoutController {
             details.put("latitude", dc.getLatitude());
             details.put("longitude", dc.getLongitude());
             details.put("wardName", dc.getWardName());
+            // Checkout must reuse the exact GHN master-data mapping saved in the
+            // address book. Re-parsing the display text can select a different
+            // district/ward and is the reason saved addresses behaved differently
+            // from manually selected checkout addresses.
+            details.put("ghnProvinceId", dc.getProvinceId());
+            details.put("ghnDistrictId", dc.getDistrictId());
+            details.put("ghnWardCode", dc.getWardCode());
+            details.put("ghnReady", dc.getProvinceId() != null
+                    && dc.getDistrictId() != null
+                    && dc.getWardCode() != null
+                    && !dc.getWardCode().isBlank());
             String fullAddress = dc.getDiaChiCuThe();
             if (dc.getWardName() != null && !dc.getWardName().trim().isEmpty() && !fullAddress.contains(dc.getWardName())) {
                 fullAddress += ", " + dc.getWardName().trim();
