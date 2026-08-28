@@ -78,6 +78,17 @@ public class SampleDataSeederRunnerTest {
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Test
+    public void testDeleteAllOrders() throws Exception {
+        System.out.println("=== THỰC THI FILE delete-orders.sql ===");
+        String deleteSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/delete-orders.sql"));
+        jdbcTemplate.execute(deleteSql);
+        
+        Integer countHd = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM HoaDon", Integer.class);
+        Integer countHdct = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM HoaDonChiTiet", Integer.class);
+        System.out.println("-> KẾT QUẢ: Số hóa đơn còn lại = " + countHd + ", Số chi tiết hóa đơn = " + countHdct);
+    }
+
+    @Test
     public void testExecuteSeedSqlFile() throws Exception {
         System.out.println("=== 1. THỰC THI FILE demo-statistics-rollback.sql ===");
         String rollbackSql = java.nio.file.Files.readString(java.nio.file.Path.of("scratch/demo-statistics-rollback.sql"));
@@ -119,8 +130,8 @@ public class SampleDataSeederRunnerTest {
         // 0. Tạo dữ liệu Phiếu Nhập Hàng & Lô Hàng cho toàn bộ các biến thể
         seedImportLots(nhanVien, spctList);
 
-        // 2. Tạo 10 đơn hàng online tương ứng 10 trạng thái
-        seed10OnlineOrders(khachHang, ptttCod, ptttVnpay, dvvcGhn, defaultSpct1, defaultSpct2);
+        // 2. Không seed đơn hàng giả lập (Đơn hàng để trống theo yêu cầu)
+        // seed10OnlineOrders(khachHang, ptttCod, ptttVnpay, dvvcGhn, defaultSpct1, defaultSpct2);
 
         // 3. Tạo dữ liệu Đánh Giá sản phẩm
         seedReviews(khachHang, defaultSpct1.getSanPham());

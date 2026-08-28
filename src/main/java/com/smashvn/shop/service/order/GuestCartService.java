@@ -31,7 +31,6 @@ public class GuestCartService {
     private final GioHangRepository gioHangRepository;
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private final KhachHangRepository khachHangRepository;
-    private final TrangThaiGioHangRepository trangThaiGioHangRepository;
     private final PricingService pricingService;
     private final ProductAvailabilityService productAvailabilityService;
 
@@ -277,10 +276,6 @@ public class GuestCartService {
             gioHang = gioHangRepository.save(gioHang);
         }
 
-        TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
-                .orElseGet(() -> trangThaiGioHangRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy trạng thái giỏ hàng")));
-
         for (GuestCartItem item : guestCart) {
             // Khóa dòng sản phẩm bằng Pessimistic Write Lock để chống race condition
             SanPhamChiTiet lockedSpct = sanPhamChiTietRepository.findByIdWithLock(item.getIdSanPhamChiTiet())
@@ -309,7 +304,6 @@ public class GuestCartService {
                 chiTiet.setGioHang(gioHang);
                 chiTiet.setSanPhamChiTiet(lockedSpct);
                 chiTiet.setSoLuong(newQuantity);
-                chiTiet.setTrangThai(trangThai);
             }
             gioHangChiTietRepository.save(chiTiet);
         }

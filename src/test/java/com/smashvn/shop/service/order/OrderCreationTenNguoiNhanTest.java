@@ -60,9 +60,6 @@ public class OrderCreationTenNguoiNhanTest {
     private DonViVanChuyenDAO donViVanChuyenDAO;
 
     @Autowired
-    private TrangThaiGioHangRepository trangThaiGioHangRepository;
-
-    @Autowired
     private org.springframework.cache.CacheManager cacheManager;
 
     private TaiKhoan testUser;
@@ -154,17 +151,10 @@ public class OrderCreationTenNguoiNhanTest {
         cart.setKhachHang(testKhachHang);
         cart = gioHangRepository.save(cart);
 
-        TrangThaiGioHang tt = trangThaiGioHangRepository.findById(1).orElseGet(() -> {
-            TrangThaiGioHang newTt = new TrangThaiGioHang();
-            newTt.setTenTrangThai("ACTIVE");
-            return trangThaiGioHangRepository.save(newTt);
-        });
-
         GioHangChiTiet cartItem = new GioHangChiTiet();
         cartItem.setGioHang(cart);
         cartItem.setSanPhamChiTiet(testSpct);
         cartItem.setSoLuong(2);
-        cartItem.setTrangThai(tt);
         gioHangChiTietRepository.save(cartItem);
     }
 

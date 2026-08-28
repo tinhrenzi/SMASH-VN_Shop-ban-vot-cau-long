@@ -29,7 +29,6 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.TaiKhoan;
-import com.smashvn.shop.entity.TrangThaiGioHang;
 import com.smashvn.shop.entity.ThongBao;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.repository.GioHangRepository;
@@ -42,7 +41,6 @@ import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.ThongBaoRepository;
-import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 import com.smashvn.shop.service.admin.AdminShippingService;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.api.ShippingFeeCalculator;
@@ -75,7 +73,6 @@ public class GioHangService {
     private final GioHangRepository gioHangRepository;
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
-    private final TrangThaiGioHangRepository trangThaiGioHangRepository;
     private final HoaDonRepository hoaDonRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
@@ -178,11 +175,6 @@ public class GioHangService {
             chiTiet.setGioHang(gioHang);
             chiTiet.setSanPhamChiTiet(spct);
             chiTiet.setSoLuong(soLuong);
-
-            TrangThaiGioHang trangThai = trangThaiGioHangRepository.findById(1)
-                    .orElseGet(() -> trangThaiGioHangRepository.findAll().stream().findFirst()
-                    .orElseThrow(() -> new RuntimeException("Lỗi cấu hình CSDL: Không tìm thấy ID trạng thái 1")));
-            chiTiet.setTrangThai(trangThai);
         }
 
         gioHangChiTietRepository.save(chiTiet);

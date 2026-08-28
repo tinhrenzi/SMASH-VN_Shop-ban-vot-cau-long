@@ -74,9 +74,6 @@ public class OrderPricingIntegrationTest {
     private HoaDonChiTietRepository hoaDonChiTietRepository;
 
     @Autowired
-    private TrangThaiGioHangRepository trangThaiGioHangRepository;
-
-    @Autowired
     private PhieuGiamGiaRepository phieuGiamGiaRepository;
 
     @Autowired
@@ -276,12 +273,6 @@ public class OrderPricingIntegrationTest {
             PhuongThucThanhToan pttt = new PhuongThucThanhToan();
             pttt.setTenPhuongThuc("COD");
             phuongThucThanhToanDAO.save(pttt);
-        }
-
-        if (!trangThaiGioHangRepository.existsById(1)) {
-            TrangThaiGioHang tt = new TrangThaiGioHang();
-            tt.setTenTrangThai("Trạng thái mặc định");
-            trangThaiGioHangRepository.save(tt);
         }
     }
 

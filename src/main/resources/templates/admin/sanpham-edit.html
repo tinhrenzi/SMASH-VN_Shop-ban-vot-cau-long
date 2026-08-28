@@ -477,17 +477,20 @@
                                         <form id="formThemBienThe"
                                               th:action="@{/admin/san-pham/{id}/bien-the/them(id=${sp.id})}"
                                               method="post" enctype="multipart/form-data"
-                                              onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn thêm biến thể mới cho sản phẩm này không?');">
+                                              onsubmit="return validateAndConfirmThemBienThe(this);">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                                             <div class="row g-3 mb-3">
                                                 <div class="col-4">
                                                     <label class="admin-form-label">Giá nhập</label>
-                                                    <input type="number" name="giaNhap" class="admin-form-control form-control" min="0" step="1000" placeholder="VD: 1800000">
+                                                    <input type="number" name="giaNhap" id="addGiaNhap" class="admin-form-control form-control" min="0" step="1000" placeholder="VD: 1800000">
+                                                    <div id="addGiaNhapWarn" class="text-danger fw-semibold d-none" style="font-size: 0.72rem; margin-top: 2px;">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>Giá nhập > Giá bán!
+                                                    </div>
                                                 </div>
                                                 <div class="col-4">
                                                     <label class="admin-form-label">Giá bán <span class="text-danger">*</span></label>
-                                                    <input type="number" name="giaBan" class="admin-form-control form-control" required min="1000" step="1000" placeholder="VD: 2500000">
+                                                    <input type="number" name="giaBan" id="addGiaBan" class="admin-form-control form-control" required min="1000" step="1000" placeholder="VD: 2500000">
                                                 </div>
                                                 <div class="col-4">
                                                     <label class="admin-form-label">Số lượng kho <span class="text-danger">*</span></label>
@@ -1097,6 +1100,87 @@
                 btn.classList.remove('btn-outline-secondary');
                 btn.classList.add('btn-primary', 'text-white');
             }
+        }
+
+        function validateAddBienThePrice(triggerToast = false) {
+            const inGiaNhap = document.getElementById('addGiaNhap');
+            const inGiaBan = document.getElementById('addGiaBan');
+            const warnMsg = document.getElementById('addGiaNhapWarn');
+            if (!inGiaNhap || !inGiaBan) return true;
+
+            const gNhap = parseFloat(inGiaNhap.value) || 0;
+            const gBan = parseFloat(inGiaBan.value) || 0;
+
+            if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
+                inGiaNhap.classList.add('is-invalid', 'border-danger');
+                inGiaBan.classList.add('is-invalid', 'border-danger');
+                if (warnMsg) warnMsg.classList.remove('d-none');
+                if (triggerToast && typeof showToast === 'function') {
+                    showToast(`Cảnh báo: Giá nhập (${gNhap.toLocaleString('vi-VN')} đ) đang cao hơn giá bán (${gBan.toLocaleString('vi-VN')} đ). Vui lòng nhập lại!`, 'warning');
+                }
+                return false;
+            } else {
+                inGiaNhap.classList.remove('is-invalid', 'border-danger');
+                inGiaBan.classList.remove('is-invalid', 'border-danger');
+                if (warnMsg) warnMsg.classList.add('d-none');
+                return true;
+            }
+        }
+
+        const inAddGiaNhap = document.getElementById('addGiaNhap');
+        const inAddGiaBan = document.getElementById('addGiaBan');
+        if (inAddGiaNhap) {
+            inAddGiaNhap.addEventListener('input', () => validateAddBienThePrice(false));
+            inAddGiaNhap.addEventListener('change', () => validateAddBienThePrice(true));
+        }
+        if (inAddGiaBan) {
+            inAddGiaBan.addEventListener('input', () => validateAddBienThePrice(false));
+            inAddGiaBan.addEventListener('change', () => validateAddBienThePrice(true));
+        }
+
+        function validateAndConfirmThemBienThe(form) {
+            if (form.dataset.confirmed === 'true') {
+                return true;
+            }
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+
+            const inGiaNhap = document.getElementById('addGiaNhap');
+            const inGiaBan = document.getElementById('addGiaBan');
+            const gNhap = inGiaNhap ? (parseFloat(inGiaNhap.value) || 0) : 0;
+            const gBan = inGiaBan ? (parseFloat(inGiaBan.value) || 0) : 0;
+
+            if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
+                validateAddBienThePrice(false);
+                if (inGiaNhap) inGiaNhap.focus();
+
+                if (window.Swal && typeof window.Swal.fire === 'function') {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Giá nhập cao hơn giá bán!',
+                        html: `
+                            <div style="font-size: 14px; text-align: left; padding: 4px;">
+                                <p class="mb-2">Giá nhập hiện tại (<strong class="text-danger">${gNhap.toLocaleString('vi-VN')} đ</strong>) đang cao hơn giá bán (<strong class="text-primary">${gBan.toLocaleString('vi-VN')} đ</strong>).</p>
+                                <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
+                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                    Vui lòng kiểm tra và điều chỉnh lại giá bán hoặc giá nhập trước khi thêm biến thể.
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Tôi sẽ nhập lại giá',
+                        confirmButtonColor: '#f97316'
+                    });
+                } else if (typeof showToast === 'function') {
+                    showToast('Lỗi: Giá nhập cao hơn giá bán. Vui lòng nhập lại!', 'error');
+                } else {
+                    alert('Lỗi: Giá nhập cao hơn giá bán. Vui lòng nhập lại!');
+                }
+                return false;
+            }
+
+            return confirmSubmitForm(form, 'Bạn có chắc chắn muốn thêm biến thể mới cho sản phẩm này không?');
         }
 
         function moTabNhapLoChoBienThe(btn) {

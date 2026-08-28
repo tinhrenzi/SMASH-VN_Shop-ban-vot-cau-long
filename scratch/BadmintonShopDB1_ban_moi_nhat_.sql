@@ -422,7 +422,6 @@ GO
 CREATE TABLE [dbo].[GioHangChiTiet](
 	[id] [int] IDENTITY(1,1) NOT NULL,
 	[id_gio_hang] [int] NOT NULL,
-	[id_trang_thai] [int] NOT NULL,
 	[id_san_pham_chi_tiet] [int] NOT NULL,
 	[so_luong] [int] NOT NULL,
 	[ngay_tao] [datetime] NOT NULL,
@@ -905,20 +904,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TrangThaiGioHang]    Script Date: 10/08/2026 15:02:13 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TrangThaiGioHang](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[ten_trang_thai] [nvarchar](50) NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
+
 SET ANSI_PADDING ON
 GO
 /****** Object:  Index [IDX_ChatConversation_Session]    Script Date: 10/08/2026 15:02:13 ******/
@@ -1305,11 +1291,6 @@ ALTER TABLE [dbo].[GioHangChiTiet]  WITH CHECK ADD  CONSTRAINT [FK_GioHangChiTie
 REFERENCES [dbo].[SanPhamChiTiet] ([id])
 GO
 ALTER TABLE [dbo].[GioHangChiTiet] CHECK CONSTRAINT [FK_GioHangChiTiet_SPCT]
-GO
-ALTER TABLE [dbo].[GioHangChiTiet]  WITH CHECK ADD  CONSTRAINT [FK_GioHangChiTiet_TrangThai] FOREIGN KEY([id_trang_thai])
-REFERENCES [dbo].[TrangThaiGioHang] ([id])
-GO
-ALTER TABLE [dbo].[GioHangChiTiet] CHECK CONSTRAINT [FK_GioHangChiTiet_TrangThai]
 GO
 ALTER TABLE [dbo].[HinhAnhDanhGia]  WITH CHECK ADD  CONSTRAINT [FK_HinhAnhDanhGia_DanhGia] FOREIGN KEY([id_danh_gia])
 REFERENCES [dbo].[DanhGia] ([id])
@@ -1699,10 +1680,6 @@ GO
 -- 9. DonViVanChuyen
 INSERT INTO [dbo].[DonViVanChuyen] ([ma_don_vi],[ten_don_vi],[so_hotline],[web_url],[ma_token],[ma_client],[dia_chi_kho],[phi_noi_dia],[phi_toan_quoc]) VALUES
 (N'GHN', N'Giao Hàng Nhanh', N'1900636677', N'https://ghn.vn', N'7cb9910e-6313-11f1-a973-aee5264794df', N'200610', N'10 Kim Mã, Ba Đình, Hà Nội', 25000, 35000);
-GO
-
--- 10. TrangThaiGioHang
-INSERT INTO [dbo].[TrangThaiGioHang] ([ten_trang_thai]) VALUES (N'Đang chờ'), (N'Đã chọn');
 GO
 
 -- 11. SanPham
@@ -2191,7 +2168,6 @@ UNION ALL SELECT N'ThuocTinh', COUNT(*) FROM dbo.ThuocTinh
 UNION ALL SELECT N'DanhMucThuocTinh', COUNT(*) FROM dbo.DanhMucThuocTinh
 UNION ALL SELECT N'PhuongThucThanhToan', COUNT(*) FROM dbo.PhuongThucThanhToan
 UNION ALL SELECT N'DonViVanChuyen', COUNT(*) FROM dbo.DonViVanChuyen
-UNION ALL SELECT N'TrangThaiGioHang', COUNT(*) FROM dbo.TrangThaiGioHang
 UNION ALL SELECT N'SanPham', COUNT(*) FROM dbo.SanPham
 UNION ALL SELECT N'SanPhamChiTiet', COUNT(*) FROM dbo.SanPhamChiTiet
 UNION ALL SELECT N'SanPhamChiTietThuocTinh', COUNT(*) FROM dbo.SanPhamChiTietThuocTinh

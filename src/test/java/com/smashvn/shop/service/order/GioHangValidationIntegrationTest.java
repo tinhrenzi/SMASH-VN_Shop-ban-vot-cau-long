@@ -41,9 +41,6 @@ public class GioHangValidationIntegrationTest {
     private SanPhamChiTietRepository sanPhamChiTietRepository;
 
     @Autowired
-    private TrangThaiGioHangRepository trangThaiGioHangRepository;
-
-    @Autowired
     private GioHangRepository gioHangRepository;
 
     @Autowired
@@ -135,13 +132,6 @@ public class GioHangValidationIntegrationTest {
         testSpct.setSoLuongTon(100); // Stock = 100
         testSpct.setGiaBan(new BigDecimal("2000000"));
         testSpct = sanPhamChiTietRepository.save(testSpct);
-
-        // Ensure TrangThaiGioHang ID 1 exists
-        if (!trangThaiGioHangRepository.existsById(1)) {
-            TrangThaiGioHang tt = new TrangThaiGioHang();
-            tt.setTenTrangThai("Trạng thái mặc định");
-            trangThaiGioHangRepository.save(tt);
-        }
     }
 
     @Test
@@ -419,7 +409,6 @@ public class GioHangValidationIntegrationTest {
         itemBObj.setGioHang(gioHangB);
         itemBObj.setSanPhamChiTiet(testSpct);
         itemBObj.setSoLuong(1);
-        itemBObj.setTrangThai(trangThaiGioHangRepository.findById(1).orElseGet(() -> trangThaiGioHangRepository.findAll().get(0)));
         itemBObj = gioHangChiTietRepository.save(itemBObj);
         Integer itemB = itemBObj.getId();
 

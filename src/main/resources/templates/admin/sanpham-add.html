@@ -55,7 +55,7 @@
                         <h5 class="admin-card-title"><i class="fas fa-box text-primary me-2"></i>Thông Tin Cấu Hình Sản Phẩm Mới</h5>
                     </div>
                     <div class="admin-card-body">
-                        <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn tạo mới sản phẩm và sinh các biến thể này không?');">
+                        <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm" onsubmit="return validateAndConfirmAddProduct(this);">
                             
                             <!-- SECTION 1: THÔNG TIN SẢN PHẨM GỐC -->
                             <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-info-circle me-2"></i>1. Thông Tin Sản Phẩm Gốc</h6>
@@ -390,7 +390,12 @@
                 tr.appendChild(tdSize);
 
                 const tdGiaNhap = document.createElement("td");
-                tdGiaNhap.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="VD: 1800000" value="${giaNhapVal}">`;
+                tdGiaNhap.innerHTML = `
+                    <input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="VD: 1800000" value="${giaNhapVal}">
+                    <div class="price-warning-msg text-danger fw-semibold d-none" style="font-size: 0.72rem; margin-top: 2px;">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Giá nhập > Giá bán!
+                    </div>
+                `;
                 tr.appendChild(tdGiaNhap);
 
                 const tdGiaBan = document.createElement("td");
@@ -407,6 +412,38 @@
                 tr.appendChild(tdAction);
 
                 return tr;
+            }
+
+            function validateVariantRowPrice(tr, showToastWarning = false) {
+                if (!tr) return true;
+                const inGiaNhap = tr.querySelector(".var-gia-nhap");
+                const inGiaBan = tr.querySelector(".var-gia-ban");
+                const warnMsg = tr.querySelector(".price-warning-msg");
+                if (!inGiaNhap || !inGiaBan) return true;
+
+                const gNhap = parseFloat(inGiaNhap.value) || 0;
+                const gBan = parseFloat(inGiaBan.value) || 0;
+
+                if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
+                    inGiaNhap.classList.add("is-invalid", "border-danger");
+                    inGiaBan.classList.add("is-invalid", "border-danger");
+                    if (warnMsg) warnMsg.classList.remove("d-none");
+
+                    if (showToastWarning) {
+                        const inMau = tr.querySelector(".var-mau-sac");
+                        const inSize = tr.querySelector(".var-size-weight");
+                        const vName = (inMau && inMau.value.trim()) ? inMau.value.trim() + (inSize && inSize.value.trim() ? " - " + inSize.value.trim() : "") : "Biến thể";
+                        if (typeof showToast === 'function') {
+                            showToast(`Cảnh báo: Giá nhập (${gNhap.toLocaleString('vi-VN')} đ) đang cao hơn giá bán (${gBan.toLocaleString('vi-VN')} đ) tại phân loại [${vName}]. Vui lòng nhập lại!`, 'warning');
+                        }
+                    }
+                    return false;
+                } else {
+                    inGiaNhap.classList.remove("is-invalid", "border-danger");
+                    inGiaBan.classList.remove("is-invalid", "border-danger");
+                    if (warnMsg) warnMsg.classList.add("d-none");
+                    return true;
+                }
             }
 
             function reindexVariantRows() {
@@ -703,6 +740,10 @@
                     if (e.target && e.target.classList.contains("var-gia-ban")) {
                         e.target.dataset.userEdited = "true";
                     }
+                    if (e.target && (e.target.classList.contains("var-gia-nhap") || e.target.classList.contains("var-gia-ban"))) {
+                        const tr = e.target.closest("tr");
+                        validateVariantRowPrice(tr, false);
+                    }
                     if (e.target && (e.target.classList.contains("var-mau-sac") || e.target.classList.contains("var-size-weight"))) {
                         reindexVariantRows();
                     }
@@ -711,6 +752,10 @@
                 previewTbody.addEventListener("change", function(e) {
                     if (e.target && e.target.classList.contains("var-gia-ban")) {
                         e.target.dataset.userEdited = "true";
+                    }
+                    if (e.target && (e.target.classList.contains("var-gia-nhap") || e.target.classList.contains("var-gia-ban"))) {
+                        const tr = e.target.closest("tr");
+                        validateVariantRowPrice(tr, true);
                     }
                     if (e.target && (e.target.classList.contains("var-mau-sac") || e.target.classList.contains("var-size-weight"))) {
                         reindexVariantRows();
@@ -724,6 +769,8 @@
                     previewTbody.querySelectorAll(".var-gia-ban").forEach(input => {
                         if (!input.dataset.userEdited) {
                             input.value = newVal;
+                            const tr = input.closest("tr");
+                            validateVariantRowPrice(tr, false);
                         }
                     });
                 });
@@ -731,6 +778,89 @@
 
             selectDanhMuc.addEventListener("change", handleCategoryChange);
             handleCategoryChange();
+
+            window.validateAndConfirmAddProduct = function(formElement) {
+                if (formElement.dataset.confirmed === "true") {
+                    return true;
+                }
+
+                if (!formElement.checkValidity()) {
+                    formElement.reportValidity();
+                    return false;
+                }
+
+                const rows = previewTbody.querySelectorAll("tr");
+                const invalidRows = [];
+
+                rows.forEach((tr, idx) => {
+                    const inMau = tr.querySelector(".var-mau-sac");
+                    const inSize = tr.querySelector(".var-size-weight");
+                    const inGiaNhap = tr.querySelector(".var-gia-nhap");
+                    const inGiaBan = tr.querySelector(".var-gia-ban");
+
+                    const gNhap = inGiaNhap ? (parseFloat(inGiaNhap.value) || 0) : 0;
+                    const gBan = inGiaBan ? (parseFloat(inGiaBan.value) || 0) : 0;
+                    const mauVal = inMau ? inMau.value.trim() : "";
+                    const sizeVal = inSize ? inSize.value.trim() : "";
+                    const variantName = mauVal ? (mauVal + (sizeVal ? " - " + sizeVal : "")) : `Biến thể #${idx + 1}`;
+
+                    if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
+                        validateVariantRowPrice(tr, false);
+                        invalidRows.push({
+                            tr: tr,
+                            inGiaNhap: inGiaNhap,
+                            inGiaBan: inGiaBan,
+                            name: variantName,
+                            giaNhap: gNhap,
+                            giaBan: gBan
+                        });
+                    }
+                });
+
+                if (invalidRows.length > 0) {
+                    if (invalidRows[0].inGiaNhap) {
+                        invalidRows[0].inGiaNhap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        invalidRows[0].inGiaNhap.focus();
+                    }
+
+                    const invalidListHtml = invalidRows.map(item => `
+                        <li class="mb-1 text-start">
+                            <strong class="text-dark">${item.name}:</strong> 
+                            Giá nhập <span class="text-danger fw-bold">${item.giaNhap.toLocaleString('vi-VN')} đ</span> 
+                            cao hơn Giá bán <span class="text-primary fw-bold">${item.giaBan.toLocaleString('vi-VN')} đ</span>
+                        </li>
+                    `).join('');
+
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Giá nhập cao hơn giá bán!',
+                            html: `
+                                <div style="font-size: 14px; text-align: left; padding: 4px;">
+                                    <p class="mb-2">Phát hiện <strong>${invalidRows.length}</strong> biến thể có giá nhập cao hơn giá bán:</p>
+                                    <ul class="text-secondary ps-3 mb-3" style="max-height: 180px; overflow-y: auto;">
+                                        ${invalidListHtml}
+                                    </ul>
+                                    <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
+                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                        Giá nhập không được phép cao hơn giá bán. Vui lòng kiểm tra và nhập lại giá phù hợp trước khi tiếp tục.
+                                    </div>
+                                </div>
+                            `,
+                            confirmButtonText: 'Tôi sẽ nhập lại giá',
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (typeof showToast === 'function') {
+                        showToast(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`, 'error');
+                    } else {
+                        alert(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`);
+                    }
+
+                    return false;
+                }
+
+                return confirmSubmitForm(formElement, 'Bạn có chắc chắn muốn tạo mới sản phẩm và sinh các biến thể này không?');
+            };
         });
     </script>
 

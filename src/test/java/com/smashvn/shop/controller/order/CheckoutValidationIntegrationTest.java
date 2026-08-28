@@ -42,7 +42,6 @@ import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SoDiaChi;
 import com.smashvn.shop.entity.TaiKhoan;
 import com.smashvn.shop.entity.ThuongHieu;
-import com.smashvn.shop.entity.TrangThaiGioHang;
 import com.smashvn.shop.repository.DanhMucRepository;
 import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
@@ -53,7 +52,6 @@ import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.SoDiaChiRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.ThuongHieuRepository;
-import com.smashvn.shop.repository.TrangThaiGioHangRepository;
 
 @SpringBootTest
 @Transactional
@@ -91,9 +89,6 @@ public class CheckoutValidationIntegrationTest {
 
     @Autowired
     private HoaDonRepository hoaDonRepository;
-
-    @Autowired
-    private TrangThaiGioHangRepository trangThaiGioHangRepository;
 
     @Autowired
     private SoDiaChiRepository soDiaChiRepository;
@@ -196,13 +191,6 @@ public class CheckoutValidationIntegrationTest {
         testSpct.setSoLuongTon(100);
         testSpct.setGiaBan(new BigDecimal("2000000"));
         testSpct = sanPhamChiTietRepository.save(testSpct);
-
-        // Ensure TrangThaiGioHang ID 1 exists
-        if (!trangThaiGioHangRepository.existsById(1)) {
-            TrangThaiGioHang tt = new TrangThaiGioHang();
-            tt.setTenTrangThai("Trạng thái mặc định");
-            trangThaiGioHangRepository.save(tt);
-        }
 
         // Seed carrier
         testDvvc = new DonViVanChuyen();

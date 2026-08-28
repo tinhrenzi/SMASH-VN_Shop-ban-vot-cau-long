@@ -295,6 +295,10 @@ public class AdminSanPhamService {
                 if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("Giá bán phải lớn hơn 0 VNĐ!");
                 }
+                if (gNhap != null && gNhap.compareTo(BigDecimal.ZERO) > 0 && gNhap.compareTo(gBan) > 0) {
+                    throw new IllegalArgumentException("Giá nhập hiện tại đang cao hơn giá bán (Giá nhập: " 
+                            + String.format("%,.0f", gNhap) + " đ > Giá bán: " + String.format("%,.0f", gBan) + " đ). Vui lòng kiểm tra và nhập lại!");
+                }
                 Integer sTon = request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0;
 
                 SanPhamChiTiet spct = new SanPhamChiTiet();
@@ -334,6 +338,13 @@ public class AdminSanPhamService {
                     BigDecimal gBan = v.getGiaBan() != null ? v.getGiaBan() : request.getGiaBanDefault();
                     if (gBan == null || gBan.compareTo(BigDecimal.ZERO) <= 0) {
                         throw new IllegalArgumentException("Giá bán của biến thể phải lớn hơn 0 VNĐ!");
+                    }
+                    if (gNhap != null && gNhap.compareTo(BigDecimal.ZERO) > 0 && gNhap.compareTo(gBan) > 0) {
+                        String variantDesc = (normMau != null ? normMau : "Mặc định") 
+                                + (normTrong != null ? " - " + normTrong : "") 
+                                + (normKich != null ? " - " + normKich : "");
+                        throw new IllegalArgumentException("Giá nhập hiện tại đang cao hơn giá bán tại phân loại [" + variantDesc + "] (Giá nhập: " 
+                                + String.format("%,.0f", gNhap) + " đ > Giá bán: " + String.format("%,.0f", gBan) + " đ). Vui lòng kiểm tra và nhập lại!");
                     }
                     Integer sTon = v.getSoLuongTon() != null ? v.getSoLuongTon() : (request.getSoLuongTonDefault() != null ? request.getSoLuongTonDefault() : 0);
 

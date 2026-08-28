@@ -107,6 +107,11 @@ public class AdminBienTheService {
 
         validateBasicFinancial(giaBan, soLuongTon);
 
+        if (giaNhap != null && giaNhap.compareTo(BigDecimal.ZERO) > 0 && giaBan != null && giaNhap.compareTo(giaBan) > 0) {
+            throw new IllegalArgumentException("Giá nhập hiện tại đang cao hơn giá bán (Giá nhập: " 
+                    + String.format("%,.0f", giaNhap) + " đ > Giá bán: " + String.format("%,.0f", giaBan) + " đ). Vui lòng kiểm tra và nhập lại!");
+        }
+
         final String fMau = cleanMauSac != null ? cleanMauSac.toLowerCase() : "";
         final String fTrong = cleanTrongLuong != null ? cleanTrongLuong.toLowerCase() : "";
         final String fKich = cleanKichThuoc != null ? cleanKichThuoc.toLowerCase() : "";
