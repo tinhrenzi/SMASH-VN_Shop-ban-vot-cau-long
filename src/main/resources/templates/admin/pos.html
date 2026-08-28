@@ -308,7 +308,7 @@
                             <div class="col-md-8">
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="productSearchInput" class="admin-form-control form-control border-start-0" placeholder="Tìm sản phẩm (tên, màu, trọng lượng, thương hiệu, danh mục...)">
+                                    <input type="text" id="productSearchInput" class="admin-form-control form-control border-start-0" placeholder="Tìm sản phẩm (mã SP, SKU, tên, màu, trọng lượng, thương hiệu...)">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -765,7 +765,8 @@
                 const discountBadgeHtml = hasDiscount ? `<div class="discount-badge">-${pct}%</div>` : '';
                 const saleNameHtml = (hasDiscount && v.tenDotGiamGia) ? `<div class="sale-name-badge" title="${v.tenDotGiamGia}">${v.tenDotGiamGia}</div>` : '';
                 const showOriginal = hasDiscount && v.giaNiemYet && parseFloat(v.giaNiemYet) > parseFloat(v.giaBan);
-                const originalPriceHtml = showOriginal ? `<div class="original-price">${formatVND(v.giaNiemYet)}</div>` : '';
+                const originalPriceHtml = showOriginal ? `<div class="product-price-original text-muted text-decoration-line-through small" style="font-size:0.75rem;">${formatVND(v.giaNiemYet)}</div>` : '';
+                const skuHtml = v.sku ? `<div class="product-sku text-muted font-monospace mb-1" style="font-size:0.68rem;">${v.sku}</div>` : '';
 
                 card.innerHTML = `
                     ${discountBadgeHtml}
@@ -774,6 +775,7 @@
                             <img src="${imgUrl}" alt="${v.tenSanPham}" onerror="this.src='/images/preloader.png'" loading="lazy">
                         </div>
                         <div class="product-name" title="${v.tenSanPham}">${v.tenSanPham}</div>
+                        ${skuHtml}
                         <div class="product-attr" title="${v.mauSac} | ${v.trongLuong} | Sức căng: ${v.mucCang}">${v.mauSac} · ${v.trongLuong} · ${v.mucCang}</div>
                         ${saleNameHtml}
                         ${originalPriceHtml}

@@ -740,15 +740,12 @@ public class GioHangService {
             hdct.setGiaSauGiam(priceSnapshot.giaBanSauGiam());
             hdct.setTenSanPhamSnapshot(lockedSpct.getSanPham().getTenSanPham());
 
-            String sku = null;
-            try {
-                java.lang.reflect.Method getSkuMethod = lockedSpct.getClass().getMethod("getSku");
-                sku = (String) getSkuMethod.invoke(lockedSpct);
-            } catch (Exception e) {
-                // ignore
-            }
+            String sku = lockedSpct.getSku();
             if (sku == null || sku.isBlank()) {
-                sku = "SKU-" + lockedSpct.getSanPham().getId() + "-" + lockedSpct.getId();
+                String maSp = (lockedSpct.getSanPham() != null && lockedSpct.getSanPham().getMaSanPham() != null)
+                        ? lockedSpct.getSanPham().getMaSanPham()
+                        : com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateProductCode(lockedSpct.getSanPham().getId());
+                sku = com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(maSp, lockedSpct.getId());
             }
             hdct.setSkuSnapshot(sku);
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());

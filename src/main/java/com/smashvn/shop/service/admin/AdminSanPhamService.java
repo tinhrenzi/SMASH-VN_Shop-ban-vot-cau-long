@@ -124,7 +124,11 @@ public class AdminSanPhamService {
             sp.setNhanVien(listNV.get(0));
         }
 
-        sanPhamRepository.save(sp);
+        sp = sanPhamRepository.save(sp);
+        if (sp.getMaSanPham() == null) {
+            sp.setMaSanPham(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateProductCode(sp.getId()));
+            sanPhamRepository.save(sp);
+        }
     }
 
     // --- HÀM THÊM MỚI CẢ SẢN PHẨM & TỰ ĐỘNG SINH BIẾN THỂ ---
@@ -283,6 +287,10 @@ public class AdminSanPhamService {
             }
             sp.setNhanVien(creator);
             sp = sanPhamRepository.save(sp);
+            if (sp.getMaSanPham() == null) {
+                sp.setMaSanPham(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateProductCode(sp.getId()));
+                sp = sanPhamRepository.save(sp);
+            }
 
             Set<String> checkDuplicates = new HashSet<>();
             int savedCount = 0;
@@ -311,9 +319,12 @@ public class AdminSanPhamService {
                 spct.setNgayTao(thoiGianNhap);
                 spct.setNgayCapNhat(thoiGianNhap);
 
-
                 saveConfiguredVariantAttributeIfPresent(spct, dm, "Màu sắc", "Mặc định");
-                sanPhamChiTietRepository.save(spct);
+                spct = sanPhamChiTietRepository.save(spct);
+                if (spct.getSku() == null) {
+                    spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
+                    sanPhamChiTietRepository.save(spct);
+                }
                 savedCount = 1;
             } else {
                 String cleanMucCangChung = RacketSpecUtils.sanitizeRecommendedTension(request.getMucCang());
@@ -367,7 +378,6 @@ public class AdminSanPhamService {
                     spct.setNgayTao(thoiGianNhap);
                     spct.setNgayCapNhat(thoiGianNhap);
 
-
                     if (v.getAttributes() != null && !v.getAttributes().isEmpty()) {
                         Set<Integer> savedAttributeIds = new HashSet<>();
                         for (AttributeValueRequest attrReq : v.getAttributes()) {
@@ -389,7 +399,11 @@ public class AdminSanPhamService {
                         saveConfiguredVariantAttributeIfPresent(spct, dm, "Sức căng", normCang);
                     }
 
-                    sanPhamChiTietRepository.save(spct);
+                    spct = sanPhamChiTietRepository.save(spct);
+                    if (spct.getSku() == null) {
+                        spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
+                        sanPhamChiTietRepository.save(spct);
+                    }
                     savedCount++;
                 }
             }

@@ -967,7 +967,13 @@ public class AdminController {
                     }
                 }
                 String tenDotGiamGia = item.getTenDotGiamGiaSnapshot() != null ? item.getTenDotGiamGiaSnapshot() : "";
-                String skuSnapshot = item.getSkuSnapshot() != null ? item.getSkuSnapshot() : "";
+                String skuSnapshot = item.getSkuSnapshot();
+                if ((skuSnapshot == null || skuSnapshot.isBlank()) && item.getSanPhamChiTiet() != null) {
+                    skuSnapshot = item.getSanPhamChiTiet().getSku();
+                }
+                if (skuSnapshot == null) {
+                    skuSnapshot = "";
+                }
 
                 String hinhAnh = "";
                 if (item.getSanPhamChiTiet() != null) {

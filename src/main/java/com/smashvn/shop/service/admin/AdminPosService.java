@@ -285,7 +285,13 @@ public class AdminPosService {
             hdct.setGiaSauGiam(sellingPrice);
             hdct.setTenSanPhamSnapshot(spct.getSanPham().getTenSanPham());
 
-            String sku = "SKU-" + spct.getSanPham().getId() + "-" + spct.getId();
+            String sku = spct.getSku();
+            if (sku == null || sku.isBlank()) {
+                String maSp = (spct.getSanPham() != null && spct.getSanPham().getMaSanPham() != null)
+                        ? spct.getSanPham().getMaSanPham()
+                        : com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateProductCode(spct.getSanPham().getId());
+                sku = com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(maSp, spct.getId());
+            }
             hdct.setSkuSnapshot(sku);
             hdct.setTenDotGiamGiaSnapshot(priceSnapshot.tenDotGiamGia());
             hdct.setThuocTinhSnapshot(inventoryLotService.getDisplayTitle(spct));

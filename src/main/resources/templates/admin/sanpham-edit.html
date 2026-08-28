@@ -167,6 +167,7 @@
                                             <tr>
                                                 <th class="text-center text-nowrap" style="width: 45px;">STT</th>
                                                 <th class="text-center text-nowrap" style="width: 65px;">Ảnh</th>
+                                                <th class="text-nowrap">Mã SKU</th>
                                                 <th class="text-nowrap">Phân Loại / Thông Số</th>
                                                 <th class="text-nowrap">Giá Bán</th>
                                                 <th class="text-nowrap">Tồn Kho</th>
@@ -184,6 +185,9 @@
                                                              onerror="this.onerror=null; this.src='/images/placeholder.png';"
                                                              alt="Ảnh SP" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                                     </div>
+                                                </td>
+                                                <td class="text-nowrap">
+                                                    <span class="badge bg-light text-dark border font-monospace" th:text="${bt.sku != null ? bt.sku : 'N/A'}">SP000001-V000001</span>
                                                 </td>
                                                 <td class="text-nowrap">
                                                     <strong class="text-dark d-block" th:text="${bt.phanLoaiHienThi}">Mặc định</strong>
@@ -211,6 +215,7 @@
                                                                 th:attr="
                                                                     data-bt-id=${bt.id},
                                                                     data-sp-id=${sp.id},
+                                                                    data-sku=${bt.sku},
                                                                     data-attrs-json=${bt.thuocTinhMapJson},
                                                                     data-gia-ban=${bt.giaBan},
                                                                     data-so-luong=${bt.soLuongTon},
@@ -259,7 +264,7 @@
                                                 </td>
                                             </tr>
                                             <tr th:if="${#lists.isEmpty(danhSachBienThe)}">
-                                                <td colspan="7" class="text-center text-muted py-4">
+                                                <td colspan="8" class="text-center text-muted py-4">
                                                     Chưa có phân loại nào. Hãy chọn tab "Thêm Biến Thể Mới" ở cột bên phải.
                                                 </td>
                                             </tr>
@@ -311,6 +316,7 @@
                                                     <option th:each="bt : ${danhSachBienThe}"
                                                             th:value="${bt.id}"
                                                             th:attr="
+                                                                data-sku=${bt.sku},
                                                                 data-gia-ban=${bt.giaBan},
                                                                 data-so-luong=${bt.soLuongTon},
                                                                 data-mau-sac=${bt.mauSac},
@@ -337,6 +343,12 @@
 
                                             <form id="formSuaBienTheDirect" th:action="@{/admin/san-pham/{id}/bien-the/sua/0(id=${sp.id})}" method="post" enctype="multipart/form-data" onsubmit="return confirmSubmitForm(this, 'Bạn có chắc chắn muốn lưu thay đổi cho biến thể này không?');">
                                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                                <!-- Mã SKU (Readonly) -->
+                                                <div class="mb-3" id="wrapDirectSku" style="display:none;">
+                                                    <label class="admin-form-label"><i class="fas fa-barcode me-1 text-primary"></i>Mã SKU (Tự sinh - Bất biến)</label>
+                                                    <input type="text" id="directSku" class="admin-form-control form-control bg-light font-monospace" readonly disabled placeholder="SPxxxxxx-Vxxxxxx">
+                                                </div>
 
                                                 <!-- Giá + Số lượng -->
                                                 <div class="row g-3 mb-3">
@@ -896,12 +908,16 @@
             const wrapFile = document.getElementById('wrapDirectFile');
             const btnSubmit = document.getElementById('btnSubmitDirect');
 
+            const wrapSku = document.getElementById('wrapDirectSku');
+            const inputSku = document.getElementById('directSku');
+
             if (btId === 0) {
                 noteBulk.style.display = 'block';
                 noteSingle.style.display = 'none';
                 attrWrap.style.display = 'none';
                 imgRow.style.display = 'none';
                 wrapFile.style.display = 'none';
+                if (wrapSku) wrapSku.style.display = 'none';
 
                 document.getElementById('directGiaBan').value = '';
                 document.getElementById('directSoLuong').value = '';
@@ -918,10 +934,10 @@
                 document.getElementById('directGiaBan').required = true;
                 document.getElementById('directSoLuong').required = false;
 
-
                 const select = document.getElementById('selectDoiTuongSua');
                 const selectedOpt = select.options[select.selectedIndex];
 
+                const sku        = selectedOpt.dataset.sku || '';
                 const giaBan     = selectedOpt.dataset.giaBan || '';
                 const soLuong    = selectedOpt.dataset.soLuong || '';
                 const mauSac     = selectedOpt.dataset.mauSac || '';
@@ -930,6 +946,11 @@
                 const mucCang    = selectedOpt.dataset.mucCang || '';
                 const hinhAnh    = selectedOpt.dataset.hinhAnh || '';
                 const attrsJson  = selectedOpt.dataset.attrsJson || '{}';
+
+                if (wrapSku && inputSku) {
+                    inputSku.value = sku || 'N/A';
+                    wrapSku.style.display = 'block';
+                }
 
                 document.getElementById('directGiaBan').value = giaBan;
                 document.getElementById('directSoLuong').value = soLuong;

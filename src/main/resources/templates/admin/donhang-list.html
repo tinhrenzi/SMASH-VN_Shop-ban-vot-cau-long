@@ -1787,6 +1787,8 @@
                             ? `<br><span class="badge-soft badge-soft-danger mt-1">${escapeHtml(item.tenDotGiamGia)} (-${item.phanTramGiam}%)</span>`
                             : '';
 
+                        const skuBadge = item.sku ? `<span class="badge bg-light text-dark border font-monospace me-1">${escapeHtml(item.sku)}</span>` : '';
+
                         itemsHtml += `
                         <tr>
                             <td class="text-center">
@@ -1794,7 +1796,7 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark mb-1">${escapeHtml(item.tenSanPham || 'N/A')}</div>
-                                <div class="text-muted small">${escapeHtml(item.thuocTinh || 'N/A')}</div>
+                                <div class="text-muted small">${skuBadge}${escapeHtml(item.thuocTinh || 'N/A')}</div>
                                 ${lineDiscountInfo}
                             </td>
                             <td class="text-center fw-bold">${item.soLuong}</td>

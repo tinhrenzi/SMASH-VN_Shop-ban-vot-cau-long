@@ -124,8 +124,9 @@
                             <table class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 60px;" class="text-center">STT</th>
-                                        <th class="text-center" style="width: 100px;">Hình Ảnh</th>
+                                        <th style="width: 50px;" class="text-center">STT</th>
+                                        <th class="text-center" style="width: 80px;">Hình Ảnh</th>
+                                        <th>Mã SKU</th>
                                         <th>Thông số Chi Tiết</th>
                                         <th>Giá Bán</th>
                                         <th>Số Lượng</th>
@@ -138,6 +139,9 @@
                                          <td class="text-center" th:text="${iterStat.count}">1</td>
                                          <td class="text-center">
                                               <img th:src="@{${bt.hinhAnhUrl}}" onerror="this.onerror=null; this.src='/images/placeholder.png';" alt="Ảnh SP" style="width: 50px; height: 50px; object-fit: contain; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff;">
+                                         </td>
+                                         <td>
+                                             <span class="badge bg-light text-dark border font-monospace" th:text="${bt.sku != null ? bt.sku : 'N/A'}">SP000001-V000001</span>
                                          </td>
                                         <td>
                                             <strong class="text-primary" th:text="${bt.phanLoaiHienThi}">Mặc định</strong>
@@ -169,7 +173,7 @@
                                         </td>
                                     </tr>
                                     <tr th:if="${danhSachBienThe.isEmpty()}">
-                                        <td colspan="7" class="text-center text-muted py-4">Chưa có phân loại nào cho sản phẩm này. Hãy thêm ở form phía trên.</td>
+                                        <td colspan="8" class="text-center text-muted py-4">Chưa có phân loại nào cho sản phẩm này. Hãy thêm ở form phía trên.</td>
                                     </tr>
                                 </tbody>
                             </table>

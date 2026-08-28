@@ -80,6 +80,8 @@ public class AdminPosController {
                 snap = new PriceSnapshot(giaGoc, giaGoc, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
             }
             map.put("id", v.getId());
+            map.put("sku", v.getSku() != null ? v.getSku() : "");
+            map.put("maSanPham", v.getSanPham() != null && v.getSanPham().getMaSanPham() != null ? v.getSanPham().getMaSanPham() : "");
             map.put("tenSanPham", v.getSanPham() != null && v.getSanPham().getTenSanPham() != null ? v.getSanPham().getTenSanPham() : "Sản phẩm");
             map.put("phanLoai", v.getPhanLoaiHienThi());
             map.put("mauSac", v.getMauSac() != null ? v.getMauSac() : "N/A");

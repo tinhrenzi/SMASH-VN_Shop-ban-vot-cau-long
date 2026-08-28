@@ -19,6 +19,10 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
 
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
 
+    Optional<SanPhamChiTiet> findBySku(String sku);
+
+    boolean existsBySku(String sku);
+
     @Query("""
             SELECT DISTINCT spct FROM SanPhamChiTiet spct
             LEFT JOIN FETCH spct.sanPhamChiTietThuocTinhs att
@@ -145,7 +149,6 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
             LEFT JOIN FETCH sp.danhMuc dm
             LEFT JOIN FETCH sp.thuongHieu th
             LEFT JOIN FETCH sp.cacDotGiamGia dgg
-            LEFT JOIN FETCH spct.hinhAnhSanPhams imgs
             LEFT JOIN spct.sanPhamChiTietThuocTinhs att
             WHERE sp.trangThaiValue = true
               AND dm.trangThai = true
@@ -156,6 +159,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet, 
               AND (
                     :keyword IS NULL OR :keyword = '' OR
                     LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(COALESCE(sp.maSanPham, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(COALESCE(spct.sku, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(att.giaTri, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(dm.tenDanhMuc, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                     LOWER(COALESCE(th.tenThuongHieu, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))

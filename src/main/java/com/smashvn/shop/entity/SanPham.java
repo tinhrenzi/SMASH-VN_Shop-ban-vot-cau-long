@@ -35,6 +35,9 @@ public class SanPham {
     @JoinColumn(name = "id_nhan_vien", nullable = false)
     private NhanVien nhanVien;
 
+    @Column(name = "ma_san_pham", length = 20)
+    private String maSanPham;
+
     @Column(name = "ten_san_pham", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String tenSanPham;
     

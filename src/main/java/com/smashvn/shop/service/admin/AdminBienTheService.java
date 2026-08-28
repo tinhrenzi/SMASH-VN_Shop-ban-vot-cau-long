@@ -126,7 +126,11 @@ public class AdminBienTheService {
         BigDecimal actualGiaNhap = (giaNhap != null && giaNhap.compareTo(BigDecimal.ZERO) > 0) ? giaNhap : giaBan;
 
         if (existingVariant != null) {
-            // Biến thể đã tồn tại -> Nhập lô hàng mới cho biến thể này thay vì ném ngoại lệ
+            // Biến thể đã tồn tại -> Mở lại nếu đang ngưng kinh doanh & Nhập lô hàng mới cho biến thể này thay vì tạo mới
+            if (TRANG_THAI_NGUNG_KINH_DOANH.equals(existingVariant.getTrangThai()) && (soLuongTon == null || soLuongTon > 0)) {
+                existingVariant.setTrangThai(TRANG_THAI_DANG_BAN);
+                sanPhamChiTietRepository.save(existingVariant);
+            }
             inventoryLotService.nhapLoMoi(existingVariant.getId(), soLuongTon != null ? soLuongTon : 0, actualGiaNhap, idNguoiDung);
             return;
         }
@@ -169,11 +173,17 @@ public class AdminBienTheService {
             }
         }
 
+        // Đảm bảo sản phẩm gốc có maSanPham trước khi sinh SKU
+        if (sp.getMaSanPham() == null || sp.getMaSanPham().isBlank()) {
+            sp.setMaSanPham(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateProductCode(sp.getId()));
+            sp = sanPhamRepository.save(sp);
+        }
+
         SanPhamChiTiet spct = new SanPhamChiTiet();
         spct.setSanPham(sp);
         spct.setGiaBan(giaBan);
         spct.setGiaNhap(actualGiaNhap);
-        spct.setSoLuongTon(soLuongTon);
+        spct.setSoLuongTon(soLuongTon != null ? soLuongTon : 0);
         spct.setTrangThai(TRANG_THAI_DANG_BAN);
 
         saveOrUpdateAttribute(spct, "Màu sắc", cleanMauSac);
@@ -182,7 +192,12 @@ public class AdminBienTheService {
         saveOrUpdateAttribute(spct, "Sức căng", cleanMucCang);
 
         spct.setHinhAnhSanPham(secureFileName);
-        sanPhamChiTietRepository.save(spct);
+        spct = sanPhamChiTietRepository.save(spct);
+
+        if (spct.getSku() == null) {
+            spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
+            spct = sanPhamChiTietRepository.save(spct);
+        }
 
         if (catType == com.smashvn.shop.constant.CategoryType.VOT && cleanMucCang != null) {
             updateMucCangAllVariants(idSanPham, cleanMucCang);

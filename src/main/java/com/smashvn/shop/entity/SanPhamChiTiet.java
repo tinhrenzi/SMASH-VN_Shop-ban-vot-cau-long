@@ -46,6 +46,9 @@ public class SanPhamChiTiet {
     @JoinColumn(name = "id_san_pham", nullable = false)
     private SanPham sanPham;
 
+    @Column(name = "sku", length = 40)
+    private String sku;
+
     @Column(name = "gia_ban", nullable = false)
     private BigDecimal giaBan;
 
@@ -74,6 +77,7 @@ public class SanPhamChiTiet {
 
     @OneToMany(mappedBy = "sanPhamChiTiet", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @org.hibernate.annotations.BatchSize(size = 30)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SELECT)
     @jakarta.persistence.OrderBy("laAnhChinh DESC, thuTu ASC, id ASC")
     @Builder.Default
     private List<HinhAnhSanPham> hinhAnhSanPhams = new ArrayList<>();

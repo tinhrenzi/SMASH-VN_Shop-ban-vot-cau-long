@@ -696,6 +696,7 @@ CREATE TABLE [dbo].[SanPham](
 	[diem_trung_binh] [float] NOT NULL,
 	[ngay_tao] [datetime] NOT NULL,
 	[ngay_cap_nhat] [datetime] NULL,
+	[ma_san_pham] [nvarchar](20) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
@@ -732,6 +733,7 @@ CREATE TABLE [dbo].[SanPhamChiTiet](
 	[ngay_tao] [datetime] NOT NULL,
 	[ngay_cap_nhat] [datetime] NULL,
 	[so_luong_sp_loi] [int] NOT NULL,
+	[sku] [nvarchar](40) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
@@ -2176,6 +2178,60 @@ SELECT
     SUM(CASE WHEN so_luong_sp_loi = 0 THEN 1 ELSE 0 END) AS [SPCT_KhoLoiBang0],
     SUM(CASE WHEN so_luong_sp_loi IS NULL THEN 1 ELSE 0 END) AS [SPCT_KhoLoiNull]
 FROM dbo.SanPhamChiTiet;
+GO
+
+/* ============================================================================
+   PHẦN 4 - BACKFILL maSanPham và SKU (tương thích ProductCodeAndSkuGenerator.java)
+   ============================================================================
+   Thuật toán padding:
+     - ID < 1.000.000  → 'SP' + RIGHT('000000' + CAST(id,6), 6)   → SP000001..SP999999
+     - ID >= 1.000.000 → 'SP' + CAST(id)                           → SP1000000...
+   SKU biến thể = {ma_san_pham} + '-V' + (cùng logic padding)
+   ============================================================================ */
+
+-- 1. Backfill ma_san_pham cho SanPham
+UPDATE dbo.SanPham
+SET ma_san_pham = CASE 
+    WHEN id < 1000000 THEN N'SP' + RIGHT('000000' + CAST(id AS VARCHAR(20)), 6)
+    ELSE N'SP' + CAST(id AS VARCHAR(20))
+END
+WHERE ma_san_pham IS NULL OR LTRIM(RTRIM(ma_san_pham)) = '';
+GO
+
+-- 2. Backfill sku cho SanPhamChiTiet
+UPDATE spct
+SET spct.sku = CASE 
+    WHEN spct.id < 1000000 THEN sp.ma_san_pham + N'-V' + RIGHT('000000' + CAST(spct.id AS VARCHAR(20)), 6)
+    ELSE sp.ma_san_pham + N'-V' + CAST(spct.id AS VARCHAR(20))
+END
+FROM dbo.SanPhamChiTiet spct
+INNER JOIN dbo.SanPham sp ON spct.id_san_pham = sp.id
+WHERE spct.sku IS NULL OR LTRIM(RTRIM(spct.sku)) = '';
+GO
+
+-- 3. Kiểm tra kết quả backfill
+PRINT N'=== Kiểm tra maSanPham và SKU sau backfill ===';
+SELECT COUNT(*) AS [SanPham_ThieuMaSP]   FROM dbo.SanPham        WHERE ma_san_pham IS NULL;
+SELECT COUNT(*) AS [SanPhamChiTiet_ThieuSku] FROM dbo.SanPhamChiTiet WHERE sku IS NULL;
+GO
+
+-- 4. Xem mẫu kết quả
+SELECT TOP 10 id, ten_san_pham, ma_san_pham FROM dbo.SanPham ORDER BY id;
+GO
+SELECT TOP 10 spct.id, sp.ma_san_pham, spct.sku FROM dbo.SanPhamChiTiet spct
+JOIN dbo.SanPham sp ON sp.id = spct.id_san_pham ORDER BY spct.id;
+GO
+
+-- 5. Tạo Filtered Unique Index trên ma_san_pham (SQL Server - WHERE IS NOT NULL)
+CREATE UNIQUE INDEX UX_SanPham_MaSanPham
+ON dbo.SanPham(ma_san_pham)
+WHERE ma_san_pham IS NOT NULL;
+GO
+
+-- 6. Tạo Filtered Unique Index trên sku
+CREATE UNIQUE INDEX UX_SanPhamChiTiet_Sku
+ON dbo.SanPhamChiTiet(sku)
+WHERE sku IS NOT NULL;
 GO
 
 PRINT N'=== HOÀN TẤT: BadmintonShopDB1 đã được tạo theo schema mới và nạp dữ liệu từ file dữ liệu đầy đủ ===';

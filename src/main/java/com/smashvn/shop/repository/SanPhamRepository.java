@@ -20,6 +20,10 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
 
     List<SanPham> findTop10ByOrderByIdDesc();
 
+    Optional<SanPham> findByMaSanPham(String maSanPham);
+
+    boolean existsByMaSanPham(String maSanPham);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT sp FROM SanPham sp WHERE sp.id = :id")
     Optional<SanPham> findByIdWithLock(@Param("id") Integer id);
@@ -85,6 +89,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
            "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) " +
            "AND (:keyword IS NULL OR :keyword = '' OR " +
            "       LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(COALESCE(sp.maSanPham, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:categoryId IS NULL OR sp.danhMuc.id = :categoryId) " +
@@ -116,6 +121,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
            "AND (sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) " +
            "AND (sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND " +
            "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(COALESCE(sp.maSanPham, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "ORDER BY sp.id DESC")
     java.util.List<SanPham> searchAutocomplete(@Param("keyword") String keyword, Pageable pageable);
@@ -175,6 +181,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
            "(sp.danhMuc IS NULL OR sp.danhMuc.trangThai = true) AND " +
            "(sp.thuongHieu IS NULL OR sp.thuongHieu.trangThai = true) AND " +
            "(LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(COALESCE(sp.maSanPham, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.thuongHieu.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(sp.danhMuc.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     java.util.List<SanPham> searchByKeyword(@Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
