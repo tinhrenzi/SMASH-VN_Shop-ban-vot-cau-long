@@ -168,7 +168,7 @@ public class SanPhamController {
         ensureCategoryRequiredAttributes(catType, sanPham, dynamicAttributes, allAttributes, listBienTheJS);
 
         boolean inWishlist = false;
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = activeMemberAccountId(session);
         if (idTaiKhoan != null) {
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
             if (kh != null) {
@@ -244,9 +244,9 @@ public class SanPhamController {
                              @RequestParam(value = "fileAnh", required = false) List<MultipartFile> files,
                              HttpSession session,
                              RedirectAttributes redirectAttributes) {
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = activeMemberAccountId(session);
         if (idTaiKhoan == null) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Vui lòng đăng nhập để thực hiện đánh giá sản phẩm.");
+            redirectAttributes.addFlashAttribute("errorMsg", "Vui lòng kích hoạt tài khoản thành viên để thực hiện đánh giá sản phẩm.");
             return "redirect:/user/dang-nhap";
         }
 
@@ -336,7 +336,7 @@ public class SanPhamController {
         ensureCategoryRequiredAttributes(catTypeQuick, sanPham, dynamicAttributes, new java.util.LinkedHashMap<>(), listBienTheJS);
 
         boolean inWishlist = false;
-        Integer idTaiKhoan = (Integer) session.getAttribute("idNguoiDung");
+        Integer idTaiKhoan = activeMemberAccountId(session);
         if (idTaiKhoan != null) {
             KhachHang kh = khachHangRepository.findByTaiKhoan_Id(idTaiKhoan);
             if (kh != null) {
@@ -356,6 +356,22 @@ public class SanPhamController {
         model.addAttribute("soLuongYeuThich", wishlistRepository.countById_SanPhamId(id));
         
         return "layout/modals :: quick-look-fragment"; 
+    }
+
+    private Integer activeMemberAccountId(HttpSession session) {
+        if (session == null || Boolean.TRUE.equals(session.getAttribute("isGuestView"))) {
+            return null;
+        }
+        Object accountId = session.getAttribute("idNguoiDung");
+        if (!(accountId instanceof Integer idTaiKhoan)) {
+            return null;
+        }
+        TaiKhoan account = taiKhoanRepository.findById(idTaiKhoan).orElse(null);
+        return account != null
+                && account.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.ACTIVE
+                && "hoat_dong".equalsIgnoreCase(account.getTrangThai())
+                        ? idTaiKhoan
+                        : null;
     }
 
     private boolean isSelectableAttribute(DanhMuc dm, String attrName) {

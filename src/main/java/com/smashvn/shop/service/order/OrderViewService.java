@@ -86,11 +86,34 @@ public class OrderViewService {
 
         if (realOrders != null && !realOrders.isEmpty()) {
             for (HoaDon hd : realOrders) {
+                if (!isVisibleInCustomerOrderHistory(hd)) {
+                    continue;
+                }
                 resultList.add(mapSingleOrderToMap(hd));
             }
         }
 
         return resultList;
+    }
+
+    /**
+     * Đơn SePay mới chỉ được khởi tạo để chờ quét QR chưa phải là một lần đặt
+     * hàng thành công. Vì vậy không hiển thị các bản ghi chờ thanh toán và các
+     * bản ghi đã tự hết hạn trong lịch sử mua hàng của khách. Đơn do khách hoặc
+     * nhân viên chủ động hủy vẫn được giữ lại để khách có thể tra cứu.
+     */
+    private boolean isVisibleInCustomerOrderHistory(HoaDon hoaDon) {
+        if (hoaDon == null) {
+            return false;
+        }
+
+        String orderStatus = hoaDon.getTrangThaiDonHang();
+        if (OrderStatus.CHO_THANH_TOAN.getValue().equalsIgnoreCase(orderStatus)) {
+            return false;
+        }
+
+        return !(OrderStatus.DA_HUY.getValue().equalsIgnoreCase(orderStatus)
+                && "expired".equalsIgnoreCase(hoaDon.getPaymentStatus()));
     }
 
     public Map<String, Object> layChiTietDonHangChoCustomer(Integer idHoaDon, Integer idKhachHang) {

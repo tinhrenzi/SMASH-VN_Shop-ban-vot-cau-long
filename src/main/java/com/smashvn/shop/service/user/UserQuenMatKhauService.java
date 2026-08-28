@@ -16,6 +16,7 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.repository.KhachHangRepository;
 import com.smashvn.shop.repository.TokenKhoiPhucRepository;
+import com.smashvn.shop.service.order.GuestCheckoutService;
 import com.smashvn.shop.util.PhoneUtils;
 
 @Service
@@ -27,6 +28,7 @@ public class UserQuenMatKhauService {
     private final TokenKhoiPhucRepository tokenRepository;
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
+    private final GuestCheckoutService guestCheckoutService;
 
     // 1. Tạo và gửi Link khôi phục
     @Transactional
@@ -151,11 +153,13 @@ public class UserQuenMatKhauService {
         }
 
         TaiKhoan tk = tkp.getTaiKhoan();
-        tk.setMatKhau(passwordEncoder.encode(matKhauMoi)); // Mã hóa Pass mới
-        if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
-            tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+            // Mọi đường đặt mật khẩu chính thức của Guest đều đi qua cùng một điểm chuyển ACTIVE.
+            guestCheckoutService.setPasswordForGuest(tk.getId(), matKhauMoi);
+        } else {
+            tk.setMatKhau(passwordEncoder.encode(matKhauMoi));
+            taiKhoanRepository.saveAndFlush(tk);
         }
-        taiKhoanRepository.saveAndFlush(tk);
 
         tkp.setDaSuDung(true);
         tokenRepository.saveAndFlush(tkp);

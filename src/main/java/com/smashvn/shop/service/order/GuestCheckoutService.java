@@ -15,8 +15,6 @@ import com.smashvn.shop.util.PhoneUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import jakarta.mail.internet.MimeMessage;
@@ -38,7 +36,6 @@ public class GuestCheckoutService {
     private final TokenKhoiPhucRepository tokenRepository;
     private final ThongBaoRepository thongBaoRepository;
     private final HoaDonChiTietRepository hoaDonChiTietRepository;
-    private final com.smashvn.shop.repository.HoaDonRepository hoaDonRepository;
     private final JavaMailSender mailSender;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
@@ -59,38 +56,17 @@ public class GuestCheckoutService {
             return "LOCKED";
         }
 
-        if (tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty()) {
-            if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
-                log.info("[GUEST_CHECKOUT] Upgrading guest account with existing password to ACTIVE for email: {}", email);
-                tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
-                taiKhoanRepository.save(tk);
-            }
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.ACTIVE) {
             return "ACTIVE";
         }
 
-        if (tk.getTrangThaiTaiKhoan() == AccountStatus.ACTIVE) {
-            // Auto-correct accounts created without a password
-            log.info("[GUEST_CHECKOUT] Correcting corrupt account status ACTIVE -> GUEST for email: {}", email);
-            tk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
-            taiKhoanRepository.save(tk);
+        if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+            return hasText(tk.getMatKhau())
+                    ? "GUEST_WITH_TEMP_PASSWORD"
+                    : "GUEST_NO_PASSWORD";
         }
 
-        // status is GUEST: dynamically check maximum between recorded counter and actual orders in DB
-        int recordedCount = (tk.getSoLanMuaThanhCong() != null) ? tk.getSoLanMuaThanhCong() : 0;
-        long dbOrderCount = (hoaDonRepository != null) ? hoaDonRepository.countOrdersByTaiKhoanOrEmail(tk.getId(), email.trim()) : 0;
-        int effectiveCount = Math.max(recordedCount, (int) dbOrderCount);
-
-        if (effectiveCount > recordedCount) {
-            tk.setSoLanMuaThanhCong(effectiveCount);
-            taiKhoanRepository.save(tk);
-            log.info("[GUEST_CHECKOUT] Resynchronized purchase count for TaiKhoan ID {}: {} -> {}", tk.getId(), recordedCount, effectiveCount);
-        }
-
-        if (effectiveCount < 3) {
-            return "GUEST_VALID";
-        } else {
-            return "GUEST_EXPIRED";
-        }
+        return tk.getTrangThaiTaiKhoan().name();
     }
 
     public static class GuestRegisterResult {
@@ -139,16 +115,6 @@ public class GuestCheckoutService {
         TaiKhoan existingTk = taiKhoanRepository.findByUsername(trimmedEmail);
         if (existingTk != null) {
             log.info("[GUEST_CHECKOUT] Linked order with existing guest account: {}", trimmedEmail);
-            // Auto-correct corrupt guest account status if it was set to ACTIVE without password
-            if ((existingTk.getMatKhau() == null || existingTk.getMatKhau().trim().isEmpty()) && existingTk.getTrangThaiTaiKhoan() == AccountStatus.ACTIVE) {
-                log.info("[GUEST_CHECKOUT] Auto-correcting corrupt guest account status to GUEST for: {}", trimmedEmail);
-                existingTk.setTrangThaiTaiKhoan(AccountStatus.GUEST);
-                taiKhoanRepository.save(existingTk);
-            } else if (existingTk.getMatKhau() != null && !existingTk.getMatKhau().trim().isEmpty() && existingTk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
-                log.info("[GUEST_CHECKOUT] Upgrading guest account with existing password to ACTIVE for: {}", trimmedEmail);
-                existingTk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
-                taiKhoanRepository.save(existingTk);
-            }
 
             // An toàn dữ liệu: KHÔNG ghi đè họ tên, số điện thoại của hồ sơ KhachHang cũ
             // Tìm hoặc sinh token GUEST_ACTIVATION duy nhất còn hiệu lực
@@ -296,7 +262,7 @@ public class GuestCheckoutService {
     @Transactional
     public void incrementPurchaseCount(Integer idTaiKhoan) {
         if (idTaiKhoan == null) return;
-        TaiKhoan tk = taiKhoanRepository.findById(idTaiKhoan).orElse(null);
+        TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(idTaiKhoan).orElse(null);
         if (tk == null) return;
         int current = (tk.getSoLanMuaThanhCong() != null) ? tk.getSoLanMuaThanhCong() : 0;
         tk.setSoLanMuaThanhCong(current + 1);
@@ -465,8 +431,8 @@ public class GuestCheckoutService {
             throw new RuntimeException("Tài khoản này đã bị khóa hoặc đang chờ khóa. Vui lòng liên hệ quản trị viên!");
         }
 
-        // Password Activation Race Protection: only GUEST state allowed (unless password is missing)
-        if (tk.getTrangThaiTaiKhoan() != AccountStatus.GUEST && (tk.getMatKhau() != null && !tk.getMatKhau().trim().isEmpty())) {
+        // GUEST + password là mật khẩu tạm; chỉ thao tác này hoặc activation link mới được ACTIVE.
+        if (tk.getTrangThaiTaiKhoan() != AccountStatus.GUEST) {
             throw new IllegalStateException("Tài khoản đã được kích hoạt trước đó.");
         }
 
@@ -482,10 +448,22 @@ public class GuestCheckoutService {
         if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,30}$")) {
             throw new RuntimeException("Mật khẩu phải chứa cả chữ và số!");
         }
+        if (hasText(tk.getMatKhau()) && passwordEncoder.matches(password, tk.getMatKhau())) {
+            throw new RuntimeException("Mật khẩu chính thức phải khác mật khẩu tạm thời!");
+        }
 
         tk.setMatKhau(passwordEncoder.encode(password));
         tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
         taiKhoanRepository.saveAndFlush(tk);
+
+        List<TokenKhoiPhuc> activeTokens = tokenRepository
+                .findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "GUEST_ACTIVATION");
+        for (TokenKhoiPhuc activeToken : activeTokens) {
+            activeToken.setDaSuDung(true);
+        }
+        if (!activeTokens.isEmpty()) {
+            tokenRepository.saveAll(activeTokens);
+        }
 
         log.info("[GUEST_CHECKOUT] Upgraded guest account ID {} to ACTIVE status and saved password.", idTaiKhoan);
     }
@@ -520,6 +498,10 @@ public class GuestCheckoutService {
         if (!otherTokens.isEmpty()) {
             tokenRepository.saveAll(otherTokens);
         }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     @org.springframework.scheduling.annotation.Async

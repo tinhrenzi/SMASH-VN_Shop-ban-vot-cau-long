@@ -13,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +50,12 @@ class SepayOrderPaymentServiceTest {
 
     @Mock
     private AuditService auditService;
+
+    @Mock
+    private com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
+
+    @Mock
+    private com.smashvn.shop.service.user.TemporaryPasswordService temporaryPasswordService;
 
     @InjectMocks
     private SepayOrderPaymentService sepayOrderPaymentService;
@@ -172,6 +180,14 @@ class SepayOrderPaymentServiceTest {
         order.setTrangThaiDonHang("CHO_THANH_TOAN");
         order.setPhieuGiamGia(voucher);
 
+        com.smashvn.shop.entity.TaiKhoan guest = new com.smashvn.shop.entity.TaiKhoan();
+        guest.setId(25);
+        guest.setTrangThaiTaiKhoan(com.smashvn.shop.entity.AccountStatus.GUEST);
+        com.smashvn.shop.entity.KhachHang customer = new com.smashvn.shop.entity.KhachHang();
+        customer.setId(26);
+        customer.setTaiKhoan(guest);
+        order.setKhachHang(customer);
+
         when(hoaDonRepository.findById(200)).thenReturn(Optional.of(order));
         when(paymentTransactionRepository.findByTransactionId("TX_SEP_12345")).thenReturn(Optional.empty());
 
@@ -210,5 +226,91 @@ class SepayOrderPaymentServiceTest {
         assertEquals(4, voucher.getSoLuongConLai());
         verify(phieuGiamGiaRepository, times(1)).save(voucher);
         verify(hoaDonRepository, times(1)).save(order);
+        verify(temporaryPasswordService, times(1)).recordSepayPaymentSuccess(25);
+    }
+
+    @Test
+    void duplicateSepayTransactionDoesNotRecordPurchaseOrIssuePasswordAgain() {
+        HoaDon order = new HoaDon();
+        order.setId(300);
+        when(hoaDonRepository.findById(300)).thenReturn(Optional.of(order));
+
+        PaymentTransaction existing = new PaymentTransaction();
+        existing.setTransactionId("DUPLICATE_TX");
+        when(paymentTransactionRepository.findByTransactionId("DUPLICATE_TX"))
+                .thenReturn(Optional.of(existing));
+
+        assertTrue(sepayOrderPaymentService.xuLyThanhToanSePay(
+                300, "DUPLICATE_TX", java.math.BigDecimal.TEN, "{}"));
+
+        verifyNoInteractions(temporaryPasswordService);
+        verify(inventoryLotService, never()).allocateFifo(any());
+    }
+
+    @Test
+    void smtpFailureAfterSepayCommitDoesNotUndoPaidOrderOrIssueAgain() {
+        HoaDon order = new HoaDon();
+        order.setId(400);
+        order.setMaDonHang("HD400");
+        order.setTrangThaiDonHang("CHO_THANH_TOAN");
+        order.setEmailNguoiNhan("buyer@realmail.vn");
+
+        com.smashvn.shop.entity.TaiKhoan guest = new com.smashvn.shop.entity.TaiKhoan();
+        guest.setId(35);
+        guest.setTrangThaiTaiKhoan(com.smashvn.shop.entity.AccountStatus.GUEST);
+        com.smashvn.shop.entity.KhachHang customer = new com.smashvn.shop.entity.KhachHang();
+        customer.setId(36);
+        customer.setTaiKhoan(guest);
+        order.setKhachHang(customer);
+
+        com.smashvn.shop.entity.SanPhamChiTiet spct = new com.smashvn.shop.entity.SanPhamChiTiet();
+        spct.setId(2);
+        com.smashvn.shop.entity.HoaDonChiTiet provisional = new com.smashvn.shop.entity.HoaDonChiTiet();
+        provisional.setId(2);
+        provisional.setHoaDon(order);
+        provisional.setSanPhamChiTiet(spct);
+        provisional.setSoLuong(1);
+        provisional.setDonGia(java.math.BigDecimal.valueOf(200000));
+        provisional.setGiaGoc(java.math.BigDecimal.valueOf(200000));
+        provisional.setGiaSauGiam(java.math.BigDecimal.valueOf(200000));
+
+        when(hoaDonRepository.findById(400)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByTransactionId("TX_SMTP_FAIL")).thenReturn(Optional.empty());
+        when(hoaDonChiTietRepository.findByHoaDon_Id(400)).thenReturn(List.of(provisional));
+        when(inventoryLotService.allocateFifo(any())).thenReturn(
+                new com.smashvn.shop.dto.inventory.AllocationResult(
+                        com.smashvn.shop.dto.inventory.AllocationStatus.SUCCESS,
+                        List.of(new com.smashvn.shop.dto.inventory.LotAllocation(2, 2, spct, 1)),
+                        "OK"));
+
+        var issueResult = new com.smashvn.shop.service.user.TemporaryPasswordService.TemporaryPasswordIssueResult(
+                com.smashvn.shop.service.user.TemporaryPasswordService.IssueStatus.ISSUED,
+                35,
+                "buyer@realmail.vn",
+                "A7kp2Qm9Xs4L",
+                "activation-token");
+        when(temporaryPasswordService.recordSepayPaymentSuccess(35)).thenReturn(issueResult);
+        doThrow(new RuntimeException("SMTP unavailable"))
+                .when(temporaryPasswordService).sendTemporaryPasswordEmail(issueResult, "http://localhost:8080");
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            boolean result = sepayOrderPaymentService.xuLyThanhToanSePay(
+                    400, "TX_SMTP_FAIL", java.math.BigDecimal.valueOf(200000), "{}");
+            List<TransactionSynchronization> synchronizations =
+                    TransactionSynchronizationManager.getSynchronizations();
+
+            assertTrue(result);
+            assertEquals("paid", order.getTrangThaiThanhToan());
+            assertEquals("paid", order.getPaymentStatus());
+            assertEquals(1, synchronizations.size());
+            assertDoesNotThrow(() -> synchronizations.forEach(TransactionSynchronization::afterCommit));
+
+            verify(temporaryPasswordService).recordSepayPaymentSuccess(35);
+            verify(temporaryPasswordService).sendTemporaryPasswordEmail(issueResult, "http://localhost:8080");
+            assertEquals("paid", order.getTrangThaiThanhToan());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 }

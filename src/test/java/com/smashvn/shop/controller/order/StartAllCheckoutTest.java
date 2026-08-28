@@ -86,7 +86,8 @@ public class StartAllCheckoutTest {
                 checkoutContextService,
                 null,
                 null,
-                productAvailabilityService
+                productAvailabilityService,
+                null
         );
 
         when(productAvailabilityService.isVariantPublished(any())).thenReturn(true);

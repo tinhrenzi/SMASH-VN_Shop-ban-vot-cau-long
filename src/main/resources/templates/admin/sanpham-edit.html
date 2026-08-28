@@ -1195,8 +1195,8 @@
                     });
                 } else if (typeof showToast === 'function') {
                     showToast('Lỗi: Giá nhập cao hơn giá bán. Vui lòng nhập lại!', 'error');
-                } else {
-                    alert('Lỗi: Giá nhập cao hơn giá bán. Vui lòng nhập lại!');
+                } else if (window.SmashNotify && typeof window.SmashNotify.error === 'function') {
+                    window.SmashNotify.error('Giá nhập cao hơn giá bán. Vui lòng nhập lại!');
                 }
                 return false;
             }

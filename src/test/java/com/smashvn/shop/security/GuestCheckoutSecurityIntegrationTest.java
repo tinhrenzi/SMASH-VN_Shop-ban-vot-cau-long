@@ -376,14 +376,14 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void test08_GuestExpiredStatusDetectedAfterMultiplePurchases() {
+    void test08_GuestRemainsEligibleAfterMultiplePurchases() {
         String email = "guest-multiple-buys-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
         tk.setSoLanMuaThanhCong(3);
         taiKhoanRepository.saveAndFlush(tk);
 
         String status = guestCheckoutService.checkEmailStatus(email);
-        assertEquals("GUEST_EXPIRED", status);
+        assertEquals("GUEST_NO_PASSWORD", status);
     }
 
     @Test
@@ -401,7 +401,7 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void test10_OnlinePaymentIncrementsPurchaseCountAndEnforcesExpiryOn4thCheckout() throws Exception {
+    void test10_PurchaseCountNoLongerExpiresGuestCheckout() throws Exception {
         String email = "guest-4th-checkout-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
         assertEquals(0, tk.getSoLanMuaThanhCong());
@@ -416,7 +416,7 @@ public class GuestCheckoutSecurityIntegrationTest {
 
         // Service check
         String status = guestCheckoutService.checkEmailStatus(email);
-        assertEquals("GUEST_EXPIRED", status);
+        assertEquals("GUEST_NO_PASSWORD", status);
 
         // API check
         MvcResult result = mockMvc.perform(post("/checkout/api/check-email")
@@ -426,11 +426,12 @@ public class GuestCheckoutSecurityIntegrationTest {
                 .andReturn();
 
         String responseContent = result.getResponse().getContentAsString();
-        assertTrue(responseContent.contains("GUEST_EXPIRED"));
+        assertTrue(responseContent.contains("GUEST_NO_PASSWORD"));
+        assertFalse(responseContent.contains("GUEST_EXPIRED"));
     }
 
     @Test
-    void test11_GuestWithInSessionIdNguoiDungRejects4thCODCheckout() throws Exception {
+    void test11_GuestWithInSessionIdNguoiDungIsNotRejectedByFourthOrderRule() throws Exception {
         String email = "guest-insession-" + System.nanoTime() + "@example.com";
         TaiKhoan tk = createGuestAccount(email);
         tk.setSoLanMuaThanhCong(3);
@@ -453,8 +454,8 @@ public class GuestCheckoutSecurityIntegrationTest {
                 .andReturn();
 
         String responseJson = result.getResponse().getContentAsString();
-        assertTrue(responseJson.contains("yeucaudoimatkhau"));
-        assertTrue(responseJson.contains("quá 3 lần") || responseJson.contains("3 lần"));
+        assertFalse(responseJson.contains("yeucaudoimatkhau"));
+        assertFalse(responseJson.contains("quá 3 lần") || responseJson.contains("3 lần"));
     }
 
     @Test
@@ -475,7 +476,7 @@ public class GuestCheckoutSecurityIntegrationTest {
     }
 
     @Test
-    void test13_GuestWithPasswordLogsInUpgradesToActive() {
+    void test13_GuestWithTemporaryPasswordLoginRemainsGuest() {
         String email = "guest-login-active-" + System.nanoTime() + "@example.com";
         TaiKhoan guestTk = new TaiKhoan();
         guestTk.setUsername(email);
@@ -486,14 +487,14 @@ public class GuestCheckoutSecurityIntegrationTest {
 
         TaiKhoan loggedInTk = userDangNhapService.kiemTraDangNhap(email, "ValidPass123");
         assertNotNull(loggedInTk);
-        assertEquals(AccountStatus.ACTIVE, loggedInTk.getTrangThaiTaiKhoan());
+        assertEquals(AccountStatus.GUEST, loggedInTk.getTrangThaiTaiKhoan());
 
         TaiKhoan dbTk = taiKhoanRepository.findById(guestTk.getId()).orElseThrow();
-        assertEquals(AccountStatus.ACTIVE, dbTk.getTrangThaiTaiKhoan());
+        assertEquals(AccountStatus.GUEST, dbTk.getTrangThaiTaiKhoan());
     }
 
     @Test
-    void test14_CheckEmailStatusUpgradesGuestWithPasswordToActive() {
+    void test14_CheckEmailStatusRecognizesGuestWithTemporaryPasswordWithoutActivation() {
         String email = "guest-check-active-" + System.nanoTime() + "@example.com";
         TaiKhoan guestTk = new TaiKhoan();
         guestTk.setUsername(email);
@@ -503,9 +504,51 @@ public class GuestCheckoutSecurityIntegrationTest {
         guestTk = taiKhoanRepository.saveAndFlush(guestTk);
 
         String status = guestCheckoutService.checkEmailStatus(email);
-        assertEquals("ACTIVE", status);
+        assertEquals("GUEST_WITH_TEMP_PASSWORD", status);
 
         TaiKhoan dbTk = taiKhoanRepository.findById(guestTk.getId()).orElseThrow();
-        assertEquals(AccountStatus.ACTIVE, dbTk.getTrangThaiTaiKhoan());
+        assertEquals(AccountStatus.GUEST, dbTk.getTrangThaiTaiKhoan());
+    }
+
+    @Test
+    void test15_SetupPasswordRequiresVerifiedTemporaryPasswordSession() throws Exception {
+        mockMvc.perform(get("/user/setup-password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dang-nhap"));
+    }
+
+    @Test
+    void test16_VerifiedGuestSetsOfficialPasswordThenBecomesActive() throws Exception {
+        String email = "guest-official-" + System.nanoTime() + "@example.com";
+        TaiKhoan guest = createGuestAccount(email);
+        guest.setMatKhau(passwordEncoder.encode("Temporary123"));
+        taiKhoanRepository.saveAndFlush(guest);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idNguoiDung", guest.getId());
+        session.setAttribute("isGuestView", true);
+        session.setAttribute("temporaryPasswordVerified", true);
+        session.setAttribute("pendingPasswordSetupAccountId", guest.getId());
+
+        mockMvc.perform(get("/user/setup-password").session(session))
+                .andExpect(status().isOk())
+                .andExpect(view().name("setup-password"));
+
+        mockMvc.perform(post("/user/setup-password")
+                        .session(session)
+                        .param("newPassword", "Official456")
+                        .param("confirmPassword", "Official456")
+                        .requestAttr("_csrf", csrfToken))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/dashboard"));
+
+        TaiKhoan active = taiKhoanRepository.findById(guest.getId()).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, active.getTrangThaiTaiKhoan());
+        assertTrue(passwordEncoder.matches("Official456", active.getMatKhau()));
+        assertFalse(passwordEncoder.matches("Temporary123", active.getMatKhau()));
+        assertNull(session.getAttribute("isGuestView"));
+        assertNull(session.getAttribute("temporaryPasswordVerified"));
+        assertNull(session.getAttribute("pendingPasswordSetupAccountId"));
+        assertEquals("KH", session.getAttribute("activeRole"));
     }
 }

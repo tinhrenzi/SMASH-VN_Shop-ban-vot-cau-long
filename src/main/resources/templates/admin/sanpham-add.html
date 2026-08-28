@@ -852,8 +852,8 @@
                         });
                     } else if (typeof showToast === 'function') {
                         showToast(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`, 'error');
-                    } else {
-                        alert(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`);
+                    } else if (window.SmashNotify && typeof window.SmashNotify.error === 'function') {
+                        window.SmashNotify.error(`Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`);
                     }
 
                     return false;

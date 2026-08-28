@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.dao.DanhGiaDAO;
 import com.smashvn.shop.entity.CommentViolationLog;
+import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.DanhGia;
 import com.smashvn.shop.entity.HinhAnhDanhGia;
 import com.smashvn.shop.entity.KhachHang;
@@ -157,6 +158,10 @@ public class DanhGiaService {
         // Concurrency lock: Load TaiKhoan with Pessimistic Write Lock
         TaiKhoan tk = taiKhoanRepository.findByIdForUpdate(idTaiKhoan)
                 .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại!"));
+        if (tk.getTrangThaiTaiKhoan() != AccountStatus.ACTIVE
+                || (tk.getTrangThai() != null && !"hoat_dong".equalsIgnoreCase(tk.getTrangThai()))) {
+            throw new IllegalStateException("Bạn cần kích hoạt tài khoản thành viên để thực hiện đánh giá.");
+        }
 
         // Check if currently comment-banned
         if (tk.getNgayKhoaBinhLuanDen() != null && tk.getNgayKhoaBinhLuanDen().isAfter(LocalDateTime.now())) {

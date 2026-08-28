@@ -80,11 +80,8 @@ public class UserDangNhapService {
         if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST && (taiKhoan.getMatKhau() == null || taiKhoan.getMatKhau().trim().isEmpty())) {
             throw new RuntimeException("Tài khoản vãng lai chưa được kích hoạt mật khẩu. Vui lòng đăng nhập bằng Google hoặc kích hoạt qua email!");
         }
-        if (taiKhoan.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(taiKhoan.getTrangThai())) {
-            taiKhoan.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
-            taiKhoan = taiKhoanRepository.saveAndFlush(taiKhoan);
-            log.info("[LOGIN] Upgraded guest account {} to ACTIVE on password login.", taiKhoan.getUsername());
-        }
+        // GUEST + password đúng chỉ chứng minh người dùng biết mật khẩu tạm.
+        // Controller sẽ tạo phiên pending setup; tuyệt đối không ACTIVE tại đây.
         return taiKhoan;
     }
 
@@ -126,15 +123,9 @@ public class UserDangNhapService {
             if (tk.getTrangThaiTaiKhoan() == AccountStatus.LOCKED || "bi_khoa".equalsIgnoreCase(tk.getTrangThai())) {
                 throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
             }
-            // Nếu là tài khoản GUEST (khách vãng lai mua hàng trước đó), tự động nâng cấp thành ACTIVE khi đăng nhập Google thành công
+            // OAuth không được tự ý biến GUEST thành Member. Controller sẽ yêu cầu đặt mật khẩu chính thức.
             if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST || "khach_vang_lai".equalsIgnoreCase(tk.getTrangThai())) {
-                tk.setTrangThaiTaiKhoan(AccountStatus.ACTIVE);
-                if (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty()) {
-                    String randomPass = java.util.UUID.randomUUID().toString();
-                    tk.setMatKhau(passwordEncoder.encode(randomPass));
-                }
-                tk = taiKhoanRepository.save(tk);
-                log.info("[GOOGLE_LOGIN] Upgraded guest account {} to ACTIVE status on Google OAuth login.", normalizedEmail);
+                log.info("[GOOGLE_LOGIN] Guest account {} verified by OAuth and remains GUEST pending official password setup.", normalizedEmail);
             }
         }
         return tk;

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.exception.AccountLockedException;
 import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.exception.InvalidPasswordException;
@@ -124,10 +125,30 @@ public class UserDangNhapController {
             request.changeSessionId();
             session = request.getSession(true);
 
+            if (tkDangNhap.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+                // Chỉ tạo quyền đặt mật khẩu chính thức; chưa cấp session Member.
+                session.setAttribute("pendingPasswordSetupAccountId", tkDangNhap.getId());
+                session.setAttribute("temporaryPasswordVerified", true);
+                session.setAttribute("isGuestView", true);
+                session.setAttribute("guestCheckoutEmail", tkDangNhap.getUsername());
+                session.setAttribute("nguoiDungDangNhap", tkDangNhap.getUsername());
+                session.setAttribute("idNguoiDung", tkDangNhap.getId());
+                session.setAttribute("vaiTro", tkDangNhap.getVaiTro());
+                session.removeAttribute("activeRole");
+
+                KhachHang guest = khachHangRepository.findByTaiKhoan_Id(tkDangNhap.getId());
+                session.setAttribute("tenHienThi", guest != null
+                        ? guest.getHoKh() + " " + guest.getTenKh()
+                        : "Khách hàng");
+                return "redirect:/user/setup-password";
+            }
+
             // Xóa bỏ hoàn toàn trạng thái Guest nếu có
             session.removeAttribute("isGuestView");
             session.removeAttribute("guestCheckoutEmail");
             session.removeAttribute("allowedGuestOrderAccesses");
+            session.removeAttribute("temporaryPasswordVerified");
+            session.removeAttribute("pendingPasswordSetupAccountId");
 
             // Lưu thông tin vào Session (giữ nguyên kiểu dữ liệu String cho nguoiDungDangNhap)
             session.setAttribute("nguoiDungDangNhap", tkDangNhap.getUsername());
@@ -224,7 +245,24 @@ public class UserDangNhapController {
             request.changeSessionId();
             session = request.getSession(true);
 
+            if (tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST) {
+                session.setAttribute("pendingPasswordSetupAccountId", tk.getId());
+                session.setAttribute("temporaryPasswordVerified", true);
+                session.setAttribute("isGuestView", true);
+                session.setAttribute("guestCheckoutEmail", tk.getUsername());
+                session.setAttribute("nguoiDungDangNhap", tk.getUsername());
+                session.setAttribute("idNguoiDung", tk.getId());
+                session.setAttribute("vaiTro", tk.getVaiTro());
+                session.removeAttribute("activeRole");
+                return "redirect:/user/setup-password";
+            }
+
             // ÉP VÀO SESSION CỤC BỘ (Giúp Giỏ hàng và Dashboard nhận diện được user)
+            session.removeAttribute("isGuestView");
+            session.removeAttribute("guestCheckoutEmail");
+            session.removeAttribute("allowedGuestOrderAccesses");
+            session.removeAttribute("temporaryPasswordVerified");
+            session.removeAttribute("pendingPasswordSetupAccountId");
             session.setAttribute("nguoiDungDangNhap", tk.getUsername());
             session.setAttribute("idNguoiDung", tk.getId());
             session.setAttribute("vaiTro", tk.getVaiTro());

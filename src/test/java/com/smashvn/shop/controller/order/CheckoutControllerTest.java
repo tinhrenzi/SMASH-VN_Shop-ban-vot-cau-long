@@ -90,6 +90,9 @@ public class CheckoutControllerTest {
     @Mock
     private ProductAvailabilityService productAvailabilityService;
 
+    @Mock
+    private com.smashvn.shop.service.user.TemporaryPasswordService temporaryPasswordService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private CheckoutController checkoutController;
@@ -118,7 +121,8 @@ public class CheckoutControllerTest {
                 checkoutContextService,
                 pendingCheckoutRegistry,
                 gioHangChiTietRepository,
-                productAvailabilityService
+                productAvailabilityService,
+                temporaryPasswordService
         );
 
         when(productAvailabilityService.isVariantPublished(any())).thenReturn(true);
@@ -329,6 +333,150 @@ public class CheckoutControllerTest {
         verify(userAddressService, never()).layDanhSachDiaChi(anyInt());
         verify(gioHangService, never()).layDanhSachSanPhamTrongGio(guestAccountId);
         verify(gioHangService, never()).cleanPendingOrders(guestAccountId);
+    }
+
+    @Test
+    void setupPasswordPageRejectsSessionWithoutTemporaryPasswordVerification() {
+        when(session.getAttribute("temporaryPasswordVerified")).thenReturn(null);
+
+        String view = checkoutController.viewSetupPassword(session, new ConcurrentModel());
+
+        assertEquals("redirect:/user/dang-nhap", view);
+    }
+
+    @Test
+    void verifiedGuestCanSubmitOfficialPasswordAndReceiveMemberSession() {
+        TaiKhoan guest = new TaiKhoan();
+        guest.setId(15);
+        guest.setUsername("guest@example.com");
+        guest.setVaiTro("KH");
+        guest.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        guest.setMatKhau("$2a$tempHash");
+
+        jakarta.servlet.http.HttpServletRequest request = mock(jakarta.servlet.http.HttpServletRequest.class);
+        when(session.getAttribute("temporaryPasswordVerified")).thenReturn(true);
+        when(session.getAttribute("pendingPasswordSetupAccountId")).thenReturn(15);
+        when(request.getSession(true)).thenReturn(session);
+        when(taiKhoanRepository.findById(15)).thenReturn(java.util.Optional.of(guest));
+
+        String view = checkoutController.submitSetupPassword(
+                "Official456", "Official456", request, session, new ConcurrentModel());
+
+        assertEquals("redirect:/user/dashboard", view);
+        verify(guestCheckoutService).setPasswordForGuest(15, "Official456");
+        verify(request).changeSessionId();
+        verify(session).removeAttribute("isGuestView");
+        verify(session).removeAttribute("temporaryPasswordVerified");
+        verify(session).removeAttribute("pendingPasswordSetupAccountId");
+        verify(session).setAttribute("activeRole", "KH");
+    }
+
+    @Test
+    void codCheckoutRemainsSuccessfulWhenTemporaryPasswordEmailTriggerThrows() {
+        when(session.getAttribute("idNguoiDung")).thenReturn(null);
+
+        com.smashvn.shop.dto.order.CheckoutContext context =
+                com.smashvn.shop.dto.order.CheckoutContext.builder()
+                        .token("cod-email-failure-token")
+                        .source(com.smashvn.shop.dto.order.CheckoutSource.CART)
+                        .status(com.smashvn.shop.dto.order.CheckoutContextStatus.READY)
+                        .build();
+        when(checkoutContextService.getContext(session, "cod-email-failure-token")).thenReturn(context);
+
+        TaiKhoan guest = new TaiKhoan();
+        guest.setId(77);
+        guest.setUsername("cod-buyer@realmail.vn");
+        guest.setVaiTro("KH");
+        guest.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        guest.setSoLanMuaThanhCong(1);
+        com.smashvn.shop.entity.KhachHang customer = new com.smashvn.shop.entity.KhachHang();
+        customer.setId(78);
+        customer.setTaiKhoan(guest);
+
+        when(guestCheckoutService.checkEmailStatus("cod-buyer@realmail.vn")).thenReturn("NEW");
+        when(guestCheckoutService.autoRegisterGuest(
+                "Guest Buyer", "0912345678", "cod-buyer@realmail.vn"))
+                .thenReturn(new com.smashvn.shop.service.order.GuestCheckoutService.GuestRegisterResult(
+                        guest, "activation-token", true));
+        when(khachHangRepository.findByTaiKhoan_Id(77)).thenReturn(customer);
+
+        DonViVanChuyen carrier = new DonViVanChuyen();
+        carrier.setId(1);
+        carrier.setMaDonVi("GHN");
+        carrier.setTenDonVi("Giao Hàng Nhanh");
+        when(donViVanChuyenDAO.findAll()).thenReturn(List.of(carrier));
+        when(soDiaChiRepository.findByKhachHang_Id(78)).thenReturn(List.of());
+        when(soDiaChiRepository.save(any(SoDiaChi.class))).thenAnswer(invocation -> {
+            SoDiaChi address = invocation.getArgument(0);
+            address.setId(91);
+            return address;
+        });
+
+        com.smashvn.shop.entity.HoaDon order = new com.smashvn.shop.entity.HoaDon();
+        order.setId(500);
+        order.setMaDonHang("HD500");
+        order.setPaymentMethod("COD");
+        order.setTongTien(BigDecimal.valueOf(250000));
+        order.setKhachHang(customer);
+        com.smashvn.shop.dto.order.OrderCreationResult orderResult =
+                com.smashvn.shop.dto.order.OrderCreationResult.builder()
+                        .hoaDon(order)
+                        .purchasedItems(List.of())
+                        .build();
+        when(gioHangService.submitCodOrder(
+                eq(77), same(context), same(session),
+                eq("Guest Buyer"), eq("0912345678"), eq("123 Street, District, City"),
+                eq(1), isNull(), eq(1442), eq("20101"), eq(201), eq(91), isNull()))
+                .thenReturn(orderResult);
+
+        var issueResult = new com.smashvn.shop.service.user.TemporaryPasswordService.TemporaryPasswordIssueResult(
+                com.smashvn.shop.service.user.TemporaryPasswordService.IssueStatus.ISSUED,
+                77,
+                "cod-buyer@realmail.vn",
+                "A7kp2Qm9Xs4L",
+                "activation-token");
+        when(temporaryPasswordService.recordCodOrderCreated(77, true)).thenReturn(issueResult);
+        doThrow(new RuntimeException("SMTP unavailable"))
+                .when(temporaryPasswordService).sendTemporaryPasswordEmail(any(), anyString());
+
+        jakarta.servlet.http.HttpServletRequest request = mock(jakarta.servlet.http.HttpServletRequest.class);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getScheme()).thenReturn("https");
+        when(request.getServerName()).thenReturn("smash.vn");
+        when(request.getServerPort()).thenReturn(443);
+        when(request.getContextPath()).thenReturn("");
+
+        org.springframework.http.ResponseEntity<Map<String, Object>> response =
+                checkoutController.submitCheckout(
+                        "cod-email-failure-token",
+                        "Guest Buyer",
+                        "0912345678",
+                        "123 Street, District, City",
+                        null,
+                        "COD",
+                        null,
+                        1442,
+                        "20101",
+                        201,
+                        null,
+                        null,
+                        "cod-buyer@realmail.vn",
+                        "City",
+                        "District",
+                        "Ward",
+                        "123 Street",
+                        false,
+                        session,
+                        request);
+
+        assertEquals("ok", response.getBody().get("trangThai"));
+        assertEquals(500, response.getBody().get("orderId"));
+        assertEquals(com.smashvn.shop.dto.order.CheckoutContextStatus.CONSUMED, context.getStatus());
+        verify(gioHangService).submitCodOrder(
+                eq(77), same(context), same(session),
+                eq("Guest Buyer"), eq("0912345678"), eq("123 Street, District, City"),
+                eq(1), isNull(), eq(1442), eq("20101"), eq(201), eq(91), isNull());
+        verify(temporaryPasswordService).sendTemporaryPasswordEmail(eq(issueResult), anyString());
     }
 
     @Test

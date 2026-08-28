@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -132,6 +133,20 @@ class UserDangNhapServiceTest {
                 () -> service.kiemTraDangNhap("locked@gmail.com", "Password1"));
 
         assertEquals("Tài khoản của bạn đã bị khóa.", error.getMessage());
+    }
+
+    @Test
+    void guestWithCorrectTemporaryPasswordRemainsGuestPendingPasswordSetup() {
+        TaiKhoan account = activeCustomer("guest@gmail.com", "$2a$tempHash");
+        account.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+        when(taiKhoanRepository.findByUsername("guest@gmail.com")).thenReturn(account);
+        when(passwordEncoder.matches("Temporary123", "$2a$tempHash")).thenReturn(true);
+
+        TaiKhoan result = service.kiemTraDangNhap("guest@gmail.com", "Temporary123");
+
+        assertSame(account, result);
+        assertEquals(AccountStatus.GUEST, result.getTrangThaiTaiKhoan());
+        verify(taiKhoanRepository, never()).saveAndFlush(account);
     }
 
     private TaiKhoan activeCustomer(String username, String passwordHash) {

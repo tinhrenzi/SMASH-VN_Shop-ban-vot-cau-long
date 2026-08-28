@@ -2,6 +2,7 @@ package com.smashvn.shop.controller.user;
 
 import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.TaiKhoan;
+import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.exception.AccountLockedException;
 import com.smashvn.shop.exception.AccountNotFoundException;
 import com.smashvn.shop.exception.InvalidPasswordException;
@@ -103,6 +104,28 @@ public class UserDangNhapControllerTest {
         verify(session).setAttribute("idNguoiDung", 1);
         verify(session).setAttribute("vaiTro", "KH");
         verify(session).setAttribute("tenHienThi", "Nguyen Van A");
+    }
+
+    @Test
+    void guestTemporaryPasswordCreatesOnlyPendingSetupSession() {
+        String email = "guest@gmail.com";
+        TaiKhoan guest = new TaiKhoan();
+        guest.setId(8);
+        guest.setUsername(email);
+        guest.setVaiTro("KH");
+        guest.setTrangThaiTaiKhoan(AccountStatus.GUEST);
+
+        when(loginRateLimiter.isBlocked(email)).thenReturn(false);
+        when(userDangNhapService.kiemTraDangNhap(email, "Temporary123")).thenReturn(guest);
+
+        String view = userDangNhapController.xuLyDangNhap(
+                email, "Temporary123", request, session, new ConcurrentModel());
+
+        assertEquals("redirect:/user/setup-password", view);
+        verify(session).setAttribute("pendingPasswordSetupAccountId", 8);
+        verify(session).setAttribute("temporaryPasswordVerified", true);
+        verify(session).setAttribute("isGuestView", true);
+        verify(session, never()).setAttribute("activeRole", "KH");
     }
 
     @Test

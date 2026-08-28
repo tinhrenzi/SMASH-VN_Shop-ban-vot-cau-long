@@ -38,6 +38,8 @@ import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.product.ProductAvailabilityService;
 import com.smashvn.shop.service.user.UserAddressService;
 import com.smashvn.shop.service.user.UserDangNhapService;
+import com.smashvn.shop.service.user.TemporaryPasswordService;
+import com.smashvn.shop.service.user.TemporaryPasswordService.TemporaryPasswordIssueResult;
 import com.smashvn.shop.dto.order.*;
 import com.smashvn.shop.repository.GioHangChiTietRepository;
 import com.smashvn.shop.service.order.CheckoutContextService;
@@ -73,6 +75,7 @@ public class CheckoutController {
     private final PendingCheckoutRegistry pendingCheckoutRegistry;
     private final GioHangChiTietRepository gioHangChiTietRepository;
     private final ProductAvailabilityService productAvailabilityService;
+    private final TemporaryPasswordService temporaryPasswordService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @org.springframework.beans.factory.annotation.Value("${app.base-url:}")
@@ -455,10 +458,6 @@ public class CheckoutController {
             TaiKhoan sessionTk = taiKhoanRepository.findById(idNguoiDung).orElse(null);
             if (sessionTk != null) {
                 model.addAttribute("guestEmail", sessionTk.getUsername());
-                int purchaseCount = (sessionTk.getSoLanMuaThanhCong() != null) ? sessionTk.getSoLanMuaThanhCong() : 0;
-                if (purchaseCount >= 3) {
-                    model.addAttribute("isGuestExpired", true);
-                }
             }
         }
 
@@ -553,7 +552,7 @@ public class CheckoutController {
 
         boolean startedAsAnonymousGuest = (idNguoiDung == null);
         String emailStatus = "NEW";
-        String activationToken = null;
+        boolean newGuestAccount = false;
 
         long startPipeline = System.currentTimeMillis();
         log.info("[GuestCheckout] Starting guest checkout pipeline execution.");
@@ -631,11 +630,6 @@ public class CheckoutController {
                     response.put("message", "Tài khoản thành viên đã tồn tại. Vui lòng đăng nhập mật khẩu để đặt hàng.");
                     return ResponseEntity.ok(response);
                 }
-            } else if ("GUEST_EXPIRED".equals(emailStatus)) {
-                response.put("trangThai", "yeucaudoimatkhau");
-                response.put("email", guestEmail);
-                response.put("message", "Tài khoản vãng lai của bạn đã mua hàng quá 3 lần. Vui lòng đặt mật khẩu bảo mật để tiếp tục.");
-                return ResponseEntity.ok(response);
             }
 
             if (idNguoiDung == null) {
@@ -643,7 +637,7 @@ public class CheckoutController {
                 try {
                     com.smashvn.shop.service.order.GuestCheckoutService.GuestRegisterResult regResult = guestCheckoutService.autoRegisterGuest(hoTenNhan, sdtNhan, guestEmail);
                     TaiKhoan tk = regResult.getTaiKhoan();
-                    activationToken = regResult.getToken();
+                    newGuestAccount = regResult.isNewAccount();
                     com.smashvn.shop.entity.KhachHang kh = khachHangRepository.findByTaiKhoan_Id(tk.getId());
 
                     guestCartService.transferGuestCartToDb(session, kh.getId());
@@ -947,8 +941,10 @@ public class CheckoutController {
                 }
             }
 
+            TemporaryPasswordIssueResult temporaryPasswordResult = null;
             if (isCod && accountIdForOrder != null) {
-                guestCheckoutService.incrementPurchaseCount(accountIdForOrder);
+                temporaryPasswordResult = temporaryPasswordService
+                        .recordCodOrderCreated(accountIdForOrder, newGuestAccount);
             }
 
             TaiKhoan tk = (checkoutTk != null) ? checkoutTk : (accountIdForOrder != null ? taiKhoanRepository.findById(accountIdForOrder).orElse(null) : null);
@@ -957,19 +953,16 @@ public class CheckoutController {
                 response.put("isGuest", isGuest);
                 response.put("soLanMuaThanhCong", tk.getSoLanMuaThanhCong());
 
-                if (isCod && isGuest && activationToken != null) {
+                if (isCod && temporaryPasswordResult != null && temporaryPasswordResult.isIssued()) {
                     long startEmail = System.currentTimeMillis();
                     try {
                         String appUrl = resolveBaseUrl(request);
-                        String contactEmail = tk.getUsername();
-                        if (contactEmail != null && contactEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
-                            guestCheckoutService.sendOrderAndAccountNotification(contactEmail, activationToken, appUrl);
-                        }
+                        temporaryPasswordService.sendTemporaryPasswordEmail(temporaryPasswordResult, appUrl);
                         long endEmail = System.currentTimeMillis();
-                        log.info("[GuestCheckout] Send notification email triggered: {}ms - SUCCESS (Asynchronous)", (endEmail - startEmail));
+                        log.info("[GuestCheckout] Temporary password email triggered: {}ms - SUCCESS (Asynchronous)", (endEmail - startEmail));
                     } catch (Exception e) {
                         long endEmail = System.currentTimeMillis();
-                        log.error("[GuestCheckout] Send notification email triggered: {}ms - FAILED. Exception: {}", (endEmail - startEmail), e.getMessage(), e);
+                        log.error("[GuestCheckout] Temporary password email trigger: {}ms - FAILED. Exception: {}", (endEmail - startEmail), e.getMessage(), e);
                     }
                 }
             } else {
@@ -1031,7 +1024,7 @@ public class CheckoutController {
             response.put("tongTien", hd.getTongTien());
             response.put("maDonHang", hd.getMaDonHang());
             response.put("isGuest", isGuest);
-            response.put("isNewAccount", activationToken != null);
+            response.put("isNewAccount", newGuestAccount);
             response.put("ghnToDistrictId", hd.getGhnToDistrictId());
             response.put("ghnToWardCode", hd.getGhnToWardCode());
             return ResponseEntity.ok(response);
@@ -1183,7 +1176,7 @@ public class CheckoutController {
     public ResponseEntity<Map<String, String>> checkEmail(@RequestParam("email") String email, HttpSession session) {
         Map<String, String> response = new HashMap<>();
         String status = guestCheckoutService.checkEmailStatus(email);
-        if ("GUEST_EXPIRED".equals(status) || "GUEST_VALID".equals(status)) {
+        if ("GUEST_NO_PASSWORD".equals(status) || "GUEST_WITH_TEMP_PASSWORD".equals(status)) {
             if (email != null && !email.trim().isEmpty()) {
                 session.setAttribute("guestCheckoutEmail", email.trim());
             }
@@ -1208,9 +1201,34 @@ public class CheckoutController {
             request.changeSessionId();
             HttpSession newSession = request.getSession(true);
 
+            if (tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.GUEST) {
+                newSession.setAttribute("pendingPasswordSetupAccountId", tk.getId());
+                newSession.setAttribute("temporaryPasswordVerified", true);
+                newSession.setAttribute("isGuestView", true);
+                newSession.setAttribute("guestCheckoutEmail", tk.getUsername());
+                newSession.setAttribute("nguoiDungDangNhap", tk.getUsername());
+                newSession.setAttribute("idNguoiDung", tk.getId());
+                newSession.setAttribute("vaiTro", "KH");
+                newSession.removeAttribute("activeRole");
+
+                response.put("redirectUrl", "/user/setup-password");
+                response.put("trangThai", "require_password_setup");
+                response.put("authenticated", false);
+                response.put("requiresPasswordSetup", true);
+                response.put("success", true);
+                return ResponseEntity.ok(response);
+            }
+
+            newSession.removeAttribute("isGuestView");
+            newSession.removeAttribute("guestCheckoutEmail");
+            newSession.removeAttribute("allowedGuestOrderAccesses");
+            newSession.removeAttribute("temporaryPasswordVerified");
+            newSession.removeAttribute("pendingPasswordSetupAccountId");
+
             newSession.setAttribute("nguoiDungDangNhap", tk.getUsername());
             newSession.setAttribute("idNguoiDung", tk.getId());
             newSession.setAttribute("vaiTro", "KH");
+            newSession.setAttribute("activeRole", "KH");
 
             if (oldSession != null) {
                 oldSession.setAttribute("nguoiDungDangNhap", tk.getUsername());
@@ -1257,6 +1275,90 @@ public class CheckoutController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/user/setup-password")
+    public String viewSetupPassword(HttpSession session, Model model) {
+        Integer accountId = pendingPasswordSetupAccountId(session);
+        if (accountId == null) {
+            return "redirect:/user/dang-nhap";
+        }
+
+        TaiKhoan account = taiKhoanRepository.findById(accountId).orElse(null);
+        if (account == null
+                || account.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST
+                || account.getMatKhau() == null
+                || account.getMatKhau().isBlank()) {
+            clearTemporaryPasswordVerification(session);
+            return "redirect:/user/dang-nhap";
+        }
+
+        model.addAttribute("guestEmail", account.getUsername());
+        return "setup-password";
+    }
+
+    @PostMapping("/user/setup-password")
+    public String submitSetupPassword(
+            @RequestParam("newPassword") String newPassword,
+            @RequestParam("confirmPassword") String confirmPassword,
+            HttpServletRequest request,
+            HttpSession session,
+            Model model) {
+        Integer accountId = pendingPasswordSetupAccountId(session);
+        if (accountId == null) {
+            return "redirect:/user/dang-nhap";
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            model.addAttribute("loi", "Mật khẩu xác nhận không trùng khớp!");
+            TaiKhoan account = taiKhoanRepository.findById(accountId).orElse(null);
+            model.addAttribute("guestEmail", account != null ? account.getUsername() : "");
+            return "setup-password";
+        }
+
+        try {
+            guestCheckoutService.setPasswordForGuest(accountId, newPassword);
+
+            request.changeSessionId();
+            HttpSession memberSession = request.getSession(true);
+            TaiKhoan activeAccount = taiKhoanRepository.findById(accountId)
+                    .orElseThrow(() -> new IllegalStateException("Tài khoản không tồn tại"));
+
+            clearTemporaryPasswordVerification(memberSession);
+            memberSession.removeAttribute("isGuestView");
+            memberSession.removeAttribute("guestCheckoutEmail");
+            memberSession.removeAttribute("allowedGuestOrderAccesses");
+            memberSession.setAttribute("nguoiDungDangNhap", activeAccount.getUsername());
+            memberSession.setAttribute("idNguoiDung", activeAccount.getId());
+            memberSession.setAttribute("vaiTro", activeAccount.getVaiTro());
+            memberSession.setAttribute("activeRole", "KH");
+
+            com.smashvn.shop.entity.KhachHang customer =
+                    khachHangRepository.findByTaiKhoan_Id(activeAccount.getId());
+            memberSession.setAttribute("tenHienThi", customer != null
+                    ? customer.getHoKh() + " " + customer.getTenKh()
+                    : "Khách hàng");
+            return "redirect:/user/dashboard";
+        } catch (Exception exception) {
+            model.addAttribute("loi", exception.getMessage());
+            TaiKhoan account = taiKhoanRepository.findById(accountId).orElse(null);
+            model.addAttribute("guestEmail", account != null ? account.getUsername() : "");
+            return "setup-password";
+        }
+    }
+
+    private Integer pendingPasswordSetupAccountId(HttpSession session) {
+        if (session == null || !Boolean.TRUE.equals(session.getAttribute("temporaryPasswordVerified"))) {
+            return null;
+        }
+        Object accountId = session.getAttribute("pendingPasswordSetupAccountId");
+        return accountId instanceof Integer ? (Integer) accountId : null;
+    }
+
+    private void clearTemporaryPasswordVerification(HttpSession session) {
+        if (session != null) {
+            session.removeAttribute("temporaryPasswordVerified");
+            session.removeAttribute("pendingPasswordSetupAccountId");
+        }
+    }
+
 
     @GetMapping("/user/thiet-lap-mat-khau")
     public String viewThietLapMatKhau(
@@ -1285,6 +1387,10 @@ public class CheckoutController {
             TaiKhoan tk = tkp.getTaiKhoan();
             if (tk == null || tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.LOCKED || tk.getTrangThaiTaiKhoan() == com.smashvn.shop.entity.AccountStatus.PENDING_LOCK) {
                 model.addAttribute("loi", "Tài khoản liên kết với đường link này đã bị khóa!");
+                return "signin";
+            }
+            if (tk.getTrangThaiTaiKhoan() != com.smashvn.shop.entity.AccountStatus.GUEST) {
+                model.addAttribute("loi", "Tài khoản đã được kích hoạt trước đó!");
                 return "signin";
             }
             model.addAttribute("token", token);

@@ -22,6 +22,8 @@ import com.smashvn.shop.entity.*;
 import com.smashvn.shop.repository.*;
 import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.service.inventory.InventoryLotService;
+import com.smashvn.shop.service.user.TemporaryPasswordService;
+import com.smashvn.shop.service.user.TemporaryPasswordService.TemporaryPasswordIssueResult;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +39,7 @@ public class SepayOrderPaymentService {
     private final InventoryLotService inventoryLotService;
     private final AuditService auditService;
     private final com.smashvn.shop.service.order.GuestCheckoutService guestCheckoutService;
-    private final TokenKhoiPhucRepository tokenRepository;
+    private final TemporaryPasswordService temporaryPasswordService;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final GioHangRepository gioHangRepository;
     private final GioHangChiTietRepository gioHangChiTietRepository;
@@ -178,10 +180,13 @@ public class SepayOrderPaymentService {
                 }
             }
 
-            // Tăng số lần mua thành công cho tài khoản Guest khi thanh toán online thành công
+            // Counter và xét cấp mật khẩu tạm cùng nằm dưới khóa account trong transaction này.
+            TemporaryPasswordIssueResult temporaryPasswordResult = null;
             if (order.getKhachHang() != null && order.getKhachHang().getTaiKhoan() != null) {
-                guestCheckoutService.incrementPurchaseCount(order.getKhachHang().getTaiKhoan().getId());
+                temporaryPasswordResult = temporaryPasswordService
+                        .recordSepayPaymentSuccess(order.getKhachHang().getTaiKhoan().getId());
             }
+            final TemporaryPasswordIssueResult passwordEmailResult = temporaryPasswordResult;
 
             // Cleanup cart items for the customer if any match
             if (order.getKhachHang() != null && order.getKhachHang().getId() != null) {
@@ -228,27 +233,10 @@ public class SepayOrderPaymentService {
                                 log.info("[SepayOrderPaymentService] Transaction committed, triggering order confirmation email for order #{}", orderSnapshot.getMaDonHang());
                                 guestCheckoutService.sendOrderConfirmationEmail(recipient, orderSnapshot, baseUrl);
 
-                                // Kiểm tra gửi email thiết lập mật khẩu cho Guest mua SePay lần đầu
-                                if (orderSnapshot.getKhachHang() != null && orderSnapshot.getKhachHang().getTaiKhoan() != null) {
-                                    TaiKhoan tk = orderSnapshot.getKhachHang().getTaiKhoan();
-                                    boolean isGuest = tk.getTrangThaiTaiKhoan() == AccountStatus.GUEST
-                                            || (tk.getMatKhau() == null || tk.getMatKhau().trim().isEmpty());
-
-                                    if (isGuest) {
-                                        List<TokenKhoiPhuc> tokens = tokenRepository.findByTaiKhoan_IdAndLoaiXacNhanAndDaSuDungFalse(tk.getId(), "GUEST_ACTIVATION");
-                                        LocalDateTime currentTime = LocalDateTime.now();
-                                        Optional<TokenKhoiPhuc> validTokenOpt = tokens.stream()
-                                                .filter(t -> t.getThoiGianHetHan() != null && t.getThoiGianHetHan().isAfter(currentTime))
-                                                .max(java.util.Comparator.comparing(TokenKhoiPhuc::getId));
-
-                                        if (validTokenOpt.isPresent()) {
-                                            String activationToken = validTokenOpt.get().getMaXacNhan();
-                                            log.info("[SepayOrderPaymentService] Triggering guest password setup email for account ID {} (Order #{})", tk.getId(), orderSnapshot.getMaDonHang());
-                                            guestCheckoutService.sendOrderAndAccountNotification(recipient, activationToken, baseUrl);
-                                        } else {
-                                            log.warn("[SepayOrderPaymentService] Account ID {} is GUEST but no valid unexpired setup token found. Skipped setup email for Order #{}", tk.getId(), orderSnapshot.getMaDonHang());
-                                        }
-                                    }
+                                if (passwordEmailResult != null && passwordEmailResult.isIssued()) {
+                                    log.info("[SepayOrderPaymentService] Triggering initial temporary password email for account ID {} (Order #{})",
+                                            passwordEmailResult.accountId(), orderSnapshot.getMaDonHang());
+                                    temporaryPasswordService.sendTemporaryPasswordEmail(passwordEmailResult, baseUrl);
                                 }
                             } catch (Exception ex) {
                                 log.error("[SepayOrderPaymentService] Lỗi gửi email xác nhận cho đơn {}: {}", orderSnapshot.getMaDonHang(), ex.getMessage());

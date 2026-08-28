@@ -559,17 +559,6 @@
                     <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-verify-password" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">XÁC NHẬN ĐĂNG NHẬP</button>
                 </div>
 
-                <!-- Mandatory notification for GUEST_EXPIRED accounts -->
-                <div id="guest-expired-form-group" style="display: none;">
-                    <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                        <p style="font-size: 13px; color: #9a3412; margin: 0; line-height: 1.5;">
-                            <i class="fas fa-info-circle" style="color: #ea580c; margin-right: 4px;"></i>
-                            Tài khoản này đã đạt giới hạn mua hàng vãng lai. Vui lòng kiểm tra email và thiết lập mật khẩu để tiếp tục mua hàng.
-                        </p>
-                    </div>
-                    <div id="guest-resend-status" style="font-size: 12px; margin-bottom: 12px; display: none;"></div>
-                    <button class="btn btn--e-brand-b-2 w-100" id="btn-guest-resend-activation" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px;">GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU</button>
-                </div>
             </div>
         </div>
     </div>
@@ -585,10 +574,10 @@
             </div>
             <div class="zp-modal-body" style="text-align: left; padding: 20px 24px 24px;">
                 <p style="font-size: 14px; color: #1e293b; font-weight: 600; margin-bottom: 12px;">
-                    Tài khoản của bạn đã được khởi tạo. Vui lòng kiểm tra email để thiết lập mật khẩu.
+                    Tài khoản Guest của bạn đã được khởi tạo. Vui lòng kiểm tra email để nhận mật khẩu tạm thời.
                 </p>
                 <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px;">
-                    Chúng tôi đã gửi thông tin đơn hàng và đường dẫn thiết lập mật khẩu tới địa chỉ email của bạn.
+                    Email bao gồm mật khẩu tạm để đăng nhập và activation link để bạn có thể thiết lập mật khẩu chính thức ngay.
                 </p>
                 <button class="btn btn--e-brand-b-2 w-100" id="btn-success-close" style="padding: 12px; font-weight: 600; border-radius: 6px; font-size: 13px; color: white;">XEM CHI TIẾT ĐƠN HÀNG</button>
             </div>
@@ -1080,35 +1069,11 @@
                             $('#guest-modal-title-text').text('Xác thực tài khoản thành viên');
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng và đồng bộ lịch sử mua hàng.');
                             $('#guest-password-form-group').show();
-                            $('#guest-expired-form-group').hide();
-                            $('#guest-auth-overlay').addClass('active');
-                        } else if (resp.status === 'GUEST_EXPIRED') {
-                            // Guest has checked out >= 3 times -> Show notice to check email
-                            $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
-                            $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đạt giới hạn mua hàng vãng lai.');
-                            $('#guest-password-form-group').hide();
-                            $('#guest-expired-form-group').show();
-                            $('#guest-resend-status').hide();
                             $('#guest-auth-overlay').addClass('active');
                         }
                     }
                 });
             });
-
-            // Auto show guest expired modal if already expired on page load
-            /*[# th:if="${isGuestExpired}"]*/
-            (function() {
-                const guestEmail = /*[[${guestEmail}]]*/ '';
-                if (guestEmail) {
-                    $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
-                    $('#guest-modal-desc').html('Địa chỉ email <strong>' + guestEmail + '</strong> đã đạt giới hạn mua hàng vãng lai.');
-                    $('#guest-password-form-group').hide();
-                    $('#guest-expired-form-group').show();
-                    $('#guest-resend-status').hide();
-                    $('#guest-auth-overlay').addClass('active');
-                }
-            })();
-            /*[/]*/
 
             // Close verification overlay
             $('#guest-auth-close-btn').on('click', function() {
@@ -1117,7 +1082,6 @@
                 $('#guest-password-input').val('');
                 $('#guest-password-error').hide();
                 $('#guest-password-success').hide();
-                $('#guest-resend-status').hide();
             });
 
             // Handle Forgot Password link inside Member Verification modal
@@ -1154,43 +1118,6 @@
                     error: function() {
                         $link.text('Quên mật khẩu?').css('pointer-events', 'auto');
                         $('#guest-password-error').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
-                    }
-                });
-            });
-
-            // Handle Resend Activation / Set Password Email for GUEST_EXPIRED accounts
-            $('#btn-guest-resend-activation').on('click', function(e) {
-                e.preventDefault();
-                const email = $('#email').val().trim();
-                if (!email) {
-                    $('#guest-resend-status').css('color', '#ef4444').text('Vui lòng nhập địa chỉ email liên hệ.').show();
-                    return;
-                }
-
-                const $btn = $(this);
-                $btn.prop('disabled', true).text('ĐANG GỬI EMAIL...');
-                $('#guest-resend-status').hide();
-
-                $.ajax({
-                    url: '/user/checkout/api/forgot-password',
-                    type: 'POST',
-                    data: { email: email },
-                    success: function(resp) {
-                        $btn.prop('disabled', false).text('GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU');
-                        if (resp.success) {
-                            const msg = getSafeCheckoutMessage(resp.message, 'Đã gửi link thiết lập mật khẩu tới email của bạn. Vui lòng kiểm tra hộp thư!');
-                            $('#guest-resend-status').css('color', '#10b981').text(msg).show();
-                            if (typeof showToast === 'function') {
-                                showToast(msg, 'success');
-                            }
-                        } else {
-                            const msg = getSafeCheckoutMessage(resp.message, 'Không thể gửi email lúc này. Vui lòng thử lại sau.');
-                            $('#guest-resend-status').css('color', '#ef4444').text(msg).show();
-                        }
-                    },
-                    error: function() {
-                        $btn.prop('disabled', false).text('GỬI LẠI EMAIL THIẾT LẬP MẬT KHẨU');
-                        $('#guest-resend-status').css('color', '#ef4444').text('Đã xảy ra lỗi kết nối hệ thống. Vui lòng thử lại sau.').show();
                     }
                 });
             });
@@ -1867,16 +1794,6 @@
                             } else {
                                 window.location.href = redirectUrl;
                             }
-                        } else if (response.trangThai === 'yeucaudoimatkhau') {
-                            showToast('Yêu cầu thiết lập mật khẩu.', 'warning');
-                            const email = response.email || $('#email').val().trim();
-                            if (email) $('#email').val(email);
-                            $('#guest-modal-title-text').text('Yêu cầu thiết lập mật khẩu');
-                            $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đạt giới hạn mua hàng vãng lai.');
-                            $('#guest-password-form-group').hide();
-                            $('#guest-expired-form-group').show();
-                            $('#guest-resend-status').hide();
-                            $('#guest-auth-overlay').addClass('active');
                         } else if (response.trangThai === 'yeucaudangnhap') {
                             showToast('Tài khoản đã tồn tại. Vui lòng đăng nhập.', 'warning');
                             const email = response.email || $('#email').val().trim();
@@ -1884,7 +1801,6 @@
                             $('#guest-modal-title-text').text('Xác thực tài khoản thành viên');
                             $('#guest-modal-desc').html('Địa chỉ email <strong>' + email + '</strong> đã đăng ký tài khoản thành viên. Vui lòng nhập mật khẩu để tiếp tục đặt hàng.');
                             $('#guest-password-form-group').show();
-                            $('#guest-expired-form-group').hide();
                             $('#guest-auth-overlay').addClass('active');
                         } else {
                             const errMsg = getSafeCheckoutMessage(response.message, 'Không thể tạo đơn hàng. Vui lòng thử lại sau.');
