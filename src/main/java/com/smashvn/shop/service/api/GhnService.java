@@ -843,12 +843,11 @@ public class GhnService {
         req.setFrom_name("SmashVN Shop");
         req.setFrom_phone("0835420088");
         
+        req.setFrom_address(ghnConfig.getFromAddress());
         if (shopDetails != null) {
-            req.setFrom_address(shopDetails.get("address") != null ? shopDetails.get("address").toString() : ghnConfig.getFromAddress());
             req.setFrom_district_id(shopDetails.get("district_id") != null ? ((Number) shopDetails.get("district_id")).intValue() : ghnConfig.getFromDistrictId());
             req.setFrom_ward_code(shopDetails.get("ward_code") != null ? shopDetails.get("ward_code").toString() : ghnConfig.getFromWardCode());
         } else {
-            req.setFrom_address(ghnConfig.getFromAddress());
             req.setFrom_district_id(ghnConfig.getFromDistrictId());
             req.setFrom_ward_code(ghnConfig.getFromWardCode());
         }
@@ -1113,12 +1112,11 @@ public class GhnService {
         req.setFrom_phone("0835420088");
         
         Map<String, Object> shopDetails = getShopDetails(shopIdStr, tokenStr);
+        req.setFrom_address(ghnConfig.getFromAddress());
         if (shopDetails != null) {
-            req.setFrom_address(shopDetails.get("address") != null ? shopDetails.get("address").toString() : ghnConfig.getFromAddress());
             req.setFrom_district_id(shopDetails.get("district_id") != null ? ((Number) shopDetails.get("district_id")).intValue() : ghnConfig.getFromDistrictId());
             req.setFrom_ward_code(shopDetails.get("ward_code") != null ? shopDetails.get("ward_code").toString() : ghnConfig.getFromWardCode());
         } else {
-            req.setFrom_address(ghnConfig.getFromAddress());
             req.setFrom_district_id(ghnConfig.getFromDistrictId());
             req.setFrom_ward_code(ghnConfig.getFromWardCode());
         }

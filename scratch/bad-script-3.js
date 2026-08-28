@@ -518,7 +518,7 @@
                         <div class="p-3 border rounded shadow-sm bg-white" style="font-family: Arial, sans-serif; font-size: 11px; max-width: 100%; color: #000; border-color: #ddd !important;">
                             <div class="text-center mb-3">
                                 <h5 style="font-weight: 800; font-size: 14px; margin-bottom: 2px;">SMASH VN SHOP</h5>
-                                <div style="font-size: 10px;">Số 12 Chùa Bộc, Đống Đa, Hà Nội</div>
+                                <div style="font-size: 10px;">10 Kim Mã, Ba Đình, Hà Nội</div>
                                 <div style="font-size: 10px;">Hotline: 0987.654.321</div>
                                 <div style="font-weight: bold; font-size: 12px; margin-top: 10px; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; letter-spacing: 1px;">HÓA ĐƠN BÁN HÀNG</div>
                             </div>
@@ -1035,4 +1035,3 @@
                 document.body.removeChild(textArea);
             });
         };
-    
