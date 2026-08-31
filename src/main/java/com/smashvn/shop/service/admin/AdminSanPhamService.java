@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.smashvn.shop.dto.AttributeValueRequest;
 import com.smashvn.shop.dto.BienTheCreateRequest;
+import com.smashvn.shop.entity.PhieuNhap;
+import com.smashvn.shop.entity.PhieuNhapChiTiet;
+import com.smashvn.shop.repository.PhieuNhapRepository;
+import com.smashvn.shop.service.inventory.InventoryLotService;
 import com.smashvn.shop.dto.SanPhamCreateRequest;
 import com.smashvn.shop.entity.DanhMuc;
 import com.smashvn.shop.entity.NhanVien;
@@ -59,6 +64,8 @@ public class AdminSanPhamService {
     private final ThuongHieuRepository thuongHieuRepository;
     private final NhanVienRepository nhanVienRepository;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final PhieuNhapRepository phieuNhapRepository;
+    private final InventoryLotService inventoryLotService;
     private final AuditService auditService;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -294,6 +301,7 @@ public class AdminSanPhamService {
 
             Set<String> checkDuplicates = new HashSet<>();
             int savedCount = 0;
+            List<SanPhamChiTiet> createdSpcts = new ArrayList<>();
 
             LocalDateTime thoiGianNhap = LocalDateTime.now();
 
@@ -325,6 +333,7 @@ public class AdminSanPhamService {
                     spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
                     sanPhamChiTietRepository.save(spct);
                 }
+                createdSpcts.add(spct);
                 savedCount = 1;
             } else {
                 String cleanMucCangChung = RacketSpecUtils.sanitizeRecommendedTension(request.getMucCang());
@@ -404,8 +413,58 @@ public class AdminSanPhamService {
                         spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
                         sanPhamChiTietRepository.save(spct);
                     }
+                    createdSpcts.add(spct);
                     savedCount++;
                 }
+            }
+
+            // Tự động tạo Phiếu nhập hàng ban đầu để lưu vào Lịch sử nhập hàng cho các biến thể có số lượng nhập > 0
+            List<SanPhamChiTiet> variantsWithStock = new ArrayList<>();
+            for (SanPhamChiTiet vSp : createdSpcts) {
+                if (vSp != null && vSp.getSoLuongTon() != null && vSp.getSoLuongTon() > 0) {
+                    variantsWithStock.add(vSp);
+                }
+            }
+
+            if (!variantsWithStock.isEmpty()) {
+                if (creator == null) {
+                    creator = nhanVienRepository.findAll().stream().findFirst().orElse(null);
+                }
+                String maPN = inventoryLotService.generateMaPhieuNhap();
+                BigDecimal tongTienPhieuNhap = BigDecimal.ZERO;
+                List<PhieuNhapChiTiet> chiTietList = new ArrayList<>();
+                PhieuNhap phieuNhap = PhieuNhap.builder()
+                        .maPhieuNhap(maPN)
+                        .nhanVien(creator)
+                        .ngayNhap(thoiGianNhap)
+                        .ghiChu("Nhập hàng khởi tạo khi tạo sản phẩm: " + sp.getTenSanPham())
+                        .ngayTao(thoiGianNhap)
+                        .ngayCapNhat(thoiGianNhap)
+                        .chiTietList(chiTietList)
+                        .build();
+
+                for (SanPhamChiTiet vSpct : variantsWithStock) {
+                    BigDecimal gNhap = (vSpct.getGiaNhap() != null && vSpct.getGiaNhap().compareTo(BigDecimal.ZERO) > 0)
+                            ? vSpct.getGiaNhap()
+                            : (vSpct.getGiaBan() != null ? vSpct.getGiaBan() : BigDecimal.ZERO);
+                    int sl = vSpct.getSoLuongTon();
+                    BigDecimal thanhTien = gNhap.multiply(BigDecimal.valueOf(sl));
+                    tongTienPhieuNhap = tongTienPhieuNhap.add(thanhTien);
+
+                    PhieuNhapChiTiet pnct = PhieuNhapChiTiet.builder()
+                            .phieuNhap(phieuNhap)
+                            .sanPhamChiTiet(vSpct)
+                            .soLuong(sl)
+                            .giaNhap(gNhap)
+                            .thanhTien(thanhTien)
+                            .build();
+                    chiTietList.add(pnct);
+                }
+
+                phieuNhap.setTongTien(tongTienPhieuNhap);
+                phieuNhapRepository.save(phieuNhap);
+                log.info("[AdminSanPhamService] Đã tạo phiếu nhập kho ban đầu [{}] cho sản phẩm '{}' với {} biến thể, tổng tiền={}",
+                        maPN, sp.getTenSanPham(), variantsWithStock.size(), tongTienPhieuNhap);
             }
 
             String role = (creator != null && creator.getChucVu() != null) ? creator.getChucVu() : "Quản trị viên";

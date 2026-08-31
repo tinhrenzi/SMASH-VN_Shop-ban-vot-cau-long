@@ -23,12 +23,16 @@ import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.ThuocTinh;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.PhieuNhap;
+import com.smashvn.shop.entity.PhieuNhapChiTiet;
+import com.smashvn.shop.repository.NhanVienRepository;
+import com.smashvn.shop.repository.PhieuNhapRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
 import com.smashvn.shop.repository.SanPhamRepository;
 import com.smashvn.shop.repository.ThuocTinhRepository;
 import com.smashvn.shop.service.inventory.InventoryLotService;
 import com.smashvn.shop.util.RacketSpecUtils;
-
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +47,8 @@ public class AdminBienTheService {
     private final ThuocTinhRepository thuocTinhRepository;
     private final HinhAnhSanPhamDAO hinhAnhSanPhamDAO;
     private final InventoryLotService inventoryLotService;
+    private final PhieuNhapRepository phieuNhapRepository;
+    private final NhanVienRepository nhanVienRepository;
 
 
     private static final String TRANG_THAI_DANG_BAN = "dang_ban";
@@ -197,6 +203,43 @@ public class AdminBienTheService {
         if (spct.getSku() == null) {
             spct.setSku(com.smashvn.shop.util.ProductCodeAndSkuGenerator.generateVariantSku(sp.getMaSanPham(), spct.getId()));
             spct = sanPhamChiTietRepository.save(spct);
+        }
+
+        // Tự động tạo Phiếu nhập hàng khởi tạo lưu vào Lịch sử nhập hàng nếu biến thể mới có số lượng tồn > 0
+        if (soLuongTon != null && soLuongTon > 0) {
+            String maPN = inventoryLotService.generateMaPhieuNhap();
+            NhanVien creator = null;
+            if (idNguoiDung != null) {
+                creator = nhanVienRepository.findByTaiKhoanId(idNguoiDung);
+            }
+            if (creator == null) {
+                creator = nhanVienRepository.findAll().stream().findFirst().orElse(null);
+            }
+            LocalDateTime now = LocalDateTime.now();
+            BigDecimal thanhTien = actualGiaNhap.multiply(BigDecimal.valueOf(soLuongTon));
+            List<PhieuNhapChiTiet> chiTietList = new ArrayList<>();
+            PhieuNhap phieuNhap = PhieuNhap.builder()
+                    .maPhieuNhap(maPN)
+                    .nhanVien(creator)
+                    .ngayNhap(now)
+                    .tongTien(thanhTien)
+                    .ghiChu("Khởi tạo tồn kho khi thêm mới biến thể SP " + sp.getTenSanPham())
+                    .ngayTao(now)
+                    .ngayCapNhat(now)
+                    .chiTietList(chiTietList)
+                    .build();
+
+            PhieuNhapChiTiet pnct = PhieuNhapChiTiet.builder()
+                    .phieuNhap(phieuNhap)
+                    .sanPhamChiTiet(spct)
+                    .soLuong(soLuongTon)
+                    .giaNhap(actualGiaNhap)
+                    .thanhTien(thanhTien)
+                    .build();
+            chiTietList.add(pnct);
+            phieuNhapRepository.save(phieuNhap);
+            log.info("[AdminBienTheService] Đã tạo phiếu nhập ban đầu [{}] cho biến thể #{} SP '{}', SL={}, Giá nhập={}",
+                    maPN, spct.getId(), sp.getTenSanPham(), soLuongTon, actualGiaNhap);
         }
 
         if (catType == com.smashvn.shop.constant.CategoryType.VOT && cleanMucCang != null) {

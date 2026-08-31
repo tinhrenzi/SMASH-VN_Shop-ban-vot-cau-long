@@ -42,12 +42,18 @@
                     </div>
                 </div>
 
-                <!-- Alert Error -->
-                <div th:if="${loi != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
+                <!-- Alert Error Banner -->
+                <div th:if="${loi != null or error != null or errorMsg != null}" class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <span th:text="${loi}">Đã xảy ra lỗi!</span>
+                    <span th:text="${loi != null ? loi : (error != null ? error : errorMsg)}">Đã xảy ra lỗi!</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+
+                <!-- Server Error Holder for Auto-Popup -->
+                <div id="serverErrorMessageHolder" 
+                     th:if="${loi != null or error != null or errorMsg != null}" 
+                     th:data-message="${loi != null ? loi : (error != null ? error : errorMsg)}" 
+                     style="display:none;"></div>
 
                 <!-- Form Card -->
                 <div class="admin-card mb-5">
@@ -55,25 +61,25 @@
                         <h5 class="admin-card-title"><i class="fas fa-box text-primary me-2"></i>Thông Tin Cấu Hình Sản Phẩm Mới</h5>
                     </div>
                     <div class="admin-card-body">
-                        <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm" onsubmit="return validateAndConfirmAddProduct(this);">
+                        <form th:action="@{/admin/san-pham/them}" method="post" enctype="multipart/form-data" id="addProductForm">
                             
                             <!-- SECTION 1: THÔNG TIN SẢN PHẨM GỐC -->
                             <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold"><i class="fas fa-info-circle me-2"></i>1. Thông Tin Sản Phẩm Gốc</h6>
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="admin-form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
-                                    <input type="text" name="tenSanPham" class="admin-form-control form-control" th:value="${requestDto != null ? requestDto.tenSanPham : ''}" required placeholder="VD: Vợt Yonex Astrox 88D Pro...">
+                                    <input type="text" name="tenSanPham" class="admin-form-control form-control" th:value="${requestDto != null ? requestDto.tenSanPham : ''}" required oninvalid="this.setCustomValidity('Vui lòng nhập tên sản phẩm!')" oninput="this.setCustomValidity('')" placeholder="VD: Vợt Yonex Astrox 88D Pro...">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="admin-form-label">Danh Mục <span class="text-danger">*</span></label>
-                                    <select name="idDanhMuc" id="selectDanhMuc" class="form-select admin-form-control" required>
+                                    <select name="idDanhMuc" id="selectDanhMuc" class="form-select admin-form-control" required oninvalid="this.setCustomValidity('Vui lòng chọn danh mục sản phẩm!')" oninput="this.setCustomValidity('')">
                                         <option value="">-- Chọn Danh Mục --</option>
                                         <option th:each="dm : ${listDanhMuc}" th:value="${dm.id}" th:text="${dm.tenDanhMuc}" th:selected="${requestDto != null &amp;&amp; requestDto.idDanhMuc == dm.id}"></option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="admin-form-label">Thương Hiệu <span class="text-danger">*</span></label>
-                                    <select name="idThuongHieu" class="form-select admin-form-control" required>
+                                    <select name="idThuongHieu" class="form-select admin-form-control" required oninvalid="this.setCustomValidity('Vui lòng chọn thương hiệu sản phẩm!')" oninput="this.setCustomValidity('')">
                                         <option value="">-- Chọn Thương Hiệu --</option>
                                         <option th:each="th : ${listThuongHieu}" th:value="${th.id}" th:text="${th.tenThuongHieu}" th:selected="${requestDto != null &amp;&amp; requestDto.idThuongHieu == th.id}"></option>
                                     </select>
@@ -90,11 +96,16 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="admin-form-label">Hình ảnh sản phẩm gốc <span class="text-danger">*</span></label>
-                                    <input type="file" name="fileAnh" class="admin-form-control form-control" accept="image/*" required>
+                                    <input type="file" name="fileAnh" id="mainFileAnh" class="admin-form-control form-control" accept="image/jpeg, image/png, image/webp" required oninvalid="this.setCustomValidity('Vui lòng chọn hình ảnh đại diện cho sản phẩm!')" oninput="this.setCustomValidity('')">
+                                    <div class="form-text text-muted small mt-1">Định dạng hỗ trợ: JPG, JPEG, PNG, WEBP. Dung lượng tối đa: <strong>5MB</strong>.</div>
+                                    <div id="mainFileError" class="text-danger small mt-1 fw-semibold d-none"></div>
+                                    <div id="mainFilePreviewWrap" class="mt-2 d-none">
+                                        <img id="mainFilePreviewImg" src="" alt="Xem trước ảnh gốc" class="rounded border p-1" style="max-height: 120px; max-width: 160px; object-fit: contain;">
+                                    </div>
                                 </div>
                                 <div class="col-md-6" id="boxGiaMacDinh">
                                     <label class="admin-form-label">Giá bán áp dụng chung <small class="text-muted fw-normal">(tùy chọn / để trống nếu nhập theo từng biến thể)</small></label>
-                                    <input type="number" name="giaBanDefault" id="giaBanDefault" class="admin-form-control form-control" min="1000" step="1000" placeholder="VD: 2500000">
+                                    <input type="number" name="giaBanDefault" id="giaBanDefault" class="admin-form-control form-control" min="1000" step="1000" placeholder="VD: 2500000" oninvalid="this.setCustomValidity('Giá bán áp dụng chung tối thiểu là 1.000 VNĐ!')" oninput="this.setCustomValidity('')">
                                     <input type="hidden" name="soLuongTonDefault" id="soLuongTonDefault" value="0">
                                 </div>
                             </div>
@@ -187,6 +198,185 @@
             const giaBanDefaultInput = document.getElementById("giaBanDefault");
             const colorImagesContainer = document.getElementById("colorImagesContainer");
             const btnAddManualRow = document.getElementById("btnAddManualRow");
+
+            const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB per image
+            const MAX_TOTAL_IMAGES_SIZE_BYTES = 10 * 1024 * 1024; // 10MB total payload safe limit
+            const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+
+            function compressImageFile(file, maxDimension = 1600, quality = 0.82) {
+                return new Promise((resolve) => {
+                    if (!file || !file.type || !file.type.startsWith('image/')) {
+                        resolve(file);
+                        return;
+                    }
+                    if (file.size <= 300 * 1024) {
+                        resolve(file);
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > maxDimension || height > maxDimension) {
+                                if (width > height) {
+                                    height = Math.round((height * maxDimension) / width);
+                                    width = maxDimension;
+                                } else {
+                                    width = Math.round((width * maxDimension) / height);
+                                    height = maxDimension;
+                                }
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const mimeType = (file.type === 'image/webp') ? 'image/webp' : 'image/jpeg';
+                            canvas.toBlob((blob) => {
+                                if (blob && blob.size < file.size) {
+                                    const origName = file.name.replace(/\.[^/.]+$/, "");
+                                    const ext = (mimeType === 'image/webp') ? '.webp' : '.jpg';
+                                    const compressedFile = new File([blob], origName + ext, {
+                                        type: mimeType,
+                                        lastModified: Date.now()
+                                    });
+                                    resolve(compressedFile);
+                                } else {
+                                    resolve(file);
+                                }
+                            }, mimeType, quality);
+                        };
+                        img.onerror = () => resolve(file);
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => resolve(file);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async function validateSingleImageFile(fileInput, errorEl, previewWrapEl, previewImgEl, fieldLabel = "hình ảnh") {
+                if (errorEl) {
+                    errorEl.textContent = "";
+                    errorEl.classList.add("d-none");
+                }
+                if (previewWrapEl) {
+                    previewWrapEl.classList.add("d-none");
+                }
+                if (previewImgEl) {
+                    previewImgEl.src = "";
+                }
+
+                let file = fileInput.files && fileInput.files[0];
+                if (!file) return true;
+
+                const fileName = file.name || "";
+                const ext = fileName.toLowerCase().split('.').pop();
+
+                // 1. Kiểm tra định dạng ảnh
+                if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+                    const msg = `Định dạng tệp "${fileName}" không hợp lệ. Chỉ chấp nhận các tệp ảnh: JPG, JPEG, PNG, WEBP.`;
+                    if (errorEl) {
+                        errorEl.textContent = msg;
+                        errorEl.classList.remove("d-none");
+                    }
+                    fileInput.value = "";
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Định dạng ảnh không hỗ trợ!',
+                            text: msg,
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (window.SmashNotify && typeof window.SmashNotify.warning === 'function') {
+                        window.SmashNotify.warning(msg);
+                    } else if (typeof showToast === 'function') {
+                        showToast(msg, 'warning');
+                    }
+                    return false;
+                }
+
+                // 2. Kiểm tra dung lượng tệp gốc (> 5MB phải báo lỗi ngay lập tức)
+                if (file.size > MAX_IMAGE_SIZE_BYTES) {
+                    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                    const msg = `Kích thước ${fieldLabel} "${fileName}" là ${sizeInMB} MB, vượt quá giới hạn tối đa 5.0 MB cho phép! Vui lòng chọn ảnh khác có dung lượng nhỏ hơn 5MB.`;
+                    if (errorEl) {
+                        errorEl.textContent = msg;
+                        errorEl.classList.remove("d-none");
+                    }
+                    fileInput.value = "";
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'error',
+                            title: 'Ảnh vượt quá dung lượng (Tối đa 5.0 MB)!',
+                            html: `
+                                <div style="font-size: 14px; text-align: left; padding: 4px;">
+                                    <p class="mb-2">Tệp <strong>${fileName}</strong> có dung lượng là <span class="text-danger fw-bold fs-6">${sizeInMB} MB</span>.</p>
+                                    <div class="alert alert-danger py-2 px-3 mb-2 small border-0 rounded-3">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Hệ thống quy định mỗi hình ảnh không được vượt quá <strong>5.0 MB</strong>.
+                                    </div>
+                                    <p class="text-muted small mb-0">Vui lòng chọn tệp ảnh khác có dung lượng nhỏ hơn để đảm bảo tốc độ tải và lưu trữ an toàn.</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Tôi đã hiểu & chọn lại',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    } else if (window.SmashNotify && typeof window.SmashNotify.error === 'function') {
+                        window.SmashNotify.error(msg);
+                    } else if (typeof showToast === 'function') {
+                        showToast(msg, 'error');
+                    } else {
+                        alert(msg);
+                    }
+                    return false;
+                }
+
+                // 3. Tự động tối ưu nhẹ đối với file hợp lệ (300KB - 5MB) để tăng tốc độ upload
+                if (file.size > 300 * 1024) {
+                    try {
+                        const compressed = await compressImageFile(file);
+                        if (compressed && compressed.size < file.size) {
+                            try {
+                                const dt = new DataTransfer();
+                                dt.items.add(compressed);
+                                fileInput.files = dt.files;
+                                file = compressed;
+                            } catch (e) {
+                                // DataTransfer fallback
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Tối ưu hóa ảnh:", err);
+                    }
+                }
+
+                if (previewWrapEl && previewImgEl) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImgEl.src = e.target.result;
+                        previewWrapEl.classList.remove("d-none");
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                return true;
+            }
+
+            const mainFileAnh = document.getElementById("mainFileAnh");
+            const mainFileError = document.getElementById("mainFileError");
+            const mainFilePreviewWrap = document.getElementById("mainFilePreviewWrap");
+            const mainFilePreviewImg = document.getElementById("mainFilePreviewImg");
+
+            if (mainFileAnh) {
+                mainFileAnh.addEventListener("change", async function() {
+                    await validateSingleImageFile(this, mainFileError, mainFilePreviewWrap, mainFilePreviewImg, "ảnh sản phẩm gốc");
+                });
+            }
 
             function updateSizeWeightDatalist(catType) {
                 const datalist = document.getElementById("listSizeWeightDatalist");
@@ -376,7 +566,7 @@
                 tr.dataset.variantAttributes = JSON.stringify(Array.isArray(attributes) ? attributes : []);
 
                 const tdMau = document.createElement("td");
-                tdMau.innerHTML = `<input type="text" class="admin-form-control form-control form-control-sm var-mau-sac" list="listMauSacDatalist" placeholder="VD: Đỏ" required value="${mauVal}">`;
+                tdMau.innerHTML = `<input type="text" class="admin-form-control form-control form-control-sm var-mau-sac" list="listMauSacDatalist" placeholder="VD: Đỏ" required oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc cho biến thể!')" oninput="this.setCustomValidity('')" value="${mauVal}">`;
                 tr.appendChild(tdMau);
 
                 const tdSize = document.createElement("td");
@@ -391,24 +581,24 @@
 
                 const tdGiaNhap = document.createElement("td");
                 tdGiaNhap.innerHTML = `
-                    <input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="VD: 1800000" value="${giaNhapVal}">
+                    <input type="number" class="admin-form-control form-control form-control-sm var-gia-nhap" min="0" placeholder="VD: 1800000" oninvalid="this.setCustomValidity('Giá nhập không được âm (tối thiểu 0 VNĐ)!')" oninput="this.setCustomValidity('')" value="${giaNhapVal}">
                     <div class="price-warning-msg text-danger fw-semibold d-none" style="font-size: 0.72rem; margin-top: 2px;">
-                        <i class="fas fa-exclamation-triangle me-1"></i>Giá nhập > Giá bán!
+                        <i class="fas fa-exclamation-triangle me-1"></i>Giá nhập không được cao hơn giá bán!
                     </div>
                 `;
                 tr.appendChild(tdGiaNhap);
 
                 const tdGiaBan = document.createElement("td");
-                tdGiaBan.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-ban" min="1000" step="1000" placeholder="VD: 2500000" required value="${giaBanVal}">`;
+                tdGiaBan.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-gia-ban" min="1000" step="1000" placeholder="VD: 2500000" required oninvalid="this.setCustomValidity('Vui lòng nhập giá bán cho biến thể (tối thiểu 1.000 VNĐ)!')" oninput="this.setCustomValidity('')" value="${giaBanVal}">`;
                 tr.appendChild(tdGiaBan);
 
                 const tdKho = document.createElement("td");
-                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" placeholder="VD: 10" required value="${soLuongTonVal}">`;
+                tdKho.innerHTML = `<input type="number" class="admin-form-control form-control form-control-sm var-so-luong-ton" min="0" placeholder="VD: 10" required oninvalid="this.setCustomValidity('Vui lòng nhập số lượng tồn kho (tối thiểu 0)!')" oninput="this.setCustomValidity('')" value="${soLuongTonVal}">`;
                 tr.appendChild(tdKho);
 
                 const tdAction = document.createElement("td");
                 tdAction.className = "text-center";
-                tdAction.innerHTML = `<button type="button" class="admin-btn admin-btn-icon danger btn-remove-row" title="Xóa dòng này"><i class="fas fa-trash-alt"></i></button>`;
+                tdAction.innerHTML = `<button type="button" class="admin-btn admin-btn-icon danger btn-remove-row" title="Xóa dòng biến thể này"><i class="fas fa-trash-alt"></i></button>`;
                 tr.appendChild(tdAction);
 
                 return tr;
@@ -589,7 +779,7 @@
                     } else {
                         colorIndexMap.forEach((cIdx, mau) => {
                             const colDiv = document.createElement("div");
-                            colDiv.className = "col-md-6 mb-2";
+                            colDiv.className = "col-md-6 mb-3 color-img-block";
 
                             const label = document.createElement("label");
                             label.className = "admin-form-label small fw-bold mb-1";
@@ -598,11 +788,32 @@
                             const fileInput = document.createElement("input");
                             fileInput.type = "file";
                             fileInput.name = `colorImages[${cIdx}]`;
-                            fileInput.className = "admin-form-control form-control form-control-sm";
-                            fileInput.accept = "image/*";
+                            fileInput.className = "admin-form-control form-control form-control-sm color-img-input";
+                            fileInput.accept = "image/jpeg, image/png, image/webp";
+
+                            const helperText = document.createElement("div");
+                            helperText.className = "form-text text-muted small mt-1";
+                            helperText.innerHTML = `Tối đa <strong>5MB</strong> (JPG, PNG, WEBP).`;
+
+                            const errDiv = document.createElement("div");
+                            errDiv.className = "text-danger small mt-1 fw-semibold d-none color-file-err";
+
+                            const previewWrap = document.createElement("div");
+                            previewWrap.className = "mt-2 d-none color-preview-wrap";
+                            const previewImg = document.createElement("img");
+                            previewImg.className = "rounded border p-1 color-preview-img";
+                            previewImg.style.cssText = "max-height: 100px; max-width: 140px; object-fit: contain;";
+                            previewWrap.appendChild(previewImg);
+
+                            fileInput.addEventListener("change", async function() {
+                                await validateSingleImageFile(this, errDiv, previewWrap, previewImg, `màu ${mau}`);
+                            });
 
                             colDiv.appendChild(label);
                             colDiv.appendChild(fileInput);
+                            colDiv.appendChild(helperText);
+                            colDiv.appendChild(errDiv);
+                            colDiv.appendChild(previewWrap);
                             colorImagesContainer.appendChild(colDiv);
                         });
                     }
@@ -779,88 +990,334 @@
             selectDanhMuc.addEventListener("change", handleCategoryChange);
             handleCategoryChange();
 
-            window.validateAndConfirmAddProduct = function(formElement) {
+            window.validateAndConfirmAddProduct = async function(formElement) {
                 if (formElement.dataset.confirmed === "true") {
                     return true;
                 }
 
+                // 1. Kiểm tra Tên sản phẩm
+                const inTen = formElement.querySelector("input[name='tenSanPham']");
+                if (inTen && (!inTen.value || !inTen.value.trim())) {
+                    inTen.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    inTen.focus();
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Thiếu tên sản phẩm!',
+                            text: 'Vui lòng nhập tên sản phẩm trước khi tạo mới!',
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (window.SmashNotify) {
+                        SmashNotify.warning('Vui lòng nhập tên sản phẩm!');
+                    }
+                    return false;
+                }
+
+                // 2. Kiểm tra Danh mục
+                const inDanhMuc = formElement.querySelector("select[name='idDanhMuc']");
+                if (inDanhMuc && !inDanhMuc.value) {
+                    inDanhMuc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    inDanhMuc.focus();
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Chưa chọn danh mục!',
+                            text: 'Vui lòng chọn danh mục cho sản phẩm!',
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (window.SmashNotify) {
+                        SmashNotify.warning('Vui lòng chọn danh mục cho sản phẩm!');
+                    }
+                    return false;
+                }
+
+                // 3. Kiểm tra Thương hiệu
+                const inThuongHieu = formElement.querySelector("select[name='idThuongHieu']");
+                if (inThuongHieu && !inThuongHieu.value) {
+                    inThuongHieu.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    inThuongHieu.focus();
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Chưa chọn thương hiệu!',
+                            text: 'Vui lòng chọn thương hiệu cho sản phẩm!',
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (window.SmashNotify) {
+                        SmashNotify.warning('Vui lòng chọn thương hiệu cho sản phẩm!');
+                    }
+                    return false;
+                }
+
+                // 4. Kiểm tra ảnh sản phẩm gốc
+                if (mainFileAnh) {
+                    if (!mainFileAnh.files || mainFileAnh.files.length === 0) {
+                        if (mainFileError) {
+                            mainFileError.textContent = "Vui lòng chọn hình ảnh sản phẩm gốc (tối đa 5.0 MB)!";
+                            mainFileError.classList.remove("d-none");
+                        }
+                        mainFileAnh.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        mainFileAnh.focus();
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Thiếu hình ảnh sản phẩm gốc!',
+                                text: 'Vui lòng chọn hình ảnh đại diện cho sản phẩm (định dạng JPG, PNG, WEBP, dung lượng tối đa 5.0 MB)!',
+                                confirmButtonColor: '#f97316'
+                            });
+                        } else if (window.SmashNotify) {
+                            SmashNotify.warning('Vui lòng chọn hình ảnh sản phẩm gốc!');
+                        }
+                        return false;
+                    }
+                    const ok = await validateSingleImageFile(mainFileAnh, mainFileError, mainFilePreviewWrap, mainFilePreviewImg, "ảnh sản phẩm gốc");
+                    if (!ok) {
+                        mainFileAnh.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        mainFileAnh.focus();
+                        return false;
+                    }
+                }
+
+                // 5. Kiểm tra tất cả ảnh biến thể màu
+                const colorInputs = Array.from(document.querySelectorAll(".color-img-input"));
+                for (let i = 0; i < colorInputs.length; i++) {
+                    const cInput = colorInputs[i];
+                    if (cInput.files && cInput.files.length > 0) {
+                        const block = cInput.closest(".color-img-block");
+                        const errDiv = block ? block.querySelector(".color-file-err") : null;
+                        const previewWrap = block ? block.querySelector(".color-preview-wrap") : null;
+                        const previewImg = block ? block.querySelector(".color-preview-img") : null;
+                        const ok = await validateSingleImageFile(cInput, errDiv, previewWrap, previewImg, "ảnh biến thể màu");
+                        if (!ok) {
+                            cInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            cInput.focus();
+                            return false;
+                        }
+                    }
+                }
+
+                // 6. Kiểm tra tổng dung lượng toàn bộ request upload
+                let totalUploadBytes = 0;
+                if (mainFileAnh && mainFileAnh.files && mainFileAnh.files[0]) {
+                    totalUploadBytes += mainFileAnh.files[0].size;
+                }
+                colorInputs.forEach(cIn => {
+                    if (cIn.files && cIn.files[0]) {
+                        totalUploadBytes += cIn.files[0].size;
+                    }
+                });
+
+                if (totalUploadBytes > MAX_TOTAL_IMAGES_SIZE_BYTES) {
+                    const totalMB = (totalUploadBytes / (1024 * 1024)).toFixed(2);
+                    const warnMsg = `Tổng dung lượng các hình ảnh là ${totalMB} MB, vượt quá mức tối đa 10 MB cho phép. Vui lòng giảm bớt ảnh hoặc chọn ảnh có dung lượng nhẹ hơn!`;
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Tổng dung lượng ảnh quá lớn!',
+                            text: warnMsg,
+                            confirmButtonColor: '#f97316'
+                        });
+                    } else if (window.SmashNotify) {
+                        SmashNotify.warning(warnMsg);
+                    } else if (typeof showToast === 'function') {
+                        showToast(warnMsg, 'error');
+                    }
+                    return false;
+                }
+
+                // 7. Kiểm tra tính hợp lệ giá bán & giá nhập của biến thể
+                const categoryId = selectDanhMuc ? selectDanhMuc.value : null;
+                const catType = categoryId ? (CATEGORY_TYPES[categoryId] || "OTHER") : "OTHER";
+                const defGia = giaBanDefaultInput ? (parseFloat(giaBanDefaultInput.value) || 0) : 0;
+
+                if (catType === 'HOP_CAU') {
+                    if (defGia < 1000) {
+                        if (giaBanDefaultInput) {
+                            giaBanDefaultInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            giaBanDefaultInput.focus();
+                        }
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Chưa nhập giá bán!',
+                                text: 'Vui lòng nhập giá bán cho sản phẩm (tối thiểu 1.000 VNĐ)!',
+                                confirmButtonColor: '#f97316'
+                            });
+                        } else if (window.SmashNotify) {
+                            SmashNotify.warning('Vui lòng nhập giá bán cho sản phẩm!');
+                        }
+                        return false;
+                    }
+                } else {
+                    const rows = previewTbody.querySelectorAll("tr");
+                    if (rows.length === 0) {
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Chưa có biến thể nào!',
+                                text: 'Vui lòng chọn thuộc tính (Màu sắc, kích thước...) hoặc bấm "Thêm dòng biến thể" để tạo phân loại cho sản phẩm!',
+                                confirmButtonColor: '#f97316'
+                            });
+                        } else if (window.SmashNotify) {
+                            SmashNotify.warning('Vui lòng cấu hình biến thể cho sản phẩm!');
+                        }
+                        return false;
+                    }
+
+                    // Kiểm tra giá bán từng biến thể:
+                    // Nếu không nhập giá bán chung (defGia < 1000), kiểm tra giá bán dưới biến thể
+                    // Nếu cả hai đều bỏ trống -> Yêu cầu nhập giá bán
+                    for (let i = 0; i < rows.length; i++) {
+                        const tr = rows[i];
+                        const inGiaBan = tr.querySelector(".var-gia-ban");
+                        const inMau = tr.querySelector(".var-mau-sac");
+                        const inSize = tr.querySelector(".var-size-weight");
+                        const mauVal = inMau ? inMau.value.trim() : "";
+                        const sizeVal = inSize ? inSize.value.trim() : "";
+                        const variantName = mauVal ? (mauVal + (sizeVal ? " - " + sizeVal : "")) : `Biến thể #${i + 1}`;
+
+                        let gBan = inGiaBan ? (parseFloat(inGiaBan.value) || 0) : 0;
+                        if (gBan < 1000) {
+                            if (defGia >= 1000) {
+                                if (inGiaBan) inGiaBan.value = defGia;
+                                gBan = defGia;
+                            } else {
+                                if (inGiaBan) {
+                                    inGiaBan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    inGiaBan.focus();
+                                }
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Chưa nhập giá bán cho biến thể!',
+                                        html: `
+                                            <div style="font-size: 14px; text-align: left; padding: 4px;">
+                                                <p class="mb-2">Phân loại <strong>${variantName}</strong> chưa có giá bán.</p>
+                                                <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    Vui lòng nhập <strong>Giá bán cho biến thể này</strong> (tối thiểu 1.000 VNĐ) hoặc điền <strong>Giá bán áp dụng chung</strong> ở phần 2 phía trên!
+                                                </div>
+                                            </div>
+                                        `,
+                                        confirmButtonText: 'Tôi sẽ nhập giá bán',
+                                        confirmButtonColor: '#f97316'
+                                    });
+                                } else if (window.SmashNotify) {
+                                    SmashNotify.warning(`Vui lòng nhập giá bán cho biến thể ${variantName}!`);
+                                }
+                                return false;
+                            }
+                        }
+                    }
+
+                    // Kiểm tra cảnh báo Giá nhập > Giá bán
+                    const invalidRows = [];
+                    rows.forEach((tr, idx) => {
+                        const inMau = tr.querySelector(".var-mau-sac");
+                        const inSize = tr.querySelector(".var-size-weight");
+                        const inGiaNhap = tr.querySelector(".var-gia-nhap");
+                        const inGiaBan = tr.querySelector(".var-gia-ban");
+
+                        const gNhap = inGiaNhap ? (parseFloat(inGiaNhap.value) || 0) : 0;
+                        const gBan = inGiaBan ? (parseFloat(inGiaBan.value) || 0) : 0;
+                        const mauVal = inMau ? inMau.value.trim() : "";
+                        const sizeVal = inSize ? inSize.value.trim() : "";
+                        const variantName = mauVal ? (mauVal + (sizeVal ? " - " + sizeVal : "")) : `Biến thể #${idx + 1}`;
+
+                        if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
+                            validateVariantRowPrice(tr, false);
+                            invalidRows.push({
+                                tr: tr,
+                                inGiaNhap: inGiaNhap,
+                                inGiaBan: inGiaBan,
+                                name: variantName,
+                                giaNhap: gNhap,
+                                giaBan: gBan
+                            });
+                        }
+                    });
+
+                    if (invalidRows.length > 0) {
+                        if (invalidRows[0].inGiaNhap) {
+                            invalidRows[0].inGiaNhap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            invalidRows[0].inGiaNhap.focus();
+                        }
+
+                        const invalidListHtml = invalidRows.map(item => `
+                            <li class="mb-1 text-start">
+                                <strong class="text-dark">${item.name}:</strong> 
+                                Giá nhập <span class="text-danger fw-bold">${item.giaNhap.toLocaleString('vi-VN')} đ</span> 
+                                cao hơn Giá bán <span class="text-primary fw-bold">${item.giaBan.toLocaleString('vi-VN')} đ</span>
+                            </li>
+                        `).join('');
+
+                        if (window.Swal && typeof window.Swal.fire === 'function') {
+                            window.Swal.fire({
+                                icon: 'warning',
+                                title: 'Giá nhập cao hơn giá bán!',
+                                html: `
+                                    <div style="font-size: 14px; text-align: left; padding: 4px;">
+                                        <p class="mb-2">Phát hiện <strong>${invalidRows.length}</strong> biến thể có giá nhập cao hơn giá bán:</p>
+                                        <ul class="text-secondary ps-3 mb-3" style="max-height: 180px; overflow-y: auto;">
+                                            ${invalidListHtml}
+                                        </ul>
+                                        <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
+                                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                            Giá nhập không được phép cao hơn giá bán. Vui lòng kiểm tra và nhập lại giá phù hợp trước khi tiếp tục.
+                                        </div>
+                                    </div>
+                                `,
+                                confirmButtonText: 'Tôi sẽ nhập lại giá',
+                                confirmButtonColor: '#f97316'
+                            });
+                        } else if (typeof showToast === 'function') {
+                            showToast(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`, 'error');
+                        } else if (window.SmashNotify && typeof window.SmashNotify.error === 'function') {
+                            window.SmashNotify.error(`Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`);
+                        }
+
+                        return false;
+                    }
+                }
+
+                // 8. Kiểm tra toàn bộ form HTML5
                 if (!formElement.checkValidity()) {
                     formElement.reportValidity();
                     return false;
                 }
 
-                const rows = previewTbody.querySelectorAll("tr");
-                const invalidRows = [];
-
-                rows.forEach((tr, idx) => {
-                    const inMau = tr.querySelector(".var-mau-sac");
-                    const inSize = tr.querySelector(".var-size-weight");
-                    const inGiaNhap = tr.querySelector(".var-gia-nhap");
-                    const inGiaBan = tr.querySelector(".var-gia-ban");
-
-                    const gNhap = inGiaNhap ? (parseFloat(inGiaNhap.value) || 0) : 0;
-                    const gBan = inGiaBan ? (parseFloat(inGiaBan.value) || 0) : 0;
-                    const mauVal = inMau ? inMau.value.trim() : "";
-                    const sizeVal = inSize ? inSize.value.trim() : "";
-                    const variantName = mauVal ? (mauVal + (sizeVal ? " - " + sizeVal : "")) : `Biến thể #${idx + 1}`;
-
-                    if (gNhap > 0 && gBan > 0 && gNhap > gBan) {
-                        validateVariantRowPrice(tr, false);
-                        invalidRows.push({
-                            tr: tr,
-                            inGiaNhap: inGiaNhap,
-                            inGiaBan: inGiaBan,
-                            name: variantName,
-                            giaNhap: gNhap,
-                            giaBan: gBan
-                        });
-                    }
-                });
-
-                if (invalidRows.length > 0) {
-                    if (invalidRows[0].inGiaNhap) {
-                        invalidRows[0].inGiaNhap.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        invalidRows[0].inGiaNhap.focus();
-                    }
-
-                    const invalidListHtml = invalidRows.map(item => `
-                        <li class="mb-1 text-start">
-                            <strong class="text-dark">${item.name}:</strong> 
-                            Giá nhập <span class="text-danger fw-bold">${item.giaNhap.toLocaleString('vi-VN')} đ</span> 
-                            cao hơn Giá bán <span class="text-primary fw-bold">${item.giaBan.toLocaleString('vi-VN')} đ</span>
-                        </li>
-                    `).join('');
-
-                    if (window.Swal && typeof window.Swal.fire === 'function') {
-                        window.Swal.fire({
-                            icon: 'warning',
-                            title: 'Giá nhập cao hơn giá bán!',
-                            html: `
-                                <div style="font-size: 14px; text-align: left; padding: 4px;">
-                                    <p class="mb-2">Phát hiện <strong>${invalidRows.length}</strong> biến thể có giá nhập cao hơn giá bán:</p>
-                                    <ul class="text-secondary ps-3 mb-3" style="max-height: 180px; overflow-y: auto;">
-                                        ${invalidListHtml}
-                                    </ul>
-                                    <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
-                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                                        Giá nhập không được phép cao hơn giá bán. Vui lòng kiểm tra và nhập lại giá phù hợp trước khi tiếp tục.
-                                    </div>
-                                </div>
-                            `,
-                            confirmButtonText: 'Tôi sẽ nhập lại giá',
-                            confirmButtonColor: '#f97316'
-                        });
-                    } else if (typeof showToast === 'function') {
-                        showToast(`Lỗi: Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`, 'error');
-                    } else if (window.SmashNotify && typeof window.SmashNotify.error === 'function') {
-                        window.SmashNotify.error(`Có ${invalidRows.length} biến thể có giá nhập cao hơn giá bán. Vui lòng nhập lại!`);
-                    }
-
-                    return false;
-                }
-
                 return confirmSubmitForm(formElement, 'Bạn có chắc chắn muốn tạo mới sản phẩm và sinh các biến thể này không?');
             };
+
+            const addProductForm = document.getElementById("addProductForm");
+            if (addProductForm) {
+                addProductForm.addEventListener("submit", async function(e) {
+                    if (this.dataset.confirmed === "true") {
+                        return;
+                    }
+                    e.preventDefault();
+                    await window.validateAndConfirmAddProduct(this);
+                });
+            }
+
+            // Tự động bật thông báo Popup nếu có lỗi từ Server truyền về
+            const serverErrHolder = document.getElementById("serverErrorMessageHolder");
+            if (serverErrHolder && serverErrHolder.dataset.message) {
+                const sMsg = serverErrHolder.dataset.message.trim();
+                if (sMsg) {
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Không thể thêm sản phẩm!',
+                            text: sMsg,
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    } else if (window.SmashNotify) {
+                        SmashNotify.error(sMsg, 'Lỗi');
+                    }
+                }
+            }
         });
     </script>
 

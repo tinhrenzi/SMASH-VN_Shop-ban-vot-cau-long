@@ -112,8 +112,32 @@ public class GlobalExceptionHandler {
         }
 
         // Log stack trace nội bộ cho các lỗi thực sự
-        log.error("Lỗi hệ thống chưa được bắt giữ tại URL: " + request.getRequestURI(), ex);
-        
+        log.error("Lỗi hệ thống chưa được bắt giữ tại URL: {}", request.getRequestURI(), ex);
+
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith("/admin")) {
+            String referer = request.getHeader("Referer");
+            String target = (referer != null && !referer.isBlank()) ? referer : "/admin/san-pham";
+            org.springframework.web.servlet.view.RedirectView rv = new org.springframework.web.servlet.view.RedirectView(target, true);
+            org.springframework.web.servlet.FlashMap flashMap = org.springframework.web.servlet.support.RequestContextUtils.getOutputFlashMap(request);
+            String errMsg = ex.getMessage();
+            if (errMsg == null || errMsg.isBlank()
+                    || errMsg.contains("java.lang")
+                    || errMsg.contains("Unresolved compilation")
+                    || errMsg.contains("Handler dispatch")
+                    || errMsg.contains("NullPointerException")
+                    || errMsg.contains("DataIntegrityViolationException")
+                    || errMsg.contains("could not execute statement")) {
+                errMsg = "Đã xảy ra lỗi kỹ thuật trong quá trình xử lý. Vui lòng kiểm tra lại thông tin và thử lại!";
+            }
+            if (flashMap != null) {
+                flashMap.put("error", errMsg);
+                flashMap.put("loi", errMsg);
+                flashMap.put("errorMsg", errMsg);
+            }
+            return new ModelAndView(rv);
+        }
+
         ModelAndView mav = new ModelAndView();
         mav.addObject("loi", "Đã xảy ra lỗi hệ thống. Vui lòng liên hệ quản trị viên!");
         mav.setViewName("error/generic");

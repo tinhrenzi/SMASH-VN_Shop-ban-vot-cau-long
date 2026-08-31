@@ -54,7 +54,7 @@ public class AdminSanPhamController {
             @org.springframework.web.bind.annotation.ModelAttribute SanPhamCreateRequest requestDto,
             HttpServletRequest request,
             HttpSession session,
-            Model model) {
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         try {
             Integer idNguoiDung = (Integer) session.getAttribute("idNguoiDung");
             adminSanPhamService.themSanPhamVaBienThe(
@@ -62,12 +62,22 @@ public class AdminSanPhamController {
                     idNguoiDung,
                     request.getRemoteAddr()
             );
-            return "redirect:/admin/san-pham?thanhcong";
+            redirectAttributes.addFlashAttribute("success", "Thêm mới sản phẩm '" + requestDto.getTenSanPham() + "' thành công!");
+            return "redirect:/admin/san-pham";
         } catch (Exception e) {
-            model.addAttribute("loi", e.getMessage());
-            model.addAttribute("requestDto", requestDto);
-            populateFormModel(model);
-            return "admin/sanpham-add";
+            String cleanMsg = e.getMessage();
+            if (cleanMsg == null || cleanMsg.isBlank()
+                    || cleanMsg.contains("java.lang")
+                    || cleanMsg.contains("Unresolved compilation")
+                    || cleanMsg.contains("Handler dispatch")
+                    || cleanMsg.contains("NullPointerException")
+                    || cleanMsg.contains("could not execute statement")) {
+                cleanMsg = "Không thể thêm sản phẩm do lỗi xử lý hệ thống. Vui lòng thử lại!";
+            }
+            redirectAttributes.addFlashAttribute("loi", cleanMsg);
+            redirectAttributes.addFlashAttribute("error", cleanMsg);
+            redirectAttributes.addFlashAttribute("errorMsg", cleanMsg);
+            return "redirect:/admin/san-pham/them";
         }
     }
 
