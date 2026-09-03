@@ -3079,7 +3079,9 @@
             const csrfHeaderName = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
 
             const headers = {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             };
             if (csrfToken) {
                 headers[csrfHeaderName] = csrfToken;
@@ -3092,7 +3094,18 @@
                 headers: headers,
                 credentials: 'same-origin'
             })
-                .then(response => response.json())
+                .then(async response => {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        if (response.status === 401 || response.status === 403) {
+                            throw new Error('Phiên làm việc đã hết hạn hoặc không có quyền. Vui lòng tải lại trang.');
+                        }
+                        throw new Error('Máy chủ phản hồi không đúng định dạng (Mã ' + response.status + '). Vui lòng tải lại trang.');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === 'ok') {
                         if (data.isDemoFallback === true) {

@@ -1865,6 +1865,31 @@ public class GhnService {
             }
         }
 
+        // Pass 4: If district is not explicitly written in text, search across all districts of this province to match Ward name in street address
+        String preMatchedWardCode = null;
+        if (districtId == null) {
+            for (Map<String, Object> d : districts) {
+                Integer dId = (Integer) d.get("DistrictID");
+                if (dId == null) continue;
+                List<Map<String, Object>> candidateWards = getWards(dId, false);
+                for (Map<String, Object> w : candidateWards) {
+                    String rawWardName = (String) w.get("WardName");
+                    if (rawWardName == null) continue;
+                    String normWName = normalizeString(rawWardName);
+                    String cleanWName = normWName.replaceAll("^(phuong|xa|thi tran)\\s+", "").trim();
+                    if (!cleanWName.isEmpty() && cleanWName.length() >= 3 && streetAddress.contains(cleanWName)) {
+                        districtId = dId;
+                        matchedDistrict = d;
+                        preMatchedWardCode = (String) w.get("WardCode");
+                        log.info("Resolved District ({}) and Ward ({}) by reverse ward search from address: {}",
+                                d.get("DistrictName"), rawWardName, dc.getDiaChiCuThe());
+                        break;
+                    }
+                }
+                if (districtId != null) break;
+            }
+        }
+
         if (districtId == null) {
             log.warn("Unable to resolve GHN district from address: {}",
                     dc.getDiaChiCuThe());
@@ -1876,11 +1901,13 @@ public class GhnService {
                 (String) matchedDistrict.get("DistrictName"));
 
         // 3. Fetch wards and match within dc.getDiaChiCuThe() first, then other fields
-        List<Map<String, Object>> wards = getWards(districtId, failOnLookupError);
-        String targetStreet = streetAddress; // dc.getDiaChiCuThe() normalized
-        String targetOtherFields = normalizeString(dc.getTinhThanh() + " " + dc.getThanhPho());
-        String wardCode = null;
+        String wardCode = preMatchedWardCode;
         Map<String, Object> matchedWard = null;
+
+        if (wardCode == null) {
+            List<Map<String, Object>> wards = getWards(districtId, failOnLookupError);
+            String targetStreet = streetAddress; // dc.getDiaChiCuThe() normalized
+            String targetOtherFields = normalizeString(dc.getTinhThanh() + " " + dc.getThanhPho());
 
         Map<Map<String, Object>, String> wardCleanNames = new java.util.HashMap<>();
         Map<Map<String, Object>, String> wardNormNames = new java.util.HashMap<>();
@@ -1943,6 +1970,7 @@ public class GhnService {
                     }
                 }
             }
+        }
         }
 
         if (wardCode == null) {

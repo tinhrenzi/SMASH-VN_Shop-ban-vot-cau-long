@@ -1,6 +1,7 @@
 package com.smashvn.shop.controller.api;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.smashvn.shop.config.GhnConfig;
+import com.smashvn.shop.dto.inventory.AllocationResult;
+import com.smashvn.shop.dto.inventory.AllocationStatus;
+import com.smashvn.shop.dto.inventory.OrderItemRequest;
 import com.smashvn.shop.entity.AccountStatus;
 import com.smashvn.shop.entity.HoaDon;
 import com.smashvn.shop.entity.HoaDonChiTiet;
@@ -28,6 +32,7 @@ import com.smashvn.shop.repository.HoaDonRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.api.GhnStatusMapper;
+import com.smashvn.shop.service.inventory.InventoryLotService;
 import com.smashvn.shop.service.order.OrderViewService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,6 +59,7 @@ public class GhnRestController {
     private final OrderViewService orderViewService;
     private final GhnConfig ghnConfig;
     private final TaiKhoanRepository taiKhoanRepository;
+    private final InventoryLotService inventoryLotService;
 
     /**
      * Lấy danh sách tỉnh/thành phố
@@ -324,6 +330,29 @@ public class GhnRestController {
                 hd.setGhnToWardCode(finalWardCode);
             }
 
+            // Đảm bảo hàng tồn kho đã được trừ FIFO an toàn nếu nhân viên bấm gửi GHN trực tiếp
+            boolean isStockDeducted = orderViewService.isStockDeductedState(hd, hd.getTrangThaiDonHang());
+            if (!isStockDeducted) {
+                List<OrderItemRequest> reqs = new ArrayList<>();
+                for (HoaDonChiTiet item : items) {
+                    if (item.getSanPhamChiTiet() != null && item.getSoLuong() != null && item.getSoLuong() > 0) {
+                        reqs.add(OrderItemRequest.builder()
+                                .representativeSpctId(item.getSanPhamChiTiet().getId())
+                                .quantity(item.getSoLuong())
+                                .build());
+                    }
+                }
+                if (!reqs.isEmpty()) {
+                    AllocationResult allocResult = inventoryLotService.allocateFifo(reqs);
+                    if (allocResult != null && allocResult.status() == AllocationStatus.INSUFFICIENT_STOCK) {
+                        return ResponseEntity.ok(Map.of(
+                                "status", "error",
+                                "message", allocResult.message() != null ? allocResult.message() : "Sản phẩm không đủ hàng tồn kho để gửi sang GHN!"
+                        ));
+                    }
+                }
+            }
+
             String ghnCode;
             if (useSandboxAddressFallback) {
                 if (ghnService.hasUnknownGhnCreateStatus(orderId)) {
@@ -343,11 +372,10 @@ public class GhnRestController {
                 hd.setGhnOrderCode(ghnCode);
                 hd.setGhnStatus("ready_to_pick");
                 String currentStatus = hd.getTrangThaiDonHang();
-                if (currentStatus != null && (
-                        "san_sang_giao".equalsIgnoreCase(currentStatus) ||
-                        "dang_chuan_bi_hang".equalsIgnoreCase(currentStatus) ||
-                        "da_xac_nhan".equalsIgnoreCase(currentStatus) ||
-                        "cho_xac_nhan".equalsIgnoreCase(currentStatus))) {
+                if (currentStatus != null && ("san_sang_giao".equalsIgnoreCase(currentStatus)
+                        || "dang_chuan_bi_hang".equalsIgnoreCase(currentStatus)
+                        || "da_xac_nhan".equalsIgnoreCase(currentStatus)
+                        || "cho_xac_nhan".equalsIgnoreCase(currentStatus))) {
                     hd.setTrangThaiDonHang(OrderStatus.DA_TAO_VAN_DON_GHN.getValue());
                 }
                 hoaDonRepository.save(hd);
@@ -388,18 +416,18 @@ public class GhnRestController {
             String baseUrl = ghnConfig.getBaseUrl();
             boolean isSandbox = baseUrl != null && (baseUrl.contains("dev.ghn.vn") || baseUrl.contains("5sao"));
             if (isSandbox) {
-                detailedMsg += "\n\n[LƯU Ý MÔI TRƯỜNG SANDBOX GHN]:\n" +
-                               "1. Hãy đảm bảo API Token (GHN_TOKEN) và Shop ID (GHN_SHOP_ID) cấu hình trong file .env được tạo trên hệ thống thử nghiệm Sandbox (https://5sao.dev.ghn.vn) (Không dùng token thật từ app.ghn.vn).\n" +
-                               "2. Mã Quận/Huyện (ghnToDistrictId) và Phường/Xã (ghnToWardCode) của địa chỉ nhận phải khớp chính xác và đang hoạt động trên cơ sở dữ liệu Sandbox của GHN.\n" +
-                               "3. Cửa hàng gửi phải được thiết lập địa chỉ kho và được hỗ trợ gói dịch vụ giao hàng chuẩn trên Sandbox.";
+                detailedMsg += "\n\n[LƯU Ý MÔI TRƯỜNG SANDBOX GHN]:\n"
+                        + "1. Hãy đảm bảo API Token (GHN_TOKEN) và Shop ID (GHN_SHOP_ID) cấu hình trong file .env được tạo trên hệ thống thử nghiệm Sandbox (https://5sao.dev.ghn.vn) (Không dùng token thật từ app.ghn.vn).\n"
+                        + "2. Mã Quận/Huyện (ghnToDistrictId) và Phường/Xã (ghnToWardCode) của địa chỉ nhận phải khớp chính xác và đang hoạt động trên cơ sở dữ liệu Sandbox của GHN.\n"
+                        + "3. Cửa hàng gửi phải được thiết lập địa chỉ kho và được hỗ trợ gói dịch vụ giao hàng chuẩn trên Sandbox.";
             }
             return ResponseEntity.ok(Map.of("status", "error", "message", detailedMsg));
         }
     }
 
     /**
-     * [ADMIN] Đồng bộ thủ công trạng thái đơn hàng từ GHN API về hệ thống nội bộ
-     * POST /api/ghn/admin/sync/{orderId}
+     * [ADMIN] Đồng bộ thủ công trạng thái đơn hàng từ GHN API về hệ thống nội
+     * bộ POST /api/ghn/admin/sync/{orderId}
      */
     @PostMapping("/admin/sync/{orderId}")
     public ResponseEntity<?> adminSyncGhnStatus(
@@ -504,8 +532,8 @@ public class GhnRestController {
     }
 
     /**
-     * [ADMIN] Mô phỏng chuyển trạng thái kế tiếp cho vận đơn GHN Fallback (Demo Simulator)
-     * POST /api/ghn/admin/demo-next-status/{orderId}
+     * [ADMIN] Mô phỏng chuyển trạng thái kế tiếp cho vận đơn GHN Fallback (Demo
+     * Simulator) POST /api/ghn/admin/demo-next-status/{orderId}
      */
     @PostMapping("/admin/demo-next-status/{orderId}")
     public ResponseEntity<?> advanceDemoNextStatus(

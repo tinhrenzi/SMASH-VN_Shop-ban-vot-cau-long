@@ -101,6 +101,60 @@
             padding-bottom: 20px !important;
         }
     </style>
+    
+    <style>
+        .product-rich-description {
+            font-size: 14.5px;
+            line-height: 1.8;
+            color: #333333;
+            word-break: break-word;
+        }
+        .product-rich-description p {
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+        .product-rich-description h1,
+        .product-rich-description h2,
+        .product-rich-description h3,
+        .product-rich-description h4 {
+            color: #111827;
+            font-weight: 700;
+            margin-top: 18px;
+            margin-bottom: 10px;
+        }
+        .product-rich-description ul, 
+        .product-rich-description ol {
+            margin-bottom: 16px;
+            padding-left: 24px;
+        }
+        .product-rich-description li {
+            margin-bottom: 6px;
+            line-height: 1.7;
+        }
+        .product-rich-description blockquote {
+            border-left: 4px solid #ff4500;
+            padding: 8px 16px;
+            margin: 14px 0;
+            background-color: #f8fafc;
+            color: #475569;
+            font-style: italic;
+        }
+        .product-rich-description table {
+            width: 100% !important;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        .product-rich-description table th,
+        .product-rich-description table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            text-align: left;
+        }
+        .product-rich-description table th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+    </style>
 
     <script>
         if (window.self !== window.top) {
@@ -344,7 +398,7 @@
                                      <!--====== Tab 1 ======-->
                                     <div class="tab-pane fade show active" id="pd-desc">
                                         <div class="pd-tab__desc">
-                                            <div class="u-s-m-b-15 product-rich-description" th:utext="${sp.moTa}">
+                                            <div class="u-s-m-b-15 product-rich-description" th:utext="${(sp.moTa != null and !#strings.isEmpty(sp.moTa)) ? sp.moTa : '<p>Sản phẩm ' + sp.tenSanPham + ' chính hãng chất lượng cao, nhập khẩu phân phối trực tiếp bởi SMASH-VN.</p>'}">
                                                 <p>Đây là thông tin mô tả chi tiết của sản phẩm. Sản phẩm vợt cầu lông SmashVN chất lượng cao, độ bền tốt, hỗ trợ tối đa cho người chơi.</p>
                                             </div>
                                             <div class="u-s-m-b-30">

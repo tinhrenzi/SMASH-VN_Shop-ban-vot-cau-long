@@ -59,6 +59,9 @@ class GhnRestControllerTest {
     @Mock
     private TaiKhoanRepository taiKhoanRepository;
 
+    @Mock
+    private com.smashvn.shop.service.inventory.InventoryLotService inventoryLotService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -71,7 +74,8 @@ class GhnRestControllerTest {
                 hoaDonChiTietRepository,
                 orderViewService,
                 ghnConfig,
-                taiKhoanRepository);
+                taiKhoanRepository,
+                inventoryLotService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
