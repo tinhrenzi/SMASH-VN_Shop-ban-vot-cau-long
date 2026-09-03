@@ -657,15 +657,21 @@ public class GioHangService {
 
         BigDecimal totalAmount = tamTinh.subtract(giamGia).add(phiShip);
 
-        String ptttName = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "SePay";
+        final String targetCode = "COD".equalsIgnoreCase(phuongThucThanhToan) ? "COD" : "SEPAY";
         List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
         PhuongThucThanhToan pttt = allPttt.stream()
-                .filter(p -> ptttName.equalsIgnoreCase(p.getTenPhuongThuc()))
+                .filter(p -> (p.getMaPhuongThuc() != null && targetCode.equalsIgnoreCase(p.getMaPhuongThuc()))
+                          || ("SEPAY".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 1))
+                          || ("COD".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 2)))
                 .findFirst()
                 .orElseGet(() -> {
-                    PhuongThucThanhToan newP = new PhuongThucThanhToan();
-                    newP.setTenPhuongThuc(ptttName);
-                    return phuongThucThanhToanDAO.save(newP);
+                    Integer targetId = "SEPAY".equalsIgnoreCase(targetCode) ? 1 : 2;
+                    return phuongThucThanhToanDAO.findById(targetId).orElseGet(() -> {
+                        PhuongThucThanhToan newP = new PhuongThucThanhToan();
+                        newP.setMaPhuongThuc(targetCode);
+                        newP.setTenPhuongThuc("SEPAY".equalsIgnoreCase(targetCode) ? "Chuyển khoản Online" : "Thanh toán khi nhận hàng");
+                        return phuongThucThanhToanDAO.save(newP);
+                    });
                 });
 
         HoaDon hd = new HoaDon();

@@ -1796,7 +1796,7 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark mb-1">${escapeHtml(item.tenSanPham || 'N/A')}</div>
-                                <div class="text-muted small">${skuBadge}${escapeHtml(item.thuocTinh || 'N/A')}</div>
+                                ${item.thuocTinh && item.thuocTinh.trim() !== 'Mặc định' && item.thuocTinh.trim() !== 'N/A' ? `<div class="text-muted small">${skuBadge}${escapeHtml(item.thuocTinh)}</div>` : (skuBadge ? `<div class="text-muted small">${skuBadge}</div>` : '')}
                                 ${lineDiscountInfo}
                             </td>
                             <td class="text-center fw-bold">${item.soLuong}</td>
@@ -2254,8 +2254,8 @@
                             posItemsHtml += `
                             <tr>
                                 <td style="padding: 4px 0; vertical-align: top;">
-                                    <span>${escapeHtml(item.tenSanPham || 'N/A')}</span><br>
-                                    <span class="item-details" style="font-size: 10px; color: #555;">${escapeHtml(item.thuocTinh || 'N/A')}</span>
+                                    <span>${escapeHtml(item.tenSanPham || 'N/A')}</span>
+                                    ${item.thuocTinh && item.thuocTinh.trim() !== 'Mặc định' && item.thuocTinh.trim() !== 'N/A' ? `<br><span class="item-details" style="font-size: 10px; color: #555;">${escapeHtml(item.thuocTinh)}</span>` : ''}
                                 </td>
                                 <td style="padding: 4px 0; text-align: center; vertical-align: top;">${item.soLuong}</td>
                                 <td style="padding: 4px 0; text-align: right; vertical-align: top;">${new Intl.NumberFormat('vi-VN').format(item.giaBan * item.soLuong)} đ</td>
@@ -2947,7 +2947,7 @@
                                     tr.innerHTML = `
                                         <td>
                                             <div class="fw-bold text-dark">${escapeHtml(it.tenSanPham || 'Sản phẩm')}</div>
-                                            <small class="text-muted">${escapeHtml(it.thuocTinh || '')}</small>
+                                            ${it.thuocTinh && it.thuocTinh.trim() !== 'Mặc định' ? `<small class="text-muted">${escapeHtml(it.thuocTinh)}</small>` : ''}
                                         </td>
                                         <td class="text-center fw-bold text-primary">${qty}</td>
                                     `;

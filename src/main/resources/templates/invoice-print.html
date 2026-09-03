@@ -266,8 +266,10 @@
                         <img th:src="@{${item.sanPhamChiTiet.hinhAnhUrl}}" alt="Hình ảnh sản phẩm" class="product-img" onerror="this.onerror=null; this.src='/images/placeholder.png';">
                     </td>
                     <td>
-                        <strong th:text="${item.tenSanPhamSnapshot}">Tên sản phẩm</strong><br>
-                        <small class="text-muted" th:text="${item.thuocTinhSnapshot != null ? #strings.replace(item.thuocTinhSnapshot, 'Mức cảng:', 'Sức căng khuyến nghị:') : ''}">Phân loại</small>
+                        <strong th:text="${item.tenSanPhamSnapshot}">Tên sản phẩm</strong>
+                        <div th:if="${item.thuocTinhSnapshot != null and item.thuocTinhSnapshot != 'Mặc định' and !#strings.isEmpty(item.thuocTinhSnapshot)}">
+                            <small class="text-muted" th:text="${#strings.replace(item.thuocTinhSnapshot, 'Mức cảng:', 'Sức căng khuyến nghị:')}">Phân loại</small>
+                        </div>
                     </td>
                     <td style="text-align: center;" th:text="${item.soLuong}">1</td>
                     <td style="text-align: right;" th:text="${#numbers.formatDecimal(item.donGia, 0, 'COMMA', 0, 'POINT')} + ' đ'">1.000 đ</td>

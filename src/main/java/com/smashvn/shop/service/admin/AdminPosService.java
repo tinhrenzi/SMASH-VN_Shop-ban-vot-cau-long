@@ -212,23 +212,23 @@ public class AdminPosService {
         }
 
         // 3. Ánh xạ phương thức thanh toán POS → PhuongThucThanhToan (giữ FK cho tương thích)
-        String tenPhuongThucCan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "chuyển khoản" : "tiền mặt";
+        final String targetCode = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "CHUYEN_KHOAN" : "TIEN_MAT";
+        final String tenPhuongThucCan = "CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "chuyển khoản" : "tiền mặt";
         List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
-        PhuongThucThanhToan pttt;
-        if (allPttt.isEmpty()) {
-            PhuongThucThanhToan defaultPttt = new PhuongThucThanhToan();
-            defaultPttt.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
-            pttt = phuongThucThanhToanDAO.save(defaultPttt);
-        } else {
-            pttt = allPttt.stream()
-                    .filter(p -> p.getTenPhuongThuc().toLowerCase().contains(tenPhuongThucCan))
-                    .findFirst()
-                    .orElseGet(() -> {
+        PhuongThucThanhToan pttt = allPttt.stream()
+                .filter(p -> (p.getMaPhuongThuc() != null && targetCode.equalsIgnoreCase(p.getMaPhuongThuc()))
+                          || ("TIEN_MAT".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 3))
+                          || ("CHUYEN_KHOAN".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 4)))
+                .findFirst()
+                .orElseGet(() -> {
+                    Integer targetId = "TIEN_MAT".equalsIgnoreCase(targetCode) ? 3 : 4;
+                    return phuongThucThanhToanDAO.findById(targetId).orElseGet(() -> {
                         PhuongThucThanhToan newP = new PhuongThucThanhToan();
-                        newP.setTenPhuongThuc("CHUYEN_KHOAN".equalsIgnoreCase(phuongThucPos) ? "Chuyển khoản" : "Tiền mặt");
+                        newP.setMaPhuongThuc(targetCode);
+                        newP.setTenPhuongThuc("TIEN_MAT".equalsIgnoreCase(targetCode) ? "Tiền mặt tại quầy" : "Chuyển khoản tại quầy");
                         return phuongThucThanhToanDAO.save(newP);
                     });
-        }
+                });
 
         // 4. Lấy đơn vị vận chuyển (Bán tại quầy)
         List<DonViVanChuyen> allDvvc = donViVanChuyenDAO.findAll();

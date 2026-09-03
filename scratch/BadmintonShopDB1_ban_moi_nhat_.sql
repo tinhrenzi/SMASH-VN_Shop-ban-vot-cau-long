@@ -1673,15 +1673,21 @@ INSERT INTO [dbo].[DanhMucThuocTinh] ([id_danh_muc],[id_thuoc_tinh],[trang_thai]
 GO
 
 -- 8. PhuongThucThanhToan
-INSERT INTO [dbo].[PhuongThucThanhToan] ([ma_phuong_thuc],[ten_phuong_thuc]) VALUES
-(N'COD', N'Thanh toán khi nhận hàng'),
-(N'VNPAY', N'VNPay'),
-(N'MOMO', N'Ví MoMo');
+SET IDENTITY_INSERT [dbo].[PhuongThucThanhToan] ON;
+INSERT INTO [dbo].[PhuongThucThanhToan] ([id],[ma_phuong_thuc],[ten_phuong_thuc]) VALUES
+(1, N'SEPAY', N'Chuyển khoản Online'),
+(2, N'COD', N'Thanh toán khi nhận hàng'),
+(3, N'TIEN_MAT', N'Tiền mặt tại quầy'),
+(4, N'CHUYEN_KHOAN', N'Chuyển khoản tại quầy');
+SET IDENTITY_INSERT [dbo].[PhuongThucThanhToan] OFF;
 GO
 
 -- 9. DonViVanChuyen
-INSERT INTO [dbo].[DonViVanChuyen] ([ma_don_vi],[ten_don_vi],[so_hotline],[web_url],[ma_token],[ma_client],[dia_chi_kho],[phi_noi_dia],[phi_toan_quoc]) VALUES
-(N'GHN', N'Giao Hàng Nhanh', N'1900636677', N'https://ghn.vn', N'7cb9910e-6313-11f1-a973-aee5264794df', N'200610', N'10 Kim Mã, Ba Đình, Hà Nội', 25000, 35000);
+SET IDENTITY_INSERT [dbo].[DonViVanChuyen] ON;
+INSERT INTO [dbo].[DonViVanChuyen] ([id],[ma_don_vi],[ten_don_vi],[so_hotline],[web_url],[ma_token],[ma_client],[dia_chi_kho],[phi_noi_dia],[phi_toan_quoc]) VALUES
+(1, N'GHN', N'Giao Hàng Nhanh', N'1900636677', N'https://ghn.vn', N'7cb9910e-6313-11f1-a973-aee5264794df', N'200610', N'10 Kim Mã, Ba Đình, Hà Nội', 25000, 35000),
+(2, N'TAIQUAY', N'Mua tại quầy', N'000000', N'https://smashvn.local', NULL, NULL, N'Tại cửa hàng SMASH-VN', 0, 0);
+SET IDENTITY_INSERT [dbo].[DonViVanChuyen] OFF;
 GO
 
 -- 11. SanPham
