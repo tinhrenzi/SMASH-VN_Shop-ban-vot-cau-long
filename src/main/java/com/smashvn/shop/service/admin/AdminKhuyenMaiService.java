@@ -30,6 +30,7 @@ import com.smashvn.shop.util.ApDungKieu;
 import com.smashvn.shop.util.PromotionValidationConstants;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service xử lý toàn bộ nghiệp vụ QUẢN LÝ KHUYẾN MÃI của admin.
@@ -47,6 +48,7 @@ import lombok.RequiredArgsConstructor;
  * Mỗi thao tác thêm/sửa/xóa đều ghi {@code EditLog} (audit trail) để truy vết
  * sau này.</p>
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminKhuyenMaiService {
@@ -215,8 +217,7 @@ public class AdminKhuyenMaiService {
                             try {
                                 newsletterService.sendPromotionEmailAsync(saved.getId());
                             } catch (Exception e) {
-                                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
-                                        .error("[Newsletter] Error triggering promotion email after commit for campaign: {}", saved.getId(), e);
+                                log.error("[Bản tin khuyến mãi] Lỗi kích hoạt gửi email thông báo sau commit cho đợt giảm giá #{}: {}", saved.getId(), e.getMessage(), e);
                             }
                         }
                     });
@@ -224,8 +225,7 @@ public class AdminKhuyenMaiService {
                     newsletterService.sendPromotionEmailAsync(saved.getId());
                 }
             } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
-                        .error("[Newsletter] Error setting up promotion email notification for campaign: {}", saved.getId(), e);
+                log.error("[Bản tin khuyến mãi] Lỗi thiết lập thông báo email cho đợt giảm giá #{}: {}", saved.getId(), e.getMessage(), e);
             }
         }
 
@@ -669,8 +669,7 @@ public class AdminKhuyenMaiService {
                             try {
                                 newsletterService.sendVoucherEmailAsync(saved.getId());
                             } catch (Exception e) {
-                                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
-                                        .error("[Newsletter] Error triggering voucher email after commit for voucher: {}", saved.getId(), e);
+                                log.error("[Bản tin khuyến mãi] Lỗi kích hoạt gửi email thông báo sau commit cho voucher #{}: {}", saved.getId(), e.getMessage(), e);
                             }
                         }
                     });
@@ -678,8 +677,7 @@ public class AdminKhuyenMaiService {
                     newsletterService.sendVoucherEmailAsync(saved.getId());
                 }
             } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger(AdminKhuyenMaiService.class)
-                        .error("[Newsletter] Error setting up voucher email notification for voucher: {}", saved.getId(), e);
+                log.error("[Bản tin khuyến mãi] Lỗi thiết lập thông báo email cho voucher #{}: {}", saved.getId(), e.getMessage(), e);
             }
         }
 

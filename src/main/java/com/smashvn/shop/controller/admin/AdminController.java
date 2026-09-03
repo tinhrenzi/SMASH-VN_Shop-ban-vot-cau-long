@@ -574,7 +574,7 @@ public class AdminController {
                 try {
                     fileStorageService.deleteFiles(savedNames, "refunds");
                 } catch (Exception cleanupEx) {
-                    log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
+                    log.warn("Không thể xóa file ảnh chứng từ hoàn tiền tạm thời: {}", cleanupEx.getMessage());
                 }
             }
             String errorMsg = "Lỗi hoàn tiền & hủy đơn: " + e.getMessage();
@@ -963,6 +963,7 @@ public class AdminController {
                         phanTramGiam = soTienGiamSanPham.multiply(java.math.BigDecimal.valueOf(100))
                                 .divide(giaNiemYet, 0, java.math.RoundingMode.HALF_UP);
                     } catch (Exception e) {
+                        log.warn("Lỗi tính toán phần trăm giảm giá cho sản phẩm: {}", e.getMessage());
                         phanTramGiam = java.math.BigDecimal.ZERO;
                     }
                 }
@@ -1247,7 +1248,7 @@ public class AdminController {
                 try {
                     fileStorageService.deleteFiles(savedNames, "refunds");
                 } catch (Exception cleanupEx) {
-                    log.warn("Failed to cleanup refund proof image: {}", cleanupEx.getMessage());
+                    log.warn("Không thể xóa file ảnh chứng từ hoàn tiền tạm thời: {}", cleanupEx.getMessage());
                 }
             }
             String errorMsg = "Lỗi hoàn tiền: " + e.getMessage();

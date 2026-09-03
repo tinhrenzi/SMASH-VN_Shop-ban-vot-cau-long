@@ -67,37 +67,37 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-3">
                                     <label class="admin-form-label">Giá bán *</label>
-                                    <input type="number" name="giaBan" class="admin-form-control form-control" required min="1000" step="1000" placeholder="VD: 2500000">
+                                    <input type="number" name="giaBan" class="admin-form-control form-control" required min="1000" step="1000" placeholder="VD: 2500000" oninvalid="this.setCustomValidity('Vui lòng nhập giá bán hợp lệ (tối thiểu 1.000 VNĐ)!')" oninput="this.setCustomValidity('')">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="admin-form-label">Số lượng kho *</label>
-                                    <input type="number" name="soLuongTon" class="admin-form-control form-control" required min="0" placeholder="VD: 10">
+                                    <input type="number" name="soLuongTon" class="admin-form-control form-control" required min="0" placeholder="VD: 10" oninvalid="this.setCustomValidity('Vui lòng nhập số lượng tồn kho (tối thiểu 0)!')" oninput="this.setCustomValidity('')">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="admin-form-label">Hình ảnh sản phẩm</label>
-                                    <input type="file" name="fileAnh" id="fileAnh" class="admin-form-control form-control" accept="image/jpeg, image/png, image/webp">
-                                    <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
+                                    <input type="file" name="fileAnh" id="fileAnh" class="admin-form-control form-control" accept="image/jpeg, image/png, image/webp" oninvalid="this.setCustomValidity('Vui lòng chọn hình ảnh hợp lệ!')" oninput="this.setCustomValidity('')">
+                                    <div id="fileError" class="text-danger mt-1 small" style="display: none;"></div>
                                 </div>
                             </div>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
                                     <label class="admin-form-label">Màu sắc *</label>
-                                    <input type="text" name="mauSac" class="admin-form-control form-control" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
+                                    <input type="text" name="mauSac" class="admin-form-control form-control" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen" oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc!')" oninput="this.setCustomValidity('')">
                                 </div>
 
                                 <div class="col-md-4" th:if="${categoryType == 'VOT'}">
                                     <label class="admin-form-label">Trọng lượng *</label>
-                                    <input type="text" name="trongLuong" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
+                                    <input type="text" name="trongLuong" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 3U / 4U / 5U" oninvalid="this.setCustomValidity('Vui lòng nhập trọng lượng vợt (VD: 3U, 4U, 5U)!')" oninput="this.setCustomValidity('')">
                                 </div>
 
                                 <div class="col-md-4" th:if="${categoryType == 'GIAY'}">
                                     <label class="admin-form-label">Size giày *</label>
-                                    <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                    <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: 36, 37... 46" oninvalid="this.setCustomValidity('Vui lòng nhập size giày (VD: 36, 37... 46)!')" oninput="this.setCustomValidity('')">
                                 </div>
 
                                 <div class="col-md-4" th:if="${categoryType == 'TRANG_PHUC'}">
                                     <label class="admin-form-label">Size trang phục *</label>
-                                    <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: S, M, L, XL...">
+                                    <input type="text" name="kichThuoc" class="admin-form-control form-control" required maxlength="50" placeholder="VD: S, M, L, XL..." oninvalid="this.setCustomValidity('Vui lòng nhập size trang phục (VD: S, M, L, XL...)!')" oninput="this.setCustomValidity('')">
                                 </div>
 
                                 <div class="col-md-4" th:if="${categoryType == 'VOT'}">
@@ -189,5 +189,39 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Admin Layout JS -->
     <script th:src="@{/js/admin-layout.js(v='2.4')}"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const fileInput = document.getElementById("fileAnh");
+        const fileError = document.getElementById("fileError");
+        if (fileInput && fileError) {
+            fileInput.addEventListener("change", function () {
+                fileError.style.display = "none";
+                fileError.textContent = "";
+
+                const file = this.files[0];
+                if (!file) return;
+
+                const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
+                const fileName = file.name.toLowerCase();
+                const extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+                if (!allowedExtensions.includes(extension)) {
+                    fileError.textContent = "Định dạng tệp không hợp lệ! Chỉ cho phép JPG, JPEG, PNG, WEBP.";
+                    fileError.style.display = "block";
+                    this.value = "";
+                    return;
+                }
+
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    fileError.textContent = "Kích thước hình ảnh quá lớn! Kích thước tối đa cho phép là 5MB.";
+                    fileError.style.display = "block";
+                    this.value = "";
+                    return;
+                }
+            });
+        }
+    });
+    </script>
 </body>
 </html>

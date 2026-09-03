@@ -19,7 +19,9 @@ import com.smashvn.shop.service.AuditService;
 import com.smashvn.shop.util.ValidationUtils;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminKhachHangService {
@@ -112,7 +114,7 @@ public class AdminKhachHangService {
             mailSender.send(message);
         } catch (Exception e) {
             // Ghi log lỗi gửi mail nhưng không làm ngắt giao dịch CSDL đã lưu thành công
-            System.err.println("Không thể gửi email cảnh báo đổi mật khẩu tới " + email + ": " + e.getMessage());
+            log.error("Không thể gửi email cảnh báo đổi mật khẩu tới {}: {}", email, e.getMessage(), e);
         }
     }
 

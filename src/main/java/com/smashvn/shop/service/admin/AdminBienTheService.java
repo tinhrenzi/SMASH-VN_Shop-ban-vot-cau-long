@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -18,14 +18,13 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smashvn.shop.dao.HinhAnhSanPhamDAO;
+import com.smashvn.shop.entity.NhanVien;
+import com.smashvn.shop.entity.PhieuNhap;
+import com.smashvn.shop.entity.PhieuNhapChiTiet;
 import com.smashvn.shop.entity.SanPham;
 import com.smashvn.shop.entity.SanPhamChiTiet;
 import com.smashvn.shop.entity.SanPhamChiTietThuocTinh;
 import com.smashvn.shop.entity.ThuocTinh;
-import com.smashvn.shop.entity.NhanVien;
-import com.smashvn.shop.entity.PhieuNhap;
-import com.smashvn.shop.entity.PhieuNhapChiTiet;
 import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.PhieuNhapRepository;
 import com.smashvn.shop.repository.SanPhamChiTietRepository;
@@ -45,11 +44,9 @@ public class AdminBienTheService {
     private final SanPhamRepository sanPhamRepository;
     private final SanPhamChiTietRepository sanPhamChiTietRepository;
     private final ThuocTinhRepository thuocTinhRepository;
-    private final HinhAnhSanPhamDAO hinhAnhSanPhamDAO;
     private final InventoryLotService inventoryLotService;
     private final PhieuNhapRepository phieuNhapRepository;
     private final NhanVienRepository nhanVienRepository;
-
 
     private static final String TRANG_THAI_DANG_BAN = "dang_ban";
     private static final String TRANG_THAI_NGUNG_KINH_DOANH = "ngung_kinh_doanh";
@@ -61,8 +58,6 @@ public class AdminBienTheService {
     public List<SanPhamChiTiet> layDanhSachBienThe(Integer idSanPham) {
         return sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
     }
-
-
 
     // 2. Thêm biến thể mới (hoặc tự động nhập lô mới nếu biến thể đã tồn tại)
     @Transactional
@@ -114,7 +109,7 @@ public class AdminBienTheService {
         validateBasicFinancial(giaBan, soLuongTon);
 
         if (giaNhap != null && giaNhap.compareTo(BigDecimal.ZERO) > 0 && giaBan != null && giaNhap.compareTo(giaBan) > 0) {
-            throw new IllegalArgumentException("Giá nhập hiện tại đang cao hơn giá bán (Giá nhập: " 
+            throw new IllegalArgumentException("Giá nhập hiện tại đang cao hơn giá bán (Giá nhập: "
                     + String.format("%,.0f", giaNhap) + " đ > Giá bán: " + String.format("%,.0f", giaBan) + " đ). Vui lòng kiểm tra và nhập lại!");
         }
 
@@ -124,8 +119,8 @@ public class AdminBienTheService {
 
         SanPhamChiTiet existingVariant = sanPhamChiTietRepository.findBySanPham_Id(idSanPham).stream()
                 .filter(bt -> (bt.getMauSac() == null ? "" : bt.getMauSac().toLowerCase()).equals(fMau)
-                        && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
-                        && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich))
+                && (bt.getTrongLuong() == null ? "" : bt.getTrongLuong().toLowerCase()).equals(fTrong)
+                && (bt.getKichThuoc() == null ? "" : bt.getKichThuoc().toLowerCase()).equals(fKich))
                 .findFirst()
                 .orElse(null);
 
@@ -144,20 +139,20 @@ public class AdminBienTheService {
         List<Path> uploadedFiles = new ArrayList<>();
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == STATUS_ROLLED_BACK) {
-                            for (Path path : uploadedFiles) {
-                                try {
-                                    Files.deleteIfExists(path);
-                                } catch (Exception e) {
-                                    // ignore
-                                }
+                    new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        for (Path path : uploadedFiles) {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (Exception e) {
+                                log.error("Xóa file ảnh tạm thất bại sau rollback khi thêm biến thể: {}", path, e);
                             }
                         }
                     }
                 }
+            }
             );
         }
 
@@ -323,20 +318,20 @@ public class AdminBienTheService {
         List<Path> uploadedFiles = new ArrayList<>();
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == STATUS_ROLLED_BACK) {
-                            for (Path path : uploadedFiles) {
-                                try {
-                                    Files.deleteIfExists(path);
-                                } catch (Exception e) {
-                                    // ignore
-                                }
+                    new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        for (Path path : uploadedFiles) {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (Exception e) {
+                                log.error("Xóa file ảnh tạm thất bại sau rollback khi cập nhật biến thể: {}", path, e);
                             }
                         }
                     }
                 }
+            }
             );
         }
 
@@ -365,7 +360,6 @@ public class AdminBienTheService {
             updateMucCangAllVariants(spct.getSanPham().getId(), cleanMucCang);
         }
     }
-
 
     private void saveOrUpdateAttribute(SanPhamChiTiet spct, String tenThuocTinh, String giaTri) {
         if (spct.getSanPhamChiTietThuocTinhs() == null) {
@@ -396,8 +390,8 @@ public class AdminBienTheService {
 
         SanPhamChiTietThuocTinh existing = spct.getSanPhamChiTietThuocTinhs().stream()
                 .filter(tt -> tt.getThuocTinh() != null && (finalTargetName.equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())
-                        || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
-                        && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
+                || (("Kích thước".equalsIgnoreCase(finalTargetName) || "Size".equalsIgnoreCase(finalTargetName))
+                && ("Kích thước".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh()) || "Size".equalsIgnoreCase(tt.getThuocTinh().getTenThuocTinh())))))
                 .findFirst()
                 .orElse(null);
 
@@ -418,9 +412,9 @@ public class AdminBienTheService {
             if (tt == null) {
                 tt = thuocTinhRepository.findByTenThuocTinhIgnoreCase(finalTargetName)
                         .orElseGet(() -> thuocTinhRepository.save(ThuocTinh.builder()
-                                .tenThuocTinh(finalTargetName.trim())
-                                .trangThai(true)
-                                .build()));
+                        .tenThuocTinh(finalTargetName.trim())
+                        .trangThai(true)
+                        .build()));
             }
             SanPhamChiTietThuocTinh val = SanPhamChiTietThuocTinh.builder()
                     .sanPhamChiTiet(spct)
@@ -431,7 +425,6 @@ public class AdminBienTheService {
         }
     }
 
-
     private void updateMucCangAllVariants(Integer idSanPham, String cleanMucCang) {
         List<SanPhamChiTiet> variants = sanPhamChiTietRepository.findBySanPham_Id(idSanPham);
         for (SanPhamChiTiet v : variants) {
@@ -441,7 +434,9 @@ public class AdminBienTheService {
     }
 
     private String normalizeText(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         String trimmed = s.trim().replaceAll("\\s+", " ");
         return trimmed.isEmpty() ? null : trimmed;
     }

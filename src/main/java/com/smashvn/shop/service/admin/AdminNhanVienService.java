@@ -19,7 +19,9 @@ import com.smashvn.shop.repository.NhanVienRepository;
 import com.smashvn.shop.repository.TaiKhoanRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminNhanVienService {
@@ -400,7 +402,7 @@ public class AdminNhanVienService {
                     cache.evict(idTaiKhoan);
                 }
             } catch (Exception e) {
-                // Ignore cache eviction errors
+                log.warn("Không thể xóa cache trạng thái tài khoản #{}: {}", idTaiKhoan, e.getMessage());
             }
         }
     }
@@ -486,7 +488,7 @@ public class AdminNhanVienService {
                 ));
                 mailSender.send(message);
             } catch (Exception e) {
-                System.err.println("Lỗi gửi mail phê duyệt khóa đến " + email + ": " + e.getMessage());
+                log.error("Lỗi gửi mail phê duyệt khóa đến {}: {}", email, e.getMessage(), e);
             }
         }
     }
@@ -561,7 +563,7 @@ public class AdminNhanVienService {
                 ));
                 mailSender.send(message);
             } catch (Exception e) {
-                System.err.println("Lỗi gửi mail thông báo từ chối khóa đến " + email + ": " + e.getMessage());
+                log.error("Lỗi gửi mail thông báo từ chối khóa đến {}: {}", email, e.getMessage(), e);
             }
         }
     }

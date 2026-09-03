@@ -139,13 +139,13 @@
                                 <!-- Title -->
                                 <div class="col-md-8">
                                     <label for="title" class="admin-form-label">Tiêu đề bài viết <span class="text-danger">*</span></label>
-                                    <input type="text" class="admin-form-control form-control" id="title" th:field="*{title}" placeholder="Nhập tiêu đề hấp dẫn..." required>
+                                    <input type="text" class="admin-form-control form-control" id="title" th:field="*{title}" placeholder="Nhập tiêu đề hấp dẫn..." required oninvalid="this.setCustomValidity('Vui lòng nhập tiêu đề bài viết!')" oninput="this.setCustomValidity('')">
                                 </div>
                                 
                                 <!-- Category -->
                                 <div class="col-md-4">
                                     <label for="category" class="admin-form-label">Danh mục bài viết <span class="text-danger">*</span></label>
-                                    <select class="form-select admin-form-control" id="category" th:field="*{category}" required>
+                                    <select class="form-select admin-form-control" id="category" th:field="*{category}" required oninvalid="this.setCustomValidity('Vui lòng chọn danh mục bài viết!')" oninput="this.setCustomValidity('')">
                                         <option value="">-- Chọn danh mục --</option>
                                         <option value="Hướng Dẫn">Hướng Dẫn</option>
                                         <option value="Review">Review Sản Phẩm</option>
@@ -157,7 +157,7 @@
                                 <!-- Author -->
                                 <div class="col-md-6">
                                     <label for="author" class="admin-form-label">Tác giả <span class="text-danger">*</span></label>
-                                    <input type="text" class="admin-form-control form-control" id="author" th:field="*{author}" placeholder="Nhập tên tác giả hoặc tên hiển thị..." required>
+                                    <input type="text" class="admin-form-control form-control" id="author" th:field="*{author}" placeholder="Nhập tên tác giả hoặc tên hiển thị..." required oninvalid="this.setCustomValidity('Vui lòng nhập tên tác giả!')" oninput="this.setCustomValidity('')">
                                 </div>
 
                                 <!-- Tags -->
@@ -169,7 +169,7 @@
                                 <!-- Image Cover -->
                                 <div class="col-md-8">
                                     <label for="imageFile" class="admin-form-label">Hình ảnh bìa bài viết <span class="text-danger">*</span></label>
-                                    <input type="file" class="admin-form-control form-control" id="imageFile" name="imageFile" accept="image/jpeg,image/png,image/webp" required onchange="previewImage(event)">
+                                    <input type="file" class="admin-form-control form-control" id="imageFile" name="imageFile" accept="image/jpeg,image/png,image/webp" required oninvalid="this.setCustomValidity('Vui lòng chọn hình ảnh bìa bài viết!')" oninput="this.setCustomValidity('')" onchange="previewImage(event)">
                                     <div class="form-text">Định dạng chấp nhận: JPG, JPEG, PNG, WEBP. Dung lượng tối đa: 5MB.</div>
                                 </div>
                                 

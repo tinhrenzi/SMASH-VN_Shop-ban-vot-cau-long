@@ -15,6 +15,13 @@
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Load local CKEditor -->
+    <script th:src="@{/vendor/ckeditor/ckeditor.js}"></script>
+    <script th:src="@{/vendor/ckeditor/translations/vi.js}"></script>
+    <style>
+        .ck-editor__editable_inline { min-height: 200px; max-height: 400px; }
+    </style>
 </head>
 <body class="admin-body">
 
@@ -88,7 +95,7 @@
 
                             <div class="mb-4">
                                 <label class="admin-form-label">Mô tả sản phẩm</label>
-                                <textarea name="moTa" class="admin-form-control form-control" rows="3" placeholder="Nhập mô tả giới thiệu chi tiết dòng sản phẩm này..." th:text="${requestDto != null ? requestDto.moTa : ''}"></textarea>
+                                <textarea name="moTa" id="moTa" class="admin-form-control form-control" rows="4" placeholder="Nhập mô tả giới thiệu chi tiết dòng sản phẩm này..." th:text="${requestDto != null ? requestDto.moTa : ''}"></textarea>
                             </div>
 
                             <!-- SECTION 2: CẤU HÌNH ẢNH SẢN PHẨM & GIÁ -->
@@ -188,7 +195,29 @@
         const PRESET_TENSIONS = ["20 - 28 lbs", "22 - 30 lbs", "24 - 32 lbs"];
         /*]]>*/
 
+        let moTaEditorInstance = null;
+
         document.addEventListener("DOMContentLoaded", function() {
+            const moTaElement = document.getElementById("moTa");
+            if (moTaElement && typeof ClassicEditor !== "undefined") {
+                ClassicEditor
+                    .create(moTaElement, {
+                        toolbar: [
+                            'heading', '|', 
+                            'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                            'insertTable', '|',
+                            'undo', 'redo'
+                        ],
+                        language: 'vi'
+                    })
+                    .then(editor => {
+                        moTaEditorInstance = editor;
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi khởi tạo CKEditor cho mô tả sản phẩm:', error);
+                    });
+            }
+
             const selectDanhMuc = document.getElementById("selectDanhMuc");
             const previewTbody = document.getElementById("previewTbody");
             const previewTable = document.getElementById("previewTable");
@@ -993,6 +1022,14 @@
             window.validateAndConfirmAddProduct = async function(formElement) {
                 if (formElement.dataset.confirmed === "true") {
                     return true;
+                }
+
+                // Đồng bộ dữ liệu từ CKEditor vào textarea
+                if (moTaEditorInstance) {
+                    const moTaInput = document.getElementById("moTa");
+                    if (moTaInput) {
+                        moTaInput.value = moTaEditorInstance.getData();
+                    }
                 }
 
                 // 1. Kiểm tra Tên sản phẩm

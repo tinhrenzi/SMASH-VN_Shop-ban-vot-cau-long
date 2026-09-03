@@ -62,7 +62,7 @@
                                     <div class="row g-3 mb-4">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Giá bán <span class="text-danger">*</span></label>
-                                            <input type="number" name="giaBan" class="admin-form-control form-control" th:value="${bt.giaBan}" required min="1000" step="1000" placeholder="VD: 2500000">
+                                            <input type="number" name="giaBan" class="admin-form-control form-control" th:value="${bt.giaBan}" required min="1000" step="1000" placeholder="VD: 2500000" oninvalid="this.setCustomValidity('Vui lòng nhập giá bán hợp lệ (tối thiểu 1.000 VNĐ)!')" oninput="this.setCustomValidity('')">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Số lượng kho <span class="text-danger">*</span></label>
@@ -74,7 +74,7 @@
                                     <div class="row g-3 mb-4" th:if="${categoryType == 'VOT'}">
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đỏ / Xanh / Đen" oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đỏ</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Xanh dương</button>
@@ -85,7 +85,7 @@
                                         </div>
                                         <div class="col-md-4">
                                             <label class="admin-form-label">Trọng lượng <span class="text-danger">*</span></label>
-                                            <input type="text" name="trongLuong" class="admin-form-control form-control mb-2" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U">
+                                            <input type="text" name="trongLuong" class="admin-form-control form-control mb-2" th:value="${bt.trongLuong}" required maxlength="50" placeholder="VD: 3U / 4U / 5U" oninvalid="this.setCustomValidity('Vui lòng nhập trọng lượng vợt (VD: 3U, 4U, 5U)!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">3U</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">4U</button>
@@ -106,7 +106,7 @@
                                     <div class="row g-3 mb-4" th:if="${categoryType == 'GIAY'}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Trắng Xanh" oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Trắng</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đen</button>
@@ -116,7 +116,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Size giày <span class="text-danger">*</span></label>
-                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46">
+                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: 36, 37... 46" oninvalid="this.setCustomValidity('Vui lòng chọn hoặc nhập kích thước giày!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)" th:each="sz : ${listKichThuocGiay}" th:text="${sz}">36</button>
                                             </div>
@@ -126,7 +126,7 @@
                                     <div class="row g-3 mb-4" th:if="${categoryType == 'TRANG_PHUC'}">
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control mb-2" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Đen / Đỏ" oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đen</button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)">Đỏ</button>
@@ -135,7 +135,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="admin-form-label">Size trang phục <span class="text-danger">*</span></label>
-                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L, XL...">
+                                            <input type="text" name="kichThuoc" class="admin-form-control form-control mb-2" th:value="${bt.kichThuoc}" required maxlength="50" placeholder="VD: XS, S, M, L, XL..." oninvalid="this.setCustomValidity('Vui lòng chọn hoặc nhập kích thước trang phục!')" oninput="this.setCustomValidity('')">
                                             <div class="d-flex flex-wrap gap-1">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 rounded-pill pill-attr" onclick="applyAttrPill(this)" th:each="sz : ${listKichThuocTrangPhuc}" th:text="${sz}">M</button>
                                             </div>
@@ -145,7 +145,7 @@
                                     <div class="row g-3 mb-4" th:if="${categoryType != 'HOP_CAU' and categoryType != 'VOT' and categoryType != 'GIAY' and categoryType != 'TRANG_PHUC'}">
                                         <div class="col-12">
                                             <label class="admin-form-label">Màu sắc <span class="text-danger">*</span></label>
-                                            <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Tiêu chuẩn">
+                                            <input type="text" name="mauSac" class="admin-form-control form-control" th:value="${bt.mauSac}" required maxlength="50" placeholder="VD: Tiêu chuẩn" oninvalid="this.setCustomValidity('Vui lòng nhập màu sắc!')" oninput="this.setCustomValidity('')">
                                         </div>
                                     </div>
 
@@ -162,7 +162,7 @@
                                     <div class="row mb-4">
                                         <div class="col-12">
                                             <label class="admin-form-label">Hình ảnh biến thể</label>
-                                            <input type="file" name="fileAnh" id="fileAnh" class="admin-form-control form-control" accept="image/jpeg, image/png, image/webp">
+                                            <input type="file" name="fileAnh" id="fileAnh" class="admin-form-control form-control" accept="image/jpeg, image/png, image/webp" oninvalid="this.setCustomValidity('Vui lòng chọn hình ảnh hợp lệ!')" oninput="this.setCustomValidity('')">
                                             <div id="fileError" class="text-danger mt-1" style="display: none;"></div>
 
                                             <div class="mt-3 p-3 bg-light rounded-3 border d-flex align-items-center gap-4" th:if="${bt.hinhAnhSanPham != null}">
