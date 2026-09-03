@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 
 import com.smashvn.shop.dao.DonViVanChuyenDAO;
 import com.smashvn.shop.dao.PhuongThucThanhToanDAO;
+import com.smashvn.shop.dto.order.CheckoutContext;
+import com.smashvn.shop.dto.order.CheckoutItemContext;
+import com.smashvn.shop.dto.order.CheckoutSource;
+import com.smashvn.shop.dto.order.OrderCreationResult;
+import com.smashvn.shop.dto.order.PurchasedItemSnapshot;
 import com.smashvn.shop.entity.DonViVanChuyen;
 import com.smashvn.shop.entity.GioHang;
 import com.smashvn.shop.entity.GioHangChiTiet;
@@ -22,7 +27,6 @@ import com.smashvn.shop.entity.KhachHang;
 import com.smashvn.shop.entity.OrderStatus;
 import com.smashvn.shop.entity.PaymentMethod;
 import com.smashvn.shop.entity.PaymentStatus;
-import com.smashvn.shop.entity.PaymentTransaction;
 import com.smashvn.shop.entity.PhieuGiamGia;
 import com.smashvn.shop.entity.PhuongThucThanhToan;
 import com.smashvn.shop.entity.SanPham;
@@ -44,22 +48,14 @@ import com.smashvn.shop.repository.ThongBaoRepository;
 import com.smashvn.shop.service.admin.AdminShippingService;
 import com.smashvn.shop.service.api.GhnService;
 import com.smashvn.shop.service.api.ShippingFeeCalculator;
-import com.smashvn.shop.dto.order.CheckoutContext;
-import com.smashvn.shop.dto.order.CheckoutItemContext;
-import com.smashvn.shop.dto.order.CheckoutSource;
-import com.smashvn.shop.dto.order.OrderCreationResult;
-
-import com.smashvn.shop.dto.order.PurchasedItemSnapshot;
-
 import com.smashvn.shop.service.product.PriceSnapshot;
 import com.smashvn.shop.service.product.PricingService;
 import com.smashvn.shop.service.product.ProductAvailabilityService;
 import com.smashvn.shop.util.PhoneUtils;
 import com.smashvn.shop.util.VoucherCalculator;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-
-
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -403,9 +399,13 @@ public class GioHangService {
         if (khachHang == null) {
             khachHang = khachHangRepository.findById(idTaiKhoan).orElse(null);
         }
-        if (khachHang == null) return;
+        if (khachHang == null) {
+            return;
+        }
         GioHang gioHang = gioHangRepository.findByKhachHang_Id(khachHang.getId());
-        if (gioHang == null) return;
+        if (gioHang == null) {
+            return;
+        }
 
         for (PurchasedItemSnapshot purchased : purchasedItems) {
             if (purchased == null || !purchased.isFromCart()) {
@@ -450,7 +450,6 @@ public class GioHangService {
         if (context == null || context.getItems() == null || context.getItems().isEmpty()) {
             throw new IllegalArgumentException("Danh sách sản phẩm thanh toán không hợp lệ.");
         }
-
 
         KhachHang kh = getOrCreateKhachHang(idTaiKhoan);
 
@@ -661,8 +660,8 @@ public class GioHangService {
         List<PhuongThucThanhToan> allPttt = phuongThucThanhToanDAO.findAll();
         PhuongThucThanhToan pttt = allPttt.stream()
                 .filter(p -> (p.getMaPhuongThuc() != null && targetCode.equalsIgnoreCase(p.getMaPhuongThuc()))
-                          || ("SEPAY".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 1))
-                          || ("COD".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 2)))
+                || ("SEPAY".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 1))
+                || ("COD".equalsIgnoreCase(targetCode) && (p.getId() != null && p.getId() == 2)))
                 .findFirst()
                 .orElseGet(() -> {
                     Integer targetId = "SEPAY".equalsIgnoreCase(targetCode) ? 1 : 2;
@@ -694,7 +693,7 @@ public class GioHangService {
             hd.setSoTienGiamVoucher(BigDecimal.ZERO);
         }
 
-        if ("COD".equalsIgnoreCase(ptttName)) {
+        if ("COD".equalsIgnoreCase(phuongThucThanhToan)) {
             hd.setTrangThaiDonHang(OrderStatus.CHO_XAC_NHAN.getValue());
             hd.setPaymentMethod(PaymentMethod.COD.getValue());
         } else {
@@ -892,4 +891,3 @@ public class GioHangService {
         return Jsoup.clean(input, Safelist.none()).trim();
     }
 }
-
