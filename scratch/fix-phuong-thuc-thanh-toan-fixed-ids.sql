@@ -1,16 +1,3 @@
--- ==============================================================================
--- SCRIPT CHUẨN HÓA VÀ FIX CỨNG ID CHO BẢNG PhuongThucThanhToan VÀ DonViVanChuyen
--- Database: BadmintonShopDB1
---
--- QUY ƯỚC CHUẨN:
--- 1. ĐƠN ONLINE (id_nhan_vien IS NULL):
---    - ID = 1: SEPAY -> Chuyển khoản Online
---    - ID = 2: COD   -> Thanh toán khi nhận hàng
--- 2. ĐƠN TẠI QUẦY (id_nhan_vien IS NOT NULL):
---    - ID = 3: TIEN_MAT     -> Tiền mặt tại quầy
---    - ID = 4: CHUYEN_KHOAN -> Chuyển khoản tại quầy
--- ==============================================================================
-
 USE [BadmintonShopDB1];
 GO
 
@@ -20,7 +7,7 @@ BEGIN TRY
     -- 1. Tắt tạm thời ràng buộc khóa ngoại trên bảng HoaDon
     ALTER TABLE dbo.HoaDon NOCHECK CONSTRAINT ALL;
 
-    -- 2. Tái tạo bảng PhuongThucThanhToan với đúng 4 ID cố định không chứa ngoặc
+    -- 2. Tái tạo bảng PhuongThucThanhToan với 4 ID cố định không dấu ngoặc
     DELETE FROM dbo.PhuongThucThanhToan;
     DBCC CHECKIDENT ('dbo.PhuongThucThanhToan', RESEED, 0);
 
@@ -33,23 +20,23 @@ BEGIN TRY
     SET IDENTITY_INSERT dbo.PhuongThucThanhToan OFF;
 
     -- 3. Cập nhật chính xác cho ĐƠN HÀNG ONLINE (id_nhan_vien IS NULL)
-    -- Đơn online chuyển khoản (bao gồm đơn số 21) -> Set đúng ID = 1 (Chuyển khoản Online)
+    -- Đơn online chuyển khoản (bao gồm đơn số 21) -> ID = 1 (Chuyển khoản Online)
     UPDATE dbo.HoaDon
     SET id_phuong_thuc_thanh_toan = 1
     WHERE id_nhan_vien IS NULL AND (id_phuong_thuc_thanh_toan IN (1, 4, 6, 7) OR id = 21);
 
-    -- Đơn online COD -> Set đúng ID = 2 (Thanh toán khi nhận hàng)
+    -- Đơn online COD -> ID = 2 (Thanh toán khi nhận hàng)
     UPDATE dbo.HoaDon
     SET id_phuong_thuc_thanh_toan = 2
     WHERE id_nhan_vien IS NULL AND id_phuong_thuc_thanh_toan = 2 AND id <> 21;
 
     -- 4. Cập nhật cho ĐƠN HÀNG TẠI QUẦY (id_nhan_vien IS NOT NULL)
-    -- Đơn tại quầy Tiền mặt -> Set ID = 3 (Tiền mặt tại quầy)
+    -- Đơn tại quầy Tiền mặt -> ID = 3 (Tiền mặt tại quầy)
     UPDATE dbo.HoaDon
     SET id_phuong_thuc_thanh_toan = 3
     WHERE id_nhan_vien IS NOT NULL AND id_phuong_thuc_thanh_toan IN (3, 5);
 
-    -- Đơn tại quầy Chuyển khoản -> Set ID = 4 (Chuyển khoản tại quầy)
+    -- Đơn tại quầy Chuyển khoản -> ID = 4 (Chuyển khoản tại quầy)
     UPDATE dbo.HoaDon
     SET id_phuong_thuc_thanh_toan = 4
     WHERE id_nhan_vien IS NOT NULL AND id_phuong_thuc_thanh_toan IN (4, 6);
