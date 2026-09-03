@@ -287,7 +287,16 @@
 
             window.openBlogFormModal = function(url, title) {
                 if (blogFormModalLabel) blogFormModalLabel.innerHTML = `<i class="fas fa-edit text-primary me-2"></i>${title}`;
-                if (blogFormIframe) blogFormIframe.src = url;
+                if (blogFormIframe) {
+                    blogFormIframe.src = url;
+                    blogFormIframe.onload = function() {
+                        try {
+                            if (blogFormIframe.contentWindow) {
+                                blogFormIframe.contentWindow.scrollTo(0, 0);
+                            }
+                        } catch(e) {}
+                    };
+                }
                 if (blogFormModal) blogFormModal.show();
             };
 

@@ -21,13 +21,16 @@
     <script th:src="@{/vendor/ckeditor/translations/vi.js}"></script>
     
     <style>
-        .ck-editor__editable_inline { min-height: 250px; max-height: 400px; }
+        .ck-editor__editable_inline { min-height: 220px; max-height: 380px; }
+        .ck-powered-by, .ck.ck-powered-by, [class*="ck-powered-by"] { display: none !important; visibility: hidden !important; height: 0 !important; }
         body.iframe-mode, html.iframe-mode {
             background-color: #ffffff !important;
             padding: 0 !important;
             margin: 0 !important;
             overflow-x: hidden !important;
             overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100% !important;
         }
         body.iframe-mode .admin-page {
             margin-left: 0 !important;
@@ -36,10 +39,7 @@
         }
         body.iframe-mode .admin-content {
             margin-left: 0 !important;
-            padding-top: 15px !important;
-            padding-bottom: 80px !important;
-            padding-left: 20px !important;
-            padding-right: 20px !important;
+            padding: 15px 20px 30px 20px !important;
             min-height: auto !important;
             background-color: #ffffff !important;
         }
@@ -52,21 +52,20 @@
             box-shadow: none !important;
             border: none !important;
             margin-bottom: 0 !important;
+            background: transparent !important;
         }
         body.iframe-mode .admin-card-body {
             padding: 0 !important;
         }
         body.iframe-mode .form-actions-bar {
-            position: sticky;
-            bottom: 0;
-            background: #ffffff;
-            padding: 12px 20px;
-            border-top: 1px solid #e2e8f0;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
-            z-index: 1000;
-            margin-left: -20px;
-            margin-right: -20px;
-            margin-bottom: -80px;
+            position: relative !important;
+            bottom: auto !important;
+            background: transparent !important;
+            padding: 20px 0 10px 0 !important;
+            border-top: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            z-index: auto !important;
+            margin: 0 !important;
         }
     </style>
     <script>
@@ -77,15 +76,16 @@
                 .sidebar, nav.sidebar, .admin-header, .admin-topbar, .admin-page-header { display: none !important; }
                 body, body.iframe-mode, html, html.iframe-mode { background-color: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow-x: hidden !important; overflow-y: auto !important; }
                 .admin-page { margin-left: 0 !important; padding-left: 0 !important; min-height: auto !important; }
-                main.main-content, .main-content, .admin-content { margin-left: 0 !important; padding-top: 15px !important; width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; padding: 15px 20px 80px 20px !important; min-height: auto !important; background-color: #ffffff !important; }
+                main.main-content, .main-content, .admin-content { margin-left: 0 !important; padding: 15px 20px 30px 20px !important; width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; min-height: auto !important; background-color: #ffffff !important; }
                 .admin-container { padding-left: 0 !important; padding-right: 0 !important; max-width: 100% !important; }
-                .card, .admin-card { box-shadow: none !important; border: none !important; margin-bottom: 0 !important; }
+                .card, .admin-card { box-shadow: none !important; border: none !important; margin-bottom: 0 !important; background: transparent !important; }
                 .btn-back-normal { display: none !important; }
                 .btn-close-iframe { display: inline-block !important; }
             `;
             document.head.appendChild(style);
             document.addEventListener('DOMContentLoaded', function() {
                 document.body.classList.add('iframe-mode');
+                window.scrollTo(0, 0);
                 const form = document.querySelector('form');
                 if (form && form.action && !form.action.includes('iframe=')) {
                     form.action += (form.action.includes('?') ? '&' : '?') + 'iframe=true';

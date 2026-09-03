@@ -922,7 +922,7 @@
 
                                                     <!-- Hover container chứa Mô tả và Wishlist để ẩn hiện đúng theo chế độ (Grid/List) -->
                                                     <div class="product-m__hover">
-                                                        <div class="product-m__preview-description" th:text="${product.moTa}">Mô tả sản phẩm...</div>
+                                                        <div class="product-m__preview-description" th:utext="${product.moTa}">Mô tả sản phẩm...</div>
                                                         <div class="product-m__wishlist">
                                                             <a href="javascript:void(0)"
                                                                th:onclick="|addToWishlist(${product.id}, this)|"
